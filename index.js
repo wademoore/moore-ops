@@ -3,6 +3,7 @@ import "dotenv/config";
 import { getCalendarEvents } from "./calendar.js";
 import { getActivityEmails } from "./gmail.js";
 import { sendDigestEmail } from "./mailer.js";
+import { getFamilyDocs } from "./drive.js";
 
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -51,6 +52,11 @@ PROACTIVE FLAGS — always check for these:
 - ACTIVE RED ALERT: Legacy Soccer tryout decision window opens May 12-15 (48-hour acceptance window). Monitor wademoore@gmail.com. Flag every digest until resolved.
 - Teacher Appreciation Week: first full week of May — flag gift ideas for Ms. Maguire (Myles) and Mrs. Watkins (Ophelia)
 - Flag Football Picture Day: Sunday May 17 — flag the week before
+
+IMPORTANT — EMAIL THREAD HANDLING:
+Do not surface email threads where the event or action item has already passed
+or been resolved. Cross-reference email dates and event dates against today's
+date and only flag items that are still actionable going forward.
 
 ═══════════════════════════════════════
 OUTPUT FORMAT — CRITICAL
@@ -150,6 +156,9 @@ const eventSummary = events.length === 0
 
 console.log("Calendar events loaded:\n", eventSummary, "\n");
 
+const docs = await getFamilyDocs();
+console.log("Family documents loaded\n");
+
 const emails = await getActivityEmails();
 const emailSummary = emails.length === 0
   ? "No recent emails from activity organizations."
@@ -160,18 +169,24 @@ const emailSummary = emails.length === 0
 console.log("Activity emails loaded:", emails.length, "found\n");
 const response = await client.messages.create({
   model: "claude-sonnet-4-6",
-  max_tokens: 4000,
+  max_tokens: 16000,
   system: systemPrompt,
   messages: [
     {
       role: "user",
-      content: `Run a morning digest for today. 
+      content: `Run a morning digest for today.
 
         Here are the calendar events for the next 72 hours:
         ${eventSummary}
 
         Here are recent emails from activity organizations (last 7 days):
-        ${emailSummary}`,
+        ${emailSummary}
+
+        Here is the Moore Family Operations Context document:
+        ${docs.familyContext}
+
+        Here is the Moore Family Athletics document:
+        ${docs.athletics}`,
     },
   ],
 });

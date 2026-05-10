@@ -28,9 +28,9 @@ export async function getActivityEmails() {
   const auth = await getAuthClient();
   const gmail = google.gmail({ version: "v1", auth });
 
-  // Build search query for all watched senders in last 7 days
+  // Build search query for all watched senders in last 3 days
   const senderQuery = WATCHED_SENDERS.map(s => `from:${s}`).join(" OR ");
-  const query = `(${senderQuery}) newer_than:7d`;
+  const query = `(${senderQuery}) newer_than:3d`;
 
   const res = await gmail.users.messages.list({
     userId: "me",

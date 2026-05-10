@@ -6,7 +6,9 @@ const SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/gmail.send",
+  "https://www.googleapis.com/auth/drive.readonly",
 ];
+
 const TOKEN_PATH = "token.json";
 const CREDENTIALS_PATH = "credentials.json";
 
