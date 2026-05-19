@@ -522,12 +522,20 @@ function renderEmail(digestData, tab = 'all') {
     default:       contentHtml = renderAll(digestData);    break;
   }
 
-  // Pre-send safety check — these strings must never appear in output
-  const forbidden = ['<style', '<html', '<head', '<body', 'class="', 'display:flex', 'display:grid'];
+  // Pre-send safety check — structural tokens that break Gmail must never appear.
+  // Note: display:flex/grid are checked only as inline style attribute values,
+  // not as plain text content which may legitimately mention CSS.
+  const forbidden = ['<style', '<html', '<head', '<body', 'class="'];
   for (const token of forbidden) {
     if (contentHtml.toLowerCase().includes(token.toLowerCase())) {
       throw new Error(`[email] Gmail-breaking token found in output: "${token}"`);
     }
+  }
+  if (/style="[^"]*display\s*:\s*flex/i.test(contentHtml)) {
+    throw new Error('[email] Gmail-breaking token found in output: "display:flex" as inline style');
+  }
+  if (/style="[^"]*display\s*:\s*grid/i.test(contentHtml)) {
+    throw new Error('[email] Gmail-breaking token found in output: "display:grid" as inline style');
   }
 
   const html = wrapEmail(contentHtml);

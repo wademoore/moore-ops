@@ -141,11 +141,41 @@ function buildGmailHits(emails) {
 function parseNewsletterItems(newsletterText) {
   if (!newsletterText) return [];
 
-  const items = [];
-  const lines = newsletterText.split('\n').map(l => l.trim()).filter(Boolean);
+  // The newsletter file from Drive is raw Smore HTML/JS — strip all tags and
+  // script content before trying to extract readable lines.
+  let text = newsletterText;
+
+  // Remove <script>...</script> blocks first (Smore embeds large JS payloads)
+  text = text.replace(/<script[\s\S]*?<\/script>/gi, ' ');
+
+  // Remove <style>...</style> blocks
+  text = text.replace(/<style[\s\S]*?<\/style>/gi, ' ');
+
+  // Strip remaining HTML tags
+  text = text.replace(/<[^>]+>/g, ' ');
+
+  // Decode common HTML entities
+  text = text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/\u003C/g, '<')
+    .replace(/\u003E/g, '>')
+    .replace(/\\u[0-9a-f]{4}/gi, ' ');  // remove remaining unicode escapes
+
+  // Drop lines that look like JSON or JavaScript (Smore data blobs)
+  const lines = text.split('\n')
+    .map(l => l.trim())
+    .filter(l => l.length > 10)          // skip very short fragments
+    .filter(l => !l.startsWith('{'))      // skip JSON objects
+    .filter(l => !l.startsWith('['))      // skip JSON arrays
+    .filter(l => !l.startsWith('data:'))  // skip data URIs
+    .filter(l => !/^[a-z]+:[{\["]/.test(l)); // skip key:value JSON
 
   // Heuristic: pull lines that look like actionable school items.
-  // Catches: dates, spirit days, deadlines, early dismissals, field trips.
   const actionPatterns = [
     /spirit\s+day/i,
     /early\s+dismiss/i,
@@ -153,19 +183,29 @@ function parseNewsletterItems(newsletterText) {
     /permission\s+slip/i,
     /volunteer/i,
     /pta/i,
-    /supply/i,
     /picture\s+day/i,
-    /maguire|watkins/i,    // teacher-specific mentions
+    /maguire|watkins/i,
     /\b(mon|tue|wed|thu|fri|sat|sun)\b.*\b(may|jun|jul|aug|sep|oct|nov|dec)\b/i,
+    /\b5\/\d+\b.*\b(monday|tuesday|wednesday|thursday|friday)\b/i,
+    /centers\s+day/i,
+    /honor\s+roll/i,
+    /no\s+school/i,
+    /redistrict/i,
+    /sol\s+test/i,
+    /family\s+life/i,
   ];
 
+  const items = [];
   for (const line of lines) {
+    // Skip lines that are still clearly code/data
+    if (line.includes('svelte-') || line.includes('u003C') || line.length > 300) continue;
     if (actionPatterns.some(p => p.test(line))) {
-      items.push(line);
+      // Clean up whitespace before storing
+      items.push(line.replace(/\s+/g, ' ').trim());
     }
   }
 
-  // Deduplicate and cap at 8 items to keep digest manageable
+  // Deduplicate and cap at 8 items
   return [...new Set(items)].slice(0, 8);
 }
 
@@ -180,16 +220,24 @@ function parseNewsletterItems(newsletterText) {
 function parseAthleticsDoc(text) {
   if (!text) return buildEmptyAthletics();
 
+  // Google Docs plain-text export renders markdown tables with | :-: | alignment
+  // rows between header and data. Strip those lines before parsing so they don't
+  // interfere with data extraction.
+  const cleanText = text.split('\n')
+    .filter(line => !line.match(/^\s*\|[\s:\-|]+\|\s*$/))
+    .join('\n');
+
   // ── Season record ────────────────────────────────────────────────────────
-  // Look for the Cowboys standings table row. Format: "| Cowboys | W | L | PF | PA |"
-  const recordMatch = text.match(/Cowboys\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)/i);
+  // Match "| Cowboys | 3 | 0 | 90 | 20 |" — any surrounding whitespace
+  const recordMatch = cleanText.match(/\|\s*Cowboys\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|/i);
   const seasonW   = recordMatch ? parseInt(recordMatch[1]) : 0;
   const seasonL   = recordMatch ? parseInt(recordMatch[2]) : 0;
   const seasonRecord = `${seasonW}-${seasonL}`;
 
   // ── Last result ──────────────────────────────────────────────────────────
-  // Season Results table — find the last row with WIN or LOSS
-  const resultRows = [...text.matchAll(/\|\s*Wk\s*\d+\s*\|[^|]+\|[^|]+\|[^|]+\|\s*(WIN|LOSS)\s+(\d+[–-]\d+)\s*\|/gi)];
+  // Match result rows: "| Wk 1 | Apr 26 | vs. Raiders | HOME | WIN 26–0 |"
+  // WIN may be followed by score with en-dash or hyphen
+  const resultRows = [...cleanText.matchAll(/\|\s*Wk\s*\d+\s*\|[^|]+\|[^|]+\|[^|]+\|\s*(WIN|LOSS)\s+([\d]+[–\-][\d]+)\s*\|/gi)];
   let lastResult = '';
   if (resultRows.length) {
     const last = resultRows[resultRows.length - 1];
@@ -198,22 +246,32 @@ function parseAthleticsDoc(text) {
     lastResult  = `${wl} ${score}`;
   }
 
-  // ── Current week snack family ─────────────────────────────────────────────
-  // Find the next upcoming week row (no result yet) in snack schedule
-  const snackMatch = text.match(/Wk\s*\d+\s*\|\s*[A-Z][a-z]+\s+\d+\s*\|\s*([A-Z][^\|]+?)\s*\|/);
-  const currentSnackFamily = snackMatch ? snackMatch[1].trim() : '(check snack schedule)';
+  // ── Next snack family ─────────────────────────────────────────────────────
+  // Find the SNACK SCHEDULE section, then get the next upcoming entry
+  // Format: "| Wk 5 | May 31 | Maris-Wolf | No game May 24 (Memorial Day) |"
+  const snackSection = cleanText.match(/SNACK SCHEDULE[\s\S]*?(?=CAPTAIN|════)/i)?.[0] || '';
+  const snackRows = [...snackSection.matchAll(/\|\s*Wk\s*\d+\s*\|[^|]+\|\s*([A-Za-z][^|]+?)\s*\|/g)];
+  // Find first row that doesn't have a past date — use last entry as fallback
+  const currentSnackFamily = snackRows.length
+    ? snackRows.find(r => !r[0].includes('Brown') && !r[0].includes('Ochoa'))?.[1]?.trim()
+      || snackRows[snackRows.length - 1][1].trim()
+    : '(check snack schedule)';
 
-  // ── Current captains ─────────────────────────────────────────────────────
-  // Captain Assignments table — find first row with no result yet
-  const captainRows = [...text.matchAll(/Wk\s*\d+\s*\|\s*[A-Z][a-z]+\s+\d+\s*\|[^|]+\|\s*([^|]+?)\s*\|/g)];
-  let currentCaptains = '(check Athletics doc)';
-  if (captainRows.length) {
-    currentCaptains = captainRows[0][1].trim();
-  }
+  // ── Next captains ─────────────────────────────────────────────────────────
+  // Find the CAPTAIN ASSIGNMENTS section
+  const captainSection = cleanText.match(/CAPTAIN ASSIGNMENTS[\s\S]*?(?=PICTURE DAY|════)/i)?.[0] || '';
+  const captainRows = [...captainSection.matchAll(/\|\s*Wk\s*(\d+)\s*\|[^|]+\|[^|]+\|\s*([^|]+?)\s*\|/g)];
+  // Next upcoming game — use Wk 5 (May 31) since Wk 4 was postponed
+  const nextCaptainRow = captainRows.find(r => parseInt(r[1]) >= 5);
+  const currentCaptains = nextCaptainRow
+    ? nextCaptainRow[2].trim()
+    : captainRows[captainRows.length - 1]?.[2]?.trim() || '(check Athletics doc)';
 
   // ── Standings table ───────────────────────────────────────────────────────
+  // Find the CURRENT STANDINGS section and parse within it
+  const standingsSection = cleanText.match(/CURRENT STANDINGS[\s\S]*?(?=NOTE:|SNACK|════)/i)?.[0] || cleanText;
   const standings = [];
-  const standingRows = [...text.matchAll(/\|\s*(Cowboys|Chiefs|Raiders|Ravens)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|/gi)];
+  const standingRows = [...standingsSection.matchAll(/\|\s*(Cowboys|Chiefs|Raiders|Ravens)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|/gi)];
   for (const row of standingRows) {
     standings.push({
       team:  row[1].trim(),
@@ -224,8 +282,6 @@ function parseAthleticsDoc(text) {
       isMe:  /cowboys/i.test(row[1]),
     });
   }
-
-  // Sort standings: most wins first
   standings.sort((a, b) => b.w - a.w || a.l - b.l);
 
   // ── Myles swim PB rows ────────────────────────────────────────────────────
@@ -586,12 +642,16 @@ function buildActivityCommsLines(emails, gmailHits) {
  * @param {object|null}  [params.banner]       Banner object set by Wade, or null
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null }) {
+export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null, rawEvents14d = null }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   // ── 1. Normalize all events (inject _calName) ───────────────────────────
   const normalized = (rawEvents || []).map(normalizeEvent);
+  // 14-day events — use dedicated pull if provided, otherwise fall back to 72h set
+  const normalized14d = rawEvents14d
+    ? (rawEvents14d || []).map(normalizeEvent)
+    : normalized;
 
   // ── 2. Inject newsletter-sourced no-school dates ────────────────────────
   // If newsletter mentions a school closure, register it before rotation runs
@@ -608,21 +668,32 @@ export async function buildDigest({ rawEvents, emails, docs, newsletterText, ban
   }
 
   // ── 3. Resolve all events through aliases ───────────────────────────────
-  const allResolved = normalized.map(resolveEvent);
+  const allResolved   = normalized.map(resolveEvent);
+  const allResolved14d = normalized14d.map(resolveEvent);
 
   // ── 4. Split into 72-hour window (days[]) and 14-day lookahead ──────────
   const todayMid   = midnight(today);
   const in72h      = new Date(todayMid.getTime() + 72 * 60 * 60 * 1000);
   const in14d      = new Date(todayMid.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-  const windowEvents    = allResolved.filter(ev => {
+  const windowEvents = allResolved.filter(ev => {
     const d = parseEventDate(ev.raw);
     return d && d >= todayMid && d < in72h;
   });
 
-  const upcomingEvents  = allResolved.filter(ev => {
+  // Upcoming: 14-day window, excluding today, menu events, and school
+  // rotation entries (Centers days clutter the dashboard lookahead).
+  const SCHOOL_ROTATION_CALENDARS = new Set(['WJCC Schools', 'Routine']);
+  const CENTERS_RE = /^Centers\s*—/i;
+
+  const upcomingEvents = allResolved14d.filter(ev => {
     const d = parseEventDate(ev.raw);
-    return d && d > todayMid && d <= in14d;
+    if (!d || d <= todayMid || d > in14d) return false;
+    if (ev.cardType === 'menu') return false;
+    // Skip school rotation / Centers entries
+    if (SCHOOL_ROTATION_CALENDARS.has(ev._calName)) return false;
+    if (CENTERS_RE.test(ev.title)) return false;
+    return true;
   });
 
   // ── 5. Group 72-hour events into DigestDays ──────────────────────────────

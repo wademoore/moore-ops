@@ -17,18 +17,28 @@ async function getAuthClient() {
   return oAuth2Client;
 }
 
+/**
+ * MIME-encodes a header value (e.g. subject line) using RFC 2047 base64 encoding.
+ * This correctly handles em-dashes, curly quotes, and any other non-ASCII characters
+ * so Gmail renders them properly instead of showing garbled Ã¢Â€Â" sequences.
+ */
+function encodeMimeHeader(value) {
+  return `=?UTF-8?B?${Buffer.from(value, 'utf8').toString('base64')}?=`;
+}
+
 function makeEmailBody(to, subject, htmlContent) {
   const boundary = "moore_ops_boundary";
   const message = [
     `To: ${to}`,
-    `Subject: ${subject}`,
+    `Subject: ${encodeMimeHeader(subject)}`,
     "MIME-Version: 1.0",
     `Content-Type: multipart/alternative; boundary="${boundary}"`,
     "",
     `--${boundary}`,
     "Content-Type: text/html; charset=UTF-8",
+    "Content-Transfer-Encoding: base64",
     "",
-    htmlContent,
+    Buffer.from(htmlContent, 'utf8').toString('base64'),
     "",
     `--${boundary}--`,
   ].join("\n");

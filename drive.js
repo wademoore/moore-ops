@@ -7,7 +7,7 @@ const TOKEN_PATH = "token.json";
 // ── Document IDs ──────────────────────────────────────────────────────────────
 const DOCS = {
   familyContext: "1eXMPEAIMZciwUc8eUQl042Bt0zW0P3Q0d_o8NqYnOx4",
-  athletics:     "196wHllkytM_p2jnIXpFKGm2EQall8cd2sfuE5jaurJE",
+  athletics:     "1t5elkwIHz5RD-Flr64se2xFNL2KxeCxmWCJtGOX_Cb8",
 };
 
 // Stonehouse newsletter — updated by Wade each Sunday with new HTML

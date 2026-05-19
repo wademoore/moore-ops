@@ -7,6 +7,7 @@ const SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
   "https://www.googleapis.com/auth/gmail.send",
   "https://www.googleapis.com/auth/drive.readonly",
+  "https://www.googleapis.com/auth/drive.file",
 ];
 
 const TOKEN_PATH = "token.json";
@@ -44,21 +45,22 @@ async function getAuthClient() {
   return oAuth2Client;
 }
 
-export async function getCalendarEvents() {
+// ── Core pull function — shared by both exports ────────────────────────────
+
+async function pullCalendarEvents(hoursAhead) {
   const auth = await getAuthClient();
   const calendar = google.calendar({ version: "v3", auth });
 
   const now = new Date();
-  const in72Hours = new Date(now.getTime() + 72 * 60 * 60 * 1000);
+  const timeMax = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
 
-  // Pull from all calendars simultaneously
   const results = await Promise.all(
     Object.entries(FAMILY_CALENDARS).map(async ([name, id]) => {
       try {
         const res = await calendar.events.list({
           calendarId: id,
           timeMin: now.toISOString(),
-          timeMax: in72Hours.toISOString(),
+          timeMax: timeMax.toISOString(),
           singleEvents: true,
           orderBy: "startTime",
         });
@@ -73,15 +75,26 @@ export async function getCalendarEvents() {
     })
   );
 
-  // Merge and sort all events by start time
-  const allEvents = results.flat().sort((a, b) => {
+  return results.flat().sort((a, b) => {
     const aTime = a.start.dateTime || a.start.date;
     const bTime = b.start.dateTime || b.start.date;
     return new Date(aTime) - new Date(bTime);
   });
-
-  return allEvents;
 }
+
+// ── 72-hour pull (email digest window) ────────────────────────────────────
+
+export async function getCalendarEvents() {
+  return pullCalendarEvents(72);
+}
+
+// ── 14-day pull (dashboard Next Two Weeks card) ───────────────────────────
+
+export async function pull14Days() {
+  return pullCalendarEvents(14 * 24);
+}
+
+// ── Auth flow ─────────────────────────────────────────────────────────────
 
 async function getNewToken(oAuth2Client) {
   const authUrl = oAuth2Client.generateAuthUrl({
