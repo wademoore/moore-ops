@@ -2,5 +2,16 @@
   "type": "module",
   "scripts": {
     "test": "node --experimental-vm-modules --test test/**/*.test.js"
+  },
+  "dependencies": {
+    "@googleapis/calendar": "^14.3.0",
+    "@googleapis/drive": "^20.2.0",
+    "@googleapis/gmail": "^16.1.2",
+    "google-auth-library": "^10.6.2",
+    "node-fetch": "^3.3.2",
+    "nodemailer": "^8.0.7"
+  },
+  "devDependencies": {
+    "dotenv": "^17.4.2"
   }
 }
