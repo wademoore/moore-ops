@@ -13,6 +13,20 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Check safe deploy window
+        run: |
+          HOUR=$(TZ="America/New_York" date +%H)
+          MIN=$(TZ="America/New_York" date +%M)
+          if [ "$HOUR" -eq 3 ] && [ "$MIN" -ge 30 ]; then
+            echo "Deploy blocked — too close to 4 AM digest run"
+            exit 1
+          fi
+          if [ "$HOUR" -eq 4 ] && [ "$MIN" -le 30 ]; then
+            echo "Deploy blocked — digest may be running"
+            exit 1
+          fi
+          echo "Deploy window is safe — proceeding"
+
       - name: Checkout
         uses: actions/checkout@v4
 
