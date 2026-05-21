@@ -85,7 +85,7 @@ import { parseNewsletterItems } from './newsletterParser.js';
 // Derives tasks from resolved events + day context.
 // Tasks are what people need to DO, as opposed to events (what is happening).
 
-function generateTasks(resolvedEvents, date, schoolStrip) {
+export function generateTasks(resolvedEvents, date, schoolStrip) {
   const tasks = [];
   const dow   = date.getDay(); // 0=Sun…6=Sat
   const isWeekday = dow >= 1 && dow <= 5;

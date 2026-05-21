@@ -6,7 +6,8 @@
  * Uses dynamic dates so tests pass on any run date.
  */
 
-import { buildDigest } from './builder.js';
+import { buildDigest, generateTasks } from './builder.js';
+import { isSchoolDay } from './schoolRotation.js';
 
 let passed = 0;
 let failed = 0;
@@ -74,9 +75,12 @@ function parseNewsletterItems(text) {
   return [...new Set(items)].slice(0, 8);
 }
 
-// Dynamic date helpers — always relative to today
+// Dynamic date helpers — always relative to today in LOCAL time
+// (avoids UTC/local mismatch near midnight in non-UTC timezones)
 function isoDate(daysOffset = 0) {
-  return new Date(Date.now() + daysOffset * 86400000).toISOString().slice(0, 10);
+  const d = new Date();
+  d.setDate(d.getDate() + daysOffset);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 function isoDateTime(daysOffset = 0, hour = 18) {
   return `${isoDate(daysOffset)}T${String(hour).padStart(2,'0')}:00:00`;
@@ -270,6 +274,141 @@ assert(empty.flags != null,                          'Empty inputs: flags comput
 assert(empty.athletics.seasonRecord === '?-?',       'Empty athletics: fallback record');
 assert(empty.menuEvent == null,                      'Empty inputs: menuEvent null');
 assert(empty.activityComms.length === 0,             'Empty emails: no comms');
+
+// ---------------------------------------------------------------------------
+// SECTION 7: generateTasks — direct unit tests (Tier 2)
+// ---------------------------------------------------------------------------
+
+// Stub factory for ResolvedEvents (only fields generateTasks reads)
+function makeResolvedEvent(overrides = {}) {
+  return {
+    title: 'Generic Event',
+    cardType: 'standard',
+    owner: [],
+    gearReminder: null,
+    isFlagGame: false,
+    isSoloEvening: false,
+    ...overrides,
+  };
+}
+
+// Stub schoolStrip with no backpack warnings
+const emptyStrip = { myles: { warningText: null }, ophelia: { warningText: null } };
+
+// Hardcoded dates that satisfy known isSchoolDay() rules
+const MONDAY   = new Date(2026, 4, 18); // May 18 2026 — Monday, school day
+const TUESDAY  = new Date(2026, 4, 19); // May 19 2026 — Tuesday, school day
+const SATURDAY = new Date(2026, 4, 23); // May 23 2026 — Saturday, no school
+
+section('generateTasks — Monday trash');
+assert( generateTasks([], MONDAY,  emptyStrip).some(t => t.text === 'Put trash bins out'), 'Monday → trash bin task');
+assert(!generateTasks([], TUESDAY, emptyStrip).some(t => t.text === 'Put trash bins out'), 'Tuesday → no trash bin task');
+
+section('generateTasks — school day vs. weekend tasks');
+assert( generateTasks([], MONDAY,   emptyStrip).some(t => t.text === 'Drop Myles + Ophelia at school'), 'School day (Monday) → drop-off task');
+assert(!generateTasks([], SATURDAY, emptyStrip).some(t => t.text === 'Drop Myles + Ophelia at school'), 'Saturday → no drop-off task');
+assert(!generateTasks([], SATURDAY, emptyStrip).some(t => /lunches/.test(t.text)),                      'Saturday → no lunch-prep task');
+
+section('generateTasks — backpack warnings');
+const mylesWarn   = '⚠ Pack library book this morning (Myles — Library today)';
+const opheliaWarn = '⚠ Pack library book this morning (Ophelia — Library today)';
+assert( generateTasks([], MONDAY, { myles: { warningText: mylesWarn },   ophelia: { warningText: null } }).some(t => t.text === mylesWarn),   'Myles warningText → backpack task');
+assert( generateTasks([], MONDAY, { myles: { warningText: null },        ophelia: { warningText: opheliaWarn } }).some(t => t.text === opheliaWarn), 'Ophelia warningText → backpack task');
+assert(!generateTasks([], MONDAY, emptyStrip).some(t => t.time === 'Before work'),                                                           'No warnings → no Before-work tasks');
+
+section('generateTasks — bag prep (Alyssa owner)');
+const alyssaGearEv = makeResolvedEvent({ title: 'Dance Class', owner: ['alyssa'], gearReminder: 'tap shoes · jazz shoes' });
+const wadeGearEv   = makeResolvedEvent({ title: 'Dance Class', owner: ['wade'],   gearReminder: 'tap shoes · jazz shoes' });
+assert( generateTasks([alyssaGearEv], TUESDAY, emptyStrip).some(t => t.owner === 'alyssa' && /Pack bag/.test(t.text)), 'Alyssa + gearReminder → bag-prep task');
+assert(!generateTasks([wadeGearEv],   TUESDAY, emptyStrip).some(t => /Pack bag/.test(t.text)),                         'Wade owner + gearReminder → no bag-prep task');
+
+section('generateTasks — coaching tasks (flag game)');
+const stubFlagGame     = makeResolvedEvent({ title: 'Cowboys vs. Ravens', isFlagGame: true });
+const stubFlagPractice = makeResolvedEvent({ title: 'Flag Practice', cardType: 'coaching' });
+const stubGameTasks    = generateTasks([stubFlagGame], TUESDAY, emptyStrip);
+assert(stubGameTasks.some(t => t.owner === 'coaching' && /practice plan/.test(t.text)),  'Flag game → practice plan task');
+assert(stubGameTasks.some(t => t.owner === 'coaching' && /snack reminder/.test(t.text)), 'Flag game → snack reminder task');
+assert(stubGameTasks.some(t => t.owner === 'coaching' && /coaching bag/.test(t.text)),   'Flag game → pack coaching bag task');
+assert(stubGameTasks.some(t => t.owner === 'coaching' && /recap email/.test(t.text)),    'Flag game → post-game recap task');
+assert(generateTasks([stubFlagPractice], TUESDAY, emptyStrip).filter(t => t.owner === 'coaching').length === 4, 'cardType coaching → exactly 4 coaching tasks');
+
+section('generateTasks — solo evening');
+const soloEv = makeResolvedEvent({ isSoloEvening: true });
+assert(generateTasks([soloEv], TUESDAY, emptyStrip).some(t => t.owner === 'wade' && /solo/.test(t.text)), 'isSoloEvening → solo evening task');
+
+section('generateTasks — recycling bin');
+const recyclingEv = makeResolvedEvent({ title: 'Recycling Pickup' });
+const soccerEv    = makeResolvedEvent({ title: 'Soccer Practice' });
+assert( generateTasks([recyclingEv], TUESDAY, emptyStrip).some(t => t.text === 'Put recycling bin out'), 'Recycling title → recycling bin task');
+assert(!generateTasks([soccerEv],   TUESDAY, emptyStrip).some(t => t.text === 'Put recycling bin out'), 'Soccer title → no recycling task');
+
+section('generateTasks — menu events skipped');
+const menuEv = makeResolvedEvent({ title: 'Pork Tenderloin', cardType: 'menu' });
+assert(!generateTasks([menuEv], TUESDAY, emptyStrip).some(t => /Pork Tenderloin/.test(t.text)), 'Menu event → no task generated from it');
+
+section('generateTasks — coaching deduplication');
+const dedupResults = generateTasks([stubFlagGame, stubFlagPractice], TUESDAY, emptyStrip);
+assert(dedupResults.filter(t => t.owner === 'coaching').length === 4, 'Flag game + practice on same day → deduped to exactly 4 coaching tasks');
+
+// ---------------------------------------------------------------------------
+// SECTION 8: buildDigest — Tier 2 edge cases
+// ---------------------------------------------------------------------------
+
+section('buildDigest — rawEvents14d fallback (absent → uses rawEvents)');
+const evIn7d    = { summary: 'Family Picnic',        calendarName: 'Family', start: { dateTime: isoDateTime(7, 11) } };
+const fallbackR = await buildDigest({ rawEvents: [evIn7d], emails: [], docs: {}, newsletterText: null });
+assert(fallbackR.upcomingEvents.some(e => /Family Picnic/.test(e.title)), 'rawEvents14d absent → event from rawEvents appears in upcomingEvents');
+
+section('buildDigest — rawEvents14d takes precedence when provided');
+const evForRaw14 = { summary: 'Fourteen Day Event', calendarName: 'Family', start: { dateTime: isoDateTime(8, 11) } };
+const evForRaw   = { summary: 'Three Day Event',    calendarName: 'Family', start: { dateTime: isoDateTime(3, 11) } };
+const with14d    = await buildDigest({ rawEvents: [evForRaw], rawEvents14d: [evForRaw14], emails: [], docs: {}, newsletterText: null });
+assert( with14d.upcomingEvents.some(e => /Fourteen Day Event/.test(e.title)), 'rawEvents14d events appear in upcomingEvents');
+assert(!with14d.upcomingEvents.some(e => /Three Day Event/.test(e.title)),    'rawEvents-only events absent when rawEvents14d provided');
+
+section('buildDigest — newsletter no-school date injection');
+const juneTen = new Date(2026, 5, 10); // June 10 2026 — Wed, normally a school day
+assert(isSchoolDay(juneTen), 'June 10 is a school day before injection');
+await buildDigest({ rawEvents: [], emails: [], docs: {}, newsletterText: 'Stonehouse closed — no school June 10.' });
+assert(!isSchoolDay(juneTen), 'June 10 is no longer a school day after newsletter injection');
+
+section('buildDigest — 72h window boundary (day +3 excluded from days[])');
+const evDay3     = { summary: 'Day Three Event', calendarName: 'Family', start: { date: isoDate(3) } };
+const bound72    = await buildDigest({ rawEvents: [evDay3], emails: [], docs: {}, newsletterText: null });
+const allDayEvts = bound72.days.flatMap(d => d.events);
+assert(!allDayEvts.some(e => /Day Three Event/.test(e.title)), 'Event at exactly day+3 (72h boundary) excluded from days[]');
+
+section('buildDigest — 14d window boundary (day +15 excluded from upcomingEvents)');
+const evDay15  = { summary: 'Way Out Event', calendarName: 'Family', start: { dateTime: isoDateTime(15, 10) } };
+const bound14  = await buildDigest({ rawEvents: [evDay15], rawEvents14d: [evDay15], emails: [], docs: {}, newsletterText: null });
+assert(!bound14.upcomingEvents.some(e => /Way Out Event/.test(e.title)), 'Event at day+15 excluded from 14d upcomingEvents');
+
+section('buildDigest — Routine calendar excluded from upcomingEvents');
+const routineEv = { summary: 'PE Day',       calendarName: 'Routine', start: { dateTime: isoDateTime(5, 9) } };
+const regularEv = { summary: 'Team Cookout', calendarName: 'Family',  start: { dateTime: isoDateTime(5, 11) } };
+const cResult   = await buildDigest({ rawEvents: [], rawEvents14d: [routineEv, regularEv], emails: [], docs: {}, newsletterText: null });
+assert(!cResult.upcomingEvents.some(e => /PE Day/.test(e.title)),      'Routine calendar event absent from upcomingEvents');
+assert( cResult.upcomingEvents.some(e => /Team Cookout/.test(e.title)), 'Non-routine event present in upcomingEvents');
+
+section('buildDigest — menu event routing (today)');
+const menuRaw14  = { summary: 'Spaghetti Bolognese', calendarName: 'Menu', start: { date: isoDate(0) } };
+const activityRaw = { summary: 'ADP Practice',       calendarName: 'Myles', start: { dateTime: isoDateTime(0, 18) } };
+const mResult    = await buildDigest({ rawEvents: [menuRaw14, activityRaw], emails: [], docs: {}, newsletterText: null });
+assert(mResult.days[0].menuEvent?.title === 'Spaghetti Bolognese', 'Menu event routed to days[0].menuEvent');
+assert(!mResult.days[0].events.some(e => e.title === 'Spaghetti Bolognese'), 'Menu event absent from days[0].events');
+
+section('buildDigest — tomorrow menu event');
+const tomorrowMenuRaw = { summary: 'Chicken Tacos', calendarName: 'Menu', start: { date: isoDate(1) } };
+const tmResult        = await buildDigest({ rawEvents: [tomorrowMenuRaw], emails: [], docs: {}, newsletterText: null });
+assert(tmResult.tomorrowMenu?.title === 'Chicken Tacos',             'Tomorrow menu event at result.tomorrowMenu');
+assert(!tmResult.days[1].events.some(e => e.title === 'Chicken Tacos'), 'Tomorrow menu event absent from days[1].events');
+
+section('buildDigest — athletics cross-reference (flag game in rawEvents)');
+const cowboysGame = { summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles', start: { dateTime: isoDateTime(1, 15) } };
+const athResult   = await buildDigest({ rawEvents: [cowboysGame], emails: [], docs: {}, newsletterText: null });
+assert(athResult.athletics.hasGameThisWeek === true,              'Flag game in rawEvents → athletics.hasGameThisWeek true');
+assert(typeof athResult.athletics.thisWeekOpponent === 'string',  'Flag game → thisWeekOpponent is a string');
+assert(/Eagles/i.test(athResult.athletics.thisWeekOpponent),      'Flag game → thisWeekOpponent contains opponent name');
 
 // ---------------------------------------------------------------------------
 // RESULT

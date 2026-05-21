@@ -51,7 +51,7 @@ export async function getActivityEmails() {
 
     return emails;
   } catch (err) {
-    console.warn('[gmail:getActivityEmails] fetch failed —', err.message);
+    console.warn(`[gmail:getActivityEmails] Fetch failed — ${err.message}`);
     return [];
   }
 }

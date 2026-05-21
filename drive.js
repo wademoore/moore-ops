@@ -29,9 +29,9 @@ export async function getFamilyDocs() {
         mimeType: "text/plain",
       });
       results[name] = res.data;
-      console.log(`Loaded document: ${name}`);
+      console.log(`[drive:getFamilyDocs] Loaded "${name}"`);
     } catch (err) {
-      console.warn(`Could not load document "${name}": ${err.message}`);
+      console.warn(`[drive:getFamilyDocs] Could not load "${name}" — ${err.message}`);
       results[name] = "";
     }
   }
@@ -53,10 +53,10 @@ export async function fetchNewsletter() {
       { fileId: NEWSLETTER_FILE_ID, alt: "media" },
       { responseType: "text" }
     );
-    console.log("Newsletter fetched from Drive");
+    console.log('[drive:fetchNewsletter] Newsletter fetched');
     return res.data;
   } catch (err) {
-    console.warn(`Could not fetch newsletter: ${err.message}`);
+    console.warn(`[drive:fetchNewsletter] Fetch failed — ${err.message}`);
     return null;
   }
 }
@@ -92,10 +92,10 @@ export async function uploadDashboard(htmlContent) {
       timeZone: "America/New_York",
     });
 
-    console.log(`✓ Dashboard updated · ${new Date().toLocaleDateString("en-US", { weekday: "long" })} ${now} ET`);
+    console.log(`[drive:uploadDashboard] ✓ Updated — ${now} ET`);
     return true;
   } catch (err) {
-    console.error(`Dashboard upload failed: ${err.message}`);
+    console.error(`[drive:uploadDashboard] Upload failed — ${err.message}`);
     return false;
   }
 }

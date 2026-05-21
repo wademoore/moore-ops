@@ -39,7 +39,7 @@ async function pullCalendarEvents(hoursAhead) {
           calendarName: name,
         }));
       } catch (err) {
-        console.warn(`Could not load calendar "${name}": ${err.message}`);
+        console.warn(`[calendar:pullCalendarEvents] Could not load "${name}" — ${err.message}`);
         return [];
       }
     })
