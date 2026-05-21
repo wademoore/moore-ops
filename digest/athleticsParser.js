@@ -9,6 +9,7 @@
  */
 
 import { timeToSeconds } from './dateUtils.js';
+import { SPORTS_CONFIG, isSeasonActive } from './sportsConfig.js';
 
 // ── Myles PB row parser ───────────────────────────────────────────────────
 // Reads the "2026 SEASON BESTS" and "CAREER PERSONAL BESTS" tables.
@@ -16,12 +17,8 @@ import { timeToSeconds } from './dateUtils.js';
 function parseMylesPBRows(text) {
   const rows = [];
 
-  // Events to surface on the dashboard (in display order)
-  const events = [
-    { event: '25m Breast', format: 'SCM', champs: null,  prior: null },
-    { event: '25m Free',   format: 'SCM', champs: null,  prior: '32.13' },
-    { event: '25m Back',   format: 'SCM', champs: null,  prior: '41.18' },
-  ];
+  // Events sourced from SPORTS_CONFIG — edit sportsConfig.js to update
+  const events = SPORTS_CONFIG.swimmers.myles.events;
 
   for (const e of events) {
     // Look for a 2026 season best for this event
@@ -67,17 +64,19 @@ function parseMylesPBRows(text) {
 
 // ── Ophelia PB row parser ─────────────────────────────────────────────────
 
-function parseOpheliaPBRows(text) {
+function parseOpheliaPBRows(text, referenceDate) {
   const rows = [];
 
-  // Mix of SCM (Wellington Waves) and SCY (757 Swim) events
-  const events = [
-    { event: '25m Back',  format: 'SCM', prior2025: '33.62', champs: '29.00' },
-    { event: '25m Free',  format: 'SCM', prior2025: '39.95', champs: '23.00' },
-    { event: '25m Back',  format: 'SCY', prior2025: '30.01Y', champs: null   },
-    { event: '25m Free',  format: 'SCY', prior2025: '30.46Y', champs: null   },
-    { event: '25m Fly',   format: 'SCM', prior2025: null,     champs: '37.00' },
-  ];
+  // Select event list based on which swim season is currently active.
+  // Waves and 757 never overlap — 757 pauses during the Waves summer season.
+  let events;
+  if (isSeasonActive(SPORTS_CONFIG.wellingtonWaves, referenceDate)) {
+    events = SPORTS_CONFIG.swimmers.ophelia.eventsWaves;
+  } else if (isSeasonActive(SPORTS_CONFIG.swim757, referenceDate)) {
+    events = SPORTS_CONFIG.swimmers.ophelia.events757;
+  } else {
+    return [];   // offseason — no swim card content
+  }
 
   for (const e of events) {
     // Look for a 2026 result for this event in the appropriate format section
@@ -144,7 +143,7 @@ function parseOpheliaPBRows(text) {
 // PUBLIC EXPORTS
 // ---------------------------------------------------------------------------
 
-export function parseAthleticsDoc(text) {
+export function parseAthleticsDoc(text, referenceDate = new Date()) {
   if (!text) return buildEmptyAthletics();
 
   // Google Docs plain-text export renders markdown tables with | :-: | alignment
@@ -154,76 +153,114 @@ export function parseAthleticsDoc(text) {
     .filter(line => !line.match(/^\s*\|[\s:\-|]+\|\s*$/))
     .join('\n');
 
-  // ── Season record ────────────────────────────────────────────────────────
-  // Match "| Cowboys | 3 | 0 | 90 | 20 |" — any surrounding whitespace
-  const recordMatch = cleanText.match(/\|\s*Cowboys\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|/i);
-  const seasonW   = recordMatch ? parseInt(recordMatch[1]) : 0;
-  const seasonL   = recordMatch ? parseInt(recordMatch[2]) : 0;
-  const seasonRecord = `${seasonW}-${seasonL}`;
+  // ── Season-active flags ───────────────────────────────────────────────────
+  // Computed once here; surfaced on the return object so render/dashboard.js
+  // can gate card visibility without importing sportsConfig.js directly.
+  const flagFootballActive = isSeasonActive(SPORTS_CONFIG.flagFootball,    referenceDate);
+  const wavesActive        = isSeasonActive(SPORTS_CONFIG.wellingtonWaves, referenceDate);
+  const swim757Active      = isSeasonActive(SPORTS_CONFIG.swim757,         referenceDate);
+  const sharksActive       = isSeasonActive(SPORTS_CONFIG.sharks,          referenceDate);
 
-  // ── Last result ──────────────────────────────────────────────────────────
-  // Match result rows: "| Wk 1 | Apr 26 | vs. Raiders | HOME | WIN 26–0 |"
-  // WIN may be followed by score with en-dash or hyphen
-  const resultRows = [...cleanText.matchAll(/\|\s*Wk\s*\d+\s*\|[^|]+\|[^|]+\|[^|]+\|\s*(WIN|LOSS)\s+([\d]+[–\-][\d]+)\s*\|/gi)];
-  let lastResult = '';
-  if (resultRows.length) {
-    const last = resultRows[resultRows.length - 1];
-    const wl    = last[1].toUpperCase() === 'WIN' ? 'W' : 'L';
-    const score = last[2].replace('-', '–');
-    lastResult  = `${wl} ${score}`;
+  // ── Flag football fields ──────────────────────────────────────────────────
+  // Only parsed when the flag football season is active; defaults match
+  // buildEmptyAthletics() so the renderer never receives undefined values.
+  let seasonRecord       = '?-?';
+  let lastResult         = '';
+  let currentCaptains    = '(check Athletics doc)';
+  let currentSnackFamily = '(check snack schedule)';
+  let standings          = [];
+  let allResultsFilled   = false;
+
+  if (flagFootballActive) {
+    // ── Season record ──────────────────────────────────────────────────────
+    // Match "| Cowboys | 3 | 0 | 90 | 20 |" — any surrounding whitespace
+    const recordMatch = cleanText.match(/\|\s*Cowboys\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|/i);
+    const seasonW = recordMatch ? parseInt(recordMatch[1]) : 0;
+    const seasonL = recordMatch ? parseInt(recordMatch[2]) : 0;
+    seasonRecord  = `${seasonW}-${seasonL}`;
+
+    // ── Last result ────────────────────────────────────────────────────────
+    // Match result rows: "| Wk 1 | Apr 26 | vs. Raiders | HOME | WIN 26–0 |"
+    // WIN may be followed by score with en-dash or hyphen
+    const resultRows = [...cleanText.matchAll(/\|\s*Wk\s*\d+\s*\|[^|]+\|[^|]+\|[^|]+\|\s*(WIN|LOSS)\s+([\d]+[–\-][\d]+)\s*\|/gi)];
+    if (resultRows.length) {
+      const last  = resultRows[resultRows.length - 1];
+      const wl    = last[1].toUpperCase() === 'WIN' ? 'W' : 'L';
+      const score = last[2].replace('-', '–');
+      lastResult  = `${wl} ${score}`;
+    }
+    allResultsFilled = resultRows.length >= 5;
+
+    // ── Next snack family ──────────────────────────────────────────────────
+    // Find the SNACK SCHEDULE section, then get the next upcoming entry
+    // Format: "| Wk 5 | May 31 | Maris-Wolf | No game May 24 (Memorial Day) |"
+    const snackSection = cleanText.match(/SNACK SCHEDULE[\s\S]*?(?=CAPTAIN|════)/i)?.[0] || '';
+    const snackRows = [...snackSection.matchAll(/\|\s*Wk\s*\d+\s*\|[^|]+\|\s*([A-Za-z][^|]+?)\s*\|/g)];
+    // Find first row that doesn't have a past date — use last entry as fallback
+    currentSnackFamily = snackRows.length
+      ? snackRows.find(r => !r[0].includes('Brown') && !r[0].includes('Ochoa'))?.[1]?.trim()
+        || snackRows[snackRows.length - 1][1].trim()
+      : '(check snack schedule)';
+
+    // ── Next captains ──────────────────────────────────────────────────────
+    // Find the CAPTAIN ASSIGNMENTS section
+    const captainSection = cleanText.match(/CAPTAIN ASSIGNMENTS[\s\S]*?(?=PICTURE DAY|════)/i)?.[0] || '';
+    const captainRows = [...captainSection.matchAll(/\|\s*Wk\s*(\d+)\s*\|[^|]+\|[^|]+\|\s*([^|]+?)\s*\|/g)];
+    // Next upcoming game — use Wk 5 (May 31) since Wk 4 was postponed
+    const nextCaptainRow = captainRows.find(r => parseInt(r[1]) >= 5);
+    currentCaptains = nextCaptainRow
+      ? nextCaptainRow[2].trim()
+      : captainRows[captainRows.length - 1]?.[2]?.trim() || '(check Athletics doc)';
+
+    // ── Standings table ────────────────────────────────────────────────────
+    // Find the CURRENT STANDINGS section and parse within it
+    const standingsSection = cleanText.match(/CURRENT STANDINGS[\s\S]*?(?=NOTE:|SNACK|════)/i)?.[0] || cleanText;
+    const standingRows = [...standingsSection.matchAll(/\|\s*(Cowboys|Chiefs|Raiders|Ravens)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|/gi)];
+    for (const row of standingRows) {
+      standings.push({
+        team:  row[1].trim(),
+        w:     parseInt(row[2]),
+        l:     parseInt(row[3]),
+        pf:    parseInt(row[4]),
+        pa:    parseInt(row[5]),
+        isMe:  /cowboys/i.test(row[1]),
+      });
+    }
+    standings.sort((a, b) => b.w - a.w || a.l - b.l);
   }
-
-  // ── Next snack family ─────────────────────────────────────────────────────
-  // Find the SNACK SCHEDULE section, then get the next upcoming entry
-  // Format: "| Wk 5 | May 31 | Maris-Wolf | No game May 24 (Memorial Day) |"
-  const snackSection = cleanText.match(/SNACK SCHEDULE[\s\S]*?(?=CAPTAIN|════)/i)?.[0] || '';
-  const snackRows = [...snackSection.matchAll(/\|\s*Wk\s*\d+\s*\|[^|]+\|\s*([A-Za-z][^|]+?)\s*\|/g)];
-  // Find first row that doesn't have a past date — use last entry as fallback
-  const currentSnackFamily = snackRows.length
-    ? snackRows.find(r => !r[0].includes('Brown') && !r[0].includes('Ochoa'))?.[1]?.trim()
-      || snackRows[snackRows.length - 1][1].trim()
-    : '(check snack schedule)';
-
-  // ── Next captains ─────────────────────────────────────────────────────────
-  // Find the CAPTAIN ASSIGNMENTS section
-  const captainSection = cleanText.match(/CAPTAIN ASSIGNMENTS[\s\S]*?(?=PICTURE DAY|════)/i)?.[0] || '';
-  const captainRows = [...captainSection.matchAll(/\|\s*Wk\s*(\d+)\s*\|[^|]+\|[^|]+\|\s*([^|]+?)\s*\|/g)];
-  // Next upcoming game — use Wk 5 (May 31) since Wk 4 was postponed
-  const nextCaptainRow = captainRows.find(r => parseInt(r[1]) >= 5);
-  const currentCaptains = nextCaptainRow
-    ? nextCaptainRow[2].trim()
-    : captainRows[captainRows.length - 1]?.[2]?.trim() || '(check Athletics doc)';
-
-  // ── Standings table ───────────────────────────────────────────────────────
-  // Find the CURRENT STANDINGS section and parse within it
-  const standingsSection = cleanText.match(/CURRENT STANDINGS[\s\S]*?(?=NOTE:|SNACK|════)/i)?.[0] || cleanText;
-  const standings = [];
-  const standingRows = [...standingsSection.matchAll(/\|\s*(Cowboys|Chiefs|Raiders|Ravens)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|\s*(\d+)\s*\|/gi)];
-  for (const row of standingRows) {
-    standings.push({
-      team:  row[1].trim(),
-      w:     parseInt(row[2]),
-      l:     parseInt(row[3]),
-      pf:    parseInt(row[4]),
-      pa:    parseInt(row[5]),
-      isMe:  /cowboys/i.test(row[1]),
-    });
-  }
-  standings.sort((a, b) => b.w - a.w || a.l - b.l);
 
   // ── Myles swim PB rows ────────────────────────────────────────────────────
   const mylesPBRows = parseMylesPBRows(text);
 
   // ── Ophelia swim PB rows ──────────────────────────────────────────────────
-  const opheliaPBRows = parseOpheliaPBRows(text);
+  const opheliaPBRows = parseOpheliaPBRows(text, referenceDate);
 
   // ── Season complete check ─────────────────────────────────────────────────
-  // After June 7 — detect if all result rows are filled
-  const allResultsFilled = resultRows.length >= 5;
-  const today = new Date();
-  const seasonComplete = today >= new Date(2026, 5, 8) && allResultsFilled; // June 8+
+  // Derived from config: flag football seasonEnd + bufferDays (currently June 21)
+  const ffEnd         = new Date(SPORTS_CONFIG.flagFootball.seasonEnd + 'T00:00:00');
+  const ffCompleteDate = new Date(ffEnd);
+  ffCompleteDate.setDate(ffCompleteDate.getDate() + SPORTS_CONFIG.flagFootball.bufferDays);
+  const seasonComplete = referenceDate >= ffCompleteDate && allResultsFilled;
+
+  // ── Season labels ─────────────────────────────────────────────────────────
+  // Derived from config dates — no hardcoded June 15 cutoff
+  const wavesStart = new Date(SPORTS_CONFIG.wellingtonWaves.seasonStart + 'T00:00:00');
+
+  const mylesSeason = wavesActive
+    ? '2026 Waves Season'
+    : referenceDate < wavesStart ? 'Pre-Season' : 'Off-Season';
+
+  const opheliaSeason = wavesActive
+    ? '2026 Waves Season'
+    : swim757Active ? '2025–26 757 Season' : 'Off-Season';
 
   return {
+    // Season-active flags (consumed by render/dashboard.js for card visibility)
+    flagFootballActive,
+    wavesActive,
+    swim757Active,
+    sharksActive,
+
     // Flag football
     seasonRecord,
     lastResult,
@@ -237,25 +274,37 @@ export function parseAthleticsDoc(text) {
     finalRecord: seasonComplete ? seasonRecord : null,
 
     // Myles swim
-    mylesSeason:  today < new Date(2026, 5, 15) ? 'Pre-Season' : '2026 Season',
+    mylesSeason,
     mylesPBRows,
-    mylesFooter:  '🏊 2025 Most Improved Swimmer (Boys)',
+    mylesFooter: SPORTS_CONFIG.swimmers.myles.footer,
 
     // Ophelia swim + dance
-    opheliaSeason: today < new Date(2026, 5, 15) ? 'Pre-Season' : '2026 Season',
+    opheliaSeason,
     opheliaPBRows,
+    opheliaFooter: SPORTS_CONFIG.swimmers.ophelia.footer,
     opheliaDanceNote: '💃 "I\'m Still Standing" · Recital May 30, 1:00 PM',
   };
 }
 
 export function buildEmptyAthletics() {
   return {
+    // Season-active flags
+    flagFootballActive: false,
+    wavesActive:        false,
+    swim757Active:      false,
+    sharksActive:       false,
+
+    // Flag football
     seasonRecord: '?-?', lastResult: '', currentCaptains: '(check Athletics doc)',
     currentSnackFamily: '(check snack schedule)', standings: [],
     hasGameThisWeek: false, thisWeekOpponent: null, thisWeekTime: null,
     seasonComplete: false, finalRecord: null,
+
+    // Myles swim
     mylesSeason: 'Pre-Season', mylesPBRows: [], mylesFooter: '',
-    opheliaSeason: 'Pre-Season', opheliaPBRows: [],
+
+    // Ophelia swim + dance
+    opheliaSeason: 'Pre-Season', opheliaPBRows: [], opheliaFooter: '',
     opheliaDanceNote: '💃 "I\'m Still Standing" · Recital May 30, 1:00 PM',
   };
 }

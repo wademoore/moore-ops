@@ -34,6 +34,13 @@
  * }
  *
  * AthleticsData {
+ *   // Season-active flags — set by parseAthleticsDoc, sourced from sportsConfig.js.
+ *   // Renderers read these to gate card visibility; do NOT re-import sportsConfig here.
+ *   flagFootballActive:  boolean
+ *   wavesActive:         boolean
+ *   swim757Active:       boolean
+ *   sharksActive:        boolean
+ *
  *   // Flag Football
  *   seasonRecord:        string   e.g. "3-0"
  *   lastResult:          string   e.g. "W 32–12"
@@ -46,15 +53,22 @@
  *   seasonComplete:      boolean
  *   finalRecord:         string|null
  *
- *   // Myles swim
- *   mylesSeason:         string   "2026 Season" | "Pre-Season"
+ *   // Myles swim (footer sourced from SPORTS_CONFIG.swimmers.myles.footer)
+ *   mylesSeason:         string   "2026 Waves Season" | "Pre-Season" | "Off-Season"
  *   mylesPBRows:         PBRow[]
  *   mylesFooter:         string
  *
- *   // Ophelia swim + dance
- *   opheliaSeason:       string
- *   opheliaPBRows:       PBRow[]
+ *   // Ophelia swim + dance (footer sourced from SPORTS_CONFIG.swimmers.ophelia.footer)
+ *   opheliaSeason:       string   "2026 Waves Season" | "2025–26 757 Season" | "Off-Season"
+ *   opheliaPBRows:       PBRow[]  SCM events during Waves season, SCY during 757 season
+ *   opheliaFooter:       string
  *   opheliaDanceNote:    string   e.g. "💃 \"I'm Still Standing\" · Recital May 30"
+ *
+ *   // Tidewater Sharks soccer — populated by builder.js when sharksActive is true
+ *   sharksRecord:        string|undefined   e.g. "3-1"
+ *   sharksLastResult:    string|undefined   e.g. "W 2–0"
+ *   sharksNextOpponent:  string|undefined
+ *   sharksNextTime:      string|undefined
  * }
  *
  * StandingsRow { team, w, l, pf, pa, isMe }
@@ -75,6 +89,7 @@ const LOGOS = {
   cowboys:    'https://icon2.cleanpng.com/lnd/20250214/pl/31638e3658752f9b36758b1b225699.webp',
   waves:      'https://swimtopia.s3.amazonaws.com/3012/embed/20b4b978-fdc5-42fc-a893-9a9ee582ced6',
   swim757:    'https://757-swim.com/wp-content/uploads/2024/05/cropped-New-orange-button-270x270.png',
+  sharks:     null,   // TODO: add Tidewater Sharks logo URL when card activates
   nationals:  'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Washington_Nationals_logo.svg/250px-Washington_Nationals_logo.svg.png',
   commanders: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Washington_Commanders_logo.svg/1280px-Washington_Commanders_logo.svg.png',
   tennessee:  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Tennessee_Volunteers_logo.svg/960px-Tennessee_Volunteers_logo.svg.png',
@@ -461,35 +476,107 @@ function renderMylesCard(athletics) {
 </div>`;
 }
 
-// ── 6d. Card 3 — Ophelia Waves + 757 ────────────────────────────────────────
+// ── 6d. Card 3 — Ophelia swim (Waves or 757, one card) ──────────────────────
 
 function renderOpheliaCard(athletics) {
-  const { opheliaSeason, opheliaPBRows, opheliaDanceNote } = athletics;
+  const { opheliaSeason, opheliaPBRows, opheliaFooter, opheliaDanceNote,
+          wavesActive, swim757Active } = athletics;
+
+  // Logo and title adapt to whichever swim season is active.
+  // wavesActive takes priority since 757 pauses during the Waves summer season.
+  const logo = wavesActive ? LOGOS.waves : LOGOS.swim757;
+  const name = wavesActive ? 'Ophelia · Wellington Waves' : 'Ophelia · 757 Swim';
 
   const pbRows = (opheliaPBRows || []).map(renderPBRow).join('');
 
   return `
 <div class="sport-card">
   <div class="sport-hdr">
-    ${sportLogo(LOGOS.swim757)}
-    <span class="sport-name">Ophelia · Waves + 757</span>
+    ${sportLogo(logo)}
+    <span class="sport-name">${name}</span>
   </div>
   <span class="season-tag">${opheliaSeason || '2026 Season'}</span>
   ${pbRows || '<div style="color:rgba(255,255,255,.3);font-size:14px;">No times recorded yet</div>'}
+  ${opheliaFooter ? `<div class="sport-footer">${opheliaFooter}</div>` : ''}
   ${opheliaDanceNote ? `<div class="dance-note">${opheliaDanceNote}</div>` : ''}
 </div>`;
 }
 
-// ── 6e. Athletics card wrapper ───────────────────────────────────────────────
+// ── 6e. Card 4 — Tidewater Sharks Soccer ─────────────────────────────────────
+// active: false in sportsConfig.js until fall 2026 — will not render until then.
+// Add LOGOS.sharks URL when activating.
+
+function renderSharksCard(athletics) {
+  const record      = athletics.sharksRecord      || '?-?';
+  const lastResult  = athletics.sharksLastResult  || '';
+  const nextOpponent = athletics.sharksNextOpponent || null;
+  const nextTime     = athletics.sharksNextTime     || null;
+
+  const nextGameBox = nextOpponent ? `
+<div class="flag-game-box" style="margin-top:10px;">
+  <div class="flag-game-title">vs. ${nextOpponent}</div>
+  ${nextTime ? `<div class="flag-game-sub">${nextTime}</div>` : ''}
+</div>` : '';
+
+  return `
+<div class="sport-card">
+  <div class="sport-hdr">
+    ${LOGOS.sharks ? sportLogo(LOGOS.sharks) : ''}
+    <span class="sport-name">Sharks Soccer · U11 Premier</span>
+  </div>
+  <div class="flag-top">
+    <div>
+      <div class="sport-record">${record}</div>
+      <div class="sport-record-lbl">2026 Season</div>
+    </div>
+    ${lastResult ? `<div><div class="flag-result">${lastResult}</div><div class="flag-result-lbl">Last game</div></div>` : ''}
+  </div>
+  ${nextGameBox}
+</div>`;
+}
+
+// ── 6f. Athletics card wrapper ───────────────────────────────────────────────
 
 function renderAthleticsCard(athletics) {
+  const a = athletics || {};
+
+  // Build the ordered list of cards that are currently active.
+  // Order: flag football → Myles swim → Ophelia swim → Sharks soccer.
+  const cards = [];
+  let flagFirst = false;
+
+  if (a.flagFootballActive) {
+    cards.push(renderFlagCard(a));
+    flagFirst = true;
+  }
+  if (a.wavesActive) {
+    cards.push(renderMylesCard(a));
+  }
+  if (a.wavesActive || a.swim757Active) {
+    cards.push(renderOpheliaCard(a));
+  }
+  if (a.sharksActive) {
+    cards.push(renderSharksCard(a));
+  }
+
+  // Derive grid-template-columns dynamically.
+  // Flag football card is wider (1.3fr) to accommodate the standings table.
+  // All other cards share equal 1fr columns.
+  let gridCols;
+  if (cards.length === 0) {
+    gridCols = '1fr';
+  } else if (flagFirst) {
+    const rest = cards.length - 1;
+    gridCols = rest > 0 ? `1.3fr ${Array(rest).fill('1fr').join(' ')}` : '1.3fr';
+  } else {
+    gridCols = Array(cards.length).fill('1fr').join(' ');
+  }
+
   return `
 <div class="card athletics-card">
   <div class="lbl">Athletics</div>
-  <div class="sport-grid">
-    ${renderFlagCard(athletics)}
-    ${renderMylesCard(athletics)}
-    ${renderOpheliaCard(athletics)}
+  <div class="sport-grid" style="grid-template-columns:${gridCols};">
+    ${cards.join('\n    ')}
   </div>
 </div>`;
 }
@@ -767,4 +854,4 @@ ${footer}
 // ---------------------------------------------------------------------------
 // EXPORTS
 // ---------------------------------------------------------------------------
-export { renderDashboard, renderTodayCard, renderWeekCard, renderAthleticsCard, renderFlagCard, renderMylesCard, renderOpheliaCard, renderAlerts, renderTicker, renderBanner, renderPBRow, daysFrom, countdownClass, countdownLabel, formatDay, formatDateNum, LOGOS, BANNER_PALETTES };
+export { renderDashboard, renderTodayCard, renderWeekCard, renderAthleticsCard, renderFlagCard, renderMylesCard, renderOpheliaCard, renderSharksCard, renderAlerts, renderTicker, renderBanner, renderPBRow, daysFrom, countdownClass, countdownLabel, formatDay, formatDateNum, LOGOS, BANNER_PALETTES };
