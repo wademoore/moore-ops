@@ -245,15 +245,21 @@ export async function buildDigest({ rawEvents, emails, docs, newsletterText, ban
   const in72h      = new Date(todayMid.getTime() + 72 * 60 * 60 * 1000);
   const in14d      = new Date(todayMid.getTime() + 14 * 24 * 60 * 60 * 1000);
 
+  // Filter out school rotation / Centers entries from both the 72-hour
+  // window and the 14-day lookahead (they display in the school strip).
+  const SCHOOL_ROTATION_CALENDARS = new Set(['WJCC Schools', 'Routine']);
+  const CENTERS_RE = /^Centers\s*—/i;
+
   const windowEvents = allResolved.filter(ev => {
     const d = parseEventDate(ev.raw);
-    return d && d >= todayMid && d < in72h;
+    if (!d || d < todayMid || d >= in72h) return false;
+    if (SCHOOL_ROTATION_CALENDARS.has(ev._calName)) return false;
+    if (CENTERS_RE.test(ev.title)) return false;
+    return true;
   });
 
   // Upcoming: 14-day window, excluding today, menu events, and school
   // rotation entries (Centers days clutter the dashboard lookahead).
-  const SCHOOL_ROTATION_CALENDARS = new Set(['WJCC Schools', 'Routine']);
-  const CENTERS_RE = /^Centers\s*—/i;
 
   const upcomingEvents = allResolved14d.filter(ev => {
     const d = parseEventDate(ev.raw);

@@ -18,15 +18,15 @@ function parseMylesPBRows(text) {
 
   // Events to surface on the dashboard (in display order)
   const events = [
-    { event: '50m Breast', format: 'SCM', champs: '1:05.00', prior: null },
-    { event: '50m Free',   format: 'SCM', champs: '43.00',   prior: '32.13 (25m)' },
-    { event: '50m Back',   format: 'SCM', champs: '57.00',   prior: '41.18 (25m)' },
+    { event: '25m Breast', format: 'SCM', champs: null,  prior: null },
+    { event: '25m Free',   format: 'SCM', champs: null,  prior: '32.13' },
+    { event: '25m Back',   format: 'SCM', champs: null,  prior: '41.18' },
   ];
 
   for (const e of events) {
     // Look for a 2026 season best for this event
     const bestMatch = text.match(
-      new RegExp(`${e.event}[^\\n]*\\|\\s*([\\d:.]+)\\s*\\|`, 'i')
+      new RegExp(`${e.event}[^\\n]*${e.format}[^\\n]*\\|\\s*([\\d:.]+)\\s*\\|`, 'i')
     );
     const currentBest = bestMatch ? bestMatch[1].trim() : '—';
     const has2026 = currentBest !== '—';
@@ -46,17 +46,17 @@ function parseMylesPBRows(text) {
       }
     } else if (e.prior) {
       deltaState = 'prior-only';
-      deltaText  = `Target sub-${e.champs}`;
+      deltaText  = e.champs ? `Target sub-${e.champs}` : '';
     } else {
       deltaState = 'first';
-      deltaText  = `First ${e.event} season · Target ${e.champs}`;
+      deltaText  = `First ${e.event} season`;
     }
 
     rows.push({
       event:       e.event,
       format:      e.format,
       currentBest: has2026 ? currentBest : '—',
-      subNote:     e.prior ? `25m best ${e.prior}` : 'Primary event',
+      subNote:     e.prior ? `2025 best: ${e.prior}` : '',
       deltaState,
       deltaText,
     });
