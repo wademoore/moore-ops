@@ -9,8 +9,6 @@
  *   4. Render dashboard HTML (renderDashboard) → upload to Drive
  */
 
-import "dotenv/config";
-
 // ── Data fetchers ─────────────────────────────────────────────────────────────
 import { getCalendarEvents, pull14Days }       from "./calendar.js";
 import { getActivityEmails }                   from "./gmail.js";
@@ -26,6 +24,13 @@ import { fetchNationalsData }                  from "./digest/nationalsParser.js
 // ── Renderers ─────────────────────────────────────────────────────────────────
 import { renderEmail, emailSubject }           from "./render/email.js";
 import { renderDashboard }                     from "./render/dashboard.js";
+
+// ── Local env ─────────────────────────────────────────────────────────────────
+// Load .env when running locally. Skipped on Lambda (dotenv is not bundled).
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  const { config } = await import('dotenv');
+  config();
+}
 
 // ── Banner state ──────────────────────────────────────────────────────────────
 // Set banner here when Wade requests one for a specific event.
