@@ -215,7 +215,10 @@ async function runDigest() {
   console.log(`  Size: ${(Buffer.byteLength(dashboardHtml, "utf8") / 1024).toFixed(1)}KB`);
 
   console.log("Uploading dashboard to Drive...");
-  await uploadDashboard(dashboardHtml);
+  const uploaded = await uploadDashboard(dashboardHtml);
+  if (!uploaded) {
+    console.warn('[handler] Dashboard upload failed — check Drive permissions');
+  }
 
   // ── Done ───────────────────────────────────────────────────────────────────
   console.log("\n═══════════════════════════════════════");
@@ -224,8 +227,25 @@ async function runDigest() {
 }
 
 // ── Run ───────────────────────────────────────────────────────────────────────
-runDigest().catch(err => {
-  console.error("\n✗ Digest failed:", err.message);
-  console.error(err.stack);
-  process.exit(1);
-});
+// ── Lambda entry point ────────────────────────────────────────────────────────
+export const handler = async (event) => {
+  try {
+    await runDigest();
+    return { statusCode: 200, body: "Digest complete" };
+  } catch (err) {
+    console.error('[handler] Digest run failed —', err.message);
+    console.error(err.stack);
+    return { statusCode: 500, body: `Digest failed: ${err.message}` };
+  }
+};
+
+// ── Local entry point ─────────────────────────────────────────────────────────
+// AWS_LAMBDA_FUNCTION_NAME is set automatically by the Lambda runtime.
+// When running locally, it's undefined, so this block executes instead.
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  runDigest().catch(err => {
+    console.error("\n✗ Digest failed:", err.message);
+    console.error(err.stack);
+    process.exit(1);
+  });
+}

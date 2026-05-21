@@ -1,8 +1,5 @@
-import { google } from "googleapis";
-import fs from "fs";
-
-const CREDENTIALS_PATH = "credentials.json";
-const TOKEN_PATH = "token.json";
+import { drive } from "@googleapis/drive";
+import { getAuthClient } from "./auth.js";
 
 // ── Document IDs ──────────────────────────────────────────────────────────────
 const DOCS = {
@@ -17,30 +14,17 @@ const NEWSLETTER_FILE_ID = "15bDYqGCuaBEvnu4BPeAeOr6r2A2EV1XY";
 const DASHBOARD_FOLDER_ID = "1jgkjO1_CKFzUlKzhvNCSKrf58ZaF0HSB";
 const DASHBOARD_FILENAME  = "moore_dashboard.html";
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
-async function getAuthClient() {
-  const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
-  const { client_secret, client_id, redirect_uris } = credentials.installed;
-  const oAuth2Client = new google.auth.OAuth2(
-    client_id,
-    client_secret,
-    redirect_uris[0]
-  );
-  const token = JSON.parse(fs.readFileSync(TOKEN_PATH));
-  oAuth2Client.setCredentials(token);
-  return oAuth2Client;
-}
 
 // ── getFamilyDocs (unchanged) ─────────────────────────────────────────────────
 export async function getFamilyDocs() {
   const auth = await getAuthClient();
-  const drive = google.drive({ version: "v3", auth });
+  const drv = drive({ version: "v3", auth });
 
   const results = {};
 
   for (const [name, fileId] of Object.entries(DOCS)) {
     try {
-      const res = await drive.files.export({
+      const res = await drv.files.export({
         fileId,
         mimeType: "text/plain",
       });
@@ -62,10 +46,10 @@ export async function getFamilyDocs() {
 
 export async function fetchNewsletter() {
   const auth = await getAuthClient();
-  const drive = google.drive({ version: "v3", auth });
+  const drv = drive({ version: "v3", auth });
 
   try {
-    const res = await drive.files.get(
+    const res = await drv.files.get(
       { fileId: NEWSLETTER_FILE_ID, alt: "media" },
       { responseType: "text" }
     );
@@ -84,11 +68,11 @@ export async function fetchNewsletter() {
 
 export async function uploadDashboard(htmlContent) {
   const auth = await getAuthClient();
-  const drive = google.drive({ version: "v3", auth });
+  const drv = drive({ version: "v3", auth });
 
   try {
     // Create the new file — Apps Script handles deleting the old one
-    await drive.files.create({
+    await drv.files.create({
       requestBody: {
         name:    DASHBOARD_FILENAME,
         mimeType: "text/html",

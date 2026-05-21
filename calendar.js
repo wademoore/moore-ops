@@ -1,17 +1,5 @@
-import { google } from "googleapis";
-import fs from "fs";
-import readline from "readline";
-
-const SCOPES = [
-  "https://www.googleapis.com/auth/calendar.readonly",
-  "https://www.googleapis.com/auth/gmail.readonly",
-  "https://www.googleapis.com/auth/gmail.send",
-  "https://www.googleapis.com/auth/drive.readonly",
-  "https://www.googleapis.com/auth/drive.file",
-];
-
-const TOKEN_PATH = "token.json";
-const CREDENTIALS_PATH = "credentials.json";
+import { calendar } from "@googleapis/calendar";
+import { getAuthClient } from "./auth.js";
 
 const FAMILY_CALENDARS = {
   "Wade Personal": "wademoore@gmail.com",
@@ -26,30 +14,12 @@ const FAMILY_CALENDARS = {
   "Robyn": "robyn.brantley@gmail.com",
 };
 
-async function getAuthClient() {
-  const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
-  const { client_secret, client_id, redirect_uris } = credentials.installed;
-  const oAuth2Client = new google.auth.OAuth2(
-    client_id,
-    client_secret,
-    redirect_uris[0]
-  );
-
-  if (fs.existsSync(TOKEN_PATH)) {
-    const token = JSON.parse(fs.readFileSync(TOKEN_PATH));
-    oAuth2Client.setCredentials(token);
-  } else {
-    await getNewToken(oAuth2Client);
-  }
-
-  return oAuth2Client;
-}
 
 // ── Core pull function — shared by both exports ────────────────────────────
 
 async function pullCalendarEvents(hoursAhead) {
   const auth = await getAuthClient();
-  const calendar = google.calendar({ version: "v3", auth });
+  const cal = calendar({ version: "v3", auth });
 
   const now = new Date();
   const timeMax = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
@@ -57,7 +27,7 @@ async function pullCalendarEvents(hoursAhead) {
   const results = await Promise.all(
     Object.entries(FAMILY_CALENDARS).map(async ([name, id]) => {
       try {
-        const res = await calendar.events.list({
+        const res = await cal.events.list({
           calendarId: id,
           timeMin: now.toISOString(),
           timeMax: timeMax.toISOString(),
@@ -96,30 +66,3 @@ export async function pull14Days() {
 
 // ── Auth flow ─────────────────────────────────────────────────────────────
 
-async function getNewToken(oAuth2Client) {
-  const authUrl = oAuth2Client.generateAuthUrl({
-    access_type: "offline",
-    scope: SCOPES,
-  });
-
-  console.log("\nAuthorize this app by visiting this URL:\n");
-  console.log(authUrl);
-  console.log("\n");
-
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-  });
-
-  const code = await new Promise((resolve) => {
-    rl.question("Paste the authorization code here: ", (code) => {
-      rl.close();
-      resolve(code);
-    });
-  });
-
-  const { tokens } = await oAuth2Client.getToken(code);
-  oAuth2Client.setCredentials(tokens);
-  fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens));
-  console.log("Token saved — you won't need to do this again.\n");
-}

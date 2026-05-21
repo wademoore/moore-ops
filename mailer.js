@@ -1,21 +1,10 @@
-import { google } from "googleapis";
+import { gmail } from "@googleapis/gmail";
+import { getAuthClient } from "./auth.js";
 import fs from "fs";
 
 const CREDENTIALS_PATH = "credentials.json";
 const TOKEN_PATH = "token.json";
 
-async function getAuthClient() {
-  const credentials = JSON.parse(fs.readFileSync(CREDENTIALS_PATH));
-  const { client_secret, client_id, redirect_uris } = credentials.installed;
-  const oAuth2Client = new google.auth.OAuth2(
-    client_id,
-    client_secret,
-    redirect_uris[0]
-  );
-  const token = JSON.parse(fs.readFileSync(TOKEN_PATH));
-  oAuth2Client.setCredentials(token);
-  return oAuth2Client;
-}
 
 /**
  * MIME-encodes a header value (e.g. subject line) using RFC 2047 base64 encoding.
@@ -52,8 +41,8 @@ function makeEmailBody(to, subject, htmlContent) {
 
 export async function sendDigestEmail(subject, htmlContent) {
   const auth = await getAuthClient();
-  const gmail = google.gmail({ version: "v1", auth });
-
+  const gml = gmail({ version: "v1", auth });
+  
   const recipients = [
     "wademoore@gmail.com",
     "robyn.brantley@gmail.com",
@@ -61,7 +50,7 @@ export async function sendDigestEmail(subject, htmlContent) {
 
   for (const recipient of recipients) {
     const raw = makeEmailBody(recipient, subject, htmlContent);
-    await gmail.users.messages.send({
+    await gml.users.messages.send({
       userId: "me",
       requestBody: { raw },
     });
