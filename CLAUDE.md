@@ -51,7 +51,8 @@ Run `reauthorize.js` (project root, gitignored) when the OAuth token needs new s
 
 **Current scopes (as of May 2026):**
 - `https://www.googleapis.com/auth/calendar`
-- `https://www.googleapis.com/auth/gmail.readonly`
+- `https://www.googleapis.com/auth/gmail.readonly` — reading activity emails (gmail.js)
+- `https://www.googleapis.com/auth/gmail.send` — sending digest email (mailer.js)
 - `https://www.googleapis.com/auth/drive`
 - `https://www.googleapis.com/auth/documents` ← added May 2026 (prep for Docs write-back)
 
