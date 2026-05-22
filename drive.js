@@ -1,5 +1,6 @@
 import { drive } from "@googleapis/drive";
 import { getAuthClient } from "./auth.js";
+import { timeToSeconds } from "./digest/dateUtils.js";
 
 // ── Document IDs ──────────────────────────────────────────────────────────────
 const DOCS = {
@@ -98,4 +99,157 @@ export async function uploadDashboard(htmlContent) {
     console.error(`[drive:uploadDashboard] Upload failed — ${err.message}`);
     return false;
   }
+}
+
+// ── getSportsConfig ───────────────────────────────────────────────────────────
+// Fetches sports-config.json from Drive and returns the parsed config object.
+// Throws loudly on any error — sports config is mandatory, no fallback.
+// Accepts optional pre-constructed drv client for unit testing.
+
+export async function getSportsConfig(drv) {
+  const fileId = process.env.DRIVE_SPORTS_CONFIG_FILE_ID;
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+  try {
+    const res = await drv.files.get(
+      { fileId, alt: 'media' },
+      { responseType: 'text' }
+    );
+    const config = JSON.parse(res.data);
+    console.log(`[drive:getSportsConfig] Loaded file ${fileId} (${Object.keys(config).length} top-level keys)`);
+    return config;
+  } catch (err) {
+    throw new Error(`[drive:getSportsConfig] Failed to load sports config (file: ${fileId}) — ${err.message}`);
+  }
+}
+
+// ── getPBRecords ──────────────────────────────────────────────────────────────
+// Fetches pb-records.json from Drive and returns the parsed records object.
+// On 404, creates the file with an empty structure and returns it (first-run).
+// On any other error, throws.
+// Accepts optional pre-constructed drv client for unit testing.
+
+const EMPTY_PB_RECORDS = { version: 1, lastUpdated: null, records: [] };
+
+export async function getPBRecords(drv) {
+  const fileId   = process.env.DRIVE_PB_RECORDS_FILE_ID;
+  const folderId = process.env.DRIVE_DATA_FOLDER_ID;
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+  try {
+    const res = await drv.files.get(
+      { fileId, alt: 'media' },
+      { responseType: 'text' }
+    );
+    const records = JSON.parse(res.data);
+    console.log(`[drive:getPBRecords] Loaded ${records.records?.length ?? 0} record(s)`);
+    return records;
+  } catch (err) {
+    // 404 → first run: create the empty file and return the empty structure
+    if (err.response?.status === 404 || err.code === 404) {
+      console.log('[drive:getPBRecords] pb-records.json not found — creating empty file');
+      await drv.files.create({
+        requestBody: {
+          name:     'pb-records.json',
+          mimeType: 'text/plain',
+          parents:  [folderId],
+        },
+        media: {
+          mimeType: 'text/plain',
+          body:     JSON.stringify(EMPTY_PB_RECORDS, null, 2),
+        },
+        fields: 'id',
+      });
+      return { ...EMPTY_PB_RECORDS, records: [] };
+    }
+    throw new Error(`[drive:getPBRecords] Failed to load PB records (file: ${fileId}) — ${err.message}`);
+  }
+}
+
+// ── updatePBRecords ───────────────────────────────────────────────────────────
+// Compares parsed PB rows against stored records. If any new PB is detected,
+// upserts the record and writes the file back to Drive.
+// Throws on Drive write failure — caller (builder.js) wraps in try/catch.
+// Accepts optional pre-constructed drv client for unit testing.
+//
+// pbData: { myles: PBRow[], ophelia: PBRow[] }
+// currentRecords: object returned by getPBRecords()
+
+export async function updatePBRecords(pbData, currentRecords, drv) {
+  const fileId = process.env.DRIVE_PB_RECORDS_FILE_ID;
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+
+  const { myles: mylesPBRows = [], ophelia: opheliaPBRows = [] } = pbData;
+
+  // Compute run-date and season string once
+  const now      = new Date();
+  const dateset  = now.toISOString().slice(0, 10);
+  const year     = now.getFullYear();
+  // month >= 5 (0-indexed) means June or later → season starts this year
+  // month <  5 means Jan–May → season started the prior year
+  const season   = now.getMonth() >= 5
+    ? `${year}-${String(year + 1).slice(2)}`
+    : `${year - 1}-${String(year).slice(2)}`;
+
+  const updatedRecords = [...(currentRecords.records || [])];
+  const newPBLog = [];
+
+  for (const [swimmer, rows] of [['myles', mylesPBRows], ['ophelia', opheliaPBRows]]) {
+    for (const row of rows) {
+      if (row.currentBest === '—') continue;
+
+      const course   = row.format;   // SCM or SCY
+      const event    = row.event;
+      const newSecs  = timeToSeconds(row.currentBest);
+      if (newSecs === null) continue;
+
+      const existingIdx = updatedRecords.findIndex(
+        r => r.swimmer === swimmer && r.event === event && r.course === course
+      );
+      const existing = existingIdx >= 0 ? updatedRecords[existingIdx] : null;
+
+      const isNewPB = !existing
+        || timeToSeconds(existing.time) === null
+        || newSecs < timeToSeconds(existing.time);
+
+      if (!isNewPB) continue;
+
+      const record = { swimmer, event, course, time: row.currentBest, dateset, meet: null, season };
+      if (existingIdx >= 0) {
+        updatedRecords[existingIdx] = record;
+      } else {
+        updatedRecords.push(record);
+      }
+      newPBLog.push(`${swimmer} ${event} ${course}: ${row.currentBest}`);
+    }
+  }
+
+  if (newPBLog.length === 0) {
+    console.log('[drive:updatePBRecords] No new PBs detected — skipping write');
+    return;
+  }
+
+  const payload = {
+    ...currentRecords,
+    records:     updatedRecords,
+    lastUpdated: now.toISOString(),
+  };
+
+  await drv.files.update({
+    fileId,
+    requestBody: {},
+    media: {
+      mimeType: 'text/plain',
+      body:     JSON.stringify(payload, null, 2),
+    },
+  });
+
+  console.log(`[drive:updatePBRecords] ✓ Wrote ${newPBLog.length} new PB(s): ${newPBLog.join(', ')}`);
 }

@@ -51,9 +51,10 @@ import { resolveEvent } from './aliases.js';
 import { computeFlags } from './flags.js';
 import { getSchoolStrip, addNoSchoolDate, isSchoolDay } from './schoolRotation.js';
 import { midnight, daysBetween, toDateKey, parseEventDate, normalizeEvent } from './dateUtils.js';
-import { parseAthleticsDoc } from './athleticsParser.js';
+import { parseAthleticsDoc, buildEmptyAthletics } from './athleticsParser.js';
 import { buildGmailHits, buildActivityCommsLines } from './gmailParser.js';
 import { parseNewsletterItems } from './newsletterParser.js';
+import { updatePBRecords } from '../drive.js';
 
 // ---------------------------------------------------------------------------
 // 1. GMAIL SENDER → gmailHits KEY MAP  (moved to digest/gmailParser.js)
@@ -211,7 +212,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.banner]       Banner object set by Wade, or null
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null, rawEvents14d = null }) {
+export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null, rawEvents14d = null, config = null, currentRecords = null }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -319,7 +320,23 @@ export async function buildDigest({ rawEvents, emails, docs, newsletterText, ban
   const newsletterItems = parseNewsletterItems(newsletterText);
 
   // ── 12. Athletics data ───────────────────────────────────────────────────
-  const athletics = parseAthleticsDoc(docs?.athletics || '');
+  // config is required by parseAthleticsDoc; fall back to empty when absent
+  // (happens in test contexts that pre-date config wiring).
+  const athletics = config
+    ? parseAthleticsDoc(docs?.athletics || '', today, config)
+    : buildEmptyAthletics();
+
+  // Write back any new PBs detected during parsing
+  if (config && currentRecords) {
+    try {
+      await updatePBRecords(
+        { myles: athletics.mylesPBRows, ophelia: athletics.opheliaPBRows },
+        currentRecords
+      );
+    } catch (err) {
+      console.warn('[builder:buildDigest] PB write-back failed — continuing:', err.message);
+    }
+  }
 
   // Cross-reference calendar for flag game this week
   const flagGameEvent = allResolved.find(ev => ev.isFlagGame);

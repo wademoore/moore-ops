@@ -15,7 +15,9 @@ import { getActivityEmails }                   from "./gmail.js";
 import { sendDigestEmail }                     from "./mailer.js";
 import { getFamilyDocs,
          fetchNewsletter,
-         uploadDashboard }                     from "./drive.js";
+         uploadDashboard,
+         getSportsConfig,
+         getPBRecords }                        from "./drive.js";
 
 // ── Digest pipeline ───────────────────────────────────────────────────────────
 import { buildDigest }                         from "./digest/builder.js";
@@ -59,13 +61,15 @@ async function runDigest() {
 
   // ── Step 1: Fetch all data in parallel ─────────────────────────────────────
   console.log("Fetching data...");
-  const [rawEvents, rawEvents14d, emails, docs, newsletterText, nationalsData] = await Promise.all([
+  const [rawEvents, rawEvents14d, emails, docs, newsletterText, nationalsData, sportsConfig, currentRecords] = await Promise.all([
     getCalendarEvents(),
     pull14Days(),
     getActivityEmails(),
     getFamilyDocs(),
     fetchNewsletter(),
     fetchNationalsData(),
+    getSportsConfig(),
+    getPBRecords(),
   ]);
 
   console.log(`  Calendar 72h: ${rawEvents.length} events`);
@@ -74,6 +78,8 @@ async function runDigest() {
   console.log(`  Docs:         familyContext ${docs.familyContext ? "✓" : "✗"}, athletics ${docs.athletics ? "✓" : "✗"}`);
   console.log(`  Newsletter:   ${newsletterText ? "✓ loaded" : "✗ not available"}`);
   console.log(`  Nationals:    ${nationalsData ? "✓" : "✗ fallback"}`);
+  console.log(`  Sports cfg:   ${sportsConfig ? "✓" : "✗"}`);
+  console.log(`  PB records:   ${currentRecords?.records?.length ?? 0} record(s)`);
   console.log();
 
   // ── Step 2: Newsletter fallback notice ─────────────────────────────────────
@@ -90,7 +96,9 @@ async function runDigest() {
     emails,
     docs,
     newsletterText,
-    banner: BANNER,
+    banner:         BANNER,
+    config:         sportsConfig,
+    currentRecords,
   });
 
   // Patch in sports data — builder leaves this null for index.js to fill

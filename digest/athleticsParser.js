@@ -9,16 +9,16 @@
  */
 
 import { timeToSeconds } from './dateUtils.js';
-import { SPORTS_CONFIG, isSeasonActive } from './sportsConfig.js';
+import { isSeasonActive } from './sportsConfig.js';
 
 // ── Myles PB row parser ───────────────────────────────────────────────────
 // Reads the "2026 SEASON BESTS" and "CAREER PERSONAL BESTS" tables.
 
-function parseMylesPBRows(text) {
+function parseMylesPBRows(text, config) {
   const rows = [];
 
-  // Events sourced from SPORTS_CONFIG — edit sportsConfig.js to update
-  const events = SPORTS_CONFIG.swimmers.myles.events;
+  // Events sourced from config (sports-config.json in Drive)
+  const events = config.swimmers.myles.events;
 
   for (const e of events) {
     // Look for a 2026 season best for this event
@@ -64,16 +64,16 @@ function parseMylesPBRows(text) {
 
 // ── Ophelia PB row parser ─────────────────────────────────────────────────
 
-function parseOpheliaPBRows(text, referenceDate) {
+function parseOpheliaPBRows(text, referenceDate, config) {
   const rows = [];
 
   // Select event list based on which swim season is currently active.
   // Waves and 757 never overlap — 757 pauses during the Waves summer season.
   let events;
-  if (isSeasonActive(SPORTS_CONFIG.wellingtonWaves, referenceDate)) {
-    events = SPORTS_CONFIG.swimmers.ophelia.eventsWaves;
-  } else if (isSeasonActive(SPORTS_CONFIG.swim757, referenceDate)) {
-    events = SPORTS_CONFIG.swimmers.ophelia.events757;
+  if (isSeasonActive(config.wellingtonWaves, referenceDate)) {
+    events = config.swimmers.ophelia.eventsWaves;
+  } else if (isSeasonActive(config.swim757, referenceDate)) {
+    events = config.swimmers.ophelia.events757;
   } else {
     return [];   // offseason — no swim card content
   }
@@ -143,7 +143,7 @@ function parseOpheliaPBRows(text, referenceDate) {
 // PUBLIC EXPORTS
 // ---------------------------------------------------------------------------
 
-export function parseAthleticsDoc(text, referenceDate = new Date()) {
+export function parseAthleticsDoc(text, referenceDate = new Date(), config) {
   if (!text) return buildEmptyAthletics();
 
   // Google Docs plain-text export renders markdown tables with | :-: | alignment
@@ -156,10 +156,10 @@ export function parseAthleticsDoc(text, referenceDate = new Date()) {
   // ── Season-active flags ───────────────────────────────────────────────────
   // Computed once here; surfaced on the return object so render/dashboard.js
   // can gate card visibility without importing sportsConfig.js directly.
-  const flagFootballActive = isSeasonActive(SPORTS_CONFIG.flagFootball,    referenceDate);
-  const wavesActive        = isSeasonActive(SPORTS_CONFIG.wellingtonWaves, referenceDate);
-  const swim757Active      = isSeasonActive(SPORTS_CONFIG.swim757,         referenceDate);
-  const sharksActive       = isSeasonActive(SPORTS_CONFIG.sharks,          referenceDate);
+  const flagFootballActive = isSeasonActive(config.flagFootball,    referenceDate);
+  const wavesActive        = isSeasonActive(config.wellingtonWaves, referenceDate);
+  const swim757Active      = isSeasonActive(config.swim757,         referenceDate);
+  const sharksActive       = isSeasonActive(config.sharks,          referenceDate);
 
   // ── Flag football fields ──────────────────────────────────────────────────
   // Only parsed when the flag football season is active; defaults match
@@ -230,21 +230,21 @@ export function parseAthleticsDoc(text, referenceDate = new Date()) {
   }
 
   // ── Myles swim PB rows ────────────────────────────────────────────────────
-  const mylesPBRows = parseMylesPBRows(text);
+  const mylesPBRows = parseMylesPBRows(text, config);
 
   // ── Ophelia swim PB rows ──────────────────────────────────────────────────
-  const opheliaPBRows = parseOpheliaPBRows(text, referenceDate);
+  const opheliaPBRows = parseOpheliaPBRows(text, referenceDate, config);
 
   // ── Season complete check ─────────────────────────────────────────────────
   // Derived from config: flag football seasonEnd + bufferDays (currently June 21)
-  const ffEnd         = new Date(SPORTS_CONFIG.flagFootball.seasonEnd + 'T00:00:00');
+  const ffEnd         = new Date(config.flagFootball.seasonEnd + 'T00:00:00');
   const ffCompleteDate = new Date(ffEnd);
-  ffCompleteDate.setDate(ffCompleteDate.getDate() + SPORTS_CONFIG.flagFootball.bufferDays);
+  ffCompleteDate.setDate(ffCompleteDate.getDate() + config.flagFootball.bufferDays);
   const seasonComplete = referenceDate >= ffCompleteDate && allResultsFilled;
 
   // ── Season labels ─────────────────────────────────────────────────────────
   // Derived from config dates — no hardcoded June 15 cutoff
-  const wavesStart = new Date(SPORTS_CONFIG.wellingtonWaves.seasonStart + 'T00:00:00');
+  const wavesStart = new Date(config.wellingtonWaves.seasonStart + 'T00:00:00');
 
   const mylesSeason = wavesActive
     ? '2026 Waves Season'
@@ -276,12 +276,12 @@ export function parseAthleticsDoc(text, referenceDate = new Date()) {
     // Myles swim
     mylesSeason,
     mylesPBRows,
-    mylesFooter: SPORTS_CONFIG.swimmers.myles.footer,
+    mylesFooter: config.swimmers.myles.footer,
 
     // Ophelia swim + dance
     opheliaSeason,
     opheliaPBRows,
-    opheliaFooter: SPORTS_CONFIG.swimmers.ophelia.footer,
+    opheliaFooter: config.swimmers.ophelia.footer,
     opheliaDanceNote: '💃 "I\'m Still Standing" · Recital May 30, 1:00 PM',
   };
 }
