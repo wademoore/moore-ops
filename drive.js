@@ -4,15 +4,15 @@ import { timeToSeconds } from "./digest/dateUtils.js";
 
 // ── Document IDs ──────────────────────────────────────────────────────────────
 const DOCS = {
-  familyContext: "1eXMPEAIMZciwUc8eUQl042Bt0zW0P3Q0d_o8NqYnOx4",
-  athletics:     "1t5elkwIHz5RD-Flr64se2xFNL2KxeCxmWCJtGOX_Cb8",
+  familyContext: process.env.DRIVE_FAMILY_CONTEXT_FILE_ID,
+  athletics:     process.env.DRIVE_ATHLETICS_FILE_ID,
 };
 
 // Stonehouse newsletter — updated by Wade each Sunday with new HTML
-const NEWSLETTER_FILE_ID = "15bDYqGCuaBEvnu4BPeAeOr6r2A2EV1XY";
+const NEWSLETTER_FILE_ID  = process.env.DRIVE_NEWSLETTER_FILE_ID;
 
 // Dashboard upload destination
-const DASHBOARD_FOLDER_ID = "1jgkjO1_CKFzUlKzhvNCSKrf58ZaF0HSB";
+const DASHBOARD_FOLDER_ID = process.env.DRIVE_DASHBOARD_FOLDER_ID;
 const DASHBOARD_FILENAME  = "moore_dashboard.html";
 
 
