@@ -212,7 +212,9 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.banner]       Banner object set by Wade, or null
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null, rawEvents14d = null, config = null, currentRecords = null }) {
+export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null, rawEvents14d = null, config, currentRecords = null }) {
+  if (!config) throw new Error('[buildDigest] config is required — pass the result of getSportsConfig()');
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -320,14 +322,10 @@ export async function buildDigest({ rawEvents, emails, docs, newsletterText, ban
   const newsletterItems = parseNewsletterItems(newsletterText);
 
   // ── 12. Athletics data ───────────────────────────────────────────────────
-  // config is required by parseAthleticsDoc; fall back to empty when absent
-  // (happens in test contexts that pre-date config wiring).
-  const athletics = config
-    ? parseAthleticsDoc(docs?.athletics || '', today, config)
-    : buildEmptyAthletics();
+  const athletics = parseAthleticsDoc(docs?.athletics || '', today, config);
 
   // Write back any new PBs detected during parsing
-  if (config && currentRecords) {
+  if (currentRecords) {
     try {
       await updatePBRecords(
         { myles: athletics.mylesPBRows, ophelia: athletics.opheliaPBRows },

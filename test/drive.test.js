@@ -122,6 +122,17 @@ describe('getPBRecords(drv)', () => {
 
     await assert.rejects(() => getPBRecords(drv), /internal server error/);
   });
+
+  it('404 + create failure — create error propagates', async () => {
+    const notFoundErr = Object.assign(new Error('File not found'), { response: { status: 404 } });
+    const createErr   = new Error('Drive create failed');
+    const drv = stubDrv({
+      get:    async () => { throw notFoundErr; },
+      create: async () => { throw createErr; },
+    });
+
+    await assert.rejects(() => getPBRecords(drv), /Drive create failed/);
+  });
 });
 
 // ── updatePBRecords ───────────────────────────────────────────────────────────

@@ -53,12 +53,12 @@
  *   seasonComplete:      boolean
  *   finalRecord:         string|null
  *
- *   // Myles swim (footer sourced from SPORTS_CONFIG.swimmers.myles.footer)
+ *   // Myles swim (footer sourced from config.swimmers.myles.footer via Drive sports-config.json)
  *   mylesSeason:         string   "2026 Waves Season" | "Pre-Season" | "Off-Season"
  *   mylesPBRows:         PBRow[]
  *   mylesFooter:         string
  *
- *   // Ophelia swim + dance (footer sourced from SPORTS_CONFIG.swimmers.ophelia.footer)
+ *   // Ophelia swim + dance (footer sourced from config.swimmers.ophelia.footer via Drive sports-config.json)
  *   opheliaSeason:       string   "2026 Waves Season" | "2025–26 757 Season" | "Off-Season"
  *   opheliaPBRows:       PBRow[]  SCM events during Waves season, SCY during 757 season
  *   opheliaFooter:       string

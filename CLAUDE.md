@@ -46,6 +46,8 @@
 - Config is fetched at Lambda startup via `getSportsConfig()` in `drive.js` and passed as `config` param to `parseAthleticsDoc` and `buildDigest`
 - Use Updater agent to edit JSON files in Drive — do not hardcode season data in source
 
+**Warning:** If `pb-records.json` is deleted from Google Drive, `getPBRecords()` will create a new empty file in the `moore-ops-data` folder with a different file ID. Subsequent runs will continue using the ID in `DRIVE_PB_RECORDS_FILE_ID` and hit 404 again, creating duplicate files. If the file is ever deleted intentionally, update `DRIVE_PB_RECORDS_FILE_ID` in both `.env` and Lambda environment variables to point to the new file ID, then re-seed the records.
+
 ## OAuth Re-authorization
 Run `reauthorize.js` (project root, gitignored) when the OAuth token needs new scopes or has expired.
 

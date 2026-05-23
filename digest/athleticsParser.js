@@ -145,6 +145,7 @@ function parseOpheliaPBRows(text, referenceDate, config) {
 
 export function parseAthleticsDoc(text, referenceDate = new Date(), config) {
   if (!text) return buildEmptyAthletics();
+  if (!config) throw new Error('[athleticsParser] config is required — getSportsConfig() must be called before parseAthleticsDoc()');
 
   // Google Docs plain-text export renders markdown tables with | :-: | alignment
   // rows between header and data. Strip those lines before parsing so they don't
