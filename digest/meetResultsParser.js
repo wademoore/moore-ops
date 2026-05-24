@@ -61,6 +61,7 @@ function parseColumnText(columnText, meetName, meetDate) {
 
     // Tokenise
     const tokens = line.trim().split(/\s+/);
+    if (tokens[1] && tokens[1].startsWith('Moore,')) console.log(`[debug] Moore tokens: ${JSON.stringify(tokens)}`);
     if (tokens.length < 6) continue;
 
     // Exhibition and skip conditions
