@@ -84,14 +84,22 @@ async function processMeetResults(currentRecords, currentProcessed) {
   let filesProcessed    = 0;
   let totalNewPBs       = 0;
 
-  // Lazy-load pdf-parse only when new files are present (cold-start guard)
-  const pdfParseModule = await import('pdf-parse');
-  const pdfParse = pdfParseModule.default || pdfParseModule;
+  // Lazy-load pdfjs-dist only when new files are present (cold-start guard)
+  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf.mjs');
+  GlobalWorkerOptions.workerSrc = '';
 
   for (const file of unprocessed) {
     try {
-      const buffer   = await fetchFileAsBuffer(file.id);
-      const { text } = await pdfParse(buffer);
+      const buffer      = await fetchFileAsBuffer(file.id);
+      const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
+      const pdf         = await getDocument({ data: arrayBuffer, useWorkerFetch: false, isEvalSupported: false, useSystemFonts: true }).promise;
+      const pageTexts   = [];
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page    = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        pageTexts.push(content.items.map(item => item.str).join(' '));
+      }
+      const text = pageTexts.join('\n');
 
       const meetData = parseMeetText(text);
       if (!meetData) {

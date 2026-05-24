@@ -10,7 +10,7 @@
     "google-auth-library": "^10.6.2",
     "node-fetch": "^3.3.2",
     "nodemailer": "^8.0.7",
-    "pdf-parse": "^2.4.5"
+    "pdfjs-dist": "^5.7.284"
   },
   "devDependencies": {
     "dotenv": "^17.4.2"
