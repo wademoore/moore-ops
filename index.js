@@ -57,46 +57,6 @@ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
 
 const BANNER = null;
 
-// ── PDF text extractor ────────────────────────────────────────────────────────
-// Zero-dependency extraction for machine-generated text PDFs (SwimTopia).
-// Decodes BT...ET text blocks from the raw PDF binary.
-
-function extractPdfText(buffer) {
-  const raw = buffer.toString('latin1');
-  const lines = [];
-  const btEtRe = /BT([\s\S]*?)ET/g;
-  const tjRe = /\(([^)]*)\)\s*T[jJ]/g;
-  const arrayTjRe = /\[([^\]]*)\]\s*TJ/g;
-  const stringRe = /\(([^)]*)\)/g;
-
-  let block;
-  while ((block = btEtRe.exec(raw)) !== null) {
-    const content = block[1];
-    const blockLines = [];
-
-    // Extract Tj strings
-    let m;
-    while ((m = tjRe.exec(content)) !== null) {
-      blockLines.push(m[1]);
-    }
-
-    // Extract TJ arrays
-    while ((m = arrayTjRe.exec(content)) !== null) {
-      const arr = m[1];
-      const parts = [];
-      let s;
-      while ((s = stringRe.exec(arr)) !== null) {
-        parts.push(s[1]);
-      }
-      if (parts.length) blockLines.push(parts.join(''));
-    }
-
-    if (blockLines.length) lines.push(blockLines.join(' '));
-  }
-
-  return lines.join('\n');
-}
-
 // ── Meet results processor ────────────────────────────────────────────────────
 // Checks for new PDFs in the meet results folder, parses them, and updates
 // pb-records.json. Runs between the parallel fetch and buildDigest so the
@@ -124,11 +84,18 @@ async function processMeetResults(currentRecords, currentProcessed) {
   let filesProcessed    = 0;
   let totalNewPBs       = 0;
 
+  // Lazy-load pdf2json only when new files are present (cold-start guard)
+  const { default: PDFParser } = await import('pdf2json');
+
   for (const file of unprocessed) {
     try {
       const buffer = await fetchFileAsBuffer(file.id);
-      const text   = extractPdfText(buffer);
-      console.log(`[meetResults] Extracted text sample (${file.name}): ${JSON.stringify(text.slice(0, 500))}`);
+      const text = await new Promise((resolve, reject) => {
+        const parser = new PDFParser(null, 1);
+        parser.on('pdfParser_dataReady', () => resolve(parser.getRawTextContent()));
+        parser.on('pdfParser_dataError', reject);
+        parser.parseBuffer(buffer);
+      });
 
       const meetData = parseMeetText(text);
       if (!meetData) {
