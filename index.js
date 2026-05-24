@@ -95,6 +95,7 @@ async function processMeetResults(currentRecords, currentProcessed) {
         parser.on('pdfParser_dataReady', () => {
           const raw = parser.getRawTextContent();
           const text = raw.replace(/(?<=[A-Za-z]) (?=[A-Za-z])/g, '');
+          console.log(`[meetResults] post-collapse sample (${file.name}): ${JSON.stringify(text.slice(0, 300))}`);
           resolve(text);
         });
         parser.on('pdfParser_dataError', reject);
