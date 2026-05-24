@@ -162,8 +162,8 @@ export function parseMeetText(text) {
     results = parseColumnText(cleaned, meetName, meetDate);
   } else {
     const cleanedLines = cleaned.split('\n');
-    const leftText  = cleanedLines.map(l => l.slice(0, splitCol)).join('\n');
-    const rightText = cleanedLines.map(l => l.slice(splitCol)).join('\n');
+    const leftText  = cleanedLines.map(l => l.slice(0, splitCol).trimEnd()).join('\n');
+    const rightText = cleanedLines.map(l => l.slice(splitCol).trimStart()).join('\n');
     results = [
       ...parseColumnText(leftText,  meetName, meetDate),
       ...parseColumnText(rightText, meetName, meetDate),
