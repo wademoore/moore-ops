@@ -326,12 +326,14 @@ describe('mergePBUpdates', () => {
 // Poppler -layout two-column output.
 // '#3 Boys 7-8 25m Freestyle' (25 chars, index 0–24) + 25 spaces → #9 at index 50.
 // Right-column-only rows are padded with 50 leading spaces.
+// Both column entries are on the same physical line (real Poppler -layout format).
+// Left content ends before col 50; right content starts at col 50.
+// Line 1: left=36 chars + 14 spaces → right at 50. Moore, at 3 (left) and 53 (right).
+// Line 2: left=33 chars + 17 spaces → right at 50. Moore, at 3 (left only).
 const POPPLER_TWO_COL_TEXT = `Results                                  2024 Seastars at Wellington Waves — Jul 15, 2024
 #3 Boys 7-8 25m Freestyle                         #9 Girls 6 & Under 25m Back
-1  Moore, Myles  7  WT  NT  44.29  5
--- Moore, Myles  7  WT  NT  46.10
-                                                  -- Moore, Ophelia  6  WT  NT  22.50
-                                                  3  Smith, Emma  8  WC  NT  28.50  3
+1  Moore, Myles  7  WT  NT  44.29  5              -- Moore, Ophelia  6  WT  NT  22.50
+-- Moore, Myles  7  WT  NT  46.10                 3  Smith, Emma  8  WC  NT  28.50  3
 `;
 
 describe('parseMeetText — Poppler two-column layout', () => {
