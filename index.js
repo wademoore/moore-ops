@@ -128,6 +128,7 @@ async function processMeetResults(currentRecords, currentProcessed) {
     try {
       const buffer = await fetchFileAsBuffer(file.id);
       const text   = extractPdfText(buffer);
+      console.log(`[meetResults] Extracted text sample (${file.name}): ${JSON.stringify(text.slice(0, 500))}`);
 
       const meetData = parseMeetText(text);
       if (!meetData) {
