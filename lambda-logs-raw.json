@@ -1,0 +1,21 @@
+{
+    "events": [
+        {
+            "logStreamName": "2026/05/22/[$LATEST]54e8a767231c43cf86f86cc749fb09d5",
+            "timestamp": 1779418532649,
+            "message": "INIT_START Runtime Version: nodejs:24.v35\tRuntime Version ARN: arn:aws:lambda:us-east-2::runtime:2e33114c0d834deb7c2f4da4af8d9f0d96984137afdfe5d0dd3aa03c55133c76\n",
+            "ingestionTime": 1779418539073,
+            "eventId": "39682359298148593623554275468924773076697034064617996288"
+        },
+        {
+            "logStreamName": "2026/05/22/[$LATEST]54e8a767231c43cf86f86cc749fb09d5",
+            "timestamp": 1779418532953,
+            "message": "START RequestId: 6427221e-9193-4939-a104-03bf53c597bc Version: $LATEST\n",
+            "ingestionTime": 1779418539073,
+            "eventId": "39682359304928020163907584903951631431582135962436042753"
+        },
+        {
+            "logStreamName": "2026/05/22/[$LATEST]54e8a767231c43cf86f86cc749fb09d5",
+            "timestamp": 1779418532954,
+            "message": 
+aws: [ERROR]: 'charmap' codec can't encode characters in position 73-111: character maps to <undefined>
