@@ -45,7 +45,6 @@ export async function sendDigestEmail(subject, htmlContent) {
   
   const recipients = [
     "wademoore@gmail.com",
-    "robyn.brantley@gmail.com",
   ];
 
   for (const recipient of recipients) {
