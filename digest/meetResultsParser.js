@@ -30,7 +30,7 @@ export function parseMeetText(text) {
   if (!text) return null;
 
   // ── 1. Extract meet metadata from first header occurrence ─────────────────
-  const headerRe = /^Results\s+(.+?)\s+—\s+([A-Za-z]+ \d+, \d{4})/m;
+  const headerRe = /^Results\s*\r?\n?\s*(.+?)\s+—\s+([A-Za-z]+ \d+, \d{4})/m;
   const headerMatch = headerRe.exec(text);
   if (!headerMatch) return null;
 
@@ -52,7 +52,7 @@ export function parseMeetText(text) {
 
   // Strip all occurrences of the header pattern (globally) after the first
   // so page-2+ headers don't create spurious event blocks
-  const headerGlobalRe = /^Results\s+.+?\s+—\s+[A-Za-z]+ \d+, \d{4}/gm;
+  const headerGlobalRe = /^Results\s*\r?\n?\s*.+?\s+—\s+[A-Za-z]+ \d+, \d{4}/gm;
   cleaned = cleaned.replace(headerGlobalRe, () => '');
 
   // Also strip Session lines
