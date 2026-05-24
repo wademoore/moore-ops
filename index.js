@@ -57,6 +57,46 @@ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
 
 const BANNER = null;
 
+// ── PDF text extractor ────────────────────────────────────────────────────────
+// Zero-dependency extraction for machine-generated text PDFs (SwimTopia).
+// Decodes BT...ET text blocks from the raw PDF binary.
+
+function extractPdfText(buffer) {
+  const raw = buffer.toString('latin1');
+  const lines = [];
+  const btEtRe = /BT([\s\S]*?)ET/g;
+  const tjRe = /\(([^)]*)\)\s*T[jJ]/g;
+  const arrayTjRe = /\[([^\]]*)\]\s*TJ/g;
+  const stringRe = /\(([^)]*)\)/g;
+
+  let block;
+  while ((block = btEtRe.exec(raw)) !== null) {
+    const content = block[1];
+    const blockLines = [];
+
+    // Extract Tj strings
+    let m;
+    while ((m = tjRe.exec(content)) !== null) {
+      blockLines.push(m[1]);
+    }
+
+    // Extract TJ arrays
+    while ((m = arrayTjRe.exec(content)) !== null) {
+      const arr = m[1];
+      const parts = [];
+      let s;
+      while ((s = stringRe.exec(arr)) !== null) {
+        parts.push(s[1]);
+      }
+      if (parts.length) blockLines.push(parts.join(''));
+    }
+
+    if (blockLines.length) lines.push(blockLines.join(' '));
+  }
+
+  return lines.join('\n');
+}
+
 // ── Meet results processor ────────────────────────────────────────────────────
 // Checks for new PDFs in the meet results folder, parses them, and updates
 // pb-records.json. Runs between the parallel fetch and buildDigest so the
@@ -84,22 +124,10 @@ async function processMeetResults(currentRecords, currentProcessed) {
   let filesProcessed    = 0;
   let totalNewPBs       = 0;
 
-  // Lazy-load pdfjs-dist only when new files are present (cold-start guard)
-  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf.mjs');
-  GlobalWorkerOptions.workerSrc = '';
-
   for (const file of unprocessed) {
     try {
-      const buffer      = await fetchFileAsBuffer(file.id);
-      const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-      const pdf         = await getDocument({ data: arrayBuffer, useWorkerFetch: false, isEvalSupported: false, useSystemFonts: true }).promise;
-      const pageTexts   = [];
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page    = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        pageTexts.push(content.items.map(item => item.str).join(' '));
-      }
-      const text = pageTexts.join('\n');
+      const buffer = await fetchFileAsBuffer(file.id);
+      const text   = extractPdfText(buffer);
 
       const meetData = parseMeetText(text);
       if (!meetData) {
