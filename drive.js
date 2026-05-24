@@ -268,7 +268,7 @@ export async function listFolderFiles(folderId, drv) {
   try {
     do {
       const params = {
-        q:         `'${folderId}' in parents and mimeType = 'application/pdf' and trashed = false`,
+        q:         `'${folderId}' in parents and (mimeType = 'application/pdf' or mimeType = 'text/plain') and trashed = false`,
         fields:    'nextPageToken, files(id,name,createdTime)',
         pageSize:  100,
       };

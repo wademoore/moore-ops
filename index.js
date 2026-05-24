@@ -84,23 +84,24 @@ async function processMeetResults(currentRecords, currentProcessed) {
   let filesProcessed    = 0;
   let totalNewPBs       = 0;
 
-  // Lazy-load pdf2json only when new files are present (cold-start guard)
-  const { default: PDFParser } = await import('pdf2json');
-
   for (const file of unprocessed) {
     try {
+      const isPdf = file.name.toLowerCase().endsWith('.pdf');
+      const isTxt = file.name.toLowerCase().endsWith('.txt');
+      if (!isPdf && !isTxt) {
+        console.log(`[meetResults] Skipping "${file.name}" — unsupported file type`);
+        continue;
+      }
+
       const buffer = await fetchFileAsBuffer(file.id);
-      const text = await new Promise((resolve, reject) => {
-        const parser = new PDFParser(null, 1);
-        parser.on('pdfParser_dataReady', () => {
-          const raw = parser.getRawTextContent();
-          const text = raw.replace(/(?<=[A-Za-z]) (?=[A-Za-z])/g, '');
-          console.log(`[meetResults] RAW sample (${file.name}): ${JSON.stringify(raw.slice(0, 1000))}`);
-          resolve(text);
-        });
-        parser.on('pdfParser_dataError', reject);
-        parser.parseBuffer(buffer);
-      });
+      const text = isTxt
+        ? buffer.toString('utf8')
+        : null;
+
+      if (!text) {
+        console.warn(`[meetResults] Skipping "${file.name}" — PDF parsing not supported, use txt instead`);
+        continue;
+      }
 
       const meetData = parseMeetText(text);
       if (!meetData) {
