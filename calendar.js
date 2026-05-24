@@ -15,6 +15,17 @@ const FAMILY_CALENDARS = {
 };
 
 
+// ── Deduplication helper — exported for unit testing ──────────────────────
+
+export function dedupeById(events) {
+  const seen = new Set();
+  return events.filter(ev => {
+    if (seen.has(ev.id)) return false;
+    seen.add(ev.id);
+    return true;
+  });
+}
+
 // ── Core pull function — shared by both exports ────────────────────────────
 
 async function pullCalendarEvents(hoursAhead) {
@@ -45,7 +56,7 @@ async function pullCalendarEvents(hoursAhead) {
     })
   );
 
-  return results.flat().sort((a, b) => {
+  return dedupeById(results.flat()).sort((a, b) => {
     const aTime = a.start.dateTime || a.start.date;
     const bTime = b.start.dateTime || b.start.date;
     return new Date(aTime) - new Date(bTime);
