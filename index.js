@@ -93,9 +93,9 @@ async function processMeetResults(currentRecords, currentProcessed) {
       const text = await new Promise((resolve, reject) => {
         const parser = new PDFParser(null, 1);
         parser.on('pdfParser_dataReady', () => {
-          const t = parser.getRawTextContent();
-          console.log(`[meetResults] pdf2json sample (${file.name}): ${JSON.stringify(t.slice(0, 500))}`);
-          resolve(t);
+          const raw = parser.getRawTextContent();
+          const text = raw.replace(/(?<=[A-Za-z]) (?=[A-Za-z])/g, '');
+          resolve(text);
         });
         parser.on('pdfParser_dataError', reject);
         parser.parseBuffer(buffer);
