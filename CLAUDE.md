@@ -48,6 +48,17 @@
 
 **Warning:** If `pb-records.json` is deleted from Google Drive, `getPBRecords()` will create a new empty file in the `moore-ops-data` folder with a different file ID. Subsequent runs will continue using the ID in `DRIVE_PB_RECORDS_FILE_ID` and hit 404 again, creating duplicate files. If the file is ever deleted intentionally, update `DRIVE_PB_RECORDS_FILE_ID` in both `.env` and Lambda environment variables to point to the new file ID, then re-seed the records.
 
+## Meet results PDF processing (as of May 2026)
+- `digest/meetResultsParser.js` — parses SwimTopia Meet Maestro PDF text, extracts Moore family results, merges PB updates against stored records (pure functions, no Drive I/O)
+- Meet PDFs uploaded manually to `moore-ops-meet-results` folder (`DRIVE_MEET_RESULTS_FOLDER_ID`)
+- Processed file tracking → `processed-meets.json` (`DRIVE_PROCESSED_MEETS_FILE_ID`) in `moore-ops-data/` folder
+- PDF processing runs in `processMeetResults()` (local function in `index.js`) between the parallel data fetch and `buildDigest`
+- New env vars: `DRIVE_MEET_RESULTS_FOLDER_ID`, `DRIVE_PROCESSED_MEETS_FILE_ID`
+
+**Warning:** If `processed-meets.json` is deleted from Drive, create a new empty file with `{ "version": 1, "processedFiles": [] }`, update `DRIVE_PROCESSED_MEETS_FILE_ID` in `.env` and Lambda config, then re-upload all meet PDFs — the next Lambda run will reprocess them all (Phase A backfill behavior is automatic).
+
+**Phase A backfill:** Upload all historical PDFs to `moore-ops-meet-results` folder. The next Lambda run (or `aws lambda invoke --function-name moore-ops-digest /tmp/out.json`) will process all unprocessed files automatically. No separate script needed.
+
 ## OAuth Re-authorization
 Run `reauthorize.js` (project root, gitignored) when the OAuth token needs new scopes or has expired.
 

@@ -253,3 +253,133 @@ export async function updatePBRecords(pbData, currentRecords, drv) {
 
   console.log(`[drive:updatePBRecords] ✓ Wrote ${newPBLog.length} new PB(s): ${newPBLog.join(', ')}`);
 }
+
+// ── listFolderFiles ───────────────────────────────────────────────────────────
+// Lists all PDF files in a Drive folder. Handles pagination.
+// Non-fatal: returns empty array on any error.
+
+export async function listFolderFiles(folderId, drv) {
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+  const files = [];
+  let pageToken = undefined;
+  try {
+    do {
+      const params = {
+        q:         `'${folderId}' in parents and mimeType = 'application/pdf' and trashed = false`,
+        fields:    'nextPageToken, files(id,name,createdTime)',
+        pageSize:  100,
+      };
+      if (pageToken) params.pageToken = pageToken;
+      const res = await drv.files.list(params);
+      files.push(...(res.data.files || []));
+      pageToken = res.data.nextPageToken;
+    } while (pageToken);
+    return files;
+  } catch (err) {
+    console.warn(`[drive:listFolderFiles] Failed to list folder ${folderId} — ${err.message}`);
+    return [];
+  }
+}
+
+// ── fetchFileAsBuffer ─────────────────────────────────────────────────────────
+// Downloads a Drive file as a Buffer. Throws on error — caller wraps in try/catch.
+
+export async function fetchFileAsBuffer(fileId, drv) {
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+  const res = await drv.files.get(
+    { fileId, alt: 'media' },
+    { responseType: 'arraybuffer' }
+  );
+  return Buffer.from(res.data);
+}
+
+// ── getProcessedMeets ─────────────────────────────────────────────────────────
+// Fetches processed-meets.json from Drive. Creates empty file on 404 (first run).
+// Throws on non-404 errors.
+
+const EMPTY_PROCESSED_MEETS = { version: 1, processedFiles: [] };
+
+export async function getProcessedMeets(drv) {
+  const fileId   = process.env.DRIVE_PROCESSED_MEETS_FILE_ID;
+  const folderId = process.env.DRIVE_DATA_FOLDER_ID;
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+  try {
+    const res = await drv.files.get(
+      { fileId, alt: 'media' },
+      { responseType: 'text' }
+    );
+    return JSON.parse(res.data);
+  } catch (err) {
+    if (err.response?.status === 404 || err.code === 404) {
+      console.log('[drive:getProcessedMeets] processed-meets.json not found — creating empty file');
+      await drv.files.create({
+        requestBody: {
+          name:     'processed-meets.json',
+          mimeType: 'text/plain',
+          parents:  [folderId],
+        },
+        media: {
+          mimeType: 'text/plain',
+          body:     JSON.stringify(EMPTY_PROCESSED_MEETS, null, 2),
+        },
+        fields: 'id',
+      });
+      return { ...EMPTY_PROCESSED_MEETS, processedFiles: [] };
+    }
+    throw new Error(`[drive:getProcessedMeets] Failed to load (file: ${fileId}) — ${err.message}`);
+  }
+}
+
+// ── updateProcessedMeets ──────────────────────────────────────────────────────
+// Appends a new entry to processed-meets.json and writes it back to Drive.
+// Throws on Drive error.
+
+export async function updateProcessedMeets(newEntry, currentProcessed, drv) {
+  const fileId = process.env.DRIVE_PROCESSED_MEETS_FILE_ID;
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+  const updated = {
+    ...currentProcessed,
+    processedFiles: [...(currentProcessed.processedFiles || []), newEntry],
+  };
+  await drv.files.update({
+    fileId,
+    requestBody: {},
+    media: {
+      mimeType: 'text/plain',
+      body:     JSON.stringify(updated, null, 2),
+    },
+  });
+}
+
+// ── writePBRecords ────────────────────────────────────────────────────────────
+// Writes a pre-built pb-records envelope to Drive. Used by the PDF batch flow.
+// Throws on error.
+
+export async function writePBRecords(payload, drv) {
+  const fileId = process.env.DRIVE_PB_RECORDS_FILE_ID;
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+  await drv.files.update({
+    fileId,
+    requestBody: {},
+    media: {
+      mimeType: 'text/plain',
+      body:     JSON.stringify(payload, null, 2),
+    },
+  });
+  console.log('[drive:writePBRecords] ✓ pb-records.json updated');
+}

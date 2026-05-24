@@ -17,11 +17,17 @@ import { getFamilyDocs,
          fetchNewsletter,
          uploadDashboard,
          getSportsConfig,
-         getPBRecords }                        from "./drive.js";
+         getPBRecords,
+         getProcessedMeets,
+         listFolderFiles,
+         fetchFileAsBuffer,
+         updateProcessedMeets,
+         writePBRecords }                      from "./drive.js";
 
 // ── Digest pipeline ───────────────────────────────────────────────────────────
 import { buildDigest }                         from "./digest/builder.js";
 import { fetchNationalsData }                  from "./digest/nationalsParser.js";
+import { parseMeetText, mergePBUpdates }       from "./digest/meetResultsParser.js";
 
 // ── Renderers ─────────────────────────────────────────────────────────────────
 import { renderEmail, emailSubject }           from "./render/email.js";
@@ -51,6 +57,85 @@ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
 
 const BANNER = null;
 
+// ── Meet results processor ────────────────────────────────────────────────────
+// Checks for new PDFs in the meet results folder, parses them, and updates
+// pb-records.json. Runs between the parallel fetch and buildDigest so the
+// digest email reflects newly detected PBs. Never throws — a failed PDF parse
+// is logged and skipped; the digest pipeline continues regardless.
+
+async function processMeetResults(currentRecords, currentProcessed) {
+  const folderId = process.env.DRIVE_MEET_RESULTS_FOLDER_ID;
+  const allFiles = await listFolderFiles(folderId);
+
+  const processedIds = new Set((currentProcessed.processedFiles || []).map(f => f.fileId));
+  const unprocessed  = allFiles.filter(f => !processedIds.has(f.id));
+
+  if (unprocessed.length === 0) {
+    console.log('[meetResults] No new meet PDFs — skipping');
+    return { workingRecords: currentRecords, totalNewPBs: 0 };
+  }
+
+  // Oldest first so batch PB comparisons are chronologically ordered
+  unprocessed.sort((a, b) => new Date(a.createdTime) - new Date(b.createdTime));
+
+  const workingRecords  = { ...currentRecords, records: [...(currentRecords.records || [])] };
+  const originalJSON    = JSON.stringify(workingRecords.records);
+  let workingProcessed  = currentProcessed;
+  let filesProcessed    = 0;
+  let totalNewPBs       = 0;
+
+  // Lazy-load pdf-parse only when new files are present (cold-start guard)
+  const pdfParseModule = await import('pdf-parse');
+  const pdfParse = pdfParseModule.default || pdfParseModule;
+
+  for (const file of unprocessed) {
+    try {
+      const buffer   = await fetchFileAsBuffer(file.id);
+      const { text } = await pdfParse(buffer);
+
+      const meetData = parseMeetText(text);
+      if (!meetData) {
+        console.warn(`[meetResults] Failed to parse "${file.name}" — no valid header found — skipping`);
+        continue;
+      }
+
+      const { updatedRecords, newPBLog } = mergePBUpdates(meetData.results, workingRecords);
+      workingRecords.records = updatedRecords;
+
+      const mylesNew   = newPBLog.filter(e => e.startsWith('myles')).length;
+      const opheliaNew = newPBLog.filter(e => e.startsWith('ophelia')).length;
+      console.log(`[meetResults] Processed "${meetData.meetName}" (${meetData.meetDate}) — Myles: ${mylesNew} new PB(s), Ophelia: ${opheliaNew} new PB(s)`);
+
+      totalNewPBs  += newPBLog.length;
+      filesProcessed++;
+
+      const entry = {
+        fileId:      file.id,
+        fileName:    file.name,
+        meetName:    meetData.meetName,
+        meetDate:    meetData.meetDate,
+        processedAt: new Date().toISOString(),
+      };
+      await updateProcessedMeets(entry, workingProcessed);
+      // Accumulate entries so each subsequent write sees the full list
+      workingProcessed = {
+        ...workingProcessed,
+        processedFiles: [...(workingProcessed.processedFiles || []), entry],
+      };
+    } catch (err) {
+      console.warn(`[meetResults] Failed to parse "${file.name}" — ${err.message} — skipping`);
+    }
+  }
+
+  if (JSON.stringify(workingRecords.records) !== originalJSON) {
+    workingRecords.lastUpdated = new Date().toISOString();
+    await writePBRecords(workingRecords);
+  }
+
+  console.log(`[meetResults] Batch complete — ${filesProcessed} PDF(s) processed, ${totalNewPBs} new PB(s) total`);
+  return { workingRecords, totalNewPBs };
+}
+
 // ── Main ──────────────────────────────────────────────────────────────────────
 
 async function runDigest() {
@@ -61,7 +146,7 @@ async function runDigest() {
 
   // ── Step 1: Fetch all data in parallel ─────────────────────────────────────
   console.log("Fetching data...");
-  const [rawEvents, rawEvents14d, emails, docs, newsletterText, nationalsData, sportsConfig, currentRecords] = await Promise.all([
+  const [rawEvents, rawEvents14d, emails, docs, newsletterText, nationalsData, sportsConfig, currentRecords, currentProcessed] = await Promise.all([
     getCalendarEvents(),
     pull14Days(),
     getActivityEmails(),
@@ -70,6 +155,7 @@ async function runDigest() {
     fetchNationalsData(),
     getSportsConfig(),
     getPBRecords(),
+    getProcessedMeets(),
   ]);
 
   console.log(`  Calendar 72h: ${rawEvents.length} events`);
@@ -80,6 +166,7 @@ async function runDigest() {
   console.log(`  Nationals:    ${nationalsData ? "✓" : "✗ fallback"}`);
   console.log(`  Sports cfg:   ${sportsConfig ? "✓" : "✗"}`);
   console.log(`  PB records:   ${currentRecords?.records?.length ?? 0} record(s)`);
+  console.log(`  Processed:    ${currentProcessed?.processedFiles?.length ?? 0} meet(s) already processed`);
   console.log();
 
   // ── Step 2: Newsletter fallback notice ─────────────────────────────────────
@@ -87,6 +174,12 @@ async function runDigest() {
     console.warn("  ⚠  Newsletter not fetched from Drive.");
     console.warn("     Wade: update 'Stonehouse Elementary School.html' in Drive with this week's newsletter.\n");
   }
+
+  // ── Step 2b: Process any new meet result PDFs ──────────────────────────────
+  const { workingRecords } = await processMeetResults(currentRecords, currentProcessed).catch(err => {
+    console.warn('[meetResults] processMeetResults failed — continuing with unmodified records:', err.message);
+    return { workingRecords: currentRecords, totalNewPBs: 0 };
+  });
 
   // ── Step 3: Build digest data model ────────────────────────────────────────
   console.log("Building digest...");
@@ -98,7 +191,7 @@ async function runDigest() {
     newsletterText,
     banner:         BANNER,
     config:         sportsConfig,
-    currentRecords,
+    currentRecords: workingRecords,
   });
 
   // Patch in sports data — builder leaves this null for index.js to fill
