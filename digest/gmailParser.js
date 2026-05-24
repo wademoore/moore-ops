@@ -24,6 +24,19 @@ export const SENDER_MAP = [
 ];
 
 // ---------------------------------------------------------------------------
+// 2. FLAG FOOTBALL EMAIL CLASSIFICATION
+// ---------------------------------------------------------------------------
+// Pure function — no side effects, exported for testing.
+// Boilerplate: weekly league emails with no actionable content (Week N).
+// Actionable: cancellations, reschedules, playoffs, or anything else unknown.
+// Default is 'actionable' — fail open rather than silently suppress.
+
+export function classifyFlagFootballEmail(subject) {
+  if (/\bweek\s+\d+\b/i.test(subject)) return 'boilerplate';
+  return 'actionable';
+}
+
+// ---------------------------------------------------------------------------
 // 4. GMAIL → gmailHits
 // ---------------------------------------------------------------------------
 
@@ -33,6 +46,10 @@ export function buildGmailHits(emails) {
     const from = email.from || '';
     for (const { pattern, key } of SENDER_MAP) {
       if (pattern.test(from) && !hits[key]) {
+        // Flag football: skip boilerplate weekly emails — only store actionable ones
+        if (key === 'flagFootball' && classifyFlagFootballEmail(email.subject || '') === 'boilerplate') {
+          break;
+        }
         hits[key] = email; // store first match per key
         break;
       }
@@ -56,8 +73,10 @@ export function buildActivityCommsLines(emails) {
 
     // Identify source
     let source = '';
+    let matchedKey = '';
     for (const { pattern, key } of SENDER_MAP) {
       if (pattern.test(from)) {
+        matchedKey = key;
         source = {
           dance:       'Dance Studio',
           swim:        '757 Swim',
@@ -71,8 +90,12 @@ export function buildActivityCommsLines(emails) {
     }
     if (!source) continue;
 
-    // Build a concise line
-    const line = `${source}: "${subject}"${snippet ? ` — ${snippet.slice(0, 80)}` : ''}`;
+    // Flag football: skip boilerplate weekly emails — only surface actionable ones
+    if (matchedKey === 'flagFootball' && classifyFlagFootballEmail(subject) === 'boilerplate') continue;
+
+    // Build a concise line — flagFootball actionable gets 120-char snippet for more context
+    const snippetLimit = matchedKey === 'flagFootball' ? 120 : 80;
+    const line = `${source}: "${subject}"${snippet ? ` — ${snippet.slice(0, snippetLimit)}` : ''}`;
     lines.push(line);
   }
 
