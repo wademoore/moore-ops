@@ -22,45 +22,12 @@ function deriveSeason(isoDate) {
     : `${year - 1}-${String(year).slice(2)}`;
 }
 
-// ── parseMeetText ─────────────────────────────────────────────────────────────
-// Accepts the full extracted text string from pdf-parse.
-// Returns { meetName, meetDate, season, results } or null if header not found.
+// ── parseColumnText ───────────────────────────────────────────────────────────
+// Processes a single-column (or pre-split column) text block.
+// Returns an array of result objects using the given meetName and meetDate.
 
-export function parseMeetText(text) {
-  if (!text) return null;
-
-  // ── 1. Extract meet metadata from first header occurrence ─────────────────
-  const headerRe = /^Results\s*\r?\n?\s*(.+?)\s+—\s+([A-Za-z]+ \d+, \d{4})/m;
-  const headerMatch = headerRe.exec(text);
-  if (!headerMatch) return null;
-
-  let meetName = headerMatch[1].trim();
-  const meetDate = new Date(headerMatch[2]).toISOString().slice(0, 10);
-  const season = deriveSeason(meetDate);
-
-  // ── 2. Check for Session line immediately after the header ─────────────────
-  const headerEnd = headerMatch.index + headerMatch[0].length;
-  const afterHeader = text.slice(headerEnd);
-  const sessionMatch = /^\s*\r?\nSession:\s+(.+?)(\s*\(|$)/m.exec(afterHeader);
-  if (sessionMatch) {
-    meetName = meetName + ' — ' + sessionMatch[1].trim();
-  }
-
-  // ── 3. Prepare text for event parsing ─────────────────────────────────────
-  // Strip SwimTopia footer lines globally
-  let cleaned = text.replace(/SwimTopia Meet Maestro.*/g, '');
-
-  // Strip all occurrences of the header pattern (globally) after the first
-  // so page-2+ headers don't create spurious event blocks
-  const headerGlobalRe = /^Results\s*\r?\n?\s*.+?\s+—\s+[A-Za-z]+ \d+, \d{4}/gm;
-  cleaned = cleaned.replace(headerGlobalRe, () => '');
-
-  // Also strip Session lines
-  cleaned = cleaned.replace(/^Session:.*$/gm, '');
-
-  const lines = cleaned.split('\n');
-
-  // ── 4. Parse event blocks and extract Moore results ───────────────────────
+function parseColumnText(columnText, meetName, meetDate) {
+  const lines = columnText.split('\n');
   const results = [];
   let currentEvent = null;
   const eventHeaderRe = /^#\d+\s+/;
@@ -139,6 +106,68 @@ export function parseMeetText(text) {
 
     // Mark next line as a potential name continuation to skip
     skipNextLine = true;
+  }
+
+  return results;
+}
+
+// ── parseMeetText ─────────────────────────────────────────────────────────────
+// Accepts the full extracted text string from pdf-parse.
+// Returns { meetName, meetDate, season, results } or null if header not found.
+
+export function parseMeetText(text) {
+  if (!text) return null;
+
+  // ── 1. Extract meet metadata from first header occurrence ─────────────────
+  const headerRe = /^Results\s*\r?\n?\s*(.+?)\s+—\s+([A-Za-z]+ \d+, \d{4})/m;
+  const headerMatch = headerRe.exec(text);
+  if (!headerMatch) return null;
+
+  let meetName = headerMatch[1].trim();
+  const meetDate = new Date(headerMatch[2]).toISOString().slice(0, 10);
+  const season = deriveSeason(meetDate);
+
+  // ── 2. Check for Session line immediately after the header ─────────────────
+  const headerEnd = headerMatch.index + headerMatch[0].length;
+  const afterHeader = text.slice(headerEnd);
+  const sessionMatch = /^\s*\r?\nSession:\s+(.+?)(\s*\(|$)/m.exec(afterHeader);
+  if (sessionMatch) {
+    meetName = meetName + ' — ' + sessionMatch[1].trim();
+  }
+
+  // ── 3. Prepare text for event parsing ─────────────────────────────────────
+  // Strip SwimTopia footer lines globally
+  let cleaned = text.replace(/SwimTopia Meet Maestro.*/g, '');
+
+  // Strip all occurrences of the header pattern (globally) after the first
+  // so page-2+ headers don't create spurious event blocks
+  const headerGlobalRe = /^Results\s*\r?\n?\s*.+?\s+—\s+[A-Za-z]+ \d+, \d{4}/gm;
+  cleaned = cleaned.replace(headerGlobalRe, () => '');
+
+  // Also strip Session lines
+  cleaned = cleaned.replace(/^Session:.*$/gm, '');
+
+  // ── 4. Detect two-column layout and dispatch ──────────────────────────────
+  let splitCol = -1;
+  for (const line of cleaned.split('\n')) {
+    const matches = [...line.matchAll(/#\d+\s+/g)];
+    if (matches.length >= 2 && matches[1].index >= 20) {
+      splitCol = matches[1].index;
+      break;
+    }
+  }
+
+  let results;
+  if (splitCol === -1) {
+    results = parseColumnText(cleaned, meetName, meetDate);
+  } else {
+    const cleanedLines = cleaned.split('\n');
+    const leftText  = cleanedLines.map(l => l.slice(0, splitCol)).join('\n');
+    const rightText = cleanedLines.map(l => l.slice(splitCol)).join('\n');
+    results = [
+      ...parseColumnText(leftText,  meetName, meetDate),
+      ...parseColumnText(rightText, meetName, meetDate),
+    ];
   }
 
   return { meetName, meetDate, season, results };

@@ -320,3 +320,67 @@ describe('mergePBUpdates', () => {
     assert.equal(updatedRecords[0].points,  5, 'Points updated from result');
   });
 });
+
+// ── parseMeetText — Poppler two-column layout ─────────────────────────────────
+
+// Poppler -layout two-column output.
+// '#3 Boys 7-8 25m Freestyle' (25 chars, index 0–24) + 25 spaces → #9 at index 50.
+// Right-column-only rows are padded with 50 leading spaces.
+const POPPLER_TWO_COL_TEXT = `Results                                  2024 Seastars at Wellington Waves — Jul 15, 2024
+#3 Boys 7-8 25m Freestyle                         #9 Girls 6 & Under 25m Back
+1  Moore, Myles  7  WT  NT  44.29  5
+-- Moore, Myles  7  WT  NT  46.10
+                                                  -- Moore, Ophelia  6  WT  NT  22.50
+                                                  3  Smith, Emma  8  WC  NT  28.50  3
+`;
+
+describe('parseMeetText — Poppler two-column layout', () => {
+  it('28. parses two-column meet name correctly', () => {
+    const result = parseMeetText(POPPLER_TWO_COL_TEXT);
+    assert.ok(result !== null, 'result should not be null');
+    assert.equal(result.meetName, '2024 Seastars at Wellington Waves');
+  });
+
+  it('29. parses two-column meet date as ISO string "2024-07-15"', () => {
+    const result = parseMeetText(POPPLER_TWO_COL_TEXT);
+    assert.ok(result !== null);
+    assert.equal(result.meetDate, '2024-07-15');
+  });
+
+  it('30. left-column Myles result has correct event "25m Freestyle"', () => {
+    const result = parseMeetText(POPPLER_TWO_COL_TEXT);
+    assert.ok(result !== null);
+    const r = result.results.find(x => x.swimmer === 'myles' && x.time === '44.29');
+    assert.ok(r, 'Myles 44.29 result missing');
+    assert.equal(r.event, '25m Freestyle');
+  });
+
+  it('31. right-column Ophelia result has correct event "25m Back"', () => {
+    const result = parseMeetText(POPPLER_TWO_COL_TEXT);
+    assert.ok(result !== null);
+    const r = result.results.find(x => x.swimmer === 'ophelia');
+    assert.ok(r, 'Ophelia result missing');
+    assert.equal(r.event, '25m Back');
+  });
+
+  it('32. ignores right-column Smith row (wrong team WC)', () => {
+    const result = parseMeetText(POPPLER_TWO_COL_TEXT);
+    assert.ok(result !== null);
+    const smithResult = result.results.find(r => r.time === '28.50');
+    assert.equal(smithResult, undefined, 'Smith/WC row should not appear in results');
+  });
+
+  it('33. total results count is 3 (Myles 44.29, Myles 46.10, Ophelia 22.50)', () => {
+    const result = parseMeetText(POPPLER_TWO_COL_TEXT);
+    assert.ok(result !== null);
+    assert.equal(result.results.length, 3, `Expected 3 results, got ${result.results.length}`);
+  });
+
+  it('34. left-column unscored Myles 46.10 has points null', () => {
+    const result = parseMeetText(POPPLER_TWO_COL_TEXT);
+    assert.ok(result !== null);
+    const r = result.results.find(x => x.swimmer === 'myles' && x.time === '46.10');
+    assert.ok(r, 'Myles 46.10 result missing');
+    assert.equal(r.points, null);
+  });
+});
