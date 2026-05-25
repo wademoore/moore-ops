@@ -413,3 +413,44 @@ describe('extractEventName', () => {
     assert.equal(extractEventName('50m Freestyle  1:23.45'), '50m Freestyle');
   });
 });
+
+// ── parseMeetText — page break handling ──────────────────────────────────────
+
+// Two-column meet split across a page break.
+// Page 1: two-col header (#3 at col 0, #9 at col 50); Myles in left col (char 3);
+//         Smith in right col (WC — ignored); SwimTopia footer acts as page delimiter.
+// Page 2: repeated Results header (stripped); Ophelia in right col (char 53),
+//         event carried over from page 1 (#9 Girls 6 & Under 25m Back).
+const PAGE_BREAK_TEXT = `Results 2025 Kingswood Klams at Wellington Waves — Jun 30, 2025
+#3 Boys 7-8 25m Freestyle                         #9 Girls 6 & Under 25m Back
+1  Moore, Myles  7  WT  NT  44.29  5              2  Smith, Emma  8  WC  NT  28.50  3
+SwimTopia Meet Maestro™ Download the SwimTopia Mobile App...    Printed 06/30/25 07:00 PM
+Results                    2025 Kingswood Klams at Wellington Waves — Jun 30, 2025
+                                                  -- Moore, Ophelia  6  WT  NT  22.50
+`;
+
+describe('parseMeetText — page break handling', () => {
+  it('40. page-break: Myles result on page 1 left column parsed correctly', () => {
+    const result = parseMeetText(PAGE_BREAK_TEXT);
+    assert.ok(result !== null, 'result should not be null');
+    const r = result.results.find(x => x.swimmer === 'myles');
+    assert.ok(r, 'Myles result missing');
+    assert.equal(r.event, '25m Freestyle');
+    assert.equal(r.time,  '44.29');
+  });
+
+  it('41. page-break: Ophelia result on page 2 right column — event carried from page 1', () => {
+    const result = parseMeetText(PAGE_BREAK_TEXT);
+    assert.ok(result !== null);
+    const r = result.results.find(x => x.swimmer === 'ophelia');
+    assert.ok(r, 'Ophelia result missing');
+    assert.equal(r.event, '25m Back');
+    assert.equal(r.time,  '22.50');
+  });
+
+  it('42. page-break: exactly 2 results total (Smith/WC ignored)', () => {
+    const result = parseMeetText(PAGE_BREAK_TEXT);
+    assert.ok(result !== null);
+    assert.equal(result.results.length, 2, `Expected 2 results, got ${result.results.length}`);
+  });
+});

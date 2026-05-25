@@ -74,160 +74,166 @@ export function parseMeetText(text) {
   }
 
   // ── 3. Prepare text for event parsing ─────────────────────────────────────
-  // Strip SwimTopia footer lines globally
-  let cleaned = text.replace(/SwimTopia Meet Maestro.*/g, '');
-
-  // Strip all occurrences of the header pattern (globally) after the first
-  // so page-2+ headers don't create spurious event blocks
+  // Strip all occurrences of the header pattern (globally) so page-N headers
+  // don't create spurious event blocks. Footer lines are kept as page delimiters.
   const headerGlobalRe = /^Results\s*\r?\n?\s*.+?\s+—\s+[A-Za-z]+ \d+, \d{4}/gm;
-  cleaned = cleaned.replace(headerGlobalRe, () => '');
+  let cleaned = text.replace(headerGlobalRe, () => '');
 
   // Also strip Session lines
   cleaned = cleaned.replace(/^Session:.*$/gm, '');
 
-  // ── 4. Pre-scan for two-column split point ────────────────────────────────
-  let splitCol = -1;
-  for (const scanLine of cleaned.split('\n')) {
-    const m = [...scanLine.matchAll(/#\d+\s+/g)];
-    if (m.length >= 2 && m[1].index >= 20) {
-      splitCol = m[1].index;
-      break;
-    }
-  }
+  // Split into pages at the SwimTopia footer line — boundary preserved so
+  // splitCol can be re-detected per page.
+  const pages = cleaned.split(/[^\n]*SwimTopia Meet Maestro[^\n]*\n?/);
 
-  // ── 5. Single loop — dual event state ─────────────────────────────────────
-  const results    = [];
-  let leftEvent    = null;
-  let rightEvent   = null;
-  let skipNextLine = false;
+  // ── 4. Page-aware loop — event state and splitCol carry across pages ───────
+  const results       = [];
+  let leftEvent       = null;
+  let rightEvent      = null;
+  let splitCol        = -1;
   const eventHeaderRe = /^#\d+\s+/;
 
-  for (const raw of cleaned.split('\n')) {
-    const line = raw.trimStart();
+  for (const page of pages) {
+    const pageLines  = page.split('\n');
+    let skipNextLine = false;
 
-    // Name-continuation skip (unchanged behaviour)
-    if (skipNextLine) {
-      skipNextLine = false;
-      if (/^[A-Za-z]/.test(line) && !/\d/.test(line) && !eventHeaderRe.test(line)) {
-        continue;
+    // Re-detect splitCol from the first two-column header on this page;
+    // if none found, the value from the previous page carries forward.
+    for (const scanLine of pageLines) {
+      const m = [...scanLine.matchAll(/#\d+\s+/g)];
+      if (m.length >= 2 && m[1].index >= 20) {
+        splitCol = m[1].index;
+        break;
       }
     }
 
-    // Two-event header — update both left and right event state
-    const headerMatches = [...raw.matchAll(/#\d+\s+/g)];
-    if (headerMatches.length >= 2 && headerMatches[1].index >= 20) {
-      const leftRest  = raw.slice(
-        headerMatches[0].index + headerMatches[0][0].length,
-        headerMatches[1].index,
-      ).trim();
-      const rightRest = raw.slice(
-        headerMatches[1].index + headerMatches[1][0].length,
-      ).trim();
-      leftEvent  = extractEventName(leftRest);
-      rightEvent = extractEventName(rightRest);
-      continue;
-    }
+    for (const raw of pageLines) {
+      const line = raw.trimStart();
 
-    // Single-event header — left column only, rightEvent unchanged
-    if (eventHeaderRe.test(line)) {
-      const rest = line.replace(/^#\d+\s+/, '').trim();
-      leftEvent = extractEventName(rest);
-      continue;
-    }
-
-    // Result rows — scan for all Moore, occurrences in this line
-    if (!raw.includes('Moore,')) continue;
-
-    // Character positions of every 'Moore,' in the raw line
-    const moorePositions = [];
-    let searchPos = 0;
-    let found;
-    while ((found = raw.indexOf('Moore,', searchPos)) !== -1) {
-      moorePositions.push(found);
-      searchPos = found + 1;
-    }
-
-    // Tokenise full line
-    const tokens = raw.trim().split(/\s+/);
-    if (raw.includes('Moore,')) console.log(`[debug] Moore line: ${JSON.stringify(raw.trim())} | tokens: ${JSON.stringify(tokens)} | splitCol: ${splitCol}`);
-
-    // Token indices where tokens[j] starts with 'Moore,'
-    const mooreTokenIndices = [];
-    for (let i = 0; i < tokens.length; i++) {
-      if (tokens[i].startsWith('Moore,')) mooreTokenIndices.push(i);
-    }
-
-    let pushedAny = false;
-
-    for (let k = 0; k < mooreTokenIndices.length; k++) {
-      const j       = mooreTokenIndices[k];
-      const charPos = moorePositions[k];
-      if (charPos === undefined) continue;
-
-      // Column assignment: right if splitCol set and Moore, starts past it
-      const isRight = splitCol !== -1 && charPos >= splitCol;
-      const event   = isRight ? rightEvent : leftEvent;
-      if (!event) continue;
-
-      // Need placement token before Moore,
-      if (j < 1) continue;
-
-      // X prefix guard
-      if (tokens[j - 1] === 'X') continue;
-
-      // EXH guard — scoped to this entry's token window
-      if (tokens.slice(Math.max(0, j - 1), j + 8).includes('EXH')) continue;
-
-      // Team guard
-      if (tokens[j + 3] !== 'WT') continue;
-
-      // Official time
-      const officialTime = tokens[j + 5];
-      if (!officialTime || officialTime === 'DQ' || officialTime === 'NS') continue;
-      if (timeToSeconds(officialTime) === null) continue;
-
-      // Swimmer
-      const firstName = tokens[j + 1]?.toLowerCase();
-      let swimmer;
-      if (firstName === 'myles') {
-        swimmer = 'myles';
-      } else if (firstName === 'ophelia') {
-        swimmer = 'ophelia';
-      } else {
-        continue;
-      }
-
-      // Points — with comma guard against two-column leakage
-      // If the token after the points candidate looks like a last name (contains
-      // ','), it is a right-column entry's placement that leaked into the points
-      // slot — treat points as null.
-      let points = null;
-      const pointsCandidate = tokens[j + 6];
-      if (pointsCandidate !== undefined) {
-        const commaGuard = splitCol !== -1
-          && tokens[j + 7] !== undefined
-          && tokens[j + 7].includes(',');
-        if (!commaGuard) {
-          const p = parseInt(pointsCandidate, 10);
-          if (!isNaN(p) && String(p) === pointsCandidate && p >= 1 && p <= 48) {
-            points = p;
-          }
+      // Name-continuation skip (unchanged behaviour)
+      if (skipNextLine) {
+        skipNextLine = false;
+        if (/^[A-Za-z]/.test(line) && !/\d/.test(line) && !eventHeaderRe.test(line)) {
+          continue;
         }
       }
 
-      results.push({
-        swimmer,
-        event,
-        course:  'SCM',
-        time:    officialTime,
-        points,
-        dateset: meetDate,
-        meet:    meetName,
-      });
-      pushedAny = true;
-    }
+      // Two-event header — update both left and right event state
+      const headerMatches = [...raw.matchAll(/#\d+\s+/g)];
+      if (headerMatches.length >= 2 && headerMatches[1].index >= 20) {
+        const leftRest  = raw.slice(
+          headerMatches[0].index + headerMatches[0][0].length,
+          headerMatches[1].index,
+        ).trim();
+        const rightRest = raw.slice(
+          headerMatches[1].index + headerMatches[1][0].length,
+        ).trim();
+        leftEvent  = extractEventName(leftRest);
+        rightEvent = extractEventName(rightRest);
+        continue;
+      }
 
-    if (pushedAny) skipNextLine = true;
+      // Single-event header — left column only, rightEvent unchanged
+      if (eventHeaderRe.test(line)) {
+        const rest = line.replace(/^#\d+\s+/, '').trim();
+        leftEvent = extractEventName(rest);
+        continue;
+      }
+
+      // Result rows — scan for all Moore, occurrences in this line
+      if (!raw.includes('Moore,')) continue;
+
+      // Character positions of every 'Moore,' in the raw line
+      const moorePositions = [];
+      let searchPos = 0;
+      let found;
+      while ((found = raw.indexOf('Moore,', searchPos)) !== -1) {
+        moorePositions.push(found);
+        searchPos = found + 1;
+      }
+
+      // Tokenise full line
+      const tokens = raw.trim().split(/\s+/);
+      if (raw.includes('Moore,')) console.log(`[debug] Moore line: ${JSON.stringify(raw.trim())} | tokens: ${JSON.stringify(tokens)} | splitCol: ${splitCol}`);
+
+      // Token indices where tokens[j] starts with 'Moore,'
+      const mooreTokenIndices = [];
+      for (let i = 0; i < tokens.length; i++) {
+        if (tokens[i].startsWith('Moore,')) mooreTokenIndices.push(i);
+      }
+
+      let pushedAny = false;
+
+      for (let k = 0; k < mooreTokenIndices.length; k++) {
+        const j       = mooreTokenIndices[k];
+        const charPos = moorePositions[k];
+        if (charPos === undefined) continue;
+
+        // Column assignment: right if splitCol set and Moore, starts past it
+        const isRight = splitCol !== -1 && charPos >= splitCol;
+        const event   = isRight ? rightEvent : leftEvent;
+        if (!event) continue;
+
+        // Need placement token before Moore,
+        if (j < 1) continue;
+
+        // X prefix guard
+        if (tokens[j - 1] === 'X') continue;
+
+        // EXH guard — scoped to this entry's token window
+        if (tokens.slice(Math.max(0, j - 1), j + 8).includes('EXH')) continue;
+
+        // Team guard
+        if (tokens[j + 3] !== 'WT') continue;
+
+        // Official time
+        const officialTime = tokens[j + 5];
+        if (!officialTime || officialTime === 'DQ' || officialTime === 'NS') continue;
+        if (timeToSeconds(officialTime) === null) continue;
+
+        // Swimmer
+        const firstName = tokens[j + 1]?.toLowerCase();
+        let swimmer;
+        if (firstName === 'myles') {
+          swimmer = 'myles';
+        } else if (firstName === 'ophelia') {
+          swimmer = 'ophelia';
+        } else {
+          continue;
+        }
+
+        // Points — with comma guard against two-column leakage
+        // If the token after the points candidate looks like a last name (contains
+        // ','), it is a right-column entry's placement that leaked into the points
+        // slot — treat points as null.
+        let points = null;
+        const pointsCandidate = tokens[j + 6];
+        if (pointsCandidate !== undefined) {
+          const commaGuard = splitCol !== -1
+            && tokens[j + 7] !== undefined
+            && tokens[j + 7].includes(',');
+          if (!commaGuard) {
+            const p = parseInt(pointsCandidate, 10);
+            if (!isNaN(p) && String(p) === pointsCandidate && p >= 1 && p <= 48) {
+              points = p;
+            }
+          }
+        }
+
+        results.push({
+          swimmer,
+          event,
+          course:  'SCM',
+          time:    officialTime,
+          points,
+          dateset: meetDate,
+          meet:    meetName,
+        });
+        pushedAny = true;
+      }
+
+      if (pushedAny) skipNextLine = true;
+    }
   }
 
   return { meetName, meetDate, season, results };
