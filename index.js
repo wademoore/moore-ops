@@ -28,6 +28,7 @@ import { getFamilyDocs,
 import { buildDigest }                         from "./digest/builder.js";
 import { fetchNationalsData }                  from "./digest/nationalsParser.js";
 import { parseMeetText, mergePBUpdates }       from "./digest/meetResultsParser.js";
+import { reconstructTextFromTextract }         from "./digest/textractParser.js";
 
 // ── Renderers ─────────────────────────────────────────────────────────────────
 import { renderEmail, emailSubject }           from "./render/email.js";
@@ -78,6 +79,10 @@ async function processMeetResults(currentRecords, currentProcessed) {
   // Oldest first so batch PB comparisons are chronologically ordered
   unprocessed.sort((a, b) => new Date(a.createdTime) - new Date(b.createdTime));
 
+  // Lazy-loaded when the first PDF is encountered — not available locally
+  let textractMod    = null;
+  let textractClient = null;
+
   const workingRecords  = { ...currentRecords, records: [...(currentRecords.records || [])] };
   const originalJSON    = JSON.stringify(workingRecords.records);
   let workingProcessed  = currentProcessed;
@@ -94,13 +99,20 @@ async function processMeetResults(currentRecords, currentProcessed) {
       }
 
       const buffer = await fetchFileAsBuffer(file.id);
-      const text = isTxt
-        ? buffer.toString('utf8')
-        : null;
-
-      if (!text) {
-        console.warn(`[meetResults] Skipping "${file.name}" — PDF parsing not supported, use txt instead`);
-        continue;
+      let text;
+      if (isTxt) {
+        text = buffer.toString('utf8');
+      } else {
+        // @aws-sdk/client-textract is available in the Lambda Node 24 runtime without
+        // installing — do NOT add to package.json, it is not available locally.
+        if (!textractMod) {
+          textractMod    = await import('@aws-sdk/client-textract');
+          textractClient = new textractMod.TextractClient({});
+        }
+        const response = await textractClient.send(
+          new textractMod.DetectDocumentTextCommand({ Document: { Bytes: buffer } })
+        );
+        text = reconstructTextFromTextract(response.Blocks);
       }
 
       const meetData = parseMeetText(text);

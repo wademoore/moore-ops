@@ -50,9 +50,12 @@
 
 ## Meet results PDF processing (as of May 2026)
 - `digest/meetResultsParser.js` — parses SwimTopia Meet Maestro PDF text, extracts Moore family results, merges PB updates against stored records (pure functions, no Drive I/O)
+- `digest/textractParser.js` — reconstructs plain text from AWS Textract `DetectDocumentText` LINE blocks; used by `processMeetResults()` for PDFs before handing off to `parseMeetText`
 - Meet PDFs uploaded manually to `moore-ops-meet-results` folder (`DRIVE_MEET_RESULTS_FOLDER_ID`)
 - Processed file tracking → `processed-meets.json` (`DRIVE_PROCESSED_MEETS_FILE_ID`) in `moore-ops-data/` folder
 - PDF processing runs in `processMeetResults()` (local function in `index.js`) between the parallel data fetch and `buildDigest`
+- `@aws-sdk/client-textract` is available in the Lambda Node 24 runtime — NOT in `node_modules` locally; it is lazy-loaded via `await import()` only when a PDF is encountered
+- **IAM required:** Lambda execution role must have `textract:DetectDocumentText` permission — add manually in AWS Console before uploading PDFs
 - New env vars: `DRIVE_MEET_RESULTS_FOLDER_ID`, `DRIVE_PROCESSED_MEETS_FILE_ID`
 
 **Warning:** If `processed-meets.json` is deleted from Drive, create a new empty file with `{ "version": 1, "processedFiles": [] }`, update `DRIVE_PROCESSED_MEETS_FILE_ID` in `.env` and Lambda config, then re-upload all meet PDFs — the next Lambda run will reprocess them all (Phase A backfill behavior is automatic).
