@@ -124,6 +124,7 @@ export function parseMeetText(text) {
 
     // Tokenise full line
     const tokens = raw.trim().split(/\s+/);
+    if (raw.includes('Moore,')) console.log(`[debug] Moore line: ${JSON.stringify(raw.trim())} | tokens: ${JSON.stringify(tokens)} | splitCol: ${splitCol}`);
 
     // Token indices where tokens[j] starts with 'Moore,'
     const mooreTokenIndices = [];
