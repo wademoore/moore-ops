@@ -28,7 +28,6 @@ import { getFamilyDocs,
 import { buildDigest }                         from "./digest/builder.js";
 import { fetchNationalsData }                  from "./digest/nationalsParser.js";
 import { parseMeetText, mergePBUpdates }       from "./digest/meetResultsParser.js";
-import { reconstructTextFromTextract }         from "./digest/textractParser.js";
 
 // ── Renderers ─────────────────────────────────────────────────────────────────
 import { renderEmail, emailSubject }           from "./render/email.js";
@@ -59,9 +58,9 @@ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
 const BANNER = null;
 
 // ── Meet results processor ────────────────────────────────────────────────────
-// Checks for new PDFs in the meet results folder, parses them, and updates
+// Checks for new txt files in the meet results folder, parses them, and updates
 // pb-records.json. Runs between the parallel fetch and buildDigest so the
-// digest email reflects newly detected PBs. Never throws — a failed PDF parse
+// digest email reflects newly detected PBs. Never throws — a failed parse
 // is logged and skipped; the digest pipeline continues regardless.
 
 async function processMeetResults(currentRecords, currentProcessed) {
@@ -72,16 +71,12 @@ async function processMeetResults(currentRecords, currentProcessed) {
   const unprocessed  = allFiles.filter(f => !processedIds.has(f.id));
 
   if (unprocessed.length === 0) {
-    console.log('[meetResults] No new meet PDFs — skipping');
+    console.log('[meetResults] No new meet files — skipping');
     return { workingRecords: currentRecords, totalNewPBs: 0 };
   }
 
   // Oldest first so batch PB comparisons are chronologically ordered
   unprocessed.sort((a, b) => new Date(a.createdTime) - new Date(b.createdTime));
-
-  // Lazy-loaded when the first PDF is encountered — not available locally
-  let textractMod    = null;
-  let textractClient = null;
 
   const workingRecords  = { ...currentRecords, records: [...(currentRecords.records || [])] };
   const originalJSON    = JSON.stringify(workingRecords.records);
@@ -91,29 +86,13 @@ async function processMeetResults(currentRecords, currentProcessed) {
 
   for (const file of unprocessed) {
     try {
-      const isPdf = file.name.toLowerCase().endsWith('.pdf');
-      const isTxt = file.name.toLowerCase().endsWith('.txt');
-      if (!isPdf && !isTxt) {
+      if (!file.name.toLowerCase().endsWith('.txt')) {
         console.log(`[meetResults] Skipping "${file.name}" — unsupported file type`);
         continue;
       }
 
       const buffer = await fetchFileAsBuffer(file.id);
-      let text;
-      if (isTxt) {
-        text = buffer.toString('utf8');
-      } else {
-        // @aws-sdk/client-textract is available in the Lambda Node 24 runtime without
-        // installing — do NOT add to package.json, it is not available locally.
-        if (!textractMod) {
-          textractMod    = await import('@aws-sdk/client-textract');
-          textractClient = new textractMod.TextractClient({});
-        }
-        const response = await textractClient.send(
-          new textractMod.DetectDocumentTextCommand({ Document: { Bytes: buffer } })
-        );
-        text = reconstructTextFromTextract(response.Blocks);
-      }
+      const text   = buffer.toString('utf8');
 
       const meetData = parseMeetText(text);
       if (!meetData) {
@@ -154,7 +133,7 @@ async function processMeetResults(currentRecords, currentProcessed) {
     await writePBRecords(workingRecords);
   }
 
-  console.log(`[meetResults] Batch complete — ${filesProcessed} PDF(s) processed, ${totalNewPBs} new PB(s) total`);
+  console.log(`[meetResults] Batch complete — ${filesProcessed} file(s) processed, ${totalNewPBs} new PB(s) total`);
   return { workingRecords, totalNewPBs };
 }
 
