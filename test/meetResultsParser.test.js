@@ -13,7 +13,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseMeetText, mergePBUpdates } from '../digest/meetResultsParser.js';
+import { parseMeetText, mergePBUpdates, extractEventName } from '../digest/meetResultsParser.js';
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -384,5 +384,32 @@ describe('parseMeetText — Poppler two-column layout', () => {
     const r = result.results.find(x => x.swimmer === 'myles' && x.time === '46.10');
     assert.ok(r, 'Myles 46.10 result missing');
     assert.equal(r.points, null);
+  });
+});
+
+// ── extractEventName ──────────────────────────────────────────────────────────
+
+describe('extractEventName', () => {
+  it('35. clean event name passes through unchanged', () => {
+    assert.equal(extractEventName('25m Freestyle'), '25m Freestyle');
+  });
+
+  it('36. gender/age prefix stripped', () => {
+    assert.equal(extractEventName('Boys 7-8 25m Freestyle'), '25m Freestyle');
+  });
+
+  it('37. truncates at placement number (digit-space-uppercase)', () => {
+    assert.equal(
+      extractEventName('25m Freestyle 1 Montgomery, Gavin 8 PS'),
+      '25m Freestyle',
+    );
+  });
+
+  it('38. truncates at column header "Pl "', () => {
+    assert.equal(extractEventName('100m IM Pl Name Age Team'), '100m IM');
+  });
+
+  it('39. truncates at double-space-digit', () => {
+    assert.equal(extractEventName('50m Freestyle  1:23.45'), '50m Freestyle');
   });
 });

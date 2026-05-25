@@ -22,6 +22,32 @@ function deriveSeason(isoDate) {
     : `${year - 1}-${String(year).slice(2)}`;
 }
 
+// ── Module-level regex constants ───────────────────────────────────────────────
+
+// Strips the leading "Boys/Girls/Men/Women <age-group> " from an event-name
+// string. Uses a lookahead for the distance pattern (25m, 50m, etc.) to handle
+// hyphenated age groups (7-8, 9-10) that a plain capture group can't match.
+const agePrefixRe = /^(?:Boys|Girls|Men|Women)\s+.+?\s+(?=\d+m)/i;
+
+// Matches the start of result-row data that can contaminate an event name when
+// Poppler places result rows on the same line as an event header:
+//   \d [A-Z]  — placement number (e.g. "1 M" from "1 Montgomery")
+//   Pl        — column-header token "Pl Name Age Team ..."
+//   Age       — column-header token "Age Team ..."
+//   \s{2,}\d  — heavy whitespace padding before a seed/time value
+const truncateRe = /\d [A-Z]|Pl |Age |\s{2,}\d/;
+
+// ── extractEventName ───────────────────────────────────────────────────────────
+// Accepts the text after stripping a "#N " prefix (caller should trim first).
+// Strips the gender/age prefix, truncates at the first result-row boundary,
+// and returns the clean event name.
+
+export function extractEventName(str) {
+  let s = str.replace(agePrefixRe, '');
+  const cut = s.search(truncateRe);
+  if (cut !== -1) s = s.slice(0, cut);
+  return s.trim();
+}
 
 // ── parseMeetText ─────────────────────────────────────────────────────────────
 // Accepts the full extracted text string from pdf-parse.
@@ -75,7 +101,6 @@ export function parseMeetText(text) {
   let rightEvent   = null;
   let skipNextLine = false;
   const eventHeaderRe = /^#\d+\s+/;
-  const agePrefixRe   = /^(?:Boys|Girls|Men|Women)\s+.+?\s+(?=\d+m)/i;
 
   for (const raw of cleaned.split('\n')) {
     const line = raw.trimStart();
@@ -98,15 +123,15 @@ export function parseMeetText(text) {
       const rightRest = raw.slice(
         headerMatches[1].index + headerMatches[1][0].length,
       ).trim();
-      leftEvent  = leftRest.replace(agePrefixRe,  '').trim();
-      rightEvent = rightRest.replace(agePrefixRe, '').trim();
+      leftEvent  = extractEventName(leftRest);
+      rightEvent = extractEventName(rightRest);
       continue;
     }
 
     // Single-event header — left column only, rightEvent unchanged
     if (eventHeaderRe.test(line)) {
       const rest = line.replace(/^#\d+\s+/, '').trim();
-      leftEvent = rest.replace(agePrefixRe, '').trim();
+      leftEvent = extractEventName(rest);
       continue;
     }
 
