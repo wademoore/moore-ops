@@ -35,7 +35,7 @@ const agePrefixRe = /^(?:Boys|Girls|Men|Women)\s+.+?\s+(?=\d+m)/i;
 //   Pl        — column-header token "Pl Name Age Team ..."
 //   Age       — column-header token "Age Team ..."
 //   \s{2,}\d  — heavy whitespace padding before a seed/time value
-const truncateRe = /\d [A-Z]|Pl |Age |\s{2,}\d/;
+const truncateRe = /\d [A-Z]|Pl |Age |\s{2,}\d|\s{2,}X |\s{2,}--/;
 
 // ── extractEventName ───────────────────────────────────────────────────────────
 // Accepts the text after stripping a "#N " prefix (caller should trim first).
