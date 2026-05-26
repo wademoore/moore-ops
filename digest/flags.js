@@ -188,7 +188,7 @@ const EVALUATORS = [
   // Registration decision pending. Conflicts with Cowboys rain date June 14.
   // Flag until registration decision is confirmed.
   (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-19', '2026-06-11')) return null;
+    if (!inWindow(ctx.today, '2026-05-19', '2026-05-26')) return null;
     const days = daysUntil(ctx.today, '2026-06-11');
     return {
       id: 'commonwealth-games-decision',
