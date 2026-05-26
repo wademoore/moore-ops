@@ -26,6 +26,25 @@ export function dedupeById(events) {
   });
 }
 
+// ── Single-calendar pull — used by weeklyPrioritiesParser and future parsers ─
+
+export async function fetchCalendarEvents(auth, calendarId, timeMin, timeMax) {
+  const cal = calendar({ version: 'v3', auth });
+  try {
+    const res = await cal.events.list({
+      calendarId,
+      timeMin,
+      timeMax,
+      singleEvents: true,
+      orderBy: 'startTime',
+    });
+    return res.data.items || [];
+  } catch (err) {
+    console.warn(`[calendar:fetchCalendarEvents] Could not load "${calendarId}" — ${err.message}`);
+    return [];
+  }
+}
+
 // ── Core pull function — shared by both exports ────────────────────────────
 
 async function pullCalendarEvents(hoursAhead) {

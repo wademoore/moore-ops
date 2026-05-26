@@ -184,6 +184,50 @@ function tickerLogo(url, active) {
 }
 
 // ---------------------------------------------------------------------------
+// 3.5. WEEKLY PRIORITIES SECTION
+// ---------------------------------------------------------------------------
+
+function renderWeeklyPriorities(weeklyPriorities) {
+  const wp = weeklyPriorities || { active: [], completed: [], overdue: [] };
+  const { active, completed, overdue } = wp;
+
+  if (active.length === 0 && completed.length === 0 && overdue.length === 0) {
+    return `<div style="color:rgba(255,255,255,.3);font-size:18px;margin-top:8px;">No priorities set for this week.</div>`;
+  }
+
+  const parts = [];
+  parts.push(`<div class="section-hdr">Weekly Priorities</div>`);
+
+  for (const item of overdue) {
+    parts.push(`
+<div style="background:rgba(186,117,23,.15);border:1px solid rgba(186,117,23,.35);border-radius:8px;padding:10px 14px;margin-bottom:6px;">
+  <div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:4px;">${item.title}</div>
+  <div style="font-size:15px;color:rgba(255,255,255,.45);">${item.assignee} · ${item.daysOverdue} day${item.daysOverdue === 1 ? '' : 's'} overdue</div>
+</div>`.trim());
+  }
+
+  for (const item of active) {
+    const subLine = item.dueDay
+      ? `${item.assignee} · Due ${item.dueDay}`
+      : item.assignee;
+    parts.push(`
+<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07);">
+  <div style="font-size:22px;color:rgba(255,255,255,.85);margin-bottom:2px;">${item.title}</div>
+  <div style="font-size:15px;color:rgba(255,255,255,.38);">${subLine}</div>
+</div>`.trim());
+  }
+
+  if (completed.length > 0) {
+    parts.push(`<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.28);margin:8px 0 4px;">COMPLETED THIS WEEK (${completed.length})</div>`);
+    for (const item of completed) {
+      parts.push(`<div style="font-size:18px;color:rgba(255,255,255,.3);">${item.title}</div>`);
+    }
+  }
+
+  return parts.join('\n');
+}
+
+// ---------------------------------------------------------------------------
 // 4. TODAY CARD
 // ---------------------------------------------------------------------------
 
@@ -242,6 +286,9 @@ function renderTodayCard(digestData) {
 </div>`);
     });
   }
+
+  // ── WEEKLY PRIORITIES ─────────────────────────────────────────────────────
+  parts.push(renderWeeklyPriorities(digestData.weeklyPriorities || { active: [], completed: [], overdue: [] }));
 
   // ── SCHOOL ROTATION STRIP ─────────────────────────────────────────────────
   if (schoolStrip) {

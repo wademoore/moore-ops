@@ -31,6 +31,7 @@
  *   activityComms:   string[]
  *   newsletterItems: string[]
  *   banner:          object|null
+ *   weeklyPriorities: WeeklyPrioritiesData  (additive — see weeklyPrioritiesParser.js)
  * }
  *
  * DigestDay {
@@ -54,6 +55,7 @@ import { midnight, daysBetween, toDateKey, parseEventDate, normalizeEvent } from
 import { parseAthleticsDoc, buildEmptyAthletics } from './athleticsParser.js';
 import { buildGmailHits, buildActivityCommsLines } from './gmailParser.js';
 import { parseNewsletterItems } from './newsletterParser.js';
+import { parseWeeklyPriorities } from './weeklyPrioritiesParser.js';
 import { updatePBRecords } from '../drive.js';
 
 // ---------------------------------------------------------------------------
@@ -344,6 +346,15 @@ export async function buildDigest({ rawEvents, emails, docs, newsletterText, ban
     athletics.thisWeekTime      = '3:00 PM';
   }
 
+  // ── 12.5. Weekly priorities ──────────────────────────────────────────────
+  let weeklyPriorities = { active: [], completed: [], overdue: [] };
+  try {
+    const wpResult = await parseWeeklyPriorities();
+    weeklyPriorities = wpResult.weeklyPriorities;
+  } catch (err) {
+    console.warn('[builder:buildDigest] weeklyPriorities fetch failed — continuing:', err.message);
+  }
+
   // ── 13. Bag prep look-ahead warnings ────────────────────────────────────
   const bagPrepWarnings = buildBagPrepLookahead(allResolved, today);
   // Merge with school rotation tomorrow warnings for the school strip
@@ -377,5 +388,6 @@ export async function buildDigest({ rawEvents, emails, docs, newsletterText, ban
     activityComms,
     newsletterItems,
     banner,
+    weeklyPriorities,
   };
 }

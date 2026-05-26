@@ -319,6 +319,51 @@ function renderActivityComms(activityComms, newsletterItems) {
 }
 
 // ---------------------------------------------------------------------------
+// 6.5. WEEKLY PRIORITIES SECTION
+// ---------------------------------------------------------------------------
+
+function renderWeeklyPriorities(weeklyPriorities) {
+  const wp = weeklyPriorities || { active: [], completed: [], overdue: [] };
+  const { active, completed, overdue } = wp;
+
+  const inner = [];
+  inner.push(sectionLabel('Weekly Priorities'));
+
+  if (active.length === 0 && completed.length === 0 && overdue.length === 0) {
+    inner.push(`<p style="font-size:12px;color:${C.muted};margin:0;font-family:Arial,sans-serif;">No priorities set for this week.</p>`);
+  } else {
+    for (const item of overdue) {
+      inner.push(`
+<div style="background:${C.amberBg};border:1px solid ${C.amberBorder};border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+  <table cellpadding="0" cellspacing="0" style="width:100%;">
+    <tr><td style="font-size:12px;font-weight:700;color:${C.amberTitle};font-family:Arial,sans-serif;">${item.assignee}</td></tr>
+    <tr><td style="font-size:13px;color:${C.amberBody};font-family:Arial,sans-serif;">${item.title} <span style="font-size:11px;color:${C.muted};font-family:Arial,sans-serif;">(${item.daysOverdue} day${item.daysOverdue === 1 ? '' : 's'} overdue)</span></td></tr>
+  </table>
+</div>`.trim());
+    }
+
+    for (const item of active) {
+      const duePart = item.dueDay
+        ? ` <span style="font-size:11px;color:${C.meta};font-family:Arial,sans-serif;">— Due ${item.dueDay}</span>`
+        : '';
+      inner.push(`<div style="border-bottom:1px solid #eeeeee;padding:5px 0;margin-bottom:4px;"><p style="font-size:13px;color:${C.body};margin:0;font-family:Arial,sans-serif;"><span style="color:${C.meta};font-family:Arial,sans-serif;">${item.assignee}</span> — ${item.title}${duePart}</p></div>`);
+    }
+
+    if (completed.length > 0) {
+      inner.push(`<p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:${C.muted};margin:10px 0 4px 0;font-family:Arial,sans-serif;">Completed this week (${completed.length})</p>`);
+      for (const item of completed) {
+        inner.push(`<p style="font-size:12px;color:${C.muted};margin:0 0 4px 0;font-family:Arial,sans-serif;">${item.title}</p>`);
+      }
+    }
+  }
+
+  return `
+<div style="border:1px solid ${C.border};border-radius:10px;padding:10px 14px;margin-bottom:8px;background:#fafafa;">
+${inner.join('\n')}
+</div>`.trim();
+}
+
+// ---------------------------------------------------------------------------
 // 7. FLAGS SECTION
 // ---------------------------------------------------------------------------
 
@@ -341,11 +386,16 @@ function renderAll(digestData) {
   // School rotation strip — top of digest
   parts.push(renderSchoolStrip(schoolStrip));
 
-  // Day blocks
-  days.forEach(day => {
-    const block = renderDay(day);
+  // Day blocks — Weekly Priorities section inserted after today's block
+  if (days[0]) {
+    const b = renderDay(days[0]);
+    if (b) parts.push(b);
+  }
+  parts.push(renderWeeklyPriorities(digestData.weeklyPriorities));
+  for (let i = 1; i < days.length; i++) {
+    const block = renderDay(days[i]);
     if (block) parts.push(block);
-  });
+  }
 
   // Activity comms
   const comms = renderActivityComms(activityComms, newsletterItems);
@@ -373,10 +423,15 @@ function renderWade(digestData) {
     parts.push(renderSchoolStrip(schoolStrip));
   }
 
-  days.forEach(day => {
-    const block = renderDay(day, 'wade');
+  if (days[0]) {
+    const b = renderDay(days[0], 'wade');
+    if (b) parts.push(b);
+  }
+  parts.push(renderWeeklyPriorities(digestData.weeklyPriorities));
+  for (let i = 1; i < days.length; i++) {
+    const block = renderDay(days[i], 'wade');
     if (block) parts.push(block);
-  });
+  }
 
   // Coaching checklist — surface if any flag game is in the window
   const hasGameDay = days.some(day =>
@@ -403,10 +458,15 @@ function renderRobyn(digestData) {
   const { days, flags } = digestData;
   const parts = [];
 
-  days.forEach(day => {
-    const block = renderDay(day, 'robyn');
+  if (days[0]) {
+    const b = renderDay(days[0], 'robyn');
+    if (b) parts.push(b);
+  }
+  parts.push(renderWeeklyPriorities(digestData.weeklyPriorities));
+  for (let i = 1; i < days.length; i++) {
+    const block = renderDay(days[i], 'robyn');
     if (block) parts.push(block);
-  });
+  }
 
   const robynFlags = (flags || []).filter(f => f.owner.includes('robyn') || f.owner.length === 0);
   if (robynFlags.length) {
@@ -438,10 +498,15 @@ function renderAlyssa(digestData) {
     }));
   }
 
-  days.forEach(day => {
-    const block = renderDay(day, 'alyssa');
+  if (days[0]) {
+    const b = renderDay(days[0], 'alyssa');
+    if (b) parts.push(b);
+  }
+  parts.push(renderWeeklyPriorities(digestData.weeklyPriorities));
+  for (let i = 1; i < days.length; i++) {
+    const block = renderDay(days[i], 'alyssa');
     if (block) parts.push(block);
-  });
+  }
 
   // Alyssa-specific flags (bag prep look-ahead, etc.)
   const alyssaFlags = (flags || []).filter(f =>
