@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 170+ passing
+- Run npm test after changes — must stay at 165+ passing
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
 
@@ -63,10 +63,6 @@
 Config and data are fetched at Lambda startup in parallel and passed as params to `parseAthleticsDoc` and `buildDigest`. Use the Updater agent to edit JSON files in Drive — do not hardcode season data in source.
 
 **Warning:** If `pb-records.json` is deleted from Google Drive, `getPBRecords()` will create a new empty file in the `moore-ops-data` folder with a different file ID. Subsequent runs will continue using the ID in `DRIVE_PB_RECORDS_FILE_ID` and hit 404 again, creating duplicate files. If the file is ever deleted intentionally, update `DRIVE_PB_RECORDS_FILE_ID` in both `.env` and Lambda environment variables to point to the new file ID, then re-seed the records.
-
-### Known open items
-- `DRIVE_ATHLETICS_FILE_ID` — remove from `.env` and Lambda config after migration to JSON files is confirmed in production
-- `writePBRecords` / `updatePBRecords` in `drive.js` — remove after migration confirmed (marked with TODO comment)
 
 ## Meet results PDF processing (as of May 2026)
 - `digest/meetResultsParser.js` — parses SwimTopia Meet Maestro PDF text, extracts Moore family results, merges PB updates against stored records (pure functions, no Drive I/O)

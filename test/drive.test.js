@@ -24,10 +24,8 @@ process.env.DRIVE_PROCESSED_MEETS_FILE_ID = 'test-processed-meets-id';
 import {
   getSportsConfig,
   getPBRecords,
-  updatePBRecords,
   getProcessedMeets,
   updateProcessedMeets,
-  writePBRecords,
 } from '../drive.js';
 
 // ── Helper: make a stub drv with only the methods a given test needs ──────────
@@ -139,111 +137,6 @@ describe('getPBRecords(drv)', () => {
   });
 });
 
-// ── updatePBRecords ───────────────────────────────────────────────────────────
-
-describe('updatePBRecords(pbData, currentRecords, drv)', () => {
-  const emptyRecords = { version: 1, lastUpdated: null, records: [] };
-
-  it('no new PBs detected (currentBest is dash) — files.update is not called', async () => {
-    let updateCalled = false;
-    const drv = stubDrv({ update: async () => { updateCalled = true; } });
-
-    const pbData = {
-      myles:   [{ event: '50m Breast', format: 'SCM', currentBest: '—' }],
-      ophelia: [{ event: '25m Back',   format: 'SCM', currentBest: '—' }],
-    };
-
-    await updatePBRecords(pbData, emptyRecords, drv);
-    assert.equal(updateCalled, false, 'files.update must not be called when no new PBs');
-  });
-
-  it('existing record already faster — files.update is not called', async () => {
-    let updateCalled = false;
-    const drv = stubDrv({ update: async () => { updateCalled = true; } });
-
-    const existingRecords = {
-      version: 1, lastUpdated: null,
-      records: [{ swimmer: 'myles', event: '50m Breast', course: 'SCM', time: '55.00' }],
-    };
-
-    // 58.50 is slower than 55.00 — not a new PB
-    const pbData = {
-      myles:   [{ event: '50m Breast', format: 'SCM', currentBest: '58.50' }],
-      ophelia: [],
-    };
-
-    await updatePBRecords(pbData, existingRecords, drv);
-    assert.equal(updateCalled, false, 'files.update must not be called when new time is slower');
-  });
-
-  it('one new PB detected — files.update called with record having correct fields', async () => {
-    let updatePayload = null;
-    const drv = stubDrv({ update: async (params) => { updatePayload = params; } });
-
-    const pbData = {
-      myles:   [{ event: '50m Breast', format: 'SCM', currentBest: '58.50' }],
-      ophelia: [],
-    };
-
-    await updatePBRecords(pbData, emptyRecords, drv);
-    assert.ok(updatePayload !== null, 'files.update should have been called');
-    assert.equal(updatePayload.fileId, 'test-pb-records-id', 'fileId should match env var');
-
-    const written = JSON.parse(updatePayload.media.body);
-    assert.equal(written.records.length, 1, 'one record should be written');
-
-    const rec = written.records[0];
-    assert.equal(rec.swimmer, 'myles',      'swimmer field');
-    assert.equal(rec.event,   '50m Breast', 'event field');
-    assert.equal(rec.course,  'SCM',        'course field (mapped from format)');
-    assert.equal(rec.time,    '58.50',      'time field');
-    assert.equal(rec.meet,    null,         'meet is null when unknown');
-    assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(rec.dateset), 'dateset is ISO date, got: ' + rec.dateset);
-    assert.ok(/^\d{4}-\d{2}$/.test(rec.season),         'season is YYYY-YY, got: ' + rec.season);
-    assert.ok(written.lastUpdated, 'lastUpdated should be set on the envelope');
-  });
-
-  it('new PB beats existing record — existing record replaced not duplicated', async () => {
-    let updatePayload = null;
-    const drv = stubDrv({ update: async (params) => { updatePayload = params; } });
-
-    const existingRecords = {
-      version: 1, lastUpdated: null,
-      records: [
-        { swimmer: 'myles', event: '50m Breast', course: 'SCM',
-          time: '1:02.00', dateset: '2026-06-01', meet: null, season: '2025-26' },
-      ],
-    };
-
-    // 58.50s < 62s — this is a new PB
-    const pbData = {
-      myles:   [{ event: '50m Breast', format: 'SCM', currentBest: '58.50' }],
-      ophelia: [],
-    };
-
-    await updatePBRecords(pbData, existingRecords, drv);
-    assert.ok(updatePayload !== null, 'files.update should have been called');
-
-    const written = JSON.parse(updatePayload.media.body);
-    assert.equal(written.records.length, 1,       'still one record (updated, not duplicated)');
-    assert.equal(written.records[0].time, '58.50', 'record updated to new PB time');
-  });
-
-  it('write error throws — caller is responsible for catching', async () => {
-    const drv = stubDrv({ update: async () => { throw new Error('Drive write failed'); } });
-
-    const pbData = {
-      myles:   [{ event: '50m Breast', format: 'SCM', currentBest: '58.50' }],
-      ophelia: [],
-    };
-
-    await assert.rejects(
-      () => updatePBRecords(pbData, emptyRecords, drv),
-      /Drive write failed/
-    );
-  });
-});
-
 // ── getProcessedMeets ─────────────────────────────────────────────────────────
 
 describe('getProcessedMeets(drv)', () => {
@@ -303,30 +196,3 @@ describe('updateProcessedMeets(newEntry, currentProcessed, drv)', () => {
   });
 });
 
-// ── writePBRecords ────────────────────────────────────────────────────────────
-
-describe('writePBRecords(payload, drv)', () => {
-  it('31. calls files.update with serialized payload to DRIVE_PB_RECORDS_FILE_ID', async () => {
-    let updatePayload = null;
-    const drv = stubDrv({ update: async (params) => { updatePayload = params; } });
-
-    const payload = {
-      version: 1,
-      lastUpdated: '2024-06-25T04:00:00.000Z',
-      records: [
-        { swimmer: 'myles', event: '50m Free', course: 'SCM', time: '44.29',
-          points: 5, dateset: '2024-06-24', meet: 'Some Meet', season: '2024-25' },
-      ],
-    };
-
-    await writePBRecords(payload, drv);
-    assert.ok(updatePayload !== null, 'files.update should have been called');
-    assert.equal(updatePayload.fileId, 'test-pb-records-id');
-
-    const written = JSON.parse(updatePayload.media.body);
-    assert.equal(written.records.length, 1);
-    assert.equal(written.records[0].swimmer, 'myles');
-    assert.equal(written.records[0].time,    '44.29');
-    assert.equal(written.lastUpdated, '2024-06-25T04:00:00.000Z');
-  });
-});
