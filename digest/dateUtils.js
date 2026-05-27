@@ -49,3 +49,11 @@ export function timeToSeconds(str) {
   const n = parseFloat(clean);
   return isNaN(n) ? null : n;
 }
+
+export function secondsToTime(seconds) {
+  if (seconds == null || isNaN(seconds)) return '—';
+  if (seconds < 60) return seconds.toFixed(2);
+  const m = Math.floor(seconds / 60);
+  const s = (seconds % 60).toFixed(2).padStart(5, '0');
+  return `${m}:${s}`;
+}

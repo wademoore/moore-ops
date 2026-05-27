@@ -93,7 +93,7 @@ describe('getSportsConfig(drv)', () => {
 // ── getPBRecords ──────────────────────────────────────────────────────────────
 
 describe('getPBRecords(drv)', () => {
-  it('404 response creates file and returns empty structure', async () => {
+  it('404 response creates file and returns empty flat object', async () => {
     let createCalled = false;
     const notFoundErr = Object.assign(new Error('File not found'), { response: { status: 404 } });
 
@@ -104,24 +104,20 @@ describe('getPBRecords(drv)', () => {
 
     const result = await getPBRecords(drv);
     assert.ok(createCalled, 'files.create should be called on 404');
-    assert.equal(result.version,     1,    'version should be 1');
-    assert.equal(result.lastUpdated, null, 'lastUpdated should be null');
-    assert.deepEqual(result.records, [],   'records should be empty array');
+    assert.deepEqual(result, {}, 'should return empty flat object');
   });
 
-  it('valid response returns parsed records object', async () => {
+  it('valid response returns flat key-value object', async () => {
     const stored = {
-      version: 1,
-      lastUpdated: '2026-05-01T00:00:00.000Z',
-      records: [{ swimmer: 'myles', event: '50m Breast', course: 'SCM', time: '58.50' }],
+      'Myles|50m Breast|SCM': { seconds: 58.5, date: '2026-05-01', meet: 'Spring Invite' },
+      'Ophelia|25m Back|SCM': { seconds: 31.2, date: '2026-05-01', meet: 'Spring Invite' },
     };
     const drv = stubDrv({ get: async () => ({ data: JSON.stringify(stored) }) });
 
     const result = await getPBRecords(drv);
-    assert.equal(result.version, 1);
-    assert.equal(result.records.length, 1);
-    assert.equal(result.records[0].swimmer, 'myles');
-    assert.equal(result.records[0].time, '58.50');
+    assert.equal(Object.keys(result).length, 2);
+    assert.equal(result['Myles|50m Breast|SCM'].seconds, 58.5);
+    assert.equal(result['Ophelia|25m Back|SCM'].meet, 'Spring Invite');
   });
 
   it('non-404 Drive error throws', async () => {

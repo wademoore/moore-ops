@@ -9,50 +9,59 @@ import {
 import { isSeasonActive } from '../digest/sportsConfig.js';
 import { FIXTURE_CONFIG } from './fixtures/sports-config.fixture.js';
 
-// ── Fixtures ──────────────────────────────────────────────────────────────────
+// ── Minimal flag football fixture ─────────────────────────────────────────────
 
-const SAMPLE_DOC = `
-CURRENT STANDINGS
-| Team     | W | L | PF | PA |
-| :-:      |:-:|:-:|:-: |:-: |
-| Cowboys  | 3 | 0 | 90 | 20 |
-| Chiefs   | 2 | 1 | 60 | 40 |
+const FIXTURE_FLAG_FOOTBALL = {
+  seasons: [
+    {
+      label:       'Spring 2026',
+      seasonStart: '2026-04-26',
+      seasonEnd:   '2026-06-14',
+      myTeamAbbr:  'Cowboys',
+      teams: [
+        { abbr: 'Cowboys', teamName: 'Cowboys' },
+        { abbr: 'Chiefs',  teamName: 'Chiefs'  },
+        { abbr: 'Raiders', teamName: 'Raiders' },
+        { abbr: 'Vikings', teamName: 'Vikings' },
+      ],
+      games: [
+        { type: 'regular', status: 'final', date: '2026-04-26', home: 'Cowboys', away: 'Raiders', homeScore: 26, awayScore: 0 },
+        { type: 'regular', status: 'final', date: '2026-05-03', home: 'Cowboys', away: 'Vikings', homeScore: 26, awayScore: 7 },
+        { type: 'regular', status: 'final', date: '2026-05-10', home: 'Cowboys', away: 'Chiefs',  homeScore: 32, awayScore: 12 },
+        { type: 'regular', status: 'rescheduled', date: '2026-05-17', home: 'Cowboys', away: 'Raiders', homeScore: null, awayScore: null },
+        { type: 'regular', status: 'scheduled',   date: '2026-05-31', home: 'Cowboys', away: 'Vikings', homeScore: null, awayScore: null },
+        { type: 'regular', status: 'final', date: '2026-04-20', home: 'Cowboys', away: 'AllStars', homeScore: 40, awayScore: 0, friendly: true },
+      ],
+      snackSchedule: [
+        { date: '2026-04-26', family: 'Brown'      },
+        { date: '2026-05-03', family: 'Ochoa'      },
+        { date: '2026-05-10', family: 'Moore'      },
+        { date: '2026-05-17', family: 'Maris-Wolf' },
+        { date: '2026-05-31', family: 'Jenkins'    },
+      ],
+      captainAssignments: [
+        { date: '2026-04-26', captains: ['Alice', 'Bob'],     mylesCaptain: false, opponent: 'Raiders' },
+        { date: '2026-05-03', captains: ['Myles', 'Carter'],  mylesCaptain: true,  opponent: 'Vikings' },
+        { date: '2026-05-31', captains: ['Dave', 'Sam'],      mylesCaptain: false, opponent: 'Chiefs'  },
+      ],
+    },
+  ],
+};
 
-SNACK SCHEDULE
-| Wk 1 | Apr 26 | Brown      | |
-| Wk 2 | May 3  | Ochoa      | |
-| Wk 5 | May 31 | Maris-Wolf | |
-
-CAPTAIN ASSIGNMENTS
-| Wk 1 | Apr 26 | Cowboys | Alice, Bob |
-| Wk 5 | May 31 | Cowboys | Carol, Dave |
-
-════════════════
-`;
-
-// A date known to be inside the flag football active window
-// (April 19 – June 21 with 7-day buffer around April 26 – June 14)
+// A date inside the flag football active window
 const IN_SEASON_FF = new Date('2026-05-01T12:00:00');
 
-// A date inside Wellington Waves active window
-// (June 8 – July 27 with 7-day buffer around June 15 – July 20)
-const IN_SEASON_WAVES = new Date('2026-06-20T12:00:00');
-
-// A date inside 757 Swim active window
-// (Aug 25 – June 7 with 7-day buffer around Sept 1, 2025 – May 31, 2026)
-const IN_SEASON_757 = new Date('2026-03-15T12:00:00');
-
-// A date outside ALL sport windows:
-//   FF ends June 21 (Jun 14 + 7 buffer), Waves ends July 27 (Jul 20 + 7 buffer),
-//   757 resumes Aug 25 (Sep 1 − 7 buffer). Aug 1 falls in the true gap.
-const OFFSEASON_FF = new Date('2026-08-01T12:00:00');
+// Dates for other season tests
+// July 1 is past the FF buffer close (Jun 21) and inside Waves window (Jun 8–Jul 27)
+const IN_SEASON_WAVES = new Date('2026-07-01T12:00:00');
+const IN_SEASON_757   = new Date('2026-03-15T12:00:00');
+const OFFSEASON_FF    = new Date('2026-08-01T12:00:00');
 
 // ── isSeasonActive ────────────────────────────────────────────────────────────
 
 describe('isSeasonActive(sport, referenceDate)', () => {
   it('returns false when sport.active is false regardless of date', () => {
     assert.equal(isSeasonActive(FIXTURE_CONFIG.sharks, IN_SEASON_FF), false);
-    // Confirm sharks is set inactive in fixture config (sanity check)
     assert.equal(FIXTURE_CONFIG.sharks.active, false);
   });
 
@@ -61,13 +70,11 @@ describe('isSeasonActive(sport, referenceDate)', () => {
   });
 
   it('returns true on the first day of the pre-buffer window', () => {
-    // Flag football seasonStart is Apr 26; bufferDays 7 → window opens Apr 19
     const windowOpen = new Date('2026-04-19T00:00:00');
     assert.equal(isSeasonActive(FIXTURE_CONFIG.flagFootball, windowOpen), true);
   });
 
   it('returns true on the last day of the post-buffer window', () => {
-    // Flag football seasonEnd is Jun 14; bufferDays 7 → window closes Jun 21
     const windowClose = new Date('2026-06-21T00:00:00');
     assert.equal(isSeasonActive(FIXTURE_CONFIG.flagFootball, windowClose), true);
   });
@@ -87,18 +94,15 @@ describe('isSeasonActive(sport, referenceDate)', () => {
 
 describe('buildEmptyAthletics()', () => {
   it("returns object with seasonRecord '?-?'", () => {
-    const result = buildEmptyAthletics();
-    assert.equal(result.seasonRecord, '?-?');
+    assert.equal(buildEmptyAthletics().seasonRecord, '?-?');
   });
 
   it('hasGameThisWeek is false', () => {
-    const result = buildEmptyAthletics();
-    assert.equal(result.hasGameThisWeek, false);
+    assert.equal(buildEmptyAthletics().hasGameThisWeek, false);
   });
 
   it('standings is []', () => {
-    const result = buildEmptyAthletics();
-    assert.deepEqual(result.standings, []);
+    assert.deepEqual(buildEmptyAthletics().standings, []);
   });
 
   it('all four season-active flags are false', () => {
@@ -108,126 +112,66 @@ describe('buildEmptyAthletics()', () => {
     assert.equal(result.swim757Active,      false);
     assert.equal(result.sharksActive,       false);
   });
-});
 
-// ── parseAthleticsDoc ─────────────────────────────────────────────────────────
-
-describe('parseAthleticsDoc(text)', () => {
-  it('returns buildEmptyAthletics() shape for empty string', () => {
-    const result = parseAthleticsDoc('', new Date(), FIXTURE_CONFIG);
-    const empty  = buildEmptyAthletics();
-    assert.equal(result.seasonRecord,    empty.seasonRecord);
-    assert.equal(result.hasGameThisWeek, empty.hasGameThisWeek);
-    assert.deepEqual(result.standings,   empty.standings);
-    // New flags must also match
-    assert.equal(result.flagFootballActive, empty.flagFootballActive);
-    assert.equal(result.wavesActive,        empty.wavesActive);
-    assert.equal(result.swim757Active,      empty.swim757Active);
-    assert.equal(result.sharksActive,       empty.sharksActive);
+  it('mylesCaptain is false', () => {
+    assert.equal(buildEmptyAthletics().mylesCaptain, false);
   });
 
-  it("parses Cowboys record as '3-0' from SAMPLE_DOC", () => {
-    const result = parseAthleticsDoc(SAMPLE_DOC, IN_SEASON_FF, FIXTURE_CONFIG);
+  it('lastOpponent is null', () => {
+    assert.equal(buildEmptyAthletics().lastOpponent, null);
+  });
+});
+
+// ── parseAthleticsDoc — coordinator behavior ──────────────────────────────────
+
+describe('parseAthleticsDoc — coordinator', () => {
+  it('returns buildEmptyAthletics() when flagFootballData is null', () => {
+    const result = parseAthleticsDoc(IN_SEASON_FF, FIXTURE_CONFIG, null, {}, []);
+    const empty  = buildEmptyAthletics();
+    assert.equal(result.seasonRecord,       empty.seasonRecord);
+    assert.equal(result.hasGameThisWeek,    empty.hasGameThisWeek);
+    assert.deepEqual(result.standings,      empty.standings);
+    assert.equal(result.flagFootballActive, empty.flagFootballActive);
+    assert.equal(result.mylesCaptain,       empty.mylesCaptain);
+    assert.equal(result.lastOpponent,       empty.lastOpponent);
+  });
+
+  it('throws when config is null', () => {
+    assert.throws(
+      () => parseAthleticsDoc(IN_SEASON_FF, null, FIXTURE_FLAG_FOOTBALL, {}, []),
+      /config is required/
+    );
+  });
+
+  it('season-active flags are set correctly for FF season date', () => {
+    const result = parseAthleticsDoc(IN_SEASON_FF, FIXTURE_CONFIG, FIXTURE_FLAG_FOOTBALL, {}, []);
+    assert.equal(result.flagFootballActive, true);
+    assert.equal(result.wavesActive,        false);
+  });
+
+  it('season-active flags are set correctly for Waves season date', () => {
+    const result = parseAthleticsDoc(IN_SEASON_WAVES, FIXTURE_CONFIG, FIXTURE_FLAG_FOOTBALL, {}, []);
+    assert.equal(result.flagFootballActive, false);
+    assert.equal(result.wavesActive,        true);
+  });
+
+  it('seasonRecord is derived from flagFootballParser', () => {
+    const result = parseAthleticsDoc(IN_SEASON_FF, FIXTURE_CONFIG, FIXTURE_FLAG_FOOTBALL, {}, []);
     assert.equal(result.seasonRecord, '3-0');
   });
 
-  it('strips |:-:| alignment rows before parsing (standings still works)', () => {
-    const result = parseAthleticsDoc(SAMPLE_DOC, IN_SEASON_FF, FIXTURE_CONFIG);
-    const cowboys = result.standings.find(t => t.team === 'Cowboys');
-    assert.ok(cowboys, 'Cowboys entry missing from standings');
+  it('hasGameThisWeek is false (set by builder, not parser)', () => {
+    const result = parseAthleticsDoc(IN_SEASON_FF, FIXTURE_CONFIG, FIXTURE_FLAG_FOOTBALL, {}, []);
+    assert.equal(result.hasGameThisWeek, false);
   });
 
-  it('standings array has Cowboys with w:3, l:0, isMe:true', () => {
-    const result  = parseAthleticsDoc(SAMPLE_DOC, IN_SEASON_FF, FIXTURE_CONFIG);
-    const cowboys = result.standings.find(t => t.team === 'Cowboys');
-    assert.ok(cowboys, 'Cowboys entry missing from standings');
-    assert.equal(cowboys.w,    3);
-    assert.equal(cowboys.l,    0);
-    assert.equal(cowboys.isMe, true);
-  });
-
-  it('standings sorted by wins descending', () => {
-    const result = parseAthleticsDoc(SAMPLE_DOC, IN_SEASON_FF, FIXTURE_CONFIG);
-    for (let i = 0; i < result.standings.length - 1; i++) {
-      assert.ok(
-        result.standings[i].w >= result.standings[i + 1].w,
-        `standings not sorted: index ${i} w=${result.standings[i].w} < index ${i + 1} w=${result.standings[i + 1].w}`
-      );
-    }
-  });
-
-  it("currentSnackFamily is 'Maris-Wolf' (first non-past entry)", () => {
-    const result = parseAthleticsDoc(SAMPLE_DOC, IN_SEASON_FF, FIXTURE_CONFIG);
-    assert.equal(result.currentSnackFamily, 'Maris-Wolf');
-  });
-
-  it('flag football fields default when season is inactive (offseason date)', () => {
-    const result = parseAthleticsDoc(SAMPLE_DOC, OFFSEASON_FF, FIXTURE_CONFIG);
-    assert.equal(result.seasonRecord,       '?-?');
-    assert.deepEqual(result.standings,      []);
-    assert.equal(result.flagFootballActive, false);
-  });
-
-  it('flagFootballActive is true during the flag football window', () => {
-    const result = parseAthleticsDoc(SAMPLE_DOC, IN_SEASON_FF, FIXTURE_CONFIG);
-    assert.equal(result.flagFootballActive, true);
-  });
-});
-
-// ── Ophelia seasonal event branching ──────────────────────────────────────────
-
-describe('parseAthleticsDoc — Ophelia seasonal event branching', () => {
-  // Pass ' ' (a single space) — truthy, bypasses the !text early-return guard,
-  // reaches parseMylesPBRows / parseOpheliaPBRows with no matching times in text.
-
-  it('opheliaPBRows are all SCM during Waves season', () => {
-    const result = parseAthleticsDoc(' ', IN_SEASON_WAVES, FIXTURE_CONFIG);
-    const formats = result.opheliaPBRows.map(r => r.format);
-    assert.ok(formats.length > 0, 'expected opheliaPBRows to be non-empty during Waves season');
-    assert.ok(formats.every(f => f === 'SCM'), `expected all SCM, got: ${formats}`);
-  });
-
-  it('opheliaPBRows are all SCY during 757 season', () => {
-    const result = parseAthleticsDoc(' ', IN_SEASON_757, FIXTURE_CONFIG);
-    const formats = result.opheliaPBRows.map(r => r.format);
-    assert.ok(formats.length > 0, 'expected opheliaPBRows to be non-empty during 757 season');
-    assert.ok(formats.every(f => f === 'SCY'), `expected all SCY, got: ${formats}`);
-  });
-
-  it('opheliaPBRows is empty during offseason', () => {
-    const result = parseAthleticsDoc(' ', OFFSEASON_FF, FIXTURE_CONFIG);
-    assert.deepEqual(result.opheliaPBRows, []);
-  });
-
-  it('opheliaPBRows has 3 rows during Waves season (eventsWaves length)', () => {
-    const result = parseAthleticsDoc(' ', IN_SEASON_WAVES, FIXTURE_CONFIG);
-    assert.equal(result.opheliaPBRows.length, FIXTURE_CONFIG.swimmers.ophelia.eventsWaves.length);
-  });
-
-  it('opheliaPBRows has 2 rows during 757 season (events757 length)', () => {
-    const result = parseAthleticsDoc(' ', IN_SEASON_757, FIXTURE_CONFIG);
-    assert.equal(result.opheliaPBRows.length, FIXTURE_CONFIG.swimmers.ophelia.events757.length);
-  });
-});
-
-// ── Myles events sourced from config (50m) ────────────────────────────────────
-
-describe('parseAthleticsDoc — Myles 50m events from config', () => {
-  // Pass ' ' for the same reason as the Ophelia tests above.
-
-  it('mylesPBRows has 3 rows matching FIXTURE_CONFIG.swimmers.myles.events', () => {
-    const result = parseAthleticsDoc(' ', IN_SEASON_FF, FIXTURE_CONFIG);
+  it('mylesPBRows length matches config events', () => {
+    const result = parseAthleticsDoc(IN_SEASON_FF, FIXTURE_CONFIG, FIXTURE_FLAG_FOOTBALL, {}, []);
     assert.equal(result.mylesPBRows.length, FIXTURE_CONFIG.swimmers.myles.events.length);
   });
 
-  it('first Myles event is 50m Breast (not 25m)', () => {
-    const result = parseAthleticsDoc(' ', IN_SEASON_FF, FIXTURE_CONFIG);
-    assert.equal(result.mylesPBRows[0].event, '50m Breast');
-  });
-
-  it('Myles events are all SCM format', () => {
-    const result = parseAthleticsDoc(' ', IN_SEASON_FF, FIXTURE_CONFIG);
-    const formats = result.mylesPBRows.map(r => r.format);
-    assert.ok(formats.every(f => f === 'SCM'), `expected all SCM, got: ${formats}`);
+  it('opheliaPBRows is empty during offseason', () => {
+    const result = parseAthleticsDoc(OFFSEASON_FF, FIXTURE_CONFIG, FIXTURE_FLAG_FOOTBALL, {}, []);
+    assert.deepEqual(result.opheliaPBRows, []);
   });
 });

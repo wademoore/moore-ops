@@ -125,13 +125,58 @@ export async function getSportsConfig(drv) {
   }
 }
 
+// ── getFlagFootballData ───────────────────────────────────────────────────────
+// Fetches flag-football.json from Drive and returns the parsed object.
+// Throws on any error — caller wraps in Promise.all.
+
+export async function getFlagFootballData(drv) {
+  const fileId = process.env.DRIVE_FLAG_FOOTBALL_FILE_ID;
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+  try {
+    const res = await drv.files.get(
+      { fileId, alt: 'media' },
+      { responseType: 'text' }
+    );
+    const data = JSON.parse(res.data);
+    console.log(`[drive:getFlagFootballData] Loaded file ${fileId}`);
+    return data;
+  } catch (err) {
+    throw new Error(`[drive:getFlagFootballData] Failed to load (file: ${fileId}) — ${err.message}`);
+  }
+}
+
+// ── getSwimResults ────────────────────────────────────────────────────────────
+// Fetches swim-results.json from Drive and returns the parsed array.
+// Throws on any error — caller wraps in Promise.all.
+
+export async function getSwimResults(drv) {
+  const fileId = process.env.DRIVE_SWIM_RESULTS_FILE_ID;
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+  try {
+    const res = await drv.files.get(
+      { fileId, alt: 'media' },
+      { responseType: 'text' }
+    );
+    const data = JSON.parse(res.data);
+    console.log(`[drive:getSwimResults] Loaded file ${fileId}`);
+    return data;
+  } catch (err) {
+    throw new Error(`[drive:getSwimResults] Failed to load (file: ${fileId}) — ${err.message}`);
+  }
+}
+
 // ── getPBRecords ──────────────────────────────────────────────────────────────
-// Fetches pb-records.json from Drive and returns the parsed records object.
-// On 404, creates the file with an empty structure and returns it (first-run).
+// Fetches pb-records.json from Drive and returns the parsed flat key-value object.
+// Shape: { "Swimmer|Event|Course": { seconds, date, meet }, ... }
+// On 404, creates the file with an empty object and returns it (first-run).
 // On any other error, throws.
 // Accepts optional pre-constructed drv client for unit testing.
-
-const EMPTY_PB_RECORDS = { version: 1, lastUpdated: null, records: [] };
 
 export async function getPBRecords(drv) {
   const fileId   = process.env.DRIVE_PB_RECORDS_FILE_ID;
@@ -146,10 +191,10 @@ export async function getPBRecords(drv) {
       { responseType: 'text' }
     );
     const records = JSON.parse(res.data);
-    console.log(`[drive:getPBRecords] Loaded ${records.records?.length ?? 0} record(s)`);
+    console.log(`[drive:getPBRecords] Loaded ${Object.keys(records).length} key(s)`);
     return records;
   } catch (err) {
-    // 404 → first run: create the empty file and return the empty structure
+    // 404 → first run: create empty file and return empty object
     if (err.response?.status === 404 || err.code === 404) {
       console.log('[drive:getPBRecords] pb-records.json not found — creating empty file');
       await drv.files.create({
@@ -160,16 +205,17 @@ export async function getPBRecords(drv) {
         },
         media: {
           mimeType: 'text/plain',
-          body:     JSON.stringify(EMPTY_PB_RECORDS, null, 2),
+          body:     JSON.stringify({}, null, 2),
         },
         fields: 'id',
       });
-      return { ...EMPTY_PB_RECORDS, records: [] };
+      return {};
     }
     throw new Error(`[drive:getPBRecords] Failed to load PB records (file: ${fileId}) — ${err.message}`);
   }
 }
 
+// TODO: remove updatePBRecords and writePBRecords after migration confirmed
 // ── updatePBRecords ───────────────────────────────────────────────────────────
 // Compares parsed PB rows against stored records. If any new PB is detected,
 // upserts the record and writes the file back to Drive.
