@@ -100,9 +100,6 @@ export function generateTasks(resolvedEvents, date, schoolStrip) {
 
   // ── School day tasks ──────────────────────────────────────────────────────
   if (isSchoolDay(date)) {
-    // Drop-off (Wade WFH Mon/Fri, in office Tue-Thu — still drops off)
-    tasks.push({ time: '7:30 AM', owner: 'wade', text: 'Drop Myles + Ophelia at school' });
-
     // Backpack warnings from school rotation
     if (schoolStrip?.myles?.warningText) {
       tasks.push({ time: 'Before work', owner: 'wade', text: schoolStrip.myles.warningText });
@@ -113,8 +110,6 @@ export function generateTasks(resolvedEvents, date, schoolStrip) {
 
     // Alyssa: lunch and after-school pickup (weekdays only)
     if (isWeekday) {
-      tasks.push({ time: '1:00 PM', owner: 'alyssa', text: 'Make kids\' lunches for tomorrow' });
-      tasks.push({ time: '4:00 PM', owner: 'alyssa', text: 'Pick up kids from bus (Stopfinder app)' });
     }
   }
 
