@@ -94,7 +94,7 @@ export function generateTasks(resolvedEvents, date, schoolStrip) {
   const isWeekday = dow >= 1 && dow <= 5;
 
   // ── Monday trash ─────────────────────────────────────────────────────────
-  if (dow === 1) {
+  if (dow === 0) {
     tasks.push({ time: 'AM', owner: 'wade', text: 'Put trash bins out' });
   }
 
