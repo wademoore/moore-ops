@@ -10,16 +10,22 @@
 import { secondsToTime, timeToSeconds } from './dateUtils.js';
 import { isSeasonActive }               from './sportsConfig.js';
 
-function formatPBSubNote(entry) {
-  const d = new Date(entry.date + 'T12:00:00');
-  const datePart = d.toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', timeZone: 'America/New_York',
-  });
-  const meet = entry.meet.length > 30
-    ? entry.meet.slice(0, 29) + '…'
-    : entry.meet;
-  return datePart + ' · ' + meet;
-}
+// Event name mapping — sports-config uses abbreviated names; swim-results.json uses full names.
+// Falls back to the config name as-is if no mapping is defined.
+const EVENT_NAME_MAP = {
+  '25m Back':   '25m Backstroke',
+  '25m Free':   '25m Freestyle',
+  '25m Breast': '25m Breaststroke',
+  '25m Fly':    '25m Butterfly',
+  '25y Back':   '25y Backstroke',
+  '25y Free':   '25y Freestyle',
+  '25y Breast': '25y Breaststroke',
+  '25y Fly':    '25y Butterfly',
+  '50m Back':   '50m Backstroke',
+  '50m Free':   '50m Freestyle',
+  '50m Breast': '50m Breaststroke',
+  '50m Fly':    '50m Butterfly',
+};
 
 /**
  * @param {object}   pbRecords    Flat key-value: "Swimmer|Event|Course" → { seconds, date, meet }
@@ -29,63 +35,54 @@ function formatPBSubNote(entry) {
  * @returns {object}
  */
 export function parseSwim(pbRecords, swimResults, referenceDate, config) {
-  const records     = pbRecords || {};
-  const wavesActive = isSeasonActive(config.wellingtonWaves, referenceDate);
+  const records       = pbRecords || {};
+  const wavesActive   = isSeasonActive(config.wellingtonWaves, referenceDate);
   const swim757Active = isSeasonActive(config.swim757, referenceDate);
+
+  // Pre-sort once, date descending — reused by both Myles and Ophelia loops
+  const sortedResults = [...(swimResults || [])].sort(
+    (a, b) => b.date.localeCompare(a.date)
+  );
 
   // ── Myles PB rows ────────────────────────────────────────────────────────────
   const mylesPBRows = [];
   for (const e of config.swimmers.myles.events) {
-    const course = e.format === 'SCY' ? 'SCY' : 'SCM';
-    const key    = `Myles|${e.event}|${course}`;
-    const entry  = records[key];
+    const resultEventName = EVENT_NAME_MAP[e.event] || e.event;
+    const lastSwimEntry   = sortedResults.find(r =>
+      r.swimmer === 'Myles' &&
+      r.event   === resultEventName &&
+      r.course  === e.format &&
+      !r.dq && !r.relay && r.seconds != null
+    );
+    const lastSwim = lastSwimEntry
+      ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet }
+      : null;
 
-    const champSec = e.champs ? timeToSeconds(e.champs) : null;
-    const bestSec  = entry ? entry.seconds : null;
+    const key     = `Myles|${e.event}|${e.format}`;
+    const pbEntry = records[key] || null;
+    const pb      = pbEntry
+      ? { seconds: pbEntry.seconds, date: pbEntry.date, meet: pbEntry.meet }
+      : null;
 
-    let champsProgress = null;
-    let champsDelta    = null;
-    if (champSec !== null && bestSec !== null) {
-      champsProgress = Math.min(1.0, champSec / bestSec);
-      if (champsProgress >= 0.85 && champsProgress < 1.0) {
-        champsDelta = '−' + (bestSec - champSec).toFixed(1) + 's';
-      }
-    }
+    const champsTarget = e.champs || null;
 
-    let currentBest, deltaState, deltaText, subNote;
+    const isNewPB = lastSwim !== null && pb !== null && (
+      lastSwim.seconds === pb.seconds || lastSwim.date === pb.date
+    );
 
-    if (entry) {
-      currentBest = secondsToTime(entry.seconds);
-      if (champSec !== null && entry.seconds <= champSec) {
-        deltaState = 'champs';
-        deltaText  = '';
-        subNote    = '';
-      } else {
-        deltaState = 'has-2026';
-        deltaText  = e.champs ? `Target: ${e.champs}` : '';
-        subNote    = formatPBSubNote(entry);
-      }
-    } else if (e.prior) {
-      currentBest = e.prior;
-      deltaState  = 'prior-only';
-      deltaText   = e.champs ? `Target sub-${e.champs}` : '';
-      subNote     = '2025 best: ' + e.prior;
-    } else {
-      currentBest = '—';
-      deltaState  = 'first';
-      deltaText   = `First ${e.event} season`;
-      subNote     = '';
-    }
+    const delta = lastSwim !== null && pb !== null
+      ? lastSwim.seconds - pb.seconds
+      : null;
+
+    const champSec       = e.champs ? timeToSeconds(e.champs) : null;
+    const bestSec        = pb ? pb.seconds : null;
+    const champsProgress = (champSec !== null && bestSec !== null)
+      ? Math.min(1.0, champSec / bestSec)
+      : null;
 
     mylesPBRows.push({
-      event:       e.event,
-      format:      e.format,
-      currentBest,
-      subNote,
-      deltaState,
-      deltaText,
-      champsProgress,
-      champsDelta,
+      event: e.event, format: e.format,
+      lastSwim, pb, champsTarget, isNewPB, delta, champsProgress,
     });
   }
 
@@ -102,77 +99,48 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config) {
 
   if (events) {
     for (const e of events) {
-      const course = e.format === 'SCY' ? 'SCY' : 'SCM';
-      const key    = `Ophelia|${e.event}|${course}`;
-      const entry  = records[key];
+      const resultEventName = EVENT_NAME_MAP[e.event] || e.event;
+      const lastSwimEntry   = sortedResults.find(r =>
+        r.swimmer === 'Ophelia' &&
+        r.event   === resultEventName &&
+        r.course  === e.format &&
+        !r.dq && !r.relay && r.seconds != null
+      );
+      const lastSwim = lastSwimEntry
+        ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet }
+        : null;
 
-      const champSec = e.champs ? timeToSeconds(e.champs) : null;
-      const bestSec  = entry ? entry.seconds : null;
+      const key     = `Ophelia|${e.event}|${e.format}`;
+      const pbEntry = records[key] || null;
+      const pb      = pbEntry
+        ? { seconds: pbEntry.seconds, date: pbEntry.date, meet: pbEntry.meet }
+        : null;
 
-      let champsProgress = null;
-      let champsDelta    = null;
-      if (champSec !== null && bestSec !== null) {
-        champsProgress = Math.min(1.0, champSec / bestSec);
-        if (champsProgress >= 0.85 && champsProgress < 1.0) {
-          champsDelta = '−' + (bestSec - champSec).toFixed(1) + 's';
-        }
-      }
+      const champsTarget = e.champs || null;
 
-      let currentBest, deltaState, deltaText, subNote;
+      const isNewPB = lastSwim !== null && pb !== null && (
+        lastSwim.seconds === pb.seconds || lastSwim.date === pb.date
+      );
 
-      if (entry) {
-        currentBest = secondsToTime(entry.seconds);
-        const priorSec = e.prior2025 ? timeToSeconds(e.prior2025) : null;
-        if (champSec !== null && entry.seconds <= champSec) {
-          deltaState = 'champs';
-          deltaText  = '';
-          subNote    = '';
-        } else if (e.prior2025) {
-          if (priorSec && entry.seconds) {
-            const diff = entry.seconds - priorSec;
-            const sign = diff < 0 ? '↓' : '↑';
-            const abs  = Math.abs(diff).toFixed(2);
-            deltaState = 'has-2026';
-            deltaText  = diff < 0
-              ? `<span class="faster">${sign} ${abs}s — PB!</span>`
-              : `${sign} ${abs}s off 2025 PB (early season)`;
-          } else {
-            deltaState = 'has-2026';
-            deltaText  = e.champs ? `Target: ${e.champs}` : '';
-          }
-          subNote = formatPBSubNote(entry);
-        } else {
-          deltaState = 'first';
-          deltaText  = e.champs ? `Target: ${e.champs}` : 'First season';
-          subNote    = '';
-        }
-      } else if (e.prior2025) {
-        currentBest = e.prior2025 || '—';
-        deltaState  = 'prior-only';
-        deltaText   = e.champs ? `Target sub-${e.champs}` : '';
-        subNote     = `2025 PB ${e.prior2025}`;
-      } else {
-        currentBest = '—';
-        deltaState  = 'first';
-        deltaText   = e.champs ? `Target: ${e.champs}` : 'First season';
-        subNote     = '';
-      }
+      const delta = lastSwim !== null && pb !== null
+        ? lastSwim.seconds - pb.seconds
+        : null;
+
+      const champSec       = e.champs ? timeToSeconds(e.champs) : null;
+      const bestSec        = pb ? pb.seconds : null;
+      const champsProgress = (champSec !== null && bestSec !== null)
+        ? Math.min(1.0, champSec / bestSec)
+        : null;
 
       opheliaPBRows.push({
-        event:       e.event,
-        format:      e.format,
-        currentBest,
-        subNote,
-        deltaState,
-        deltaText,
-        champsProgress,
-        champsDelta,
+        event: e.event, format: e.format,
+        lastSwim, pb, champsTarget, isNewPB, delta, champsProgress,
       });
     }
   }
 
   // ── Season labels ────────────────────────────────────────────────────────────
-  const wavesStart = new Date(config.wellingtonWaves.seasonStart + 'T00:00:00');
+  const wavesStart  = new Date(config.wellingtonWaves.seasonStart + 'T00:00:00');
   const mylesSeason = wavesActive
     ? '2026 Waves Season'
     : referenceDate < wavesStart ? 'Pre-Season' : 'Off-Season';
@@ -181,54 +149,13 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config) {
     ? '2026 Waves Season'
     : swim757Active ? '2025–26 757 Season' : 'Off-Season';
 
-  // ── Sparkline data ───────────────────────────────────────────────────────────
-  const mylesRaw = (swimResults || []).filter(r =>
-    r.swimmer === 'Myles' &&
-    r.event   === '25m Breaststroke' &&
-    r.course  === 'SCM' &&
-    !r.dq && !r.relay && r.seconds != null
-  ).sort((a, b) => a.date.localeCompare(b.date))
-   .map(r => ({ date: r.date, seconds: r.seconds }));
-  const mylesSparklineData  = mylesRaw.length >= 3 ? mylesRaw : null;
-  const mylesSparklineLabel = mylesSparklineData
-    ? '25m Breast · SCM progression' : null;
-
-  let opheliaEvent = null, opheliaCourse = null, opheliaLabel = null;
-  if (wavesActive) {
-    opheliaEvent  = '25m Backstroke';
-    opheliaCourse = 'SCM';
-    opheliaLabel  = '25m Back · SCM progression';
-  } else if (swim757Active) {
-    opheliaEvent  = '25y Backstroke';
-    opheliaCourse = 'SCY';
-    opheliaLabel  = '25y Back · SCY progression';
-  }
-  let opheliaSparklineData = null, opheliaSparklineLabel = null;
-  if (opheliaEvent) {
-    const opheliaRaw = (swimResults || []).filter(r =>
-      r.swimmer === 'Ophelia' &&
-      r.event   === opheliaEvent &&
-      r.course  === opheliaCourse &&
-      !r.dq && !r.relay && r.seconds != null
-    ).sort((a, b) => a.date.localeCompare(b.date))
-     .map(r => ({ date: r.date, seconds: r.seconds }));
-    if (opheliaRaw.length >= 3) {
-      opheliaSparklineData  = opheliaRaw;
-      opheliaSparklineLabel = opheliaLabel;
-    }
-  }
-
   return {
     mylesPBRows,
     opheliaPBRows,
     mylesSeason,
     opheliaSeason,
-    mylesFooter:     config.swimmers.myles.footer,
-    opheliaFooter:   config.swimmers.ophelia.footer,
+    mylesFooter:      config.swimmers.myles.footer,
+    opheliaFooter:    config.swimmers.ophelia.footer,
     opheliaDanceNote: '💃 "I\'m Still Standing" · Recital May 30, 1:00 PM',
-    mylesSparklineData,
-    mylesSparklineLabel,
-    opheliaSparklineData,
-    opheliaSparklineLabel,
   };
 }

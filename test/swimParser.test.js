@@ -6,8 +6,8 @@ import { secondsToTime }   from '../digest/dateUtils.js';
 import { FIXTURE_CONFIG }  from './fixtures/sports-config.fixture.js';
 
 // Reference dates
-const IN_SEASON_FF   = new Date('2026-05-01T12:00:00'); // FF active, 757 active, Waves inactive
-const OFFSEASON      = new Date('2026-08-01T12:00:00'); // past all season windows
+const IN_SEASON_FF    = new Date('2026-05-01T12:00:00'); // FF active, 757 active, Waves inactive
+const OFFSEASON       = new Date('2026-08-01T12:00:00'); // past all season windows
 const IN_WAVES_SEASON = new Date('2026-06-25T12:00:00'); // within Waves season (Jun 15 – Jul 20)
 
 // ── secondsToTime ─────────────────────────────────────────────────────────────
@@ -40,8 +40,10 @@ describe('parseSwim', () => {
     const breast = result.mylesPBRows[0];
     assert.equal(breast.event, '50m Breast');
     assert.equal(breast.format, 'SCM');
-    assert.equal(breast.currentBest, '1:05.30');
-    assert.equal(breast.deltaState, 'has-2026');
+    assert.ok(breast.pb !== null, 'pb should be non-null when pbRecords has entry');
+    assert.equal(breast.lastSwim, null);                          // no swimResults provided
+    assert.equal(typeof breast.isNewPB, 'boolean');
+    assert.ok(breast.champsProgress !== null, 'champsProgress should be set when champs and pb exist');
   });
 
   it('opheliaPBRows is [] when neither Waves nor 757 season is active', () => {
@@ -66,7 +68,7 @@ describe('parseSwim — enhancements 2/4/5', () => {
   });
 
   it('champsProgress is correct float when champs target and time exist', () => {
-    // 50m Breast champs '1:05.00' = 65.0s; entry seconds 65.3
+    // 50m Breast champs '1:05.00' = 65.0s; pb seconds 65.3
     const pbRecords = {
       'Myles|50m Breast|SCM': { seconds: 65.3, date: '2026-05-01', meet: 'Spring Invite' },
     };
@@ -86,118 +88,117 @@ describe('parseSwim — enhancements 2/4/5', () => {
     assert.equal(result.mylesPBRows[0].champsProgress, 1.0);
   });
 
-  // ── champsDelta ──────────────────────────────────────────────────────────────
+});
 
-  it('champsDelta is null when champsProgress < 0.85', () => {
-    // 50m Back champs '57.00' = 57s; entry 75.0s → progress = 57/75 = 0.76
-    const pbRecords = {
-      'Myles|50m Back|SCM': { seconds: 75.0, date: '2026-05-01', meet: 'Meet' },
-    };
-    const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
-    const back = result.mylesPBRows.find(r => r.event === '50m Back');
-    assert.equal(back.champsDelta, null);
+// ── parseSwim — trend indicator PBRow ────────────────────────────────────────
+//
+// swimResults fixtures use full event names (as stored in swim-results.json);
+// EVENT_NAME_MAP in swimParser translates config short names to these full names.
+
+describe('parseSwim — trend indicator PBRow', () => {
+
+  it('lastSwim is null when no matching swimResults entry exists', () => {
+    const result = parseSwim({}, [], IN_SEASON_FF, FIXTURE_CONFIG);
+    assert.equal(result.mylesPBRows[0].lastSwim, null);
   });
 
-  it('champsDelta is null when champsProgress >= 1.0', () => {
-    // 56.0s < 57.0s champs → qualified
-    const pbRecords = {
-      'Myles|50m Back|SCM': { seconds: 56.0, date: '2026-05-01', meet: 'Meet' },
-    };
-    const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
-    const back = result.mylesPBRows.find(r => r.event === '50m Back');
-    assert.equal(back.champsDelta, null);
-  });
-
-  it('champsDelta uses real minus sign U+2212 and "s" suffix', () => {
-    // 50m Breast champs 65.0s; entry 65.5s → progress ≈ 0.992 (close)
-    // delta = 65.5 - 65.0 = 0.5 → '−0.5s'
-    const pbRecords = {
-      'Myles|50m Breast|SCM': { seconds: 65.5, date: '2026-05-01', meet: 'Meet' },
-    };
-    const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
-    const breast = result.mylesPBRows[0];
-    assert.equal(breast.champsDelta, '−0.5s');
-  });
-
-  // ── subNote ──────────────────────────────────────────────────────────────────
-
-  it('subNote includes formatted date and meet name when pbRecords entry exists', () => {
-    const pbRecords = {
-      'Myles|50m Breast|SCM': { seconds: 65.3, date: '2026-02-08', meet: 'Spring Invite' },
-    };
-    const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
-    const breast = result.mylesPBRows[0];
-    assert.equal(breast.subNote, 'Feb 8 · Spring Invite');
-  });
-
-  it('subNote truncates meet name at 30 chars with ellipsis', () => {
-    const longMeet = 'A Very Long Meet Name That Exceeds Thirty Characters';
-    const pbRecords = {
-      'Myles|50m Breast|SCM': { seconds: 65.3, date: '2026-02-08', meet: longMeet },
-    };
-    const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
-    const breast = result.mylesPBRows[0];
-    // meet portion is after ' · '
-    const meetPart = breast.subNote.split(' · ')[1];
-    assert.ok(meetPart.endsWith('…'), 'should end with ellipsis');
-    assert.ok(meetPart.length <= 30, `meet portion length ${meetPart.length} should be <= 30`);
-  });
-
-  it('subNote is empty string when deltaState is champs', () => {
-    // 63.0s < 65.0s champs → champs state
-    const pbRecords = {
-      'Myles|50m Breast|SCM': { seconds: 63.0, date: '2026-05-01', meet: 'Spring Invite' },
-    };
-    const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
-    const breast = result.mylesPBRows[0];
-    assert.equal(breast.deltaState, 'champs');
-    assert.equal(breast.subNote, '');
-  });
-
-  // ── sparkline data ───────────────────────────────────────────────────────────
-
-  it('mylesSparklineData is null when fewer than 3 matching results', () => {
+  it('lastSwim returns most recent result when multiple exist', () => {
     const swimResults = [
-      { swimmer: 'Myles', event: '25m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 60.0, date: '2026-01-01' },
-      { swimmer: 'Myles', event: '25m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 58.0, date: '2026-02-01' },
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 67.0, date: '2026-01-01' },
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 65.5, date: '2026-03-01' },
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 66.0, date: '2026-02-01' },
     ];
     const result = parseSwim({}, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
-    assert.equal(result.mylesSparklineData, null);
+    assert.equal(result.mylesPBRows[0].lastSwim.date, '2026-03-01');
   });
 
-  it('mylesSparklineData is sorted ascending by date', () => {
+  it('lastSwim excludes DQ entries', () => {
     const swimResults = [
-      { swimmer: 'Myles', event: '25m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 58.0, date: '2026-03-01' },
-      { swimmer: 'Myles', event: '25m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 62.0, date: '2026-01-01' },
-      { swimmer: 'Myles', event: '25m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 60.0, date: '2026-02-01' },
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: true, relay: false, seconds: 65.0, date: '2026-03-01' },
     ];
     const result = parseSwim({}, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
-    assert.ok(result.mylesSparklineData !== null);
-    const dates = result.mylesSparklineData.map(d => d.date);
-    assert.deepEqual(dates, ['2026-01-01', '2026-02-01', '2026-03-01']);
+    assert.equal(result.mylesPBRows[0].lastSwim, null);
   });
 
-  it('opheliaSparklineData uses SCY event and correct label during 757 season', () => {
+  it('lastSwim excludes relay entries', () => {
     const swimResults = [
-      { swimmer: 'Ophelia', event: '25y Backstroke', course: 'SCY', dq: false, relay: false, seconds: 30.0, date: '2026-01-01' },
-      { swimmer: 'Ophelia', event: '25y Backstroke', course: 'SCY', dq: false, relay: false, seconds: 29.5, date: '2026-02-01' },
-      { swimmer: 'Ophelia', event: '25y Backstroke', course: 'SCY', dq: false, relay: false, seconds: 29.0, date: '2026-03-01' },
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: true, seconds: 65.0, date: '2026-03-01' },
     ];
-    // IN_SEASON_FF: swim757 active, Waves inactive
     const result = parseSwim({}, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
-    assert.ok(result.opheliaSparklineData !== null);
-    assert.equal(result.opheliaSparklineLabel, '25y Back · SCY progression');
+    assert.equal(result.mylesPBRows[0].lastSwim, null);
   });
 
-  it('opheliaSparklineData is null when neither season is active', () => {
+  it('isNewPB is true when lastSwim.seconds === pb.seconds', () => {
+    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
     const swimResults = [
-      { swimmer: 'Ophelia', event: '25y Backstroke', course: 'SCY', dq: false, relay: false, seconds: 30.0, date: '2026-01-01' },
-      { swimmer: 'Ophelia', event: '25y Backstroke', course: 'SCY', dq: false, relay: false, seconds: 29.5, date: '2026-02-01' },
-      { swimmer: 'Ophelia', event: '25y Backstroke', course: 'SCY', dq: false, relay: false, seconds: 29.0, date: '2026-03-01' },
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 65.0, date: '2026-03-01' },
     ];
-    const result = parseSwim({}, swimResults, OFFSEASON, FIXTURE_CONFIG);
-    assert.equal(result.opheliaSparklineData, null);
-    assert.equal(result.opheliaSparklineLabel, null);
+    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    assert.equal(result.mylesPBRows[0].isNewPB, true);
+  });
+
+  it('isNewPB is true when lastSwim.date === pb.date (fallback)', () => {
+    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-03-01', meet: 'Meet A' } };
+    const swimResults = [
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 65.3, date: '2026-03-01' },
+    ];
+    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    assert.equal(result.mylesPBRows[0].isNewPB, true);
+  });
+
+  it('isNewPB is false when lastSwim is slower than pb', () => {
+    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
+    const swimResults = [
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 67.0, date: '2026-03-01' },
+    ];
+    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    assert.equal(result.mylesPBRows[0].isNewPB, false);
+  });
+
+  it('delta is positive when lastSwim is slower than pb', () => {
+    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
+    const swimResults = [
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 67.0, date: '2026-03-01' },
+    ];
+    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    const row = result.mylesPBRows[0];
+    assert.ok(row.delta > 0, 'delta should be positive when lastSwim is slower');
+    assert.equal(row.delta, 67.0 - 65.0);
+  });
+
+  it('delta is negative when lastSwim is faster than pb (data inconsistency)', () => {
+    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
+    const swimResults = [
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 64.0, date: '2026-03-01' },
+    ];
+    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    assert.ok(result.mylesPBRows[0].delta < 0, 'delta should be negative when lastSwim is faster than stored pb');
+  });
+
+  it('delta is null when lastSwim is null', () => {
+    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
+    const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
+    assert.equal(result.mylesPBRows[0].delta, null);
+  });
+
+  it('champsTarget is the raw champs string not converted to seconds', () => {
+    const result = parseSwim({}, [], IN_SEASON_FF, FIXTURE_CONFIG);
+    // Myles first event (50m Breast) has champs '1:05.00' in fixture
+    assert.equal(result.mylesPBRows[0].champsTarget, '1:05.00');
+  });
+
+  it('champsProgress uses pb.seconds not lastSwim.seconds as bestSec', () => {
+    // pb.seconds = 65.3 → champsProgress should be 65.0/65.3 ≈ 0.9954
+    // If lastSwim.seconds (64.0) were used → champsProgress would be 65.0/64.0 ≈ 1.016, capped at 1.0
+    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.3, date: '2026-01-01', meet: 'Meet A' } };
+    const swimResults = [
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 64.0, date: '2026-03-01' },
+    ];
+    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    const row = result.mylesPBRows[0];
+    const expectedPbBased = 65.0 / 65.3;
+    assert.ok(Math.abs(row.champsProgress - expectedPbBased) < 0.001,
+      `champsProgress ${row.champsProgress} should be pb-based ~${expectedPbBased}, not lastSwim-based`);
   });
 
 });
