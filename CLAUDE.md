@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 165+ passing
+- Run npm test after changes — must stay at 180+ passing
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
 
@@ -46,12 +46,13 @@
 - `flag-football.json` (`DRIVE_FLAG_FOOTBALL_FILE_ID`) — flag football seasons, teams, games, snack/captain data
 - `pb-records.json` (`DRIVE_PB_RECORDS_FILE_ID`) — current PBs per swimmer/event/course; flat key-value shape: `"Swimmer|Event|Course" → { seconds, date, meet }`; Updater-managed
 - `swim-results.json` (`DRIVE_SWIM_RESULTS_FILE_ID`) — complete historical swim results array; Updater-managed
-- `waves-season.json` — VPSU season data (not yet wired — reserved for wavesParser future work)
+- `waves-season.json` (`DRIVE_WAVES_SEASON_FILE_ID`) — VPSU season data; schema: `seasons` array with `year`, `wellingtonDivision`, `divisions` (teams with `abbr`/`name`), `meets` (with `scoreA`/`scoreB`, `date`, `friendly`)
 
 ### Parser modules
 - `digest/flagFootballParser.js` — internal module; derives season record, standings, captains, snack, opponent from flag-football.json
 - `digest/swimParser.js` — internal module; derives PB rows, season labels from pb-records.json + sports-config.json
-- `digest/athleticsParser.js` — thin coordinator; imports the two parsers above, sets season-active flags, assembles final athletics object
+- `digest/wavesParser.js` — internal module; derives division record, standings, last meet, next meet from waves-season.json
+- `digest/athleticsParser.js` — thin coordinator; imports the three parsers above, sets season-active flags, assembles final athletics object
 - `digest/sportsConfig.js` — exports only `isSeasonActive(sport, referenceDate)` (pure function — no data)
 
 ### Fetch functions (drive.js)
@@ -59,6 +60,7 @@
 - `getFlagFootballData()` — fetches flag-football.json
 - `getPBRecords()` — fetches pb-records.json; auto-creates empty `{}` file on 404
 - `getSwimResults()` — fetches swim-results.json
+- `getWavesSeasonData()` — fetches waves-season.json; throws on error
 
 Config and data are fetched at Lambda startup in parallel and passed as params to `parseAthleticsDoc` and `buildDigest`. Use the Updater agent to edit JSON files in Drive — do not hardcode season data in source.
 

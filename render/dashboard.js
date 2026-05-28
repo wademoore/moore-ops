@@ -64,6 +64,14 @@
  *   opheliaFooter:       string
  *   opheliaDanceNote:    string   e.g. "💃 \"I'm Still Standing\" · Recital May 30"
  *
+ *   // Wellington Waves division — populated by wavesParser.js
+ *   wavesRecord:         string             e.g. "2-1"
+ *   wavesLastMeet:       object|null        { opponent, result, myScore, oppScore, date }
+ *   wavesNextMeet:       object|null        { opponent, date, daysUntil, friendly }
+ *   wavesStandings:      array              [{ team, w, l, isMe }] sorted wins desc
+ *   wavesDivision:       number|null        e.g. 2
+ *   wavesSeasonYear:     number|null        e.g. 2026
+ *
  *   // Tidewater Sharks soccer — populated by builder.js when sharksActive is true
  *   sharksRecord:        string|undefined   e.g. "3-1"
  *   sharksLastResult:    string|undefined   e.g. "W 2–0"
@@ -594,42 +602,79 @@ function renderSharksCard(athletics) {
 </div>`;
 }
 
+// ── 6e-2. Card — Wellington Waves Division Standings ────────────────────────
+
+function renderWavesCard(athletics) {
+  const {
+    wavesRecord, wavesLastMeet, wavesNextMeet, wavesStandings,
+    wavesDivision, wavesSeasonYear,
+  } = athletics;
+
+  const record = wavesRecord || '0-0';
+
+  const lastMeetHtml = wavesLastMeet ? `
+<div>
+  <div class="flag-result">${wavesLastMeet.result} ${wavesLastMeet.myScore}–${wavesLastMeet.oppScore} vs ${wavesLastMeet.opponent}</div>
+  <div class="flag-result-lbl">Last meet</div>
+</div>` : '';
+
+  const nextBox = (() => {
+    if (!wavesNextMeet || wavesNextMeet.daysUntil > 7) return '';
+    const dateFmt = new Date(wavesNextMeet.date + 'T12:00:00')
+      .toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const friendlyTag = wavesNextMeet.friendly ? ' · (friendly)' : '';
+    return `
+<div class="flag-next-box">
+  <span class="flag-next-label">Next</span>
+  vs. ${wavesNextMeet.opponent}${friendlyTag} · ${dateFmt}
+</div>`;
+  })();
+
+  const standingsRows = (wavesStandings || []).map(row => `
+<tr${row.isMe ? ' class="me"' : ''}>
+  <td>${row.team}</td>
+  <td>${row.w}</td>
+  <td>${row.l}</td>
+</tr>`).join('');
+
+  return `
+<div class="sport-card">
+  <div class="sport-hdr">
+    ${sportLogo(LOGOS.waves)}
+    <span class="sport-name">Waves · Division ${wavesDivision ?? ''}</span>
+  </div>
+  <div class="flag-top">
+    <div>
+      <div class="sport-record">${record}</div>
+      <div class="sport-record-lbl">${wavesSeasonYear || 2026} Season</div>
+    </div>
+    ${lastMeetHtml}
+  </div>
+  ${nextBox}
+  <table class="standings">
+    <thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead>
+    <tbody>${standingsRows}</tbody>
+  </table>
+</div>`;
+}
+
 // ── 6f. Athletics card wrapper ───────────────────────────────────────────────
 
 function renderAthleticsCard(athletics) {
   const a = athletics || {};
 
   // Build the ordered list of cards that are currently active.
-  // Order: flag football → Myles swim → Ophelia swim → Sharks soccer.
+  // Order: flag football → Waves standings → Myles swim → Ophelia swim → Sharks soccer.
   const cards = [];
-  let flagFirst = false;
 
-  if (a.flagFootballActive) {
-    cards.push(renderFlagCard(a));
-    flagFirst = true;
-  }
-  if (a.wavesActive) {
-    cards.push(renderMylesCard(a));
-  }
-  if (a.wavesActive || a.swim757Active) {
-    cards.push(renderOpheliaCard(a));
-  }
-  if (a.sharksActive) {
-    cards.push(renderSharksCard(a));
-  }
+  if (a.flagFootballActive)             cards.push(renderFlagCard(a));
+  if (a.wavesActive)                    cards.push(renderWavesCard(a));
+  if (a.wavesActive)                    cards.push(renderMylesCard(a));
+  if (a.wavesActive || a.swim757Active) cards.push(renderOpheliaCard(a));
+  if (a.sharksActive)                   cards.push(renderSharksCard(a));
 
-  // Derive grid-template-columns dynamically.
-  // Flag football card is wider (1.3fr) to accommodate the standings table.
-  // All other cards share equal 1fr columns.
-  let gridCols;
-  if (cards.length === 0) {
-    gridCols = '1fr';
-  } else if (flagFirst) {
-    const rest = cards.length - 1;
-    gridCols = rest > 0 ? `1.3fr ${Array(rest).fill('1fr').join(' ')}` : '1.3fr';
-  } else {
-    gridCols = Array(cards.length).fill('1fr').join(' ');
-  }
+  // Equal-width grid — all cards share 1fr columns.
+  const gridCols = cards.length === 0 ? '1fr' : Array(cards.length).fill('1fr').join(' ');
 
   return `
 <div class="card athletics-card">
@@ -915,4 +960,4 @@ ${footer}
 // ---------------------------------------------------------------------------
 // EXPORTS
 // ---------------------------------------------------------------------------
-export { renderDashboard, renderTodayCard, renderWeekCard, renderAthleticsCard, renderFlagCard, renderMylesCard, renderOpheliaCard, renderSharksCard, renderAlerts, renderTicker, renderBanner, renderPBRow, daysFrom, countdownClass, countdownLabel, formatDay, formatDateNum, LOGOS, BANNER_PALETTES };
+export { renderDashboard, renderTodayCard, renderWeekCard, renderAthleticsCard, renderFlagCard, renderWavesCard, renderMylesCard, renderOpheliaCard, renderSharksCard, renderAlerts, renderTicker, renderBanner, renderPBRow, daysFrom, countdownClass, countdownLabel, formatDay, formatDateNum, LOGOS, BANNER_PALETTES };

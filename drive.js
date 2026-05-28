@@ -171,6 +171,29 @@ export async function getSwimResults(drv) {
   }
 }
 
+// ── getWavesSeasonData ────────────────────────────────────────────────────────
+// Fetches waves-season.json from Drive and returns the parsed object.
+// Throws on any error — caller wraps in Promise.all.
+
+export async function getWavesSeasonData(drv) {
+  const fileId = process.env.DRIVE_WAVES_SEASON_FILE_ID;
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+  try {
+    const res = await drv.files.get(
+      { fileId, alt: 'media' },
+      { responseType: 'text' }
+    );
+    const data = JSON.parse(res.data);
+    console.log(`[drive:getWavesSeasonData] Loaded file ${fileId}`);
+    return data;
+  } catch (err) {
+    throw new Error(`[drive:getWavesSeasonData] Failed to load (file: ${fileId}) — ${err.message}`);
+  }
+}
+
 // ── getPBRecords ──────────────────────────────────────────────────────────────
 // Fetches pb-records.json from Drive and returns the parsed flat key-value object.
 // Shape: { "Swimmer|Event|Course": { seconds, date, meet }, ... }

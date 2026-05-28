@@ -12,12 +12,13 @@
 import { isSeasonActive }     from './sportsConfig.js';
 import { parseFlagFootball }  from './flagFootballParser.js';
 import { parseSwim }          from './swimParser.js';
+import { parseWaves }         from './wavesParser.js';
 
 // ---------------------------------------------------------------------------
 // PUBLIC EXPORTS
 // ---------------------------------------------------------------------------
 
-export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootballData, pbRecords, swimResults) {
+export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootballData, pbRecords, swimResults, wavesSeasonData) {
   if (!config) throw new Error('[athleticsParser] config is required — getSportsConfig() must be called before parseAthleticsDoc()');
   if (!flagFootballData) return buildEmptyAthletics();
 
@@ -32,6 +33,9 @@ export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootba
   // ── Flag football fields ──────────────────────────────────────────────────
   const ff = parseFlagFootball(flagFootballData, referenceDate, config);
 
+  // ── Waves fields ──────────────────────────────────────────────────────────
+  const waves = parseWaves(wavesSeasonData || null, referenceDate);
+
   // ── Swim fields ───────────────────────────────────────────────────────────
   const swim = parseSwim(pbRecords || {}, swimResults || [], referenceDate, config);
 
@@ -41,6 +45,14 @@ export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootba
     wavesActive,
     swim757Active,
     sharksActive,
+
+    // Wellington Waves division
+    wavesRecord:        waves.wavesRecord,
+    wavesLastMeet:      waves.wavesLastMeet,
+    wavesNextMeet:      waves.wavesNextMeet,
+    wavesStandings:     waves.wavesStandings,
+    wavesDivision:      waves.wavesDivision,
+    wavesSeasonYear:    waves.wavesSeasonYear,
 
     // Flag football
     seasonRecord:       ff.seasonRecord,
@@ -78,6 +90,10 @@ export function buildEmptyAthletics() {
     wavesActive:        false,
     swim757Active:      false,
     sharksActive:       false,
+
+    // Wellington Waves division
+    wavesRecord: '0-0', wavesLastMeet: null, wavesNextMeet: null,
+    wavesStandings: [], wavesDivision: null, wavesSeasonYear: null,
 
     // Flag football
     seasonRecord: '?-?', lastResult: '', lastOpponent: null,
