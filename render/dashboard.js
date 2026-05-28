@@ -510,7 +510,7 @@ function renderPBRow(row) {
 <div class="pb-group">
   <div class="pb-row">
     <div class="pb-event-col">
-      ${abbreviateStroke(event)} <span class="pool-chip">${format}</span>
+      ${event} <span class="pool-chip">${format}</span>
     </div>
     <div class="pb-main">
       ${mainHtml}

@@ -7,7 +7,7 @@
  * all swim fields on the athletics object.
  */
 
-import { secondsToTime, timeToSeconds } from './dateUtils.js';
+import { timeToSeconds } from './dateUtils.js';
 import { isSeasonActive }               from './sportsConfig.js';
 
 // Event name mapping — sports-config uses abbreviated names; swim-results.json uses full names.
