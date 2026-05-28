@@ -94,6 +94,26 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   const mylesCaptain    = !!(nextCaptain?.mylesCaptain);
   const thisWeekOpponent = nextCaptain ? nextCaptain.opponent : null;
 
+  // ── Next flag game ───────────────────────────────────────────────────────────
+  // First upcoming scheduled game involving myTeamAbbr, sorted ascending.
+  // Friendly games are included — they are real events worth showing.
+  const scheduledGames = (season.games || [])
+    .filter(g => (g.home === myAbbr || g.away === myAbbr) && g.status === 'scheduled' && g.date >= todayStr)
+    .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+
+  let nextFlagGame = null;
+  if (scheduledGames.length > 0) {
+    const nextGame   = scheduledGames[0];
+    const oppAbbr    = nextGame.home === myAbbr ? nextGame.away : nextGame.home;
+    nextFlagGame = {
+      opponent: teamsMap.get(oppAbbr) || oppAbbr,
+      date:     nextGame.date,
+      daysUntil: Math.ceil((new Date(nextGame.date) - refDate) / 86400000),
+      time:     nextGame.time ?? null,
+      friendly: !!nextGame.friendly,
+    };
+  }
+
   // ── Season complete ──────────────────────────────────────────────────────────
   // All regular, non-rescheduled, non-friendly games must be final,
   // AND referenceDate must be past seasonEnd.
@@ -116,6 +136,7 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
     thisWeekOpponent,
     seasonComplete,
     finalRecord,
-    seasonLabel: season.label,
+    seasonLabel:  season.label,
+    nextFlagGame,
   };
 }

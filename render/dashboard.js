@@ -454,7 +454,7 @@ function renderFlagCard(athletics) {
   const {
     seasonRecord, lastResult, currentCaptains, currentSnackFamily,
     standings, hasGameThisWeek, thisWeekOpponent, thisWeekTime,
-    seasonComplete, finalRecord,
+    seasonComplete, finalRecord, nextFlagGame, seasonLabel,
   } = athletics;
 
   const record    = seasonRecord  || '?-?';
@@ -478,6 +478,17 @@ function renderFlagCard(athletics) {
   </div>
 </div>` : '';
 
+  const nextBox = !hasGameThisWeek && nextFlagGame && nextFlagGame.daysUntil <= 7 && !seasonComplete ? (() => {
+    const gameDate = new Date(nextFlagGame.date + 'T12:00:00');
+    const dateFmt  = gameDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const friendlyTag = nextFlagGame.friendly ? ' · (friendly)' : '';
+    return `
+<div class="flag-next-box">
+  <span class="flag-next-label">Next</span>
+  vs. ${nextFlagGame.opponent}${friendlyTag} · ${dateFmt}
+</div>`;
+  })() : '';
+
   const seasonNote = seasonComplete
     ? `<div style="font-size:20px;color:rgba(255,255,255,.5);margin-bottom:10px;">Season Complete · Final Record: ${finalRecord || record}</div>`
     : '';
@@ -491,11 +502,12 @@ function renderFlagCard(athletics) {
   <div class="flag-top">
     <div>
       <div class="sport-record">${record}</div>
-      <div class="sport-record-lbl">2026 Season</div>
+      <div class="sport-record-lbl">${seasonLabel || '2026 Season'}</div>
     </div>
     ${lastRes ? `<div><div class="flag-result">${lastRes.startsWith('W') ? lastRes : lastRes}</div><div class="flag-result-lbl">Last game</div></div>` : ''}
   </div>
   ${seasonNote}
+  ${nextBox}
   ${gameBox}
   <table class="standings">
     <thead><tr><th>Team</th><th>W</th><th>L</th><th>PF</th><th>PA</th></tr></thead>
@@ -804,6 +816,8 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
 .flag-result{font-size:38px;font-weight:700;color:#5dca8a;line-height:1}
 .flag-result-lbl{font-size:15px;color:rgba(255,255,255,.35);margin-top:2px}
 .flag-game-box{background:rgba(100,140,255,.1);border:1px solid rgba(100,140,255,.25);border-radius:8px;padding:10px 14px;margin-bottom:10px;flex-shrink:0}
+.flag-next-box{background:rgba(100,140,255,.06);border:1px solid rgba(100,140,255,.15);border-radius:8px;padding:10px 14px;margin-bottom:10px;flex-shrink:0;font-size:16px;color:rgba(255,255,255,.55)}
+.flag-next-label{display:inline-block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(100,140,255,.7);margin-right:8px}
 .flag-game-title{font-size:22px;font-weight:600;color:#fff;margin-bottom:5px}
 .flag-game-sub{font-size:18px;color:rgba(255,255,255,.48);line-height:1.45}
 .standings{width:100%;border-collapse:collapse;margin-top:auto}

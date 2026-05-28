@@ -161,4 +161,42 @@ describe('parseFlagFootball', () => {
     assert.equal(result.seasonComplete, true);
     assert.equal(result.finalRecord, '4-0');  // 4 wins: Apr 26, May 3, May 10, May 31
   });
+
+  it('nextFlagGame is null when no scheduled games remain (past season)', () => {
+    // AFTER_FF (Jul 1) is past all game dates — the May 31 scheduled game no longer qualifies
+    const result = parseFlagFootball(FIXTURE, AFTER_FF, CONFIG);
+    assert.equal(result.nextFlagGame, null);
+  });
+
+  it('nextFlagGame.opponent is the correct team name for next scheduled game', () => {
+    // At MAY_1, next scheduled game is May 31 Cowboys (home) vs Vikings (away)
+    const result = parseFlagFootball(FIXTURE, MAY_1, CONFIG);
+    assert.ok(result.nextFlagGame !== null, 'nextFlagGame should not be null');
+    assert.equal(result.nextFlagGame.opponent, 'Vikings');
+  });
+
+  it('nextFlagGame.daysUntil matches expected formula for May 1 → May 31 game', () => {
+    const result = parseFlagFootball(FIXTURE, MAY_1, CONFIG);
+    const expected = Math.ceil((new Date('2026-05-31') - MAY_1) / 86400000);
+    assert.equal(result.nextFlagGame.daysUntil, expected);
+  });
+
+  it('nextFlagGame.friendly is true and opponent is oppAbbr fallback for scheduled friendly', () => {
+    // Extend fixture with a scheduled friendly on Jun 15 (AllStars not in teamsMap)
+    const FIXTURE_WITH_FRIENDLY = {
+      seasons: [{
+        ...FIXTURE.seasons[0],
+        games: [
+          ...FIXTURE.seasons[0].games,
+          { type: 'regular', status: 'scheduled', date: '2026-06-15', home: 'Cowboys', away: 'AllStars', friendly: true },
+        ],
+      }],
+    };
+    // Use Jun 1 as refDate — May 31 scheduled game is excluded (date < '2026-06-01')
+    const JUN_1 = new Date('2026-06-01T12:00:00');
+    const result = parseFlagFootball(FIXTURE_WITH_FRIENDLY, JUN_1, CONFIG);
+    assert.ok(result.nextFlagGame !== null, 'nextFlagGame should not be null');
+    assert.equal(result.nextFlagGame.friendly, true);
+    assert.equal(result.nextFlagGame.opponent, 'AllStars');  // not in teamsMap → falls back to oppAbbr
+  });
 });
