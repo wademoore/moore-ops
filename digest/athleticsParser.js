@@ -80,6 +80,12 @@ export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootba
     opheliaPBRows:    swim.opheliaPBRows,
     opheliaFooter:    swim.opheliaFooter,
     opheliaDanceNote: swim.opheliaDanceNote,
+
+    // Sparkline data
+    mylesSparklineData:    swim.mylesSparklineData,
+    mylesSparklineLabel:   swim.mylesSparklineLabel,
+    opheliaSparklineData:  swim.opheliaSparklineData,
+    opheliaSparklineLabel: swim.opheliaSparklineLabel,
   };
 }
 
@@ -109,5 +115,11 @@ export function buildEmptyAthletics() {
     // Ophelia swim + dance
     opheliaSeason: 'Pre-Season', opheliaPBRows: [], opheliaFooter: '',
     opheliaDanceNote: '💃 "I\'m Still Standing" · Recital May 30, 1:00 PM',
+
+    // Sparkline data
+    mylesSparklineData:   null,
+    mylesSparklineLabel:  null,
+    opheliaSparklineData:  null,
+    opheliaSparklineLabel: null,
   };
 }

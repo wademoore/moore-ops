@@ -80,7 +80,7 @@
  * }
  *
  * StandingsRow { team, w, l, pf, pa, isMe }
- * PBRow        { event, format, currentBest, subNote, deltaState, deltaText }
+ * PBRow        { event, format, currentBest, subNote, deltaState, deltaText, champsProgress, champsDelta }
  *   deltaState: 'first'|'prior-only'|'has-2026'|'champs'
  *
  * ─────────────────────────────────────────────────────────────────────────
@@ -422,6 +422,14 @@ function renderWeekCard(digestData) {
 
 // ── 6a. Swim PB row ─────────────────────────────────────────────────────────
 
+function abbreviateStroke(event) {
+  return event
+    .replace('Freestyle',    'Free')
+    .replace('Backstroke',   'Back')
+    .replace('Breaststroke', 'Breast')
+    .replace('Butterfly',    'Fly');
+}
+
 function renderPBRow(row) {
   const { event, format, currentBest, subNote, deltaState, deltaText } = row;
 
@@ -443,16 +451,43 @@ function renderPBRow(row) {
       deltaHtml = deltaText || '';
   }
 
+  const pct = row.champsProgress;
+  let champsBar = '';
+  if (pct !== null && pct !== undefined) {
+    const fillPct = (Math.min(1.0, pct) * 100).toFixed(1);
+    let stateClass, label;
+    if (pct >= 1.0) {
+      stateClass = 'pb-champs-qual';
+      label = '<span class="pb-champs-label">CHAMPS ✓</span>';
+    } else if (pct >= 0.85) {
+      stateClass = 'pb-champs-close';
+      label = `<span class="pb-champs-label">${row.champsDelta}</span>`;
+    } else {
+      stateClass = 'pb-champs-far';
+      label = '';
+    }
+    champsBar = `
+<div class="pb-champs-row ${stateClass}">
+  <div class="pb-champs-bar">
+    <div class="pb-champs-fill" style="width:${fillPct}%;"></div>
+  </div>
+  ${label}
+</div>`;
+  }
+
   return `
-<div class="pb-row">
-  <div class="pb-left">
-    <div class="pb-event">${event} <span class="pool-chip">${format}</span></div>
-    <div class="pb-delta">${deltaHtml}</div>
+<div class="pb-group">
+  <div class="pb-row">
+    <div class="pb-left">
+      <div class="pb-event">${abbreviateStroke(event)} <span class="pool-chip">${format}</span></div>
+      <div class="pb-delta">${deltaHtml}</div>
+    </div>
+    <div class="pb-right">
+      <div class="pb-val">${currentBest || '—'}</div>
+      ${subNote ? `<div class="pb-sub">${subNote}</div>` : ''}
+    </div>
   </div>
-  <div class="pb-right">
-    <div class="pb-val">${currentBest || '—'}</div>
-    ${subNote ? `<div class="pb-sub">${subNote}</div>` : ''}
-  </div>
+  ${champsBar}
 </div>`;
 }
 
@@ -524,10 +559,58 @@ function renderFlagCard(athletics) {
 </div>`;
 }
 
+// ── 6b-2. Sparkline ──────────────────────────────────────────────────────────
+
+function renderSparkline(data, label) {
+  if (!data || data.length < 3) return '';
+  const n = data.length;
+  const W = 400, H = 80;
+  const padX = 12, padTop = 8, padBottom = 8;
+  const usableW = W - 2 * padX;
+  const usableH = H - padTop - padBottom;
+  const secs   = data.map(d => d.seconds);
+  const minS   = Math.min(...secs);
+  const maxS   = Math.max(...secs);
+  const rangeS = maxS - minS || 1;
+  const points = data.map((d, i) => ({
+    x: padX + (n === 1 ? usableW / 2 : (i / (n - 1)) * usableW),
+    y: padTop + ((d.seconds - minS) / rangeS) * usableH,
+    seconds: d.seconds,
+  }));
+  const pbIdx      = secs.indexOf(minS);
+  const recentIdx  = n - 1;
+  const recentIsPB = recentIdx === pbIdx;
+  const polylinePoints = points
+    .map(p => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  return `
+<div class="pb-sparkline-section">
+  <div class="pb-sparkline-hdr">${label}</div>
+  <svg class="pb-sparkline-svg" width="100%" height="80"
+       viewBox="0 0 400 80" preserveAspectRatio="none">
+    <polyline points="${polylinePoints}"
+      fill="none" stroke="rgba(100,140,255,.4)"
+      stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+    ${points.map((p, i) => {
+      if (i === pbIdx || (!recentIsPB && i === recentIdx)) return '';
+      return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}"
+        r="3" fill="rgba(100,140,255,.8)"/>`;
+    }).join('')}
+    <circle cx="${points[pbIdx].x.toFixed(1)}"
+      cy="${points[pbIdx].y.toFixed(1)}" r="4" fill="#5dca8a"/>
+    ${!recentIsPB
+      ? `<circle cx="${points[recentIdx].x.toFixed(1)}"
+           cy="${points[recentIdx].y.toFixed(1)}"
+           r="4" fill="rgba(255,255,255,.9)"/>`
+      : ''}
+  </svg>
+</div>`;
+}
+
 // ── 6c. Card 2 — Myles Wellington Waves ─────────────────────────────────────
 
 function renderMylesCard(athletics) {
-  const { mylesSeason, mylesPBRows, mylesFooter } = athletics;
+  const { mylesSeason, mylesPBRows, mylesFooter,
+          mylesSparklineData, mylesSparklineLabel } = athletics;
 
   const pbRows = (mylesPBRows || []).map(renderPBRow).join('');
 
@@ -539,6 +622,7 @@ function renderMylesCard(athletics) {
   </div>
   <span class="season-tag">${mylesSeason || '2026 Season'}</span>
   ${pbRows || '<div style="color:rgba(255,255,255,.3);font-size:14px;">No times recorded yet</div>'}
+  ${renderSparkline(mylesSparklineData, mylesSparklineLabel)}
   ${mylesFooter ? `<div class="sport-footer">${mylesFooter}</div>` : ''}
 </div>`;
 }
@@ -547,7 +631,8 @@ function renderMylesCard(athletics) {
 
 function renderOpheliaCard(athletics) {
   const { opheliaSeason, opheliaPBRows, opheliaFooter, opheliaDanceNote,
-          wavesActive, swim757Active } = athletics;
+          wavesActive, swim757Active,
+          opheliaSparklineData, opheliaSparklineLabel } = athletics;
 
   // Logo and title adapt to whichever swim season is active.
   // wavesActive takes priority since 757 pauses during the Waves summer season.
@@ -564,6 +649,7 @@ function renderOpheliaCard(athletics) {
   </div>
   <span class="season-tag">${opheliaSeason || '2026 Season'}</span>
   ${pbRows || '<div style="color:rgba(255,255,255,.3);font-size:14px;">No times recorded yet</div>'}
+  ${renderSparkline(opheliaSparklineData, opheliaSparklineLabel)}
   ${opheliaFooter ? `<div class="sport-footer">${opheliaFooter}</div>` : ''}
   ${opheliaDanceNote ? `<div class="dance-note">${opheliaDanceNote}</div>` : ''}
 </div>`;
@@ -886,6 +972,21 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
 .pb-right{text-align:right;flex-shrink:0}
 .pb-val{font-size:28px;font-weight:500;color:#fff;line-height:1}
 .pb-sub{font-size:14px;color:rgba(255,255,255,.28);margin-top:4px}
+.pb-group{border-bottom:1px solid rgba(255,255,255,.06)}
+.pb-group:last-child{border-bottom:none}
+.pb-group .pb-row{border-bottom:none;padding-bottom:4px}
+.pb-champs-row{display:flex;align-items:center;gap:8px;margin-top:2px;margin-bottom:7px}
+.pb-champs-bar{flex:1;height:3px;background:rgba(255,255,255,.07);border-radius:2px;position:relative}
+.pb-champs-fill{height:100%;border-radius:2px;position:absolute;left:0;top:0}
+.pb-champs-label{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;flex-shrink:0}
+.pb-champs-far .pb-champs-fill{background:rgba(100,140,255,.35)}
+.pb-champs-close .pb-champs-fill{background:#EF9F27}
+.pb-champs-qual .pb-champs-fill{background:#5dca8a}
+.pb-champs-close .pb-champs-label{color:#EF9F27}
+.pb-champs-qual .pb-champs-label{color:#5dca8a}
+.pb-sparkline-section{margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);flex-shrink:0}
+.pb-sparkline-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.28);margin-bottom:6px}
+.pb-sparkline-svg{display:block;width:100%}
 .sport-footer{font-size:14px;color:rgba(255,255,255,.28);margin-top:auto;padding-top:8px;line-height:1.5}
 .dance-note{font-size:18px;color:rgba(255,255,255,.5);margin-top:auto;padding-top:9px;border-top:1px solid rgba(255,255,255,.08);line-height:1.5;flex-shrink:0}
 .alerts{display:flex;gap:11px;flex-shrink:0}
