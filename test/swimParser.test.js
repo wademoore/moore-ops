@@ -31,7 +31,7 @@ describe('secondsToTime', () => {
 describe('parseSwim', () => {
   it('mylesPBRows has one entry per event in config with correct shape', () => {
     const pbRecords = {
-      'Myles|50m Breast|SCM': { seconds: 65.3, date: '2026-05-01', meet: 'Spring Invite' },
+      'Myles|50m Breaststroke|SCM': { seconds: 65.3, date: '2026-05-01', meet: 'Spring Invite' },
     };
     const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
 
@@ -61,7 +61,7 @@ describe('parseSwim — enhancements 2/4/5', () => {
   it('champsProgress is null when event has no champs target', () => {
     // Ophelia 757 events both have champs: null
     const pbRecords = {
-      'Ophelia|25m Back|SCY': { seconds: 30.01, date: '2026-02-08', meet: 'Meet' },
+      'Ophelia|25m Backstroke|SCY': { seconds: 30.01, date: '2026-02-08', meet: 'Meet' },
     };
     const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
     assert.equal(result.opheliaPBRows[0].champsProgress, null);
@@ -70,7 +70,7 @@ describe('parseSwim — enhancements 2/4/5', () => {
   it('champsProgress is correct float when champs target and time exist', () => {
     // 50m Breast champs '1:05.00' = 65.0s; pb seconds 65.3
     const pbRecords = {
-      'Myles|50m Breast|SCM': { seconds: 65.3, date: '2026-05-01', meet: 'Spring Invite' },
+      'Myles|50m Breaststroke|SCM': { seconds: 65.3, date: '2026-05-01', meet: 'Spring Invite' },
     };
     const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
     const breast = result.mylesPBRows[0];
@@ -82,7 +82,7 @@ describe('parseSwim — enhancements 2/4/5', () => {
   it('champsProgress is capped at 1.0 when swimmer has qualified', () => {
     // 63.0s < 65.0s champs → qualified
     const pbRecords = {
-      'Myles|50m Breast|SCM': { seconds: 63.0, date: '2026-05-01', meet: 'Spring Invite' },
+      'Myles|50m Breaststroke|SCM': { seconds: 63.0, date: '2026-05-01', meet: 'Spring Invite' },
     };
     const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
     assert.equal(result.mylesPBRows[0].champsProgress, 1.0);
@@ -129,7 +129,7 @@ describe('parseSwim — trend indicator PBRow', () => {
   });
 
   it('isNewPB is true when lastSwim.seconds === pb.seconds', () => {
-    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
+    const pbRecords = { 'Myles|50m Breaststroke|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
     const swimResults = [
       { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 65.0, date: '2026-03-01' },
     ];
@@ -138,7 +138,7 @@ describe('parseSwim — trend indicator PBRow', () => {
   });
 
   it('isNewPB is true when lastSwim.date === pb.date (fallback)', () => {
-    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-03-01', meet: 'Meet A' } };
+    const pbRecords = { 'Myles|50m Breaststroke|SCM': { seconds: 65.0, date: '2026-03-01', meet: 'Meet A' } };
     const swimResults = [
       { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 65.3, date: '2026-03-01' },
     ];
@@ -147,7 +147,7 @@ describe('parseSwim — trend indicator PBRow', () => {
   });
 
   it('isNewPB is false when lastSwim is slower than pb', () => {
-    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
+    const pbRecords = { 'Myles|50m Breaststroke|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
     const swimResults = [
       { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 67.0, date: '2026-03-01' },
     ];
@@ -156,7 +156,7 @@ describe('parseSwim — trend indicator PBRow', () => {
   });
 
   it('delta is positive when lastSwim is slower than pb', () => {
-    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
+    const pbRecords = { 'Myles|50m Breaststroke|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
     const swimResults = [
       { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 67.0, date: '2026-03-01' },
     ];
@@ -167,7 +167,7 @@ describe('parseSwim — trend indicator PBRow', () => {
   });
 
   it('delta is negative when lastSwim is faster than pb (data inconsistency)', () => {
-    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
+    const pbRecords = { 'Myles|50m Breaststroke|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
     const swimResults = [
       { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 64.0, date: '2026-03-01' },
     ];
@@ -176,7 +176,7 @@ describe('parseSwim — trend indicator PBRow', () => {
   });
 
   it('delta is null when lastSwim is null', () => {
-    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
+    const pbRecords = { 'Myles|50m Breaststroke|SCM': { seconds: 65.0, date: '2026-01-01', meet: 'Meet A' } };
     const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
     assert.equal(result.mylesPBRows[0].delta, null);
   });
@@ -190,7 +190,7 @@ describe('parseSwim — trend indicator PBRow', () => {
   it('champsProgress uses pb.seconds not lastSwim.seconds as bestSec', () => {
     // pb.seconds = 65.3 → champsProgress should be 65.0/65.3 ≈ 0.9954
     // If lastSwim.seconds (64.0) were used → champsProgress would be 65.0/64.0 ≈ 1.016, capped at 1.0
-    const pbRecords = { 'Myles|50m Breast|SCM': { seconds: 65.3, date: '2026-01-01', meet: 'Meet A' } };
+    const pbRecords = { 'Myles|50m Breaststroke|SCM': { seconds: 65.3, date: '2026-01-01', meet: 'Meet A' } };
     const swimResults = [
       { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 64.0, date: '2026-03-01' },
     ];

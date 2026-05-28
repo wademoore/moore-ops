@@ -58,7 +58,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config) {
       ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet }
       : null;
 
-    const key     = `Myles|${e.event}|${e.format}`;
+    const key     = `Myles|${EVENT_NAME_MAP[e.event] || e.event}|${e.format}`;
     const pbEntry = records[key] || null;
     const pb      = pbEntry
       ? { seconds: pbEntry.seconds, date: pbEntry.date, meet: pbEntry.meet }
@@ -110,7 +110,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config) {
         ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet }
         : null;
 
-      const key     = `Ophelia|${e.event}|${e.format}`;
+      const key     = `Ophelia|${EVENT_NAME_MAP[e.event] || e.event}|${e.format}`;
       const pbEntry = records[key] || null;
       const pb      = pbEntry
         ? { seconds: pbEntry.seconds, date: pbEntry.date, meet: pbEntry.meet }
