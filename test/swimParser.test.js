@@ -201,4 +201,36 @@ describe('parseSwim — trend indicator PBRow', () => {
       `champsProgress ${row.champsProgress} should be pb-based ~${expectedPbBased}, not lastSwim-based`);
   });
 
+  // ── leagueRank ───────────────────────────────────────────────────────────────
+
+  it('leagueRank is null when vpsuRankings is null', () => {
+    const result = parseSwim({}, [], IN_SEASON_FF, FIXTURE_CONFIG, null);
+    assert.equal(result.mylesPBRows[0].leagueRank, null);
+  });
+
+  it('leagueRank is null when no distance match (25m ranking vs 50m event)', () => {
+    // Myles event[0] is '50m Breast' — parseInt = 50
+    // VPSU entry has distance 25 → no match expected
+    const rankings = {
+      season: 2025,
+      swimmers: {
+        Myles: [{ ageGroup: 'Boys 8 & Under', distance: 25, stroke: 'Breaststroke', place: 46, time: '37.65S', date: '2025-07-07', meet: 'Test Meet' }],
+      },
+    };
+    const result = parseSwim({}, [], IN_SEASON_FF, FIXTURE_CONFIG, rankings);
+    assert.equal(result.mylesPBRows[0].leagueRank, null);
+  });
+
+  it('leagueRank returns place when stroke and distance both match', () => {
+    // Myles event[0] is '50m Breast' — parseInt = 50; includes('Breast') = true
+    const rankings = {
+      season: 2025,
+      swimmers: {
+        Myles: [{ ageGroup: 'Boys 8 & Under', distance: 50, stroke: 'Breaststroke', place: 12, time: '65.00', date: '2025-07-07', meet: 'Test Meet' }],
+      },
+    };
+    const result = parseSwim({}, [], IN_SEASON_FF, FIXTURE_CONFIG, rankings);
+    assert.equal(result.mylesPBRows[0].leagueRank, 12);
+  });
+
 });

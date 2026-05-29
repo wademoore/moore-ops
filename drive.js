@@ -194,6 +194,30 @@ export async function getWavesSeasonData(drv) {
   }
 }
 
+// ── getVpsuRankings ───────────────────────────────────────────────────────────
+// Fetches vpsu-rankings.json from Drive and returns the parsed object.
+// Returns null on any error — caller treats missing rankings as no-op.
+
+export async function getVpsuRankings(drv) {
+  const fileId = process.env.DRIVE_VPSU_RANKINGS_FILE_ID;
+  if (!drv) {
+    const auth = await getAuthClient();
+    drv = drive({ version: 'v3', auth });
+  }
+  try {
+    const res = await drv.files.get(
+      { fileId, alt: 'media' },
+      { responseType: 'text' }
+    );
+    const data = JSON.parse(res.data);
+    console.log(`[drive:getVpsuRankings] Loaded file ${fileId}`);
+    return data;
+  } catch (err) {
+    console.warn(`[drive:getVpsuRankings] Failed to load — ${err.message}`);
+    return null;
+  }
+}
+
 // ── getPBRecords ──────────────────────────────────────────────────────────────
 // Fetches pb-records.json from Drive and returns the parsed flat key-value object.
 // Shape: { "Swimmer|Event|Course": { seconds, date, meet }, ... }

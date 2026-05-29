@@ -18,7 +18,7 @@ import { parseWaves }         from './wavesParser.js';
 // PUBLIC EXPORTS
 // ---------------------------------------------------------------------------
 
-export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootballData, pbRecords, swimResults, wavesSeasonData) {
+export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings = null) {
   if (!config) throw new Error('[athleticsParser] config is required — getSportsConfig() must be called before parseAthleticsDoc()');
   if (!flagFootballData) return buildEmptyAthletics();
 
@@ -37,7 +37,7 @@ export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootba
   const waves = parseWaves(wavesSeasonData || null, referenceDate);
 
   // ── Swim fields ───────────────────────────────────────────────────────────
-  const swim = parseSwim(pbRecords || {}, swimResults || [], referenceDate, config);
+  const swim = parseSwim(pbRecords || {}, swimResults || [], referenceDate, config, vpsuRankings);
 
   return {
     // Season-active flags (consumed by render/dashboard.js for card visibility)

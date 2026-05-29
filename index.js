@@ -20,7 +20,8 @@ import { getFamilyDocs,
          getPBRecords,
          getFlagFootballData,
          getSwimResults,
-         getWavesSeasonData }                  from "./drive.js";
+         getWavesSeasonData,
+         getVpsuRankings }                     from "./drive.js";
 
 // ── Digest pipeline ───────────────────────────────────────────────────────────
 import { buildDigest }                         from "./digest/builder.js";
@@ -64,7 +65,7 @@ async function runDigest() {
 
   // ── Step 1: Fetch all data in parallel ─────────────────────────────────────
   console.log("Fetching data...");
-  const [rawEvents, rawEvents14d, emails, docs, newsletterText, nationalsData, sportsConfig, pbRecords, flagFootballData, swimResults, wavesSeasonData] = await Promise.all([
+  const [rawEvents, rawEvents14d, emails, docs, newsletterText, nationalsData, sportsConfig, pbRecords, flagFootballData, swimResults, wavesSeasonData, vpsuRankings] = await Promise.all([
     getCalendarEvents(),
     pull14Days(),
     getActivityEmails(),
@@ -76,6 +77,7 @@ async function runDigest() {
     getFlagFootballData(),
     getSwimResults(),
     getWavesSeasonData(),
+    getVpsuRankings(),
   ]);
 
   console.log(`  Calendar 72h: ${rawEvents.length} events`);
@@ -89,6 +91,7 @@ async function runDigest() {
   console.log(`  Swim results:  ${swimResults?.length ?? 0} result(s)`);
   console.log(`  PB records:    ${Object.keys(pbRecords || {}).length} key(s)`);
   console.log(`  Waves season:  ${wavesSeasonData ? '✓' : '✗'}`);
+  console.log(`  VPSU rankings: ${vpsuRankings ? '✓' : '✗ (non-fatal)'}`);
   console.log();
 
   // ── Step 2: Newsletter fallback notice ─────────────────────────────────────
@@ -111,6 +114,7 @@ async function runDigest() {
     pbRecords,
     swimResults,
     wavesSeasonData,
+    vpsuRankings,
   });
 
   // Patch in sports data — builder leaves this null for index.js to fill

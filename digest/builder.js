@@ -208,7 +208,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.banner]       Banner object set by Wade, or null
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData }) {
+export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings = null }) {
   if (!config) throw new Error('[buildDigest] config is required — pass the result of getSportsConfig()');
 
   const today = new Date();
@@ -318,7 +318,7 @@ export async function buildDigest({ rawEvents, emails, docs, newsletterText, ban
   const newsletterItems = parseNewsletterItems(newsletterText);
 
   // ── 12. Athletics data ───────────────────────────────────────────────────
-  const athletics = parseAthleticsDoc(today, config, flagFootballData, pbRecords, swimResults, wavesSeasonData);
+  const athletics = parseAthleticsDoc(today, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings);
 
   // Cross-reference calendar for flag game this week
   const flagGameEvent = allResolved.find(ev => ev.isFlagGame);

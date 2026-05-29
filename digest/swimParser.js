@@ -10,6 +10,36 @@
 import { timeToSeconds } from './dateUtils.js';
 import { isSeasonActive }               from './sportsConfig.js';
 
+// Stroke mapping — VPSU rankings use full stroke names; config uses abbreviated names.
+const STROKE_MAP = {
+  'Freestyle':         'Free',
+  'Backstroke':        'Back',
+  'Breaststroke':      'Breast',
+  'Butterfly':         'Fly',
+  'Individual Medley': 'IM',
+};
+
+/**
+ * Finds a swimmer's league rank for a given config event name.
+ * Matches on stroke abbreviation AND distance to avoid cross-event contamination.
+ * @param {string}      swimmerName      e.g. 'Myles'
+ * @param {string}      configEventName  e.g. '50m Breast'
+ * @param {object|null} rankings         vpsu-rankings.json parsed object
+ * @returns {number|null}
+ */
+function findLeagueRank(swimmerName, configEventName, rankings) {
+  if (!rankings) return null;
+  const entries = rankings.swimmers?.[swimmerName] || [];
+  const eventDistance = parseInt(configEventName);
+  const match = entries.find(r => {
+    const abbrev = STROKE_MAP[r.stroke];
+    return abbrev !== undefined &&
+           r.distance === eventDistance &&
+           configEventName.includes(abbrev);
+  });
+  return match ? match.place : null;
+}
+
 // Event name mapping — sports-config uses abbreviated names; swim-results.json uses full names.
 // Falls back to the config name as-is if no mapping is defined.
 const EVENT_NAME_MAP = {
@@ -28,13 +58,14 @@ const EVENT_NAME_MAP = {
 };
 
 /**
- * @param {object}   pbRecords    Flat key-value: "Swimmer|Event|Course" → { seconds, date, meet }
- * @param {object[]} swimResults  Array of swim result objects
- * @param {Date}     referenceDate
- * @param {object}   config       sports-config.json
+ * @param {object}      pbRecords     Flat key-value: "Swimmer|Event|Course" → { seconds, date, meet }
+ * @param {object[]}    swimResults   Array of swim result objects
+ * @param {Date}        referenceDate
+ * @param {object}      config        sports-config.json
+ * @param {object|null} vpsuRankings  vpsu-rankings.json parsed object, or null
  * @returns {object}
  */
-export function parseSwim(pbRecords, swimResults, referenceDate, config) {
+export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRankings = null) {
   const records       = pbRecords || {};
   const wavesActive   = isSeasonActive(config.wellingtonWaves, referenceDate);
   const swim757Active = isSeasonActive(config.swim757, referenceDate);
@@ -80,9 +111,11 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config) {
       ? Math.min(1.0, champSec / bestSec)
       : null;
 
+    const leagueRank = findLeagueRank('Myles', e.event, vpsuRankings);
+
     mylesPBRows.push({
       event: e.event, format: e.format,
-      lastSwim, pb, champsTarget, isNewPB, delta, champsProgress,
+      lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank,
     });
   }
 
@@ -132,9 +165,11 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config) {
         ? Math.min(1.0, champSec / bestSec)
         : null;
 
+      const leagueRank = findLeagueRank('Ophelia', e.event, vpsuRankings);
+
       opheliaPBRows.push({
         event: e.event, format: e.format,
-        lastSwim, pb, champsTarget, isNewPB, delta, champsProgress,
+        lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank,
       });
     }
   }

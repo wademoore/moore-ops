@@ -82,7 +82,7 @@ import { secondsToTime, timeToSeconds } from '../digest/dateUtils.js';
  * }
  *
  * StandingsRow { team, w, l, pf, pa, isMe }
- * PBRow        { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress }
+ * PBRow        { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank }
  *
  * ─────────────────────────────────────────────────────────────────────────
  * OUTPUT — complete HTML string written to moore_dashboard.html in Drive
@@ -432,7 +432,7 @@ function abbreviateStroke(event) {
 }
 
 function renderPBRow(row) {
-  const { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress } = row;
+  const { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank } = row;
 
   // State determination — checked in priority order
   const state = (() => {
@@ -467,17 +467,26 @@ function renderPBRow(row) {
     mainHtml = `<span class="pb-hero-time pb-hero-time--empty">—</span>`;
   }
 
+  // League rank chip — shown in all states when available
+  const rankHtml = leagueRank != null
+    ? `<div class="pb-ctx-rank">#${leagueRank} VPSU</div>`
+    : '';
+
   // pb-ctx content
   let ctxHtml = '';
   if (state === 'newpb') {
     if (champsTarget) ctxHtml = `<div class="pb-ctx-champs">Champs ${champsTarget}</div>`;
+    ctxHtml += rankHtml;
   } else if (state === 'champs') {
     if (lastSwim && !isNewPB) ctxHtml = `<div class="pb-ctx-last">Last ${secondsToTime(lastSwim.seconds)}</div>`;
+    ctxHtml += rankHtml;
   } else if (state === 'slower') {
     if (pb)           ctxHtml += `<div class="pb-ctx-pb">PB ${secondsToTime(pb.seconds)}</div>`;
     if (champsTarget) ctxHtml += `<div class="pb-ctx-champs">Champs ${champsTarget}</div>`;
+    ctxHtml += rankHtml;
   } else {
     if (champsTarget) ctxHtml = `<div class="pb-ctx-champs">Champs ${champsTarget}</div>`;
+    ctxHtml += rankHtml;
   }
 
   // Champs bar — logic unchanged, champsDelta now computed inline
@@ -962,6 +971,7 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
 .pb-ctx-pb{font-size:14px;color:rgba(255,255,255,.5);white-space:nowrap}
 .pb-ctx-last{font-size:14px;color:rgba(255,255,255,.5);white-space:nowrap}
 .pb-ctx-champs{font-size:12px;color:rgba(255,255,255,.25);white-space:nowrap}
+.pb-ctx-rank{font-size:11px;color:rgba(255,255,255,.35);white-space:nowrap}
 .pb-ctx-label{font-size:12px;font-weight:700;color:#5dca8a;white-space:nowrap}
 .pb-champs-row{display:flex;align-items:center;gap:8px;margin-top:2px;margin-bottom:7px}
 .pb-champs-bar{flex:1;height:3px;background:rgba(255,255,255,.07);border-radius:2px;position:relative}
