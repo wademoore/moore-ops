@@ -5,7 +5,6 @@ import { timeToSeconds } from "./digest/dateUtils.js";
 // ── Document IDs ──────────────────────────────────────────────────────────────
 const DOCS = {
   familyContext: process.env.DRIVE_FAMILY_CONTEXT_FILE_ID,
-  athletics:     process.env.DRIVE_ATHLETICS_FILE_ID,
 };
 
 // Stonehouse newsletter — updated by Wade each Sunday with new HTML

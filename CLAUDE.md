@@ -66,6 +66,8 @@
 
 Config and data are fetched at Lambda startup in parallel and passed as params to `parseAthleticsDoc` and `buildDigest`. Use the Updater agent to edit JSON files in Drive — do not hardcode season data in source.
 
+**Cleanup note:** `DRIVE_ATHLETICS_FILE_ID` has been removed from all source files (drive.js, .env.example). It is safe to delete from the Lambda environment variables in the AWS console.
+
 **Warning:** If `pb-records.json` is deleted from Google Drive, `getPBRecords()` will create a new empty file in the `moore-ops-data` folder with a different file ID. Subsequent runs will continue using the ID in `DRIVE_PB_RECORDS_FILE_ID` and hit 404 again, creating duplicate files. If the file is ever deleted intentionally, update `DRIVE_PB_RECORDS_FILE_ID` in both `.env` and Lambda environment variables to point to the new file ID, then re-seed the records.
 
 ## Meet results PDF processing (as of May 2026)
