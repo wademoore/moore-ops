@@ -47,6 +47,7 @@
 - `pb-records.json` (`DRIVE_PB_RECORDS_FILE_ID`) — current PBs per swimmer/event/course; flat key-value shape: `"Swimmer|Event|Course" → { seconds, date, meet }`; Updater-managed
 - `swim-results.json` (`DRIVE_SWIM_RESULTS_FILE_ID`) — complete historical swim results array; Updater-managed
 - `waves-season.json` (`DRIVE_WAVES_SEASON_FILE_ID`) — VPSU season data; schema: `seasons` array with `year`, `wellingtonDivision`, `divisions` (teams with `abbr`/`name`), `meets` (with `scoreA`/`scoreB`, `date`, `friendly`)
+- `vpsu-rankings.json` (`DRIVE_VPSU_RANKINGS_FILE_ID`) — VPSU league top-50 rankings per event; updated weekly via Updater during Waves season
 
 ### Parser modules
 - `digest/flagFootballParser.js` — internal module; derives season record, standings, captains, snack, opponent from flag-football.json
@@ -61,6 +62,7 @@
 - `getPBRecords()` — fetches pb-records.json; auto-creates empty `{}` file on 404
 - `getSwimResults()` — fetches swim-results.json
 - `getWavesSeasonData()` — fetches waves-season.json; throws on error
+- `getVpsuRankings()` — fetches vpsu-rankings.json; returns null on error (non-critical)
 
 Config and data are fetched at Lambda startup in parallel and passed as params to `parseAthleticsDoc` and `buildDigest`. Use the Updater agent to edit JSON files in Drive — do not hardcode season data in source.
 
