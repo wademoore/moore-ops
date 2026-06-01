@@ -1,7 +1,7 @@
 {
   "type": "module",
   "scripts": {
-    "test": "node --experimental-vm-modules --test test/**/*.test.js"
+    "test": "node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js"
   },
   "dependencies": {
     "@googleapis/calendar": "^14.3.0",

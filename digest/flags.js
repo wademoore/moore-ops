@@ -112,45 +112,6 @@ const EVALUATORS = [
     };
   },
 
-  // ── Myles Reading SOL — full week warning ───────────────────────────────
-  // May 12 & 13. Flag starting May 9 (the Friday before).
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-09', '2026-05-11')) return null;
-    return {
-      id: 'sol-reading-approaching',
-      level: 'amber',
-      title: '📚 Myles Reading SOL — May 12 & 13',
-      body: 'Full school day required BOTH days. No early dismissal, late arrival, or non-urgent appointments. Ensure strong sleep and breakfast both mornings.',
-      owner: ['wade', 'robyn'],
-      persist: false,
-    };
-  },
-
-  // ── Myles Math SOL — pre-warning ────────────────────────────────────────
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-16', '2026-05-18')) return null;
-    return {
-      id: 'sol-math-approaching',
-      level: 'amber',
-      title: '📚 Myles Math SOL — May 19 & 20',
-      body: 'Full school day required both days. No early dismissal or late arrival.',
-      owner: ['wade', 'robyn'],
-      persist: false,
-    };
-  },
-
-  // ── Myles Virginia Studies SOL ───────────────────────────────────────────
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-24', '2026-05-26')) return null;
-    return {
-      id: 'sol-va-studies-approaching',
-      level: 'amber',
-      title: '📚 Myles Virginia Studies SOL — May 27',
-      body: 'Full school day required. No early dismissal or late arrival.',
-      owner: ['wade', 'robyn'],
-      persist: false,
-    };
-  },
 
   // ── Flag Football Picture Day — June 7 ──────────────────────────────────
   // Rescheduled from May 17 to June 7 — same day as final regular season
@@ -168,37 +129,6 @@ const EVALUATORS = [
     };
   },
 
-  // ── Myles Family Life Education — May 29 ────────────────────────────────
-  // 4th grade FLE afternoon lesson. Full school day required.
-  // Warn starting May 27.
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-27', '2026-05-29')) return null;
-    const days = daysUntil(ctx.today, '2026-05-29');
-    return {
-      id: 'family-life-education',
-      level: 'blue',
-      title: `🔵 Myles Family Life Education — ${days === 0 ? 'Today' : `${days} Day${days === 1 ? '' : 's'} Away`} (May 29)`,
-      body: '4th grade FLE lessons scheduled for the afternoon. Boys and girls separated per VA state standards. Family has opted in — no action needed. Full school day required.',
-      owner: [],
-      persist: false,
-    };
-  },
-
-  // ── 757 Swim Commonwealth Games — June 11-14 ────────────────────────────
-  // Registration decision pending. Conflicts with Cowboys rain date June 14.
-  // Flag until registration decision is confirmed.
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-19', '2026-05-26')) return null;
-    const days = daysUntil(ctx.today, '2026-06-11');
-    return {
-      id: 'commonwealth-games-decision',
-      level: 'amber',
-      title: `🏊 757 Swim Commonwealth Games — ${days <= 0 ? 'This Week' : `${days} Day${days === 1 ? '' : 's'} Away`} (June 11–14)`,
-      body: 'Registration decision pending for Ophelia. Conflict: Cowboys rain date / championship is June 14 — same day as Commonwealth Games finals. Decide and register before deadline. Monitor notifications+va757@gomotionapp.com.',
-      owner: ['wade', 'robyn'],
-      persist: true,
-    };
-  },
 
   // ── Wellington Waves group assignments — post late-May assessment ────────
   // Group placement assessment happens late May. Flag until assignments land.
@@ -216,67 +146,6 @@ const EVALUATORS = [
     };
   },
 
-  // ── Ophelia Dance Picture Day — May 8 ───────────────────────────────────
-  // Arrive 5:00 PM, fully dressed in costume, hair and makeup done. No retakes.
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-06', '2026-05-08')) return null;
-    const days = daysUntil(ctx.today, '2026-05-08');
-    return {
-      id: 'dance-picture-day',
-      level: days === 0 ? 'red' : 'amber',
-      title: `💃 Ophelia Dance Picture Day — ${days === 0 ? 'TODAY' : `${days} Day${days === 1 ? '' : 's'} Away`} (May 8)`,
-      body: `Arrive 5:00 PM at Institute for Dance, 3356 Ironbound Rd Ste 501. Ophelia must be fully dressed in costume with hair and makeup done before arrival. Photos begin at 5:15 PM sharp — no retakes.`,
-      owner: ['robyn', 'wade'],
-      persist: false,
-    };
-  },
-
-  // ── Ophelia Dress Rehearsal — May 23 ────────────────────────────────────
-  // Confirmed: Saturday May 23, arrive 5:05 PM, Glenn Close Theater PBK Hall.
-  // Parents of dancers 12 and under stay until dancer is finished.
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-18', '2026-05-23')) return null;
-    const days = daysUntil(ctx.today, '2026-05-23');
-    return {
-      id: 'dance-dress-rehearsal',
-      level: days <= 1 ? 'red' : 'amber',
-      title: `💃 Dress Rehearsal — ${days === 0 ? 'TODAY' : days === 1 ? 'Tomorrow' : `${days} Days Away`} (May 23)`,
-      body: 'Arrive 5:05 PM at Glenn Close Theater, PBK Hall. Ophelia in full costume with hair and makeup done before arrival. Parents stay until dancer is finished.',
-      owner: ['robyn', 'wade'],
-      persist: false,
-    };
-  },
-
-  // ── Dance Recital — May 30 ───────────────────────────────────────────────
-  // Confirmed: Saturday May 30, 1:00 PM, Glenn Close Theater PBK Hall.
-  // Expect ~3 hours. Same costume/hair/makeup requirements as dress rehearsal.
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-24', '2026-05-30')) return null;
-    const days = daysUntil(ctx.today, '2026-05-30');
-    return {
-      id: 'dance-recital',
-      level: days <= 1 ? 'red' : 'amber',
-      title: `💃 Dance Recital — ${days === 0 ? 'TODAY' : days === 1 ? 'Tomorrow' : `${days} Days Away`} (May 30)`,
-      body: 'Glenn Close Theater, PBK Hall — 1:00 PM. Full costume, hair and makeup done before arrival. Plan for ~3 hours.',
-      owner: ['robyn', 'wade'],
-      persist: false,
-    };
-  },
-
-  // ── Family Life Education — May 29 ──────────────────────────────────────
-  // 4th grade FLE afternoon lesson. Full school day required.
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-27', '2026-05-29')) return null;
-    const days = daysUntil(ctx.today, '2026-05-29');
-    return {
-      id: 'family-life-education',
-      level: 'blue',
-      title: `🔵 Myles Family Life Education — ${days === 0 ? 'Today' : `${days} Day${days === 1 ? '' : 's'} Away`} (May 29)`,
-      body: '4th grade FLE lessons scheduled for the afternoon. Boys and girls separated per VA state standards. Family has opted in — no action needed. Full school day required.',
-      owner: [],
-      persist: false,
-    };
-  },
 
   // ── Sunday: no weekly menu set ───────────────────────────────────────────
   (ctx) => {
@@ -293,36 +162,6 @@ const EVALUATORS = [
     };
   },
 
-  // ── Alyssa Off — task reassignment ──────────────────────────────────────
-  (ctx) => {
-    const alyssaOff = ctx.resolvedEvents.some(e => e.title === 'Alyssa Off');
-    if (!alyssaOff) return null;
-    return {
-      id: 'alyssa-off',
-      level: 'red',
-      title: '⚠️ Alyssa Off',
-      body: 'Reassign all house tasks, dinner prep, and school pickup to Wade and Robyn. Wade handles Myles; Robyn handles Ophelia. Confirm dinner plan.',
-      owner: ['wade', 'robyn'],
-      persist: false,
-    };
-  },
-
-  // ── Alyssa Off — no dinner plan ─────────────────────────────────────────
-  // Secondary flag: Alyssa is off AND no menu event for that day.
-  (ctx) => {
-    const alyssaOff = ctx.resolvedEvents.some(e => e.title === 'Alyssa Off');
-    if (!alyssaOff) return null;
-    const hasDinnerPlan = ctx.menuEvents && ctx.menuEvents.length > 0;
-    if (hasDinnerPlan) return null;
-    return {
-      id: 'alyssa-off-no-dinner',
-      level: 'red',
-      title: '⚠️ No Dinner Plan — Alyssa Off',
-      body: 'No menu event found for today and Alyssa is off. Wade or Robyn must decide on dinner.',
-      owner: ['wade', 'robyn'],
-      persist: false,
-    };
-  },
 
   // ── Robyn solo evening — solo coverage needed ────────────────────────────
   (ctx) => {
@@ -332,8 +171,8 @@ const EVALUATORS = [
       id: 'solo-evening',
       level: 'amber',
       title: `🟡 Solo Evening — ${soloEvent.title}`,
-      body: 'Robyn is out this evening. Wade or Alyssa covers dinner and kids solo. Confirm who is home.',
-      owner: ['wade', 'alyssa'],
+      body: 'Robyn is out this evening. Wade covers dinner and kids solo.',
+      owner: ['wade'],
       persist: false,
     };
   },
@@ -396,21 +235,6 @@ const EVALUATORS = [
     };
   },
 
-  // ── Teacher Appreciation Week (first full week of May) ───────────────────
-  // Flag during the week with gift ideas from Section 20.
-  (ctx) => {
-    // First full Mon-Fri of May each year
-    // 2026: May 4-8
-    if (!inWindow(ctx.today, '2026-05-04', '2026-05-08')) return null;
-    return {
-      id: 'teacher-appreciation-week',
-      level: 'blue',
-      title: '🍎 Teacher Appreciation Week — May 4–8',
-      body: 'Ms. Maguire (Myles): CAVA, Nerds Gummy Clusters, Vanilla Sugar Free Red Bull, Starbucks/Target gift cards. Mrs. Watkins (Ophelia): NY Deli, gummy candy, Parmesan Goldfish, Celsius/coffee, WaWa/$10 or Amazon/$20 gift cards.',
-      owner: ['wade', 'robyn'],
-      persist: true,
-    };
-  },
 
   // ── Ms. Maguire birthday — June 6 ───────────────────────────────────────
   // Flag one week before.
