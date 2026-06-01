@@ -227,9 +227,6 @@ function renderWeeklyPriorities(weeklyPriorities) {
 
   if (completed.length > 0) {
     parts.push(`<div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:rgba(255,255,255,.28);margin:8px 0 4px;">COMPLETED THIS WEEK (${completed.length})</div>`);
-    for (const item of completed) {
-      parts.push(`<div style="font-size:18px;color:rgba(255,255,255,.3);">${item.title}</div>`);
-    }
   }
 
   return parts.join('\n');
