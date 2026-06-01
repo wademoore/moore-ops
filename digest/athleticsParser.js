@@ -19,7 +19,7 @@ import { parseWaves }         from './wavesParser.js';
 // ---------------------------------------------------------------------------
 
 export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings = null) {
-  if (!config) throw new Error('[athleticsParser] config is required — getSportsConfig() must be called before parseAthleticsDoc()');
+  if (!config) throw new Error('[athleticsParser] config is required — ensure data/sports-config.json is present and valid');
   if (!flagFootballData) return buildEmptyAthletics();
 
   // ── Season-active flags ───────────────────────────────────────────────────

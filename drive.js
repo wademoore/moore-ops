@@ -1,6 +1,5 @@
 import { drive } from "@googleapis/drive";
 import { getAuthClient } from "./auth.js";
-import { timeToSeconds } from "./digest/dateUtils.js";
 
 // ── Document IDs ──────────────────────────────────────────────────────────────
 const DOCS = {

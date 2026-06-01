@@ -2,15 +2,16 @@
  * digest/sportsConfig.js
  * Moore Family Operations Assistant
  *
- * Sports configuration data has moved to sports-config.json in Google Drive
- * (moore-ops-data folder). Use the Updater agent to edit season dates, event
- * lists, or swimmer configs — without touching any parser or renderer logic.
+ * Sports configuration data lives in data/sports-config.json (committed to
+ * the repo). digest/builder.js reads it from the local filesystem at runtime.
+ * Use the Updater agent to edit season dates, event lists, or swimmer configs
+ * — without touching any parser or renderer logic.
  *
  * This file now exports only the pure helper function:
  *   isSeasonActive — takes a sport config object + date, returns boolean
  *
- * The config object itself is fetched at Lambda startup via getSportsConfig()
- * in drive.js and passed as a parameter wherever it is needed.
+ * The config object is loaded from data/sports-config.json by builder.js and
+ * passed as a parameter wherever it is needed.
  */
 
 // ---------------------------------------------------------------------------
