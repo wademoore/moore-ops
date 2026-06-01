@@ -92,27 +92,6 @@ function daysUntil(today, targetStr) {
 
 const EVALUATORS = [
 
-  // ── Tidewater Sharks onboarding monitoring ──────────────────────────────
-  // DECISION CLOSED May 2026: Myles accepted U11 Premier White.
-  // Do NOT flag Legacy or Sharks decision prompts. Instead monitor
-  // dash@dashplatform.com and martinvickerton14@gmail.com for onboarding
-  // details: practice schedule, kit requirements, payment deadlines.
-  (ctx) => {
-    // Active through end of summer as onboarding continues
-    if (!inWindow(ctx.today, '2026-05-19', '2026-09-01')) return null;
-    const hasSharksMail = ctx.gmailHits?.sharks != null;
-    if (!hasSharksMail) return null; // Only surface when there is actually new mail
-    return {
-      id: 'sharks-onboarding-email',
-      level: 'amber',
-      title: '📬 Tidewater Sharks — New Onboarding Email',
-      body: 'New email from dash@dashplatform.com or martinvickerton14@gmail.com. Check for practice schedule, kit requirements, tournament dates, or payment deadlines.',
-      owner: ['wade'],
-      persist: false,
-    };
-  },
-
-
   // ── Flag Football Picture Day — June 7 ──────────────────────────────────
   // Rescheduled from May 17 to June 7 — same day as final regular season
   // game / playoffs. Warn starting May 31 (one week out).
@@ -123,25 +102,8 @@ const EVALUATORS = [
       id: 'flag-picture-day',
       level: days <= 1 ? 'amber' : 'blue',
       title: `📸 Flag Football Picture Day — ${days === 0 ? 'Today' : `${days} Day${days === 1 ? '' : 's'} Away`} (June 7)`,
-      body: 'Picture Day is the same day as the final regular season game / playoffs. Confirm uniform is clean and pressed. Check LeagueApps app for exact photo schedule.',
+      body: 'Picture Day is the same day as playoffs. Confirm uniform is clean and pressed. Check LeagueApps app for exact photo schedule.',
       owner: ['wade'],
-      persist: false,
-    };
-  },
-
-
-  // ── Wellington Waves group assignments — post late-May assessment ────────
-  // Group placement assessment happens late May. Flag until assignments land.
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-25', '2026-06-15')) return null;
-    const hasAssignment = ctx.gmailHits?.waves != null;
-    if (hasAssignment) return null; // New email may contain assignment — surfaces via activity-comms
-    return {
-      id: 'waves-group-assignment',
-      level: 'blue',
-      title: '🔵 Wellington Waves — Practice Group Assignments Pending',
-      body: 'Late-May assessment determines summer practice groups for both kids. Watch for group placement email from Wellington Waves and update calendar once received.',
-      owner: ['wade', 'robyn'],
       persist: false,
     };
   },
@@ -391,27 +353,6 @@ const EVALUATORS = [
     };
   },
 
-  // ── Activity comms: new email from activity orgs ────────────────────────
-  (ctx) => {
-    const hits = ctx.gmailHits || {};
-    const newItems = [];
-
-    if (hits.dance)        newItems.push('Dance studio (no-reply@thestudiodirectr.biz)');
-    if (hits.swim)         newItems.push('757 Swim / Coach Lindsay (gomotionapp.com)');
-    if (hits.flagFootball) newItems.push('Flag Football league (leagueapps.com)');
-    if (hits.sharks)       newItems.push('Tidewater Sharks (dash@dashplatform.com)');
-
-    if (newItems.length === 0) return null;
-
-    return {
-      id: 'activity-comms',
-      level: 'amber',
-      title: '📬 New Activity Communications',
-      body: `Recent emails from: ${newItems.join(', ')}. Review for schedule changes, deadlines, or action items.`,
-      owner: ['wade', 'robyn'],
-      persist: false,
-    };
-  },
 
 ];
 

@@ -61,38 +61,6 @@ describe('Legacy / Sharks decision flags — permanently retired', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Section 2 — Sharks onboarding
-// ---------------------------------------------------------------------------
-
-describe('Sharks onboarding — only fires when new email present', () => {
-  it('Sharks onboarding suppressed with no gmail hit', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-01') })).find(f => f.id === 'sharks-onboarding-email');
-    assert.ok(!flag);
-  });
-
-  it('Sharks onboarding fires with gmail hit', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-01'), gmailHits: { sharks: { id: 'x' } } })).find(f => f.id === 'sharks-onboarding-email');
-    assert.ok(flag != null);
-  });
-
-  it('Sharks onboarding is AMBER', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-01'), gmailHits: { sharks: { id: 'x' } } })).find(f => f.id === 'sharks-onboarding-email');
-    assert.equal(flag.level, 'amber');
-  });
-
-  it('Sharks onboarding body mentions dash@dashplatform.com', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-01'), gmailHits: { sharks: { id: 'x' } } })).find(f => f.id === 'sharks-onboarding-email');
-    assert.ok(/dash@dashplatform/i.test(flag.body));
-  });
-
-  it('Sharks onboarding suppressed before May 19', () => {
-    const flag = computeFlags(ctx({ today: d('2026-05-18'), gmailHits: { sharks: { id: 'x' } } })).find(f => f.id === 'sharks-onboarding-email');
-    assert.ok(!flag);
-  });
-});
-
-
-// ---------------------------------------------------------------------------
 // Section 4 — Flag Football Picture Day
 // ---------------------------------------------------------------------------
 
@@ -143,37 +111,6 @@ describe('Flag Football Picture Day — rescheduled June 7', () => {
 
 
 // ---------------------------------------------------------------------------
-// Section 7 — Wellington Waves group assignments
-// ---------------------------------------------------------------------------
-
-describe('Wellington Waves group assignments', () => {
-  it('Fires June 1', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-01') })).find(f => f.id === 'waves-group-assignment');
-    assert.ok(flag != null);
-  });
-
-  it('Is BLUE', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-01') })).find(f => f.id === 'waves-group-assignment');
-    assert.equal(flag.level, 'blue');
-  });
-
-  it('Suppressed when waves gmail hit present', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-01'), gmailHits: { waves: { id: 'x' } } })).find(f => f.id === 'waves-group-assignment');
-    assert.ok(!flag);
-  });
-
-  it('Suppressed before May 25', () => {
-    assert.ok(!computeFlags(ctx({ today: d('2026-05-24') })).find(f => f.id === 'waves-group-assignment'));
-  });
-
-  it('Suppressed after June 15', () => {
-    assert.ok(!computeFlags(ctx({ today: d('2026-06-16') })).find(f => f.id === 'waves-group-assignment'));
-  });
-});
-
-
-
-// ---------------------------------------------------------------------------
 // Section 10 — ADP season end
 // ---------------------------------------------------------------------------
 
@@ -196,44 +133,6 @@ describe('ADP season end — body updated for Sharks decision', () => {
   it('Body no longer mentions "Sharks offer"', () => {
     const flag = computeFlags(ctx({ today: d('2026-06-01') })).find(f => f.id === 'adp-season-end');
     assert.ok(!/Sharks offer/i.test(flag.body));
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Section 11 — Activity comms
-// ---------------------------------------------------------------------------
-
-describe('Activity comms — legacy removed, sharks shows Tidewater', () => {
-  it('Fires with sharks + dance hits', () => {
-    const flag = computeFlags(ctx({
-      today: d('2026-06-01'),
-      gmailHits: { sharks: { id: 'x' }, dance: { id: 'y' } },
-    })).find(f => f.id === 'activity-comms');
-    assert.ok(flag != null);
-  });
-
-  it('Body mentions Tidewater Sharks', () => {
-    const flag = computeFlags(ctx({
-      today: d('2026-06-01'),
-      gmailHits: { sharks: { id: 'x' }, dance: { id: 'y' } },
-    })).find(f => f.id === 'activity-comms');
-    assert.ok(/Tidewater Sharks/i.test(flag.body));
-  });
-
-  it('Body no longer mentions Legacy', () => {
-    const flag = computeFlags(ctx({
-      today: d('2026-06-01'),
-      gmailHits: { sharks: { id: 'x' }, dance: { id: 'y' } },
-    })).find(f => f.id === 'activity-comms');
-    assert.ok(!/Legacy/i.test(flag.body));
-  });
-
-  it('Suppressed for legacy-only hit (key retired)', () => {
-    const flag = computeFlags(ctx({
-      today: d('2026-06-01'),
-      gmailHits: { legacy: { id: 'z' } },
-    })).find(f => f.id === 'activity-comms');
-    assert.ok(!flag);
   });
 });
 
