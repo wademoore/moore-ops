@@ -148,11 +148,24 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * Assembles the full digestData object from all data sources.
  *
  * @param {object} params
- * @param {object[]}     params.rawEvents      From getCalendarEvents()
- * @param {object[]}     params.emails         From getActivityEmails()
- * @param {object}       params.docs           From getFamilyDocs()
+ * @param {object[]}     params.rawEvents        From getCalendarEvents()
+ * @param {object[]}     params.emails           From getActivityEmails()
+ * @param {object}       params.docs             From getFamilyDocs()
  * @param {string}       [params.newsletterText] Pre-fetched newsletter HTML/text from Drive
- * @param {object|null}  [params.banner]       Banner object set by Wade, or null
+ * @param {object|null}  [params.banner]         Banner object set by Wade, or null
+ * @param {object[]}     [params.rawEvents14d]   14-day calendar pull; falls back to rawEvents when omitted
+ *
+ * The following six params are for test fixture injection only. In production
+ * they are always omitted — builder.js reads the corresponding files from
+ * data/ via fs.readFile. Pass null (not undefined) to force an empty/absent
+ * value without triggering the disk-read fallback.
+ *
+ * @param {object}       [params.config]          Sports season config (data/sports-config.json)
+ * @param {object|null}  [params.flagFootballData] Flag football season data (data/flag-football.json); null → empty athletics
+ * @param {object}       [params.pbRecords]        PB records flat map (data/pb-records.json)
+ * @param {object[]}     [params.swimResults]      Swim results array (data/swim-results.json)
+ * @param {object}       [params.wavesSeasonData]  Waves season data (data/waves-season.json)
+ * @param {object|null}  [params.vpsuRankings]     VPSU league rankings (data/vpsu-rankings.json); null on file error
  * @returns {object}     digestData
  */
 export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings }) {
