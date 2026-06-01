@@ -1,0 +1,619 @@
+{
+    "athlete":  "Myles",
+    "sport":  "Flag Football",
+    "seasons":  [
+                    {
+                        "seasonId":  "fall-2025",
+                        "label":  "Fall 2025",
+                        "organization":  "Perfect Performance Flag",
+                        "league":  "Yorktown",
+                        "gradeGroup":  "4th-5th Grade Rec",
+                        "teamName":  "Cowboys",
+                        "coaches":  [
+                                        "Flintroy"
+                                    ],
+                        "myTeamAbbr":  "FLI",
+                        "location":  "McReynolds Athletic Complex, Toano VA",
+                        "seasonEnd":  "2025-11-02",
+                        "rainDate":  null,
+                        "pictureDay":  "2025-10-26",
+                        "snackSchedule":  [
+
+                                          ],
+                        "captainAssignments":  [
+
+                                               ],
+                        "teams":  [
+                                      {
+                                          "abbr":  "FLI",
+                                          "coach":  "Flintroy",
+                                          "teamName":  "Cowboys"
+                                      },
+                                      {
+                                          "abbr":  "RUL",
+                                          "coach":  "Rule",
+                                          "teamName":  "Browns"
+                                      },
+                                      {
+                                          "abbr":  "SCH",
+                                          "coach":  "Schmidt/Ruttledge/Johnson",
+                                          "teamName":  "Vikings"
+                                      },
+                                      {
+                                          "abbr":  "GAR",
+                                          "coach":  "Garrett/Riggins",
+                                          "teamName":  "Vikings"
+                                      },
+                                      {
+                                          "abbr":  "WAT",
+                                          "coach":  "Watkins",
+                                          "teamName":  "Cowboys"
+                                      },
+                                      {
+                                          "abbr":  "LEO",
+                                          "coach":  "Leonard",
+                                          "teamName":  "Commanders"
+                                      },
+                                      {
+                                          "abbr":  "BAK",
+                                          "coach":  "Baker/Pfauth",
+                                          "teamName":  "Seahawks"
+                                      },
+                                      {
+                                          "abbr":  "HER",
+                                          "coach":  "Herring",
+                                          "teamName":  "Panthers"
+                                      }
+                                  ],
+                        "games":  [
+                                      {
+                                          "date":  "2025-09-14",
+                                          "away":  "FLI",
+                                          "awayScore":  0,
+                                          "home":  "GAR",
+                                          "homeScore":  32,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-09-14",
+                                          "away":  "WAT",
+                                          "awayScore":  18,
+                                          "home":  "BAK",
+                                          "homeScore":  12,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-09-14",
+                                          "away":  "SCH",
+                                          "awayScore":  13,
+                                          "home":  "HER",
+                                          "homeScore":  6,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-09-14",
+                                          "away":  "RUL",
+                                          "awayScore":  36,
+                                          "home":  "LEO",
+                                          "homeScore":  6,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-09-21",
+                                          "away":  "RUL",
+                                          "awayScore":  32,
+                                          "home":  "GAR",
+                                          "homeScore":  2,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-09-21",
+                                          "away":  "FLI",
+                                          "awayScore":  0,
+                                          "home":  "BAK",
+                                          "homeScore":  38,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-09-21",
+                                          "away":  "SCH",
+                                          "awayScore":  32,
+                                          "home":  "WAT",
+                                          "homeScore":  0,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-09-21",
+                                          "away":  "LEO",
+                                          "awayScore":  6,
+                                          "home":  "HER",
+                                          "homeScore":  26,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-09-28",
+                                          "away":  "HER",
+                                          "awayScore":  null,
+                                          "home":  "GAR",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "rescheduled"
+                                      },
+                                      {
+                                          "date":  "2025-09-28",
+                                          "away":  "RUL",
+                                          "awayScore":  null,
+                                          "home":  "FLI",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "rescheduled"
+                                      },
+                                      {
+                                          "date":  "2025-09-28",
+                                          "away":  "SCH",
+                                          "awayScore":  null,
+                                          "home":  "BAK",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "rescheduled"
+                                      },
+                                      {
+                                          "date":  "2025-09-28",
+                                          "away":  "LEO",
+                                          "awayScore":  null,
+                                          "home":  "WAT",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "rescheduled"
+                                      },
+                                      {
+                                          "date":  "2025-10-05",
+                                          "away":  "GAR",
+                                          "awayScore":  28,
+                                          "home":  "WAT",
+                                          "homeScore":  0,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-10-05",
+                                          "away":  "HER",
+                                          "awayScore":  18,
+                                          "home":  "FLI",
+                                          "homeScore":  7,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-10-05",
+                                          "away":  "RUL",
+                                          "awayScore":  26,
+                                          "home":  "BAK",
+                                          "homeScore":  6,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-10-05",
+                                          "away":  "LEO",
+                                          "awayScore":  6,
+                                          "home":  "SCH",
+                                          "homeScore":  13,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-10-12",
+                                          "away":  "GAR",
+                                          "awayScore":  null,
+                                          "home":  "SCH",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "rescheduled"
+                                      },
+                                      {
+                                          "date":  "2025-10-12",
+                                          "away":  "HER",
+                                          "awayScore":  null,
+                                          "home":  "RUL",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "rescheduled"
+                                      },
+                                      {
+                                          "date":  "2025-10-12",
+                                          "away":  "LEO",
+                                          "awayScore":  null,
+                                          "home":  "BAK",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "rescheduled"
+                                      },
+                                      {
+                                          "date":  "2025-10-12",
+                                          "away":  "WAT",
+                                          "awayScore":  null,
+                                          "home":  "FLI",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "rescheduled"
+                                      },
+                                      {
+                                          "date":  "2025-10-19",
+                                          "away":  "HER",
+                                          "awayScore":  0,
+                                          "home":  "GAR",
+                                          "homeScore":  38,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-10-19",
+                                          "away":  "RUL",
+                                          "awayScore":  36,
+                                          "home":  "FLI",
+                                          "homeScore":  0,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-10-19",
+                                          "away":  "SCH",
+                                          "awayScore":  19,
+                                          "home":  "BAK",
+                                          "homeScore":  7,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-10-19",
+                                          "away":  "LEO",
+                                          "awayScore":  15,
+                                          "home":  "WAT",
+                                          "homeScore":  25,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-10-26",
+                                          "away":  "GAR",
+                                          "awayScore":  16,
+                                          "home":  "SCH",
+                                          "homeScore":  20,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-10-26",
+                                          "away":  "HER",
+                                          "awayScore":  6,
+                                          "home":  "RUL",
+                                          "homeScore":  24,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-10-26",
+                                          "away":  "LEO",
+                                          "awayScore":  24,
+                                          "home":  "BAK",
+                                          "homeScore":  7,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-10-26",
+                                          "away":  "WAT",
+                                          "awayScore":  20,
+                                          "home":  "FLI",
+                                          "homeScore":  25,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-11-02",
+                                          "away":  "HER",
+                                          "awayScore":  7,
+                                          "home":  "RUL",
+                                          "homeScore":  18,
+                                          "type":  "playoff",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-11-02",
+                                          "away":  "GAR",
+                                          "awayScore":  8,
+                                          "home":  "SCH",
+                                          "homeScore":  6,
+                                          "type":  "playoff",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-11-02",
+                                          "away":  "BAK",
+                                          "awayScore":  20,
+                                          "home":  "WAT",
+                                          "homeScore":  9,
+                                          "type":  "consolation",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2025-11-02",
+                                          "away":  "FLI",
+                                          "awayScore":  12,
+                                          "home":  "LEO",
+                                          "homeScore":  48,
+                                          "type":  "consolation",
+                                          "status":  "final"
+                                      }
+                                  ]
+                    },
+                    {
+                        "seasonId":  "spring-2026",
+                        "label":  "Spring 2026",
+                        "organization":  "Perfect Performance Flag",
+                        "league":  "Williamsburg",
+                        "gradeGroup":  "3rd-4th Grade Rec",
+                        "teamName":  "Cowboys",
+                        "coaches":  [
+                                        "Moore",
+                                        "Parker"
+                                    ],
+                        "myTeamAbbr":  "MPC",
+                        "location":  "Williamsburg Christian Academy, Toano VA",
+                        "seasonEnd":  "2026-06-07",
+                        "rainDate":  "2026-06-14",
+                        "pictureDay":  "2026-06-07",
+                        "teams":  [
+                                      {
+                                          "abbr":  "MPC",
+                                          "coach":  "Moore/Parker",
+                                          "teamName":  "Cowboys"
+                                      },
+                                      {
+                                          "abbr":  "BAR",
+                                          "coach":  "Barber",
+                                          "teamName":  "Chiefs"
+                                      },
+                                      {
+                                          "abbr":  "SLZ",
+                                          "coach":  "Slentz",
+                                          "teamName":  "Ravens"
+                                      },
+                                      {
+                                          "abbr":  "LAW",
+                                          "coach":  "Law",
+                                          "teamName":  "Raiders"
+                                      }
+                                  ],
+                        "snackSchedule":  [
+                                              {
+                                                  "week":  2,
+                                                  "date":  "2026-05-03",
+                                                  "family":  "Brown",
+                                                  "notes":  null
+                                              },
+                                              {
+                                                  "week":  3,
+                                                  "date":  "2026-05-10",
+                                                  "family":  "Ochoa",
+                                                  "notes":  null
+                                              },
+                                              {
+                                                  "week":  4,
+                                                  "date":  "2026-05-17",
+                                                  "family":  "Stewart",
+                                                  "notes":  "Game postponed — Stewart snack TBD for reschedule"
+                                              },
+                                              {
+                                                  "week":  5,
+                                                  "date":  "2026-05-31",
+                                                  "family":  "Maris-Wolf",
+                                                  "notes":  "No game May 24 Memorial Day"
+                                              },
+                                              {
+                                                  "week":  6,
+                                                  "date":  "2026-06-07",
+                                                  "family":  "Parker",
+                                                  "notes":  "Final regular season or playoffs"
+                                              },
+                                              {
+                                                  "week":  "rain-date",
+                                                  "date":  "2026-06-14",
+                                                  "family":  "TBD",
+                                                  "notes":  "If needed"
+                                              }
+                                          ],
+                        "captainAssignments":  [
+                                                   {
+                                                       "week":  1,
+                                                       "date":  "2026-04-26",
+                                                       "opponent":  "Raiders",
+                                                       "home":  true,
+                                                       "captains":  [
+                                                                        "Landon Ochoa",
+                                                                        "Ben Jenkins"
+                                                                    ],
+                                                       "mylesCaptain":  false
+                                                   },
+                                                   {
+                                                       "week":  2,
+                                                       "date":  "2026-05-03",
+                                                       "opponent":  "Ravens",
+                                                       "home":  false,
+                                                       "captains":  [
+                                                                        "Myles Moore",
+                                                                        "Levi Stewart"
+                                                                    ],
+                                                       "mylesCaptain":  true
+                                                   },
+                                                   {
+                                                       "week":  3,
+                                                       "date":  "2026-05-10",
+                                                       "opponent":  "Chiefs",
+                                                       "home":  true,
+                                                       "captains":  [
+                                                                        "Matthew Maris-Wolf",
+                                                                        "Benjamin Brown"
+                                                                    ],
+                                                       "mylesCaptain":  false
+                                                   },
+                                                   {
+                                                       "week":  4,
+                                                       "date":  "2026-05-17",
+                                                       "opponent":  "Raiders",
+                                                       "home":  true,
+                                                       "captains":  [
+                                                                        "Pierre Parker",
+                                                                        "Tripp Jenkins"
+                                                                    ],
+                                                       "mylesCaptain":  false
+                                                   },
+                                                   {
+                                                       "week":  5,
+                                                       "date":  "2026-05-31",
+                                                       "opponent":  "Ravens",
+                                                       "home":  false,
+                                                       "captains":  [
+                                                                        "Ben Jenkins",
+                                                                        "Landon Ochoa"
+                                                                    ],
+                                                       "mylesCaptain":  false
+                                                   },
+                                                   {
+                                                       "week":  6,
+                                                       "date":  "2026-06-07",
+                                                       "opponent":  "Chiefs",
+                                                       "home":  true,
+                                                       "captains":  [
+                                                                        "Tripp Jenkins",
+                                                                        "Benjamin Brown"
+                                                                    ],
+                                                       "mylesCaptain":  false
+                                                   }
+                                               ],
+                        "games":  [
+                                      {
+                                          "date":  "2026-04-26",
+                                          "away":  "LAW",
+                                          "awayScore":  0,
+                                          "home":  "MPC",
+                                          "homeScore":  26,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2026-04-26",
+                                          "away":  "BAR",
+                                          "awayScore":  22,
+                                          "home":  "SLZ",
+                                          "homeScore":  0,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2026-05-03",
+                                          "away":  "BAR",
+                                          "awayScore":  50,
+                                          "home":  "LAW",
+                                          "homeScore":  26,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2026-05-03",
+                                          "away":  "MPC",
+                                          "awayScore":  32,
+                                          "home":  "SLZ",
+                                          "homeScore":  8,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2026-05-10",
+                                          "away":  "SLZ",
+                                          "awayScore":  0,
+                                          "home":  "LAW",
+                                          "homeScore":  25,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2026-05-10",
+                                          "away":  "BAR",
+                                          "awayScore":  12,
+                                          "home":  "MPC",
+                                          "homeScore":  32,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2026-05-31",
+                                          "time":  "15:00",
+                                          "away":  "MPC",
+                                          "awayScore":  27,
+                                          "home":  "SLZ",
+                                          "homeScore":  6,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2026-05-31",
+                                          "time":  "15:00",
+                                          "away":  "BAR",
+                                          "awayScore":  null,
+                                          "home":  "LAW",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "scheduled"
+                                      },
+                                      {
+                                          "date":  "2026-05-31",
+                                          "time":  "16:00",
+                                          "away":  "LAW",
+                                          "awayScore":  0,
+                                          "home":  "MPC",
+                                          "homeScore":  19,
+                                          "type":  "regular",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2026-05-31",
+                                          "time":  "16:00",
+                                          "away":  "BAR",
+                                          "awayScore":  null,
+                                          "home":  "SLZ",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "scheduled"
+                                      },
+                                      {
+                                          "date":  "2026-06-07",
+                                          "away":  "SLZ",
+                                          "awayScore":  null,
+                                          "home":  "LAW",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "scheduled"
+                                      },
+                                      {
+                                          "date":  "2026-06-07",
+                                          "away":  "BAR",
+                                          "awayScore":  null,
+                                          "home":  "MPC",
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "status":  "scheduled"
+                                      }
+                                  ]
+                    }
+                ]
+}

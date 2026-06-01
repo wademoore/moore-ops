@@ -82,9 +82,11 @@ const RESULT = await buildDigest(MINIMAL_PARAMS);
 // ── Input validation ───────────────────────────────────────────────────────────
 
 describe('buildDigest — input validation', () => {
-  it('throws when config is missing', async () => {
+  it('throws when config is explicitly null (no disk-read fallback for null)', async () => {
+    // Passing null is treated as "intentionally absent" — no fallback to data/ file.
+    // Passing undefined (or omitting the param) triggers the disk-read fallback instead.
     await assert.rejects(
-      () => buildDigest({ ...MINIMAL_PARAMS, config: undefined }),
+      () => buildDigest({ ...MINIMAL_PARAMS, config: null }),
       /config is required/
     );
   });

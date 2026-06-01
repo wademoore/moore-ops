@@ -2,28 +2,23 @@
  * test/drive.test.js
  * Moore Family Operations Assistant
  *
- * Unit tests for the three new drive.js functions:
- *   getSportsConfig(drv)
- *   getPBRecords(drv)
- *   updatePBRecords(pbData, currentRecords, drv)
+ * Unit tests for drive.js functions that remain Drive-backed:
+ *   getProcessedMeets(drv)
+ *   updateProcessedMeets(newEntry, currentProcessed, drv)
  *
- * Each test passes a stub drv object (the test seam) so no real Drive
- * API calls are made. The optional drv parameter on each function is
- * the same pattern used for referenceDate in athleticsParser.js.
+ * Sports JSON functions (getSportsConfig, getPBRecords, etc.) were removed
+ * from drive.js in the June 2026 local-data migration — see test/data.test.js
+ * for coverage of the replacement filesystem-based loading.
  */
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 // Set env vars before importing drive.js so the functions can read them
-process.env.DRIVE_SPORTS_CONFIG_FILE_ID  = 'test-sports-config-id';
-process.env.DRIVE_PB_RECORDS_FILE_ID     = 'test-pb-records-id';
-process.env.DRIVE_DATA_FOLDER_ID         = 'test-folder-id';
+process.env.DRIVE_DATA_FOLDER_ID          = 'test-folder-id';
 process.env.DRIVE_PROCESSED_MEETS_FILE_ID = 'test-processed-meets-id';
 
 import {
-  getSportsConfig,
-  getPBRecords,
   getProcessedMeets,
   updateProcessedMeets,
 } from '../drive.js';
@@ -40,102 +35,6 @@ function stubDrv(overrides = {}) {
     },
   };
 }
-
-// ── getSportsConfig ───────────────────────────────────────────────────────────
-
-describe('getSportsConfig(drv)', () => {
-  it('valid JSON response returns parsed object with expected top-level keys', async () => {
-    const fakeConfig = {
-      flagFootball: { active: true }, wellingtonWaves: {},
-      swim757: {}, sharks: {}, swimmers: {},
-    };
-    const drv = stubDrv({ get: async () => ({ data: JSON.stringify(fakeConfig) }) });
-
-    const result = await getSportsConfig(drv);
-    assert.deepEqual(result, fakeConfig);
-    assert.ok('flagFootball' in result, 'flagFootball key present');
-    assert.ok('swimmers' in result,     'swimmers key present');
-  });
-
-  it('invalid JSON response throws with file ID in message', async () => {
-    const drv = stubDrv({ get: async () => ({ data: 'not { valid json' }) });
-
-    await assert.rejects(
-      () => getSportsConfig(drv),
-      (err) => {
-        assert.ok(
-          err.message.includes('test-sports-config-id'),
-          'Error should contain file ID, got: ' + err.message
-        );
-        return true;
-      }
-    );
-  });
-
-  it('Drive API error throws with file ID in message', async () => {
-    const drv = stubDrv({ get: async () => { throw new Error('network timeout'); } });
-
-    await assert.rejects(
-      () => getSportsConfig(drv),
-      (err) => {
-        assert.ok(
-          err.message.includes('test-sports-config-id'),
-          'Error should contain file ID, got: ' + err.message
-        );
-        return true;
-      }
-    );
-  });
-});
-
-// ── getPBRecords ──────────────────────────────────────────────────────────────
-
-describe('getPBRecords(drv)', () => {
-  it('404 response creates file and returns empty flat object', async () => {
-    let createCalled = false;
-    const notFoundErr = Object.assign(new Error('File not found'), { response: { status: 404 } });
-
-    const drv = stubDrv({
-      get:    async () => { throw notFoundErr; },
-      create: async () => { createCalled = true; return { data: { id: 'new-id' } }; },
-    });
-
-    const result = await getPBRecords(drv);
-    assert.ok(createCalled, 'files.create should be called on 404');
-    assert.deepEqual(result, {}, 'should return empty flat object');
-  });
-
-  it('valid response returns flat key-value object', async () => {
-    const stored = {
-      'Myles|50m Breast|SCM': { seconds: 58.5, date: '2026-05-01', meet: 'Spring Invite' },
-      'Ophelia|25m Back|SCM': { seconds: 31.2, date: '2026-05-01', meet: 'Spring Invite' },
-    };
-    const drv = stubDrv({ get: async () => ({ data: JSON.stringify(stored) }) });
-
-    const result = await getPBRecords(drv);
-    assert.equal(Object.keys(result).length, 2);
-    assert.equal(result['Myles|50m Breast|SCM'].seconds, 58.5);
-    assert.equal(result['Ophelia|25m Back|SCM'].meet, 'Spring Invite');
-  });
-
-  it('non-404 Drive error throws', async () => {
-    const serverErr = Object.assign(new Error('internal server error'), { response: { status: 500 } });
-    const drv = stubDrv({ get: async () => { throw serverErr; } });
-
-    await assert.rejects(() => getPBRecords(drv), /internal server error/);
-  });
-
-  it('404 + create failure — create error propagates', async () => {
-    const notFoundErr = Object.assign(new Error('File not found'), { response: { status: 404 } });
-    const createErr   = new Error('Drive create failed');
-    const drv = stubDrv({
-      get:    async () => { throw notFoundErr; },
-      create: async () => { throw createErr; },
-    });
-
-    await assert.rejects(() => getPBRecords(drv), /Drive create failed/);
-  });
-});
 
 // ── getProcessedMeets ─────────────────────────────────────────────────────────
 

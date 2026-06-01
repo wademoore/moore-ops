@@ -39,15 +39,20 @@
 - Update CLAUDE.md after any significant change
 - Use /plan before Planner prompts to enforce no-edit mode
 
-## Sports data architecture (as of May 2026)
+## Sports data architecture (as of June 2026)
 
-### Drive JSON files (`moore-ops-data/` folder)
-- `sports-config.json` (`DRIVE_SPORTS_CONFIG_FILE_ID`) — season dates, swimmer event configs, qualifying times
-- `flag-football.json` (`DRIVE_FLAG_FOOTBALL_FILE_ID`) — flag football seasons, teams, games, snack/captain data
-- `pb-records.json` (`DRIVE_PB_RECORDS_FILE_ID`) — current PBs per swimmer/event/course; flat key-value shape: `"Swimmer|Event|Course" → { seconds, date, meet }`; Updater-managed
-- `swim-results.json` (`DRIVE_SWIM_RESULTS_FILE_ID`) — complete historical swim results array; Updater-managed
-- `waves-season.json` (`DRIVE_WAVES_SEASON_FILE_ID`) — VPSU season data; schema: `seasons` array with `year`, `wellingtonDivision`, `divisions` (teams with `abbr`/`name`), `meets` (with `scoreA`/`scoreB`, `date`, `friendly`)
-- `vpsu-rankings.json` (`DRIVE_VPSU_RANKINGS_FILE_ID`) — VPSU league top-50 rankings per event; updated weekly via Updater during Waves season
+### Local JSON files (`data/` folder — committed to repo)
+- `sports-config.json` — season dates, swimmer event configs, qualifying times
+- `flag-football.json` — flag football seasons, teams, games, snack/captain data
+- `pb-records.json` — current PBs per swimmer/event/course; flat key-value shape: `"Swimmer|Event|Course" → { seconds, date, meet }`; Updater-managed
+- `swim-results.json` — complete historical swim results array; Updater-managed
+- `waves-season.json` — VPSU season data; schema: `seasons` array with `year`, `wellingtonDivision`, `divisions` (teams with `abbr`/`name`), `meets` (with `scoreA`/`scoreB`, `date`, `friendly`)
+- `vpsu-rankings.json` — VPSU league top-50 rankings per event; updated weekly via Updater during Waves season
+
+These files are read directly by `digest/builder.js` via `fs.readFile` — no Drive fetch. To update them, edit the files in the repo and redeploy, or use the Updater agent to push new versions.
+
+**Retired Lambda env vars** (can be removed from Lambda configuration — no longer used):
+`DRIVE_SPORTS_CONFIG_FILE_ID`, `DRIVE_FLAG_FOOTBALL_FILE_ID`, `DRIVE_PB_RECORDS_FILE_ID`, `DRIVE_SWIM_RESULTS_FILE_ID`, `DRIVE_WAVES_SEASON_FILE_ID`, `DRIVE_VPSU_RANKINGS_FILE_ID`
 
 ### Parser modules
 - `digest/flagFootballParser.js` — internal module; derives season record, standings, captains, snack, opponent from flag-football.json
@@ -55,19 +60,6 @@
 - `digest/wavesParser.js` — internal module; derives division record, standings, last meet, next meet from waves-season.json
 - `digest/athleticsParser.js` — thin coordinator; imports the three parsers above, sets season-active flags, assembles final athletics object
 - `digest/sportsConfig.js` — exports only `isSeasonActive(sport, referenceDate)` (pure function — no data)
-
-### Fetch functions (drive.js)
-- `getSportsConfig()` — fetches sports-config.json
-- `getFlagFootballData()` — fetches flag-football.json
-- `getPBRecords()` — fetches pb-records.json; auto-creates empty `{}` file on 404
-- `getSwimResults()` — fetches swim-results.json
-- `getWavesSeasonData()` — fetches waves-season.json; throws on error
-- `getVpsuRankings()` — fetches vpsu-rankings.json; returns null on error (non-critical)
-
-Config and data are fetched at Lambda startup in parallel and passed as params to `parseAthleticsDoc` and `buildDigest`. Use the Updater agent to edit JSON files in Drive — do not hardcode season data in source.
-
-
-**Warning:** If `pb-records.json` is deleted from Google Drive, `getPBRecords()` will create a new empty file in the `moore-ops-data` folder with a different file ID. Subsequent runs will continue using the ID in `DRIVE_PB_RECORDS_FILE_ID` and hit 404 again, creating duplicate files. If the file is ever deleted intentionally, update `DRIVE_PB_RECORDS_FILE_ID` in both `.env` and Lambda environment variables to point to the new file ID, then re-seed the records.
 
 ## Meet results PDF processing (as of May 2026)
 - `digest/meetResultsParser.js` — parses SwimTopia Meet Maestro PDF text, extracts Moore family results, merges PB updates against stored records (pure functions, no Drive I/O)

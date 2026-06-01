@@ -48,6 +48,7 @@
  * }
  */
 
+import { readFile } from 'node:fs/promises';
 import { resolveEvent } from './aliases.js';
 import { computeFlags } from './flags.js';
 import { getSchoolStrip, addNoSchoolDate } from './schoolRotation.js';
@@ -60,6 +61,18 @@ import { generateTasks } from './generateTasks.js';
 
 // Re-export so existing callers (e.g. builder.test.js) continue to work.
 export { generateTasks };
+
+// ---------------------------------------------------------------------------
+// LOCAL DATA FILES
+// ---------------------------------------------------------------------------
+// Sports JSON files live in data/ at the project root (one level above digest/).
+// readDataFile() is the internal loader; it is also used as a fallback when
+// the sports params are not injected by a caller (e.g. in tests).
+
+async function readDataFile(filename) {
+  const url = new URL(`../data/${filename}`, import.meta.url);
+  return JSON.parse(await readFile(url, 'utf8'));
+}
 
 // ---------------------------------------------------------------------------
 // 1. GMAIL SENDER → gmailHits KEY MAP  (moved to digest/gmailParser.js)
@@ -142,8 +155,22 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.banner]       Banner object set by Wade, or null
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings = null }) {
-  if (!config) throw new Error('[buildDigest] config is required — pass the result of getSportsConfig()');
+export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings }) {
+  // Load sports data from local data/ files when not injected by the caller.
+  // Params are left as optional so tests can inject fixture objects directly.
+  // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
+  // only undefined (param absent) triggers the disk read.
+  if (config           === undefined) config           = await readDataFile('sports-config.json');
+  if (flagFootballData === undefined) flagFootballData = await readDataFile('flag-football.json');
+  if (pbRecords        === undefined) pbRecords        = await readDataFile('pb-records.json');
+  if (swimResults      === undefined) swimResults      = await readDataFile('swim-results.json');
+  if (wavesSeasonData  === undefined) wavesSeasonData  = await readDataFile('waves-season.json');
+  if (vpsuRankings     === undefined) {
+    try { vpsuRankings = await readDataFile('vpsu-rankings.json'); }
+    catch { vpsuRankings = null; }  // non-critical — treat missing file as no rankings
+  }
+
+  if (!config) throw new Error('[buildDigest] config is required — ensure data/sports-config.json is valid');
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);

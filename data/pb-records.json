@@ -1,0 +1,83 @@
+{
+  "Myles|25m Freestyle|SCM": {
+    "seconds": 31.16,
+    "date": "2025-07-26",
+    "meet": "Summer Awards"
+  },
+  "Myles|25m Breaststroke|SCM": {
+    "seconds": 37.65,
+    "date": "2025-07-07",
+    "meet": "Ford's Colony at Wellington Waves"
+  },
+  "Myles|25m Backstroke|SCM": {
+    "seconds": 41.18,
+    "date": "2025-07-21",
+    "meet": "Greenspring Gators at Wellington Waves"
+  },
+  "Ophelia|25m Freestyle|SCM": {
+    "seconds": 35.64,
+    "date": "2026-04-25",
+    "meet": "14 and Under Spring Challenge"
+  },
+  "Ophelia|25m Backstroke|SCM": {
+    "seconds": 33.62,
+    "date": "2025-08-02",
+    "meet": "Champs"
+  },
+  "Ophelia|25m Breaststroke|SCM": {
+    "seconds": 44.4,
+    "date": "2025-07-26",
+    "meet": "Summer Awards"
+  },
+  "Ophelia|25m Butterfly|SCM": {
+    "seconds": 43.46,
+    "date": "2026-04-25",
+    "meet": "14 and Under Spring Challenge"
+  },
+  "Ophelia|25y Freestyle|SCY": {
+    "seconds": 30.46,
+    "date": "2026-03-20",
+    "meet": "Short Course Send off"
+  },
+  "Ophelia|25y Backstroke|SCY": {
+    "seconds": 30.01,
+    "date": "2026-02-08",
+    "meet": "8 and Under Southeastern"
+  },
+  "Ophelia|25y Breaststroke|SCY": {
+    "seconds": 41.09,
+    "date": "2025-10-24",
+    "meet": "October Spooktacular"
+  },
+  "Ophelia|50y Backstroke|SCY": {
+    "seconds": 129.23,
+    "date": "2026-01-10",
+    "meet": "Splash and Dash"
+  },
+  "Ophelia|50y Freestyle|SCY": {
+    "seconds": 133.9,
+    "date": "2026-02-08",
+    "meet": "8 and Under Southeastern"
+  },
+  "records": [
+    {
+      "swimmer": "ophelia",
+      "event": "25y Back",
+      "course": "SCY",
+      "time": "30.01Y",
+      "dateset": "2026-05-27",
+      "meet": null,
+      "season": "2025-26"
+    },
+    {
+      "swimmer": "ophelia",
+      "event": "25y Free",
+      "course": "SCY",
+      "time": "30.46Y",
+      "dateset": "2026-05-27",
+      "meet": null,
+      "season": "2025-26"
+    }
+  ],
+  "lastUpdated": "2026-05-27T08:23:51.731Z"
+}

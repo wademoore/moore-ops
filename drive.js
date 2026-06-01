@@ -100,166 +100,18 @@ export async function uploadDashboard(htmlContent) {
   }
 }
 
-// ── getSportsConfig ───────────────────────────────────────────────────────────
-// Fetches sports-config.json from Drive and returns the parsed config object.
-// Throws loudly on any error — sports config is mandatory, no fallback.
-// Accepts optional pre-constructed drv client for unit testing.
-
-export async function getSportsConfig(drv) {
-  const fileId = process.env.DRIVE_SPORTS_CONFIG_FILE_ID;
-  if (!drv) {
-    const auth = await getAuthClient();
-    drv = drive({ version: 'v3', auth });
-  }
-  try {
-    const res = await drv.files.get(
-      { fileId, alt: 'media' },
-      { responseType: 'text' }
-    );
-    const config = JSON.parse(res.data);
-    console.log(`[drive:getSportsConfig] Loaded file ${fileId} (${Object.keys(config).length} top-level keys)`);
-    return config;
-  } catch (err) {
-    throw new Error(`[drive:getSportsConfig] Failed to load sports config (file: ${fileId}) — ${err.message}`);
-  }
-}
-
-// ── getFlagFootballData ───────────────────────────────────────────────────────
-// Fetches flag-football.json from Drive and returns the parsed object.
-// Throws on any error — caller wraps in Promise.all.
-
-export async function getFlagFootballData(drv) {
-  const fileId = process.env.DRIVE_FLAG_FOOTBALL_FILE_ID;
-  if (!drv) {
-    const auth = await getAuthClient();
-    drv = drive({ version: 'v3', auth });
-  }
-  try {
-    const res = await drv.files.get(
-      { fileId, alt: 'media' },
-      { responseType: 'text' }
-    );
-    const data = JSON.parse(res.data);
-    console.log(`[drive:getFlagFootballData] Loaded file ${fileId}`);
-    return data;
-  } catch (err) {
-    throw new Error(`[drive:getFlagFootballData] Failed to load (file: ${fileId}) — ${err.message}`);
-  }
-}
-
-// ── getSwimResults ────────────────────────────────────────────────────────────
-// Fetches swim-results.json from Drive and returns the parsed array.
-// Throws on any error — caller wraps in Promise.all.
-
-export async function getSwimResults(drv) {
-  const fileId = process.env.DRIVE_SWIM_RESULTS_FILE_ID;
-  if (!drv) {
-    const auth = await getAuthClient();
-    drv = drive({ version: 'v3', auth });
-  }
-  try {
-    const res = await drv.files.get(
-      { fileId, alt: 'media' },
-      { responseType: 'text' }
-    );
-    const data = JSON.parse(res.data);
-    console.log(`[drive:getSwimResults] Loaded file ${fileId}`);
-    return data;
-  } catch (err) {
-    throw new Error(`[drive:getSwimResults] Failed to load (file: ${fileId}) — ${err.message}`);
-  }
-}
-
-// ── getWavesSeasonData ────────────────────────────────────────────────────────
-// Fetches waves-season.json from Drive and returns the parsed object.
-// Throws on any error — caller wraps in Promise.all.
-
-export async function getWavesSeasonData(drv) {
-  const fileId = process.env.DRIVE_WAVES_SEASON_FILE_ID;
-  if (!drv) {
-    const auth = await getAuthClient();
-    drv = drive({ version: 'v3', auth });
-  }
-  try {
-    const res = await drv.files.get(
-      { fileId, alt: 'media' },
-      { responseType: 'text' }
-    );
-    const data = JSON.parse(res.data);
-    console.log(`[drive:getWavesSeasonData] Loaded file ${fileId}`);
-    return data;
-  } catch (err) {
-    throw new Error(`[drive:getWavesSeasonData] Failed to load (file: ${fileId}) — ${err.message}`);
-  }
-}
-
-// ── getVpsuRankings ───────────────────────────────────────────────────────────
-// Fetches vpsu-rankings.json from Drive and returns the parsed object.
-// Returns null on any error — caller treats missing rankings as no-op.
-
-export async function getVpsuRankings(drv) {
-  const fileId = process.env.DRIVE_VPSU_RANKINGS_FILE_ID;
-  if (!drv) {
-    const auth = await getAuthClient();
-    drv = drive({ version: 'v3', auth });
-  }
-  try {
-    const res = await drv.files.get(
-      { fileId, alt: 'media' },
-      { responseType: 'text' }
-    );
-    const data = JSON.parse(res.data);
-    console.log(`[drive:getVpsuRankings] Loaded file ${fileId}`);
-    return data;
-  } catch (err) {
-    console.warn(`[drive:getVpsuRankings] Failed to load — ${err.message}`);
-    return null;
-  }
-}
-
-// ── getPBRecords ──────────────────────────────────────────────────────────────
-// Fetches pb-records.json from Drive and returns the parsed flat key-value object.
-// Shape: { "Swimmer|Event|Course": { seconds, date, meet }, ... }
-// On 404, creates the file with an empty object and returns it (first-run).
-// On any other error, throws.
-// Accepts optional pre-constructed drv client for unit testing.
-
-export async function getPBRecords(drv) {
-  const fileId   = process.env.DRIVE_PB_RECORDS_FILE_ID;
-  const folderId = process.env.DRIVE_DATA_FOLDER_ID;
-  if (!drv) {
-    const auth = await getAuthClient();
-    drv = drive({ version: 'v3', auth });
-  }
-  try {
-    const res = await drv.files.get(
-      { fileId, alt: 'media' },
-      { responseType: 'text' }
-    );
-    const records = JSON.parse(res.data);
-    console.log(`[drive:getPBRecords] Loaded ${Object.keys(records).length} key(s)`);
-    return records;
-  } catch (err) {
-    // 404 → first run: create empty file and return empty object
-    if (err.response?.status === 404 || err.code === 404) {
-      console.log('[drive:getPBRecords] pb-records.json not found — creating empty file');
-      await drv.files.create({
-        requestBody: {
-          name:     'pb-records.json',
-          mimeType: 'text/plain',
-          parents:  [folderId],
-        },
-        media: {
-          mimeType: 'text/plain',
-          body:     JSON.stringify({}, null, 2),
-        },
-        fields: 'id',
-      });
-      return {};
-    }
-    throw new Error(`[drive:getPBRecords] Failed to load PB records (file: ${fileId}) — ${err.message}`);
-  }
-}
+// ── Sports JSON data (removed from Drive) ────────────────────────────────────
+// The following six functions were removed in the June 2026 local-data migration.
+// Sports JSON files now live in data/ (committed to the repo) and are read
+// directly by digest/builder.js via fs.readFile — no Drive fetch required.
+//
+// Lambda env vars that are NO LONGER NEEDED and can be removed from Lambda config:
+//   DRIVE_SPORTS_CONFIG_FILE_ID
+//   DRIVE_FLAG_FOOTBALL_FILE_ID
+//   DRIVE_PB_RECORDS_FILE_ID
+//   DRIVE_SWIM_RESULTS_FILE_ID
+//   DRIVE_WAVES_SEASON_FILE_ID
+//   DRIVE_VPSU_RANKINGS_FILE_ID
 
 // ── listFolderFiles ───────────────────────────────────────────────────────────
 // Lists all PDF files in a Drive folder. Handles pagination.

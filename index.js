@@ -15,13 +15,7 @@ import { getActivityEmails }                   from "./gmail.js";
 import { sendDigestEmail }                     from "./mailer.js";
 import { getFamilyDocs,
          fetchNewsletter,
-         uploadDashboard,
-         getSportsConfig,
-         getPBRecords,
-         getFlagFootballData,
-         getSwimResults,
-         getWavesSeasonData,
-         getVpsuRankings }                     from "./drive.js";
+         uploadDashboard }                     from "./drive.js";
 
 // ── Digest pipeline ───────────────────────────────────────────────────────────
 import { buildDigest }                         from "./digest/builder.js";
@@ -65,19 +59,13 @@ async function runDigest() {
 
   // ── Step 1: Fetch all data in parallel ─────────────────────────────────────
   console.log("Fetching data...");
-  const [rawEvents, rawEvents14d, emails, docs, newsletterText, nationalsData, sportsConfig, pbRecords, flagFootballData, swimResults, wavesSeasonData, vpsuRankings] = await Promise.all([
+  const [rawEvents, rawEvents14d, emails, docs, newsletterText, nationalsData] = await Promise.all([
     getCalendarEvents(),
     pull14Days(),
     getActivityEmails(),
     getFamilyDocs(),
     fetchNewsletter(),
     fetchNationalsData(),
-    getSportsConfig(),
-    getPBRecords(),
-    getFlagFootballData(),
-    getSwimResults(),
-    getWavesSeasonData(),
-    getVpsuRankings(),
   ]);
 
   console.log(`  Calendar 72h: ${rawEvents.length} events`);
@@ -86,12 +74,7 @@ async function runDigest() {
   console.log(`  Docs:         familyContext ${docs.familyContext ? "✓" : "✗"}`);
   console.log(`  Newsletter:   ${newsletterText ? "✓ loaded" : "✗ not available"}`);
   console.log(`  Nationals:    ${nationalsData ? "✓" : "✗ fallback"}`);
-  console.log(`  Sports cfg:   ${sportsConfig ? "✓" : "✗"}`);
-  console.log(`  Flag football: ${flagFootballData ? '✓' : '✗'}`);
-  console.log(`  Swim results:  ${swimResults?.length ?? 0} result(s)`);
-  console.log(`  PB records:    ${Object.keys(pbRecords || {}).length} key(s)`);
-  console.log(`  Waves season:  ${wavesSeasonData ? '✓' : '✗'}`);
-  console.log(`  VPSU rankings: ${vpsuRankings ? '✓' : '✗ (non-fatal)'}`);
+  console.log(`  Sports data:  read from data/ (local JSON files)`);
   console.log();
 
   // ── Step 2: Newsletter fallback notice ─────────────────────────────────────
@@ -108,13 +91,9 @@ async function runDigest() {
     emails,
     docs,
     newsletterText,
-    banner:          BANNER,
-    config:          sportsConfig,
-    flagFootballData,
-    pbRecords,
-    swimResults,
-    wavesSeasonData,
-    vpsuRankings,
+    banner: BANNER,
+    // Sports data (config, flagFootballData, pbRecords, swimResults,
+    // wavesSeasonData, vpsuRankings) is loaded from data/ inside buildDigest().
   });
 
   // Patch in sports data — builder leaves this null for index.js to fill
