@@ -60,11 +60,10 @@ import { secondsToTime, timeToSeconds } from '../digest/dateUtils.js';
  *   mylesPBRows:         PBRow[]
  *   mylesFooter:         string
  *
- *   // Ophelia swim + dance (footer sourced from config.swimmers.ophelia.footer via Drive sports-config.json)
+ *   // Ophelia swim (footer sourced from config.swimmers.ophelia.footer via Drive sports-config.json)
  *   opheliaSeason:       string   "2026 Waves Season" | "2025–26 757 Season" | "Off-Season"
  *   opheliaPBRows:       PBRow[]  SCM events during Waves season, SCY during 757 season
  *   opheliaFooter:       string
- *   opheliaDanceNote:    string   e.g. "💃 \"I'm Still Standing\" · Recital May 30"
  *
  *   // Wellington Waves division — populated by wavesParser.js
  *   wavesRecord:         string             e.g. "2-1"
@@ -622,7 +621,7 @@ function renderMylesCard(athletics) {
 // ── 6d. Card 3 — Ophelia swim (Waves or 757, one card) ──────────────────────
 
 function renderOpheliaCard(athletics) {
-  const { opheliaSeason, opheliaPBRows, opheliaFooter, opheliaDanceNote,
+  const { opheliaSeason, opheliaPBRows, opheliaFooter,
           wavesActive, swim757Active } = athletics;
 
   // Logo and title adapt to whichever swim season is active.
@@ -641,7 +640,6 @@ function renderOpheliaCard(athletics) {
   <span class="season-tag">${opheliaSeason || '2026 Season'}</span>
   ${pbRows || '<div style="color:rgba(255,255,255,.3);font-size:14px;">No times recorded yet</div>'}
   ${opheliaFooter ? `<div class="sport-footer">${opheliaFooter}</div>` : ''}
-  ${opheliaDanceNote ? `<div class="dance-note">${opheliaDanceNote}</div>` : ''}
 </div>`;
 }
 
