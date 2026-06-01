@@ -65,12 +65,12 @@ function toDateKey(date) {
 // ---------------------------------------------------------------------------
 const ANCHORS = {
   myles: {
-    date: new Date('2026-05-01'),
+    date: new Date(2026, 4, 1),  // local midnight May 1 — avoid UTC string parsing
     day: 4,           // anchor = Day 4
     cycleLength: 6,
   },
   ophelia: {
-    date: new Date('2026-05-01'),
+    date: new Date(2026, 4, 1),  // local midnight May 1 — avoid UTC string parsing
     day: 1,           // anchor = Day 1
     cycleLength: 7,
   },

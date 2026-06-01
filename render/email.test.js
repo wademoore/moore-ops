@@ -1,6 +1,9 @@
 /**
- * email.test.js
- * Run with: node email.test.js
+ * render/email.test.js
+ * Moore Family Operations Assistant
+ *
+ * ESM rewrite of the legacy CJS email test.
+ * Run via: node --test  (picked up automatically by the test runner)
  *
  * Covers:
  *   - Gmail safety (no forbidden tokens in any output path)
@@ -14,9 +17,10 @@
  *   - Safety guard throws on forbidden token
  */
 
-'use strict';
+import { describe, it } from 'node:test';
+import assert from 'node:assert/strict';
 
-const {
+import {
   renderEmail,
   emailSubject,
   badge,
@@ -28,46 +32,27 @@ const {
   renderActivityComms,
   renderFlags,
   renderCoachingChecklist,
-} = require('./email');
-
-// ---------------------------------------------------------------------------
-// Harness
-// ---------------------------------------------------------------------------
-let passed = 0;
-let failed = 0;
-
-function assert(condition, label) {
-  if (condition) { console.log(`  ✅  ${label}`); passed++; }
-  else           { console.error(`  ❌  ${label}`); failed++; }
-}
-
-function section(title) { console.log(`\n── ${title} ──`); }
+} from './email.js';
 
 // ---------------------------------------------------------------------------
 // Gmail safety checker — the single most important invariant
 // ---------------------------------------------------------------------------
+
 const FORBIDDEN = ['<style', '<html', '<head', '<body', 'class="', 'display:flex', 'display:grid'];
 
 function assertGmailSafe(html, label) {
   for (const token of FORBIDDEN) {
-    if (html.toLowerCase().includes(token.toLowerCase())) {
-      console.error(`  ❌  ${label} — FORBIDDEN TOKEN: "${token}"`);
-      failed++;
-      return;
-    }
+    assert.ok(
+      !html.toLowerCase().includes(token.toLowerCase()),
+      `${label} — FORBIDDEN TOKEN: "${token}"`
+    );
   }
-  console.log(`  ✅  ${label} — Gmail safe`);
-  passed++;
-}
-
-function assertHasInlineStyle(html, prop, label) {
-  // Check that at least one style="..." attribute contains the property
-  assert(html.includes(`${prop}:`), `${label} — inline style contains "${prop}:"`);
 }
 
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
+
 function d(str) {
   const [y, m, day] = str.split('-').map(Number);
   return new Date(y, m - 1, day);
@@ -75,15 +60,15 @@ function d(str) {
 
 function makeEvent(overrides = {}) {
   return {
-    title:        'ADP Soccer Practice',
-    subtitle:     '6:45 PM · Myles · GREEN kit',
-    cardType:     'standard',
-    gearReminder: 'GREEN jersey · black shorts',
-    owner:        ['alyssa'],
-    isFlagGame:   false,
-    isSoloEvening:false,
-    _calName:     'Myles',
-    raw:          { start: { dateTime: '2026-05-11T18:45:00' } },
+    title:         'ADP Soccer Practice',
+    subtitle:      '6:45 PM · Myles · GREEN kit',
+    cardType:      'standard',
+    gearReminder:  'GREEN jersey · black shorts',
+    owner:         ['alyssa'],
+    isFlagGame:    false,
+    isSoloEvening: false,
+    _calName:      'Myles',
+    raw:           { start: { dateTime: '2026-05-11T18:45:00' } },
     ...overrides,
   };
 }
@@ -120,361 +105,431 @@ function makeDigestData(overrides = {}) {
 }
 
 // ---------------------------------------------------------------------------
-// SECTION 1: badge primitive
+// Section 1: badge primitive
 // ---------------------------------------------------------------------------
-section('badge primitive');
 
-const wBadge = badge('wade');
-assertGmailSafe(wBadge, 'Wade badge');
-assert(wBadge.includes('display:inline-block'),    'Wade badge has display:inline-block');
-assert(wBadge.includes('#1A56A0'),                 'Wade badge uses correct blue');
-assert(wBadge.includes('WADE'),                    'Wade badge shows WADE text');
-assert(!wBadge.includes('class='),                 'Wade badge has no class attribute');
+describe('badge primitive', () => {
+  it('Wade badge is Gmail-safe, has display:inline-block, correct color, no class attr', () => {
+    const wBadge = badge('wade');
+    assertGmailSafe(wBadge, 'Wade badge');
+    assert.ok(wBadge.includes('display:inline-block'));
+    assert.ok(wBadge.includes('#1A56A0'));
+    assert.ok(wBadge.includes('WADE'));
+    assert.ok(!wBadge.includes('class='));
+  });
 
-const rBadge = badge('robyn');
-assert(rBadge.includes('#A0366E'), 'Robyn badge uses correct pink');
-assert(rBadge.includes('ROBYN'),   'Robyn badge shows ROBYN text');
+  it('Robyn badge uses correct pink color and text', () => {
+    const rBadge = badge('robyn');
+    assert.ok(rBadge.includes('#A0366E'));
+    assert.ok(rBadge.includes('ROBYN'));
+  });
 
-const aBadge = badge('alyssa');
-assert(aBadge.includes('#1A7A3C'), 'Alyssa badge uses correct green');
+  it('Alyssa badge uses correct green', () => {
+    assert.ok(badge('alyssa').includes('#1A7A3C'));
+  });
 
-const cBadge = badge('coaching');
-assert(cBadge.includes('#BA7517'), 'Coaching badge uses correct amber');
-
-// ---------------------------------------------------------------------------
-// SECTION 2: eventCard primitive
-// ---------------------------------------------------------------------------
-section('eventCard primitive');
-
-const standardCard = eventCard({
-  title:        'ADP Soccer Practice',
-  subtitle:     '6:45 PM · Myles',
-  cardType:     'standard',
-  gearReminder: 'GREEN jersey · black shorts',
+  it('Coaching badge uses correct amber', () => {
+    assert.ok(badge('coaching').includes('#BA7517'));
+  });
 });
-assertGmailSafe(standardCard, 'Standard event card');
-assert(standardCard.includes('border-radius:10px'),           'Standard card has rounded corners');
-assert(!standardCard.includes('border-left:4px'),             'Standard card has no left border accent');
-assert(standardCard.includes('ADP Soccer Practice'),          'Standard card includes title');
-assert(standardCard.includes('🎒'),                           'Standard card includes gear emoji');
-assert(standardCard.includes('GREEN jersey'),                  'Standard card includes gear reminder');
-
-const coachingCard = eventCard({ title: 'Flag Practice', subtitle: '2 PM', cardType: 'coaching', gearReminder: null });
-assertGmailSafe(coachingCard, 'Coaching event card');
-assert(coachingCard.includes('#BA7517'), 'Coaching card has amber left border');
-assert(coachingCard.includes('border-left:4px solid #BA7517'), 'Coaching card border-left is amber');
-
-const urgentCard = eventCard({ title: 'SOL Testing', subtitle: 'Full day', cardType: 'urgent', gearReminder: null });
-assertGmailSafe(urgentCard, 'Urgent event card');
-assert(urgentCard.includes('#E24B4A'), 'Urgent card has red left border');
-
-// Menu cards — no gear line when gearReminder is null
-const noGearCard = eventCard({ title: 'Parent Conference', subtitle: '5 PM', cardType: 'standard', gearReminder: null });
-assert(!noGearCard.includes('🎒'), 'Card without gear reminder omits gear emoji');
 
 // ---------------------------------------------------------------------------
-// SECTION 3: taskRow primitive
+// Section 2: eventCard primitive
 // ---------------------------------------------------------------------------
-section('taskRow primitive');
 
-const row = taskRow({ time: '7:30 AM', owner: 'wade', text: 'Drop Myles at school' });
-assertGmailSafe(row, 'Task row');
-assert(row.includes('<table'),        'Task row uses table layout');
-assert(row.includes('cellpadding="0"'),'Task row has cellpadding=0');
-assert(!row.includes('display:flex'), 'Task row uses no flexbox');
-assert(!row.includes('display:grid'), 'Task row uses no grid');
-assert(row.includes('7:30 AM'),       'Task row includes time');
-assert(row.includes('WADE'),          'Task row includes wade badge');
-assert(row.includes('Drop Myles'),    'Task row includes task text');
-assert(row.includes('#1A56A0'),       'Task row badge uses correct wade blue');
+describe('eventCard primitive', () => {
+  it('Standard card — Gmail-safe, rounded corners, no left border, gear reminder', () => {
+    const card = eventCard({ title: 'ADP Soccer Practice', subtitle: '6:45 PM · Myles', cardType: 'standard', gearReminder: 'GREEN jersey · black shorts' });
+    assertGmailSafe(card, 'Standard event card');
+    assert.ok(card.includes('border-radius:10px'));
+    assert.ok(!card.includes('border-left:4px'));
+    assert.ok(card.includes('ADP Soccer Practice'));
+    assert.ok(card.includes('🎒'));
+    assert.ok(card.includes('GREEN jersey'));
+  });
 
-const robynRow = taskRow({ time: '', owner: 'robyn', text: 'Pick up Ophelia' });
-assert(robynRow.includes('ROBYN'),    'Robyn task row includes robyn badge');
-assert(robynRow.includes('#A0366E'), 'Robyn badge color correct in task row');
+  it('Coaching card — Gmail-safe, amber left border', () => {
+    const card = eventCard({ title: 'Flag Practice', subtitle: '2 PM', cardType: 'coaching', gearReminder: null });
+    assertGmailSafe(card, 'Coaching event card');
+    assert.ok(card.includes('#BA7517'));
+    assert.ok(card.includes('border-left:4px solid #BA7517'));
+  });
 
-// ---------------------------------------------------------------------------
-// SECTION 4: dinnerStrip primitive
-// ---------------------------------------------------------------------------
-section('dinnerStrip primitive');
+  it('Urgent card — Gmail-safe, red left border', () => {
+    const card = eventCard({ title: 'SOL Testing', subtitle: 'Full day', cardType: 'urgent', gearReminder: null });
+    assertGmailSafe(card, 'Urgent event card');
+    assert.ok(card.includes('#E24B4A'));
+  });
 
-const dinner = dinnerStrip({ title: 'Pork Tenderloin', subtitle: 'mashed potatoes, green beans', cardType: 'menu' });
-assertGmailSafe(dinner, 'Dinner strip');
-assert(dinner.includes('🍽️'),              'Dinner strip has plate emoji');
-assert(dinner.includes('Pork Tenderloin'), 'Dinner strip includes meal name');
-assert(dinner.includes('mashed potatoes'), 'Dinner strip includes sides');
-
-const noDinner = dinnerStrip(null);
-assert(noDinner === '', 'dinnerStrip(null) returns empty string');
-
-const noSides = dinnerStrip({ title: 'Hamburgers', subtitle: '', cardType: 'menu' });
-assert(noSides.includes('Hamburgers'), 'Dinner strip without sides includes just meal name');
-assert(!noSides.includes('()'),        'Dinner strip without sides has no empty parens');
-
-// ---------------------------------------------------------------------------
-// SECTION 5: alertBox primitive
-// ---------------------------------------------------------------------------
-section('alertBox primitive');
-
-const redAlert = alertBox({ level: 'red', title: '⚠️ Conflict', body: 'Overlapping pickups today.' });
-assertGmailSafe(redAlert, 'Red alert box');
-assert(redAlert.includes('#FEF2F2'),  'Red alert has correct background');
-assert(redAlert.includes('#991B1B'),  'Red alert title uses correct color');
-assert(redAlert.includes('#DC2626'),  'Red alert body uses correct color');
-
-const amberAlert = alertBox({ level: 'amber', title: '🟡 Heads Up', body: 'No menu set.' });
-assertGmailSafe(amberAlert, 'Amber alert box');
-assert(amberAlert.includes('#FFFBEB'), 'Amber alert has correct background');
-assert(amberAlert.includes('#92400E'), 'Amber alert title color correct');
-
-const blueAlert = alertBox({ level: 'blue', title: '🔵 Decision', body: 'Fall registration.' });
-assertGmailSafe(blueAlert, 'Blue alert box');
-assert(blueAlert.includes('#EFF6FF'),  'Blue alert has correct background');
-assert(blueAlert.includes('#1E40AF'),  'Blue alert title color correct');
-
-// ---------------------------------------------------------------------------
-// SECTION 6: renderSchoolStrip
-// ---------------------------------------------------------------------------
-section('renderSchoolStrip');
-
-const strip = renderSchoolStrip({
-  myles:   { center: 'Library', warningText: '⚠ Pack library book' },
-  ophelia: { center: 'PE',      warningText: null },
-  tomorrowWarnings: ['Tomorrow: Myles has Music — pack recorder tonight'],
+  it('Card without gear reminder omits gear emoji', () => {
+    const card = eventCard({ title: 'Parent Conference', subtitle: '5 PM', cardType: 'standard', gearReminder: null });
+    assert.ok(!card.includes('🎒'));
+  });
 });
-assertGmailSafe(strip, 'School strip');
-assert(strip.includes('Library'),      'School strip shows Myles center');
-assert(strip.includes('PE'),           'School strip shows Ophelia center');
-assert(strip.includes('⚠'),           'School strip shows warning indicator');
-assert(strip.includes('recorder'),     'School strip includes tomorrow warning');
-assert(strip.includes('#D97706'),      'Tomorrow warning uses amber color');
 
-const noWarnings = renderSchoolStrip({
-  myles:   { center: 'Art', warningText: null },
-  ophelia: { center: 'Music', warningText: null },
-  tomorrowWarnings: [],
+// ---------------------------------------------------------------------------
+// Section 3: taskRow primitive
+// ---------------------------------------------------------------------------
+
+describe('taskRow primitive', () => {
+  it('Task row is Gmail-safe, uses table layout, no flex or grid', () => {
+    const row = taskRow({ time: '7:30 AM', owner: 'wade', text: 'Drop Myles at school' });
+    assertGmailSafe(row, 'Task row');
+    assert.ok(row.includes('<table'));
+    assert.ok(row.includes('cellpadding="0"'));
+    assert.ok(!row.includes('display:flex'));
+    assert.ok(!row.includes('display:grid'));
+  });
+
+  it('Task row includes time, wade badge text, task text, and correct badge color', () => {
+    const row = taskRow({ time: '7:30 AM', owner: 'wade', text: 'Drop Myles at school' });
+    assert.ok(row.includes('7:30 AM'));
+    assert.ok(row.includes('WADE'));
+    assert.ok(row.includes('Drop Myles'));
+    assert.ok(row.includes('#1A56A0'));
+  });
+
+  it('Robyn task row uses correct badge color and text', () => {
+    const row = taskRow({ time: '', owner: 'robyn', text: 'Pick up Ophelia' });
+    assert.ok(row.includes('ROBYN'));
+    assert.ok(row.includes('#A0366E'));
+  });
 });
-assert(!noWarnings.includes('⚠'),     'School strip with no warnings omits warning text');
-assert(noWarnings.includes('Art'),     'School strip (no warnings) still shows center');
-
-const nullStrip = renderSchoolStrip(null);
-assert(nullStrip === '', 'renderSchoolStrip(null) returns empty string');
 
 // ---------------------------------------------------------------------------
-// SECTION 7: renderActivityComms
+// Section 4: dinnerStrip primitive
 // ---------------------------------------------------------------------------
-section('renderActivityComms');
 
-const comms = renderActivityComms(
-  ['Dance studio: Recital details confirmed for May 30'],
-  ['Spirit Week: May 18–22 — Hat Day on Monday']
-);
-assertGmailSafe(comms, 'Activity comms section');
-assert(comms.includes('Dance studio'),   'Comms includes activity comms item');
-assert(comms.includes('Spirit Week'),    'Comms includes newsletter item');
-assert(comms.includes('Activity Comm'), 'Comms has section header');
+describe('dinnerStrip primitive', () => {
+  it('Dinner strip is Gmail-safe with plate emoji, meal name, and sides', () => {
+    const dinner = dinnerStrip({ title: 'Pork Tenderloin', subtitle: 'mashed potatoes, green beans', cardType: 'menu' });
+    assertGmailSafe(dinner, 'Dinner strip');
+    assert.ok(dinner.includes('🍽️'));
+    assert.ok(dinner.includes('Pork Tenderloin'));
+    assert.ok(dinner.includes('mashed potatoes'));
+  });
 
-const emptyComms = renderActivityComms([], []);
-assert(emptyComms === '', 'renderActivityComms([], []) returns empty string');
+  it('dinnerStrip(null) returns empty string', () => {
+    assert.equal(dinnerStrip(null), '');
+  });
 
-// ---------------------------------------------------------------------------
-// SECTION 8: renderCoachingChecklist
-// ---------------------------------------------------------------------------
-section('renderCoachingChecklist');
-
-const checklist = renderCoachingChecklist({
-  athletics: { currentSnackFamily: 'Parker family', currentCaptains: 'Ben & Ben', seasonRecord: '4-1' },
+  it('Dinner strip without sides includes meal name and no empty parens', () => {
+    const noSides = dinnerStrip({ title: 'Hamburgers', subtitle: '', cardType: 'menu' });
+    assert.ok(noSides.includes('Hamburgers'));
+    assert.ok(!noSides.includes('()'));
+  });
 });
-assertGmailSafe(checklist, 'Coaching checklist');
-assert(checklist.includes('Parker family'),     'Checklist includes snack family');
-assert(checklist.includes('Ben & Ben'),         'Checklist includes captains');
-assert(checklist.includes('4-1'),               'Checklist includes season record');
-assert(checklist.includes('#BA7517'),           'Checklist uses coaching amber');
-assert(checklist.includes('border-left:4px'),   'Checklist has coaching left border');
-assert(checklist.includes('post-game parent'),  'Checklist includes recap email item');
 
 // ---------------------------------------------------------------------------
-// SECTION 9: renderEmail — All tab
+// Section 5: alertBox primitive
 // ---------------------------------------------------------------------------
-section('renderEmail — All tab');
 
-const allEmail = renderEmail(makeDigestData());
-assertGmailSafe(allEmail.html, 'Full All tab email');
-assert(allEmail.subject.includes('Moore Family Morning Digest'), 'Subject includes family name');
-assert(allEmail.subject.includes('2026'),                       'Subject includes year');
-assert(allEmail.subject.includes('Monday'),                     'Subject includes weekday (May 11 = Monday)');
-assert(allEmail.html.includes('Pork Tenderloin'),               'All tab includes dinner');
-assert(allEmail.html.includes('Library'),                       'All tab includes school rotation');
-assert(allEmail.html.includes('ADP Soccer Practice'),           'All tab includes event title');
-assert(allEmail.html.includes('Drop Myles'),                    'All tab includes task');
-assert(allEmail.html.startsWith('<div style='),                 'Email starts with outer div (no preceding tags)');
-assert(allEmail.html.endsWith('</div>'),                        'Email ends with closing div');
+describe('alertBox primitive', () => {
+  it('Red alert — Gmail-safe, correct background and text colors', () => {
+    const alert = alertBox({ level: 'red', title: '⚠️ Conflict', body: 'Overlapping pickups today.' });
+    assertGmailSafe(alert, 'Red alert box');
+    assert.ok(alert.includes('#FEF2F2'));
+    assert.ok(alert.includes('#991B1B'));
+    assert.ok(alert.includes('#DC2626'));
+  });
 
-// ---------------------------------------------------------------------------
-// SECTION 10: renderEmail — Wade tab
-// ---------------------------------------------------------------------------
-section('renderEmail — Wade tab');
+  it('Amber alert — Gmail-safe, correct background and title color', () => {
+    const alert = alertBox({ level: 'amber', title: '🟡 Heads Up', body: 'No menu set.' });
+    assertGmailSafe(alert, 'Amber alert box');
+    assert.ok(alert.includes('#FFFBEB'));
+    assert.ok(alert.includes('#92400E'));
+  });
 
-const wadeData = makeDigestData({
-  days: [makeDay({
-    tasks: [
-      makeTask({ owner: 'wade',  text: 'Drop Myles at school' }),
-      makeTask({ owner: 'robyn', text: 'Pick up Ophelia' }),
-    ],
-  })],
+  it('Blue alert — Gmail-safe, correct background and title color', () => {
+    const alert = alertBox({ level: 'blue', title: '🔵 Decision', body: 'Fall registration.' });
+    assertGmailSafe(alert, 'Blue alert box');
+    assert.ok(alert.includes('#EFF6FF'));
+    assert.ok(alert.includes('#1E40AF'));
+  });
 });
-const wadeEmail = renderEmail(wadeData, 'wade');
-assertGmailSafe(wadeEmail.html, 'Wade tab email');
-assert(wadeEmail.html.includes('Drop Myles'),   'Wade tab includes wade task');
-assert(!wadeEmail.html.includes('Pick up Ophelia'), 'Wade tab excludes robyn task');
-assert(wadeEmail.html.includes('recorder'),     'Wade tab includes backpack reminder (tomorrowWarnings)');
 
-// Coaching checklist appears only when flag game is in window
-const wadeWithGame = makeDigestData({
-  days: [makeDay({
-    events: [makeEvent({ title: 'Cowboys Flag Football — vs. Raiders', isFlagGame: true, cardType: 'coaching', owner: ['wade'] })],
-    tasks:  [makeTask({ owner: 'wade', text: 'Coach prep' })],
-  })],
+// ---------------------------------------------------------------------------
+// Section 6: renderSchoolStrip
+// ---------------------------------------------------------------------------
+
+describe('renderSchoolStrip', () => {
+  it('School strip is Gmail-safe, shows both centers, warning, and tomorrow reminder', () => {
+    const strip = renderSchoolStrip({
+      myles:   { center: 'Library', warningText: '⚠ Pack library book' },
+      ophelia: { center: 'PE',      warningText: null },
+      tomorrowWarnings: ['Tomorrow: Myles has Music — pack recorder tonight'],
+    });
+    assertGmailSafe(strip, 'School strip');
+    assert.ok(strip.includes('Library'));
+    assert.ok(strip.includes('PE'));
+    assert.ok(strip.includes('⚠'));
+    assert.ok(strip.includes('recorder'));
+    assert.ok(strip.includes('#D97706'));
+  });
+
+  it('Strip with no warnings omits warning indicator but shows center', () => {
+    const noWarnings = renderSchoolStrip({
+      myles:   { center: 'Art',   warningText: null },
+      ophelia: { center: 'Music', warningText: null },
+      tomorrowWarnings: [],
+    });
+    assert.ok(!noWarnings.includes('⚠'));
+    assert.ok(noWarnings.includes('Art'));
+  });
+
+  it('renderSchoolStrip(null) returns empty string', () => {
+    assert.equal(renderSchoolStrip(null), '');
+  });
 });
-const wadeGameEmail = renderEmail(wadeWithGame, 'wade');
-assertGmailSafe(wadeGameEmail.html, 'Wade tab with flag game');
-assert(wadeGameEmail.html.includes('Coaching Checklist'), 'Wade tab injects coaching checklist on game day');
-assert(wadeGameEmail.html.includes('Parker family'),      'Coaching checklist shows snack family');
-
-// No checklist on non-game day
-const wadeNoGame = renderEmail(makeDigestData(), 'wade');
-assert(!wadeNoGame.html.includes('Coaching Checklist'), 'Wade tab omits coaching checklist on non-game day');
 
 // ---------------------------------------------------------------------------
-// SECTION 11: renderEmail — Robyn tab
+// Section 7: renderActivityComms
 // ---------------------------------------------------------------------------
-section('renderEmail — Robyn tab');
 
-const robynData = makeDigestData({
-  days: [makeDay({
-    tasks: [
-      makeTask({ owner: 'wade',  text: 'Drop Myles' }),
-      makeTask({ owner: 'robyn', text: 'Pick up Ophelia' }),
-    ],
-    events: [makeEvent({ owner: ['robyn'], title: 'Swim Team Practice' })],
-  })],
+describe('renderActivityComms', () => {
+  it('Activity comms section is Gmail-safe and includes both items and header', () => {
+    const comms = renderActivityComms(
+      ['Dance studio: Recital details confirmed for May 30'],
+      ['Spirit Week: May 18–22 — Hat Day on Monday']
+    );
+    assertGmailSafe(comms, 'Activity comms section');
+    assert.ok(comms.includes('Dance studio'));
+    assert.ok(comms.includes('Spirit Week'));
+    assert.ok(comms.includes('Activity Comm'));
+  });
+
+  it('renderActivityComms([], []) returns empty string', () => {
+    assert.equal(renderActivityComms([], []), '');
+  });
 });
-const robynEmail = renderEmail(robynData, 'robyn');
-assertGmailSafe(robynEmail.html, 'Robyn tab email');
-assert(robynEmail.html.includes('Pick up Ophelia'),    'Robyn tab includes robyn task');
-assert(!robynEmail.html.includes('Drop Myles'),        'Robyn tab excludes wade task');
-assert(robynEmail.html.includes('Swim Team Practice'), 'Robyn tab includes robyn event');
 
 // ---------------------------------------------------------------------------
-// SECTION 12: renderEmail — Alyssa tab
+// Section 8: renderCoachingChecklist
 // ---------------------------------------------------------------------------
-section('renderEmail — Alyssa tab');
 
-const alyssaData = makeDigestData({
-  days: [makeDay({
-    tasks: [
-      makeTask({ owner: 'alyssa', text: 'Pack swim bag' }),
-      makeTask({ owner: 'wade',   text: 'Drop Myles' }),
-    ],
-    events: [makeEvent({ owner: ['alyssa'], title: 'Swim Team Practice — bag prep' })],
-  })],
-  schoolStrip: { myles: { center: 'PE', warningText: null }, ophelia: { center: 'Art', warningText: null }, tomorrowWarnings: [] },
+describe('renderCoachingChecklist', () => {
+  it('Coaching checklist is Gmail-safe with snack family, captains, record, amber styling', () => {
+    const checklist = renderCoachingChecklist({
+      athletics: { currentSnackFamily: 'Parker family', currentCaptains: 'Ben & Ben', seasonRecord: '4-1' },
+    });
+    assertGmailSafe(checklist, 'Coaching checklist');
+    assert.ok(checklist.includes('Parker family'));
+    assert.ok(checklist.includes('Ben & Ben'));
+    assert.ok(checklist.includes('4-1'));
+    assert.ok(checklist.includes('#BA7517'));
+    assert.ok(checklist.includes('border-left:4px'));
+    assert.ok(checklist.includes('post-game parent'));
+  });
 });
-const alyssaEmail = renderEmail(alyssaData, 'alyssa');
-assertGmailSafe(alyssaEmail.html, 'Alyssa tab email');
-assert(alyssaEmail.html.includes('Pack swim bag'),               'Alyssa tab includes alyssa task');
-assert(!alyssaEmail.html.includes('Drop Myles'),                 'Alyssa tab excludes wade task');
 
-// Alyssa Off — special alert
-const alyssaOffData = makeDigestData({
-  days: [makeDay({
-    events: [makeEvent({ title: 'Alyssa Off', cardType: 'urgent', owner: ['wade', 'robyn'] })],
-    tasks: [],
-  })],
+// ---------------------------------------------------------------------------
+// Section 9: renderEmail — All tab
+// ---------------------------------------------------------------------------
+
+describe('renderEmail — All tab', () => {
+  const allEmail = renderEmail(makeDigestData());
+
+  it('Full All tab email is Gmail-safe', () => {
+    assertGmailSafe(allEmail.html, 'Full All tab email');
+  });
+
+  it('Subject includes family name, year, and weekday (May 11 = Monday)', () => {
+    assert.ok(allEmail.subject.includes('Moore Family Morning Digest'));
+    assert.ok(allEmail.subject.includes('2026'));
+    assert.ok(allEmail.subject.includes('Monday'));
+  });
+
+  it('All tab includes dinner, school rotation, event title, and task', () => {
+    assert.ok(allEmail.html.includes('Pork Tenderloin'));
+    assert.ok(allEmail.html.includes('Library'));
+    assert.ok(allEmail.html.includes('ADP Soccer Practice'));
+    assert.ok(allEmail.html.includes('Drop Myles'));
+  });
+
+  it('Email starts with outer div and ends with closing div (no preceding tags)', () => {
+    assert.ok(allEmail.html.startsWith('<div style='));
+    assert.ok(allEmail.html.endsWith('</div>'));
+  });
 });
-const alyssaOffEmail = renderEmail(alyssaOffData, 'alyssa');
-assertGmailSafe(alyssaOffEmail.html, 'Alyssa tab (off day)');
-assert(alyssaOffEmail.html.includes('You Are Off'), 'Alyssa tab shows off-day alert');
 
 // ---------------------------------------------------------------------------
-// SECTION 13: Flags rendered in email
+// Section 10: renderEmail — Wade tab
 // ---------------------------------------------------------------------------
-section('Flags in full email');
 
-const flaggedData = makeDigestData({
-  flags: [
-    { id: 'test-red',   level: 'red',   title: '⚠️ Test Red Flag',   body: 'Something urgent.' },
-    { id: 'test-amber', level: 'amber', title: '🟡 Test Amber Flag', body: 'Something to note.' },
-    { id: 'test-blue',  level: 'blue',  title: '🔵 Test Blue Flag',  body: 'FYI.' },
-  ],
+describe('renderEmail — Wade tab', () => {
+  it('Wade tab is Gmail-safe, shows wade task, excludes robyn task, includes reminder', () => {
+    const wadeData = makeDigestData({
+      days: [makeDay({
+        tasks: [
+          makeTask({ owner: 'wade',  text: 'Drop Myles at school' }),
+          makeTask({ owner: 'robyn', text: 'Pick up Ophelia' }),
+        ],
+      })],
+    });
+    const wadeEmail = renderEmail(wadeData, 'wade');
+    assertGmailSafe(wadeEmail.html, 'Wade tab email');
+    assert.ok(wadeEmail.html.includes('Drop Myles'));
+    assert.ok(!wadeEmail.html.includes('Pick up Ophelia'));
+    assert.ok(wadeEmail.html.includes('recorder'));
+  });
+
+  it('Coaching checklist injected on flag game day', () => {
+    const wadeWithGame = makeDigestData({
+      days: [makeDay({
+        events: [makeEvent({ title: 'Cowboys Flag Football — vs. Raiders', isFlagGame: true, cardType: 'coaching', owner: ['wade'] })],
+        tasks:  [makeTask({ owner: 'wade', text: 'Coach prep' })],
+      })],
+    });
+    const wadeGameEmail = renderEmail(wadeWithGame, 'wade');
+    assertGmailSafe(wadeGameEmail.html, 'Wade tab with flag game');
+    assert.ok(wadeGameEmail.html.includes('Coaching Checklist'));
+    assert.ok(wadeGameEmail.html.includes('Parker family'));
+  });
+
+  it('Coaching checklist omitted on non-game day', () => {
+    const wadeNoGame = renderEmail(makeDigestData(), 'wade');
+    assert.ok(!wadeNoGame.html.includes('Coaching Checklist'));
+  });
 });
-const flaggedEmail = renderEmail(flaggedData);
-assertGmailSafe(flaggedEmail.html, 'Email with flags');
-assert(flaggedEmail.html.includes('Test Red Flag'),   'Red flag rendered in email');
-assert(flaggedEmail.html.includes('Test Amber Flag'), 'Amber flag rendered in email');
-assert(flaggedEmail.html.includes('Test Blue Flag'),  'Blue flag rendered in email');
-assert(flaggedEmail.html.includes('#FEF2F2'),         'Red flag background color present');
-assert(flaggedEmail.html.includes('#FFFBEB'),         'Amber flag background color present');
-assert(flaggedEmail.html.includes('#EFF6FF'),         'Blue flag background color present');
 
 // ---------------------------------------------------------------------------
-// SECTION 14: Subject line format
+// Section 11: renderEmail — Robyn tab
 // ---------------------------------------------------------------------------
-section('Subject line format');
 
-const sub = emailSubject(d('2026-05-11'));
-assert(sub === 'Moore Family Morning Digest — Monday, May 11, 2026', 'Subject line exact format matches spec');
-
-const sub2 = emailSubject(d('2026-05-17'));
-assert(sub2.includes('Sunday'),  'Subject line includes correct weekday (May 17 = Sunday)');
-assert(sub2.includes('May 17'),  'Subject line includes correct date');
-
-// ---------------------------------------------------------------------------
-// SECTION 15: Safety guard — throws on forbidden token
-// ---------------------------------------------------------------------------
-section('Safety guard — throws on forbidden token injection');
-
-// Monkey-patch a forbidden token into an event title to trigger the guard
-let threw = false;
-try {
-  renderEmail(makeDigestData({
-    days: [makeDay({
-      events: [makeEvent({ title: '<style>body{color:red}</style>' })],
-    })],
-  }));
-} catch (e) {
-  threw = e.message.includes('<style');
-}
-assert(threw, 'renderEmail throws when forbidden token appears in output');
-
-// ---------------------------------------------------------------------------
-// SECTION 16: Multiple days in 72-hour window
-// ---------------------------------------------------------------------------
-section('Multiple days — 72-hour window');
-
-const multiDayData = makeDigestData({
-  days: [
-    makeDay({ date: d('2026-05-11'), events: [makeEvent({ title: 'ADP Soccer Practice' })], tasks: [], menuEvent: { title: 'Spaghetti', subtitle: '', cardType: 'menu' } }),
-    makeDay({ date: d('2026-05-12'), events: [makeEvent({ title: 'Reading SOL',           cardType: 'urgent', owner: [], gearReminder: null })], tasks: [], menuEvent: null }),
-    makeDay({ date: d('2026-05-13'), events: [], tasks: [makeTask({ time: '7:00 AM', owner: 'wade', text: 'SOL day 2 — early breakfast' })], menuEvent: { title: 'Hamburgers', subtitle: '', cardType: 'menu' } }),
-  ],
+describe('renderEmail — Robyn tab', () => {
+  it('Robyn tab is Gmail-safe, shows robyn task and event, excludes wade task', () => {
+    const robynData = makeDigestData({
+      days: [makeDay({
+        tasks: [
+          makeTask({ owner: 'wade',  text: 'Drop Myles' }),
+          makeTask({ owner: 'robyn', text: 'Pick up Ophelia' }),
+        ],
+        events: [makeEvent({ owner: ['robyn'], title: 'Swim Team Practice' })],
+      })],
+    });
+    const robynEmail = renderEmail(robynData, 'robyn');
+    assertGmailSafe(robynEmail.html, 'Robyn tab email');
+    assert.ok(robynEmail.html.includes('Pick up Ophelia'));
+    assert.ok(!robynEmail.html.includes('Drop Myles'));
+    assert.ok(robynEmail.html.includes('Swim Team Practice'));
+  });
 });
-const multiEmail = renderEmail(multiDayData);
-assertGmailSafe(multiEmail.html, 'Multi-day email');
-assert(multiEmail.html.includes('Monday'),  'Multi-day email includes Monday header');
-assert(multiEmail.html.includes('Tuesday'), 'Multi-day email includes Tuesday header');
-assert(multiEmail.html.includes('Wednesday'), 'Multi-day email includes Wednesday header');
-assert(multiEmail.html.includes('Spaghetti'),  'Day 1 dinner shown');
-assert(multiEmail.html.includes('Hamburgers'), 'Day 3 dinner shown');
-assert(multiEmail.html.includes('Reading SOL'), 'SOL event shown on day 2');
 
 // ---------------------------------------------------------------------------
-// RESULT
+// Section 12: renderEmail — Alyssa tab
 // ---------------------------------------------------------------------------
-console.log(`\n${'─'.repeat(50)}`);
-console.log(`Results: ${passed} passed, ${failed} failed`);
-if (failed > 0) {
-  console.error('\n⚠️  Fix failures before sending email output to Gmail.');
-  process.exit(1);
-} else {
-  console.log('\n✅  All assertions passed. email.js is production-ready.');
-}
+
+describe('renderEmail — Alyssa tab', () => {
+  it('Alyssa tab is Gmail-safe, shows alyssa task, excludes wade task', () => {
+    const alyssaData = makeDigestData({
+      days: [makeDay({
+        tasks: [
+          makeTask({ owner: 'alyssa', text: 'Pack swim bag' }),
+          makeTask({ owner: 'wade',   text: 'Drop Myles' }),
+        ],
+        events: [makeEvent({ owner: ['alyssa'], title: 'Swim Team Practice — bag prep' })],
+      })],
+      schoolStrip: { myles: { center: 'PE', warningText: null }, ophelia: { center: 'Art', warningText: null }, tomorrowWarnings: [] },
+    });
+    const alyssaEmail = renderEmail(alyssaData, 'alyssa');
+    assertGmailSafe(alyssaEmail.html, 'Alyssa tab email');
+    assert.ok(alyssaEmail.html.includes('Pack swim bag'));
+    assert.ok(!alyssaEmail.html.includes('Drop Myles'));
+  });
+
+  it('Alyssa off-day — tab is Gmail-safe and shows "You Are Off" alert', () => {
+    const alyssaOffData = makeDigestData({
+      days: [makeDay({
+        events: [makeEvent({ title: 'Alyssa Off', cardType: 'urgent', owner: ['wade', 'robyn'] })],
+        tasks: [],
+      })],
+    });
+    const alyssaOffEmail = renderEmail(alyssaOffData, 'alyssa');
+    assertGmailSafe(alyssaOffEmail.html, 'Alyssa tab (off day)');
+    assert.ok(alyssaOffEmail.html.includes('You Are Off'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 13: Flags rendered in email
+// ---------------------------------------------------------------------------
+
+describe('Flags in full email', () => {
+  it('All three flag levels are Gmail-safe and rendered with correct colors', () => {
+    const flaggedData = makeDigestData({
+      flags: [
+        { id: 'test-red',   level: 'red',   title: '⚠️ Test Red Flag',   body: 'Something urgent.' },
+        { id: 'test-amber', level: 'amber', title: '🟡 Test Amber Flag', body: 'Something to note.' },
+        { id: 'test-blue',  level: 'blue',  title: '🔵 Test Blue Flag',  body: 'FYI.' },
+      ],
+    });
+    const flaggedEmail = renderEmail(flaggedData);
+    assertGmailSafe(flaggedEmail.html, 'Email with flags');
+    assert.ok(flaggedEmail.html.includes('Test Red Flag'));
+    assert.ok(flaggedEmail.html.includes('Test Amber Flag'));
+    assert.ok(flaggedEmail.html.includes('Test Blue Flag'));
+    assert.ok(flaggedEmail.html.includes('#FEF2F2'));
+    assert.ok(flaggedEmail.html.includes('#FFFBEB'));
+    assert.ok(flaggedEmail.html.includes('#EFF6FF'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 14: Subject line format
+// ---------------------------------------------------------------------------
+
+describe('Subject line format', () => {
+  it('Exact format matches spec for May 11 (Monday)', () => {
+    assert.equal(emailSubject(d('2026-05-11')), 'Moore Family Morning Digest — Monday, May 11, 2026');
+  });
+
+  it('Correct weekday and date for May 17 (Sunday)', () => {
+    const sub = emailSubject(d('2026-05-17'));
+    assert.ok(sub.includes('Sunday'));
+    assert.ok(sub.includes('May 17'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 15: Safety guard — throws on forbidden token injection
+// ---------------------------------------------------------------------------
+
+describe('Safety guard — throws on forbidden token injection', () => {
+  it('renderEmail throws when forbidden token appears in output', () => {
+    let threw = false;
+    try {
+      renderEmail(makeDigestData({
+        days: [makeDay({
+          events: [makeEvent({ title: '<style>body{color:red}</style>' })],
+        })],
+      }));
+    } catch (e) {
+      threw = e.message.includes('<style');
+    }
+    assert.ok(threw);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 16: Multiple days in 72-hour window
+// ---------------------------------------------------------------------------
+
+describe('Multiple days — 72-hour window', () => {
+  it('Multi-day email is Gmail-safe with all three day headers and correct content', () => {
+    const multiDayData = makeDigestData({
+      days: [
+        makeDay({ date: d('2026-05-11'), events: [makeEvent({ title: 'ADP Soccer Practice' })],     tasks: [], menuEvent: { title: 'Spaghetti',   subtitle: '', cardType: 'menu' } }),
+        makeDay({ date: d('2026-05-12'), events: [makeEvent({ title: 'Reading SOL', cardType: 'urgent', owner: [], gearReminder: null })], tasks: [], menuEvent: null }),
+        makeDay({ date: d('2026-05-13'), events: [], tasks: [makeTask({ time: '7:00 AM', owner: 'wade', text: 'SOL day 2 — early breakfast' })], menuEvent: { title: 'Hamburgers', subtitle: '', cardType: 'menu' } }),
+      ],
+    });
+    const multiEmail = renderEmail(multiDayData);
+    assertGmailSafe(multiEmail.html, 'Multi-day email');
+    assert.ok(multiEmail.html.includes('Monday'));
+    assert.ok(multiEmail.html.includes('Tuesday'));
+    assert.ok(multiEmail.html.includes('Wednesday'));
+    assert.ok(multiEmail.html.includes('Spaghetti'));
+    assert.ok(multiEmail.html.includes('Hamburgers'));
+    assert.ok(multiEmail.html.includes('Reading SOL'));
+  });
+});
