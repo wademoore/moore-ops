@@ -96,3 +96,23 @@ Run `reauthorize.js` (project root, gitignored) when the OAuth token needs new s
 - Adding a new Google API scope (always requires new consent)
 - Token has been revoked (check CloudWatch for 401 errors)
 - Never needed for routine Lambda runs — the token auto-refreshes via the `tokens` event in `auth.js`
+
+## Weekly Household Operations Review
+
+### Phase 5 — Menu Planning (~5 min)
+
+Full facilitation spec lives in `docs/meal-planning.md`. Follow that document for the complete step-by-step flow.
+
+Summary:
+- Pull the Menu calendar for the coming Monday–Sunday — show filled and empty nights
+- Pull all Moore family calendars to identify busy nights (≤30 min meals required)
+- Classify each night (BUSY / OPEN / Weekend / Eat Out / Home Chef)
+- Propose a 7-night dinner plan using the Recipe Library as the primary source
+- Ask for confirmation before creating calendar events
+- Create events on the Menu calendar after confirmation (see meal-planning.md for event format)
+- Produce a grocery list only if requested
+
+Key IDs:
+- Menu calendar: `rtd3pm2tqjusgob36vpoi4u85c@group.calendar.google.com`
+- Meal Planning Preferences doc: `1WF1CP4SX3tiAKiHS2BxlDauaoNhtDUQVvFQELPGHkB4`
+- Recipe Library doc: `1nJSZH1lBDNUd5x2zyGBBRmsclqTeWWkDukoL9dHB1Ro`
