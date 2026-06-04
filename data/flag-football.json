@@ -569,11 +569,11 @@
                                           "date":  "2026-05-31",
                                           "time":  "15:00",
                                           "away":  "BAR",
-                                          "awayScore":  null,
+                                          "awayScore":  21,
                                           "home":  "LAW",
-                                          "homeScore":  null,
+                                          "homeScore":  6,
                                           "type":  "regular",
-                                          "status":  "scheduled"
+                                          "status":  "final"
                                       },
                                       {
                                           "date":  "2026-05-31",
@@ -589,11 +589,11 @@
                                           "date":  "2026-05-31",
                                           "time":  "16:00",
                                           "away":  "BAR",
-                                          "awayScore":  null,
+                                          "awayScore":  18,
                                           "home":  "SLZ",
-                                          "homeScore":  null,
+                                          "homeScore":  14,
                                           "type":  "regular",
-                                          "status":  "scheduled"
+                                          "status":  "final"
                                       },
                                       {
                                           "date":  "2026-06-07",
