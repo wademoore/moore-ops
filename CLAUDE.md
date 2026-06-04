@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 460+ passing
+- Run npm test after changes — must stay at 452+ passing
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
 

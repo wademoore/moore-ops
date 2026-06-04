@@ -440,12 +440,17 @@ function renderPBRow(row) {
     return 'empty';
   })();
 
+  // placement span — appended after time when available
+  const placementHtml = lastSwim?.placement
+    ? ` <span class="pb-placement">(${lastSwim.placement})</span>`
+    : '';
+
   // pb-main content
   let mainHtml = '';
   if (state === 'newpb') {
     mainHtml = `
       <span class="pb-arrow pb-arrow--fast">↓</span>
-      <span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>
+      <span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>${placementHtml}
       <span class="pb-trend-label pb-label--celebrate">NEW PB!</span>`;
   } else if (state === 'champs') {
     mainHtml = `
@@ -454,7 +459,7 @@ function renderPBRow(row) {
       <span class="pb-trend-label pb-label--celebrate">CHAMPS ✓</span>`;
   } else if (state === 'slower') {
     mainHtml = `
-      <span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>
+      <span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>${placementHtml}
       <span class="pb-arrow pb-arrow--slow">↑</span>
       <span class="pb-trend-delta">+${Math.abs(delta).toFixed(2)}s</span>`;
   } else if (state === 'pbonly') {
@@ -474,7 +479,7 @@ function renderPBRow(row) {
     if (champsTarget) ctxHtml = `<div class="pb-ctx-champs">Champs ${champsTarget}</div>`;
     ctxHtml += rankHtml;
   } else if (state === 'champs') {
-    if (lastSwim && !isNewPB) ctxHtml = `<div class="pb-ctx-last">Last ${secondsToTime(lastSwim.seconds)}</div>`;
+    if (lastSwim && !isNewPB) ctxHtml = `<div class="pb-ctx-last">Last ${secondsToTime(lastSwim.seconds)}${placementHtml}</div>`;
     ctxHtml += rankHtml;
   } else if (state === 'slower') {
     if (pb)           ctxHtml += `<div class="pb-ctx-pb">PB ${secondsToTime(pb.seconds)}</div>`;
@@ -967,6 +972,7 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
 .pb-ctx-last{font-size:14px;color:rgba(255,255,255,.5);white-space:nowrap}
 .pb-ctx-champs{font-size:12px;color:rgba(255,255,255,.25);white-space:nowrap}
 .pb-ctx-rank{font-size:11px;color:rgba(255,255,255,.35);white-space:nowrap}
+.pb-placement{font-size:0.75em;opacity:0.65;}
 .pb-ctx-label{font-size:12px;font-weight:700;color:#5dca8a;white-space:nowrap}
 .pb-champs-row{display:flex;align-items:center;gap:8px;margin-top:2px;margin-bottom:7px}
 .pb-champs-bar{flex:1;height:3px;background:rgba(255,255,255,.07);border-radius:2px;position:relative}
