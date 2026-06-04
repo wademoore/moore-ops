@@ -406,7 +406,8 @@
                                    ],
                         "awards":  [
                                        { "award": "MVP", "winner": null, "votes": null },
-                                       { "award": "Best Teammate", "winner": null, "votes": null }
+                                       { "award": "Best Teammate", "winner": null, "votes": null },
+                                       { "award": "Most Improved", "winner": null, "votes": null, "selectedBy": "Coach" }
                                    ],
                         "snackSchedule":  [
                                               {
