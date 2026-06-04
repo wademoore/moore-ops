@@ -394,6 +394,20 @@
                                           "teamName":  "Raiders"
                                       }
                                   ],
+                        "roster":  [
+                                       "Ben J.",
+                                       "Ben B.",
+                                       "Landon O.",
+                                       "Levi S.",
+                                       "Matthew M.",
+                                       "Myles M.",
+                                       "PJ P.",
+                                       "Tripp J."
+                                   ],
+                        "awards":  [
+                                       { "award": "MVP", "winner": null, "votes": null },
+                                       { "award": "Best Teammate", "winner": null, "votes": null }
+                                   ],
                         "snackSchedule":  [
                                               {
                                                   "week":  2,
