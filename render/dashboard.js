@@ -385,7 +385,7 @@ function renderWeekCard(digestData) {
     // Combine same-day events into one row
     const titles = events.map(e => e.title).join(' · ');
     const subs   = events
-      .map(e => e.gearReminder ? `Gear: ${e.gearReminder.split('·')[0].trim()}` : e.subtitle)
+      .map(e => (e.gearReminder && days === 0) ? `Gear: ${e.gearReminder.split('·')[0].trim()}` : e.subtitle)
       .filter(Boolean)
       .join(' · ');
 
