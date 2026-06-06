@@ -92,23 +92,6 @@ function daysUntil(today, targetStr) {
 
 const EVALUATORS = [
 
-  // ── Flag Football Picture Day — June 7 ──────────────────────────────────
-  // Rescheduled from May 17 to June 7 — same day as final regular season
-  // game / playoffs. Warn starting May 31 (one week out).
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-31', '2026-06-07')) return null;
-    const days = daysUntil(ctx.today, '2026-06-07');
-    return {
-      id: 'flag-picture-day',
-      level: days <= 1 ? 'amber' : 'blue',
-      title: `📸 Flag Football Picture Day — ${days === 0 ? 'Today' : `${days} Day${days === 1 ? '' : 's'} Away`} (June 7)`,
-      body: 'Picture Day is the same day as playoffs. Confirm uniform is clean and pressed. Check LeagueApps app for exact photo schedule.',
-      owner: ['wade'],
-      persist: false,
-    };
-  },
-
-
   // ── Sunday: no weekly menu set ───────────────────────────────────────────
   (ctx) => {
     if (ctx.today.getDay() !== 0) return null; // Sunday only
@@ -198,22 +181,6 @@ const EVALUATORS = [
   },
 
 
-  // ── Ms. Maguire birthday — June 6 ───────────────────────────────────────
-  // Flag one week before.
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-05-30', '2026-06-06')) return null;
-    const days = daysUntil(ctx.today, '2026-06-06');
-    if (days > 7) return null;
-    return {
-      id: 'maguire-birthday',
-      level: 'blue',
-      title: `🎂 Ms. Maguire's Birthday — ${days === 0 ? 'Today!' : `${days} Day${days === 1 ? '' : 's'} Away`} (June 6)`,
-      body: 'Myles\'s teacher. Favorites: Carrot cake, Nerds Gummy Clusters, Vanilla Sugar Free Red Bull, Starbucks/Target gift cards. Shirt size: L.',
-      owner: ['wade', 'robyn'],
-      persist: false,
-    };
-  },
-
   // ── Mrs. Watkins birthday — October 19 ──────────────────────────────────
   (ctx) => {
     if (!inWindow(ctx.today, '2026-10-12', '2026-10-19')) return null;
@@ -225,34 +192,6 @@ const EVALUATORS = [
       title: `🎂 Mrs. Watkins' Birthday — ${days === 0 ? 'Today!' : `${days} Day${days === 1 ? '' : 's'} Away`} (Oct 19)`,
       body: 'Ophelia\'s teacher. Favorites: Cheesecake, gummy candy, Parmesan Goldfish, WaWa ($10) or Amazon ($20) gift cards. Shirt: M or L.',
       owner: ['wade', 'robyn'],
-      persist: false,
-    };
-  },
-
-  // ── Flag football season end approaching ─────────────────────────────────
-  // Last game June 7; rain date June 14.
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-06-01', '2026-06-07')) return null;
-    const days = daysUntil(ctx.today, '2026-06-07');
-    return {
-      id: 'flag-season-end',
-      level: 'blue',
-      title: `🏈 Cowboys Flag Football — Final Game${days === 0 ? ' Today' : ` in ${days} Day${days === 1 ? '' : 's'}`}`,
-      body: `Season ends June 7 (rain date June 14). Captains: Ben Jenkins & Benjamin Brown. Snack: Parker family. Post-game recap email required.`,
-      owner: ['wade'],
-      persist: false,
-    };
-  },
-
-  // ── Flag football season complete ───────────────────────────────────────
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-06-08', '2026-06-21')) return null;
-    return {
-      id: 'flag-season-complete',
-      level: 'blue',
-      title: '🏈 Cowboys Season Complete',
-      body: 'Flag football season has ended. Rain date was June 14. No further coaching action needed. Consider end-of-season thank-you to families.',
-      owner: ['wade'],
       persist: false,
     };
   },

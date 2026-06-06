@@ -61,56 +61,6 @@ describe('Legacy / Sharks decision flags — permanently retired', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Section 4 — Flag Football Picture Day
-// ---------------------------------------------------------------------------
-
-describe('Flag Football Picture Day — rescheduled June 7', () => {
-  it('Suppressed May 12 (old window retired)', () => {
-    assert.ok(!computeFlags(ctx({ today: d('2026-05-12') })).find(f => f.id === 'flag-picture-day'));
-  });
-
-  it('Suppressed May 17 (old date)', () => {
-    assert.ok(!computeFlags(ctx({ today: d('2026-05-17') })).find(f => f.id === 'flag-picture-day'));
-  });
-
-  it('Fires June 5', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-05') })).find(f => f.id === 'flag-picture-day');
-    assert.ok(flag != null);
-  });
-
-  it('Title shows June 7 on June 5', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-05') })).find(f => f.id === 'flag-picture-day');
-    assert.ok(/June 7/i.test(flag.title));
-  });
-
-  it('Body notes conflict with final game/playoffs on June 5', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-05') })).find(f => f.id === 'flag-picture-day');
-    assert.ok(/playoffs|final/i.test(flag.body));
-  });
-
-  it('Fires June 7 (day of)', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-07') })).find(f => f.id === 'flag-picture-day');
-    assert.ok(flag != null);
-  });
-
-  it('Title says Today on June 7', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-07') })).find(f => f.id === 'flag-picture-day');
-    assert.ok(/Today/i.test(flag.title));
-  });
-
-  it('Level is AMBER on day of (June 7)', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-07') })).find(f => f.id === 'flag-picture-day');
-    assert.equal(flag.level, 'amber');
-  });
-
-  it('Suppressed June 8', () => {
-    assert.ok(!computeFlags(ctx({ today: d('2026-06-08') })).find(f => f.id === 'flag-picture-day'));
-  });
-});
-
-
-
-// ---------------------------------------------------------------------------
 // Section 10 — ADP season end
 // ---------------------------------------------------------------------------
 
@@ -147,10 +97,6 @@ describe('Regression — unchanged evaluators', () => {
 
   it('Backpack reminder still fires', () => {
     assert.ok(computeFlags(ctx({ today: d('2026-05-18'), schoolStrip: { myles: {}, ophelia: {}, tomorrowWarnings: ['Tomorrow: Myles has Library'] } })).find(f => f.id === 'backpack-reminder') != null);
-  });
-
-  it('Flag season end still fires', () => {
-    assert.ok(computeFlags(ctx({ today: d('2026-06-05') })).find(f => f.id === 'flag-season-end') != null);
   });
 
   it('Saturday board game still fires', () => {
