@@ -211,12 +211,22 @@
         }
       ],
       "meets": [
-        { "date": "2026-06-15", "teamA": "WT",  "scoreA": null, "teamB": "FDC", "scoreB": null, "friendly": true },
+        { "date": "2026-06-15", "teamA": "WT",  "scoreA": null, "teamB": "FDC", "scoreB": null, "friendly": true  },
         { "date": "2026-06-22", "teamA": "WPD", "scoreA": null, "teamB": "WT",  "scoreB": null, "friendly": false },
+        { "date": "2026-06-22", "teamA": "WF",  "scoreA": null, "teamB": "EH",  "scoreB": null, "friendly": false },
+        { "date": "2026-06-22", "teamA": "PS",  "scoreA": null, "teamB": "WC",  "scoreB": null, "friendly": false },
         { "date": "2026-06-29", "teamA": "WT",  "scoreA": null, "teamB": "WC",  "scoreB": null, "friendly": false },
+        { "date": "2026-06-29", "teamA": "WF",  "scoreA": null, "teamB": "PS",  "scoreB": null, "friendly": false },
+        { "date": "2026-06-29", "teamA": "EH",  "scoreA": null, "teamB": "WPD", "scoreB": null, "friendly": false },
         { "date": "2026-07-06", "teamA": "PS",  "scoreA": null, "teamB": "WT",  "scoreB": null, "friendly": false },
+        { "date": "2026-07-06", "teamA": "WPD", "scoreA": null, "teamB": "WF",  "scoreB": null, "friendly": false },
+        { "date": "2026-07-06", "teamA": "WC",  "scoreA": null, "teamB": "EH",  "scoreB": null, "friendly": false },
         { "date": "2026-07-13", "teamA": "EH",  "scoreA": null, "teamB": "WT",  "scoreB": null, "friendly": false },
-        { "date": "2026-07-20", "teamA": "WT",  "scoreA": null, "teamB": "WF",  "scoreB": null, "friendly": false }
+        { "date": "2026-07-13", "teamA": "WF",  "scoreA": null, "teamB": "WC",  "scoreB": null, "friendly": false },
+        { "date": "2026-07-13", "teamA": "WPD", "scoreA": null, "teamB": "PS",  "scoreB": null, "friendly": false },
+        { "date": "2026-07-20", "teamA": "WT",  "scoreA": null, "teamB": "WF",  "scoreB": null, "friendly": false },
+        { "date": "2026-07-20", "teamA": "WC",  "scoreA": null, "teamB": "WPD", "scoreB": null, "friendly": false },
+        { "date": "2026-07-20", "teamA": "PS",  "scoreA": null, "teamB": "EH",  "scoreB": null, "friendly": false }
       ]
     }
   ]
