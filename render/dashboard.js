@@ -869,7 +869,7 @@ function renderBanner(banner) {
 // ---------------------------------------------------------------------------
 
 function renderChampionshipBanner() {
-  const logo = `<img src="${LOGOS.cowboys}" style="height:60px;width:auto;object-fit:contain;" alt="" onerror="this.style.display:'none'">`;
+  const logo = `<img src="${LOGOS.cowboys}" style="height:60px;width:auto;object-fit:contain;" alt="" onerror="this.style.display='none'">`;
   return `
 <div style="width:100%;background:#003594;border:2px solid #869397;border-radius:14px;padding:18px 32px;display:flex;align-items:center;justify-content:center;gap:28px;flex-shrink:0;">
   ${logo}

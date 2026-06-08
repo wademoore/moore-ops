@@ -300,7 +300,7 @@ const EVALUATORS = [
       level: 'blue',
       title: '🏆 Cowboys Spring 2026 Champions',
       body: 'Undefeated season — 7-0 regular + 2 playoff wins',
-      owner: [],
+      owner: ['dashboard'],
       persist: false,
       bannerOnly: true,
     };
