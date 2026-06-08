@@ -129,7 +129,7 @@ export function parseWaves(wavesSeasonData, referenceDate) {
         if (m.scoreB > m.scoreA) w++; else l++;
       }
     }
-    return { team: t.name, w, l, isMe: t.abbr === 'WT' };
+    return { team: t.name, abbr: t.abbr, w, l, isMe: t.abbr === 'WT' };
   }).sort((a, b) => b.w - a.w || a.l - b.l);
 
   return {
