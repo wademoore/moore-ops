@@ -207,21 +207,20 @@ function renderWeeklyPriorities(weeklyPriorities) {
   parts.push(`<div class="section-hdr">Weekly Priorities</div>`);
 
   for (const item of overdue) {
+    const overdueLabel = `${item.assignee} · ${item.daysOverdue} day${item.daysOverdue === 1 ? '' : 's'} overdue`;
     parts.push(`
-<div style="background:rgba(186,117,23,.15);border:1px solid rgba(186,117,23,.35);border-radius:8px;padding:10px 14px;margin-bottom:6px;">
-  <div style="font-size:20px;font-weight:600;color:#fff;margin-bottom:4px;">${item.title}</div>
-  <div style="font-size:15px;color:rgba(255,255,255,.45);">${item.assignee} · ${item.daysOverdue} day${item.daysOverdue === 1 ? '' : 's'} overdue</div>
+<div style="background:rgba(186,117,23,.15);border:1px solid rgba(186,117,23,.35);border-radius:8px;padding:8px 14px;margin-bottom:5px;">
+  <div style="font-size:19px;font-weight:500;color:#fff;line-height:1.3;"><span style="font-size:14px;color:rgba(255,255,255,.45);font-weight:400;">${overdueLabel}</span> · ${item.title}</div>
 </div>`.trim());
   }
 
   for (const item of active) {
-    const subLine = item.dueDay
+    const ownerLabel = item.dueDay
       ? `${item.assignee} · Due ${item.dueDay}`
       : item.assignee;
     parts.push(`
-<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,.07);">
-  <div style="font-size:22px;color:rgba(255,255,255,.85);margin-bottom:2px;">${item.title}</div>
-  <div style="font-size:15px;color:rgba(255,255,255,.38);">${subLine}</div>
+<div style="padding:6px 0;border-bottom:1px solid rgba(255,255,255,.07);">
+  <div style="font-size:19px;color:rgba(255,255,255,.82);line-height:1.3;"><span style="font-size:14px;color:rgba(255,255,255,.4);font-weight:400;">${ownerLabel}</span> · ${item.title}</div>
 </div>`.trim());
   }
 
