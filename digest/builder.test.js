@@ -213,7 +213,7 @@ const FIXTURE_FF_WITH_EAGLES = {
     games: [],
     snackSchedule: [],
     captainAssignments: [
-      { date: '2026-06-07', opponent: 'Eagles', captains: ['Pierre', 'Jake'], mylesCaptain: true },
+      { date: '2026-06-14', opponent: 'Eagles', captains: ['Pierre', 'Jake'], mylesCaptain: true },
     ],
   }],
 };
@@ -274,8 +274,7 @@ const dig = await buildDigest({
   rawEvents: mockRawEvents,
   emails: mockEmails,
   docs: mockDocs,
-  newsletterText: null,
-  banner: null,
+   banner: null,
   ...SPORTS_PARAMS,
   flagFootballData: FIXTURE_FF_WITH_RECORD,  // 3-0 record, 4 teams
 });
@@ -332,8 +331,7 @@ assert(day0.tasks.length > 0,                        'Tasks generated for today'
 
 // Banner passthrough
 const withBanner = await buildDigest({
-  rawEvents: [], emails: [], docs: {}, newsletterText: null,
-  banner: { supertitle: 'Cowboys', headline: 'Champions!', subtitle: '', type: 'championship', logoUrl: null },
+  rawEvents: [], emails: [], docs: {},  banner: { supertitle: 'Cowboys', headline: 'Champions!', subtitle: '', type: 'championship', logoUrl: null },
   ...SPORTS_PARAMS,
 });
 assert(withBanner.banner?.headline === 'Champions!', 'Banner passed through');
@@ -343,7 +341,7 @@ assert(withBanner.banner?.headline === 'Champions!', 'Banner passed through');
 // ---------------------------------------------------------------------------
 section('buildDigest — graceful handling of empty/null inputs');
 
-const empty = await buildDigest({ rawEvents: [], emails: [], docs: {}, newsletterText: null, banner: null, ...SPORTS_PARAMS, flagFootballData: null });
+const empty = await buildDigest({ rawEvents: [], emails: [], docs: {}, banner: null, ...SPORTS_PARAMS, flagFootballData: null });
 assert(empty.days.length === 3,                      'Empty inputs: still 3 days');
 assert(empty.flags != null,                          'Empty inputs: flags computed');
 assert(empty.athletics.seasonRecord === '?-?',       'Empty athletics: fallback record');
@@ -431,56 +429,50 @@ assert(dedupResults.filter(t => t.owner === 'coaching').length === 4, 'Flag game
 
 section('buildDigest — rawEvents14d fallback (absent → uses rawEvents)');
 const evIn7d    = { summary: 'Family Picnic',        calendarName: 'Family', start: { dateTime: isoDateTime(7, 11) } };
-const fallbackR = await buildDigest({ rawEvents: [evIn7d], emails: [], docs: {}, newsletterText: null, ...SPORTS_PARAMS });
+const fallbackR = await buildDigest({ rawEvents: [evIn7d], emails: [], docs: {}, ...SPORTS_PARAMS });
 assert(fallbackR.upcomingEvents.some(e => /Family Picnic/.test(e.title)), 'rawEvents14d absent → event from rawEvents appears in upcomingEvents');
 
 section('buildDigest — rawEvents14d takes precedence when provided');
 const evForRaw14 = { summary: 'Fourteen Day Event', calendarName: 'Family', start: { dateTime: isoDateTime(8, 11) } };
 const evForRaw   = { summary: 'Three Day Event',    calendarName: 'Family', start: { dateTime: isoDateTime(3, 11) } };
-const with14d    = await buildDigest({ rawEvents: [evForRaw], rawEvents14d: [evForRaw14], emails: [], docs: {}, newsletterText: null, ...SPORTS_PARAMS });
+const with14d    = await buildDigest({ rawEvents: [evForRaw], rawEvents14d: [evForRaw14], emails: [], docs: {}, ...SPORTS_PARAMS });
 assert( with14d.upcomingEvents.some(e => /Fourteen Day Event/.test(e.title)), 'rawEvents14d events appear in upcomingEvents');
 assert(!with14d.upcomingEvents.some(e => /Three Day Event/.test(e.title)),    'rawEvents-only events absent when rawEvents14d provided');
 
-section('buildDigest — newsletter no-school date injection');
-const juneTen = new Date(2026, 5, 10); // June 10 2026 — Wed, normally a school day
-assert(isSchoolDay(juneTen), 'June 10 is a school day before injection');
-await buildDigest({ rawEvents: [], emails: [], docs: {}, newsletterText: 'Stonehouse closed — no school June 10.', ...SPORTS_PARAMS });
-assert(!isSchoolDay(juneTen), 'June 10 is no longer a school day after newsletter injection');
-
 section('buildDigest — 72h window boundary (day +3 excluded from days[])');
 const evDay3     = { summary: 'Day Three Event', calendarName: 'Family', start: { date: isoDate(3) } };
-const bound72    = await buildDigest({ rawEvents: [evDay3], emails: [], docs: {}, newsletterText: null, ...SPORTS_PARAMS });
+const bound72    = await buildDigest({ rawEvents: [evDay3], emails: [], docs: {}, ...SPORTS_PARAMS });
 const allDayEvts = bound72.days.flatMap(d => d.events);
 assert(!allDayEvts.some(e => /Day Three Event/.test(e.title)), 'Event at exactly day+3 (72h boundary) excluded from days[]');
 
 section('buildDigest — 14d window boundary (day +15 excluded from upcomingEvents)');
 const evDay15  = { summary: 'Way Out Event', calendarName: 'Family', start: { dateTime: isoDateTime(15, 10) } };
-const bound14  = await buildDigest({ rawEvents: [evDay15], rawEvents14d: [evDay15], emails: [], docs: {}, newsletterText: null, ...SPORTS_PARAMS });
+const bound14  = await buildDigest({ rawEvents: [evDay15], rawEvents14d: [evDay15], emails: [], docs: {}, ...SPORTS_PARAMS });
 assert(!bound14.upcomingEvents.some(e => /Way Out Event/.test(e.title)), 'Event at day+15 excluded from 14d upcomingEvents');
 
 section('buildDigest — Routine calendar excluded from upcomingEvents');
 const routineEv = { summary: 'PE Day',       calendarName: 'Routine', start: { dateTime: isoDateTime(5, 9) } };
 const regularEv = { summary: 'Team Cookout', calendarName: 'Family',  start: { dateTime: isoDateTime(5, 11) } };
-const cResult   = await buildDigest({ rawEvents: [], rawEvents14d: [routineEv, regularEv], emails: [], docs: {}, newsletterText: null, ...SPORTS_PARAMS });
+const cResult   = await buildDigest({ rawEvents: [], rawEvents14d: [routineEv, regularEv], emails: [], docs: {}, ...SPORTS_PARAMS });
 assert(!cResult.upcomingEvents.some(e => /PE Day/.test(e.title)),      'Routine calendar event absent from upcomingEvents');
 assert( cResult.upcomingEvents.some(e => /Team Cookout/.test(e.title)), 'Non-routine event present in upcomingEvents');
 
 section('buildDigest — menu event routing (today)');
 const menuRaw14  = { summary: 'Spaghetti Bolognese', calendarName: 'Menu', start: { date: isoDate(0) } };
 const activityRaw = { summary: 'ADP Practice',       calendarName: 'Myles', start: { dateTime: isoDateTime(0, 18) } };
-const mResult    = await buildDigest({ rawEvents: [menuRaw14, activityRaw], emails: [], docs: {}, newsletterText: null, ...SPORTS_PARAMS });
+const mResult    = await buildDigest({ rawEvents: [menuRaw14, activityRaw], emails: [], docs: {}, ...SPORTS_PARAMS });
 assert(mResult.days[0].menuEvent?.title === 'Spaghetti Bolognese', 'Menu event routed to days[0].menuEvent');
 assert(!mResult.days[0].events.some(e => e.title === 'Spaghetti Bolognese'), 'Menu event absent from days[0].events');
 
 section('buildDigest — tomorrow menu event');
 const tomorrowMenuRaw = { summary: 'Chicken Tacos', calendarName: 'Menu', start: { date: isoDate(1) } };
-const tmResult        = await buildDigest({ rawEvents: [tomorrowMenuRaw], emails: [], docs: {}, newsletterText: null, ...SPORTS_PARAMS });
+const tmResult        = await buildDigest({ rawEvents: [tomorrowMenuRaw], emails: [], docs: {}, ...SPORTS_PARAMS });
 assert(tmResult.tomorrowMenu?.title === 'Chicken Tacos',             'Tomorrow menu event at result.tomorrowMenu');
 assert(!tmResult.days[1].events.some(e => e.title === 'Chicken Tacos'), 'Tomorrow menu event absent from days[1].events');
 
 section('buildDigest — athletics cross-reference (flag game in rawEvents)');
 const cowboysGame = { summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles', start: { dateTime: isoDateTime(1, 15) } };
-const athResult   = await buildDigest({ rawEvents: [cowboysGame], emails: [], docs: {}, newsletterText: null, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
+const athResult   = await buildDigest({ rawEvents: [cowboysGame], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
 assert(athResult.athletics.hasGameThisWeek === true,              'Flag game in rawEvents → athletics.hasGameThisWeek true');
 assert(typeof athResult.athletics.thisWeekOpponent === 'string',  'Flag game → thisWeekOpponent is a string');
 assert(/Eagles/i.test(athResult.athletics.thisWeekOpponent),      'Flag game → thisWeekOpponent contains opponent name');

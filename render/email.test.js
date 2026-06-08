@@ -98,7 +98,6 @@ function makeDigestData(overrides = {}) {
       tomorrowWarnings: ['Tomorrow: Myles has Music — pack recorder tonight'],
     },
     activityComms:   [],
-    newsletterItems: [],
     athletics:       { currentSnackFamily: 'Parker family', currentCaptains: 'Ben & Ben', seasonRecord: '4-1' },
     ...overrides,
   };
@@ -287,19 +286,19 @@ describe('renderSchoolStrip', () => {
 // ---------------------------------------------------------------------------
 
 describe('renderActivityComms', () => {
-  it('Activity comms section is Gmail-safe and includes both items and header', () => {
-    const comms = renderActivityComms(
-      ['Dance studio: Recital details confirmed for May 30'],
-      ['Spirit Week: May 18–22 — Hat Day on Monday']
-    );
+  it('Activity comms section is Gmail-safe and includes items and header', () => {
+    const comms = renderActivityComms([
+      'Dance studio: Recital details confirmed for May 30',
+      '📋 Stonehouse Newsletter — "May Update" · https://smore.com/abc',
+    ]);
     assertGmailSafe(comms, 'Activity comms section');
     assert.ok(comms.includes('Dance studio'));
-    assert.ok(comms.includes('Spirit Week'));
+    assert.ok(comms.includes('Stonehouse Newsletter'));
     assert.ok(comms.includes('Activity Comm'));
   });
 
-  it('renderActivityComms([], []) returns empty string', () => {
-    assert.equal(renderActivityComms([], []), '');
+  it('renderActivityComms([]) returns empty string', () => {
+    assert.equal(renderActivityComms([]), '');
   });
 });
 

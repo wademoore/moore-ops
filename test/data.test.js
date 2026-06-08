@@ -95,7 +95,6 @@ describe('buildDigest() — filesystem fallback (no sports params injected)', ()
       rawEvents:      [],
       emails:         [],
       docs:           {},
-      newsletterText: null,
       banner:         null,
     });
 

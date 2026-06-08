@@ -21,6 +21,7 @@ export const SENDER_MAP = [
   { pattern: /melissa\.white@wjccschools/i,  key: 'newsletter'   },
   // Wellington Waves — no dedicated sender yet; monitor for assignment emails
   { pattern: /wellingtonwaves/i,             key: 'waves'        },
+  { pattern: /swimtopia\.net/i,              key: 'swimtopia'    },
 ];
 
 // ---------------------------------------------------------------------------
@@ -37,6 +38,23 @@ export function classifyFlagFootballEmail(subject) {
 }
 
 // ---------------------------------------------------------------------------
+// 3. NEWSLETTER URL EXTRACTION
+// ---------------------------------------------------------------------------
+// Extracts the Smore newsletter link from a quoted-printable Gmail body.
+// Looks for an <a> tag with a relative-link attribute whose href is the
+// canonical Smore/SendGrid URL for the newsletter.
+
+export function extractNewsletterUrl(emailBody) {
+  if (!emailBody) return null;
+  // Strip quoted-printable soft line breaks
+  const decoded = emailBody.replace(/=\n/g, '');
+  // Match href on an <a> tag that also contains relative-link attribute
+  const match = decoded.match(/href=3D["']?(https:\/\/[^"'\s>]+)["']?[^>]*relative-link|relative-link[^>]*href=3D["']?(https:\/\/[^"'\s>]+)["']?/i);
+  if (!match) return null;
+  return (match[1] || match[2]) || null;
+}
+
+// ---------------------------------------------------------------------------
 // 4. GMAIL → gmailHits
 // ---------------------------------------------------------------------------
 
@@ -50,7 +68,11 @@ export function buildGmailHits(emails) {
         if (key === 'flagFootball' && classifyFlagFootballEmail(email.subject || '') === 'boilerplate') {
           break;
         }
-        hits[key] = email; // store first match per key
+        if (key === 'newsletter') {
+          hits[key] = { ...email, newsletterUrl: extractNewsletterUrl(email.body || '') };
+        } else {
+          hits[key] = email; // store first match per key
+        }
         break;
       }
     }
@@ -63,7 +85,7 @@ export function buildGmailHits(emails) {
 // ---------------------------------------------------------------------------
 // Converts raw email objects into human-readable digest lines.
 
-export function buildActivityCommsLines(emails) {
+export function buildActivityCommsLines(emails, gmailHits = {}) {
   const lines = [];
 
   for (const email of (emails || [])) {
@@ -84,6 +106,7 @@ export function buildActivityCommsLines(emails) {
           sharks:      'Tidewater Sharks',
           newsletter:  'Stonehouse Elementary',
           waves:       'Wellington Waves',
+          swimtopia:   'Wellington Waves',
         }[key] || key;
         break;
       }
@@ -92,6 +115,23 @@ export function buildActivityCommsLines(emails) {
 
     // Flag football: skip boilerplate weekly emails — only surface actionable ones
     if (matchedKey === 'flagFootball' && classifyFlagFootballEmail(subject) === 'boilerplate') continue;
+
+    // Newsletter: emit link format if URL is present
+    if (matchedKey === 'newsletter') {
+      const url = gmailHits.newsletter?.newsletterUrl;
+      const line = url
+        ? `📋 Stonehouse Newsletter — "${subject}" · ${url}`
+        : `Stonehouse Elementary: "${subject}"${snippet ? ` — ${snippet.slice(0, 80)}` : ''}`;
+      lines.push(line);
+      continue;
+    }
+
+    // SwimTopia (Wellington Waves): render with 📣 Waves: prefix
+    if (matchedKey === 'swimtopia') {
+      const line = `📣 Waves: "${subject}"${snippet ? ` — ${snippet.slice(0, 80)}` : ''}`;
+      lines.push(line);
+      continue;
+    }
 
     // Build a concise line — flagFootball actionable gets 120-char snippet for more context
     const snippetLimit = matchedKey === 'flagFootball' ? 120 : 80;

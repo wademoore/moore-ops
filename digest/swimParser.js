@@ -10,6 +10,41 @@
 import { timeToSeconds } from './dateUtils.js';
 import { isSeasonActive }               from './sportsConfig.js';
 
+/**
+ * Returns the correct English ordinal suffix for integer n.
+ * 11, 12, 13 → "th"; ending in 1 → "st"; 2 → "nd"; 3 → "rd"; else → "th".
+ * @param {number} n
+ * @returns {string}
+ */
+export function ordinalSuffix(n) {
+  const abs = Math.abs(n);
+  const lastTwo = abs % 100;
+  if (lastTwo >= 11 && lastTwo <= 13) return 'th';
+  const lastOne = abs % 10;
+  if (lastOne === 1) return 'st';
+  if (lastOne === 2) return 'nd';
+  if (lastOne === 3) return 'rd';
+  return 'th';
+}
+
+/**
+ * Derives a placement string from a swim result entry, or returns null.
+ * Requires overallPlace and overallCount. Optionally appends heat info
+ * if heatPlace, heatNumber, and heatCount are all present.
+ * @param {object} entry  A swim result entry
+ * @returns {string|null}
+ */
+function derivePlacementString(entry) {
+  if (entry == null) return null;
+  const { overallPlace, overallCount, heatPlace, heatNumber, heatCount } = entry;
+  if (overallPlace == null || overallCount == null) return null;
+  let s = `${overallPlace}${ordinalSuffix(overallPlace)} of ${overallCount}`;
+  if (heatPlace != null && heatNumber != null && heatCount != null) {
+    s += ` · ${heatPlace}${ordinalSuffix(heatPlace)} in Heat ${heatNumber}`;
+  }
+  return s;
+}
+
 // Stroke mapping — VPSU rankings use full stroke names; config uses abbreviated names.
 const STROKE_MAP = {
   'Freestyle':         'Free',
@@ -86,7 +121,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
       !r.dq && !r.relay && r.seconds != null
     );
     const lastSwim = lastSwimEntry
-      ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet }
+      ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet, placement: derivePlacementString(lastSwimEntry) }
       : null;
 
     const key     = `Myles|${EVENT_NAME_MAP[e.event] || e.event}|${e.format}`;
@@ -140,7 +175,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
         !r.dq && !r.relay && r.seconds != null
       );
       const lastSwim = lastSwimEntry
-        ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet }
+        ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet, placement: derivePlacementString(lastSwimEntry) }
         : null;
 
       const key     = `Ophelia|${EVENT_NAME_MAP[e.event] || e.event}|${e.format}`;

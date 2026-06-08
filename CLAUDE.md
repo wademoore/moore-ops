@@ -61,16 +61,8 @@ These files are read directly by `digest/builder.js` via `fs.readFile` — no Dr
 - `digest/athleticsParser.js` — thin coordinator; imports the three parsers above, sets season-active flags, assembles final athletics object
 - `digest/sportsConfig.js` — exports only `isSeasonActive(sport, referenceDate)` (pure function — no data)
 
-## Meet results PDF processing (as of May 2026)
-- `digest/meetResultsParser.js` — parses SwimTopia Meet Maestro PDF text, extracts Moore family results, merges PB updates against stored records (pure functions, no Drive I/O)
-- `digest/textractParser.js` — reconstructs plain text from AWS Textract `DetectDocumentText` LINE blocks; used by `processMeetResults()` for PDFs before handing off to `parseMeetText`
-- Meet PDFs uploaded manually to `moore-ops-meet-results` folder (`DRIVE_MEET_RESULTS_FOLDER_ID`)
-- Processed file tracking → `processed-meets.json` (`DRIVE_PROCESSED_MEETS_FILE_ID`) in `moore-ops-data/` folder
-- PDF processing is currently removed from `index.js` — the `processMeetResults()` function was deleted as part of the May 2026 migration to JSON-based athletics data
-- `@aws-sdk/client-textract` is available in the Lambda Node 24 runtime — NOT in `node_modules` locally
-- **IAM required:** Lambda execution role must have `textract:DetectDocumentText` permission
-
-**Warning:** If `processed-meets.json` is deleted from Drive, create a new empty file with `{ "version": 1, "processedFiles": [] }`, update `DRIVE_PROCESSED_MEETS_FILE_ID` in `.env` and Lambda config, then re-upload all meet PDFs.
+## Meet results txt pipeline — removed June 2026
+Pipeline removed June 2026. Updater manual entry (`pb-records.json`, `swim-results.json`) is the authoritative workflow for swim data.
 
 ## OAuth Re-authorization
 Run `reauthorize.js` (project root, gitignored) when the OAuth token needs new scopes or has expired.

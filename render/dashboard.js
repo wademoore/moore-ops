@@ -744,7 +744,7 @@ function renderAthleticsCard(athletics) {
   const cards = [];
 
   if (a.flagFootballActive)             cards.push(renderFlagCard(a));
-  if (a.wavesActive && a.wavesLastMeet !== null) cards.push(renderWavesCard(a));
+  if (a.wavesActive)                    cards.push(renderWavesCard(a));
   if (a.wavesActive)                    cards.push(renderMylesCard(a));
   if (a.wavesActive || a.swim757Active) cards.push(renderOpheliaCard(a));
   if (a.sharksActive)                   cards.push(renderSharksCard(a));

@@ -29,7 +29,6 @@
  *   tomorrowMenu:    ResolvedEvent|null   tomorrow's dinner
  *   nationalsData:   null                 populated by index.js after sports fetch
  *   activityComms:   string[]
- *   newsletterItems: string[]
  *   banner:          object|null
  *   weeklyPriorities: WeeklyPrioritiesData  (additive — see weeklyPrioritiesParser.js)
  * }
@@ -51,11 +50,10 @@
 import { readFile } from 'node:fs/promises';
 import { resolveEvent } from './aliases.js';
 import { computeFlags } from './flags.js';
-import { getSchoolStrip, addNoSchoolDate } from './schoolRotation.js';
+import { getSchoolStrip } from './schoolRotation.js';
 import { midnight, daysBetween, toDateKey, parseEventDate, normalizeEvent } from './dateUtils.js';
 import { parseAthleticsDoc } from './athleticsParser.js';
 import { buildGmailHits, buildActivityCommsLines } from './gmailParser.js';
-import { parseNewsletterItems } from './newsletterParser.js';
 import { parseWeeklyPriorities } from './weeklyPrioritiesParser.js';
 import { generateTasks } from './generateTasks.js';
 
@@ -151,7 +149,6 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object[]}     params.rawEvents        From getCalendarEvents()
  * @param {object[]}     params.emails           From getActivityEmails()
  * @param {object}       params.docs             From getFamilyDocs()
- * @param {string}       [params.newsletterText] Pre-fetched newsletter HTML/text from Drive
  * @param {object|null}  [params.banner]         Banner object set by Wade, or null
  * @param {object[]}     [params.rawEvents14d]   14-day calendar pull; falls back to rawEvents when omitted
  *
@@ -168,7 +165,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.vpsuRankings]     VPSU league rankings (data/vpsu-rankings.json); null on file error
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, newsletterText, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -194,20 +191,6 @@ export async function buildDigest({ rawEvents, emails, docs, newsletterText, ban
   const normalized14d = rawEvents14d
     ? (rawEvents14d || []).map(normalizeEvent)
     : normalized;
-
-  // ── 2. Inject newsletter-sourced no-school dates ────────────────────────
-  // If newsletter mentions a school closure, register it before rotation runs
-  if (newsletterText) {
-    const closureMatches = newsletterText.matchAll(/no\s+school[^.]*?(\w+\s+\d+)/gi);
-    for (const match of closureMatches) {
-      // Best-effort: try to parse dates found near "no school" phrases
-      const attempt = new Date(`${match[1]} 2026`);
-      if (!isNaN(attempt)) {
-        const key = `2026-${String(attempt.getMonth()+1).padStart(2,'0')}-${String(attempt.getDate()).padStart(2,'0')}`;
-        addNoSchoolDate(key);
-      }
-    }
-  }
 
   // ── 3. Resolve all events through aliases ───────────────────────────────
   const allResolved   = normalized.map(resolveEvent);
@@ -286,10 +269,7 @@ export async function buildDigest({ rawEvents, emails, docs, newsletterText, ban
   const gmailHits = buildGmailHits(emails);
 
   // ── 10. Activity comms lines ─────────────────────────────────────────────
-  const activityComms = buildActivityCommsLines(emails);
-
-  // ── 11. Newsletter items ─────────────────────────────────────────────────
-  const newsletterItems = parseNewsletterItems(newsletterText);
+  const activityComms = buildActivityCommsLines(emails, gmailHits);
 
   // ── 12. Athletics data ───────────────────────────────────────────────────
   const athletics = parseAthleticsDoc(today, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings);
@@ -342,7 +322,6 @@ export async function buildDigest({ rawEvents, emails, docs, newsletterText, ban
     tomorrowMenu,
     nationalsData:   null,   // populated by index.js after fetch_sports_data call
     activityComms,
-    newsletterItems,
     banner,
     weeklyPriorities,
   };

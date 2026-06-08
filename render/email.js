@@ -24,7 +24,6 @@
  *   flags:           Flag[]          — output of flags.computeFlags()
  *   schoolStrip:     object          — output of schoolRotation.getSchoolStrip()
  *   activityComms:   string[]        — human-readable lines from Gmail monitoring
- *   newsletterItems: string[]        — parsed from Stonehouse newsletter
  * }
  *
  * DigestDay {
@@ -303,8 +302,8 @@ function renderSchoolStrip(schoolStrip) {
 // 6. ACTIVITY COMMS + NEWSLETTER SECTION
 // ---------------------------------------------------------------------------
 
-function renderActivityComms(activityComms, newsletterItems) {
-  const items = [...(activityComms || []), ...(newsletterItems || [])];
+function renderActivityComms(activityComms) {
+  const items = [...(activityComms || [])];
   if (items.length === 0) return '';
 
   const rows = items
@@ -380,7 +379,7 @@ function renderFlags(flags) {
  * All tab: full family picture, all owners, all days.
  */
 function renderAll(digestData) {
-  const { days, flags, schoolStrip, activityComms, newsletterItems } = digestData;
+  const { days, flags, schoolStrip, activityComms } = digestData;
   const parts = [];
 
   // School rotation strip — top of digest
@@ -398,7 +397,7 @@ function renderAll(digestData) {
   }
 
   // Activity comms
-  const comms = renderActivityComms(activityComms, newsletterItems);
+  const comms = renderActivityComms(activityComms);
   if (comms) parts.push(comms);
 
   // Flags at bottom

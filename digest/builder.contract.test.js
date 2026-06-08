@@ -9,8 +9,7 @@
  * I/O isolation strategy:
  *   - Sports data (config, flagFootballData, pbRecords, swimResults,
  *     wavesSeasonData) passed as inline fixture objects — no Drive fetch.
- *   - rawEvents, emails, docs, newsletterText all empty/null — no Calendar,
- *     Gmail, or Drive call.
+ *   - rawEvents, emails, docs all empty/null — no Calendar, Gmail, or Drive call.
  *   - parseWeeklyPriorities() inside buildDigest calls getAuthClient() which
  *     fails (no credentials in test environment). The try/catch in builder.js
  *     catches this and defaults weeklyPriorities to { active: [], completed: [],
@@ -63,7 +62,6 @@ const MINIMAL_PARAMS = {
   rawEvents:        [],
   emails:           [],
   docs:             {},
-  newsletterText:   null,
   banner:           null,
   rawEvents14d:     null,
   config:           FIXTURE_CONFIG,
@@ -103,7 +101,7 @@ describe('buildDigest — top-level keys', () => {
     const REQUIRED = [
       'today', 'days', 'flags', 'schoolStrip', 'upcomingEvents',
       'athletics', 'menuEvent', 'tomorrowMenu', 'nationalsData',
-      'activityComms', 'newsletterItems', 'banner', 'weeklyPriorities',
+      'activityComms', 'banner', 'weeklyPriorities',
     ];
     for (const key of REQUIRED) {
       assert.ok(key in RESULT, `missing top-level key: "${key}"`);
@@ -185,20 +183,15 @@ describe('buildDigest — upcomingEvents', () => {
   });
 });
 
-// ── activityComms and newsletterItems ──────────────────────────────────────────
+// ── activityComms ──────────────────────────────────────────────────────────────
 
-describe('buildDigest — activityComms and newsletterItems', () => {
+describe('buildDigest — activityComms', () => {
   it('activityComms is an array', () => {
     assert.ok(Array.isArray(RESULT.activityComms));
   });
 
-  it('newsletterItems is an array', () => {
-    assert.ok(Array.isArray(RESULT.newsletterItems));
-  });
-
-  it('both are empty when emails and newsletterText are null/empty', () => {
-    assert.equal(RESULT.activityComms.length,  0);
-    assert.equal(RESULT.newsletterItems.length, 0);
+  it('is empty when emails are null/empty', () => {
+    assert.equal(RESULT.activityComms.length, 0);
   });
 });
 

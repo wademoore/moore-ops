@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseSwim }       from '../digest/swimParser.js';
+import { parseSwim, ordinalSuffix } from '../digest/swimParser.js';
 import { secondsToTime }   from '../digest/dateUtils.js';
 import { FIXTURE_CONFIG }  from './fixtures/sports-config.fixture.js';
 
@@ -231,6 +231,69 @@ describe('parseSwim — trend indicator PBRow', () => {
     };
     const result = parseSwim({}, [], IN_SEASON_FF, FIXTURE_CONFIG, rankings);
     assert.equal(result.mylesPBRows[0].leagueRank, 12);
+  });
+
+});
+
+// ── parseSwim — placement fields ─────────────────────────────────────────────
+
+describe('parseSwim — placement fields', () => {
+
+  it('full placement (all 5 fields) → correct string with both overall and heat segments', () => {
+    const swimResults = [
+      {
+        swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM',
+        dq: false, relay: false, seconds: 65.5, date: '2026-03-01', meet: 'Spring Invite',
+        overallPlace: 3, overallCount: 24,
+        heatPlace: 1, heatNumber: 2, heatCount: 8,
+      },
+    ];
+    const result = parseSwim({}, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    assert.equal(result.mylesPBRows[0].lastSwim.placement, '3rd of 24 · 1st in Heat 2');
+  });
+
+  it('overall only (overallPlace + overallCount, no heat fields) → correct string, no heat segment', () => {
+    const swimResults = [
+      {
+        swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM',
+        dq: false, relay: false, seconds: 65.5, date: '2026-03-01', meet: 'Spring Invite',
+        overallPlace: 11, overallCount: 30,
+      },
+    ];
+    const result = parseSwim({}, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    assert.equal(result.mylesPBRows[0].lastSwim.placement, '11th of 30');
+  });
+
+  it('no placement fields → placement is null', () => {
+    const swimResults = [
+      {
+        swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM',
+        dq: false, relay: false, seconds: 65.5, date: '2026-03-01', meet: 'Spring Invite',
+      },
+    ];
+    const result = parseSwim({}, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    assert.equal(result.mylesPBRows[0].lastSwim.placement, null);
+  });
+
+  // ── ordinalSuffix edge cases ───────────────────────────────────────────────
+
+  it('ordinalSuffix: 1→"st", 2→"nd", 3→"rd", 4→"th"', () => {
+    assert.equal(ordinalSuffix(1),  'st');
+    assert.equal(ordinalSuffix(2),  'nd');
+    assert.equal(ordinalSuffix(3),  'rd');
+    assert.equal(ordinalSuffix(4),  'th');
+  });
+
+  it('ordinalSuffix: 11→"th", 12→"th", 13→"th" (teen exceptions)', () => {
+    assert.equal(ordinalSuffix(11), 'th');
+    assert.equal(ordinalSuffix(12), 'th');
+    assert.equal(ordinalSuffix(13), 'th');
+  });
+
+  it('ordinalSuffix: 21→"st", 22→"nd", 23→"rd" (non-teen)', () => {
+    assert.equal(ordinalSuffix(21), 'st');
+    assert.equal(ordinalSuffix(22), 'nd');
+    assert.equal(ordinalSuffix(23), 'rd');
   });
 
 });

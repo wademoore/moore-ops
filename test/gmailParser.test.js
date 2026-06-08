@@ -6,6 +6,7 @@ import {
   buildGmailHits,
   buildActivityCommsLines,
   classifyFlagFootballEmail,
+  extractNewsletterUrl,
 } from '../digest/gmailParser.js';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -173,5 +174,88 @@ describe('buildActivityCommsLines — flagFootball classification', () => {
     const email = makeEmail(FF_FROM, 'Williamsburg NFL Flag League Spring 2026 - Week 3', 'Weekly reminders');
     const lines = buildActivityCommsLines([email]);
     assert.deepEqual(lines, []);
+  });
+});
+
+// ── extractNewsletterUrl ──────────────────────────────────────────────────────
+
+describe('extractNewsletterUrl(emailBody)', () => {
+  it('returns SendGrid URL when href contains relative-link attribute', () => {
+    const body = `<a href=3D"https://u345601.ct.sendgrid.net/ls/click?upn=abc123" relative-link=3D"true">View Newsletter</a>`;
+    const result = extractNewsletterUrl(body);
+    assert.equal(result, 'https://u345601.ct.sendgrid.net/ls/click?upn=abc123');
+  });
+
+  it('handles quoted-printable soft line breaks splitting the URL', () => {
+    const body = `<a href=3D"https://u345601.ct.sendgrid.net/ls/click?upn=abc=\n123" relative-link=3D"true">View</a>`;
+    const result = extractNewsletterUrl(body);
+    assert.equal(result, 'https://u345601.ct.sendgrid.net/ls/click?upn=abc123');
+  });
+
+  it('returns null when body has only an unsubscribe link (no relative-link attribute)', () => {
+    const body = `<a href=3D"https://u345601.ct.sendgrid.net/ls/click?upn=unsub456">Unsubscribe</a>`;
+    const result = extractNewsletterUrl(body);
+    assert.equal(result, null);
+  });
+
+  it('returns null for null input', () => {
+    const result = extractNewsletterUrl(null);
+    assert.equal(result, null);
+  });
+
+  it('handles =\\n soft break between href value and relative-link attribute', () => {
+    const body = `<a href=3D"https://u345601.ct.sendgrid.net/ls/click?upn=abc123" =\nrelative-link=3D"">View</a>`;
+    const result = extractNewsletterUrl(body);
+    assert.equal(result, 'https://u345601.ct.sendgrid.net/ls/click?upn=abc123');
+  });
+});
+
+// ── SwimTopia / Wellington Waves sender ──────────────────────────────────────
+
+describe('SENDER_MAP — swimtopia pattern', () => {
+  function findKey(address) {
+    for (const { pattern, key } of SENDER_MAP) {
+      if (pattern.test(address)) return key;
+    }
+    return null;
+  }
+
+  it("'noreply+waves@swimtopia.net' matches key 'swimtopia'", () => {
+    assert.equal(findKey('noreply+waves@swimtopia.net'), 'swimtopia');
+  });
+
+  it("non-regression: 'no-reply@thestudiodirectr.biz' still matches key 'dance'", () => {
+    assert.equal(findKey('no-reply@thestudiodirectr.biz'), 'dance');
+  });
+});
+
+describe('buildActivityCommsLines — swimtopia 📣 Waves: line format', () => {
+  it("formats SwimTopia email as '📣 Waves: \"subject\" — snippet'", () => {
+    const email = makeEmail('noreply+waves@swimtopia.net', 'Practice Tuesday 6–8pm', 'See you at the pool!');
+    const lines = buildActivityCommsLines([email]);
+    assert.equal(lines.length, 1);
+    assert.ok(lines[0].startsWith('📣 Waves:'), `line should start with 📣 Waves:, got: ${lines[0]}`);
+    assert.ok(lines[0].includes('Practice Tuesday 6–8pm'), `line should include subject, got: ${lines[0]}`);
+  });
+});
+
+// ── buildActivityCommsLines — newsletter 📋 line format ───────────────────────
+
+describe('buildActivityCommsLines — newsletter 📋 line format', () => {
+  it('emits 📋 Stonehouse Newsletter line when gmailHits.newsletter has newsletterUrl', () => {
+    const newsletterEmail = {
+      from: 'melissa.white@wjccschools.org',
+      subject: 'Week 32 Newsletter',
+      snippet: 'This week at Stonehouse...',
+    };
+    const gmailHits = {
+      newsletter: {
+        ...newsletterEmail,
+        newsletterUrl: 'https://u345601.ct.sendgrid.net/ls/click?upn=abc123',
+      },
+    };
+    const lines = buildActivityCommsLines([newsletterEmail], gmailHits);
+    assert.equal(lines.length, 1);
+    assert.ok(lines[0].startsWith('📋 Stonehouse Newsletter'), `line should start with 📋 Stonehouse Newsletter, got: ${lines[0]}`);
   });
 });

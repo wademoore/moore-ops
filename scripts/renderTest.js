@@ -76,7 +76,6 @@ const digestData = {
   tomorrowMenu: null,
   nationalsData: null,
   activityComms:   [],
-  newsletterItems: [],
   banner: null,
 
   weeklyPriorities: {
