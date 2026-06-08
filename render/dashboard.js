@@ -708,7 +708,7 @@ function renderWavesCard(athletics) {
 
   const standingsRows = (wavesStandings || []).map(row => `
 <tr${row.isMe ? ' class="me"' : ''}>
-  <td>${row.abbr}</td>
+  <td>${row.mascot}</td>
   <td>${row.w}</td>
   <td>${row.l}</td>
 </tr>`).join('');
