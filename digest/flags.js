@@ -292,6 +292,19 @@ const EVALUATORS = [
     };
   },
 
+  // ── Cowboys Spring 2026 Championship banner — Jun 7–9 only ───────────────
+  (ctx) => {
+    if (!inWindow(ctx.today, '2026-06-07', '2026-06-09')) return null;
+    return {
+      id: 'cowboys-championship-banner',
+      level: 'blue',
+      title: '🏆 Cowboys Spring 2026 Champions',
+      body: 'Undefeated season — 7-0 regular + 2 playoff wins',
+      owner: [],
+      persist: false,
+      bannerOnly: true,
+    };
+  },
 
 ];
 

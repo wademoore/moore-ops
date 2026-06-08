@@ -767,7 +767,8 @@ function renderAthleticsCard(athletics) {
 
 function renderAlerts(flags) {
   // Dashboard shows up to 3 — highest priority already sorted red→amber→blue
-  const shown = (flags || []).slice(0, 3);
+  // bannerOnly flags drive the championship banner, not the alert bar
+  const shown = (flags || []).filter(f => !f.bannerOnly).slice(0, 3);
   if (!shown.length) return '';
 
   const cls = { red: 'ar', amber: 'aa', blue: 'ab' };
@@ -860,6 +861,24 @@ function renderBanner(banner) {
     <div style="font-size:18px;color:rgba(255,255,255,.55);margin-top:5px;">${banner.subtitle || ''}</div>
   </div>
   ${logoHtml}
+</div>`;
+}
+
+// ---------------------------------------------------------------------------
+// 9.5. COWBOYS CHAMPIONSHIP BANNER
+// ---------------------------------------------------------------------------
+
+function renderChampionshipBanner() {
+  const logo = `<img src="${LOGOS.cowboys}" style="height:60px;width:auto;object-fit:contain;" alt="" onerror="this.style.display:'none'">`;
+  return `
+<div style="width:100%;background:#003594;border:2px solid #869397;border-radius:14px;padding:18px 32px;display:flex;align-items:center;justify-content:center;gap:28px;flex-shrink:0;">
+  ${logo}
+  <div style="text-align:center;">
+    <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.14em;color:#869397;margin-bottom:5px;">SPRING 2026 · WILLIAMSBURG COWBOYS</div>
+    <div style="font-size:44px;font-weight:700;color:#fff;line-height:1.1;">🏆 COWBOYS — SPRING 2026 CHAMPIONS</div>
+    <div style="font-size:20px;color:#869397;margin-top:6px;">7-0 Season · Undefeated · Moore/Parker Cowboys · Myles Moore</div>
+  </div>
+  ${logo}
 </div>`;
 }
 
@@ -1019,9 +1038,12 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
 function renderDashboard(digestData) {
   const { today, flags, athletics, nationalsData, banner } = digestData;
 
-  const hasBanner      = !!banner;
-  const bodyClass      = hasBanner ? ' class="has-banner"' : '';
-  const bannerRow      = hasBanner ? renderBanner(banner) : '';
+  const championshipFlag = (flags || []).find(f => f.id === 'cowboys-championship-banner');
+  const hasBanner  = !!(championshipFlag || banner);
+  const bodyClass  = hasBanner ? ' class="has-banner"' : '';
+  const bannerRow  = championshipFlag
+    ? renderChampionshipBanner()
+    : (banner ? renderBanner(banner) : '');
 
   const todayCard      = renderTodayCard(digestData);
   const weekCard       = renderWeekCard(digestData);
