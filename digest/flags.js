@@ -292,6 +292,32 @@ const EVALUATORS = [
     };
   },
 
+  // ── Waves Pool Party pizza order deadline — Jun 9–11 ────────────────────
+  (ctx) => {
+    if (!inWindow(ctx.today, '2026-06-09', '2026-06-11')) return null;
+    return {
+      id: 'waves-pizza-deadline',
+      level: 'amber',
+      title: '🏊 Waves Pool Party — Pizza Order Due',
+      body: 'Order + pay @tina-bissette via Venmo before end of practice Thu Jun 11. Moore family = A–M, bring a side dish.',
+      owner: [],
+      persist: false,
+    };
+  },
+
+  // ── Madison onboarding window — Jun 7–13 ─────────────────────────────────
+  (ctx) => {
+    if (!inWindow(ctx.today, '2026-06-07', '2026-06-13')) return null;
+    return {
+      id: 'madison-onboarding',
+      level: 'amber',
+      title: '👤 Madison Onboarding — Tasks Open',
+      body: 'Add Madison to Rec Connect pickup (Wade) + Print Madison binder (Robyn) — both due this week.',
+      owner: [],
+      persist: false,
+    };
+  },
+
   // ── Cowboys Spring 2026 Championship banner — Jun 7–9 only ───────────────
   (ctx) => {
     if (!inWindow(ctx.today, '2026-06-07', '2026-06-09')) return null;
