@@ -370,6 +370,8 @@
                         "myTeamAbbr":  "MPC",
                         "location":  "Williamsburg Christian Academy, Toano VA",
                         "seasonEnd":  "2026-06-07",
+                        "outcome":  "Champions",
+                        "regularRecord":  "7-0",
                         "rainDate":  "2026-06-14",
                         "pictureDay":  "2026-06-07",
                         "teams":  [
@@ -612,21 +614,38 @@
                                       },
                                       {
                                           "date":  "2026-06-07",
-                                          "away":  "SLZ",
+                                          "time":  "15:00",
+                                          "away":  "BAR",
                                           "awayScore":  null,
                                           "home":  "LAW",
                                           "homeScore":  null,
-                                          "type":  "regular",
-                                          "status":  "scheduled"
+                                          "type":  "playoff",
+                                          "label":  "semifinal",
+                                          "status":  "final"
                                       },
                                       {
                                           "date":  "2026-06-07",
-                                          "away":  "BAR",
-                                          "awayScore":  null,
+                                          "time":  "15:00",
+                                          "away":  "SLZ",
+                                          "awayScore":  6,
                                           "home":  "MPC",
-                                          "homeScore":  null,
-                                          "type":  "regular",
-                                          "status":  "scheduled"
+                                          "homeScore":  34,
+                                          "type":  "playoff",
+                                          "label":  "semifinal",
+                                          "location":  "WCA Field 2",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "date":  "2026-06-07",
+                                          "time":  "16:00",
+                                          "away":  "BAR",
+                                          "awayScore":  18,
+                                          "home":  "MPC",
+                                          "homeScore":  38,
+                                          "type":  "playoff",
+                                          "label":  "championship",
+                                          "location":  "WCA Field 2",
+                                          "status":  "final"
                                       }
                                   ]
                     }
