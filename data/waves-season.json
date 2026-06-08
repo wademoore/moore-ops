@@ -179,34 +179,34 @@
         {
           "division": 1,
           "teams": [
-            { "abbr": "FTC", "name": "First Colony Flyers" },
-            { "abbr": "FDC", "name": "Ford's Colony Killer Whales" },
-            { "abbr": "GS",  "name": "Greensprings Gators" },
-            { "abbr": "KM",  "name": "Kingsmill Sharks Swim Team" },
-            { "abbr": "KW",  "name": "Kingswood Klams" },
-            { "abbr": "QL",  "name": "Queens Lake Eagles" }
+            { "abbr": "FTC", "name": "First Colony Flyers",              "mascot": "Flyers"      },
+            { "abbr": "FDC", "name": "Ford's Colony Killer Whales",      "mascot": "Killer Whales" },
+            { "abbr": "GS",  "name": "Greensprings Gators",              "mascot": "Gators"      },
+            { "abbr": "KM",  "name": "Kingsmill Sharks Swim Team",       "mascot": "Sharks"      },
+            { "abbr": "KW",  "name": "Kingswood Klams",                  "mascot": "Klams"       },
+            { "abbr": "QL",  "name": "Queens Lake Eagles",               "mascot": "Eagles"      }
           ]
         },
         {
           "division": 2,
           "teams": [
-            { "abbr": "EH",  "name": "Edgehill Eels Swim Team" },
-            { "abbr": "PS",  "name": "Powhatan Secondary Seastars" },
-            { "abbr": "WT",  "name": "Wellington Waves Swim Team" },
-            { "abbr": "WPD", "name": "West Point Dolphins" },
-            { "abbr": "WC",  "name": "Williamsburg Community Pool Manta Rays" },
-            { "abbr": "WF",  "name": "Windsor Forest Frogs Swim Team" }
+            { "abbr": "EH",  "name": "Edgehill Eels Swim Team",                    "mascot": "Eels"       },
+            { "abbr": "PS",  "name": "Powhatan Secondary Seastars",                "mascot": "Seastars"   },
+            { "abbr": "WT",  "name": "Wellington Waves Swim Team",                 "mascot": "Waves"      },
+            { "abbr": "WPD", "name": "West Point Dolphins",                        "mascot": "Dolphins"   },
+            { "abbr": "WC",  "name": "Williamsburg Community Pool Manta Rays",     "mascot": "Manta Rays" },
+            { "abbr": "WF",  "name": "Windsor Forest Frogs Swim Team",             "mascot": "Frogs"      }
           ]
         },
         {
           "division": 3,
           "teams": [
-            { "abbr": "GLT",   "name": "Governor's Land Typhoons" },
-            { "abbr": "IP",    "name": "Indigo Park Stingrays Swim Team" },
-            { "abbr": "KP",    "name": "Kingspoint Dolphins Swim Team" },
-            { "abbr": "SH",    "name": "Stonehouse Splash" },
-            { "abbr": "VW",    "name": "Villages of Westminster Swim Team" },
-            { "abbr": "WGPRA","name": "Windsor Great Park Waves" }
+            { "abbr": "GLT",   "name": "Governor's Land Typhoons",            "mascot": "Typhoons"  },
+            { "abbr": "IP",    "name": "Indigo Park Stingrays Swim Team",     "mascot": "Stingrays" },
+            { "abbr": "KP",    "name": "Kingspoint Dolphins Swim Team",       "mascot": "Dolphins"  },
+            { "abbr": "SH",    "name": "Stonehouse Splash",                   "mascot": "Splash"    },
+            { "abbr": "VW",    "name": "Villages of Westminster Swim Team",   "mascot": "VW"        },
+            { "abbr": "WGPRA","name": "Windsor Great Park Waves",             "mascot": "Waves"     }
           ]
         }
       ],
