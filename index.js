@@ -145,7 +145,6 @@ async function runDashboardOnly() {
 const JSON_HEADERS = { 'Content-Type': 'application/json' };
 
 export const handler = async (event) => {
-  console.log('[handler] event:', JSON.stringify(event));
   // HTTP invocation via Function URL
   if (event.requestContext?.http) {
     const expectedToken = process.env.DASHBOARD_REFRESH_TOKEN;
