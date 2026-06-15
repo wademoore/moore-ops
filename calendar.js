@@ -1,6 +1,10 @@
 import { calendar } from "@googleapis/calendar";
 import { getAuthClient } from "./auth.js";
 
+const EXCLUDED_CALENDAR_IDS = new Set([
+  '6ac1de94baada01a89e5bcf845d71c5d02301b5a62d9406c1069430341e3ccc2@group.calendar.google.com',
+]);
+
 const FAMILY_CALENDARS = {
   "Wade Personal": "wademoore@gmail.com",
   "Wade On-Call": "bpe8s3ggfuiv306dlmpdbv5rvk@group.calendar.google.com",
@@ -63,10 +67,10 @@ async function pullCalendarEvents(hoursAhead) {
           singleEvents: true,
           orderBy: "startTime",
         });
-        return (res.data.items || []).map(event => ({
-          ...event,
-          calendarName: name,
-        }));
+        const items = (res.data.items || [])
+          .filter(ev => !EXCLUDED_CALENDAR_IDS.has(ev.organizer?.email))
+          .map(event => ({ ...event, calendarName: name }));
+        return items;
       } catch (err) {
         console.warn(`[calendar:pullCalendarEvents] Could not load "${name}" — ${err.message}`);
         return [];
