@@ -9,7 +9,6 @@ const FAMILY_CALENDARS = {
   "Ophelia": "06489bc7e533f0f62dd989b34ded54d64c04f5fc5f2a5767bea98d64ce4868e3@group.calendar.google.com",
   "Routine": "384ed3b47848634fdc4c333bf5d2bff1a37ca599d4f39b1a85f37b36c43f1d27@group.calendar.google.com",
   "Menu": "rtd3pm2tqjusgob36vpoi4u85c@group.calendar.google.com",
-  "Wellington Waves": "v8unhfav8e0gpb9u6k0dkkgqgrc6fq0j@import.calendar.google.com",
   "WJCC Schools": "o3oasbc616bhijsqn80a58jo7a40lrl2@import.calendar.google.com",
   "Robyn": "robyn.brantley@gmail.com",
 };
