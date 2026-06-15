@@ -223,46 +223,6 @@ const EVALUATORS = [
     };
   },
 
-  // ── ADP Soccer season end ────────────────────────────────────────────────
-  // When Saturday soccer games stop appearing, flag fall registration decision.
-  (ctx) => {
-    // Look ahead 14 days for any ADP soccer game events
-    const hasFutureSoccerGame = ctx.resolvedEvents.some(e =>
-      (e.title === 'ADP Soccer Game') &&
-      e.raw?.start?.dateTime &&
-      new Date(e.raw.start.dateTime) > ctx.today
-    );
-    if (hasFutureSoccerGame) return null;
-    // Only flag in summer window when this would be meaningful
-    if (!inWindow(ctx.today, '2026-05-15', '2026-08-01')) return null;
-    return {
-      id: 'adp-season-end',
-      level: 'blue',
-      title: '⚽ ADP Spring Season Appears Complete',
-      body: 'No upcoming ADP soccer games found. If spring season is over, confirm whether fall ADP registration is needed — Myles is joining Tidewater Sharks U11 Premier White for fall, so ADP fall may not apply.',
-      owner: ['wade', 'robyn'],
-      persist: false,
-    };
-  },
-
-  // ── Ophelia swim meets not on calendar ──────────────────────────────────
-  (ctx) => {
-    // Wellington Waves season runs June–July
-    if (!inWindow(ctx.today, '2026-05-15', '2026-07-25')) return null;
-    const hasUpcomingMeet = ctx.resolvedEvents.some(e =>
-      /meet/i.test(e.title) && e._calName === 'Wellington Waves'
-    );
-    if (hasUpcomingMeet) return null;
-    return {
-      id: 'swim-meet-missing',
-      level: 'blue',
-      title: '🔵 Wellington Waves Meets Not on Calendar',
-      body: 'No upcoming swim meets found in the Wellington Waves calendar. Check schedule and add official meets (June 22, June 29, July 6, July 13, July 20).',
-      owner: ['wade', 'robyn'],
-      persist: false,
-    };
-  },
-
   // ── 757 Swim fall assessment monitoring ─────────────────────────────────
   (ctx) => {
     if (!inWindow(ctx.today, '2026-08-01', '2026-09-30')) return null;

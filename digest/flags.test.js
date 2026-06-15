@@ -61,32 +61,6 @@ describe('Legacy / Sharks decision flags — permanently retired', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Section 10 — ADP season end
-// ---------------------------------------------------------------------------
-
-describe('ADP season end — body updated for Sharks decision', () => {
-  it('ADP season end still fires', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-01') })).find(f => f.id === 'adp-season-end');
-    assert.ok(flag != null);
-  });
-
-  it('Body references Tidewater Sharks', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-01') })).find(f => f.id === 'adp-season-end');
-    assert.ok(/Tidewater Sharks/i.test(flag.body));
-  });
-
-  it('Body no longer mentions Legacy', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-01') })).find(f => f.id === 'adp-season-end');
-    assert.ok(!/Legacy/i.test(flag.body));
-  });
-
-  it('Body no longer mentions "Sharks offer"', () => {
-    const flag = computeFlags(ctx({ today: d('2026-06-01') })).find(f => f.id === 'adp-season-end');
-    assert.ok(!/Sharks offer/i.test(flag.body));
-  });
-});
-
-// ---------------------------------------------------------------------------
 // Section 12 — Regression
 // ---------------------------------------------------------------------------
 
