@@ -38,7 +38,7 @@ export function classifyEvent(event, todayMidnight, thisSundayMidnight) {
     endDateMidnight = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
   }
 
-  if (endDateMidnight && endDateMidnight.getTime() < todayMidnight.getTime()) {
+  if (endDateMidnight && endDateMidnight.getTime() <= todayMidnight.getTime()) {
     const daysOverdue = Math.round(
       (todayMidnight.getTime() - endDateMidnight.getTime()) / (24 * 3600 * 1000)
     );
