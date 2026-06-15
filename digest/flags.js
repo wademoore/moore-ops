@@ -305,19 +305,6 @@ const EVALUATORS = [
     };
   },
 
-  // ── Madison onboarding window — Jun 7–13 ─────────────────────────────────
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-06-07', '2026-06-13')) return null;
-    return {
-      id: 'madison-onboarding',
-      level: 'amber',
-      title: '👤 Madison Onboarding — Tasks Open',
-      body: 'Add Madison to Rec Connect pickup (Wade) + Print Madison binder (Robyn) — both due this week.',
-      owner: [],
-      persist: false,
-    };
-  },
-
   // ── Cowboys Spring 2026 Championship banner — Jun 7–9 only ───────────────
   (ctx) => {
     if (!inWindow(ctx.today, '2026-06-07', '2026-06-09')) return null;
