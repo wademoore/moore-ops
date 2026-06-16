@@ -59,11 +59,15 @@ describe('parseSwim — enhancements 2/4/5', () => {
   // ── champsProgress ───────────────────────────────────────────────────────────
 
   it('champsProgress is null when event has no champs target', () => {
-    // Ophelia 757 events both have champs: null
+    // Ophelia 757 events both have champs: null — null must come from missing target, not absent results
     const pbRecords = {
       'Ophelia|25m Backstroke|SCY': { seconds: 30.01, date: '2026-02-08', meet: 'Meet' },
     };
-    const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
+    const swimResults = [
+      { swimmer: 'Ophelia', event: '25m Backstroke', course: 'SCY', dq: false, relay: false, seconds: 30.01, date: '2026-06-20' },
+    ];
+    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    // seasonBestSeconds is non-null (30.01) but champsTarget is null → champsProgress still null
     assert.equal(result.opheliaPBRows[0].champsProgress, null);
   });
 
@@ -75,7 +79,7 @@ describe('parseSwim — enhancements 2/4/5', () => {
     const swimResults = [
       { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 65.3, date: '2026-06-20' },
     ];
-    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    const result = parseSwim(pbRecords, swimResults, IN_WAVES_SEASON, FIXTURE_CONFIG);
     const breast = result.mylesPBRows[0];
     const expected = 65.0 / 65.3;
     assert.ok(Math.abs(breast.champsProgress - expected) < 0.001,
@@ -90,7 +94,7 @@ describe('parseSwim — enhancements 2/4/5', () => {
     const swimResults = [
       { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 63.0, date: '2026-06-20' },
     ];
-    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    const result = parseSwim(pbRecords, swimResults, IN_WAVES_SEASON, FIXTURE_CONFIG);
     assert.equal(result.mylesPBRows[0].champsProgress, 1.0);
   });
 
@@ -199,7 +203,7 @@ describe('parseSwim — trend indicator PBRow', () => {
     const swimResults = [
       { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 64.0, date: '2026-03-01' },
     ];
-    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    const result = parseSwim(pbRecords, swimResults, IN_WAVES_SEASON, FIXTURE_CONFIG);
     assert.equal(result.mylesPBRows[0].champsProgress, null);
   });
 
@@ -211,7 +215,7 @@ describe('parseSwim — trend indicator PBRow', () => {
     const swimResults = [
       { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 64.0, date: '2026-06-20' },
     ];
-    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    const result = parseSwim(pbRecords, swimResults, IN_WAVES_SEASON, FIXTURE_CONFIG);
     const row = result.mylesPBRows[0];
     assert.equal(row.champsProgress, 1.0, 'capped at 1.0 because seasonBestSeconds(64.0) < champsTarget(65.0s)');
     assert.ok(row.champsProgress !== 65.0 / 65.3, 'not pb-based');
