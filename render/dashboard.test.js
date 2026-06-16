@@ -395,6 +395,13 @@ describe('Athletics — Myles swim, all PB row states', () => {
     assert.ok(row.includes('pb-arrow--fast'));
   });
 
+  it('Fresh PB with prior PB — margin displays correct improvement', () => {
+    const row = renderPBRow({ event: '25m Free', format: 'SCM', lastSwim: { seconds: 29.40, date: '2026-06-15', pb: true }, pb: { seconds: 29.40, date: '2026-06-15' }, champsTarget: null, isNewPB: true, isFreshPb: true, previousPbSeconds: 35.00, delta: null, champsProgress: null, leagueRank: null });
+    assert.ok(row.includes('↓'));
+    assert.ok(row.includes('5.60'));
+    assert.ok(row.includes('NEW PB!'));
+  });
+
   it('Stale PB state — badge and arrow suppressed when newer non-PB result exists', () => {
     const row = renderPBRow({ event: '25m Back', format: 'SCM', lastSwim: { seconds: 36.97, date: '2026-07-01' }, pb: { seconds: 34.5, date: '2026-06-15' }, champsTarget: null, isNewPB: true, isFreshPb: false, previousPbSeconds: null, delta: null, champsProgress: null, leagueRank: null });
     assert.ok(!row.includes('NEW PB!'));
