@@ -1004,7 +1004,7 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
 .pb-ctx-champs{font-size:12px;color:rgba(255,255,255,.25);white-space:nowrap}
 .pb-ctx-rank{font-size:11px;color:rgba(255,255,255,.35);white-space:nowrap}
 .pb-time-block{display:flex;flex-direction:column;align-items:flex-start;overflow:visible}
-.pb-placement{display:block;font-size:0.78em;opacity:0.85;margin-top:2px}
+.pb-placement{display:block;font-size:0.78em;opacity:0.85;margin-top:2px;color:rgba(255,255,255,0.7)}
 .pb-ctx-label{font-size:12px;font-weight:700;color:#5dca8a;white-space:nowrap}
 .pb-champs-row{display:flex;align-items:center;gap:8px;margin-top:2px;margin-bottom:7px}
 .pb-champs-bar{flex:1;height:3px;background:rgba(255,255,255,.07);border-radius:2px;position:relative}
