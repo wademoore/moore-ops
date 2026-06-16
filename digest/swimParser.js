@@ -37,9 +37,11 @@ export function ordinalSuffix(n) {
 function derivePlacementString(entry) {
   if (entry == null) return null;
   const { overallPlace, overallCount, heatPlace, heatNumber, heatCount } = entry;
-  if (overallPlace == null || overallCount == null) return null;
-  let s = `${overallPlace}${ordinalSuffix(overallPlace)} of ${overallCount}`;
-  if (heatPlace != null && heatNumber != null && heatCount != null) {
+  if (overallPlace == null) return null;
+  let s = overallCount != null
+    ? `${overallPlace}${ordinalSuffix(overallPlace)} of ${overallCount}`
+    : `${overallPlace}${ordinalSuffix(overallPlace)}`;
+  if (overallCount != null && heatPlace != null && heatNumber != null && heatCount != null) {
     s += ` · ${heatPlace}${ordinalSuffix(heatPlace)} in Heat ${heatNumber}`;
   }
   return s;
