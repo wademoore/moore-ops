@@ -41,8 +41,10 @@ function derivePlacementString(entry) {
   let s = overallCount != null
     ? `${overallPlace}${ordinalSuffix(overallPlace)} of ${overallCount}`
     : `${overallPlace}${ordinalSuffix(overallPlace)}`;
-  if (overallCount != null && heatPlace != null && heatNumber != null && heatCount != null) {
+  if (heatPlace != null && heatNumber != null) {
     s += ` · ${heatPlace}${ordinalSuffix(heatPlace)} in Heat ${heatNumber}`;
+  } else if (heatPlace != null) {
+    s += ` · ${heatPlace}${ordinalSuffix(heatPlace)} in Heat`;
   }
   return s;
 }

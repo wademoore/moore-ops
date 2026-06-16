@@ -439,10 +439,14 @@ function renderPBRow(row) {
     return 'empty';
   })();
 
-  // placement span — appended after time when available
+  // placement block — stacks below hero time when available
   const placementHtml = lastSwim?.placement
-    ? ` <span class="pb-placement">(${lastSwim.placement})</span>`
+    ? `<div class="pb-placement">${lastSwim.placement}</div>`
     : '';
+
+  // time + placement stacked container
+  const timeBlock = (timeHtml, extraClass = '') =>
+    `<div class="pb-time-block">${timeHtml}${placementHtml}</div>`;
 
   // pb-main content
   let mainHtml = '';
@@ -453,12 +457,12 @@ function renderPBRow(row) {
         : '';
       mainHtml = `
       <span class="pb-arrow pb-arrow--fast">↓</span>
-      <span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>${placementHtml}
+      ${timeBlock(`<span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>`)}
       <span class="pb-trend-label pb-label--celebrate">NEW PB!</span>
       ${marginHtml}`;
     } else {
       mainHtml = `
-      <span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>${placementHtml}`;
+      ${timeBlock(`<span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>`)}`;
     }
   } else if (state === 'champs') {
     mainHtml = `
@@ -467,7 +471,7 @@ function renderPBRow(row) {
       <span class="pb-trend-label pb-label--celebrate">CHAMPS ✓</span>`;
   } else if (state === 'slower') {
     mainHtml = `
-      <span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>${placementHtml}
+      ${timeBlock(`<span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>`)}
       <span class="pb-arrow pb-arrow--slow">↑</span>
       <span class="pb-trend-delta">+${Math.abs(delta).toFixed(2)}s</span>`;
   } else if (state === 'pbonly') {
@@ -999,7 +1003,8 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
 .pb-ctx-last{font-size:14px;color:rgba(255,255,255,.5);white-space:nowrap}
 .pb-ctx-champs{font-size:12px;color:rgba(255,255,255,.25);white-space:nowrap}
 .pb-ctx-rank{font-size:11px;color:rgba(255,255,255,.35);white-space:nowrap}
-.pb-placement{font-size:0.75em;opacity:0.65;}
+.pb-time-block{display:flex;flex-direction:column;align-items:flex-start}
+.pb-placement{display:block;font-size:0.72em;opacity:0.6;margin-top:2px}
 .pb-ctx-label{font-size:12px;font-weight:700;color:#5dca8a;white-space:nowrap}
 .pb-champs-row{display:flex;align-items:center;gap:8px;margin-top:2px;margin-bottom:7px}
 .pb-champs-bar{flex:1;height:3px;background:rgba(255,255,255,.07);border-radius:2px;position:relative}
