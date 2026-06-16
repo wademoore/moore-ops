@@ -15,9 +15,9 @@
     "meet": "Greenspring Gators at Wellington Waves"
   },
   "Ophelia|25m Freestyle|SCM": {
-    "seconds": 35.64,
-    "date": "2026-04-25",
-    "meet": "14 and Under Spring Challenge"
+    "seconds": 29.40,
+    "date": "2026-06-15",
+    "meet": "Friendly vs FDC"
   },
   "Ophelia|25m Backstroke|SCM": {
     "seconds": 33.62,
@@ -25,9 +25,9 @@
     "meet": "Champs"
   },
   "Ophelia|25m Breaststroke|SCM": {
-    "seconds": 44.4,
-    "date": "2025-07-26",
-    "meet": "Summer Awards"
+    "seconds": 40.19,
+    "date": "2026-06-15",
+    "meet": "Friendly vs FDC"
   },
   "Ophelia|25m Butterfly|SCM": {
     "seconds": 43.46,
@@ -58,5 +58,20 @@
     "seconds": 133.9,
     "date": "2026-02-08",
     "meet": "8 and Under Southeastern"
+  },
+  "Myles|50m Freestyle|SCM": {
+    "seconds": 70.14,
+    "date": "2026-06-15",
+    "meet": "Friendly vs FDC"
+  },
+  "Myles|50m Breaststroke|SCM": {
+    "seconds": 76.33,
+    "date": "2026-06-15",
+    "meet": "Friendly vs FDC"
+  },
+  "Myles|50m Backstroke|SCM": {
+    "seconds": 92.32,
+    "date": "2026-06-15",
+    "meet": "Friendly vs FDC"
   }
 }
