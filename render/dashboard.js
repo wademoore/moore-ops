@@ -981,14 +981,14 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
 .standings tr.me td{color:#fff;font-weight:700}
 .standings tr.me td:not(:first-child){color:#5dca8a}
 .season-tag{display:inline-block;font-size:13px;font-weight:700;padding:3px 10px;border-radius:8px;background:rgba(93,202,138,.15);color:#5dca8a;border:1px solid rgba(93,202,138,.25);margin-bottom:9px;flex-shrink:0}
-.pb-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);gap:10px}
+.pb-row{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);gap:10px}
 .pb-row:last-child{border-bottom:none}
 .pool-chip{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;background:rgba(100,140,255,.12);color:rgba(150,180,255,.7);border:1px solid rgba(100,140,255,.2);letter-spacing:.04em}
 .pb-group{border-bottom:1px solid rgba(255,255,255,.06)}
 .pb-group:last-child{border-bottom:none}
 .pb-group .pb-row{border-bottom:none;padding-bottom:4px}
 .pb-event-col{flex-shrink:0;width:115px;display:flex;align-items:center;gap:8px;font-size:18px;color:rgba(255,255,255,.5)}
-.pb-main{flex:1;min-width:0;display:flex;align-items:center;gap:6px}
+.pb-main{flex:1;min-width:0;display:flex;align-items:flex-start;gap:6px}
 .pb-ctx{flex-shrink:0;width:85px;text-align:right;display:flex;flex-direction:column;gap:3px;align-self:flex-start;padding-top:2px}
 .pb-hero-time{font-size:28px;font-weight:500;color:#fff;line-height:1;white-space:nowrap}
 .pb-hero-time--muted{color:rgba(255,255,255,.5)}
@@ -1003,8 +1003,8 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
 .pb-ctx-last{font-size:14px;color:rgba(255,255,255,.5);white-space:nowrap}
 .pb-ctx-champs{font-size:12px;color:rgba(255,255,255,.25);white-space:nowrap}
 .pb-ctx-rank{font-size:11px;color:rgba(255,255,255,.35);white-space:nowrap}
-.pb-time-block{display:flex;flex-direction:column;align-items:flex-start}
-.pb-placement{display:block;font-size:0.72em;opacity:0.6;margin-top:2px}
+.pb-time-block{display:flex;flex-direction:column;align-items:flex-start;overflow:visible}
+.pb-placement{display:block;font-size:0.78em;opacity:0.85;margin-top:2px}
 .pb-ctx-label{font-size:12px;font-weight:700;color:#5dca8a;white-space:nowrap}
 .pb-champs-row{display:flex;align-items:center;gap:8px;margin-top:2px;margin-bottom:7px}
 .pb-champs-bar{flex:1;height:3px;background:rgba(255,255,255,.07);border-radius:2px;position:relative}
