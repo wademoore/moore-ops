@@ -88,9 +88,9 @@ const BASE_ATHLETICS = {
   // Ophelia swim
   opheliaSeason: '2026 Season',
   opheliaPBRows: [
-    { event: '25m Back', format: 'SCM', lastSwim: { seconds: 36.25 }, pb: { seconds: 36.25 }, champsTarget: null, isNewPB: true,  delta: null, champsProgress: null, leagueRank: null },
-    { event: '25m Free', format: 'SCY', lastSwim: { seconds: 30.46 }, pb: { seconds: 30.46 }, champsTarget: null, isNewPB: true,  delta: null, champsProgress: null, leagueRank: null },
-    { event: '25m Fly',  format: 'SCM', lastSwim: { seconds: 43.46 }, pb: { seconds: 43.46 }, champsTarget: null, isNewPB: false, delta: null, champsProgress: null, leagueRank: null },
+    { event: '25m Back', format: 'SCM', lastSwim: { seconds: 36.25, date: '2026-04-25' }, pb: { seconds: 36.25, date: '2026-04-25' }, champsTarget: null, isNewPB: true, isFreshPb: true,  previousPbSeconds: null, delta: null, champsProgress: null, leagueRank: null },
+    { event: '25m Free', format: 'SCY', lastSwim: { seconds: 30.46, date: '2026-03-20' }, pb: { seconds: 30.46, date: '2026-03-20' }, champsTarget: null, isNewPB: true, isFreshPb: true,  previousPbSeconds: null, delta: null, champsProgress: null, leagueRank: null },
+    { event: '25m Fly',  format: 'SCM', lastSwim: { seconds: 43.46, date: '2026-04-25' }, pb: { seconds: 43.46, date: '2026-04-25' }, champsTarget: null, isNewPB: false, isFreshPb: false, previousPbSeconds: null, delta: null, champsProgress: null, leagueRank: null },
   ],
   opheliaFooter: '',
 
@@ -390,9 +390,16 @@ describe('Athletics — Myles swim, all PB row states', () => {
   });
 
   it('New PB state — NEW PB! label and fast arrow', () => {
-    const row = renderPBRow({ event: '25m Back', format: 'SCM', lastSwim: { seconds: 34.5 }, pb: { seconds: 34.5 }, champsTarget: null, isNewPB: true, delta: null, champsProgress: null, leagueRank: null });
+    const row = renderPBRow({ event: '25m Back', format: 'SCM', lastSwim: { seconds: 34.5, date: '2026-06-15' }, pb: { seconds: 34.5, date: '2026-06-15' }, champsTarget: null, isNewPB: true, isFreshPb: true, previousPbSeconds: null, delta: null, champsProgress: null, leagueRank: null });
     assert.ok(row.includes('NEW PB!'));
     assert.ok(row.includes('pb-arrow--fast'));
+  });
+
+  it('Stale PB state — badge and arrow suppressed when newer non-PB result exists', () => {
+    const row = renderPBRow({ event: '25m Back', format: 'SCM', lastSwim: { seconds: 36.97, date: '2026-07-01' }, pb: { seconds: 34.5, date: '2026-06-15' }, champsTarget: null, isNewPB: true, isFreshPb: false, previousPbSeconds: null, delta: null, champsProgress: null, leagueRank: null });
+    assert.ok(!row.includes('NEW PB!'));
+    assert.ok(!row.includes('pb-arrow--fast'));
+    assert.ok(row.includes('pb-hero-time'));
   });
 
   it('Slower-than-PB state — slow arrow, signed delta, PB in context', () => {

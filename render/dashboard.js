@@ -81,7 +81,7 @@ import { secondsToTime, timeToSeconds } from '../digest/dateUtils.js';
  * }
  *
  * StandingsRow { team, w, l, pf, pa, isMe }
- * PBRow        { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank }
+ * PBRow        { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank, isFreshPb, previousPbSeconds }
  *
  * ─────────────────────────────────────────────────────────────────────────
  * OUTPUT — complete HTML string written to moore_dashboard.html in Drive
@@ -427,7 +427,7 @@ function abbreviateStroke(event) {
 }
 
 function renderPBRow(row) {
-  const { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank } = row;
+  const { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank, isFreshPb, previousPbSeconds } = row;
 
   // State determination — checked in priority order
   const state = (() => {
@@ -447,20 +447,19 @@ function renderPBRow(row) {
   // pb-main content
   let mainHtml = '';
   if (state === 'newpb') {
-    // Fix 1: badge only when this is the most recent result for this event
-    //   (pb.date matches lastSwim.date — guards against showing "NEW PB!" on a stale PB
-    //    when a more recent non-PB swim exists).
-    // Fix 2: margin only when there's a prior PB to compare against (delta < 0 = faster).
-    //   No margin on first-ever result (delta null or 0).
-    const isFreshPB = isNewPB && lastSwim?.date === pb?.date;
-    const pbMarginHtml = (isFreshPB && delta !== null && delta < 0)
-      ? `<span class="pb-trend-delta" style="color:#5dca8a;">↓ ${Math.abs(delta).toFixed(2)}s PB</span>`
-      : '';
-    mainHtml = `
+    if (isFreshPb) {
+      const marginHtml = previousPbSeconds !== null
+        ? `<span class="pb-trend-delta" style="color:#5dca8a;">↓ ${(previousPbSeconds - pb.seconds).toFixed(2)}s PB</span>`
+        : '';
+      mainHtml = `
       <span class="pb-arrow pb-arrow--fast">↓</span>
       <span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>${placementHtml}
-      ${isFreshPB ? `<span class="pb-trend-label pb-label--celebrate">NEW PB!</span>` : ''}
-      ${pbMarginHtml}`;
+      <span class="pb-trend-label pb-label--celebrate">NEW PB!</span>
+      ${marginHtml}`;
+    } else {
+      mainHtml = `
+      <span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>${placementHtml}`;
+    }
   } else if (state === 'champs') {
     mainHtml = `
       <span class="pb-arrow pb-arrow--fast">↓</span>

@@ -121,7 +121,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
       !r.dq && !r.relay && r.seconds != null
     );
     const lastSwim = lastSwimEntry
-      ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet, placement: derivePlacementString(lastSwimEntry) }
+      ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet, placement: derivePlacementString(lastSwimEntry), pb: lastSwimEntry.pb }
       : null;
 
     const key     = `Myles|${EVENT_NAME_MAP[e.event] || e.event}|${e.format}`;
@@ -140,6 +140,22 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
       ? lastSwim.seconds - pb.seconds
       : null;
 
+    const isFreshPb = lastSwim !== null && pb !== null && lastSwim.pb === true && lastSwim.date === pb.date;
+
+    let previousPbSeconds = null;
+    if (pb !== null) {
+      const priorResults = sortedResults.filter(r =>
+        r.swimmer === 'Myles' &&
+        r.event   === resultEventName &&
+        r.course  === e.format &&
+        !r.dq && !r.relay && r.seconds != null &&
+        r.date < pb.date
+      );
+      previousPbSeconds = priorResults.length > 0
+        ? Math.min(...priorResults.map(r => r.seconds))
+        : null;
+    }
+
     const champSec       = e.champs ? timeToSeconds(e.champs) : null;
     const bestSec        = pb ? pb.seconds : null;
     const champsProgress = (champSec !== null && bestSec !== null)
@@ -151,6 +167,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
     mylesPBRows.push({
       event: e.event, format: e.format,
       lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank,
+      isFreshPb, previousPbSeconds,
     });
   }
 
@@ -175,7 +192,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
         !r.dq && !r.relay && r.seconds != null
       );
       const lastSwim = lastSwimEntry
-        ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet, placement: derivePlacementString(lastSwimEntry) }
+        ? { seconds: lastSwimEntry.seconds, date: lastSwimEntry.date, meet: lastSwimEntry.meet, placement: derivePlacementString(lastSwimEntry), pb: lastSwimEntry.pb }
         : null;
 
       const key     = `Ophelia|${EVENT_NAME_MAP[e.event] || e.event}|${e.format}`;
@@ -194,6 +211,22 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
         ? lastSwim.seconds - pb.seconds
         : null;
 
+      const isFreshPb = lastSwim !== null && pb !== null && lastSwim.pb === true && lastSwim.date === pb.date;
+
+      let previousPbSeconds = null;
+      if (pb !== null) {
+        const priorResults = sortedResults.filter(r =>
+          r.swimmer === 'Ophelia' &&
+          r.event   === resultEventName &&
+          r.course  === e.format &&
+          !r.dq && !r.relay && r.seconds != null &&
+          r.date < pb.date
+        );
+        previousPbSeconds = priorResults.length > 0
+          ? Math.min(...priorResults.map(r => r.seconds))
+          : null;
+      }
+
       const champSec       = e.champs ? timeToSeconds(e.champs) : null;
       const bestSec        = pb ? pb.seconds : null;
       const champsProgress = (champSec !== null && bestSec !== null)
@@ -205,6 +238,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
       opheliaPBRows.push({
         event: e.event, format: e.format,
         lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank,
+        isFreshPb, previousPbSeconds,
       });
     }
   }
