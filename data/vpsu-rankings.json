@@ -1,36 +1,27 @@
 {
-  "season": 2025,
-  "asOf": "2025-07-22",
+  "season": 2026,
+  "asOf": "2026-06-15",
   "swimmers": {
     "Myles": [
       {
-        "ageGroup": "Boys 8 & Under",
-        "distance": 25,
+        "ageGroup": "Boys 9-10",
+        "distance": 50,
         "stroke": "Breaststroke",
-        "place": 46,
-        "time": "37.65S",
-        "date": "2025-07-07",
-        "meet": "2025 Ford's Colony at Wellington Waves"
+        "place": 31,
+        "time": "1:16.33S",
+        "date": "2026-06-15",
+        "meet": "2026 Friendly vs FDC"
       }
     ],
     "Ophelia": [
       {
-        "ageGroup": "Girls 6 & Under",
+        "ageGroup": "Girls 8 & Under",
         "distance": 25,
-        "stroke": "Freestyle",
-        "place": 44,
-        "time": "39.95S",
-        "date": "2025-06-23",
-        "meet": "2025 Wellington Waves at First Colony"
-      },
-      {
-        "ageGroup": "Girls 6 & Under",
-        "distance": 25,
-        "stroke": "Backstroke",
-        "place": 25,
-        "time": "37.15S",
-        "date": "2025-07-21",
-        "meet": "2025 Gators at Wellington Waves"
+        "stroke": "Breaststroke",
+        "place": 30,
+        "time": "40.19S",
+        "date": "2026-06-15",
+        "meet": "2026 Friendly vs FDC"
       }
     ]
   }
