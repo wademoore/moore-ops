@@ -447,10 +447,20 @@ function renderPBRow(row) {
   // pb-main content
   let mainHtml = '';
   if (state === 'newpb') {
+    // Fix 1: badge only when this is the most recent result for this event
+    //   (pb.date matches lastSwim.date — guards against showing "NEW PB!" on a stale PB
+    //    when a more recent non-PB swim exists).
+    // Fix 2: margin only when there's a prior PB to compare against (delta < 0 = faster).
+    //   No margin on first-ever result (delta null or 0).
+    const isFreshPB = isNewPB && lastSwim?.date === pb?.date;
+    const pbMarginHtml = (isFreshPB && delta !== null && delta < 0)
+      ? `<span class="pb-trend-delta" style="color:#5dca8a;">↓ ${Math.abs(delta).toFixed(2)}s PB</span>`
+      : '';
     mainHtml = `
       <span class="pb-arrow pb-arrow--fast">↓</span>
       <span class="pb-hero-time">${secondsToTime(lastSwim.seconds)}</span>${placementHtml}
-      <span class="pb-trend-label pb-label--celebrate">NEW PB!</span>`;
+      ${isFreshPB ? `<span class="pb-trend-label pb-label--celebrate">NEW PB!</span>` : ''}
+      ${pbMarginHtml}`;
   } else if (state === 'champs') {
     mainHtml = `
       <span class="pb-arrow pb-arrow--fast">↓</span>
