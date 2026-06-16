@@ -43,7 +43,7 @@ describe('parseSwim', () => {
     assert.ok(breast.pb !== null, 'pb should be non-null when pbRecords has entry');
     assert.equal(breast.lastSwim, null);                          // no swimResults provided
     assert.equal(typeof breast.isNewPB, 'boolean');
-    assert.ok(breast.champsProgress !== null, 'champsProgress should be set when champs and pb exist');
+    assert.equal(breast.champsProgress, null, 'champsProgress is null when no in-season swim results exist');
   });
 
   it('opheliaPBRows is [] when neither Waves nor 757 season is active', () => {
@@ -68,11 +68,14 @@ describe('parseSwim — enhancements 2/4/5', () => {
   });
 
   it('champsProgress is correct float when champs target and time exist', () => {
-    // 50m Breast champs '1:05.00' = 65.0s; pb seconds 65.3
+    // 50m Breast champs '1:05.00' = 65.0s; in-season best 65.3s → 65.0/65.3 ≈ 0.9954
     const pbRecords = {
       'Myles|50m Breaststroke|SCM': { seconds: 65.3, date: '2026-05-01', meet: 'Spring Invite' },
     };
-    const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
+    const swimResults = [
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 65.3, date: '2026-06-20' },
+    ];
+    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
     const breast = result.mylesPBRows[0];
     const expected = 65.0 / 65.3;
     assert.ok(Math.abs(breast.champsProgress - expected) < 0.001,
@@ -80,11 +83,14 @@ describe('parseSwim — enhancements 2/4/5', () => {
   });
 
   it('champsProgress is capped at 1.0 when swimmer has qualified', () => {
-    // 63.0s < 65.0s champs → qualified
+    // 63.0s < 65.0s champs → qualified; in-season result required for champsProgress to be non-null
     const pbRecords = {
       'Myles|50m Breaststroke|SCM': { seconds: 63.0, date: '2026-05-01', meet: 'Spring Invite' },
     };
-    const result = parseSwim(pbRecords, [], IN_SEASON_FF, FIXTURE_CONFIG);
+    const swimResults = [
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 63.0, date: '2026-06-20' },
+    ];
+    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
     assert.equal(result.mylesPBRows[0].champsProgress, 1.0);
   });
 
@@ -187,18 +193,28 @@ describe('parseSwim — trend indicator PBRow', () => {
     assert.equal(result.mylesPBRows[0].champsTarget, '1:05.00');
   });
 
-  it('champsProgress uses pb.seconds not lastSwim.seconds as bestSec', () => {
-    // pb.seconds = 65.3 → champsProgress should be 65.0/65.3 ≈ 0.9954
-    // If lastSwim.seconds (64.0) were used → champsProgress would be 65.0/64.0 ≈ 1.016, capped at 1.0
+  it('champsProgress is null when no in-season results exist', () => {
+    // result date '2026-03-01' is before wavesSeasonStart '2026-06-15' → seasonBestSeconds null → champsProgress null
     const pbRecords = { 'Myles|50m Breaststroke|SCM': { seconds: 65.3, date: '2026-01-01', meet: 'Meet A' } };
     const swimResults = [
       { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 64.0, date: '2026-03-01' },
     ];
     const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
+    assert.equal(result.mylesPBRows[0].champsProgress, null);
+  });
+
+  it('champsProgress uses seasonBestSeconds not pb.seconds', () => {
+    // in-season result: date '2026-06-20' >= wavesSeasonStart '2026-06-15' → seasonBestSeconds = 64.0
+    // champsTarget for 50m Breast = '1:05.0' = 65.0s → champsProgress = 65.0/64.0 ≈ 1.016, capped at 1.0
+    // if pb.seconds (65.3) were used → 65.0/65.3 ≈ 0.9954 (not capped)
+    const pbRecords = { 'Myles|50m Breaststroke|SCM': { seconds: 65.3, date: '2026-01-01', meet: 'Meet A' } };
+    const swimResults = [
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM', dq: false, relay: false, seconds: 64.0, date: '2026-06-20' },
+    ];
+    const result = parseSwim(pbRecords, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
     const row = result.mylesPBRows[0];
-    const expectedPbBased = 65.0 / 65.3;
-    assert.ok(Math.abs(row.champsProgress - expectedPbBased) < 0.001,
-      `champsProgress ${row.champsProgress} should be pb-based ~${expectedPbBased}, not lastSwim-based`);
+    assert.equal(row.champsProgress, 1.0, 'capped at 1.0 because seasonBestSeconds(64.0) < champsTarget(65.0s)');
+    assert.ok(row.champsProgress !== 65.0 / 65.3, 'not pb-based');
   });
 
   // ── leagueRank ───────────────────────────────────────────────────────────────

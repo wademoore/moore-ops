@@ -109,6 +109,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
   const sortedResults = [...(swimResults || [])].sort(
     (a, b) => b.date.localeCompare(a.date)
   );
+  const wavesSeasonStart = config.wellingtonWaves.seasonStart;
 
   // ── Myles PB rows ────────────────────────────────────────────────────────────
   const mylesPBRows = [];
@@ -156,8 +157,19 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
         : null;
     }
 
+    const seasonResults = sortedResults.filter(r =>
+      r.swimmer === 'Myles' &&
+      r.event   === resultEventName &&
+      r.course  === e.format &&
+      !r.dq && !r.relay && r.seconds != null &&
+      r.date >= wavesSeasonStart
+    );
+    const seasonBestSeconds = seasonResults.length > 0
+      ? Math.min(...seasonResults.map(r => r.seconds))
+      : null;
+
     const champSec       = e.champs ? timeToSeconds(e.champs) : null;
-    const bestSec        = pb ? pb.seconds : null;
+    const bestSec        = seasonBestSeconds;
     const champsProgress = (champSec !== null && bestSec !== null)
       ? Math.min(1.0, champSec / bestSec)
       : null;
@@ -167,7 +179,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
     mylesPBRows.push({
       event: e.event, format: e.format,
       lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank,
-      isFreshPb, previousPbSeconds,
+      isFreshPb, previousPbSeconds, seasonBestSeconds,
     });
   }
 
@@ -227,8 +239,19 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
           : null;
       }
 
+      const seasonResults = sortedResults.filter(r =>
+        r.swimmer === 'Ophelia' &&
+        r.event   === resultEventName &&
+        r.course  === e.format &&
+        !r.dq && !r.relay && r.seconds != null &&
+        r.date >= wavesSeasonStart
+      );
+      const seasonBestSeconds = seasonResults.length > 0
+        ? Math.min(...seasonResults.map(r => r.seconds))
+        : null;
+
       const champSec       = e.champs ? timeToSeconds(e.champs) : null;
-      const bestSec        = pb ? pb.seconds : null;
+      const bestSec        = seasonBestSeconds;
       const champsProgress = (champSec !== null && bestSec !== null)
         ? Math.min(1.0, champSec / bestSec)
         : null;
@@ -238,7 +261,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
       opheliaPBRows.push({
         event: e.event, format: e.format,
         lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank,
-        isFreshPb, previousPbSeconds,
+        isFreshPb, previousPbSeconds, seasonBestSeconds,
       });
     }
   }

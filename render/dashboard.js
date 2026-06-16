@@ -81,7 +81,7 @@ import { secondsToTime, timeToSeconds } from '../digest/dateUtils.js';
  * }
  *
  * StandingsRow { team, w, l, pf, pa, isMe }
- * PBRow        { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank, isFreshPb, previousPbSeconds }
+ * PBRow        { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank, isFreshPb, previousPbSeconds, seasonBestSeconds }
  *
  * ─────────────────────────────────────────────────────────────────────────
  * OUTPUT — complete HTML string written to moore_dashboard.html in Drive
@@ -427,7 +427,7 @@ function abbreviateStroke(event) {
 }
 
 function renderPBRow(row) {
-  const { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank, isFreshPb, previousPbSeconds } = row;
+  const { event, format, lastSwim, pb, champsTarget, isNewPB, delta, champsProgress, leagueRank, isFreshPb, previousPbSeconds, seasonBestSeconds } = row;
 
   // State determination — checked in priority order
   const state = (() => {
@@ -509,7 +509,7 @@ function renderPBRow(row) {
       label = '<span class="pb-champs-label">CHAMPS ✓</span>';
     } else if (pct >= 0.85) {
       stateClass = 'pb-champs-close';
-      const closeDelta = '−' + (pb.seconds - timeToSeconds(champsTarget)).toFixed(1) + 's';
+      const closeDelta = '−' + (seasonBestSeconds - timeToSeconds(champsTarget)).toFixed(1) + 's';
       label = `<span class="pb-champs-label">${closeDelta}</span>`;
     } else {
       stateClass = 'pb-champs-far';

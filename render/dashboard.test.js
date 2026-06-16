@@ -377,50 +377,60 @@ describe('Athletics — Flag Football card', () => {
 
 describe('Athletics — Myles swim, all PB row states', () => {
   it('Empty state — em-dash, pool chip, empty class', () => {
-    const row = renderPBRow({ event: '50m Breast', format: 'SCM', lastSwim: null, pb: null, champsTarget: null, isNewPB: false, delta: null, champsProgress: null, leagueRank: null });
+    const row = renderPBRow({ event: '50m Breast', format: 'SCM', lastSwim: null, pb: null, champsTarget: null, isNewPB: false, delta: null, champsProgress: null, leagueRank: null, seasonBestSeconds: null });
     assert.ok(row.includes('—'));
     assert.ok(row.includes('SCM'));
     assert.ok(row.includes('pb-hero-time--empty'));
   });
 
   it('Prior-PB-only state — muted time class, champs target shown', () => {
-    const row = renderPBRow({ event: '50m Free', format: 'SCM', lastSwim: null, pb: { seconds: 43.0 }, champsTarget: '39.00', isNewPB: false, delta: null, champsProgress: 0.5, leagueRank: null });
+    const row = renderPBRow({ event: '50m Free', format: 'SCM', lastSwim: null, pb: { seconds: 43.0 }, champsTarget: '39.00', isNewPB: false, delta: null, champsProgress: 0.5, leagueRank: null, seasonBestSeconds: null });
     assert.ok(row.includes('pb-hero-time--muted'));
     assert.ok(row.includes('Champs 39.00'));
   });
 
   it('New PB state — NEW PB! label and fast arrow', () => {
-    const row = renderPBRow({ event: '25m Back', format: 'SCM', lastSwim: { seconds: 34.5, date: '2026-06-15' }, pb: { seconds: 34.5, date: '2026-06-15' }, champsTarget: null, isNewPB: true, isFreshPb: true, previousPbSeconds: null, delta: null, champsProgress: null, leagueRank: null });
+    const row = renderPBRow({ event: '25m Back', format: 'SCM', lastSwim: { seconds: 34.5, date: '2026-06-15' }, pb: { seconds: 34.5, date: '2026-06-15' }, champsTarget: null, isNewPB: true, isFreshPb: true, previousPbSeconds: null, delta: null, champsProgress: null, leagueRank: null, seasonBestSeconds: null });
     assert.ok(row.includes('NEW PB!'));
     assert.ok(row.includes('pb-arrow--fast'));
   });
 
   it('Fresh PB with prior PB — margin displays correct improvement', () => {
-    const row = renderPBRow({ event: '25m Free', format: 'SCM', lastSwim: { seconds: 29.40, date: '2026-06-15', pb: true }, pb: { seconds: 29.40, date: '2026-06-15' }, champsTarget: null, isNewPB: true, isFreshPb: true, previousPbSeconds: 35.00, delta: null, champsProgress: null, leagueRank: null });
+    const row = renderPBRow({ event: '25m Free', format: 'SCM', lastSwim: { seconds: 29.40, date: '2026-06-15', pb: true }, pb: { seconds: 29.40, date: '2026-06-15' }, champsTarget: null, isNewPB: true, isFreshPb: true, previousPbSeconds: 35.00, delta: null, champsProgress: null, leagueRank: null, seasonBestSeconds: null });
     assert.ok(row.includes('↓'));
     assert.ok(row.includes('5.60'));
     assert.ok(row.includes('NEW PB!'));
   });
 
   it('Stale PB state — badge and arrow suppressed when newer non-PB result exists', () => {
-    const row = renderPBRow({ event: '25m Back', format: 'SCM', lastSwim: { seconds: 36.97, date: '2026-07-01' }, pb: { seconds: 34.5, date: '2026-06-15' }, champsTarget: null, isNewPB: true, isFreshPb: false, previousPbSeconds: null, delta: null, champsProgress: null, leagueRank: null });
+    const row = renderPBRow({ event: '25m Back', format: 'SCM', lastSwim: { seconds: 36.97, date: '2026-07-01' }, pb: { seconds: 34.5, date: '2026-06-15' }, champsTarget: null, isNewPB: true, isFreshPb: false, previousPbSeconds: null, delta: null, champsProgress: null, leagueRank: null, seasonBestSeconds: null });
     assert.ok(!row.includes('NEW PB!'));
     assert.ok(!row.includes('pb-arrow--fast'));
     assert.ok(row.includes('pb-hero-time'));
   });
 
   it('Slower-than-PB state — slow arrow, signed delta, PB in context', () => {
-    const row = renderPBRow({ event: '25m Free', format: 'SCY', lastSwim: { seconds: 32.0 }, pb: { seconds: 30.5 }, champsTarget: null, isNewPB: false, delta: 1.5, champsProgress: null, leagueRank: null });
+    const row = renderPBRow({ event: '25m Free', format: 'SCY', lastSwim: { seconds: 32.0 }, pb: { seconds: 30.5 }, champsTarget: null, isNewPB: false, delta: 1.5, champsProgress: null, leagueRank: null, seasonBestSeconds: null });
     assert.ok(row.includes('↑'));
     assert.ok(row.includes('+1.50s'));
     assert.ok(row.includes('pb-arrow--slow'));
   });
 
   it('Champs-qualified state — CHAMPS ✓ label, progress bar, league rank', () => {
-    const row = renderPBRow({ event: '25m Fly', format: 'SCM', lastSwim: null, pb: { seconds: 40.0 }, champsTarget: null, isNewPB: false, delta: null, champsProgress: 1.2, leagueRank: 5 });
+    const row = renderPBRow({ event: '25m Fly', format: 'SCM', lastSwim: null, pb: { seconds: 40.0 }, champsTarget: null, isNewPB: false, delta: null, champsProgress: 1.2, leagueRank: 5, seasonBestSeconds: 38.5 });
     assert.ok(row.includes('CHAMPS ✓'));
     assert.ok(row.includes('pb-champs-qual'));
     assert.ok(row.includes('#5 VPSU'));
+  });
+
+  it('Champs close-delta uses seasonBestSeconds not pb.seconds', () => {
+    // pb.seconds=43.0, seasonBestSeconds=45.5, champsTarget='44.00' (44.0s)
+    // pct = 44.0/45.5 ≈ 0.967 — triggers close-delta path (≥0.85, <1.0)
+    // expected gap: 45.5 - 44.0 = 1.5 → '−1.5s'
+    // wrong gap if pb.seconds used: 43.0 - 44.0 = −1.0 → '−1.0s' (negative, wrong sign)
+    const row = renderPBRow({ event: '50m Free', format: 'SCM', lastSwim: null, pb: { seconds: 43.0 }, champsTarget: '44.00', isNewPB: false, delta: null, champsProgress: 44.0 / 45.5, leagueRank: null, seasonBestSeconds: 45.5 });
+    assert.ok(row.includes('−1.5s'),  'close-delta matches season best gap');
+    assert.ok(!row.includes('−1.0s'), 'close-delta does not use all-time PB');
   });
 
   it('Myles card has Waves logo, onerror handler, season tag, and footer', () => {
