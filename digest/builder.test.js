@@ -204,7 +204,7 @@ const FIXTURE_FF_WITH_RECORD = {
 // Fixture with Eagles captain assignment — satisfies Section 8 cross-reference
 const FIXTURE_FF_WITH_EAGLES = {
   seasons: [{
-    label: 'Spring 2026', seasonStart: '2026-04-26', seasonEnd: '2026-06-14',
+    label: 'Spring 2026', seasonStart: '2026-04-26', seasonEnd: '2026-07-31',
     myTeamAbbr: 'Cowboys',
     teams: [
       { abbr: 'Cowboys', teamName: 'Cowboys' },
@@ -213,7 +213,7 @@ const FIXTURE_FF_WITH_EAGLES = {
     games: [],
     snackSchedule: [],
     captainAssignments: [
-      { date: '2026-06-14', opponent: 'Eagles', captains: ['Pierre', 'Jake'], mylesCaptain: true },
+      { date: '2026-06-21', opponent: 'Eagles', captains: ['Pierre', 'Jake'], mylesCaptain: true },
     ],
   }],
 };
