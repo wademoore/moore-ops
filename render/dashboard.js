@@ -449,7 +449,7 @@ function renderPBRow(row) {
   if (state === 'newpb') {
     if (isFreshPb) {
       const marginHtml = previousPbSeconds !== null
-        ? `<span class="pb-trend-delta" style="color:#5dca8a;">↓ ${(previousPbSeconds - pb.seconds).toFixed(2)}s PB</span>`
+        ? `<span class="pb-trend-delta" style="color:#5dca8a;">↓ ${(previousPbSeconds - pb.seconds).toFixed(2)}s</span>`
         : '';
       mainHtml = `
       <span class="pb-arrow pb-arrow--fast">↓</span>
