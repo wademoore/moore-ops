@@ -85,7 +85,14 @@ function daysUntil(today, targetStr) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. INDIVIDUAL FLAG EVALUATORS
+// 2. MANUAL ORDER FLAGS
+// ---------------------------------------------------------------------------
+// Flip to true once ordered — no other logic change needed.
+
+const OPHELIA_SHOES_ORDERED = false;
+
+// ---------------------------------------------------------------------------
+// 3. INDIVIDUAL FLAG EVALUATORS
 // ---------------------------------------------------------------------------
 // Each evaluator is (context) => Flag | null.
 // Return null to suppress the flag for this run.
@@ -265,6 +272,20 @@ const EVALUATORS = [
     };
   },
 
+  // ── Ophelia hip hop shoes — order before Jul 6 ──────────────────────────
+  (ctx) => {
+    if (OPHELIA_SHOES_ORDERED) return null;
+    if (midnight(ctx.today) >= ld('2026-07-06')) return null;
+    return {
+      id: 'ophelia-hip-hop-shoes',
+      level: 'amber',
+      title: '🟡 Ophelia Hip Hop Shoes',
+      body: 'Ophelia hip hop shoes not yet ordered — dance starts Jul 6',
+      owner: [],
+      persist: false,
+    };
+  },
+
   // ── Cowboys Spring 2026 Championship banner — Jun 7–9 only ───────────────
   (ctx) => {
     if (!inWindow(ctx.today, '2026-06-07', '2026-06-09')) return null;
@@ -282,7 +303,7 @@ const EVALUATORS = [
 ];
 
 // ---------------------------------------------------------------------------
-// 3. PUBLIC API
+// 4. PUBLIC API
 // ---------------------------------------------------------------------------
 
 /**
