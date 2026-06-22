@@ -108,3 +108,21 @@ Key IDs:
 - Menu calendar: `rtd3pm2tqjusgob36vpoi4u85c@group.calendar.google.com`
 - Meal Planning Preferences doc: `1WF1CP4SX3tiAKiHS2BxlDauaoNhtDUQVvFQELPGHkB4`
 - Recipe Library doc: `1nJSZH1lBDNUd5x2zyGBBRmsclqTeWWkDukoL9dHB1Ro`
+
+## Skills
+
+Skill files are version-controlled in `skills/` in the repo root.
+
+At the start of any new Claude Code session, run:
+
+    .\install-skills.ps1
+
+from the repo root to copy all skill files to the correct Claude Code plugin path. The plugin path includes a session-scoped UUID that changes when the session rotates — this script detects it automatically.
+
+### Skills in this repo
+
+| Skill | Trigger |
+|-------|---------|
+| `moore-ops-updater` | "Updater role" or any request to modify `data/` JSON files |
+| `moore-ops-weekly-review` | "Weekly Review", "Weekly Review — Robyn is here", or any household review request |
+| `walmart-cart` | Any request to add items to a Walmart cart, or Weekly Review Phase 6 grocery handoff |
