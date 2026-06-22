@@ -43,7 +43,7 @@ function makeEvent(overrides = {}) {
   return {
     title: 'ADP Soccer Practice', subtitle: '6:45 PM · GREEN kit',
     cardType: 'standard', gearReminder: 'GREEN jersey · black shorts',
-    owner: ['alyssa'], isFlagGame: false, _calName: 'Myles',
+    owner: ['madison'], isFlagGame: false, _calName: 'Myles',
     raw: { start: { dateTime: '2026-05-18T18:45:00' } },
     ...overrides,
   };
@@ -242,32 +242,32 @@ describe('Today card — events, tasks, school, dinner', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Section 5: Alyssa tasks — divider only shown when present
+// Section 5: Madison tasks — divider only shown when present
 // ---------------------------------------------------------------------------
 
-describe('Alyssa tasks — divider only shown when present', () => {
-  it('Divider, alyssa badge, and task text shown when alyssa tasks present', () => {
-    const withAlyssaData = makeDigestData({
+describe('Madison tasks — divider only shown when present', () => {
+  it('Divider, madison badge, and task text shown when madison tasks present', () => {
+    const withMadisonData = makeDigestData({
       days: [{
         date: d('2026-05-18'),
         events: [],
         tasks: [
-          makeTask({ owner: 'wade',   text: 'Drop Myles' }),
-          makeTask({ owner: 'alyssa', text: 'Pack swim bag' }),
+          makeTask({ owner: 'wade',    text: 'Drop Myles' }),
+          makeTask({ owner: 'madison', text: 'Pack swim bag' }),
         ],
         menuEvent: null,
       }],
       menuEvent: null,
       tomorrowMenu: null,
     });
-    const html = renderTodayCard(withAlyssaData);
+    const html = renderTodayCard(withMadisonData);
     assert.ok(html.includes('class="task-div"'));
     assert.ok(html.includes('class="badge ba"'));
     assert.ok(html.includes('Pack swim bag'));
   });
 
-  it('Divider absent when no alyssa tasks', () => {
-    const noAlyssaData = makeDigestData({
+  it('Divider absent when no madison tasks', () => {
+    const noMadisonData = makeDigestData({
       days: [{
         date: d('2026-05-18'),
         events: [],
@@ -276,7 +276,7 @@ describe('Alyssa tasks — divider only shown when present', () => {
       }],
       menuEvent: null, tomorrowMenu: null,
     });
-    assert.ok(!renderTodayCard(noAlyssaData).includes('class="task-div"'));
+    assert.ok(!renderTodayCard(noMadisonData).includes('class="task-div"'));
   });
 });
 

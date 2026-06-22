@@ -9,9 +9,9 @@
  *   - Gmail safety (no forbidden tokens in any output path)
  *   - Every primitive: badge, eventCard, taskRow, dinnerStrip, alertBox
  *   - School strip rendering
- *   - Tab routing: all / wade / robyn / alyssa
+ *   - Tab routing: all / wade / robyn / madison
  *   - Coaching checklist injection on flag game days
- *   - Alyssa-off alert
+ *   - Madison-off alert
  *   - Activity comms + newsletter section
  *   - Subject line format
  *   - Safety guard throws on forbidden token
@@ -64,7 +64,7 @@ function makeEvent(overrides = {}) {
     subtitle:      '6:45 PM · Myles · GREEN kit',
     cardType:      'standard',
     gearReminder:  'GREEN jersey · black shorts',
-    owner:         ['alyssa'],
+    owner:         ['madison'],
     isFlagGame:    false,
     isSoloEvening: false,
     _calName:      'Myles',
@@ -123,8 +123,8 @@ describe('badge primitive', () => {
     assert.ok(rBadge.includes('ROBYN'));
   });
 
-  it('Alyssa badge uses correct green', () => {
-    assert.ok(badge('alyssa').includes('#1A7A3C'));
+  it('Madison badge uses correct green', () => {
+    assert.ok(badge('madison').includes('#1A7A3C'));
   });
 
   it('Coaching badge uses correct amber', () => {
@@ -415,37 +415,37 @@ describe('renderEmail — Robyn tab', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Section 12: renderEmail — Alyssa tab
+// Section 12: renderEmail — Madison tab
 // ---------------------------------------------------------------------------
 
-describe('renderEmail — Alyssa tab', () => {
-  it('Alyssa tab is Gmail-safe, shows alyssa task, excludes wade task', () => {
-    const alyssaData = makeDigestData({
+describe('renderEmail — Madison tab', () => {
+  it('Madison tab is Gmail-safe, shows madison task, excludes wade task', () => {
+    const madisonData = makeDigestData({
       days: [makeDay({
         tasks: [
-          makeTask({ owner: 'alyssa', text: 'Pack swim bag' }),
-          makeTask({ owner: 'wade',   text: 'Drop Myles' }),
+          makeTask({ owner: 'madison', text: 'Pack swim bag' }),
+          makeTask({ owner: 'wade',    text: 'Drop Myles' }),
         ],
-        events: [makeEvent({ owner: ['alyssa'], title: 'Swim Team Practice — bag prep' })],
+        events: [makeEvent({ owner: ['madison'], title: 'Swim Team Practice — bag prep' })],
       })],
       schoolStrip: { myles: { center: 'PE', warningText: null }, ophelia: { center: 'Art', warningText: null }, tomorrowWarnings: [] },
     });
-    const alyssaEmail = renderEmail(alyssaData, 'alyssa');
-    assertGmailSafe(alyssaEmail.html, 'Alyssa tab email');
-    assert.ok(alyssaEmail.html.includes('Pack swim bag'));
-    assert.ok(!alyssaEmail.html.includes('Drop Myles'));
+    const madisonEmail = renderEmail(madisonData, 'madison');
+    assertGmailSafe(madisonEmail.html, 'Madison tab email');
+    assert.ok(madisonEmail.html.includes('Pack swim bag'));
+    assert.ok(!madisonEmail.html.includes('Drop Myles'));
   });
 
-  it('Alyssa off-day — tab is Gmail-safe and shows "You Are Off" alert', () => {
-    const alyssaOffData = makeDigestData({
+  it('Madison off-day — tab is Gmail-safe and shows "You Are Off" alert', () => {
+    const madisonOffData = makeDigestData({
       days: [makeDay({
-        events: [makeEvent({ title: 'Alyssa Off', cardType: 'urgent', owner: ['wade', 'robyn'] })],
+        events: [makeEvent({ title: 'Madison Off', cardType: 'urgent', owner: ['wade', 'robyn'] })],
         tasks: [],
       })],
     });
-    const alyssaOffEmail = renderEmail(alyssaOffData, 'alyssa');
-    assertGmailSafe(alyssaOffEmail.html, 'Alyssa tab (off day)');
-    assert.ok(alyssaOffEmail.html.includes('You Are Off'));
+    const madisonOffEmail = renderEmail(madisonOffData, 'madison');
+    assertGmailSafe(madisonOffEmail.html, 'Madison tab (off day)');
+    assert.ok(madisonOffEmail.html.includes('You Are Off'));
   });
 });
 

@@ -32,7 +32,7 @@ const digestData = {
       events: [],
       tasks: [
         { time: '7:30 AM', owner: 'wade',  text: 'Drop Myles + Ophelia at school' },
-        { time: '4:00 PM', owner: 'alyssa', text: 'Pick up kids from bus (Stopfinder app)' },
+        { time: '4:00 PM', owner: 'madison', text: 'Pick up kids from bus (Stopfinder app)' },
       ],
       menuEvent: null,
     },

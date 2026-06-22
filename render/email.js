@@ -35,7 +35,7 @@
  *
  * Task {
  *   time:    string   e.g. '7:30 AM'
- *   owner:   string   'wade' | 'robyn' | 'alyssa' | 'coaching'
+ *   owner:   string   'wade' | 'robyn' | 'madison' | 'coaching'
  *   text:    string
  * }
  *
@@ -56,7 +56,7 @@ const C = {
   // Owner badge backgrounds
   wade:       '#1A56A0',
   robyn:      '#A0366E',
-  alyssa:     '#1A7A3C',
+  madison:    '#1A7A3C',
   coaching:   '#BA7517',
   // Alert box backgrounds + borders
   redBg:      '#FEF2F2',
@@ -84,7 +84,7 @@ function badge(owner) {
   const labels = {
     wade:     { bg: C.wade,     label: 'WADE' },
     robyn:    { bg: C.robyn,    label: 'ROBYN' },
-    alyssa:   { bg: C.alyssa,   label: 'ALYSSA' },
+    madison:  { bg: C.madison,  label: 'MADISON' },
     coaching: { bg: C.coaching, label: 'COACHING' },
   };
   const { bg, label } = labels[owner] || { bg: C.muted, label: owner.toUpperCase() };
@@ -213,7 +213,7 @@ function formatEventTime(event) {
 // Each tab function returns an HTML string for its section.
 // Tab system is faked for email — we render one "All" view with clear
 // ownership headers, since email clients don't support JS tabs.
-// The Wade/Robyn/Alyssa views are separate email sends (see §12).
+// The Wade/Robyn/Madison views are separate email sends (see §12).
 // ---------------------------------------------------------------------------
 
 /**
@@ -256,7 +256,7 @@ function renderDay(day, ownerFilter) {
   }
 
   // ── Dinner ───────────────────────────────────────────────────────────────
-  if (!ownerFilter || ownerFilter === 'alyssa') {
+  if (!ownerFilter || ownerFilter === 'madison') {
     parts.push(dinnerStrip(day.menuEvent));
   }
 
@@ -372,7 +372,7 @@ function renderFlags(flags) {
 }
 
 // ---------------------------------------------------------------------------
-// 8. TOP-LEVEL RENDERERS — All / Wade / Robyn / Alyssa
+// 8. TOP-LEVEL RENDERERS — All / Wade / Robyn / Madison
 // ---------------------------------------------------------------------------
 
 /**
@@ -477,19 +477,19 @@ function renderRobyn(digestData) {
 }
 
 /**
- * Alyssa tab: plain, direct. House tasks, bag packing, lunch, pickup.
+ * Madison tab: plain, direct. House tasks, bag packing, lunch, pickup.
  * No coaching content. Look-ahead bag prep surfaced as event cards.
  * Per spec: "written in plain, direct language."
  */
-function renderAlyssa(digestData) {
+function renderMadison(digestData) {
   const { days, flags } = digestData;
   const parts = [];
 
-  const alyssaOff = days.some(day =>
-    day.events.some(ev => ev.title === 'Alyssa Off')
+  const madisonOff = days.some(day =>
+    day.events.some(ev => ev.title === 'Madison Off')
   );
 
-  if (alyssaOff) {
+  if (madisonOff) {
     parts.push(alertBox({
       level: 'red',
       title: '⚠️ You Are Off Today',
@@ -498,22 +498,22 @@ function renderAlyssa(digestData) {
   }
 
   if (days[0]) {
-    const b = renderDay(days[0], 'alyssa');
+    const b = renderDay(days[0], 'madison');
     if (b) parts.push(b);
   }
   parts.push(renderWeeklyPriorities(digestData.weeklyPriorities));
   for (let i = 1; i < days.length; i++) {
-    const block = renderDay(days[i], 'alyssa');
+    const block = renderDay(days[i], 'madison');
     if (block) parts.push(block);
   }
 
-  // Alyssa-specific flags (bag prep look-ahead, etc.)
-  const alyssaFlags = (flags || []).filter(f =>
-    f.owner.includes('alyssa') || f.owner.length === 0
+  // Madison-specific flags (bag prep look-ahead, etc.)
+  const madisonFlags = (flags || []).filter(f =>
+    f.owner.includes('madison') || f.owner.length === 0
   );
-  if (alyssaFlags.length) {
+  if (madisonFlags.length) {
     parts.push(`<p style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:${C.muted};margin:20px 0 8px 0;font-family:Arial,sans-serif;">Heads Up</p>`);
-    parts.push(renderFlags(alyssaFlags));
+    parts.push(renderFlags(madisonFlags));
   }
 
   return parts.filter(Boolean).join('\n');
@@ -569,7 +569,7 @@ function wrapEmail(contentHtml) {
  * Render the full digest email for a given recipient tab.
  *
  * @param {object} digestData    From builder.js
- * @param {'all'|'wade'|'robyn'|'alyssa'} [tab]  Defaults to 'all'
+ * @param {'all'|'wade'|'robyn'|'madison'} [tab]  Defaults to 'all'
  * @returns {{ subject: string, html: string }}
  */
 function renderEmail(digestData, tab = 'all') {
@@ -582,7 +582,7 @@ function renderEmail(digestData, tab = 'all') {
   switch (tab) {
     case 'wade':   contentHtml = renderWade(digestData);   break;
     case 'robyn':  contentHtml = renderRobyn(digestData);  break;
-    case 'alyssa': contentHtml = renderAlyssa(digestData); break;
+    case 'madison': contentHtml = renderMadison(digestData); break;
     default:       contentHtml = renderAll(digestData);    break;
   }
 

@@ -96,13 +96,13 @@ describe('Exact aliases — static entries', () => {
 // ---------------------------------------------------------------------------
 
 describe('ADP Practice — context-sensitive kit (Tuesday vs Thursday)', () => {
-  it('Tuesday ADP Practice → ADP Soccer Practice, GREEN kit, alyssa owner', () => {
+  it('Tuesday ADP Practice → ADP Soccer Practice, GREEN kit, madison owner', () => {
     const adpTue = resolveEvent(tuesdayEvent('ADP Practice'));
     assert.equal(adpTue.title, 'ADP Soccer Practice');
     assert.ok(adpTue.subtitle.includes('GREEN'));
     assert.ok(adpTue.gearReminder.includes('GREEN jersey'));
     assert.ok(!adpTue.gearReminder.includes('BLACK'));
-    assert.ok(adpTue.owner.includes('alyssa'));
+    assert.ok(adpTue.owner.includes('madison'));
   });
 
   it('Thursday ADP Practice → BLACK kit, no GREEN', () => {
@@ -142,7 +142,7 @@ describe('Flag game — pattern matcher + opponent extraction', () => {
 // Section 4: Other pattern matchers
 // ---------------------------------------------------------------------------
 
-describe('Pattern matchers — swim, dance, SOL, Alyssa Off, recycling, trash, menu', () => {
+describe('Pattern matchers — swim, dance, SOL, Madison Off, recycling, trash, menu', () => {
   it('Swim Practice → Swim Team Practice, robyn owner, full swim gear', () => {
     const swim = resolveEvent(mkEvent('Swim Practice', 'Wellington Waves'));
     assert.equal(swim.title, 'Swim Team Practice');
@@ -180,12 +180,12 @@ describe('Pattern matchers — swim, dance, SOL, Alyssa Off, recycling, trash, m
     assert.ok(sol.subtitle.includes('no early dismissal'));
   });
 
-  it('Alyssa Off → urgent, wade and robyn owners', () => {
-    const alyssaOff = resolveEvent(mkEvent('Alyssa Off', 'Family'));
-    assert.equal(alyssaOff.title, 'Alyssa Off');
-    assert.equal(alyssaOff.cardType, 'urgent');
-    assert.ok(alyssaOff.owner.includes('wade'));
-    assert.ok(alyssaOff.owner.includes('robyn'));
+  it('Madison Off → urgent, wade and robyn owners', () => {
+    const madisonOff = resolveEvent(mkEvent('Madison Off', 'Family'));
+    assert.equal(madisonOff.title, 'Madison Off');
+    assert.equal(madisonOff.cardType, 'urgent');
+    assert.ok(madisonOff.owner.includes('wade'));
+    assert.ok(madisonOff.owner.includes('robyn'));
   });
 
   it('Recycling Pickup → wade owner, info cardType', () => {
@@ -201,10 +201,10 @@ describe('Pattern matchers — swim, dance, SOL, Alyssa Off, recycling, trash, m
     assert.ok(trash.owner.includes('wade'));
   });
 
-  it('Walmart Grocery Delivery → alyssa owner', () => {
+  it('Walmart Grocery Delivery → madison owner', () => {
     const grocery = resolveEvent(mkEvent('Walmart Grocery Delivery', 'Family'));
     assert.equal(grocery.title, 'Walmart Grocery Delivery');
-    assert.ok(grocery.owner.includes('alyssa'));
+    assert.ok(grocery.owner.includes('madison'));
   });
 
   it('Menu calendar event → cardType: menu, title from summary', () => {

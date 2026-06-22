@@ -13,7 +13,7 @@
  * @param {object}          schoolStrip     Output of schoolRotation.getSchoolStrip()
  * @returns {Task[]}
  *
- * Task { time: string, owner: 'wade'|'robyn'|'alyssa'|'coaching', text: string }
+ * Task { time: string, owner: 'wade'|'robyn'|'madison'|'coaching', text: string }
  */
 
 import { isSchoolDay } from './schoolRotation.js';
@@ -38,7 +38,7 @@ export function generateTasks(resolvedEvents, date, schoolStrip) {
       tasks.push({ time: 'Before work', owner: 'wade', text: schoolStrip.ophelia.warningText });
     }
 
-    // Alyssa: lunch and after-school pickup (weekdays only)
+    // Madison: lunch and after-school pickup (weekdays only)
     if (isWeekday) {
     }
   }
@@ -47,11 +47,11 @@ export function generateTasks(resolvedEvents, date, schoolStrip) {
   for (const ev of resolvedEvents) {
     if (ev.cardType === 'menu') continue;
 
-    // Bag prep task — Alyssa packs day before for weekday activities
-    if (ev.gearReminder && ev.owner.includes('alyssa')) {
+    // Bag prep task — Madison packs day before for weekday activities
+    if (ev.gearReminder && ev.owner.includes('madison')) {
       tasks.push({
         time: '1:00–3:00 PM',
-        owner: 'alyssa',
+        owner: 'madison',
         text: `Pack bag: ${ev.title} — ${ev.gearReminder.split('·')[0].trim()}`,
       });
     }

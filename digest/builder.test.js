@@ -389,10 +389,10 @@ assert( generateTasks([], MONDAY, { myles: { warningText: mylesWarn },   ophelia
 assert( generateTasks([], MONDAY, { myles: { warningText: null },        ophelia: { warningText: opheliaWarn } }).some(t => t.text === opheliaWarn), 'Ophelia warningText → backpack task');
 assert(!generateTasks([], MONDAY, emptyStrip).some(t => t.time === 'Before work'),                                                           'No warnings → no Before-work tasks');
 
-section('generateTasks — bag prep (Alyssa owner)');
-const alyssaGearEv = makeResolvedEvent({ title: 'Dance Class', owner: ['alyssa'], gearReminder: 'tap shoes · jazz shoes' });
-const wadeGearEv   = makeResolvedEvent({ title: 'Dance Class', owner: ['wade'],   gearReminder: 'tap shoes · jazz shoes' });
-assert( generateTasks([alyssaGearEv], TUESDAY, emptyStrip).some(t => t.owner === 'alyssa' && /Pack bag/.test(t.text)), 'Alyssa + gearReminder → bag-prep task');
+section('generateTasks — bag prep (Madison owner)');
+const madisonGearEv = makeResolvedEvent({ title: 'Dance Class', owner: ['madison'], gearReminder: 'tap shoes · jazz shoes' });
+const wadeGearEv    = makeResolvedEvent({ title: 'Dance Class', owner: ['wade'],    gearReminder: 'tap shoes · jazz shoes' });
+assert( generateTasks([madisonGearEv], TUESDAY, emptyStrip).some(t => t.owner === 'madison' && /Pack bag/.test(t.text)), 'Madison + gearReminder → bag-prep task');
 assert(!generateTasks([wadeGearEv],   TUESDAY, emptyStrip).some(t => /Pack bag/.test(t.text)),                         'Wade owner + gearReminder → no bag-prep task');
 
 section('generateTasks — coaching tasks (flag game)');

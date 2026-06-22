@@ -176,27 +176,27 @@ describe('generateTasks — no drop-off or lunch tasks', () => {
 
 // ── generateTasks — bag prep ──────────────────────────────────────────────────
 
-describe('generateTasks — bag prep (alyssa + gearReminder)', () => {
-  it('fires when owner includes alyssa and gearReminder is set', () => {
+describe('generateTasks — bag prep (madison + gearReminder)', () => {
+  it('fires when owner includes madison and gearReminder is set', () => {
     const ev = makeEvent({
       title:        'Swim Practice',
-      owner:        ['alyssa'],
+      owner:        ['madison'],
       gearReminder: 'Goggles · Cap · Suit',
     });
     const result = generateTasks([ev], MONDAY, emptyStrip);
-    const task = result.find(t => t.owner === 'alyssa');
-    assert.ok(task, 'expected alyssa bag prep task');
+    const task = result.find(t => t.owner === 'madison');
+    assert.ok(task, 'expected madison bag prep task');
     assert.equal(task.time, '1:00–3:00 PM');
   });
 
   it('text uses only the first segment before · in gearReminder', () => {
     const ev = makeEvent({
       title:        'Soccer',
-      owner:        ['alyssa'],
+      owner:        ['madison'],
       gearReminder: 'Cleats · Shin guards · Jersey',
     });
     const result = generateTasks([ev], MONDAY, emptyStrip);
-    const task = result.find(t => t.owner === 'alyssa');
+    const task = result.find(t => t.owner === 'madison');
     assert.ok(task.text.includes('Cleats'),       '"Cleats" should appear in bag prep text');
     assert.ok(!task.text.includes('Shin guards'), '"Shin guards" should be trimmed off');
   });
@@ -204,15 +204,15 @@ describe('generateTasks — bag prep (alyssa + gearReminder)', () => {
   it('text format is "Pack bag: {title} — {first gear segment}"', () => {
     const ev = makeEvent({
       title:        'Lacrosse',
-      owner:        ['alyssa'],
+      owner:        ['madison'],
       gearReminder: 'Stick',
     });
     const result = generateTasks([ev], MONDAY, emptyStrip);
-    const task = result.find(t => t.owner === 'alyssa');
+    const task = result.find(t => t.owner === 'madison');
     assert.equal(task.text, 'Pack bag: Lacrosse — Stick');
   });
 
-  it('does NOT fire when owner is wade (not alyssa)', () => {
+  it('does NOT fire when owner is wade (not madison)', () => {
     const ev = makeEvent({ owner: ['wade'], gearReminder: 'Football' });
     const result = generateTasks([ev], MONDAY, emptyStrip);
     assert.ok(
@@ -221,8 +221,8 @@ describe('generateTasks — bag prep (alyssa + gearReminder)', () => {
     );
   });
 
-  it('does NOT fire when gearReminder is null even if owner is alyssa', () => {
-    const ev = makeEvent({ owner: ['alyssa'], gearReminder: null });
+  it('does NOT fire when gearReminder is null even if owner is madison', () => {
+    const ev = makeEvent({ owner: ['madison'], gearReminder: null });
     const result = generateTasks([ev], MONDAY, emptyStrip);
     assert.ok(
       !result.some(t => t.time === '1:00–3:00 PM'),
@@ -234,10 +234,10 @@ describe('generateTasks — bag prep (alyssa + gearReminder)', () => {
 // ── generateTasks — menu events skipped ──────────────────────────────────────
 
 describe('generateTasks — menu events are skipped', () => {
-  it('menu cardType suppresses bag prep even when alyssa + gearReminder', () => {
+  it('menu cardType suppresses bag prep even when madison + gearReminder', () => {
     const ev = makeEvent({
       cardType:     'menu',
-      owner:        ['alyssa'],
+      owner:        ['madison'],
       gearReminder: 'Utensils',
     });
     const result = generateTasks([ev], MONDAY, emptyStrip);
