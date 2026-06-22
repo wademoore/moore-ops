@@ -272,6 +272,19 @@ const EVALUATORS = [
     };
   },
 
+  // ── Jul 3 REC Connect closure — 4th of July holiday ────────────────────
+  (ctx) => {
+    if (!inWindow(ctx.today, '2026-06-28', '2026-07-03')) return null;
+    return {
+      id: 'jul3KidsCoverage',
+      level: 'amber',
+      title: '🟡 No REC Connect Jul 3 (4th of July holiday) — kids need coverage',
+      body: 'No REC Connect Jul 3 (4th of July holiday) — kids need coverage',
+      owner: [],
+      persist: false,
+    };
+  },
+
   // ── Ophelia hip hop shoes — order before Jul 6 ──────────────────────────
   (ctx) => {
     if (OPHELIA_SHOES_ORDERED) return null;
