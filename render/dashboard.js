@@ -1062,6 +1062,7 @@ function renderDashboard(digestData) {
   const { today, flags, athletics, nationalsData, banner } = digestData;
 
   const championshipFlag = (flags || []).find(f => f.id === 'cowboys-championship-banner');
+  console.log('[dashboard] flags:', JSON.stringify(flags))
   const birthdayFlag     = (flags || []).find(f => f.bannerOnly && typeof f.label === 'function');
   const hasBanner  = !!(championshipFlag || birthdayFlag || banner);
   const bodyClass  = hasBanner ? ' class="has-banner"' : '';
