@@ -1051,7 +1051,7 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
 function renderBirthdayBanner(flag, today) {
   const labelText = typeof flag.label === 'function' ? flag.label({ today }) : flag.label;
   return `
-<div style="width:100%;background:linear-gradient(135deg,rgba(60,10,80,.97),rgba(120,30,140,.88));border:2px solid rgba(220,150,255,.55);border-radius:14px;padding:18px 32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+<div style="width:100%;background:linear-gradient(135deg,rgba(80,19,19,.97),rgba(163,45,45,.88));border:2px solid rgba(242,145,145,.55);border-radius:14px;padding:18px 32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
   <div style="text-align:center;">
     <div style="font-size:44px;font-weight:700;color:#fff;line-height:1.1;">${labelText}</div>
   </div>
