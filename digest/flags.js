@@ -316,6 +316,7 @@ const EVALUATORS = [
   // ── Myles birthday banner — June 23 only ────────────────────────────────
   (ctx) => {
     const d = ctx.today.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    console.log('[flags] myles_birthday d:', d, 'slice:', d.slice(5));
     if (d.slice(5) !== '06-23') return null;
     return {
       id: 'myles_birthday',
