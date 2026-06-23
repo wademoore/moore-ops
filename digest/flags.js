@@ -318,7 +318,7 @@ const EVALUATORS = [
     const d = ctx.today.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
     if (d.slice(5) !== '06-23') return null;
     return {
-      key: 'myles_birthday',
+      id: 'myles_birthday',
       label: ({ today }) => {
         const year = today.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }).slice(0, 4);
         const age = parseInt(year) - 2016;
@@ -335,7 +335,7 @@ const EVALUATORS = [
     const d = ctx.today.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
     if (d.slice(5) !== '10-20') return null;
     return {
-      key: 'ophelia_birthday',
+      id: 'ophelia_birthday',
       label: ({ today }) => {
         const year = today.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }).slice(0, 4);
         const age = parseInt(year) - 2018;
