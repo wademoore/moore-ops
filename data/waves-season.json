@@ -212,7 +212,7 @@
       ],
       "meets": [
         { "date": "2026-06-15", "teamA": "WT",  "scoreA": null, "teamB": "FDC", "scoreB": null, "friendly": true  },
-        { "date": "2026-06-22", "teamA": "WPD", "scoreA": null, "teamB": "WT",  "scoreB": null, "friendly": false },
+        { "date": "2026-06-22", "teamA": "WPD", "scoreA": 86, "teamB": "WT",  "scoreB": 203, "winner": "WT", "friendly": false, "note": "Meet called after first half due to thunderstorms — Free and Breast only swum; times are official" },
         { "date": "2026-06-22", "teamA": "WF",  "scoreA": null, "teamB": "EH",  "scoreB": null, "friendly": false },
         { "date": "2026-06-22", "teamA": "PS",  "scoreA": null, "teamB": "WC",  "scoreB": null, "friendly": false },
         { "date": "2026-06-29", "teamA": "WT",  "scoreA": null, "teamB": "WC",  "scoreB": null, "friendly": false },
