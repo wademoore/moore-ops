@@ -313,6 +313,40 @@ const EVALUATORS = [
     };
   },
 
+  // ── Myles birthday banner — June 23 only ────────────────────────────────
+  (ctx) => {
+    const d = ctx.today.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    if (d.slice(5) !== '06-23') return null;
+    return {
+      key: 'myles_birthday',
+      label: ({ today }) => {
+        const year = today.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }).slice(0, 4);
+        const age = parseInt(year) - 2016;
+        return `🎂 Happy ${age}th Birthday, Myles!`;
+      },
+      level: 'blue',
+      owner: ['dashboard'],
+      bannerOnly: true,
+    };
+  },
+
+  // ── Ophelia birthday banner — October 20 only ───────────────────────────
+  (ctx) => {
+    const d = ctx.today.toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    if (d.slice(5) !== '10-20') return null;
+    return {
+      key: 'ophelia_birthday',
+      label: ({ today }) => {
+        const year = today.toLocaleDateString('en-CA', { timeZone: 'America/New_York' }).slice(0, 4);
+        const age = parseInt(year) - 2018;
+        return `🎂 Happy ${age}th Birthday, Ophelia!`;
+      },
+      level: 'blue',
+      owner: ['dashboard'],
+      bannerOnly: true,
+    };
+  },
+
 ];
 
 // ---------------------------------------------------------------------------

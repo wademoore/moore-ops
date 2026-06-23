@@ -1048,15 +1048,28 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
  * @param {object} digestData   See module-level JSDoc for full shape
  * @returns {string}            Complete HTML document
  */
+function renderBirthdayBanner(flag, today) {
+  const labelText = typeof flag.label === 'function' ? flag.label({ today }) : flag.label;
+  return `
+<div style="width:100%;background:linear-gradient(135deg,rgba(60,10,80,.97),rgba(120,30,140,.88));border:2px solid rgba(220,150,255,.55);border-radius:14px;padding:18px 32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+  <div style="text-align:center;">
+    <div style="font-size:44px;font-weight:700;color:#fff;line-height:1.1;">${labelText}</div>
+  </div>
+</div>`;
+}
+
 function renderDashboard(digestData) {
   const { today, flags, athletics, nationalsData, banner } = digestData;
 
   const championshipFlag = (flags || []).find(f => f.id === 'cowboys-championship-banner');
-  const hasBanner  = !!(championshipFlag || banner);
+  const birthdayFlag     = (flags || []).find(f => f.bannerOnly && f.key);
+  const hasBanner  = !!(championshipFlag || birthdayFlag || banner);
   const bodyClass  = hasBanner ? ' class="has-banner"' : '';
   const bannerRow  = championshipFlag
     ? renderChampionshipBanner()
-    : (banner ? renderBanner(banner) : '');
+    : (birthdayFlag
+        ? renderBirthdayBanner(birthdayFlag, today)
+        : (banner ? renderBanner(banner) : ''));
 
   const todayCard      = renderTodayCard(digestData);
   const weekCard       = renderWeekCard(digestData);
