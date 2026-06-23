@@ -213,7 +213,7 @@ const FIXTURE_FF_WITH_EAGLES = {
     games: [],
     snackSchedule: [],
     captainAssignments: [
-      { date: '2026-06-21', opponent: 'Eagles', captains: ['Pierre', 'Jake'], mylesCaptain: true },
+      { date: isoDate(6), opponent: 'Eagles', captains: ['Pierre', 'Jake'], mylesCaptain: true },
     ],
   }],
 };
