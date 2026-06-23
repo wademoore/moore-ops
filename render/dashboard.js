@@ -700,11 +700,15 @@ function renderWavesCard(athletics) {
 
   const record = wavesRecord || '0-0';
 
-  const lastMeetHtml = wavesLastMeet ? `
-<div>
-  <div class="flag-result">${wavesLastMeet.result} ${wavesLastMeet.myScore}–${wavesLastMeet.oppScore} vs ${wavesLastMeet.opponent}</div>
-  <div class="flag-result-lbl">Last meet</div>
-</div>` : '';
+  const lastMeetHtml = wavesLastMeet ? (() => {
+    const dateFmt = new Date(wavesLastMeet.date + 'T12:00:00')
+      .toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `
+<div class="flag-next-box">
+  <span class="flag-next-label">Last meet</span>
+  ${wavesLastMeet.result} ${wavesLastMeet.myScore}–${wavesLastMeet.oppScore} vs ${wavesLastMeet.opponent} · ${dateFmt}
+</div>`;
+  })() : '';
 
   const nextBox = (() => {
     if (!wavesNextMeet || wavesNextMeet.daysUntil > 7) return '';
@@ -736,8 +740,8 @@ function renderWavesCard(athletics) {
       <div class="sport-record">${record}</div>
       <div class="sport-record-lbl">${wavesSeasonYear || 2026} Season</div>
     </div>
-    ${lastMeetHtml}
   </div>
+  ${lastMeetHtml}
   ${nextBox}
   <table class="standings">
     <thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead>
