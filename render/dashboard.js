@@ -1066,14 +1066,16 @@ function renderDashboard(digestData) {
   const { today, flags, athletics, nationalsData, banner } = digestData;
 
   const championshipFlag = (flags || []).find(f => f.id === 'cowboys-championship-banner');
-  console.log('[dashboard] flags:', JSON.stringify(flags))
-  const birthdayFlag     = (flags || []).find(f => f.bannerOnly && typeof f.label === 'function');
-  const hasBanner  = !!(championshipFlag || birthdayFlag || banner);
+  const bannerFlag       = (flags || []).find(f => f.bannerOnly);
+  const bannerText       = bannerFlag
+    ? (typeof bannerFlag.label === 'function' ? bannerFlag.label({ today }) : bannerFlag.message)
+    : null;
+  const hasBanner  = !!(championshipFlag || bannerText || banner);
   const bodyClass  = hasBanner ? ' class="has-banner"' : '';
   const bannerRow  = championshipFlag
     ? renderChampionshipBanner()
-    : (birthdayFlag
-        ? renderBirthdayBanner(birthdayFlag, today)
+    : (bannerText
+        ? renderBirthdayBanner({ label: bannerText }, today)
         : (banner ? renderBanner(banner) : ''));
 
   const todayCard      = renderTodayCard(digestData);

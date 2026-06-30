@@ -591,6 +591,43 @@ describe('Banner — four palette types, default off', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Section 13b: bannerOnly flag rendering — message string and label function
+// ---------------------------------------------------------------------------
+
+describe('bannerOnly flag rendering', () => {
+  it('bannerOnly flag with message (string) renders the message text and has-banner class', () => {
+    const flags = [{ id: 'champs-qualifier-ophelia-25m-butterfly-2026-06-29', level: 'blue', bannerOnly: true, owner: ['dashboard'], message: '🎉 Ophelia qualified for Champs in 25m Butterfly!' }];
+    const html = renderDashboard(makeDigestData({ flags }));
+    assert.ok(html.includes('class="has-banner"'));
+    assert.ok(html.includes('🎉 Ophelia qualified for Champs in 25m Butterfly!'));
+  });
+
+  it('bannerOnly flag with label (function) still renders correctly — no regression', () => {
+    const flags = [{ id: 'birthday-ophelia', level: 'blue', bannerOnly: true, owner: ['dashboard'], label: () => '🎂 Happy Birthday, Ophelia!' }];
+    const html = renderDashboard(makeDigestData({ flags }));
+    assert.ok(html.includes('class="has-banner"'));
+    assert.ok(html.includes('🎂 Happy Birthday, Ophelia!'));
+  });
+
+  it('No bannerOnly flags → no banner rendered', () => {
+    const flags = [{ id: 'some-alert', level: 'amber', owner: ['dashboard'], message: 'Regular alert' }];
+    const html = renderDashboard(makeDigestData({ flags, banner: null }));
+    assert.ok(!html.includes('class="has-banner"'));
+  });
+
+  it('Two bannerOnly flags active → only the first renders, no crash', () => {
+    const flags = [
+      { id: 'champs-qualifier-ophelia-25m-fly-2026-06-29', level: 'blue', bannerOnly: true, owner: ['dashboard'], message: '🎉 Ophelia qualified for Champs in 25m Butterfly!' },
+      { id: 'champs-qualifier-myles-50m-free-2026-06-29',  level: 'blue', bannerOnly: true, owner: ['dashboard'], message: '🎉 Myles qualified for Champs in 50m Freestyle!' },
+    ];
+    const html = renderDashboard(makeDigestData({ flags }));
+    assert.ok(html.includes('class="has-banner"'));
+    assert.ok(html.includes('🎉 Ophelia qualified for Champs in 25m Butterfly!'));
+    assert.ok(!html.includes('🎉 Myles qualified for Champs in 50m Freestyle!'));
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Section 14: Logo onerror handlers — all sport cards
 // ---------------------------------------------------------------------------
 
