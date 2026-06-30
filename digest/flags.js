@@ -347,6 +347,65 @@ const EVALUATORS = [
     };
   },
 
+  // ── Champs qualifiers — fires the day after a fresh qualification ────────
+  // Reads champsTargets from sports-config.json (via context), compares against
+  // the current PB, and suppresses if the swimmer already had a qualifying result
+  // earlier this season (i.e. this is not the first time they cleared the mark).
+  // Returns an array — computeFlags handles multi-flag evaluator returns.
+  (ctx) => {
+    const targets = ctx.champsTargets;
+    const pbRecords = ctx.pbRecords;
+    const swimResults = ctx.swimResults;
+    if (!targets || !pbRecords || !swimResults) return null;
+
+    const today = ctx.today;
+    const yesterday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+
+    const flags = [];
+
+    for (const [swimmer, events] of Object.entries(targets)) {
+      for (const [event, target] of Object.entries(events)) {
+        const course = event.startsWith('25m') || event.startsWith('50m') ? 'SCM' : 'SCY';
+        const pbKey = `${swimmer}|${event}|${course}`;
+        const pb = pbRecords[pbKey];
+
+        if (!pb || pb.seconds == null) continue;
+        if (pb.seconds > target) continue;
+
+        // PB date must be exactly yesterday
+        const [py, pm, pd] = pb.date.split('-').map(Number);
+        if (py !== yesterday.getFullYear() ||
+            pm !== (yesterday.getMonth() + 1) ||
+            pd !== yesterday.getDate()) continue;
+
+        // Suppress if swimmer already had an earlier 2026-season result under the target
+        const pbDateStr = pb.date;
+        const alreadyQualified = swimResults.some(r =>
+          r.swimmer === swimmer &&
+          r.event === event &&
+          r.course === course &&
+          !r.dq &&
+          r.seconds != null &&
+          r.seconds <= target &&
+          r.date.startsWith('2026') &&
+          r.date < pbDateStr
+        );
+        if (alreadyQualified) continue;
+
+        const slug = event.toLowerCase().replace(/\s+/g, '-');
+        flags.push({
+          id: `champs-qualifier-${swimmer.toLowerCase()}-${slug}-${pb.date}`,
+          level: 'blue',
+          bannerOnly: true,
+          owner: ['dashboard'],
+          message: `🎉 ${swimmer} qualified for Champs in ${event}!`,
+        });
+      }
+    }
+
+    return flags.length > 0 ? flags : null;
+  },
+
 ];
 
 // ---------------------------------------------------------------------------
@@ -366,20 +425,23 @@ function computeFlags(context) {
   const flags = [];
 
   for (const evaluator of EVALUATORS) {
-    let flag;
+    let result;
     try {
-      flag = evaluator(context);
+      result = evaluator(context);
     } catch (err) {
       // Never let a single bad evaluator crash the digest
       console.error(`[flags] Evaluator threw: ${err.message}`);
       continue;
     }
 
-    if (!flag) continue;
-    if (seen.has(flag.id)) continue;
-
-    seen.add(flag.id);
-    flags.push(flag);
+    if (!result) continue;
+    const batch = Array.isArray(result) ? result : [result];
+    for (const flag of batch) {
+      if (!flag) continue;
+      if (seen.has(flag.id)) continue;
+      seen.add(flag.id);
+      flags.push(flag);
+    }
   }
 
   // Sort: red first, then amber, then blue

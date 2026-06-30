@@ -102,5 +102,18 @@
       ],
       "footer": "🏊 2025 Most Improved Swimmer (Girls)"
     }
+  },
+  "champsTargets": {
+    "Myles": {
+      "50m Freestyle": 43.00,
+      "50m Backstroke": 57.00,
+      "50m Breaststroke": 65.00
+    },
+    "Ophelia": {
+      "25m Freestyle": 23.00,
+      "25m Backstroke": 29.00,
+      "25m Breaststroke": 34.00,
+      "25m Butterfly": 37.00
+    }
   }
 }

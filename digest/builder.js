@@ -308,6 +308,9 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     athletics,
     menuEvents,
     gmailHits,
+    pbRecords:     pbRecords     || {},
+    swimResults:   swimResults   || [],
+    champsTargets: config.champsTargets || {},
   });
 
   // ── 15. Assemble and return ──────────────────────────────────────────────

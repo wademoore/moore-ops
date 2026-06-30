@@ -104,3 +104,74 @@ describe('Error isolation', () => {
     assert.ok(Array.isArray(result));
   });
 });
+
+// ---------------------------------------------------------------------------
+// Section 15 — Champs qualifier evaluator
+// ---------------------------------------------------------------------------
+
+describe('evaluateChampsQualifiers', () => {
+  const TARGETS = {
+    Myles:   { '50m Freestyle': 43.00, '50m Backstroke': 57.00, '50m Breaststroke': 65.00 },
+    Ophelia: { '25m Freestyle': 23.00, '25m Backstroke': 29.00, '25m Breaststroke': 34.00, '25m Butterfly': 37.00 },
+  };
+
+  function champsCtx(today, pbRecords, swimResults = []) {
+    return ctx({
+      today: d(today),
+      pbRecords,
+      swimResults,
+      champsTargets: TARGETS,
+    });
+  }
+
+  it('fires when PB date is yesterday and no earlier qualifying result exists', () => {
+    // Today = 2026-06-30, PB date = 2026-06-29 (yesterday), time beats target
+    const pb = { 'Ophelia|25m Butterfly|SCM': { seconds: 36.50, date: '2026-06-29', meet: 'Waves vs EH' } };
+    const flags = computeFlags(champsCtx('2026-06-30', pb, []));
+    const f = flags.find(f => f.id === 'champs-qualifier-ophelia-25m-butterfly-2026-06-29');
+    assert.ok(f, 'flag should fire');
+    assert.equal(f.level, 'blue');
+    assert.equal(f.bannerOnly, true);
+    assert.deepEqual(f.owner, ['dashboard']);
+    assert.ok(f.message.includes('Ophelia'));
+    assert.ok(f.message.includes('25m Butterfly'));
+  });
+
+  it('does not fire when PB date is not yesterday', () => {
+    // PB date = 2026-06-27 (two days ago), not yesterday
+    const pb = { 'Ophelia|25m Butterfly|SCM': { seconds: 36.50, date: '2026-06-27', meet: 'Waves vs EH' } };
+    const flags = computeFlags(champsCtx('2026-06-30', pb, []));
+    assert.ok(!flags.find(f => f.id && f.id.startsWith('champs-qualifier-ophelia-25m-butterfly')));
+  });
+
+  it('does not fire when PB time is slower than target', () => {
+    // 38.00 > 37.00 target — does not qualify
+    const pb = { 'Ophelia|25m Butterfly|SCM': { seconds: 38.00, date: '2026-06-29', meet: 'Waves vs EH' } };
+    const flags = computeFlags(champsCtx('2026-06-30', pb, []));
+    assert.ok(!flags.find(f => f.id && f.id.startsWith('champs-qualifier-ophelia-25m-butterfly')));
+  });
+
+  it('does not fire when an earlier 2026-season result already beat the target', () => {
+    const pb = { 'Ophelia|25m Butterfly|SCM': { seconds: 36.50, date: '2026-06-29', meet: 'Waves vs EH' } };
+    const earlier = [
+      { swimmer: 'Ophelia', event: '25m Butterfly', course: 'SCM', date: '2026-06-22', seconds: 36.80, dq: false },
+    ];
+    const flags = computeFlags(champsCtx('2026-06-30', pb, earlier));
+    assert.ok(!flags.find(f => f.id && f.id.startsWith('champs-qualifier-ophelia-25m-butterfly')));
+  });
+
+  it('fires for multiple swimmers on the same day', () => {
+    const pb = {
+      'Ophelia|25m Butterfly|SCM': { seconds: 36.50, date: '2026-06-29', meet: 'Waves vs EH' },
+      'Myles|50m Freestyle|SCM':   { seconds: 42.50, date: '2026-06-29', meet: 'Waves vs EH' },
+    };
+    const flags = computeFlags(champsCtx('2026-06-30', pb, []));
+    assert.ok(flags.find(f => f.id === 'champs-qualifier-ophelia-25m-butterfly-2026-06-29'));
+    assert.ok(flags.find(f => f.id === 'champs-qualifier-myles-50m-freestyle-2026-06-29'));
+  });
+
+  it('does not fire when champsTargets is absent from context', () => {
+    const flags = computeFlags(ctx({ today: d('2026-06-30') }));
+    assert.ok(!flags.find(f => f.id && f.id.startsWith('champs-qualifier-')));
+  });
+});
