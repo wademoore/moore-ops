@@ -1,16 +1,16 @@
 {
   "season": 2026,
-  "asOf": "2026-06-15",
+  "asOf": "2026-06-22",
   "swimmers": {
     "Myles": [
       {
         "ageGroup": "Boys 9-10",
         "distance": 50,
         "stroke": "Breaststroke",
-        "place": 31,
-        "time": "1:16.33S",
-        "date": "2026-06-15",
-        "meet": "2026 Friendly vs FDC"
+        "place": 47,
+        "time": "1:13.32S",
+        "date": "2026-06-22",
+        "meet": "2026 West Point Dolphins at Wellington Waves"
       }
     ],
     "Ophelia": [
@@ -18,10 +18,10 @@
         "ageGroup": "Girls 8 & Under",
         "distance": 25,
         "stroke": "Breaststroke",
-        "place": 30,
-        "time": "40.19S",
-        "date": "2026-06-15",
-        "meet": "2026 Friendly vs FDC"
+        "place": 37,
+        "time": "37.34S",
+        "date": "2026-06-22",
+        "meet": "2026 West Point Dolphins at Wellington Waves"
       }
     ]
   }
