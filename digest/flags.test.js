@@ -191,4 +191,18 @@ describe('evaluateChampsQualifiers', () => {
     const flags = computeFlags(champsCtx('2026-06-30', pb, dqResult));
     assert.ok(flags.find(f => f.id === 'champs-qualifier-ophelia-25m-freestyle-2026-06-29'), 'DQ should not suppress banner');
   });
+
+  it('Ophelia champs-qualifier flag has swimmerColor #7F77DD (purple)', () => {
+    const pb = { 'Ophelia|25m Butterfly|SCM': { seconds: 36.50, date: '2026-06-29', meet: 'Waves vs EH' } };
+    const flags = computeFlags(champsCtx('2026-06-30', pb, []));
+    const f = flags.find(f => f.id === 'champs-qualifier-ophelia-25m-butterfly-2026-06-29');
+    assert.equal(f.swimmerColor, '#7F77DD');
+  });
+
+  it('Myles champs-qualifier flag has swimmerColor #E24B4A (red)', () => {
+    const pb = { 'Myles|50m Freestyle|SCM': { seconds: 42.50, date: '2026-06-29', meet: 'Waves vs EH' } };
+    const flags = computeFlags(champsCtx('2026-06-30', pb, []));
+    const f = flags.find(f => f.id === 'champs-qualifier-myles-50m-freestyle-2026-06-29');
+    assert.equal(f.swimmerColor, '#E24B4A');
+  });
 });

@@ -399,6 +399,7 @@ const EVALUATORS = [
           bannerOnly: true,
           owner: ['dashboard'],
           message: `🎉 ${swimmer} qualified for Champs in ${event}!`,
+          swimmerColor: swimmer === 'Ophelia' ? '#7F77DD' : '#E24B4A',
         });
       }
     }

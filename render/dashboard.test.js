@@ -615,6 +615,26 @@ describe('bannerOnly flag rendering', () => {
     assert.ok(!html.includes('class="has-banner"'));
   });
 
+  it('Ophelia champs-qualifier banner renders with purple color (#7F77DD → derived gradient)', () => {
+    const flags = [{ id: 'champs-qualifier-ophelia-25m-butterfly-2026-06-29', level: 'blue', bannerOnly: true, owner: ['dashboard'], message: '🎉 Ophelia qualified!', swimmerColor: '#7F77DD' }];
+    const html = renderDashboard(makeDigestData({ flags }));
+    // #7F77DD = rgb(127,119,221) — mid gradient stop should appear
+    assert.ok(html.includes('127,119,221'), 'purple mid-stop should be in gradient');
+  });
+
+  it('Myles champs-qualifier banner renders with red color (#E24B4A → derived gradient)', () => {
+    const flags = [{ id: 'champs-qualifier-myles-50m-free-2026-06-29', level: 'blue', bannerOnly: true, owner: ['dashboard'], message: '🎉 Myles qualified!', swimmerColor: '#E24B4A' }];
+    const html = renderDashboard(makeDigestData({ flags }));
+    // #E24B4A = rgb(226,75,74) — mid gradient stop should appear
+    assert.ok(html.includes('226,75,74'), 'red mid-stop should be in gradient');
+  });
+
+  it('Birthday banner (no swimmerColor) falls back to default red gradient', () => {
+    const flags = [{ id: 'birthday-ophelia', level: 'blue', bannerOnly: true, owner: ['dashboard'], label: () => '🎂 Happy Birthday!' }];
+    const html = renderDashboard(makeDigestData({ flags }));
+    assert.ok(html.includes('rgba(80,19,19'), 'default birthday gradient dark stop should be present');
+  });
+
   it('Two bannerOnly flags active → only the first renders, no crash', () => {
     const flags = [
       { id: 'champs-qualifier-ophelia-25m-fly-2026-06-29', level: 'blue', bannerOnly: true, owner: ['dashboard'], message: '🎉 Ophelia qualified for Champs in 25m Butterfly!' },

@@ -1054,8 +1054,22 @@ body.has-banner{grid-template-rows:auto 1fr auto auto auto}
  */
 function renderBirthdayBanner(flag, today) {
   const labelText = typeof flag.label === 'function' ? flag.label({ today }) : flag.label;
+  let bg, border;
+  if (flag.swimmerColor) {
+    const c = flag.swimmerColor;
+    const r = parseInt(c.slice(1, 3), 16);
+    const g = parseInt(c.slice(3, 5), 16);
+    const b = parseInt(c.slice(5, 7), 16);
+    const rd = Math.round(r * 0.45), gd = Math.round(g * 0.45), bd = Math.round(b * 0.45);
+    const rl = Math.min(255, Math.round(r * 1.2)), gl = Math.min(255, Math.round(g * 1.2)), bl = Math.min(255, Math.round(b * 1.2));
+    bg     = `linear-gradient(135deg,rgba(${rd},${gd},${bd},.97),rgba(${r},${g},${b},.88))`;
+    border = `rgba(${rl},${gl},${bl},.55)`;
+  } else {
+    bg     = 'linear-gradient(135deg,rgba(80,19,19,.97),rgba(163,45,45,.88))';
+    border = 'rgba(242,145,145,.55)';
+  }
   return `
-<div style="width:100%;background:linear-gradient(135deg,rgba(80,19,19,.97),rgba(163,45,45,.88));border:2px solid rgba(242,145,145,.55);border-radius:14px;padding:18px 32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+<div style="width:100%;background:${bg};border:2px solid ${border};border-radius:14px;padding:18px 32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
   <div style="text-align:center;">
     <div style="font-size:44px;font-weight:700;color:#fff;line-height:1.1;">${labelText}</div>
   </div>
@@ -1075,7 +1089,7 @@ function renderDashboard(digestData) {
   const bannerRow  = championshipFlag
     ? renderChampionshipBanner()
     : (bannerText
-        ? renderBirthdayBanner({ label: bannerText }, today)
+        ? renderBirthdayBanner({ label: bannerText, swimmerColor: bannerFlag.swimmerColor }, today)
         : (banner ? renderBanner(banner) : ''));
 
   const todayCard      = renderTodayCard(digestData);
