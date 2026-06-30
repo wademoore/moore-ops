@@ -174,4 +174,21 @@ describe('evaluateChampsQualifiers', () => {
     const flags = computeFlags(ctx({ today: d('2026-06-30') }));
     assert.ok(!flags.find(f => f.id && f.id.startsWith('champs-qualifier-')));
   });
+
+  it('fires when PB time exactly equals target (boundary: strict > gate)', () => {
+    // 43.00 === 43.00 target — evaluator uses pb.seconds > target, so equal passes
+    const pb = { 'Myles|50m Freestyle|SCM': { seconds: 43.00, date: '2026-06-29', meet: 'Waves vs EH' } };
+    const flags = computeFlags(champsCtx('2026-06-30', pb, []));
+    assert.ok(flags.find(f => f.id === 'champs-qualifier-myles-50m-freestyle-2026-06-29'), 'exact-match should qualify');
+  });
+
+  it('does not suppress when the only prior qualifying result was a DQ', () => {
+    // DQ result beats the target numerically but should not count as an earlier qualification
+    const pb = { 'Ophelia|25m Freestyle|SCM': { seconds: 22.50, date: '2026-06-29', meet: 'Waves vs EH' } };
+    const dqResult = [
+      { swimmer: 'Ophelia', event: '25m Freestyle', course: 'SCM', date: '2026-06-22', seconds: 22.80, dq: true },
+    ];
+    const flags = computeFlags(champsCtx('2026-06-30', pb, dqResult));
+    assert.ok(flags.find(f => f.id === 'champs-qualifier-ophelia-25m-freestyle-2026-06-29'), 'DQ should not suppress banner');
+  });
 });
