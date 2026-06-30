@@ -25,14 +25,14 @@
     "meet": "Champs"
   },
   "Ophelia|25m Breaststroke|SCM": {
-    "seconds": 37.34,
-    "date": "2026-06-22",
-    "meet": "WT vs WPD"
+    "seconds": 37.14,
+    "date": "2026-06-29",
+    "meet": "WT vs WC"
   },
   "Ophelia|25m Butterfly|SCM": {
-    "seconds": 43.46,
-    "date": "2026-04-25",
-    "meet": "14 and Under Spring Challenge"
+    "seconds": 36.21,
+    "date": "2026-06-29",
+    "meet": "WT vs WC"
   },
   "Ophelia|25y Freestyle|SCY": {
     "seconds": 30.46,
@@ -60,9 +60,9 @@
     "meet": "8 and Under Southeastern"
   },
   "Myles|50m Freestyle|SCM": {
-    "seconds": 63.63,
-    "date": "2026-06-22",
-    "meet": "WT vs WPD"
+    "seconds": 59.25,
+    "date": "2026-06-29",
+    "meet": "WT vs WC"
   },
   "Myles|50m Breaststroke|SCM": {
     "seconds": 73.32,
@@ -70,8 +70,8 @@
     "meet": "WT vs WPD"
   },
   "Myles|50m Backstroke|SCM": {
-    "seconds": 92.32,
-    "date": "2026-06-15",
-    "meet": "Friendly vs FDC"
+    "seconds": 81.93,
+    "date": "2026-06-29",
+    "meet": "WT vs WC"
   }
 }
