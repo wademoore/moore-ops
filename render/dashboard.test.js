@@ -26,6 +26,7 @@ import {
   daysFrom,
   countdownClass,
   countdownLabel,
+  eventDateKeyET,
   LOGOS,
   BANNER_PALETTES,
 } from './dashboard.js';
@@ -333,7 +334,41 @@ describe('Countdown helpers', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Section 8: Athletics — Flag Football card
+// Section 8: eventDateKeyET — timezone bucketing helper
+// ---------------------------------------------------------------------------
+
+describe('eventDateKeyET', () => {
+  it('(a) timed 8:00 PM EDT event buckets to same ET calendar day', () => {
+    // 2026-07-01T20:00:00-04:00 = 2026-07-02T00:00:00Z; must resolve to 2026-07-01
+    const result = eventDateKeyET({ dateTime: '2026-07-01T20:00:00-04:00' });
+    assert.equal(result, '2026-07-01');
+  });
+
+  it('(b) all-day event returns start.date unchanged (no backward shift)', () => {
+    const result = eventDateKeyET({ date: '2026-07-01' });
+    assert.equal(result, '2026-07-01');
+  });
+
+  it('(c) morning timed event buckets to same ET calendar day', () => {
+    const result = eventDateKeyET({ dateTime: '2026-07-01T09:00:00-04:00' });
+    assert.equal(result, '2026-07-01');
+  });
+
+  it('(d) 7:00 PM EST event in December buckets to same ET day (DST off)', () => {
+    // 2026-12-15T19:00:00-05:00 = 2026-12-15T00:00:00Z; must resolve to 2026-12-15
+    const result = eventDateKeyET({ dateTime: '2026-12-15T19:00:00-05:00' });
+    assert.equal(result, '2026-12-15');
+  });
+
+  it('(e) late event crossing month boundary resolves to correct ET month/day', () => {
+    // 2026-07-31T21:00:00-04:00 = 2026-08-01T01:00:00Z; ET date is still July 31
+    const result = eventDateKeyET({ dateTime: '2026-07-31T21:00:00-04:00' });
+    assert.equal(result, '2026-07-31');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 9: Athletics — Flag Football card
 // ---------------------------------------------------------------------------
 
 describe('Athletics — Flag Football card', () => {

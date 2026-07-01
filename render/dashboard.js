@@ -154,6 +154,17 @@ function formatTime(date) {
 }
 
 /**
+ * ET-aware date key for event bucketing. All-day events return start.date
+ * unchanged; timed events convert from UTC to ET calendar date so that
+ * 8 PM ET events don't land in the next day's bucket.
+ */
+function eventDateKeyET(start) {
+  if (start.date) return start.date;
+  return new Date(start.dateTime)
+    .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+}
+
+/**
  * Days from today to a future date (for countdown badges).
  */
 function daysFrom(today, target) {
@@ -345,9 +356,9 @@ function renderWeekCard(digestData) {
 
   upcomingEvents.forEach(ev => {
     if (ev.cardType === 'menu') return;
-    const raw = ev.raw?.start?.dateTime || ev.raw?.start?.date;
-    if (!raw) return;
-    const dateStr = raw.slice(0, 10);
+    const start = ev.raw?.start;
+    if (!start) return;
+    const dateStr = eventDateKeyET(start);
     if (dateStr === todayISO) return; // today shown in Today card
     if (!byDate.has(dateStr)) byDate.set(dateStr, []);
     byDate.get(dateStr).push(ev);
@@ -1126,4 +1137,4 @@ ${footer}
 // ---------------------------------------------------------------------------
 // EXPORTS
 // ---------------------------------------------------------------------------
-export { renderDashboard, renderTodayCard, renderWeekCard, renderAthleticsCard, renderFlagCard, renderWavesCard, renderMylesCard, renderOpheliaCard, renderSharksCard, renderAlerts, renderTicker, renderBanner, renderPBRow, daysFrom, countdownClass, countdownLabel, formatDay, formatDateNum, LOGOS, BANNER_PALETTES };
+export { renderDashboard, renderTodayCard, renderWeekCard, renderAthleticsCard, renderFlagCard, renderWavesCard, renderMylesCard, renderOpheliaCard, renderSharksCard, renderAlerts, renderTicker, renderBanner, renderPBRow, daysFrom, countdownClass, countdownLabel, formatDay, formatDateNum, eventDateKeyET, LOGOS, BANNER_PALETTES };

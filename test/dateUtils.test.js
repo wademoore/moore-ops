@@ -88,11 +88,32 @@ describe('parseEventDate(event)', () => {
     assert.equal(result.getSeconds(),     0);
   });
 
-  it('datetime event: returns a Date object for ISO datetime string', () => {
+  it('datetime event: returns ET calendar date as local midnight', () => {
+    // 9 AM EDT on May 20 — ET date is May 20
     const event = { start: { dateTime: '2026-05-20T09:00:00-04:00' } };
     const result = parseEventDate(event);
     assert.ok(result instanceof Date);
-    assert.ok(!isNaN(result.getTime())); // valid Date
+    assert.equal(result.getFullYear(), 2026);
+    assert.equal(result.getMonth(),       4); // May
+    assert.equal(result.getDate(),       20);
+    assert.equal(result.getHours(),       0);
+  });
+
+  it('8 PM EDT event buckets to same ET calendar day, not next UTC day', () => {
+    // 2026-07-01T20:00:00-04:00 = 2026-07-02T00:00:00Z; ET date must be July 1
+    const event = { start: { dateTime: '2026-07-01T20:00:00-04:00' } };
+    const result = parseEventDate(event);
+    assert.equal(result.getFullYear(), 2026);
+    assert.equal(result.getMonth(),       6); // July
+    assert.equal(result.getDate(),        1);
+  });
+
+  it('7 PM EST event in December buckets to same ET day (DST off)', () => {
+    const event = { start: { dateTime: '2026-12-15T19:00:00-05:00' } };
+    const result = parseEventDate(event);
+    assert.equal(result.getFullYear(), 2026);
+    assert.equal(result.getMonth(),      11); // December
+    assert.equal(result.getDate(),       15);
   });
 
   it('returns null when event.start is missing', () => {

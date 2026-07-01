@@ -29,7 +29,10 @@ export function parseEventDate(event) {
     const [y, m, d] = raw.split('-').map(Number);
     return new Date(y, m - 1, d);
   }
-  return new Date(raw);
+  // Timed event: use ET calendar date so 8 PM ET events bucket to the right day.
+  const etStr = new Date(raw).toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+  const [y, m, d] = etStr.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }
 
 export function normalizeEvent(raw) {
