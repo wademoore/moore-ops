@@ -10,6 +10,19 @@ export function midnight(date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+/**
+ * Returns midnight-UTC of the ET calendar date for a given instant.
+ * At 8 PM ET (= midnight UTC next day) this correctly returns the ET day,
+ * not the UTC day. Use this as the ctx.today / todayMid anchor in Lambda.
+ */
+export function startOfTodayET(instant = new Date()) {
+  const [y, m, d] = instant
+    .toLocaleDateString('en-CA', { timeZone: 'America/New_York' })
+    .split('-')
+    .map(Number);
+  return new Date(y, m - 1, d); // local midnight of ET calendar date (= UTC midnight in Lambda)
+}
+
 export function daysBetween(a, b) {
   const msPerDay = 24 * 60 * 60 * 1000;
   return Math.round((midnight(b) - midnight(a)) / msPerDay);

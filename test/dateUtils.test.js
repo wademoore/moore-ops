@@ -6,6 +6,7 @@ import {
   daysBetween,
   toDateKey,
   parseEventDate,
+  startOfTodayET,
   timeToSeconds,
 } from '../digest/dateUtils.js';
 
@@ -70,6 +71,63 @@ describe('toDateKey(date)', () => {
   it('pads double-digit month and day correctly', () => {
     const result = toDateKey(new Date(2026, 11, 31)); // Dec 31
     assert.equal(result, '2026-12-31');
+  });
+});
+
+// ── startOfTodayET ────────────────────────────────────────────────────────────
+
+describe('startOfTodayET(instant)', () => {
+  // Expected: local midnight of the ET calendar date (= UTC midnight in Lambda/UTC env)
+  function localMidnight(y, m, d) { return new Date(y, m - 1, d); }
+
+  it('(a) 8:00 PM EDT instant anchors to same ET calendar day', () => {
+    // 2026-07-01T20:00:00-04:00 = 2026-07-02T00:00:00Z — must anchor to Jul 1
+    const instant = new Date('2026-07-02T00:00:00Z');
+    const result = startOfTodayET(instant);
+    assert.equal(result.getFullYear(), 2026);
+    assert.equal(result.getMonth(),       6); // July
+    assert.equal(result.getDate(),        1);
+    assert.equal(result.getHours(),       0);
+  });
+
+  it('(b) 11:30 PM EDT instant anchors to same ET calendar day', () => {
+    // 2026-07-01T23:30:00-04:00 = 2026-07-02T03:30:00Z — must anchor to Jul 1
+    const instant = new Date('2026-07-02T03:30:00Z');
+    const result = startOfTodayET(instant);
+    assert.equal(result.getFullYear(), 2026);
+    assert.equal(result.getMonth(),       6);
+    assert.equal(result.getDate(),        1);
+    assert.equal(result.getHours(),       0);
+  });
+
+  it('(c) 7:00 PM EST instant in December anchors to same ET day (winter rollover)', () => {
+    // 2026-12-15T19:00:00-05:00 = 2026-12-16T00:00:00Z — must anchor to Dec 15
+    const instant = new Date('2026-12-16T00:00:00Z');
+    const result = startOfTodayET(instant);
+    assert.equal(result.getFullYear(), 2026);
+    assert.equal(result.getMonth(),      11); // December
+    assert.equal(result.getDate(),       15);
+    assert.equal(result.getHours(),       0);
+  });
+
+  it('(d) early-morning ET instant anchors to same ET calendar day (regression guard)', () => {
+    // 2026-07-01T07:00:00-04:00 = 2026-07-01T11:00:00Z — must anchor to Jul 1
+    const instant = new Date('2026-07-01T11:00:00Z');
+    const result = startOfTodayET(instant);
+    assert.equal(result.getFullYear(), 2026);
+    assert.equal(result.getMonth(),       6);
+    assert.equal(result.getDate(),        1);
+    assert.equal(result.getHours(),       0);
+  });
+
+  it('(e) 10:00 PM ET on Jun 30 anchors to Jun 30, not Jul 1 (month boundary)', () => {
+    // 2026-06-30T22:00:00-04:00 = 2026-07-01T02:00:00Z — must anchor to Jun 30
+    const instant = new Date('2026-07-01T02:00:00Z');
+    const result = startOfTodayET(instant);
+    assert.equal(result.getFullYear(), 2026);
+    assert.equal(result.getMonth(),       5); // June
+    assert.equal(result.getDate(),       30);
+    assert.equal(result.getHours(),       0);
   });
 });
 

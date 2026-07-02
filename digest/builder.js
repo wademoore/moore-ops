@@ -51,7 +51,7 @@ import { readFile } from 'node:fs/promises';
 import { resolveEvent } from './aliases.js';
 import { computeFlags } from './flags.js';
 import { getSchoolStrip } from './schoolRotation.js';
-import { midnight, daysBetween, toDateKey, parseEventDate, normalizeEvent } from './dateUtils.js';
+import { midnight, daysBetween, toDateKey, parseEventDate, normalizeEvent, startOfTodayET } from './dateUtils.js';
 import { parseAthleticsDoc } from './athleticsParser.js';
 import { buildGmailHits, buildActivityCommsLines } from './gmailParser.js';
 import { parseWeeklyPriorities } from './weeklyPrioritiesParser.js';
@@ -182,8 +182,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
 
   if (!config) throw new Error('[buildDigest] config is required — ensure data/sports-config.json is valid');
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = startOfTodayET(); // midnight-UTC of the ET calendar date; avoids ≥8 PM ET rollover
 
   // ── 1. Normalize all events (inject _calName) ───────────────────────────
   const normalized = (rawEvents || []).map(normalizeEvent);
