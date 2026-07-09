@@ -1,6 +1,6 @@
 {
   "season": 2026,
-  "asOf": "2026-06-22",
+  "asOf": "2026-07-08",
   "swimmers": {
     "Myles": [
       {
@@ -22,6 +22,24 @@
         "time": "37.34S",
         "date": "2026-06-22",
         "meet": "2026 West Point Dolphins at Wellington Waves"
+      },
+      {
+        "ageGroup": "Girls 8 & Under",
+        "distance": 25,
+        "stroke": "Breaststroke",
+        "place": 50,
+        "time": "36.52S",
+        "date": "2026-07-08",
+        "meet": "WT vs Powhatan Secondary"
+      },
+      {
+        "ageGroup": "Girls 8 & Under",
+        "distance": 25,
+        "stroke": "Butterfly",
+        "place": 48,
+        "time": "34.38S",
+        "date": "2026-07-08",
+        "meet": "WT vs Powhatan Secondary"
       }
     ]
   }
