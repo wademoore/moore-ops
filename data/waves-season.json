@@ -218,7 +218,7 @@
         { "date": "2026-06-29", "teamA": "WT",  "scoreA": 352, "teamB": "WC",  "scoreB": 152, "winner": "WT", "friendly": false },
         { "date": "2026-06-29", "teamA": "WF",  "scoreA": 301, "teamB": "PS",  "scoreB": 182, "winner": "WF", "friendly": false },
         { "date": "2026-06-29", "teamA": "EH",  "scoreA": 384, "teamB": "WPD", "scoreB": 102, "winner": "EH", "friendly": false },
-        { "date": "2026-07-06", "teamA": "PS",  "scoreA": null, "teamB": "WT",  "scoreB": null, "friendly": false },
+        { "date": "2026-07-08", "teamA": "PS",  "scoreA": 176, "teamB": "WT",  "scoreB": 301, "winner": "WT", "friendly": false },
         { "date": "2026-07-06", "teamA": "WPD", "scoreA": null, "teamB": "WF",  "scoreB": null, "friendly": false },
         { "date": "2026-07-06", "teamA": "WC",  "scoreA": null, "teamB": "EH",  "scoreB": null, "friendly": false },
         { "date": "2026-07-13", "teamA": "EH",  "scoreA": null, "teamB": "WT",  "scoreB": null, "friendly": false },
