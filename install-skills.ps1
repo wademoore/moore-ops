@@ -21,7 +21,7 @@ $skillsDest = Join-Path $sessionFolders[0].FullName "skills"
 $repoRoot = $PSScriptRoot
 $skillsSrc = Join-Path $repoRoot "skills"
 
-$skills = @("moore-ops-updater", "moore-ops-weekly-review", "walmart-cart")
+$skills = @("moore-ops-updater", "moore-ops-weekly-review", "walmart-cart", "waves-champs-qualifier", "waves-team-record-check", "waves-weekly-check")
 
 foreach ($skill in $skills) {
     $src = Join-Path $skillsSrc $skill
@@ -30,6 +30,6 @@ foreach ($skill in $skills) {
         Copy-Item -Path $src -Destination $dest -Recurse -Force
         Write-Host "OK: $skill"
     } catch {
-        Write-Host "FAIL: $skill — $_"
+        Write-Host "FAIL: $skill - $_"
     }
 }
