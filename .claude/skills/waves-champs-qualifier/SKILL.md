@@ -4,8 +4,9 @@ description: >
   Generates Wellington Waves champs qualifier Facebook posts. Trigger whenever
   the user says "champs post", "qualifier post", "who has qualified", or asks
   about Waves champs qualifiers. Reads league-results.json (all WT swimmers)
-  and swim-results.json (Myles and Ophelia). Produces two outputs: a full
-  current qualifier list and a "new this week" delta list.
+  and swim-results.json (Myles and Ophelia). Produces three outputs: a full
+  current qualifier list, a "new this week" delta list, and a "Top 10 closest
+  to qualifying" near-miss list.
 ---
 
 # Waves Champs Qualifier Skill
@@ -116,7 +117,9 @@ When a row has `ageGroup` of `"Boys 9-10"` or `"Girls 9-10"`, use the
 
 ### Step 1 — Run this exact script
 
-When the user provides the data files, run the following Node.js script via bash_tool. Substitute the three placeholders at the top before running:
+When the user provides the week number and date, run the following Node.js script
+via bash_tool from the moore-ops project root. Substitute the three placeholders
+at the top before running:
 - `WEEK_NUM` → the week number (e.g. `2`)
 - `WEEK_DATE` → the meet date in ISO format (e.g. `'2026-06-22'`)
 - `WEEK_LABEL` → the display date (e.g. `'June 22'`)
@@ -124,8 +127,8 @@ When the user provides the data files, run the following Node.js script via bash
 ```javascript
 import { readFileSync } from 'fs';
 
-const league = JSON.parse(readFileSync('/mnt/user-data/uploads/league-results.json', 'utf8').replace(/^\uFEFF/, ''));
-const swim = JSON.parse(readFileSync('/mnt/user-data/uploads/swim-results.json', 'utf8').replace(/^\uFEFF/, ''));
+const league = JSON.parse(readFileSync('./data/league-results.json', 'utf8').replace(/^﻿/, ''));
+const swim = JSON.parse(readFileSync('./data/swim-results.json', 'utf8').replace(/^﻿/, ''));
 
 const WEEK_NUM = 2;
 const WEEK_DATE = '2026-06-22';
@@ -186,6 +189,7 @@ function opheliaAG(event) {
 
 const qualifiers = new Map();
 const earliestQualDate = new Map();
+const nearMiss = new Map();
 
 function tryQualify(name, time, date, event, gender, ageGroup) {
   const lookupKey = getLookupKey(gender, ageGroup, event);
@@ -201,6 +205,19 @@ function tryQualify(name, time, date, event, gender, ageGroup) {
   if (!ed || date < ed) earliestQualDate.set(qkey, date);
 }
 
+function tryNearMiss(name, time, event, gender, ageGroup) {
+  const lookupKey = getLookupKey(gender, ageGroup, event);
+  const std = standards[lookupKey];
+  if (std == null || time == null || isNaN(time)) return;
+  if (time <= std) return; // already qualifies — belongs in qualifier list
+  const nmkey = name + '|' + event;
+  const gap = time - std;
+  const existing = nearMiss.get(nmkey);
+  if (!existing || gap < existing.gap) {
+    nearMiss.set(nmkey, { name, time, gap, std, event, ageGroup: gender + ' ' + ageGroup });
+  }
+}
+
 // League results — WT only, no DQ, skip Moore kids
 for (const r of league.filter(r => r.team === 'WT' && !r.dq)) {
   const parts = r.ageGroup.split(' ');
@@ -210,6 +227,7 @@ for (const r of league.filter(r => r.team === 'WT' && !r.dq)) {
   const displayName = nameParts.slice(1).join(' ') + ' ' + nameParts[0];
   if (displayName === 'Myles Moore' || displayName === 'Ophelia Moore') continue;
   tryQualify(displayName, r.time, r.date, r.event, gender, ag);
+  tryNearMiss(displayName, r.time, r.event, gender, ag);
 }
 
 // Moore kids from swim-results.json
@@ -217,8 +235,11 @@ for (const r of swim) {
   const t = r.seconds ?? r.time;
   if (r.swimmer === 'Myles') {
     tryQualify('Myles', t, r.date, r.event, 'Boys', '9-10');
+    tryNearMiss('Myles', t, r.event, 'Boys', '9-10');
   } else if (r.swimmer === 'Ophelia') {
-    tryQualify('Ophelia', t, r.date, r.event, 'Girls', opheliaAG(r.event));
+    const ag = opheliaAG(r.event);
+    tryQualify('Ophelia', t, r.date, r.event, 'Girls', ag);
+    tryNearMiss('Ophelia', t, r.event, 'Girls', ag);
   }
 }
 
@@ -298,11 +319,32 @@ for (const { label, entries } of allGroups) {
   console.log('');
 }
 console.log('Total: ' + totalSpots + ' qualifying spots | ' + uniqueSwimmers + ' swimmers');
+
+console.log('\n---\n');
+
+// Block 3 — Top 10 closest to qualifying
+const top10 = [...nearMiss.entries()]
+  .filter(([nmkey]) => !qualifiers.has(nmkey))
+  .map(([, v]) => v)
+  .sort((a, b) => a.gap - b.gap)
+  .slice(0, 10);
+
+console.log('📍 TOP 10 CLOSEST TO A VPSU CHAMPS STANDARD');
+console.log('  (swimmers who haven\'t qualified in this event yet)');
+console.log('');
+top10.forEach((v, i) => {
+  const warn = v.gap < 1 ? '  ⚠️  within 1s — verify source data before posting' : '';
+  console.log((i + 1) + '. ' + v.name + ' — ' + fmtEvent(v.event) + ' (' + v.ageGroup + ')');
+  console.log('   Best: ' + fmtTime(v.time) + ' | Standard: ' + fmtTime(v.std) + ' | Gap: +' + v.gap.toFixed(2) + 's' + warn);
+});
+console.log('');
+console.log('Note: swimmers whose only events are 6&Under/7-8 Breaststroke or Butterfly,');
+console.log('or 7-8/8&Under 100m IM, are not shown — no VPSU standard exists for those brackets.');
 ```
 
 ### Step 2 — Verify razor-thin qualifiers
 
-After running, scan for any time within 1 second of the standard and flag it to Wade for source data verification before posting.
+After running, scan for any time within 1 second of the standard and flag it to Wade for source data verification before posting. Block 3 flags these automatically with ⚠️.
 
 ### Step 3 — Post the output
 
@@ -332,8 +374,9 @@ Use short stroke names in the post:
 ## What the user needs to provide
 
 To run this skill, the user should supply:
-1. The data files uploaded to Claude.ai (league-results.json and swim-results.json)
-2. The current week number and meet date (e.g. "Week 3, June 29")
+1. The current week number and meet date (e.g. "Week 3, June 29")
+2. The data files are read from the local repo (`data/league-results.json` and
+   `data/swim-results.json`) — no uploads needed
 
 ---
 
