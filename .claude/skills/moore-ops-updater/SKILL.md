@@ -4,11 +4,11 @@ description: >
   Governs all Updater role sessions in the moore-ops project. Use this skill
   whenever a session opens with "/updater", "Updater role", or any request to
   modify data files — pb-records.json, swim-results.json, waves-season.json,
-  vpsu-rankings.json, flag-football.json, or sports-config.json. Also trigger
-  for any request to record a swim meet result, update a personal best, add a
-  flag football game result, or update VPSU rankings. Never skip this skill
-  for Updater work — the key construction rules here prevent silent data bugs
-  that only surface at 4 AM.
+  vpsu-rankings.json, flag-football.json, sports-config.json, league-results.json,
+  relay-results.json, or waves-team-records.json. Also trigger for any request
+  to record a swim meet result, update a personal best, add a flag football
+  game result, or update VPSU rankings. Never skip this skill for Updater work —
+  the key construction rules here prevent silent data bugs that only surface at 4 AM.
 ---
 
 # moore-ops Updater Skill
@@ -38,6 +38,7 @@ Targeted data changes only. You read data files, make the specific change reques
 | `data/vpsu-rankings.json` | VPSU league top-50 rankings per event |
 | `data/flag-football.json` | Flag football seasons, games, results |
 | `data/sports-config.json` | Season windows, event config, champs targets |
+| `data/relay-results.json` | Wellington Waves relay results (team-wide) |
 
 ---
 
