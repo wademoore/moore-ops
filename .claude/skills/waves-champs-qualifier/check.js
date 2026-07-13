@@ -12,9 +12,9 @@ const swim   = JSON.parse(readFileSync(path.join(dataDir, 'swim-results.json'), 
 // WEEK_NUM  → week number (e.g. 2)
 // WEEK_DATE → meet date ISO string (e.g. '2026-06-22')  used for new-this-week delta
 // WEEK_LABEL → display date (e.g. 'June 22')
-const WEEK_NUM   = 2;
-const WEEK_DATE  = '2026-06-22';
-const WEEK_LABEL = 'June 22';
+const WEEK_NUM   = 3;
+const WEEK_DATE  = '2026-07-08';
+const WEEK_LABEL = 'July 8';
 // ─────────────────────────────────────────────────────────────────────────────
 
 const standards = {
@@ -74,19 +74,19 @@ const qualifiers      = new Map();
 const earliestQualDate = new Map();
 const nearMiss        = new Map();
 
-function tryQualify(name, time, date, event, gender, ageGroup) {
+function tryQualify(name, time, date, meet, event, gender, ageGroup) {
   const std = standards[getLookupKey(gender, ageGroup, event)];
   if (std == null || time == null || isNaN(time)) return;
   if (time > std) return;
   const qkey = name + '|' + event;
   const existing = qualifiers.get(qkey);
   if (!existing || time < existing.time)
-    qualifiers.set(qkey, { name, time, date, event, ageGroup: gender + ' ' + ageGroup, gender });
+    qualifiers.set(qkey, { name, time, date, meet, event, ageGroup: gender + ' ' + ageGroup, gender });
   const ed = earliestQualDate.get(qkey);
   if (!ed || date < ed) earliestQualDate.set(qkey, date);
 }
 
-function tryNearMiss(name, time, event, gender, ageGroup) {
+function tryNearMiss(name, time, date, meet, event, gender, ageGroup) {
   const std = standards[getLookupKey(gender, ageGroup, event)];
   if (std == null || time == null || isNaN(time)) return;
   if (time <= std) return;
@@ -94,7 +94,7 @@ function tryNearMiss(name, time, event, gender, ageGroup) {
   const gap = time - std;
   const existing = nearMiss.get(nmkey);
   if (!existing || gap < existing.gap)
-    nearMiss.set(nmkey, { name, time, gap, std, event, ageGroup: gender + ' ' + ageGroup });
+    nearMiss.set(nmkey, { name, time, gap, std, event, ageGroup: gender + ' ' + ageGroup, date, meet });
 }
 
 // League results — WT only, no DQ, skip Moore kids
@@ -104,21 +104,21 @@ for (const r of league.filter(r => r.team === 'WT' && !r.dq)) {
   const ag = parts.slice(1).join(' ');
   const nameParts = r.swimmer.trim().split(' ');
   const displayName = nameParts.slice(1).join(' ') + ' ' + nameParts[0];
-  if (displayName === 'Myles Moore' || displayName === 'Ophelia Moore') continue;
-  tryQualify(displayName, r.time, r.date, r.event, gender, ag);
-  tryNearMiss(displayName, r.time, r.event, gender, ag);
+  if (displayName === 'Myles Moore' || displayName === 'Ophelia Moore') continue; // sourced from swim-results.json instead
+  tryQualify(displayName, r.time, r.date, r.meet, r.event, gender, ag);
+  tryNearMiss(displayName, r.time, r.date, r.meet, r.event, gender, ag);
 }
 
 // Moore kids from swim-results.json
 for (const r of swim) {
   const t = r.seconds ?? r.time;
   if (r.swimmer === 'Myles') {
-    tryQualify('Myles', t, r.date, r.event, 'Boys', '9-10');
-    tryNearMiss('Myles', t, r.event, 'Boys', '9-10');
+    tryQualify('Myles Moore', t, r.date, r.meet, r.event, 'Boys', '9-10');
+    tryNearMiss('Myles Moore', t, r.date, r.meet, r.event, 'Boys', '9-10');
   } else if (r.swimmer === 'Ophelia') {
     const ag = opheliaAG(r.event);
-    tryQualify('Ophelia', t, r.date, r.event, 'Girls', ag);
-    tryNearMiss('Ophelia', t, r.event, 'Girls', ag);
+    tryQualify('Ophelia Moore', t, r.date, r.meet, r.event, 'Girls', ag);
+    tryNearMiss('Ophelia Moore', t, r.date, r.meet, r.event, 'Girls', ag);
   }
 }
 
@@ -172,7 +172,7 @@ if (newThisWeek.length > 0) {
   console.log('');
   console.log('🎉 NEW THIS WEEK:');
   for (const q of newThisWeek)
-    console.log(q.name + ' — ' + fmtEvent(q.event) + ' (' + fmtTime(q.time) + ')');
+    console.log(q.name + ' — ' + fmtEvent(q.event) + ' (' + fmtTime(q.time) + ') — ' + q.meet + ', ' + q.date);
 } else {
   console.log('🌊 Wellington Waves — Champs Update 🌊');
   console.log('Week ' + WEEK_NUM + ' | ' + WEEK_LABEL);
@@ -192,7 +192,7 @@ console.log('');
 for (const { label, entries } of allGroups) {
   console.log(label);
   for (const q of entries)
-    console.log('  ' + q.name + ' — ' + fmtEvent(q.event) + ' (' + fmtTime(q.time) + ')');
+    console.log('  ' + q.name + ' — ' + fmtEvent(q.event) + ' (' + fmtTime(q.time) + ') — ' + q.meet + ', ' + q.date);
   console.log('');
 }
 console.log('Total: ' + totalSpots + ' qualifying spots | ' + uniqueSwimmers + ' swimmers');
@@ -212,7 +212,7 @@ console.log('');
 top10.forEach((v, i) => {
   const warn = v.gap < 1 ? '  ⚠️  within 1s — verify source data before posting' : '';
   console.log((i + 1) + '. ' + v.name + ' — ' + fmtEvent(v.event) + ' (' + v.ageGroup + ')');
-  console.log('   Best: ' + fmtTime(v.time) + ' | Standard: ' + fmtTime(v.std) + ' | Gap: +' + v.gap.toFixed(2) + 's' + warn);
+  console.log('   Best: ' + fmtTime(v.time) + ' | Standard: ' + fmtTime(v.std) + ' | Gap: +' + v.gap.toFixed(2) + 's | ' + v.meet + ', ' + v.date + warn);
 });
 console.log('');
 console.log('Note: swimmers whose only events are 6&Under/7-8 Breaststroke or Butterfly,');
