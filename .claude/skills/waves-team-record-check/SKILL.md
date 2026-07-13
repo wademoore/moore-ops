@@ -6,56 +6,84 @@ description: "Checks new Wellington Waves swim results (individual and relay) ag
 # Wellington Waves Team Record Check
 
 ## Purpose
-Weekly check comparing new results against data/waves-team-records.json
-to catch broken Wellington Waves all-time records. Team-wide in scope
-(any WT swimmer, not just Myles/Ophelia) — distinct from
-waves-champs-qualifier, which is Moore-family-only.
+Cumulative season check comparing ALL WT results to date against
+`data/waves-team-records.json`. Produces:
+- **Block 1** — every team record broken this season, with Facebook-post draft text
+- **Block 2** — Top 10 near-misses (closest season-best times to each standing record)
 
-## Inputs
-- data/league-results.json — filter to team === "WT"
-- data/swim-results.json — Myles + Ophelia
-- data/relay-results.json — relay results (any WT swimmers)
-- data/waves-team-records.json — standing records to check against
+Team-wide in scope (any WT swimmer, not just Myles/Ophelia) — distinct from
+`waves-champs-qualifier`, which is Moore-family-only.
 
-## Step 1 — Verify before building logic
-Confirm against the live files (not this spec):
-- league-results.json rows carry `ageGroup` in the exact string format
-  used in waves-team-records.json keys (e.g. "Boys 9-10") — confirm,
-  don't assume
-- swim-results.json rows do NOT carry `ageGroup` directly — confirm how
-  age group is currently derived for Myles/Ophelia elsewhere (check
-  digest/swimParser.js and sports-config.json) and reuse that same
-  derivation logic rather than reinventing it
-- Confirm event name strings match across all three files (should
-  already use full names like "50m Freestyle" / "25m Breaststroke" —
-  verify, note any translation needed)
-If anything doesn't match, stop and flag rather than guessing a mapping.
+---
 
-## Step 2 — Comparison logic (Node.js script via bash_tool — never
-format results manually)
-For each result being checked (league-results.json, swim-results.json,
-and relay-results.json):
-1. Strip UTF-8 BOM from league-results.json before JSON.parse
-2. Skip DQ rows (dq: true)
-3. Build composite key: "{ageGroup}|{event}|{course}"
-4. Look up the key in waves-team-records.json
-5. If found and the new time is faster than the record's `time`, flag
-   as a broken record
+## Data sources
 
-For relay-results.json rows specifically:
-- ageGroup is the combined gender+bracket string already on each row
-  (e.g. "Women Open", "Boys 9-10") — no derivation needed
-- swimmers array (leadoff to anchor) is available for output but not
-  needed for the record lookup key
+| File | Filter |
+|------|--------|
+| `data/league-results.json` | `team === "WT"` and `dq === false` |
+| `data/swim-results.json` | Myles and Ophelia only |
+| `data/relay-results.json` | `team === "WT"` and `dq === false` |
+| `data/waves-team-records.json` | standing records to compare against |
 
-## Step 3 — Output
-1. Full list of broken records: swimmer, event, new time, previous
-   record (holder(s), time, year)
-2. Facebook-post-ready draft text per broken record
-Flag any result within 1 second of a standing record for manual
-source-data verification before posting — same convention as
-waves-champs-qualifier's proximity check.
+**Age-group mapping for swim-results.json (Myles/Ophelia):**
 
-## Step 4 — Guardrails
-- Read-only. Never modifies waves-team-records.json — updating the
-  record file after a confirmed break is a separate Updater task.
+| Swimmer | Age | Records bracket used |
+|---------|-----|----------------------|
+| Myles   | 9   | Boys 9-10            |
+| Ophelia | 7   | Girls 8&Under        |
+
+League results carry `ageGroup` directly; relay results carry a combined gender+bracket
+string (`"Women Open"`, `"Boys 9-10"`, etc.) — no derivation needed for either.
+
+Results whose `ageGroup` has no matching entry in `waves-team-records.json`
+(e.g. `"Girls 7-8"`, `"Boys 10&Under"`) are silently skipped — those brackets have
+no standing team record.
+
+---
+
+## Algorithm
+
+**CRITICAL: Always run the computation as JavaScript code using bash_tool. Never manually
+format output — manual formatting has caused omissions and errors. The code is authoritative.**
+
+### Step 1 — Run the script
+
+```
+node .claude/skills/waves-team-record-check/check.js
+```
+
+Path resolution is self-contained via `import.meta.url` — no `cd` or working-directory
+assumption required. The script works from any cwd.
+
+### Step 2 — Review Block 1 (broken records)
+
+Each broken record prints the swimmer, new time, previous record (holder + year), meet
+name and date, and a ready-to-post Facebook draft. Copy draft text directly; do not
+reformat manually.
+
+### Step 3 — Review Block 2 (near-miss top 10)
+
+Shows the 10 closest season-best times to each standing record, one per record, sorted
+by gap ascending. Any entry within 1 second carries a ⚠️ flag — verify the source data
+before posting or commenting publicly.
+
+---
+
+## Near-miss logic
+
+- **Season-best** per (swimmer, ageGroup, event, course) is tracked across all data sources.
+- For relay near-miss entries, the "swimmer" is the relay team's swimmer list.
+- **gap = swimmer's season-best − record time**
+- `gap < 0` → record broken; entry goes to Block 1 only
+- `gap > 0` → near-miss candidate
+- If a record key appears in Block 1 (broken), it is excluded from Block 2 entirely
+- Block 2 shows **one entry per record key** (the closest swimmer for that record)
+
+---
+
+## Guardrails
+
+- **Read-only.** Never modifies `waves-team-records.json` — updating the record file
+  after a confirmed break is a separate Updater task.
+- Relay records (`Women Open`, `Men Open`) are included in both blocks; Mixed Open
+  relay results are checked but currently no Mixed Open record exists.
