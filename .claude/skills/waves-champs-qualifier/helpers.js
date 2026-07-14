@@ -35,6 +35,30 @@ export function getLookupKey(gender, ageGroup, event) {
   return gender + ' ' + ageGroup + '|' + event;
 }
 
+/**
+ * Returns true if the swimmer has any qualifying swim in ANY event, across all
+ * rows in historyRows, dated strictly before beforeDate (ISO 'YYYY-MM-DD').
+ *
+ * "First time ever" means no prior champs-standard swim in any event — not just
+ * the same event being evaluated. Same-day rows are excluded (r.date >= beforeDate
+ * fails), so two qualifying swims at the same meet do not suppress each other.
+ *
+ * Each row's standard is looked up using that row's OWN ageGroup and event, not
+ * the swimmer's current-season bracket — important because standards are bracket-
+ * specific and swimmers age up yearly.
+ *
+ * Row shape required: { swimmer, event, dq, seconds, ageGroup, date }
+ * - swimmer: "Last First" format (normalized from display name internally)
+ * - seconds: numeric time in seconds (callers must map r.time → seconds for
+ *   league-results*.json sources, which store time under r.time not r.seconds)
+ * - ageGroup: full bracket string e.g. 'Boys 9-10', 'Girls 8&Under'
+ * - date: ISO date string 'YYYY-MM-DD'
+ *
+ * @param {string} displayName - "First Last" display name
+ * @param {Array<{swimmer:string,event:string,dq:boolean,seconds:number,ageGroup:string,date:string}>} historyRows
+ * @param {string} beforeDate - ISO date string; rows on or after this date are excluded
+ * @returns {boolean}
+ */
 export function hasAnyPriorQual(displayName, historyRows, beforeDate) {
   const nameParts = displayName.split(' ');
   const histKey = nameParts[nameParts.length - 1] + ' ' + nameParts.slice(0, -1).join(' ');
