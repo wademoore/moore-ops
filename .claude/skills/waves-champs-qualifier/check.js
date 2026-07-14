@@ -118,7 +118,7 @@ const swimHistoryRows = swim.map(r => ({
   event:    r.event,
   dq:       r.dq,
   seconds:  r.seconds,
-  ageGroup: r.ageGroup,
+  ageGroup: r.ageGroup ? r.ageGroup.replace(/(\d+)\s*&\s*Under/, '$1&Under') : r.ageGroup,
   date:     r.date,
 }));
 

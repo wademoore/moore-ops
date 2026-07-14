@@ -57,6 +57,21 @@ test('hasAnyPriorQual: Case I — same-day swim is excluded (strict < on date)',
   assert.equal(hasAnyPriorQual('Jane Smith', historyRows, '2026-07-13'), false);
 });
 
+test('hasAnyPriorQual: Case K — swim-results.json ageGroup spacing ("6 & Under") must be normalized before passing', () => {
+  // swim-results.json stores ageGroup with spaces around & ("Girls 6 & Under"),
+  // but standards keys use no-space form ("Girls 6&Under"). A raw swim-results row
+  // passed without normalization silently fails the standards lookup (std == null)
+  // even for a genuinely qualifying time. This is the bug that made Ophelia's
+  // 2025 Champs Backstroke (33.62s, standard 41s) invisible.
+  // Callers must normalize via .replace(/(\d+)\s*&\s*Under/, '$1&Under') before passing.
+  const rawRow = {
+    swimmer: 'Moore Ophelia', event: '25m Backstroke', dq: false, seconds: 33.62,
+    ageGroup: 'Girls 6 & Under', date: '2025-08-02',
+  };
+  const normalized = [{ ...rawRow, ageGroup: rawRow.ageGroup.replace(/(\d+)\s*&\s*Under/, '$1&Under') }];
+  assert.equal(hasAnyPriorQual('Ophelia Moore', normalized, '2026-07-13'), true);
+});
+
 test('hasAnyPriorQual: Case J — current-season earlier swim in different event counts', () => {
   // An earlier swim in the current season (before beforeDate) in a different event
   // suppresses the "first time ever" tag.
