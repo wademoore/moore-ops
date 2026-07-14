@@ -1,50 +1,25 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import { getLookupKey, hasHistoricalQual, standards } from './helpers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, '..', '..', '..', 'data');
 
-const league = JSON.parse(readFileSync(path.join(dataDir, 'league-results.json'), 'utf8').replace(/^﻿/, ''));
-const swim   = JSON.parse(readFileSync(path.join(dataDir, 'swim-results.json'),   'utf8').replace(/^﻿/, ''));
+const league   = JSON.parse(readFileSync(path.join(dataDir, 'league-results.json'),         'utf8').replace(/^﻿/, ''));
+const swim     = JSON.parse(readFileSync(path.join(dataDir, 'swim-results.json'),            'utf8').replace(/^﻿/, ''));
+const history  = JSON.parse(readFileSync(path.join(dataDir, 'league-results-history.json'), 'utf8').replace(/^﻿/, ''));
 
 // ── Placeholders: substitute before running ──────────────────────────────────
 // WEEK_NUM  → week number (e.g. 2)
 // WEEK_DATE → meet date ISO string (e.g. '2026-06-22')  used for new-this-week delta
 // WEEK_LABEL → display date (e.g. 'June 22')
-const WEEK_NUM   = 3;
-const WEEK_DATE  = '2026-07-08';
-const WEEK_LABEL = 'July 8';
+const WEEK_NUM   = 5;
+const WEEK_DATE  = '2026-07-13';
+const WEEK_LABEL = 'July 13';
 // ─────────────────────────────────────────────────────────────────────────────
 
-const standards = {
-  'Boys 6&Under|25m Freestyle': 36,   'Girls 6&Under|25m Freestyle': 36,
-  'Boys 6&Under|25m Backstroke': 42,  'Girls 6&Under|25m Backstroke': 41,
-  'Boys 7-8|25m Freestyle': 22,       'Girls 7-8|25m Freestyle': 23,
-  'Boys 7-8|25m Backstroke': 29,      'Girls 7-8|25m Backstroke': 29,
-  'Boys 8&Under|25m Breaststroke': 35,'Girls 8&Under|25m Breaststroke': 34,
-  'Boys 8&Under|25m Butterfly': 37,   'Girls 8&Under|25m Butterfly': 37,
-  'Boys 10&Under|100m Individual Medley': 118, 'Girls 10&Under|100m Individual Medley': 115,
-  'Boys 9-10|50m Freestyle': 43,      'Girls 9-10|50m Freestyle': 43,
-  'Boys 9-10|50m Breaststroke': 65,   'Girls 9-10|50m Breaststroke': 60,
-  'Boys 9-10|50m Backstroke': 57,     'Girls 9-10|50m Backstroke': 53,
-  'Boys 9-10|50m Butterfly': 60,      'Girls 9-10|50m Butterfly': 58,
-  'Boys 11-12|100m Individual Medley': 100, 'Girls 11-12|100m Individual Medley': 100,
-  'Boys 11-12|50m Freestyle': 37,     'Girls 11-12|50m Freestyle': 38,
-  'Boys 11-12|50m Breaststroke': 52,  'Girls 11-12|50m Breaststroke': 52,
-  'Boys 11-12|50m Backstroke': 48,    'Girls 11-12|50m Backstroke': 48,
-  'Boys 11-12|50m Butterfly': 48,     'Girls 11-12|50m Butterfly': 47,
-  'Boys 13-14|100m Individual Medley': 90, 'Girls 13-14|100m Individual Medley': 90,
-  'Boys 13-14|50m Freestyle': 33,     'Girls 13-14|50m Freestyle': 35,
-  'Boys 13-14|50m Breaststroke': 48,  'Girls 13-14|50m Breaststroke': 48,
-  'Boys 13-14|50m Backstroke': 45,    'Girls 13-14|50m Backstroke': 43,
-  'Boys 13-14|50m Butterfly': 42,     'Girls 13-14|50m Butterfly': 40,
-  'Boys 15-18|100m Individual Medley': 80, 'Girls 15-18|100m Individual Medley': 86,
-  'Boys 15-18|50m Freestyle': 30,     'Girls 15-18|50m Freestyle': 33,
-  'Boys 15-18|50m Breaststroke': 42,  'Girls 15-18|50m Breaststroke': 47,
-  'Boys 15-18|50m Backstroke': 39,    'Girls 15-18|50m Backstroke': 43,
-  'Boys 15-18|50m Butterfly': 34,     'Girls 15-18|50m Butterfly': 38,
-};
+// standards and getLookupKey imported from helpers.js
 
 function fmtTime(s) {
   if (s < 60) return s.toFixed(2);
@@ -56,14 +31,6 @@ function fmtTime(s) {
 function fmtEvent(e) {
   return e.replace('m ', ' ').replace('Freestyle', 'Free').replace('Backstroke', 'Back')
     .replace('Breaststroke', 'Breast').replace('Butterfly', 'Fly').replace('Individual Medley', 'IM');
-}
-
-function getLookupKey(gender, ageGroup, event) {
-  if (event === '100m Individual Medley') {
-    const ag = ageGroup.replace('9-10', '10&Under');
-    return gender + ' ' + ag + '|' + event;
-  }
-  return gender + ' ' + ageGroup + '|' + event;
 }
 
 function opheliaAG(event) {
@@ -111,16 +78,22 @@ for (const r of league.filter(r => r.team === 'WT' && !r.dq)) {
 
 // Moore kids from swim-results.json
 for (const r of swim) {
-  const t = r.seconds ?? r.time;
   if (r.swimmer === 'Myles') {
-    tryQualify('Myles Moore', t, r.date, r.meet, r.event, 'Boys', '9-10');
-    tryNearMiss('Myles Moore', t, r.date, r.meet, r.event, 'Boys', '9-10');
+    tryQualify('Myles Moore', r.seconds, r.date, r.meet, r.event, 'Boys', '9-10');
+    tryNearMiss('Myles Moore', r.seconds, r.date, r.meet, r.event, 'Boys', '9-10');
   } else if (r.swimmer === 'Ophelia') {
     const ag = opheliaAG(r.event);
-    tryQualify('Ophelia Moore', t, r.date, r.meet, r.event, 'Girls', ag);
-    tryNearMiss('Ophelia Moore', t, r.date, r.meet, r.event, 'Girls', ag);
+    tryQualify('Ophelia Moore', r.seconds, r.date, r.meet, r.event, 'Girls', ag);
+    tryNearMiss('Ophelia Moore', r.seconds, r.date, r.meet, r.event, 'Girls', ag);
   }
 }
+
+const swimHistoryRows = swim.map(r => ({
+  swimmer: r.swimmer === 'Myles' ? 'Moore Myles' : 'Moore Ophelia',
+  event: r.event,
+  dq: r.dq,
+  seconds: r.seconds,
+}));
 
 // ── Sorting helpers ───────────────────────────────────────────────────────────
 const agOrder    = ['6&Under','7-8','8&Under','9-10','10&Under','11-12','13-14','15-18'];
@@ -191,8 +164,17 @@ console.log('📋 FULL QUALIFIER LIST — ' + WEEK_LABEL + ', 2026');
 console.log('');
 for (const { label, entries } of allGroups) {
   console.log(label);
-  for (const q of entries)
+  for (const q of entries) {
     console.log('  ' + q.name + ' — ' + fmtEvent(q.event) + ' (' + fmtTime(q.time) + ') — ' + q.meet + ', ' + q.date);
+    const qkey = q.name + '|' + q.event;
+    const isNewThisWeek = earliestQualDate.get(qkey) >= WEEK_DATE;
+    if (isNewThisWeek) {
+      const histRows = (q.name === 'Myles Moore' || q.name === 'Ophelia Moore') ? swimHistoryRows : history;
+      const ag = q.ageGroup.replace(q.gender + ' ', '');
+      if (!hasHistoricalQual(q.name, q.event, q.gender, ag, histRows))
+        console.log('  ✨ FIRST TIME EVER');
+    }
+  }
   console.log('');
 }
 console.log('Total: ' + totalSpots + ' qualifying spots | ' + uniqueSwimmers + ' swimmers');
