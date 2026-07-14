@@ -212,7 +212,8 @@ console.log('');
 top10.forEach((v, i) => {
   const warn = v.gap < 1 ? '  ⚠️  within 1s — verify source data before posting' : '';
   console.log((i + 1) + '. ' + v.name + ' — ' + fmtEvent(v.event) + ' (' + v.ageGroup + ')');
-  console.log('   Best: ' + fmtTime(v.time) + ' | Standard: ' + fmtTime(v.std) + ' | Gap: +' + v.gap.toFixed(2) + 's | ' + v.meet + ', ' + v.date + warn);
+  console.log('   Best: ' + fmtTime(v.time) + ' | Standard: ' + fmtTime(v.std) + ' | Gap: +' + v.gap.toFixed(2) + 's' + warn);
+  console.log('   Meet: ' + v.meet + ' | Date: ' + v.date);
 });
 console.log('');
 console.log('Note: swimmers whose only events are 6&Under/7-8 Breaststroke or Butterfly,');

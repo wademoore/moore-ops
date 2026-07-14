@@ -170,6 +170,58 @@ To run this skill, the user should supply:
 
 ---
 
+## Output block formats
+
+### Block 1 — New this week / header
+
+```
+🌊 Wellington Waves — Champs Qualifiers 🌊
+Week N | Month DD
+
+🎉 NEW THIS WEEK:
+First Last — ShortEvent (Time) — Meet Name, YYYY-MM-DD
+...
+
+✅ TOTAL QUALIFIERS TO DATE: N spots across N swimmers
+
+Go Waves! 🏊‍♂️💙
+```
+
+(If no new qualifiers this week, replaces the NEW THIS WEEK block with a "No new qualifiers" line.)
+
+### Block 2 — Full qualifier list
+
+```
+📋 FULL QUALIFIER LIST — Month DD, 2026
+
+Gender AgeGroup
+  First Last — ShortEvent (Time) — Meet Name, YYYY-MM-DD
+  ...
+
+Total: N qualifying spots | N swimmers
+```
+
+### Block 3 — Top 10 near-misses
+
+```
+📍 TOP 10 CLOSEST TO A VPSU CHAMPS STANDARD
+  (swimmers who haven't qualified in this event yet)
+
+1. First Last — ShortEvent (AgeGroup)
+   Best: Time | Standard: Time | Gap: +X.XXs  [⚠️  within 1s — verify source data before posting]
+   Meet: Meet Name | Date: YYYY-MM-DD
+...
+
+Note: swimmers whose only events are 6&Under/7-8 Breaststroke or Butterfly,
+or 7-8/8&Under 100m IM, are not shown — no VPSU standard exists for those brackets.
+```
+
+The ⚠️ warning appears on the Gap line when gap < 1.0s. The Meet/Date line immediately below is the source row to verify.
+
+**Single-best-swim caveat:** each near-miss entry shows only the swimmer's personal best (lowest time) for that event and the meet/date of that specific swim. Other swims of the same event in the same season are not surfaced. If a fuller history is needed for verification (e.g., to cross-check Nikolai Ilardi 50m Breast or William Whaley 50m Butterfly), pull it on request from `league-results.json` filtered by swimmer name and event.
+
+---
+
 ## Notes
 
 - A swimmer can qualify in multiple events — each counts as a separate spot
