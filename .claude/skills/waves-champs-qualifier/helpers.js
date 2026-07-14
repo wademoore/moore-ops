@@ -35,16 +35,20 @@ export function getLookupKey(gender, ageGroup, event) {
   return gender + ' ' + ageGroup + '|' + event;
 }
 
-export function hasHistoricalQual(displayName, event, gender, ageGroup, historyRows) {
-  const std = standards[getLookupKey(gender, ageGroup, event)];
-  if (std == null) return false;
+export function hasAnyPriorQual(displayName, historyRows, beforeDate) {
   const nameParts = displayName.split(' ');
   const histKey = nameParts[nameParts.length - 1] + ' ' + nameParts.slice(0, -1).join(' ');
-  return historyRows.some(r =>
-    r.swimmer === histKey &&
-    r.event === event &&
-    r.dq !== true &&
-    r.seconds != null && !isNaN(r.seconds) &&
-    r.seconds <= std
-  );
+  return historyRows.some(r => {
+    if (r.swimmer !== histKey) return false;
+    if (r.date >= beforeDate) return false;
+    if (r.dq === true) return false;
+    if (r.seconds == null || isNaN(r.seconds)) return false;
+    if (!r.ageGroup) return false;
+    const agParts = r.ageGroup.split(' ');
+    const gender  = agParts[0];
+    const ag      = agParts.slice(1).join(' ');
+    const std     = standards[getLookupKey(gender, ag, r.event)];
+    if (std == null) return false;
+    return r.seconds <= std;
+  });
 }

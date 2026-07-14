@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import { getLookupKey, hasHistoricalQual, standards } from './helpers.js';
+import { getLookupKey, hasAnyPriorQual, standards } from './helpers.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, '..', '..', '..', 'data');
@@ -9,6 +9,31 @@ const dataDir = path.join(__dirname, '..', '..', '..', 'data');
 const league   = JSON.parse(readFileSync(path.join(dataDir, 'league-results.json'),         'utf8').replace(/^﻿/, ''));
 const swim     = JSON.parse(readFileSync(path.join(dataDir, 'swim-results.json'),            'utf8').replace(/^﻿/, ''));
 const history  = JSON.parse(readFileSync(path.join(dataDir, 'league-results-history.json'), 'utf8').replace(/^﻿/, ''));
+
+// Normalize history to the { swimmer, event, dq, seconds, ageGroup, date } shape hasAnyPriorQual expects.
+// league-results-history.json (and league-results.json) store time under r.time; only
+// swim-results.json uses r.seconds. Normalizing here keeps hasAnyPriorQual's contract clean.
+const historyRows = history.map(r => ({
+  swimmer:  r.swimmer,
+  event:    r.event,
+  dq:       r.dq,
+  seconds:  r.time,
+  ageGroup: r.ageGroup.replace('Men ', 'Boys ').replace('Women ', 'Girls '),
+  date:     r.date,
+}));
+
+const currentLeagueRows = league
+  .filter(r => r.swimmer !== 'Moore Myles' && r.swimmer !== 'Moore Ophelia')
+  .map(r => ({
+    swimmer:  r.swimmer,
+    event:    r.event,
+    dq:       r.dq,
+    seconds:  r.time,
+    ageGroup: r.ageGroup,
+    date:     r.date,
+  }));
+
+const allNonMooreRows = [...historyRows, ...currentLeagueRows];
 
 // ── Placeholders: substitute before running ──────────────────────────────────
 // WEEK_NUM  → week number (e.g. 2)
@@ -89,10 +114,12 @@ for (const r of swim) {
 }
 
 const swimHistoryRows = swim.map(r => ({
-  swimmer: r.swimmer === 'Myles' ? 'Moore Myles' : 'Moore Ophelia',
-  event: r.event,
-  dq: r.dq,
-  seconds: r.seconds,
+  swimmer:  r.swimmer === 'Myles' ? 'Moore Myles' : 'Moore Ophelia',
+  event:    r.event,
+  dq:       r.dq,
+  seconds:  r.seconds,
+  ageGroup: r.ageGroup,
+  date:     r.date,
 }));
 
 // ── Sorting helpers ───────────────────────────────────────────────────────────
@@ -169,9 +196,10 @@ for (const { label, entries } of allGroups) {
     const qkey = q.name + '|' + q.event;
     const isNewThisWeek = earliestQualDate.get(qkey) >= WEEK_DATE;
     if (isNewThisWeek) {
-      const histRows = (q.name === 'Myles Moore' || q.name === 'Ophelia Moore') ? swimHistoryRows : history;
-      const ag = q.ageGroup.replace(q.gender + ' ', '');
-      if (!hasHistoricalQual(q.name, q.event, q.gender, ag, histRows))
+      const histRows = (q.name === 'Myles Moore' || q.name === 'Ophelia Moore')
+        ? swimHistoryRows : allNonMooreRows;
+      const beforeDate = earliestQualDate.get(qkey);
+      if (!hasAnyPriorQual(q.name, histRows, beforeDate))
         console.log('  ✨ FIRST TIME EVER');
     }
   }
