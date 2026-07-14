@@ -232,3 +232,11 @@ The ⚠️ warning appears on the Gap line when gap < 1.0s. The Meet/Date line i
 - Do not include relay results — league-results.json already excludes them
 - Moore kids (Myles/Ophelia) must never appear in output unless they have actually
   hit a champs standard — check time <= standard before including them
+
+## ✨ FIRST TIME EVER — implementation notes
+
+Block 2 prints `✨ FIRST TIME EVER` under any new-this-week entry where the swimmer has no prior qualifying swim in **any** event at any point strictly before the swim being evaluated. Implemented in `hasAnyPriorQual()` (`helpers.js`). Full semantic and history details are in CLAUDE.md under the "first time ever" changelog entry.
+
+**Data-format stability:** The `hasAnyPriorQual` function has gone through **three rounds of data-format fixes** since it shipped and is now considered stable. The three bugs were: (1) field name — `league-results*.json` stores time as `r.time`, not `r.seconds`; (2) event scoping — original version only matched the same event, not any prior qualifying event; (3) ageGroup spacing — `swim-results.json` uses `"X & Under"` (spaced), standards table expects `"X&Under"` (no space). Each was caught, fixed, and covered by a regression test (Cases G, H/I/J, and K respectively). **Any future data source added to this function's scan set must have its schema conventions verified explicitly** against the standards-table key format before being assumed compatible.
+
+**SCY/yards rows:** `swim-results.json` contains USA Swimming (SCY, yards) results alongside VPSU (SCM, meters) Waves results. Event strings like `"25y Backstroke"` have no match in the VPSU standards table and are silently skipped by `hasAnyPriorQual`. This is correct and intentional — yards and meters times for the same stroke/distance number are not comparable against a meters-only standard. Not a bug.

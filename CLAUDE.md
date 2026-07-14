@@ -139,11 +139,11 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-**✓ 429 unit tests passing, 0 failing (current baseline as of July 2026, post timezone bug fixes, age-field addition, July skill-file work, and `waves-champs-qualifier` hasAnyPriorQual redesign — confirm CLAUDE.md is synced to this number via Documenter)**
+**✓ 430 unit tests passing, 0 failing (current baseline as of July 2026, post timezone bug fixes, age-field addition, July skill-file work, `waves-champs-qualifier` hasAnyPriorQual redesign, and ageGroup spacing fix — confirm CLAUDE.md is synced to this number via Documenter)**
 
 Run via: `npm test` (uses Node's built-in `node:test` runner).
 
-Coder mode must keep tests at 429+. If the number changes, the Documenter should update this baseline.
+Coder mode must keep tests at 430+. If the number changes, the Documenter should update this baseline.
 
 ## Current state (changelog)
 
@@ -163,6 +163,14 @@ Coder mode must keep tests at 429+. If the number changes, the Documenter should
 
   **Name-collision caveat:** `hasAnyPriorQual` matches on `"Last First"` string across all teams and seasons in the merged scan, unfiltered by team (deliberate — a swimmer's personal qualifying history counts regardless of which team they were on). A one-time check on `league-results-history.json` found 26 same-name-different-team cases; 5 involve WT (Norkunas Zoe, Palmer Henry, Palmer Poppy, Murphy Morgan, Vermeire Abi) and were confirmed by Wade as legitimate mid-season transfers, not identity bugs. If a new same-name collision is ever suspected, run a targeted grep on both JSON files to check before assuming a logic error. 3 new tests (Cases H/I/J) cover cross-event suppression, same-day exclusion, and current-season merge respectively. 429 tests passing, 0 failing.
 
+  **ageGroup spacing fix (commit `d406d8d`):** A third data-format mismatch was found and fixed after the feature shipped. `swim-results.json` stores ageGroup with spaces around the ampersand (`"Girls 6 & Under"`, `"Girls 8 & Under"`) — this is the correct, intentional convention for that file. The standards table and `getLookupKey` expect the no-space form (`"Girls 6&Under"`, `"Girls 8&Under"`) used by `league-results.json` and `league-results-history.json`. When `swimHistoryRows` passed raw `swim-results.json` ageGroup values through to `hasAnyPriorQual`, the key lookup silently failed for any Moore-kid row using an `&Under` bracket — `std == null`, row skipped as if no standard existed. Concretely: all 7 of Ophelia's 2025 season 25m Backstroke rows, including her Champs qualification (33.62s, standard 41s), were invisible, causing her 2026 25m Fly to be wrongly tagged first-time-ever.
+
+  Fixed via regex normalization in the `swimHistoryRows` builder in `check.js` (`.replace(/(\d+)\s*&\s*Under/, '$1&Under')`), mirroring the `Men→Boys`/`Women→Girls` normalization already applied to `historyRows`. The backfill script received the identical fix. Myles is unaffected by this specific fix — no qualifying rows in his in-season `swim-results.json` data either way. Case K test (added in this pass) uses the raw spaced format as input, not pre-normalized — same standard as Cases G and J. Season backfill corrected from 14 spots/13 swimmers to 13 spots/12 swimmers; Ophelia's Fly entry was the only change. 430 tests passing, 0 failing.
+
+  **Pattern note:** This was the **third distinct data-matching bug** found in `hasAnyPriorQual` across its build-out — field name (`r.time` vs `r.seconds`), then event-scoping semantics (same-event only vs any-event), then ageGroup spacing. Each traced to a different data source having a subtly different convention than the function assumed. **Any future data source fed into `hasAnyPriorQual` should have its schema conventions checked explicitly against the standards-table key format** (no-space `&Under`, `Boys`/`Girls` gender prefix, `YYYY-MM-DD` date, `seconds` field name) before being assumed compatible.
+
+  **SCY/yards rows silently skipped — known, intentional:** `swim-results.json` contains USA Swimming (SCY, yards) meet results alongside VPSU (SCM, meters) Waves results. Event strings like `"25y Backstroke"` and `"50y Freestyle"` have no matching entry in the VPSU standards table, so `hasAnyPriorQual` silently skips them (`std == null → return false`). This is **correct and intentional behavior** — a yards time and a meters time for the same stroke/distance number are not comparable against a meters-only standard. Not a bug; not something to fix. Documented here so it is not rediscovered as a mystery.
+
 ## Key learnings & principles
 
 **The dashboard "today" anchor must be built from the ET calendar date, not the UTC date.** At ≥8 PM ET (≥7 PM EST) the UTC date is already tomorrow, so a plain `new Date(); setHours(0,0,0,0)` in Lambda anchors the whole dashboard a day ahead, and the 8 PM scheduled refresh trips this daily. Use `startOfTodayET()`. Corollary to the double-convert rule below: the anchor is effectively local-midnight-of-the-ET-date, so downstream consumers (TODAY heading, day bucketing) must still read it via direct `getMonth()/getDate()/getFullYear()` — never `toLocaleDateString(ET)` on the anchor itself, or it double-converts backward a day. The two rules cover opposite directions of the same underlying trap (UTC-instant vs. already-ET-anchored-date) and should be read together.
@@ -173,3 +181,4 @@ Coder mode must keep tests at 429+. If the number changes, the Documenter should
 
 - **`TZ=UTC` not yet pinned in test runner** — `dateUtils.test.js` currently validates against the ET dev machine's local timezone, not Lambda's UTC runtime. Recommended follow-up: add `TZ=UTC` to the npm test script so the suite deterministically validates production behavior.
 - **Reviewer requested full `parseEventDate` body for both branches (all-day and timed) to confirm both anchor consistently on local-midnight-of-ET-date** — not yet explicitly pasted/confirmed across three review passes; low risk given tests pass, but flagged as an open verification item.
+- **Myles `tryQualify`/`tryNearMiss` calls use hardcoded `'9-10'` age-group literal** — unlike Ophelia, which uses the `opheliaAG(event)` function to derive the correct bracket per event. Pre-existing; flagged by Reviewer during the original "first time ever" feature review but not yet cleaned up. Low priority — Myles is only in one bracket for the foreseeable current season so no bug has been observed, but it's a latent inconsistency. Fix whenever `check.js` is next touched for an unrelated reason.
