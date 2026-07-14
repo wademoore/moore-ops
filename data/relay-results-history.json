@@ -1,0 +1,1940 @@
+[
+  {
+    "team": "GS",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Qi, Jiayi",
+      "Cory, Bryson",
+      "Gianoukos, Alex",
+      "Sleeth, Ben"
+    ],
+    "time": 218.66,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shnowske, Luke",
+      "Hibbard, Mason",
+      "Shnowske, Sam",
+      "Kimball, Declan"
+    ],
+    "time": 227.45,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Grimm, Bryce",
+      "Roberts, Levi",
+      "Sleeth, Jack",
+      "Zheng, Feynman"
+    ],
+    "time": 249.26,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Scianandre, Gina",
+      "Dameron, Finley",
+      "Liebler, Emma",
+      "Wang, Anna"
+    ],
+    "time": 221.65,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bissette, Zurie",
+      "Buzek, Jaclynn",
+      "Shnowske, Anna",
+      "Swartzel, Reagan"
+    ],
+    "time": 221.81,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Guillen, Ryleigh",
+      "Taylor, Graysen",
+      "Bruhl, Zoe",
+      "Castillo, Maia"
+    ],
+    "time": 308,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Han, Maxwell",
+      "Zheng, Ryan",
+      "Bermudez, Brennan",
+      "Hartig, Will"
+    ],
+    "time": 204.03,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kimball, Braden",
+      "Childress, Wyatt",
+      "Jones, Jackson",
+      "Leggett, Finn"
+    ],
+    "time": 215.63,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bradshaw, Sam",
+      "Marcondes, Nathan",
+      "Buch, William",
+      "Reed, Josh"
+    ],
+    "time": 222.72,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Childress, Grey",
+      "Hobbs, Michaela",
+      "Whaley, Katelyn",
+      "Haas, Natalie"
+    ],
+    "time": 221.71,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Farah, Lilah",
+      "Budde, Reese",
+      "Rosler, Blanka",
+      "Ericsson, Brooke"
+    ],
+    "time": 227.78,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ainsley, Sophia",
+      "Pisaniello, Annie",
+      "Grimm, Kami",
+      "Basic, Charlotte"
+    ],
+    "time": 242.27,
+    "date": "2025-07-21",
+    "meet": "WT vs Gators",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Carstarphen, Grant",
+      "Arne, Shawn",
+      "Barrell, Rhodes",
+      "Cockrill, Hunter"
+    ],
+    "time": 228.4,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Carter, Drew",
+      "Hibbard, Mason",
+      "Jones, Jackson",
+      "Kimball, Braden"
+    ],
+    "time": 229.53,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Cockrill, Beau",
+      "Trainum, Brecken",
+      "Cox, Brody",
+      "Olds, Sebastian"
+    ],
+    "time": 237.58,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Taliaferro, Noah",
+      "Crisci, Colin",
+      "Cantrell, Sam",
+      "Cockrill, Tucker"
+    ],
+    "time": 256.13,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bissette, Zurie",
+      "Buzek, Jaclynn",
+      "Shnowske, Anna",
+      "Swartzel, Reagan"
+    ],
+    "time": 228.64,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Walker, Avery",
+      "Williams, Mallory Grace",
+      "Cox, Rosie",
+      "Switzer, Charlotte"
+    ],
+    "time": 237.25,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Wall, Madison",
+      "Olds, Sophia",
+      "Lofgren, Bergen",
+      "Jacobs, Josie"
+    ],
+    "time": 246.56,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kohler, Stevie",
+      "OBrien, Knox",
+      "Jacobs, Jimmy",
+      "Brenner, Cole"
+    ],
+    "time": 158.03,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kimball, Declan",
+      "Shnowske, Luke",
+      "Shnowske, Sam",
+      "Leggett, Finn"
+    ],
+    "time": 208.22,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Heilman, Dean",
+      "Arne, Lars",
+      "Dwyer, Evan",
+      "Thibeault, Jason"
+    ],
+    "time": 218.59,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Welch, Sutton",
+      "Hummel, Liam",
+      "Thrash, Nehemiah",
+      "Keithley, Jostin"
+    ],
+    "time": 220.53,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Abbondanzo, James",
+      "Wyles, Oliver",
+      "Kolar, Andrew",
+      "Robinson, Andrew"
+    ],
+    "time": 238.37,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lofgren, Elin",
+      "Kolar, Olivia",
+      "Barrell, Bradley",
+      "Powell, Ella"
+    ],
+    "time": 220.14,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hobbs, Piper",
+      "Hobbs, Michaela",
+      "Hoadley, Addison",
+      "Haas, Natalie"
+    ],
+    "time": 225.39,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Blanchard, Reagan",
+      "Modest, Elizabeth",
+      "Wall, Lilly",
+      "OBrien, Ellie"
+    ],
+    "time": 229.82,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Snyder, Wren",
+      "Hobbs, Reagan",
+      "Bissette, Emjay",
+      "O'Neil, Lexi"
+    ],
+    "time": 234.51,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bradsher, Caroline",
+      "Brenner, Ella",
+      "Carter, Blakely",
+      "Zinanni, Kaitlyn"
+    ],
+    "time": null,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": true,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Snyder, Ezra",
+      "Bissette, Imogen",
+      "Pate, Abigail",
+      "Wilkins, Bethany"
+    ],
+    "time": null,
+    "date": "2025-07-07",
+    "meet": "WT vs Ford's Colony",
+    "dq": true,
+    "season": "2025"
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Townsend, Chad",
+      "Watson, Tommy",
+      "Ban-Boca, Nicholas",
+      "Maris-Wolf, Matthew"
+    ],
+    "time": 223.19,
+    "date": "2025-06-30",
+    "meet": "WT vs Kingswood Klams",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shnowske, Luke",
+      "Leggett, Finn",
+      "Shnowske, Sam",
+      "Kimball, Declan"
+    ],
+    "time": 224.31,
+    "date": "2025-06-30",
+    "meet": "WT vs Kingswood Klams",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bissette, Zurie",
+      "Buzek, Jaclynn",
+      "Haas, Natalie",
+      "Hobbs, Piper"
+    ],
+    "time": 230.88,
+    "date": "2025-06-30",
+    "meet": "WT vs Kingswood Klams",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ban-Boca, Maya",
+      "Cook, Elly",
+      "Gregory, Gracie",
+      "Liechti, Cora"
+    ],
+    "time": 231.75,
+    "date": "2025-06-30",
+    "meet": "WT vs Kingswood Klams",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Reynolds, Eli",
+      "Broderick, Logan",
+      "Gillespie, Jayden",
+      "Roose, Andy"
+    ],
+    "time": 158.45,
+    "date": "2025-06-30",
+    "meet": "WT vs Kingswood Klams",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kimball, Braden",
+      "Carter, Drew",
+      "Jones, Jackson",
+      "Hibbard, Mason"
+    ],
+    "time": 215.09,
+    "date": "2025-06-30",
+    "meet": "WT vs Kingswood Klams",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Nester, Laurel",
+      "Nester, Ellery",
+      "Robertson, Caroline",
+      "Gregory, Elizabeth"
+    ],
+    "time": 207.51,
+    "date": "2025-06-30",
+    "meet": "WT vs Kingswood Klams",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Snyder, Wren",
+      "Lantz, Clara",
+      "Whaley, Katelyn",
+      "Wilkins, Bethany"
+    ],
+    "time": 226.88,
+    "date": "2025-06-30",
+    "meet": "WT vs Kingswood Klams",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hummel, Liam",
+      "Hibbard, Mason",
+      "Johnson, Graham",
+      "Kimball, Braden"
+    ],
+    "time": 244.97,
+    "date": "2025-06-23",
+    "meet": "WT at First Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Schroth, Mason",
+      "Aponte, Georgie",
+      "Levin, Noah",
+      "Voss, Mason"
+    ],
+    "time": null,
+    "date": "2025-06-23",
+    "meet": "WT at First Colony",
+    "dq": true,
+    "season": "2025"
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Mortier, Gracie",
+      "Henshaw, Emerson",
+      "Levin, Bella",
+      "Evans, Annabelle"
+    ],
+    "time": 221.77,
+    "date": "2025-06-23",
+    "meet": "WT at First Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lantz, Clara",
+      "Buzek, Jaclynn",
+      "Shnowske, Anna",
+      "Swartzel, Reagan"
+    ],
+    "time": 231.71,
+    "date": "2025-06-23",
+    "meet": "WT at First Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hamilton, Makai",
+      "Voss, Oliver",
+      "Quinn, Owen",
+      "Landers, Lucas"
+    ],
+    "time": 158.51,
+    "date": "2025-06-23",
+    "meet": "WT at First Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kimball, Declan",
+      "Shnowske, Luke",
+      "Shnowske, Sam",
+      "Leggett, Finn"
+    ],
+    "time": 211,
+    "date": "2025-06-23",
+    "meet": "WT at First Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Buzek, Rowan",
+      "Asbell, Grayson",
+      "Lantz, Parker",
+      "Keithley, Jostin"
+    ],
+    "time": 230.63,
+    "date": "2025-06-23",
+    "meet": "WT at First Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Keithley, Merritt",
+      "Carter, Drew",
+      "Whaley, William",
+      "Carter, Spencer"
+    ],
+    "time": 240.66,
+    "date": "2025-06-23",
+    "meet": "WT at First Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Evans, Elizabeth",
+      "Hamilton, Keller",
+      "Freeman, Remington",
+      "Lorack, Bella"
+    ],
+    "time": 201.32,
+    "date": "2025-06-23",
+    "meet": "WT at First Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Snyder, Wren",
+      "Welch, Kinsley",
+      "Whaley, Katelyn",
+      "Haas, Natalie"
+    ],
+    "time": 230.16,
+    "date": "2025-06-23",
+    "meet": "WT at First Colony",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shnowske, Luke",
+      "Hibbard, Mason",
+      "Shnowske, Sam",
+      "Kimball, Declan"
+    ],
+    "time": 230.36,
+    "date": "2025-06-16",
+    "meet": "WT at Typhoons",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "GLT",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Russell, Eddie",
+      "Hafl, Brody",
+      "Hafl, Broc",
+      "Campbell, Colin"
+    ],
+    "time": 305.27,
+    "date": "2025-06-16",
+    "meet": "WT at Typhoons",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lantz, Clara",
+      "Whaley, Katelyn",
+      "Haas, Natalie",
+      "Hobbs, Piper"
+    ],
+    "time": 245.34,
+    "date": "2025-06-16",
+    "meet": "WT at Typhoons",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "GLT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Oltra Render, Elena",
+      "Oltra Render, Natalie",
+      "Pankratz, Olivia",
+      "Almeida, Lydia"
+    ],
+    "time": 257.7,
+    "date": "2025-06-16",
+    "meet": "WT at Typhoons",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kimball, Braden",
+      "Hummel, Liam",
+      "Johnson, Graham",
+      "Leggett, Finn"
+    ],
+    "time": 221.36,
+    "date": "2025-06-16",
+    "meet": "WT at Typhoons",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Keithley, Merritt",
+      "Lantz, Parker",
+      "Thrash, Nehemiah",
+      "Keithley, Jostin"
+    ],
+    "time": 229.84,
+    "date": "2025-06-16",
+    "meet": "WT at Typhoons",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "GLT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Roeder, Perry",
+      "Gartlan, Liam",
+      "Ferris, Remy",
+      "Pankratz, William"
+    ],
+    "time": 338.28,
+    "date": "2025-06-16",
+    "meet": "WT at Typhoons",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Swartzel, Reagan",
+      "Bissette, Zurie",
+      "Buzek, Jaclynn",
+      "Wilkins, Bethany"
+    ],
+    "time": 225.12,
+    "date": "2025-06-16",
+    "meet": "WT at Typhoons",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Snyder, Wren",
+      "Hobbs, Reagan",
+      "Hoadley, Addison",
+      "Bissette, Emjay"
+    ],
+    "time": 236.62,
+    "date": "2025-06-16",
+    "meet": "WT at Typhoons",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "GLT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Roeder, Gabriella",
+      "Golinski, Wynter",
+      "Gartlan, Annie",
+      "Almeida, Lucy"
+    ],
+    "time": 323.96,
+    "date": "2025-06-16",
+    "meet": "WT at Typhoons",
+    "dq": false,
+    "season": "2025"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shackley, Adin",
+      "Shnowske, Matt",
+      "Shnowske, Sam",
+      "Shnowske, Luke"
+    ],
+    "time": 220.83,
+    "date": "2024-07-22",
+    "meet": "WT at Queens Lake",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shouse, Charlie",
+      "Pugh, Joseph",
+      "Walters, Adam",
+      "Sosa, Ayden"
+    ],
+    "time": 240.83,
+    "date": "2024-07-22",
+    "meet": "WT at Queens Lake",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Cleary, Peyton",
+      "Sanford, Natalie",
+      "Smith, Gianna",
+      "VanDyke, Ila"
+    ],
+    "time": 228.19,
+    "date": "2024-07-22",
+    "meet": "WT at Queens Lake",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Haas, Natalie",
+      "Lantz, Clara",
+      "Whaley, Katelyn",
+      "Swartzel, Reagan"
+    ],
+    "time": 245.51,
+    "date": "2024-07-22",
+    "meet": "WT at Queens Lake",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hobbs, Michaela",
+      "O'Neil, Lexi",
+      "Hoadley, Addison",
+      "Hobbs, Piper"
+    ],
+    "time": null,
+    "date": "2024-07-22",
+    "meet": "WT at Queens Lake",
+    "dq": true,
+    "season": "2024"
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Sanford, Jacob",
+      "Forbes, Johnny",
+      "Check, Gryphon",
+      "Hubbard, Zach"
+    ],
+    "time": 207.97,
+    "date": "2024-07-22",
+    "meet": "WT at Queens Lake",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hummel, Liam",
+      "Carter, Drew",
+      "Carter, Spencer",
+      "Keithley, Jostin"
+    ],
+    "time": 212.75,
+    "date": "2024-07-22",
+    "meet": "WT at Queens Lake",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lantz, Parker",
+      "Asbell, Grayson",
+      "Johnson, Graham",
+      "Hibbard, Mason"
+    ],
+    "time": null,
+    "date": "2024-07-22",
+    "meet": "WT at Queens Lake",
+    "dq": true,
+    "season": "2024"
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ellis, Anna",
+      "Hutto, Addy",
+      "Thompson, Ali",
+      "White, Alyssa"
+    ],
+    "time": 216.18,
+    "date": "2024-07-22",
+    "meet": "WT at Queens Lake",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Welch, Kinsley",
+      "Bissette, Zurie",
+      "Buzek, Jaclynn",
+      "Shnowske, Anna"
+    ],
+    "time": null,
+    "date": "2024-07-22",
+    "meet": "WT at Queens Lake",
+    "dq": true,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shnowske, Sam",
+      "Shnowske, Matt",
+      "Jones, Jackson",
+      "Shnowske, Luke"
+    ],
+    "time": 218.24,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Montgomery, Gavin",
+      "Austin, James",
+      "Saunders, Andrew",
+      "Queripel, Guy"
+    ],
+    "time": 257.01,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bissette, Zurie",
+      "Buzek, Jaclynn",
+      "Shnowske, Anna",
+      "Welch, Kinsley"
+    ],
+    "time": 233.78,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ballin, Alivia",
+      "McConky, Hannah",
+      "Austin, Skyler",
+      "Montgomery, Emma"
+    ],
+    "time": 244.95,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Pate, Abigail",
+      "O'Neil, Lexi",
+      "Hoadley, Addison",
+      "Snyder, Wren"
+    ],
+    "time": 304.02,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Asbell, Grayson",
+      "Wiseman, Nathan",
+      "Carter, Spencer",
+      "Keithley, Jostin"
+    ],
+    "time": 212.34,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Dabney, Andrew",
+      "Zheng, Ryan",
+      "Saul, Robby",
+      "Guaspari, Aiden"
+    ],
+    "time": 223.65,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lantz, Parker",
+      "Whaley, William",
+      "Carter, Drew",
+      "Hibbard, Mason"
+    ],
+    "time": 227.08,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Swartzel, Reagan",
+      "Lantz, Clara",
+      "Whaley, Katelyn",
+      "Haas, Natalie"
+    ],
+    "time": 225.31,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Case, Madelyn",
+      "Conley, Ellie",
+      "Montgomery, Chloe",
+      "Guaspari, Emma"
+    ],
+    "time": 237.07,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Childress, Grey",
+      "Bissette, Imogen",
+      "Wiseman, Sophia",
+      "Wilkins, Bethany"
+    ],
+    "time": 234.18,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Linton, Kate",
+      "Wheeler, Quinn",
+      "Case, Lilly",
+      "Hansen, Peyton"
+    ],
+    "time": 321.59,
+    "date": "2024-07-15",
+    "meet": "WT vs Powhatan Seastars",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Johnson, Graham",
+      "Hibbard, Mason",
+      "Jones, Jackson",
+      "Hummel, Liam"
+    ],
+    "time": 226.76,
+    "date": "2024-07-08",
+    "meet": "WT vs Kingspoint",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "KP",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Blinn, Evan",
+      "Patterson, Sam",
+      "Kader, Harrison",
+      "Kader, Davis"
+    ],
+    "time": 240.65,
+    "date": "2024-07-08",
+    "meet": "WT vs Kingspoint",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bissette, Zurie",
+      "Buzek, Jaclynn",
+      "Shnowske, Anna",
+      "Swartzel, Reagan"
+    ],
+    "time": 235.59,
+    "date": "2024-07-08",
+    "meet": "WT vs Kingspoint",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "KP",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Sokolowsky, Moira",
+      "Epperson, Esme",
+      "Kellogg, Katie",
+      "Cromer, Evelyn"
+    ],
+    "time": 237.14,
+    "date": "2024-07-08",
+    "meet": "WT vs Kingspoint",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Pate, Abigail",
+      "O'Neil, Lexi",
+      "Snyder, Ezra",
+      "Darne, Mason"
+    ],
+    "time": 332.33,
+    "date": "2024-07-08",
+    "meet": "WT vs Kingspoint",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shnowske, Luke",
+      "Shnowske, Sam",
+      "Shackley, Adin",
+      "Shnowske, Matt"
+    ],
+    "time": 200.86,
+    "date": "2024-07-08",
+    "meet": "WT vs Kingspoint",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "KP",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Patterson, Will",
+      "Kroenlein, Xander",
+      "Joosse, Peter",
+      "Henderson, Keller"
+    ],
+    "time": 239.26,
+    "date": "2024-07-08",
+    "meet": "WT vs Kingspoint",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lantz, Parker",
+      "Hess, Ryle",
+      "Wiseman, Nathan",
+      "Keithley, Jostin"
+    ],
+    "time": 230.84,
+    "date": "2024-07-08",
+    "meet": "WT vs Kingspoint",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "KP",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Stanhope, Lexi",
+      "Richardi, Cameron",
+      "Waggoner, Annabelle",
+      "Cale, Sloan"
+    ],
+    "time": 238.68,
+    "date": "2024-07-08",
+    "meet": "WT vs Kingspoint",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hobbs, Piper",
+      "Bissette, Imogen",
+      "Bissette, Emjay",
+      "Haas, Natalie"
+    ],
+    "time": 238.69,
+    "date": "2024-07-08",
+    "meet": "WT vs Kingspoint",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Snyder, Wren",
+      "Lantz, Clara",
+      "Keithley, Jennings",
+      "Wilkins, Bethany"
+    ],
+    "time": 249.45,
+    "date": "2024-07-08",
+    "meet": "WT vs Kingspoint",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Jones, Jackson",
+      "Shnowske, Matt",
+      "Shackley, Adin",
+      "Shnowske, Luke"
+    ],
+    "time": 221.26,
+    "date": "2024-07-01",
+    "meet": "WT at Edgehill Eels",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Campbell, Cooper",
+      "Vasquez, Lucas",
+      "Pollock, John",
+      "Walker, Elliot"
+    ],
+    "time": 302.25,
+    "date": "2024-07-01",
+    "meet": "WT at Edgehill Eels",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bissette, Zurie",
+      "Buzek, Jaclynn",
+      "Shnowske, Anna",
+      "Welch, Kinsley"
+    ],
+    "time": 233.94,
+    "date": "2024-07-01",
+    "meet": "WT at Edgehill Eels",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Tingen, Casey",
+      "Pollock, Leora",
+      "Tingen, Bailey",
+      "Shay, Lindsey"
+    ],
+    "time": 245.83,
+    "date": "2024-07-01",
+    "meet": "WT at Edgehill Eels",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lantz, Clara",
+      "O'Neil, Lexi",
+      "Hoadley, Addison",
+      "Snyder, Wren"
+    ],
+    "time": 313.2,
+    "date": "2024-07-01",
+    "meet": "WT at Edgehill Eels",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hummel, Liam",
+      "Shnowske, Sam",
+      "Wiseman, Nathan",
+      "Keithley, Jostin"
+    ],
+    "time": 212.89,
+    "date": "2024-07-01",
+    "meet": "WT at Edgehill Eels",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bordt, Jaxson",
+      "Gunderman, AJ",
+      "Hoercher, Camden",
+      "Pelletier, Ryan"
+    ],
+    "time": 215.25,
+    "date": "2024-07-01",
+    "meet": "WT at Edgehill Eels",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Gunderman, Annalise",
+      "Stocki, Sutton",
+      "Gunderman, Katie",
+      "Pelletier, Zoey"
+    ],
+    "time": 220.22,
+    "date": "2024-07-01",
+    "meet": "WT at Edgehill Eels",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Swartzel, Reagan",
+      "Hobbs, Michaela",
+      "Whaley, Katelyn",
+      "Haas, Natalie"
+    ],
+    "time": 230.5,
+    "date": "2024-07-01",
+    "meet": "WT at Edgehill Eels",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Darne, Mason",
+      "Hobbs, Reagan",
+      "Bissette, Emjay",
+      "Gray, Maddy"
+    ],
+    "time": 244.25,
+    "date": "2024-07-01",
+    "meet": "WT at Edgehill Eels",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shnowske, Sam",
+      "Shnowske, Matt",
+      "Jones, Jackson",
+      "Shnowske, Luke"
+    ],
+    "time": 220.07,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Men Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Walker, Nathan",
+      "Lavender, Thad",
+      "Maris-Wolf, Micah",
+      "Matheson, Will"
+    ],
+    "time": 235.81,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hobbs, Michaela",
+      "Buzek, Jaclynn",
+      "Shnowske, Anna",
+      "Welch, Kinsley"
+    ],
+    "time": 242.19,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "James, Harper",
+      "Matheson, Chelsea",
+      "Bonyadlou, Taraneh",
+      "Murphy, Morgan"
+    ],
+    "time": 313.28,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hobbs, Reagan",
+      "O'Neil, Lexi",
+      "Hoadley, Addison",
+      "Swartzel, Reagan"
+    ],
+    "time": 302.22,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hummel, Liam",
+      "Wiseman, Nathan",
+      "Shackley, Adin",
+      "Hibbard, Mason"
+    ],
+    "time": 211.71,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Maris-Wolf, Matt or Matthew",
+      "Marlowe, Colton",
+      "Whatley, Jacob",
+      "Sylvester, Wyatt"
+    ],
+    "time": 218.33,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Asbell, Grayson",
+      "Lantz, Parker",
+      "Johnson, Graham",
+      "Keithley, Jostin"
+    ],
+    "time": 223.08,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Men Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Stockburger, Benjamin",
+      "Pierce, Austin",
+      "Kalloch, Finley",
+      "Walker, Cameron"
+    ],
+    "time": null,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": true,
+    "season": "2024"
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lee, Hope",
+      "Walker, Olivia",
+      "James, Hadley",
+      "Bonyadlou, Parvaneh"
+    ],
+    "time": 220.35,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Snyder, Wren",
+      "Lantz, Clara",
+      "Wiseman, Sophia",
+      "Haas, Natalie"
+    ],
+    "time": 233,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Palmer, Poppy",
+      "Burcham, Felicity",
+      "Stockburger, Emily",
+      "Burcham, Anya"
+    ],
+    "time": 245.38,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Women Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Snyder, Ezra",
+      "Bissette, Imogen",
+      "Bissette, Emjay",
+      "Wilkins, Bethany"
+    ],
+    "time": 250.64,
+    "date": "2024-06-24",
+    "meet": "WT vs Williamsburg Community (WCP Manta Rays)",
+    "dq": false,
+    "season": "2024"
+  }
+]
