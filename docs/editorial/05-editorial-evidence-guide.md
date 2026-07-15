@@ -35,11 +35,9 @@ Confidence levels used here align with the standards in [01-editorial-charter.md
 - Swimmer names are `"Last First"` strings. Convert to `"First Last"` for editorial copy per [04-editorial-style-guide.md](04-editorial-style-guide.md).
 - Does not include Moore family SCY (yards) swims — those are in `swim-results.json` only.
 - Friendly meets are intentionally included in this file. Use the `waves-season.json` `friendly` field to distinguish friendlies from scored dual meets when computing win-loss records — but do not filter friendlies out of `league-results.json` for individual-swim analysis; the swims are valid regardless of meet type.
-
-**Open questions (not confirmed in current CLAUDE.md — verify before asserting):**
-- A historical BOM (byte-order mark) issue with this file has been referenced in project history but is not documented in the current CLAUDE.md "Key learnings" section. If the file was affected, it may have been resolved. Verify before relying on automated parsing of older exports.
-- DQ row handling: the prompt spec references a `dq:true/time:null` pattern for disqualified swims. Inspection of current data shows `dq: false` rows have valid `time` values, but the behavior of `dq: true` rows (whether `time` is null or populated) is not confirmed from the current CLAUDE.md. Verify before using DQ rows in any calculation.
-- `course ≠ organization`: the meaning of this caveat was referenced in the project spec but is not documented in current CLAUDE.md. Likely means the `course` field (`"SCM"`) describes the pool format, not which organization (VPSU vs. USA Swimming) sanctioned the meet. Confirm before using `course` as a meet-type filter.
+- **DQ/NS/DNF rows are included, not omitted.** Shape: `dq: true, time: null, overallPlace: null, overallCount: null`. Filter on `dq: false` before any time-based analysis.
+- **UTF-8 BOM risk.** This file carried a UTF-8 BOM that broke `JSON.parse` until stripped during a 2026 Week 3 append. Any script reading files from `data/` should strip a leading BOM defensively before parsing. See CLAUDE.md "Swim data conventions" and "Key learnings."
+- **`course` reflects pool length only, not league affiliation.** `"SCM"` = 25m pool. A 757swim (USA Swimming) meet held in a 25m pool can be recorded as `SCM`. Do not use `course` to infer whether a result came from a VPSU meet — check the `meet` field or rely on which file the row came from (`league-results.json` = VPSU meets only). See CLAUDE.md "Swim data conventions."
 
 **Related datasets:** `relay-results.json` (relay swims), `pb-records.json` (personal best cross-check), `waves-team-records.json` (team record cross-check), `league-results-history.json` (prior seasons).
 

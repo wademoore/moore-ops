@@ -86,4 +86,3 @@ The following decisions have been flagged as open in this documentation and requ
 | Whether historical `vpsu-rankings.json` snapshots are retained for year-over-year comparison | [05-editorial-evidence-guide.md](05-editorial-evidence-guide.md) |
 | Exact field name for opponent in `waves-season.json` meets array (confirm before publishing meet scores) | [05-editorial-evidence-guide.md](05-editorial-evidence-guide.md) |
 | Season window dates for years other than 2026 (update [09-production-calendar.md](09-production-calendar.md) each season) | [09-production-calendar.md](09-production-calendar.md) |
-| Specific caveats for `league-results.json` noted in project history (BOM issue, DQ row handling) — not confirmed in current CLAUDE.md; verify and update [05-editorial-evidence-guide.md](05-editorial-evidence-guide.md) | [05-editorial-evidence-guide.md](05-editorial-evidence-guide.md) |
