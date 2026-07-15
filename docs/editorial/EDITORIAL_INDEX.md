@@ -23,6 +23,7 @@ These are not reference docs. They record durable beliefs, load-bearing architec
 | [PRINCIPLES.md](PRINCIPLES.md) | Six editorial beliefs, in priority order, as a terse testable checklist. Settles "does this belong" arguments. Read before making any editorial judgment call. |
 | [DECISIONS.md](DECISIONS.md) | Architecture Decision Record. Records the load-bearing structural decisions (role split, GitHub as source of truth, Editorial Meeting as interface, etc.) and the reasoning behind them. Near-sacred — changes infrequently. |
 | [PROJECT_LOG.md](PROJECT_LOG.md) | Chronological working journal. Records what was done each session and why. Append-only. Not a reference document — read it for project history, not operational guidance. |
+| [newsroom-notebook.md](newsroom-notebook.md) | Editorial judgment record. Captures why stories were chosen or held, what surprised the newsroom, lessons learned from publishing. Written by humans after real Editorial Meetings — never auto-generated. Unlike the other three living documents, not required reading for new contributors until they have some editorial history to reflect on. |
 
 ### Foundational Documents
 
@@ -71,6 +72,7 @@ Consult these when designing, writing, or planning.
 6. [05-editorial-evidence-guide.md](05-editorial-evidence-guide.md) — what the data can and cannot support
 7. [02-publication-blueprint.md](02-publication-blueprint.md) — what each edition contains
 8. Remaining documents as needed for your specific role
+9. [newsroom-notebook.md](newsroom-notebook.md) — read after your first real Editorial Meeting, not before; it's more useful once you have something to compare it against
 
 ### For Claude Code (Newsroom) producing an Editorial Meeting artifact
 
