@@ -20,11 +20,16 @@ The newsroom (Claude Code) surfaces findings. The editor-in-chief (ChatGPT) shap
 
 ## Core Principles
 
-1. **Evidence-first.** Every published claim must trace to a specific data source. Confidence levels (see §Evidence Standards below) determine how claims are framed.
-2. **Accuracy over speed.** Data validation precedes editorial work. See [03-editorial-workflow.md](03-editorial-workflow.md) for the dependency chain.
-3. **No invented context.** If the data doesn't say it, the publication doesn't say it. Open questions are flagged, not filled.
-4. **Proportional coverage.** Age groups, strokes, and relay contributions all receive attention. Coverage is not weighted toward the fastest swimmers or the highest-profile events.
-5. **Version-controlled truth.** All editorial handoff artifacts are committed to GitHub. The repo is the source of record.
+The canonical checklist of editorial beliefs lives in [PRINCIPLES.md](PRINCIPLES.md). That file is the terse, testable version; this section carries the rationale and the connection to operational practice.
+
+The six principles, and where they surface in day-to-day editorial work:
+
+1. **Evidence before narrative.** Every published claim traces to a specific data source. Confidence levels (see §Evidence Standards below) determine how claims are framed. See also `05-editorial-evidence-guide.md`.
+2. **Celebrate many forms of excellence.** Age groups, strokes, and relay contributions all receive attention. Coverage is not weighted toward the fastest swimmers or the highest-profile events.
+3. **Explain why numbers matter.** Statistics are never published without context that connects them to meaning. The Editorial Meeting artifact always provides that context before ChatGPT writes prose.
+4. **Build for history, not hype.** Data validation precedes editorial work; haste that produces an inaccurate record is worse than delay. See [03-editorial-workflow.md](03-editorial-workflow.md) for the dependency chain.
+5. **Make methodology visible.** Open questions are flagged in the Editorial Meeting artifact, not silently filled. Methodology notes explain non-obvious derivations. See `07-editorial-meeting-spec.md`.
+6. **Strengthen the community, don't rank it.** All editorial handoff artifacts are committed to GitHub. The repo is the source of record, and the publication is for the community it covers, not a ranking of its members.
 
 ## Evidence Standards
 

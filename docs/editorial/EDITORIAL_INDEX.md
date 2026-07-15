@@ -14,13 +14,23 @@ The Wellington Wave is built on the moore-ops data layer (`league-results.json`,
 
 ## Document Index
 
-### Foundational Documents
+### Living Documents — Read First, Updated Continuously
 
-Read these first. They define the principles that govern every other document.
+These are not reference docs. They record durable beliefs, load-bearing architectural decisions, and a chronological working journal. They are updated as the project evolves, not rewritten.
 
 | Document | Description |
 |----------|-------------|
-| [01-editorial-charter.md](01-editorial-charter.md) | Mission, audience, editorial philosophy, ethics, tone, and evidence standards. The governing document for the publication. |
+| [PRINCIPLES.md](PRINCIPLES.md) | Six editorial beliefs, in priority order, as a terse testable checklist. Settles "does this belong" arguments. Read before making any editorial judgment call. |
+| [DECISIONS.md](DECISIONS.md) | Architecture Decision Record. Records the load-bearing structural decisions (role split, GitHub as source of truth, Editorial Meeting as interface, etc.) and the reasoning behind them. Near-sacred — changes infrequently. |
+| [PROJECT_LOG.md](PROJECT_LOG.md) | Chronological working journal. Records what was done each session and why. Append-only. Not a reference document — read it for project history, not operational guidance. |
+
+### Foundational Documents
+
+Read these after the living documents. They define the operational principles that govern every numbered doc.
+
+| Document | Description |
+|----------|-------------|
+| [01-editorial-charter.md](01-editorial-charter.md) | Mission, audience, editorial philosophy, ethics, tone, and evidence standards. Points to PRINCIPLES.md for the canonical principles checklist. |
 | [03-editorial-workflow.md](03-editorial-workflow.md) | Full workflow from data entry to distribution. Defines role responsibilities and the critical dependency (data first, editorial second). |
 | [07-editorial-meeting-spec.md](07-editorial-meeting-spec.md) | The contract between Claude Code and ChatGPT. Defines the structure of the Editorial Meeting artifact — the primary handoff document. Read before producing any handoff. |
 | [12-claude-deliverables.md](12-claude-deliverables.md) | Exactly what Claude Code produces and the explicit boundary between Newsroom and Editor-in-chief work. |
@@ -53,26 +63,30 @@ Consult these when designing, writing, or planning.
 
 ### For a new contributor joining the editorial team
 
-1. [01-editorial-charter.md](01-editorial-charter.md) — understand the mission and ethics first
-2. [03-editorial-workflow.md](03-editorial-workflow.md) — understand how the process works and your role in it
-3. [07-editorial-meeting-spec.md](07-editorial-meeting-spec.md) — understand what the handoff artifact looks like
-4. [05-editorial-evidence-guide.md](05-editorial-evidence-guide.md) — understand what the data can and cannot support
-5. [02-publication-blueprint.md](02-publication-blueprint.md) — understand what each edition contains
-6. Remaining documents as needed for your specific role
+1. [PRINCIPLES.md](PRINCIPLES.md) — six beliefs that settle argument before any process question arises
+2. [DECISIONS.md](DECISIONS.md) — why the architecture is the way it is
+3. [01-editorial-charter.md](01-editorial-charter.md) — mission, ethics, tone, evidence standards
+4. [03-editorial-workflow.md](03-editorial-workflow.md) — how the process works and your role in it
+5. [07-editorial-meeting-spec.md](07-editorial-meeting-spec.md) — what the handoff artifact looks like
+6. [05-editorial-evidence-guide.md](05-editorial-evidence-guide.md) — what the data can and cannot support
+7. [02-publication-blueprint.md](02-publication-blueprint.md) — what each edition contains
+8. Remaining documents as needed for your specific role
 
 ### For Claude Code (Newsroom) producing an Editorial Meeting artifact
 
-1. [07-editorial-meeting-spec.md](07-editorial-meeting-spec.md) — structure of the artifact
-2. [05-editorial-evidence-guide.md](05-editorial-evidence-guide.md) — confidence levels and caveats
-3. [06-story-discovery-playbook.md](06-story-discovery-playbook.md) — what categories to look for
-4. [12-claude-deliverables.md](12-claude-deliverables.md) — boundary check before finalizing
+1. [PRINCIPLES.md](PRINCIPLES.md) — confirm the finding serves the publication's values
+2. [07-editorial-meeting-spec.md](07-editorial-meeting-spec.md) — structure of the artifact
+3. [05-editorial-evidence-guide.md](05-editorial-evidence-guide.md) — confidence levels and caveats
+4. [06-story-discovery-playbook.md](06-story-discovery-playbook.md) — what categories to look for
+5. [12-claude-deliverables.md](12-claude-deliverables.md) — boundary check before finalizing
 
 ### For ChatGPT (Editor-in-chief) writing a publication
 
-1. [01-editorial-charter.md](01-editorial-charter.md) — tone, ethics, what to celebrate and avoid
-2. [04-editorial-style-guide.md](04-editorial-style-guide.md) — naming, headlines, stat boxes
-3. [08-art-direction.md](08-art-direction.md) — visual conventions and photo policy
-4. The approved Editorial Meeting artifact for the current edition
+1. [PRINCIPLES.md](PRINCIPLES.md) — the six tests to apply to every editorial judgment
+2. [01-editorial-charter.md](01-editorial-charter.md) — tone, ethics, what to celebrate and avoid
+3. [04-editorial-style-guide.md](04-editorial-style-guide.md) — naming, headlines, stat boxes
+4. [08-art-direction.md](08-art-direction.md) — visual conventions and photo policy
+5. The approved Editorial Meeting artifact for the current edition
 
 ---
 
