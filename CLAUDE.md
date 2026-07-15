@@ -48,6 +48,11 @@
 - `swim-results.json` — complete historical swim results array; Updater-managed
 - `waves-season.json` — VPSU season data; schema: `seasons` array with `year`, `wellingtonDivision`, `divisions` (teams with `abbr`/`name`), `meets` (with `scoreA`/`scoreB`, `date`, `friendly`)
 - `vpsu-rankings.json` — VPSU league top-50 rankings per event; updated weekly via Updater during Waves season
+- `league-results.json` — current-season individual swim results for all VPSU teams; Updater-managed. **DQ/NS/DNF rows are included, not omitted** — shape: `dq: true, time: null, overallPlace: null, overallCount: null`. Filter on `dq: false` before any time-based analysis. **BOM risk:** this file carried a UTF-8 BOM that broke `JSON.parse` until it was stripped during a Week 3 append (2026). Strip defensively on read in any script that touches it.
+- `relay-results.json` — current-season relay results for all VPSU teams; Updater-managed
+- `league-results-history.json` — individual swim results for prior seasons (2022–2025), all teams
+- `relay-results-history.json` — relay results for prior seasons (2022–2025)
+- `waves-team-records.json` — Wellington Waves all-time team records by age group and event; Updater-managed
 
 These files are read directly by `digest/builder.js` via `fs.readFile` — no Drive fetch. To update them, edit the files in the repo and redeploy, or use the Updater agent to push new versions.
 
@@ -60,6 +65,12 @@ These files are read directly by `digest/builder.js` via `fs.readFile` — no Dr
 - `digest/wavesParser.js` — internal module; derives division record, standings, last meet, next meet from waves-season.json
 - `digest/athleticsParser.js` — thin coordinator; imports the three parsers above, sets season-active flags, assembles final athletics object
 - `digest/sportsConfig.js` — exports only `isSeasonActive(sport, referenceDate)` (pure function — no data)
+
+### Swim data conventions
+
+- **`course` field reflects pool length only, not league affiliation.** `"SCM"` = 25m pool, `"SCY"` = yards pool. A 757swim (USA Swimming) meet held in a 25m pool is recorded as `SCM`. Do not use `course` to infer whether a result came from a VPSU meet vs. a USA Swimming meet — check the `league` or `meet` field instead, or rely on which file the row came from (`league-results.json` = VPSU; `swim-results.json` = all meets including 757swim/SCY).
+- **Time field name differs by file:** `league-results.json` uses `time`; `swim-results.json` uses `seconds`. Do not assume these are interchangeable.
+- **UTF-8 BOM risk on JSON data files:** JSON files (not just CSVs) can carry a UTF-8 BOM. `league-results.json` was confirmed affected during a 2026 Week 3 append. Strip defensively on read in any script consuming files from `data/`.
 
 ## Meet results txt pipeline — removed June 2026
 Pipeline removed June 2026. Updater manual entry (`pb-records.json`, `swim-results.json`) is the authoritative workflow for swim data.
@@ -174,6 +185,8 @@ Coder mode must keep tests at 430+. If the number changes, the Documenter should
 ## Key learnings & principles
 
 **The dashboard "today" anchor must be built from the ET calendar date, not the UTC date.** At ≥8 PM ET (≥7 PM EST) the UTC date is already tomorrow, so a plain `new Date(); setHours(0,0,0,0)` in Lambda anchors the whole dashboard a day ahead, and the 8 PM scheduled refresh trips this daily. Use `startOfTodayET()`. Corollary to the double-convert rule below: the anchor is effectively local-midnight-of-the-ET-date, so downstream consumers (TODAY heading, day bucketing) must still read it via direct `getMonth()/getDate()/getFullYear()` — never `toLocaleDateString(ET)` on the anchor itself, or it double-converts backward a day. The two rules cover opposite directions of the same underlying trap (UTC-instant vs. already-ET-anchored-date) and should be read together.
+
+**JSON data files can carry a UTF-8 BOM, not just CSV imports.** `league-results.json` carried a BOM that broke `JSON.parse` until stripped during a 2026 Week 3 append. Any script that reads files from `data/` should strip a leading BOM defensively before parsing — `JSON.parse(content.replace(/^﻿/, ''))` or equivalent.
 
 **Never pass an already-ET-anchored date through `toLocaleDateString(ET)` again.** Once a `Date` object has been constructed as local-midnight of the ET calendar date (via `startOfTodayET()` or `parseEventDate()`), reading it with `getMonth()/getDate()/getFullYear()` gives the correct ET values directly. Running it through `toLocaleDateString('en-CA', {timeZone: 'America/New_York'})` a second time shifts it backward a day (midnight ET → prior evening UTC → prior ET date). Apply the ET conversion exactly once, at the point where a raw UTC instant becomes a calendar date.
 
