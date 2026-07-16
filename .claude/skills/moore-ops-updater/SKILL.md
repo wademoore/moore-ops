@@ -38,7 +38,11 @@ Targeted data changes only. You read data files, make the specific change reques
 | `data/vpsu-rankings.json` | VPSU league top-50 rankings per event |
 | `data/flag-football.json` | Flag football seasons, games, results |
 | `data/sports-config.json` | Season windows, event config, champs targets |
-| `data/relay-results.json` | Wellington Waves relay results (team-wide) |
+| `data/league-results.json` | Current-season individual results, all VPSU teams |
+| `data/relay-results.json` | Current-season relay results, all VPSU teams |
+| `data/league-results-history.json` | Prior-season individual results (2022–present) |
+| `data/relay-results-history.json` | Prior-season relay results (2024–present) |
+| `data/waves-team-records.json` | Wellington Waves all-time team records |
 
 ---
 
@@ -120,13 +124,35 @@ These are the only valid event name strings. Use them exactly:
 
 ## Time conversion
 
-Meet results show times as `MM:SS.ss` or `SS.ss`. The `seconds` field in JSON is always a decimal number.
+**This rule applies to every file the Updater writes numeric time values into:**
+`pb-records.json`, `swim-results.json`, `league-results.json`, `relay-results.json`,
+`league-results-history.json`, `relay-results-history.json`, and `waves-team-records.json`.
+
+Meet results show times as `MM:SS.ss` or `SS.ss`. Time fields in JSON are always decimal seconds.
 
 ```
-23.4  → 23.4
-1:05.4 → 65.4   (60 + 5.4)
-1:23.00 → 83.0
+23.4    → 23.4
+1:05.4  → 65.4    (1 × 60 + 5.4)
+1:21.33 → 81.33   (1 × 60 + 21.33)
+1:23.00 → 83.0    (1 × 60 + 23.0)
+2:18.76 → 138.76  (2 × 60 + 18.76)
 ```
+
+⚠️ **This conversion has been a recurring source of error: minutes were previously
+miscalculated as ×100 instead of ×60 in several files, producing values like `121.33`
+instead of the correct `81.33` for a time of `1:21.33`. When entering ANY time with a
+minutes component, double-check the arithmetic explicitly: minutes × 60 + seconds, not
+minutes × 100 + seconds. This is easy to get right for times under 60 seconds (no
+minutes to miscalculate) and easy to get wrong for anything at or over 1:00 — apply
+extra care specifically to Backstroke, Breaststroke, Butterfly, and IM results in
+older/slower age brackets, and to relay times, which are almost always over a minute.**
+
+**Spot-check rule for any incoming pre-structured JSON (e.g. from a PDF-parsing session):**
+For every row where `time` or `seconds` ≥ 60, verify the stored value against the
+original source's displayed `MM:SS.ss` string before committing. Compute
+`floor(value/60)` minutes and `value % 60` seconds and confirm they match what the
+source PDF shows. This is the exact case the ×100 bug hid in — values in the 100–200
+range look plausible for slow swimmers but are wrong by 40–80 seconds.
 
 ---
 
@@ -140,14 +166,14 @@ When adding a new result entry:
   "meet": "Waves vs EH",
   "event": "25m Backstroke",
   "course": "SCM",
-  "time": 27.4,
+  "seconds": 27.4,
   "swimmer": "Ophelia"
 }
 ```
 
 - `event` uses full event names (same as pb-records.json keys)
 - `course` is `SCM` or `SCY`
-- `time` is decimal seconds
+- `seconds` is decimal seconds (**field is named `seconds`, not `time`** — unlike league-results.json which uses `time`)
 - `meet` is a short human-readable name; be consistent with existing entries
 
 ---
