@@ -1,2291 +1,2835 @@
 [
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Bordt, Jaxson",
-      "Smelser, Marcus",
-      "Gunderman, AJ",
-      "Sherman III, Tripp"
-    ],
-    "time": 151.03,
-    "date": "2026-06-15",
-    "meet": "EH vs Gators (friendly)",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Radcliff, Zoe",
-      "Pollock, Leora",
-      "Gunderman, Katie",
-      "Keene, Michelle"
-    ],
-    "time": 169.7,
-    "date": "2026-06-15",
-    "meet": "EH vs Gators (friendly)",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Wulczynski, Joey",
-      "Vasquez, Leon",
-      "Campbell, Cooper",
-      "Petrie, Evan"
-    ],
-    "time": 137.82,
-    "date": "2026-06-15",
-    "meet": "EH vs Gators (friendly)",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Lamb, Addley",
-      "Gunderman, Annalise",
-      "Stephens, Keiryn",
-      "Pelletier, Zoey"
-    ],
-    "time": 140.38,
-    "date": "2026-06-15",
-    "meet": "EH vs Gators (friendly)",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": null,
-    "time": 146.3,
-    "date": "2026-06-15",
-    "meet": "WF vs Kingswood Klams (friendship meet)",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "McCormick, Quinn",
-      "Moore, Kensington",
-      "Sykes, Katharine",
-      "Collado, Sophia"
-    ],
-    "time": 166.5,
-    "date": "2026-06-15",
-    "meet": "WF vs Kingswood Klams (friendship meet)",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": null,
-    "time": 137.96,
-    "date": "2026-06-15",
-    "meet": "WF vs Kingswood Klams (friendship meet)",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": null,
-    "time": null,
-    "date": "2026-06-15",
-    "meet": "WF vs Kingswood Klams (friendship meet)",
-    "dq": true
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Kurowski, Kaleb",
-      "Ballin, Christian",
-      "Saul, Robby",
-      "Finley, Cameron"
-    ],
-    "time": 155.78,
-    "date": "2026-06-15",
-    "meet": "PS vs WGPRA",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Montgomery, Gavin",
-      "Kurowski, Ryan",
-      "Finley, Jonathan",
-      "Long, Matthew"
-    ],
-    "time": 139.64,
-    "date": "2026-06-15",
-    "meet": "PS vs WGPRA",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Mixed Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Weaver, Grayson",
-      "Keyes, Evan",
-      "Ballin, Alivia",
-      "Leone, Morgan"
-    ],
-    "time": 161.08,
-    "date": "2026-06-15",
-    "meet": "PS vs WGPRA",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Schum, Alfie",
-      "McGlamery, Joel",
-      "Walker, Cameron",
-      "Ready, Ryan"
-    ],
-    "time": 186.65,
-    "date": "2026-06-15",
-    "meet": "WC vs VW",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Simone, Olivia",
-      "Murphy, Morgan",
-      "Purse, Amelia",
-      "Kalloch, Lucy"
-    ],
-    "time": 195.66,
-    "date": "2026-06-15",
-    "meet": "WC vs VW",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Newsome, Wyatt",
-      "Matheson, Will",
-      "Stehle, Carter",
-      "Lavender, Thad"
-    ],
-    "time": 183.65,
-    "date": "2026-06-15",
-    "meet": "WC vs VW",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Matheson, Chelsea",
-      "Lee, Hope",
-      "Fly, Harper",
-      "Walker, Olivia"
-    ],
-    "time": 150.25,
-    "date": "2026-06-15",
-    "meet": "WC vs VW",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Lantz, Parker",
-      "Whaley, William",
-      "Ilardi, Nikolai",
-      "Hunley, Christian"
-    ],
-    "time": 172.34,
-    "date": "2026-06-15",
-    "meet": "WT vs FDC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Eggleston, Hayden",
-      "Buzek, Jaclynn",
-      "Bissette, Zurie",
-      "Hobbs, Piper"
-    ],
-    "time": 172.78,
-    "date": "2026-06-15",
-    "meet": "WT vs FDC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Hunley, Alexander",
-      "Asbell, Grayson",
-      "Childress, Wyatt",
-      "Palacios, Gabe"
-    ],
-    "time": 136.81,
-    "date": "2026-06-15",
-    "meet": "WT vs FDC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Snyder, Wren",
-      "Welch, Kinsley",
-      "Hobbs, Reagan",
-      "Haas, Natalie"
-    ],
-    "time": 149.52,
-    "date": "2026-06-15",
-    "meet": "WT vs FDC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Mixed Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Shnowske, Luke",
-      "Shnowske, Sam",
-      "Shnowske, Anna",
-      "Swartzel, Reagan"
-    ],
-    "time": 133.84,
-    "date": "2026-06-15",
-    "meet": "WT vs FDC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Mixed Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Welch, Sutton",
-      "Buzek, Rowan",
-      "Hobbs, Michaela",
-      "Hoadley, Addison"
-    ],
-    "time": 154.53,
-    "date": "2026-06-15",
-    "meet": "WT vs FDC",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Murphy, Tucker",
-      "Hubbard, Camden",
-      "Clark, Nethan",
-      "Amiss, Noah"
-    ],
-    "time": 196,
-    "date": "2026-06-15",
-    "meet": "WPD vs IP",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Brizendine, Ella",
-      "Wills, Kennedy",
-      "Brizendine, Lily",
-      "Baker, Annabelle"
-    ],
-    "time": 196.32,
-    "date": "2026-06-15",
-    "meet": "WPD vs IP",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Evans, Kinley",
-      "Hunsucker, Addison",
-      "Clark, Sofia",
-      "Paone, Mac"
-    ],
-    "time": 197.56,
-    "date": "2026-06-15",
-    "meet": "WPD vs IP",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Jordan, Charlie",
-      "Dameron, Harrison",
-      "Poorman, Julian",
-      "Rose, Blake"
-    ],
-    "time": 198.09,
-    "date": "2026-06-15",
-    "meet": "WPD vs IP",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Poorman, Jonathan",
-      "Shaw, Tucker",
-      "Hopson, Hunter",
-      "Lohr Jr, Bill"
-    ],
-    "time": 204.56,
-    "date": "2026-06-15",
-    "meet": "WPD vs IP",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ronan, Everly",
-      "Walker, Ashlynn",
-      "Wills, Ava",
-      "Rodriguez, Lydia"
-    ],
-    "time": 180.32,
-    "date": "2026-06-15",
-    "meet": "WPD vs IP",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Hopson, Reese",
-      "Murphy, Helen",
-      "Ronan, Harper",
-      "Dameron, Annabelle"
-    ],
-    "time": 210.38,
-    "date": "2026-06-15",
-    "meet": "WPD vs IP",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Voss, Oliver",
-      "Butler, Anson",
-      "Walk, Callen",
-      "Pascoe, Wilson"
-    ],
-    "time": 137.3,
-    "date": "2026-06-22",
-    "meet": "WF vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Vasquez, Leon",
-      "Smelser, Marcus",
-      "Gunderman, AJ",
-      "Polk, Timothy"
-    ],
-    "time": 157.89,
-    "date": "2026-06-22",
-    "meet": "WF vs EH",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Sykes, Katharine",
-      "Long, Tessa",
-      "Gorelick, Ryah",
-      "Collado, Sophia"
-    ],
-    "time": 149.52,
-    "date": "2026-06-22",
-    "meet": "WF vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Gunderman, Katie",
-      "Pollock, Leora",
-      "Gunderman, Annalise",
-      "Lamb, Addley"
-    ],
-    "time": 167.06,
-    "date": "2026-06-22",
-    "meet": "WF vs EH",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Long, Tucker",
-      "Gorelick, Canaan",
-      "Perkins, Reddick",
-      "Husband, Vince"
-    ],
-    "time": 128.23,
-    "date": "2026-06-22",
-    "meet": "WF vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Sherman III, Tripp",
-      "Bordt, Jaxson",
-      "Campbell, Cooper",
-      "Petrie, Evan"
-    ],
-    "time": 134.15,
-    "date": "2026-06-22",
-    "meet": "WF vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Keene, Michelle",
-      "Jackson, Lucy",
-      "Polk, Abby",
-      "Pelletier, Zoey"
-    ],
-    "time": 145.46,
-    "date": "2026-06-22",
-    "meet": "WF vs EH",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Wilding, Emmie",
-      "McCormick, Quinn",
-      "Jackson, Olivia",
-      "Walk, Morgan"
-    ],
-    "time": 158.43,
-    "date": "2026-06-22",
-    "meet": "WF vs EH",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ballin, Christian",
-      "Finley, Jonathan",
-      "Saul, Robby",
-      "Johnson, Nate"
-    ],
-    "time": 156.08,
-    "date": "2026-06-22",
-    "meet": "PS vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Matheson, Will",
-      "McGlamery, Joel",
-      "Lee, Coleman",
-      "Landers, Benjamin"
-    ],
-    "time": 186.94,
-    "date": "2026-06-22",
-    "meet": "PS vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Fly, Harper",
-      "Bonyadlou, Taraneh",
-      "James, Hadley",
-      "Broughton, Emily"
-    ],
-    "time": 170.64,
-    "date": "2026-06-22",
-    "meet": "PS vs WC",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Fischer, Camryn",
-      "Ballin, Alivia",
-      "Austin, Skyler",
-      "Herron, Vivian"
-    ],
-    "time": 174.06,
-    "date": "2026-06-22",
-    "meet": "PS vs WC",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Kurowski, Ryan",
-      "Finley, Cameron",
-      "Herron, Isaac",
-      "Guaspari, Aiden"
-    ],
-    "time": 146.19,
-    "date": "2026-06-22",
-    "meet": "PS vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ready, Ryan",
-      "Stockburger, Ben",
-      "Pierce, Austin",
-      "Walker, Cameron"
-    ],
-    "time": 160.9,
-    "date": "2026-06-22",
-    "meet": "PS vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Broughton, Chase",
-      "Newsome, Wyatt",
-      "Stehle, Carter",
-      "Lavender, Thad"
-    ],
-    "time": 196.34,
-    "date": "2026-06-22",
-    "meet": "PS vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Matheson, Chelsea",
-      "Lee, Hope",
-      "Walker, Olivia",
-      "Burcham, Anya"
-    ],
-    "time": 149.77,
-    "date": "2026-06-22",
-    "meet": "PS vs WC",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Johnson, Annie",
-      "Hamati, Gianina",
-      "Faucett, Jade",
-      "Leone, Morgan"
-    ],
-    "time": 169.13,
-    "date": "2026-06-22",
-    "meet": "PS vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Trichler, Kate",
-      "Honenberger, Shirley",
-      "Murphy, Morgan",
-      "Burcham, Felicity"
-    ],
-    "time": 186.37,
-    "date": "2026-06-22",
-    "meet": "PS vs WC",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Bordt, Jaxson",
-      "Petrie, Evan",
-      "Gunderman, AJ",
-      "Sherman III, Tripp"
-    ],
-    "time": 157.41,
-    "date": "2026-06-29",
-    "meet": "EH vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Murphy, Tucker",
-      "Dameron, Harrison",
-      "Clark, Nethan",
-      "Amiss, Noah"
-    ],
-    "time": 186.86,
-    "date": "2026-06-29",
-    "meet": "EH vs WPD",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Pelletier, Zoey",
-      "Keene, Michelle",
-      "Gunderman, Annalise",
-      "Stephens, Keiryn"
-    ],
-    "time": 152.68,
-    "date": "2026-06-29",
-    "meet": "EH vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Brizendine, Ella",
-      "Wills, Kennedy",
-      "Clark, Sofia",
-      "Rodriguez, Lydia"
-    ],
-    "time": 181.29,
-    "date": "2026-06-29",
-    "meet": "EH vs WPD",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Polk, Timothy",
-      "Vasquez, Leon",
-      "Campbell, Cooper",
-      "Vasquez, Max"
-    ],
-    "time": 141.64,
-    "date": "2026-06-29",
-    "meet": "EH vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Lewis, Jase",
-      "Lewis, Waylon",
-      "Lohr Jr, Bill",
-      "Rose, Blake"
-    ],
-    "time": 195.89,
-    "date": "2026-06-29",
-    "meet": "EH vs WPD",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Corbett, Sammy",
-      "Corbett, Lucas",
-      "Dodge, Landon",
-      "Campbell, Colton"
-    ],
-    "time": 164.05,
-    "date": "2026-06-29",
-    "meet": "EH vs WPD",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Dodge, Avery",
-      "Pollock, Leora",
-      "Polk, Abby",
-      "Gunderman, Katie"
-    ],
-    "time": 149.08,
-    "date": "2026-06-29",
-    "meet": "EH vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Paone, Mac",
-      "Evans, Kinley",
-      "Wills, Ava",
-      "Brizendine, Lily"
-    ],
-    "time": 168.17,
-    "date": "2026-06-29",
-    "meet": "EH vs WPD",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Blake, Della",
-      "Jackson, Lucy",
-      "Radcliff, Zoe",
-      "Stephens, Kimaya"
-    ],
-    "time": 173.71,
-    "date": "2026-06-29",
-    "meet": "EH vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Paone, Rylie",
-      "Walker, Ashlynn",
-      "Baker, Annabelle",
-      "Whisenhunt, Harlee"
-    ],
-    "time": 186.09,
-    "date": "2026-06-29",
-    "meet": "EH vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Gorelick, Canaan",
-      "Butler, Anson",
-      "Walk, Callen",
-      "Long, Tucker"
-    ],
-    "time": 143.53,
-    "date": "2026-06-29",
-    "meet": "WF vs PS",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ballin, Christian",
-      "Finley, Jonathan",
-      "Long, Matthew",
-      "Finley, Cameron"
-    ],
-    "time": 150.32,
-    "date": "2026-06-29",
-    "meet": "WF vs PS",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ballin, Alivia",
-      "Fischer, Camryn",
-      "Austin, Skyler",
-      "Case, Madelyn"
-    ],
-    "time": 158.84,
-    "date": "2026-06-29",
-    "meet": "WF vs PS",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "McCormick, Quinn",
-      "Long, Tessa",
-      "Spicer, Brynn",
-      "Wilding, Emmie"
-    ],
-    "time": 169.97,
-    "date": "2026-06-29",
-    "meet": "WF vs PS",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Bravo, Frankie",
-      "Linton, Kate",
-      "McKinley, Sage",
-      "Lamicella, AJ"
-    ],
-    "time": null,
-    "date": "2026-06-29",
-    "meet": "WF vs PS",
-    "dq": true
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Pascoe, Wilson",
-      "Perkins, Reddick",
-      "Voss, Oliver",
-      "Husband, Vince"
-    ],
-    "time": 127.52,
-    "date": "2026-06-29",
-    "meet": "WF vs PS",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Kurowski, Ryan",
-      "Faucett, Marcellus",
-      "Kurowski, Kaleb",
-      "Saul, Robby"
-    ],
-    "time": 143.26,
-    "date": "2026-06-29",
-    "meet": "WF vs PS",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Collado, Sophia",
-      "Sykes, Katharine",
-      "Jackson, Olivia",
-      "Walk, Morgan"
-    ],
-    "time": 141.65,
-    "date": "2026-06-29",
-    "meet": "WF vs PS",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Fisher, Lily",
-      "Leone, Sarah",
-      "Cooke, Allyson",
-      "Leone, Morgan"
-    ],
-    "time": 182.12,
-    "date": "2026-06-29",
-    "meet": "WF vs PS",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Takach, Natalie",
-      "Herron, Vivian",
-      "Vallejo, Sophia",
-      "Faucett, Jade"
-    ],
-    "time": 205.69,
-    "date": "2026-06-29",
-    "meet": "WF vs PS",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Shnowske, Luke",
-      "Hibbard, Mason",
-      "Shnowske, Sam",
-      "Hunley, Christian"
-    ],
-    "time": 145.82,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Schum, Alfie",
-      "McGlamery, Joel",
-      "Sylvester, Wyatt",
-      "Stockburger, Ben"
-    ],
-    "time": 167.08,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Childress, Grey",
-      "Bissette, Zurie",
-      "Shnowske, Anna",
-      "Swartzel, Reagan"
-    ],
-    "time": 153.72,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Purse, Amelia",
-      "Bonyadlou, Taraneh",
-      "Walker, Olivia",
-      "Matheson, Chelsea"
-    ],
-    "time": 173.57,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Hunley, Alexander",
-      "Lantz, Parker",
-      "Whaley, William",
-      "Palacios, Ian"
-    ],
-    "time": 157.82,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ready, Ryan",
-      "Landers, Benjamin",
-      "Matheson, Will",
-      "Lavender, Bram"
-    ],
-    "time": 182,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Hobbs, Piper",
-      "Welch, Kinsley",
-      "Hobbs, Reagan",
-      "Haas, Natalie"
-    ],
-    "time": 148.46,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Taylor, Delani",
-      "Warfield, Reese",
-      "Lantz, Clara",
-      "Bissette, Emjay"
-    ],
-    "time": 164.25,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Kalloch, Lucy",
-      "Honenberger, Shirley",
-      "Burcham, Felicity",
-      "Burcham, Anya"
-    ],
-    "time": 171.2,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Mixed Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Hobbs, Michaela",
-      "Buzek, Jaclynn",
-      "Childress, Wyatt",
-      "Welch, Sutton"
-    ],
-    "time": 151.51,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Mixed Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Walker, Cameron",
-      "Lee, Hope",
-      "James, Hadley",
-      "Newsome, Wyatt"
-    ],
-    "time": 170.28,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Mixed Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Gilligan, Donovan",
-      "Fly, Kayla",
-      "Murphy, Morgan",
-      "Broughton, Chase"
-    ],
-    "time": 209.46,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Mixed Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Snyder, Wren",
-      "Eggleston, Hayden",
-      "Thrash, Nehemiah",
-      "Palacios, Gabe"
-    ],
-    "time": 142.88,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Mixed Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Peterson, JJ",
-      "Fly, Harper",
-      "Whatley, Ellie",
-      "Moore, Brendan"
-    ],
-    "time": 163.13,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Mixed Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Stehle, Willow",
-      "Stehle, Carter",
-      "Simone, Leila",
-      "Whatley, Jacob"
-    ],
-    "time": 181.25,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Mixed Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Greer, Conor",
-      "Crowther, Joe",
-      "Bissette, Imogen",
-      "Whaley, Katelyn"
-    ],
-    "time": 154.01,
-    "date": "2026-06-29",
-    "meet": "WT vs WC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Shnowske, Luke",
-      "Hibbard, Mason",
-      "Shnowske, Sam",
-      "Welch, Sutton"
-    ],
-    "time": 144.64,
-    "date": "2026-07-08",
-    "meet": "WT vs PS",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ballin, Christian",
-      "Finley, Jonathan",
-      "Long, Matthew",
-      "Finley, Cameron"
-    ],
-    "time": 152.53,
-    "date": "2026-07-08",
-    "meet": "WT vs PS",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Bravo, Frankie",
-      "Ballin, Alivia",
-      "Austin, Skyler",
-      "Case, Madelyn"
-    ],
-    "time": 162.47,
-    "date": "2026-07-08",
-    "meet": "WT vs PS",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Welch, Kinsley",
-      "Bissette, Emjay",
-      "Hobbs, Michaela",
-      "Hobbs, Piper"
-    ],
-    "time": 174.45,
-    "date": "2026-07-08",
-    "meet": "WT vs PS",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Bibbins, Tyler",
-      "Asbell, Grayson",
-      "Childress, Wyatt",
-      "Keithley, Jostin"
-    ],
-    "time": 135.9,
-    "date": "2026-07-08",
-    "meet": "WT vs PS",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Kurowski, Ryan",
-      "Johnson, Nate",
-      "Kurowski, Kaleb",
-      "Saul, Robby"
-    ],
-    "time": 139.44,
-    "date": "2026-07-08",
-    "meet": "WT vs PS",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Swartzel, Reagan",
-      "Childress, Grey",
-      "Hobbs, Reagan",
-      "Hoadley, Addison"
-    ],
-    "time": 139.6,
-    "date": "2026-07-08",
-    "meet": "WT vs PS",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Johnson, Annie",
-      "Hamati, Gianina",
-      "Lamicella, AJ",
-      "Leone, Morgan"
-    ],
-    "time": 168.83,
-    "date": "2026-07-08",
-    "meet": "WT vs PS",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Bordt, Jaxson",
-      "Petrie, Evan",
-      "Gunderman, AJ",
-      "Wulczynski, Joey"
-    ],
-    "time": 152.03,
-    "date": "2026-07-08",
-    "meet": "EH vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Schum, Alfie",
-      "McGlamery, Joel",
-      "Moskal, Nathan",
-      "Landers, Benjamin"
-    ],
-    "time": 187.13,
-    "date": "2026-07-08",
-    "meet": "EH vs WC",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Pelletier, Zoey",
-      "Keene, Michelle",
-      "Gunderman, Annalise",
-      "Stephens, Keiryn"
-    ],
-    "time": 149.5,
-    "date": "2026-07-08",
-    "meet": "EH vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Fly, Harper",
-      "Murphy, Morgan",
-      "Fly, Kayla",
-      "Matheson, Chelsea"
-    ],
-    "time": 174.83,
-    "date": "2026-07-08",
-    "meet": "EH vs WC",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Shobe, Sam",
-      "Vasquez, Leon",
-      "Campbell, Cooper",
-      "Vasquez, Max"
-    ],
-    "time": 146.34,
-    "date": "2026-07-08",
-    "meet": "EH vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Newsome, Wyatt",
-      "Stehle, Carter",
-      "Matheson, Will",
-      "Lee, Coleman"
-    ],
-    "time": 182.38,
-    "date": "2026-07-08",
-    "meet": "EH vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ready, Ryan",
-      "Gilligan, Bryce",
-      "Gilligan, Donovan",
-      "Moore, Brendan"
-    ],
-    "time": 212.83,
-    "date": "2026-07-08",
-    "meet": "EH vs WC",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Lamb, Addley",
-      "Pollock, Leora",
-      "Radcliff, Zoe",
-      "Gunderman, Katie"
-    ],
-    "time": 152.19,
-    "date": "2026-07-08",
-    "meet": "EH vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Broughton, Emily",
-      "Lee, Hope",
-      "James, Hadley",
-      "Simone, Olivia"
-    ],
-    "time": 162.97,
-    "date": "2026-07-08",
-    "meet": "EH vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ready, Leah",
-      "Purse, Amelia",
-      "Honenberger, Shirley",
-      "Burcham, Felicity"
-    ],
-    "time": 183.5,
-    "date": "2026-07-08",
-    "meet": "EH vs WC",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Shnowske Luke",
-      "Hibbard Mason",
-      "Shnowske Sam",
-      "Hunley Christian"
-    ],
-    "time": 143.76,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Eason Colin",
-      "Smelser Marcus",
-      "Gunderman AJ",
-      "Corbett Sammy"
-    ],
-    "time": 162.81,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Radcliff Zoe",
-      "Keene Michelle",
-      "Gunderman Katie",
-      "Pollock Leora"
-    ],
-    "time": 165.39,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Eggleston Hayden",
-      "Lantz Clara",
-      "Whaley Katelyn",
-      "Taylor Delani"
-    ],
-    "time": 183.63,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Hunley Alexander",
-      "Lantz Parker",
-      "Thrash Nehemiah",
-      "Keithley Jostin"
-    ],
-    "time": 135.18,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Wulczynski Joey",
-      "Vasquez Leon",
-      "Campbell Cooper",
-      "Vasquez Max"
-    ],
-    "time": 137.87,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Bavuso Connor",
-      "Corbett Jacob",
-      "Grimm Ben",
-      "Smelser Marcus"
-    ],
-    "time": null,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": true
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Swartzel Reagan",
-      "Childress Grey",
-      "Bissette Zurie",
-      "Shnowske Anna"
-    ],
-    "time": 131.64,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Lamb Addley",
-      "Jorgensen Aves",
-      "Stocki Sutton",
-      "Stephens Kimaya"
-    ],
-    "time": 155.13,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Lantz Violet",
-      "Welch Kinsley",
-      "Bissette Imogen",
-      "Bissette Emjay"
-    ],
-    "time": 160.59,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Blake Della",
-      "Taylor Rowan",
-      "Peters Lorelei",
-      "Scheid Penny"
-    ],
-    "time": 218,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Mixed Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Stephens Keiryn",
-      "Petrie Evan",
-      "Gunderman Annalise",
-      "Sherman III Tripp"
-    ],
-    "time": 146.31,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Mixed Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Pate Abigail",
-      "Buzek Jaclynn",
-      "Childress Wyatt",
-      "Welch Sutton"
-    ],
-    "time": 154.23,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Mixed Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Polk Timothy",
-      "Bordt Jaxson",
-      "Polk Abby",
-      "Pelletier Zoey"
-    ],
-    "time": 139.71,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "WT",
-    "ageGroup": "Mixed Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Snyder Wren",
-      "Whaley William",
-      "Ilardi Nikolai",
-      "Haas Natalie"
-    ],
-    "time": 146.23,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": false
-  },
-  {
-    "team": "EH",
-    "ageGroup": "Mixed Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Corbett Lucas",
-      "Corbett Hannah",
-      "Corbett Rachel",
-      "Corbett Jacob"
-    ],
-    "time": null,
-    "date": "2026-07-13",
-    "meet": "WT vs EH",
-    "dq": true
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Perkins Reddick",
-      "Butler Anson",
-      "Walk Callen",
-      "Long Tucker"
-    ],
-    "time": 137.71,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Matheson Will",
-      "McGlamery Joel",
-      "Sylvester Wyatt",
-      "Stockburger Ben"
-    ],
-    "time": 165.06,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Overton Liam",
-      "Pascoe Clark",
-      "Grizzle Fletcher",
-      "McCartney Nolan"
-    ],
-    "time": 192.83,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Fly Harper",
-      "Bonyadlou Taraneh",
-      "James Hadley",
-      "Broughton Emily"
-    ],
-    "time": 173.21,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Hill Summer",
-      "Moore Kensington",
-      "McCormick Quinn",
-      "Wilding Emmie"
-    ],
-    "time": 195.7,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Kordosky Lucy",
-      "Lee Grace",
-      "Walk Morgan",
-      "Chess Julia"
-    ],
-    "time": 230.64,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Pascoe Wilson",
-      "Gorelick Canaan",
-      "Perkins Cavan",
-      "Husband Vince"
-    ],
-    "time": 140.06,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Chess Charlie",
-      "Larimer Everett",
-      "Chess Freddy",
-      "Gemerek Theo"
-    ],
-    "time": 175.02,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ready Ryan",
-      "Newsome Wyatt",
-      "Pierce Austin",
-      "Lee Coleman"
-    ],
-    "time": 175.46,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Broughton Chase",
-      "Peterson JJ",
-      "Gilligan Bryce",
-      "Lavender Bram"
-    ],
-    "time": 185.19,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Collado Sophia",
-      "Sykes Katharine",
-      "Long Tessa",
-      "Gorelick Ryah"
-    ],
-    "time": 135.31,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Matheson Chelsea",
-      "Lee Hope",
-      "Walker Olivia",
-      "Burcham Anya"
-    ],
-    "time": 147.58,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WC",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Kalloch Lucy",
-      "Purse Amelia",
-      "Murphy Morgan",
-      "Kalloch Grace"
-    ],
-    "time": 166.43,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "WF",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Overton Camilla",
-      "Larimer June",
-      "Shelley Clara",
-      "Grizzle Abby"
-    ],
-    "time": 186.91,
-    "date": "2026-07-13",
-    "meet": "WF vs WC",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Finley Cameron",
-      "Finley Jonathan",
-      "Long Matthew",
-      "Ballin Christian"
-    ],
-    "time": 154.84,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Men Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Poorman Julian",
-      "Lohr Jr Bill",
-      "Clark Nethan",
-      "Kinstetter Merick"
-    ],
-    "time": 195.29,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ballin Alivia",
-      "Fischer Camryn",
-      "Austin Skyler",
-      "Case Madelyn"
-    ],
-    "time": 159.72,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Newman Alyssa",
-      "Wills Kennedy",
-      "Hunsucker Addison",
-      "Ronan Brynnlee"
-    ],
-    "time": 165.7,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Bravo Frankie",
-      "Linton Kate",
-      "Lamicella AJ",
-      "Cooke Allyson"
-    ],
-    "time": 205.78,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Women Open",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "BAker Annabelle",
-      "Lamp Sophie",
-      "Paone Mac",
-      "Amiss Bella"
-    ],
-    "time": 222.75,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Kurowski Ryan",
-      "Johnson Nate",
-      "Kurowski Kaleb",
-      "Saul Robby"
-    ],
-    "time": 146.46,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Poorman Jonathan",
-      "Dameron Harrison",
-      "Amiss Noah",
-      "Rose Blake"
-    ],
-    "time": 162.68,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Men Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Murphy Tucker",
-      "Hopson Hunter",
-      "Romero Roman",
-      "Hubbard Camden"
-    ],
-    "time": 215.12,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Johnson Annie",
-      "Hamati Gianina",
-      "Hamati Jacqueline",
-      "Leone Morgan"
-    ],
-    "time": 159.11,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ronan Everly",
-      "Allen Amzie",
-      "Wills Ava",
-      "Clark Sofia"
-    ],
-    "time": 165.72,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "WPD",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Hoang Milana",
-      "Ronan Harper",
-      "Lamp Savannah",
-      "Dameron Annabelle"
-    ],
-    "time": 174.7,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  },
-  {
-    "team": "PS",
-    "ageGroup": "Women Open",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Takach Natalie",
-      "Leone Sarah",
-      "Vallejo Sophia",
-      "Vallejo Scarlett"
-    ],
-    "time": 192.72,
-    "date": "2026-07-13",
-    "meet": "PS vs WPD",
-    "dq": false
-  }
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Bordt, Jaxson",
+   "Smelser, Marcus",
+   "Gunderman, AJ",
+   "Sherman III, Tripp"
+  ],
+  "time": 151.03,
+  "date": "2026-06-15",
+  "meet": "EH vs Gators (friendly)",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Radcliff, Zoe",
+   "Pollock, Leora",
+   "Gunderman, Katie",
+   "Keene, Michelle"
+  ],
+  "time": 169.7,
+  "date": "2026-06-15",
+  "meet": "EH vs Gators (friendly)",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Wulczynski, Joey",
+   "Vasquez, Leon",
+   "Campbell, Cooper",
+   "Petrie, Evan"
+  ],
+  "time": 137.82,
+  "date": "2026-06-15",
+  "meet": "EH vs Gators (friendly)",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Lamb, Addley",
+   "Gunderman, Annalise",
+   "Stephens, Keiryn",
+   "Pelletier, Zoey"
+  ],
+  "time": 140.38,
+  "date": "2026-06-15",
+  "meet": "EH vs Gators (friendly)",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": null,
+  "time": 146.3,
+  "date": "2026-06-15",
+  "meet": "WF vs Kingswood Klams (friendship meet)",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "McCormick, Quinn",
+   "Moore, Kensington",
+   "Sykes, Katharine",
+   "Collado, Sophia"
+  ],
+  "time": 166.5,
+  "date": "2026-06-15",
+  "meet": "WF vs Kingswood Klams (friendship meet)",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": null,
+  "time": 137.96,
+  "date": "2026-06-15",
+  "meet": "WF vs Kingswood Klams (friendship meet)",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": null,
+  "time": null,
+  "date": "2026-06-15",
+  "meet": "WF vs Kingswood Klams (friendship meet)",
+  "dq": true
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Kurowski, Kaleb",
+   "Ballin, Christian",
+   "Saul, Robby",
+   "Finley, Cameron"
+  ],
+  "time": 155.78,
+  "date": "2026-06-15",
+  "meet": "PS vs WGPRA",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Montgomery, Gavin",
+   "Kurowski, Ryan",
+   "Finley, Jonathan",
+   "Long, Matthew"
+  ],
+  "time": 139.64,
+  "date": "2026-06-15",
+  "meet": "PS vs WGPRA",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Mixed Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Weaver, Grayson",
+   "Keyes, Evan",
+   "Ballin, Alivia",
+   "Leone, Morgan"
+  ],
+  "time": 161.08,
+  "date": "2026-06-15",
+  "meet": "PS vs WGPRA",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Schum, Alfie",
+   "McGlamery, Joel",
+   "Walker, Cameron",
+   "Ready, Ryan"
+  ],
+  "time": 186.65,
+  "date": "2026-06-15",
+  "meet": "WC vs VW",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Simone, Olivia",
+   "Murphy, Morgan",
+   "Purse, Amelia",
+   "Kalloch, Lucy"
+  ],
+  "time": 195.66,
+  "date": "2026-06-15",
+  "meet": "WC vs VW",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Newsome, Wyatt",
+   "Matheson, Will",
+   "Stehle, Carter",
+   "Lavender, Thad"
+  ],
+  "time": 183.65,
+  "date": "2026-06-15",
+  "meet": "WC vs VW",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Matheson, Chelsea",
+   "Lee, Hope",
+   "Fly, Harper",
+   "Walker, Olivia"
+  ],
+  "time": 150.25,
+  "date": "2026-06-15",
+  "meet": "WC vs VW",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Lantz, Parker",
+   "Whaley, William",
+   "Ilardi, Nikolai",
+   "Hunley, Christian"
+  ],
+  "time": 172.34,
+  "date": "2026-06-15",
+  "meet": "WT vs FDC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Eggleston, Hayden",
+   "Buzek, Jaclynn",
+   "Bissette, Zurie",
+   "Hobbs, Piper"
+  ],
+  "time": 172.78,
+  "date": "2026-06-15",
+  "meet": "WT vs FDC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Hunley, Alexander",
+   "Asbell, Grayson",
+   "Childress, Wyatt",
+   "Palacios, Gabe"
+  ],
+  "time": 136.81,
+  "date": "2026-06-15",
+  "meet": "WT vs FDC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Snyder, Wren",
+   "Welch, Kinsley",
+   "Hobbs, Reagan",
+   "Haas, Natalie"
+  ],
+  "time": 149.52,
+  "date": "2026-06-15",
+  "meet": "WT vs FDC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Mixed Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Shnowske, Luke",
+   "Shnowske, Sam",
+   "Shnowske, Anna",
+   "Swartzel, Reagan"
+  ],
+  "time": 133.84,
+  "date": "2026-06-15",
+  "meet": "WT vs FDC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Mixed Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Welch, Sutton",
+   "Buzek, Rowan",
+   "Hobbs, Michaela",
+   "Hoadley, Addison"
+  ],
+  "time": 154.53,
+  "date": "2026-06-15",
+  "meet": "WT vs FDC",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Murphy, Tucker",
+   "Hubbard, Camden",
+   "Clark, Nethan",
+   "Amiss, Noah"
+  ],
+  "time": 196,
+  "date": "2026-06-15",
+  "meet": "WPD vs IP",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Brizendine, Ella",
+   "Wills, Kennedy",
+   "Brizendine, Lily",
+   "Baker, Annabelle"
+  ],
+  "time": 196.32,
+  "date": "2026-06-15",
+  "meet": "WPD vs IP",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Evans, Kinley",
+   "Hunsucker, Addison",
+   "Clark, Sofia",
+   "Paone, Mac"
+  ],
+  "time": 197.56,
+  "date": "2026-06-15",
+  "meet": "WPD vs IP",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Jordan, Charlie",
+   "Dameron, Harrison",
+   "Poorman, Julian",
+   "Rose, Blake"
+  ],
+  "time": 198.09,
+  "date": "2026-06-15",
+  "meet": "WPD vs IP",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Poorman, Jonathan",
+   "Shaw, Tucker",
+   "Hopson, Hunter",
+   "Lohr Jr, Bill"
+  ],
+  "time": 204.56,
+  "date": "2026-06-15",
+  "meet": "WPD vs IP",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ronan, Everly",
+   "Walker, Ashlynn",
+   "Wills, Ava",
+   "Rodriguez, Lydia"
+  ],
+  "time": 180.32,
+  "date": "2026-06-15",
+  "meet": "WPD vs IP",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Hopson, Reese",
+   "Murphy, Helen",
+   "Ronan, Harper",
+   "Dameron, Annabelle"
+  ],
+  "time": 210.38,
+  "date": "2026-06-15",
+  "meet": "WPD vs IP",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Voss, Oliver",
+   "Butler, Anson",
+   "Walk, Callen",
+   "Pascoe, Wilson"
+  ],
+  "time": 137.3,
+  "date": "2026-06-22",
+  "meet": "WF vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Vasquez, Leon",
+   "Smelser, Marcus",
+   "Gunderman, AJ",
+   "Polk, Timothy"
+  ],
+  "time": 157.89,
+  "date": "2026-06-22",
+  "meet": "WF vs EH",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Sykes, Katharine",
+   "Long, Tessa",
+   "Gorelick, Ryah",
+   "Collado, Sophia"
+  ],
+  "time": 149.52,
+  "date": "2026-06-22",
+  "meet": "WF vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Gunderman, Katie",
+   "Pollock, Leora",
+   "Gunderman, Annalise",
+   "Lamb, Addley"
+  ],
+  "time": 167.06,
+  "date": "2026-06-22",
+  "meet": "WF vs EH",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Long, Tucker",
+   "Gorelick, Canaan",
+   "Perkins, Reddick",
+   "Husband, Vince"
+  ],
+  "time": 128.23,
+  "date": "2026-06-22",
+  "meet": "WF vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Sherman III, Tripp",
+   "Bordt, Jaxson",
+   "Campbell, Cooper",
+   "Petrie, Evan"
+  ],
+  "time": 134.15,
+  "date": "2026-06-22",
+  "meet": "WF vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Keene, Michelle",
+   "Jackson, Lucy",
+   "Polk, Abby",
+   "Pelletier, Zoey"
+  ],
+  "time": 145.46,
+  "date": "2026-06-22",
+  "meet": "WF vs EH",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Wilding, Emmie",
+   "McCormick, Quinn",
+   "Jackson, Olivia",
+   "Walk, Morgan"
+  ],
+  "time": 158.43,
+  "date": "2026-06-22",
+  "meet": "WF vs EH",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ballin, Christian",
+   "Finley, Jonathan",
+   "Saul, Robby",
+   "Johnson, Nate"
+  ],
+  "time": 156.08,
+  "date": "2026-06-22",
+  "meet": "PS vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Matheson, Will",
+   "McGlamery, Joel",
+   "Lee, Coleman",
+   "Landers, Benjamin"
+  ],
+  "time": 186.94,
+  "date": "2026-06-22",
+  "meet": "PS vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Fly, Harper",
+   "Bonyadlou, Taraneh",
+   "James, Hadley",
+   "Broughton, Emily"
+  ],
+  "time": 170.64,
+  "date": "2026-06-22",
+  "meet": "PS vs WC",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Fischer, Camryn",
+   "Ballin, Alivia",
+   "Austin, Skyler",
+   "Herron, Vivian"
+  ],
+  "time": 174.06,
+  "date": "2026-06-22",
+  "meet": "PS vs WC",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Kurowski, Ryan",
+   "Finley, Cameron",
+   "Herron, Isaac",
+   "Guaspari, Aiden"
+  ],
+  "time": 146.19,
+  "date": "2026-06-22",
+  "meet": "PS vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ready, Ryan",
+   "Stockburger, Ben",
+   "Pierce, Austin",
+   "Walker, Cameron"
+  ],
+  "time": 160.9,
+  "date": "2026-06-22",
+  "meet": "PS vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Broughton, Chase",
+   "Newsome, Wyatt",
+   "Stehle, Carter",
+   "Lavender, Thad"
+  ],
+  "time": 196.34,
+  "date": "2026-06-22",
+  "meet": "PS vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Matheson, Chelsea",
+   "Lee, Hope",
+   "Walker, Olivia",
+   "Burcham, Anya"
+  ],
+  "time": 149.77,
+  "date": "2026-06-22",
+  "meet": "PS vs WC",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Johnson, Annie",
+   "Hamati, Gianina",
+   "Faucett, Jade",
+   "Leone, Morgan"
+  ],
+  "time": 169.13,
+  "date": "2026-06-22",
+  "meet": "PS vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Trichler, Kate",
+   "Honenberger, Shirley",
+   "Murphy, Morgan",
+   "Burcham, Felicity"
+  ],
+  "time": 186.37,
+  "date": "2026-06-22",
+  "meet": "PS vs WC",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Bordt, Jaxson",
+   "Petrie, Evan",
+   "Gunderman, AJ",
+   "Sherman III, Tripp"
+  ],
+  "time": 157.41,
+  "date": "2026-06-29",
+  "meet": "EH vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Murphy, Tucker",
+   "Dameron, Harrison",
+   "Clark, Nethan",
+   "Amiss, Noah"
+  ],
+  "time": 186.86,
+  "date": "2026-06-29",
+  "meet": "EH vs WPD",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Pelletier, Zoey",
+   "Keene, Michelle",
+   "Gunderman, Annalise",
+   "Stephens, Keiryn"
+  ],
+  "time": 152.68,
+  "date": "2026-06-29",
+  "meet": "EH vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Brizendine, Ella",
+   "Wills, Kennedy",
+   "Clark, Sofia",
+   "Rodriguez, Lydia"
+  ],
+  "time": 181.29,
+  "date": "2026-06-29",
+  "meet": "EH vs WPD",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Polk, Timothy",
+   "Vasquez, Leon",
+   "Campbell, Cooper",
+   "Vasquez, Max"
+  ],
+  "time": 141.64,
+  "date": "2026-06-29",
+  "meet": "EH vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Lewis, Jase",
+   "Lewis, Waylon",
+   "Lohr Jr, Bill",
+   "Rose, Blake"
+  ],
+  "time": 195.89,
+  "date": "2026-06-29",
+  "meet": "EH vs WPD",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Corbett, Sammy",
+   "Corbett, Lucas",
+   "Dodge, Landon",
+   "Campbell, Colton"
+  ],
+  "time": 164.05,
+  "date": "2026-06-29",
+  "meet": "EH vs WPD",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Dodge, Avery",
+   "Pollock, Leora",
+   "Polk, Abby",
+   "Gunderman, Katie"
+  ],
+  "time": 149.08,
+  "date": "2026-06-29",
+  "meet": "EH vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Paone, Mac",
+   "Evans, Kinley",
+   "Wills, Ava",
+   "Brizendine, Lily"
+  ],
+  "time": 168.17,
+  "date": "2026-06-29",
+  "meet": "EH vs WPD",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Blake, Della",
+   "Jackson, Lucy",
+   "Radcliff, Zoe",
+   "Stephens, Kimaya"
+  ],
+  "time": 173.71,
+  "date": "2026-06-29",
+  "meet": "EH vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Paone, Rylie",
+   "Walker, Ashlynn",
+   "Baker, Annabelle",
+   "Whisenhunt, Harlee"
+  ],
+  "time": 186.09,
+  "date": "2026-06-29",
+  "meet": "EH vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Gorelick, Canaan",
+   "Butler, Anson",
+   "Walk, Callen",
+   "Long, Tucker"
+  ],
+  "time": 143.53,
+  "date": "2026-06-29",
+  "meet": "WF vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ballin, Christian",
+   "Finley, Jonathan",
+   "Long, Matthew",
+   "Finley, Cameron"
+  ],
+  "time": 150.32,
+  "date": "2026-06-29",
+  "meet": "WF vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ballin, Alivia",
+   "Fischer, Camryn",
+   "Austin, Skyler",
+   "Case, Madelyn"
+  ],
+  "time": 158.84,
+  "date": "2026-06-29",
+  "meet": "WF vs PS",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "McCormick, Quinn",
+   "Long, Tessa",
+   "Spicer, Brynn",
+   "Wilding, Emmie"
+  ],
+  "time": 169.97,
+  "date": "2026-06-29",
+  "meet": "WF vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Bravo, Frankie",
+   "Linton, Kate",
+   "McKinley, Sage",
+   "Lamicella, AJ"
+  ],
+  "time": null,
+  "date": "2026-06-29",
+  "meet": "WF vs PS",
+  "dq": true
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Pascoe, Wilson",
+   "Perkins, Reddick",
+   "Voss, Oliver",
+   "Husband, Vince"
+  ],
+  "time": 127.52,
+  "date": "2026-06-29",
+  "meet": "WF vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Kurowski, Ryan",
+   "Faucett, Marcellus",
+   "Kurowski, Kaleb",
+   "Saul, Robby"
+  ],
+  "time": 143.26,
+  "date": "2026-06-29",
+  "meet": "WF vs PS",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Collado, Sophia",
+   "Sykes, Katharine",
+   "Jackson, Olivia",
+   "Walk, Morgan"
+  ],
+  "time": 141.65,
+  "date": "2026-06-29",
+  "meet": "WF vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Fisher, Lily",
+   "Leone, Sarah",
+   "Cooke, Allyson",
+   "Leone, Morgan"
+  ],
+  "time": 182.12,
+  "date": "2026-06-29",
+  "meet": "WF vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Takach, Natalie",
+   "Herron, Vivian",
+   "Vallejo, Sophia",
+   "Faucett, Jade"
+  ],
+  "time": 205.69,
+  "date": "2026-06-29",
+  "meet": "WF vs PS",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Shnowske, Luke",
+   "Hibbard, Mason",
+   "Shnowske, Sam",
+   "Hunley, Christian"
+  ],
+  "time": 145.82,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Schum, Alfie",
+   "McGlamery, Joel",
+   "Sylvester, Wyatt",
+   "Stockburger, Ben"
+  ],
+  "time": 167.08,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Childress, Grey",
+   "Bissette, Zurie",
+   "Shnowske, Anna",
+   "Swartzel, Reagan"
+  ],
+  "time": 153.72,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Purse, Amelia",
+   "Bonyadlou, Taraneh",
+   "Walker, Olivia",
+   "Matheson, Chelsea"
+  ],
+  "time": 173.57,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Hunley, Alexander",
+   "Lantz, Parker",
+   "Whaley, William",
+   "Palacios, Ian"
+  ],
+  "time": 157.82,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ready, Ryan",
+   "Landers, Benjamin",
+   "Matheson, Will",
+   "Lavender, Bram"
+  ],
+  "time": 182,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Hobbs, Piper",
+   "Welch, Kinsley",
+   "Hobbs, Reagan",
+   "Haas, Natalie"
+  ],
+  "time": 148.46,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Taylor, Delani",
+   "Warfield, Reese",
+   "Lantz, Clara",
+   "Bissette, Emjay"
+  ],
+  "time": 164.25,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Kalloch, Lucy",
+   "Honenberger, Shirley",
+   "Burcham, Felicity",
+   "Burcham, Anya"
+  ],
+  "time": 171.2,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Mixed Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Hobbs, Michaela",
+   "Buzek, Jaclynn",
+   "Childress, Wyatt",
+   "Welch, Sutton"
+  ],
+  "time": 151.51,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Mixed Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Walker, Cameron",
+   "Lee, Hope",
+   "James, Hadley",
+   "Newsome, Wyatt"
+  ],
+  "time": 170.28,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Mixed Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Gilligan, Donovan",
+   "Fly, Kayla",
+   "Murphy, Morgan",
+   "Broughton, Chase"
+  ],
+  "time": 209.46,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Mixed Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Snyder, Wren",
+   "Eggleston, Hayden",
+   "Thrash, Nehemiah",
+   "Palacios, Gabe"
+  ],
+  "time": 142.88,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Mixed Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Peterson, JJ",
+   "Fly, Harper",
+   "Whatley, Ellie",
+   "Moore, Brendan"
+  ],
+  "time": 163.13,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Mixed Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Stehle, Willow",
+   "Stehle, Carter",
+   "Simone, Leila",
+   "Whatley, Jacob"
+  ],
+  "time": 181.25,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Mixed Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Greer, Conor",
+   "Crowther, Joe",
+   "Bissette, Imogen",
+   "Whaley, Katelyn"
+  ],
+  "time": 154.01,
+  "date": "2026-06-29",
+  "meet": "WT vs WC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Shnowske, Luke",
+   "Hibbard, Mason",
+   "Shnowske, Sam",
+   "Welch, Sutton"
+  ],
+  "time": 144.64,
+  "date": "2026-07-08",
+  "meet": "WT vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ballin, Christian",
+   "Finley, Jonathan",
+   "Long, Matthew",
+   "Finley, Cameron"
+  ],
+  "time": 152.53,
+  "date": "2026-07-08",
+  "meet": "WT vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Bravo, Frankie",
+   "Ballin, Alivia",
+   "Austin, Skyler",
+   "Case, Madelyn"
+  ],
+  "time": 162.47,
+  "date": "2026-07-08",
+  "meet": "WT vs PS",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Welch, Kinsley",
+   "Bissette, Emjay",
+   "Hobbs, Michaela",
+   "Hobbs, Piper"
+  ],
+  "time": 174.45,
+  "date": "2026-07-08",
+  "meet": "WT vs PS",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Bibbins, Tyler",
+   "Asbell, Grayson",
+   "Childress, Wyatt",
+   "Keithley, Jostin"
+  ],
+  "time": 135.9,
+  "date": "2026-07-08",
+  "meet": "WT vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Kurowski, Ryan",
+   "Johnson, Nate",
+   "Kurowski, Kaleb",
+   "Saul, Robby"
+  ],
+  "time": 139.44,
+  "date": "2026-07-08",
+  "meet": "WT vs PS",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Swartzel, Reagan",
+   "Childress, Grey",
+   "Hobbs, Reagan",
+   "Hoadley, Addison"
+  ],
+  "time": 139.6,
+  "date": "2026-07-08",
+  "meet": "WT vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Johnson, Annie",
+   "Hamati, Gianina",
+   "Lamicella, AJ",
+   "Leone, Morgan"
+  ],
+  "time": 168.83,
+  "date": "2026-07-08",
+  "meet": "WT vs PS",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Bordt, Jaxson",
+   "Petrie, Evan",
+   "Gunderman, AJ",
+   "Wulczynski, Joey"
+  ],
+  "time": 152.03,
+  "date": "2026-07-08",
+  "meet": "EH vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Schum, Alfie",
+   "McGlamery, Joel",
+   "Moskal, Nathan",
+   "Landers, Benjamin"
+  ],
+  "time": 187.13,
+  "date": "2026-07-08",
+  "meet": "EH vs WC",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Pelletier, Zoey",
+   "Keene, Michelle",
+   "Gunderman, Annalise",
+   "Stephens, Keiryn"
+  ],
+  "time": 149.5,
+  "date": "2026-07-08",
+  "meet": "EH vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Fly, Harper",
+   "Murphy, Morgan",
+   "Fly, Kayla",
+   "Matheson, Chelsea"
+  ],
+  "time": 174.83,
+  "date": "2026-07-08",
+  "meet": "EH vs WC",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Shobe, Sam",
+   "Vasquez, Leon",
+   "Campbell, Cooper",
+   "Vasquez, Max"
+  ],
+  "time": 146.34,
+  "date": "2026-07-08",
+  "meet": "EH vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Newsome, Wyatt",
+   "Stehle, Carter",
+   "Matheson, Will",
+   "Lee, Coleman"
+  ],
+  "time": 182.38,
+  "date": "2026-07-08",
+  "meet": "EH vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ready, Ryan",
+   "Gilligan, Bryce",
+   "Gilligan, Donovan",
+   "Moore, Brendan"
+  ],
+  "time": 212.83,
+  "date": "2026-07-08",
+  "meet": "EH vs WC",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Lamb, Addley",
+   "Pollock, Leora",
+   "Radcliff, Zoe",
+   "Gunderman, Katie"
+  ],
+  "time": 152.19,
+  "date": "2026-07-08",
+  "meet": "EH vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Broughton, Emily",
+   "Lee, Hope",
+   "James, Hadley",
+   "Simone, Olivia"
+  ],
+  "time": 162.97,
+  "date": "2026-07-08",
+  "meet": "EH vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ready, Leah",
+   "Purse, Amelia",
+   "Honenberger, Shirley",
+   "Burcham, Felicity"
+  ],
+  "time": 183.5,
+  "date": "2026-07-08",
+  "meet": "EH vs WC",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Shnowske Luke",
+   "Hibbard Mason",
+   "Shnowske Sam",
+   "Hunley Christian"
+  ],
+  "time": 143.76,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Eason Colin",
+   "Smelser Marcus",
+   "Gunderman AJ",
+   "Corbett Sammy"
+  ],
+  "time": 162.81,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Radcliff Zoe",
+   "Keene Michelle",
+   "Gunderman Katie",
+   "Pollock Leora"
+  ],
+  "time": 165.39,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Eggleston Hayden",
+   "Lantz Clara",
+   "Whaley Katelyn",
+   "Taylor Delani"
+  ],
+  "time": 183.63,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Hunley Alexander",
+   "Lantz Parker",
+   "Thrash Nehemiah",
+   "Keithley Jostin"
+  ],
+  "time": 135.18,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Wulczynski Joey",
+   "Vasquez Leon",
+   "Campbell Cooper",
+   "Vasquez Max"
+  ],
+  "time": 137.87,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Bavuso Connor",
+   "Corbett Jacob",
+   "Grimm Ben",
+   "Smelser Marcus"
+  ],
+  "time": null,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": true
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Swartzel Reagan",
+   "Childress Grey",
+   "Bissette Zurie",
+   "Shnowske Anna"
+  ],
+  "time": 131.64,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Lamb Addley",
+   "Jorgensen Aves",
+   "Stocki Sutton",
+   "Stephens Kimaya"
+  ],
+  "time": 155.13,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Lantz Violet",
+   "Welch Kinsley",
+   "Bissette Imogen",
+   "Bissette Emjay"
+  ],
+  "time": 160.59,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Blake Della",
+   "Taylor Rowan",
+   "Peters Lorelei",
+   "Scheid Penny"
+  ],
+  "time": 218,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Mixed Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Stephens Keiryn",
+   "Petrie Evan",
+   "Gunderman Annalise",
+   "Sherman III Tripp"
+  ],
+  "time": 146.31,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Mixed Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Pate Abigail",
+   "Buzek Jaclynn",
+   "Childress Wyatt",
+   "Welch Sutton"
+  ],
+  "time": 154.23,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Mixed Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Polk Timothy",
+   "Bordt Jaxson",
+   "Polk Abby",
+   "Pelletier Zoey"
+  ],
+  "time": 139.71,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Mixed Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Snyder Wren",
+   "Whaley William",
+   "Ilardi Nikolai",
+   "Haas Natalie"
+  ],
+  "time": 146.23,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Mixed Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Corbett Lucas",
+   "Corbett Hannah",
+   "Corbett Rachel",
+   "Corbett Jacob"
+  ],
+  "time": null,
+  "date": "2026-07-13",
+  "meet": "WT vs EH",
+  "dq": true
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Perkins Reddick",
+   "Butler Anson",
+   "Walk Callen",
+   "Long Tucker"
+  ],
+  "time": 137.71,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Matheson Will",
+   "McGlamery Joel",
+   "Sylvester Wyatt",
+   "Stockburger Ben"
+  ],
+  "time": 165.06,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Overton Liam",
+   "Pascoe Clark",
+   "Grizzle Fletcher",
+   "McCartney Nolan"
+  ],
+  "time": 192.83,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Fly Harper",
+   "Bonyadlou Taraneh",
+   "James Hadley",
+   "Broughton Emily"
+  ],
+  "time": 173.21,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Hill Summer",
+   "Moore Kensington",
+   "McCormick Quinn",
+   "Wilding Emmie"
+  ],
+  "time": 195.7,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Kordosky Lucy",
+   "Lee Grace",
+   "Walk Morgan",
+   "Chess Julia"
+  ],
+  "time": 230.64,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Pascoe Wilson",
+   "Gorelick Canaan",
+   "Perkins Cavan",
+   "Husband Vince"
+  ],
+  "time": 140.06,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Chess Charlie",
+   "Larimer Everett",
+   "Chess Freddy",
+   "Gemerek Theo"
+  ],
+  "time": 175.02,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ready Ryan",
+   "Newsome Wyatt",
+   "Pierce Austin",
+   "Lee Coleman"
+  ],
+  "time": 175.46,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Broughton Chase",
+   "Peterson JJ",
+   "Gilligan Bryce",
+   "Lavender Bram"
+  ],
+  "time": 185.19,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Collado Sophia",
+   "Sykes Katharine",
+   "Long Tessa",
+   "Gorelick Ryah"
+  ],
+  "time": 135.31,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Matheson Chelsea",
+   "Lee Hope",
+   "Walker Olivia",
+   "Burcham Anya"
+  ],
+  "time": 147.58,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Kalloch Lucy",
+   "Purse Amelia",
+   "Murphy Morgan",
+   "Kalloch Grace"
+  ],
+  "time": 166.43,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Overton Camilla",
+   "Larimer June",
+   "Shelley Clara",
+   "Grizzle Abby"
+  ],
+  "time": 186.91,
+  "date": "2026-07-13",
+  "meet": "WF vs WC",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Finley Cameron",
+   "Finley Jonathan",
+   "Long Matthew",
+   "Ballin Christian"
+  ],
+  "time": 154.84,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Poorman Julian",
+   "Lohr Jr Bill",
+   "Clark Nethan",
+   "Kinstetter Merick"
+  ],
+  "time": 195.29,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ballin Alivia",
+   "Fischer Camryn",
+   "Austin Skyler",
+   "Case Madelyn"
+  ],
+  "time": 159.72,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Newman Alyssa",
+   "Wills Kennedy",
+   "Hunsucker Addison",
+   "Ronan Brynnlee"
+  ],
+  "time": 165.7,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Bravo Frankie",
+   "Linton Kate",
+   "Lamicella AJ",
+   "Cooke Allyson"
+  ],
+  "time": 205.78,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "BAker Annabelle",
+   "Lamp Sophie",
+   "Paone Mac",
+   "Amiss Bella"
+  ],
+  "time": 222.75,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Kurowski Ryan",
+   "Johnson Nate",
+   "Kurowski Kaleb",
+   "Saul Robby"
+  ],
+  "time": 146.46,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Poorman Jonathan",
+   "Dameron Harrison",
+   "Amiss Noah",
+   "Rose Blake"
+  ],
+  "time": 162.68,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Murphy Tucker",
+   "Hopson Hunter",
+   "Romero Roman",
+   "Hubbard Camden"
+  ],
+  "time": 215.12,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Johnson Annie",
+   "Hamati Gianina",
+   "Hamati Jacqueline",
+   "Leone Morgan"
+  ],
+  "time": 159.11,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ronan Everly",
+   "Allen Amzie",
+   "Wills Ava",
+   "Clark Sofia"
+  ],
+  "time": 165.72,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Hoang Milana",
+   "Ronan Harper",
+   "Lamp Savannah",
+   "Dameron Annabelle"
+  ],
+  "time": 174.7,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Takach Natalie",
+   "Leone Sarah",
+   "Vallejo Sophia",
+   "Vallejo Scarlett"
+  ],
+  "time": 192.72,
+  "date": "2026-07-13",
+  "meet": "PS vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Tucker Murphy",
+   "Bill Lohr Jr",
+   "Nethan Clark",
+   "Camden Hubbard"
+  ],
+  "time": 185.43,
+  "date": "2026-07-20",
+  "meet": "WC vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Logan Pierce",
+   "Will Matheson",
+   "Wyatt Sylvester",
+   "Ryan Ready"
+  ],
+  "time": null,
+  "date": "2026-07-20",
+  "meet": "WC vs WPD",
+  "dq": true
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Kinley Evans",
+   "Kennedy Wills",
+   "Brynnlee Ronan",
+   "Everly Ronan"
+  ],
+  "time": 177.93,
+  "date": "2026-07-20",
+  "meet": "WC vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Felicity Burcham",
+   "Anya Burcham",
+   "Harper Fly",
+   "Emily Broughton"
+  ],
+  "time": 199.18,
+  "date": "2026-07-20",
+  "meet": "WC vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Lydia Rodriguez",
+   "Sophie Lamp",
+   "Annabelle BAker",
+   "Emmy Baker"
+  ],
+  "time": 216.11,
+  "date": "2026-07-20",
+  "meet": "WC vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "JJ Peterson",
+   "Carter Stehle",
+   "Austin Pierce",
+   "Coleman Lee"
+  ],
+  "time": 172.32,
+  "date": "2026-07-20",
+  "meet": "WC vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Merick Kinstetter",
+   "Waylon Lewis",
+   "Noah Amiss",
+   "Blake Rose"
+  ],
+  "time": 178.34,
+  "date": "2026-07-20",
+  "meet": "WC vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WC",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Chelsea Matheson",
+   "Hope Lee",
+   "Olivia Walker",
+   "Hadley James"
+  ],
+  "time": 149.42,
+  "date": "2026-07-20",
+  "meet": "WC vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ella Brizendine",
+   "Harper Ronan",
+   "Alyssa Newman",
+   "Ava Wills"
+  ],
+  "time": 165.99,
+  "date": "2026-07-20",
+  "meet": "WC vs WPD",
+  "dq": false
+ },
+ {
+  "team": "WPD",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Emmy Blair",
+   "Ashlynn Walker",
+   "Lily Brizendine",
+   "Sofia Clark"
+  ],
+  "time": 174.05,
+  "date": "2026-07-20",
+  "meet": "WC vs WPD",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Cameron Finley",
+   "Jonathan Finley",
+   "Matthew Long",
+   "Christian Ballin"
+  ],
+  "time": 145.89,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Jaxson Bordt",
+   "Marcus Smelser",
+   "AJ Gunderman",
+   "Tripp Sherman III"
+  ],
+  "time": 149.7,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Zoey Pelletier",
+   "Michelle Keene",
+   "Annalise Gunderman",
+   "Keiryn Stephens"
+  ],
+  "time": 150.76,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Frankie Bravo",
+   "Alivia Ballin",
+   "Skyler Austin",
+   "Gianina Hamati"
+  ],
+  "time": 165.13,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Timothy Polk",
+   "Leon Vasquez",
+   "Cooper Campbell",
+   "Evan Petrie"
+  ],
+  "time": 136.92,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Ryan Kurowski",
+   "Nate Johnson",
+   "Kaleb Kurowski",
+   "Robby Saul"
+  ],
+  "time": 144.46,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Addley Lamb",
+   "Leora Pollock",
+   "Abby Polk",
+   "Katie Gunderman"
+  ],
+  "time": 149.18,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Annie Johnson",
+   "Sophia Vallejo",
+   "Rose Styron",
+   "Morgan Leone"
+  ],
+  "time": 169.27,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Mixed Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Colin Eason",
+   "Colton Campbell",
+   "Moriah Luechauer",
+   "Avery Dodge"
+  ],
+  "time": 165.52,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Mixed Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Jade Faucett",
+   "Grayson Weaver",
+   "AJ Lamicella",
+   "Isaac Herron"
+  ],
+  "time": 196.54,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": false
+ },
+ {
+  "team": "PS",
+  "ageGroup": "Mixed Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Gavin Montgomery",
+   "Kate Linton",
+   "Sarah Leone",
+   "Aiden Guaspari"
+  ],
+  "time": 152.98,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": false
+ },
+ {
+  "team": "EH",
+  "ageGroup": "Mixed Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Rowan Taylor",
+   "Aves Jorgensen",
+   "John Pollock",
+   "Max Vasquez"
+  ],
+  "time": null,
+  "date": "2026-07-20",
+  "meet": "EH vs PS",
+  "dq": true
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Callen Walk",
+   "Anson Butler",
+   "Reddick Perkins",
+   "Patrick Lloyd"
+  ],
+  "time": 140.95,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Wyatt Childress",
+   "Mason Hibbard",
+   "Nehemiah Thrash",
+   "Alexander Hunley"
+  ],
+  "time": 143.37,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Grayson Asbell",
+   "Nikolai Ilardi",
+   "Gabe Palacios",
+   "Sutton Welch"
+  ],
+  "time": 163.63,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Katharine Sykes",
+   "Tessa Long",
+   "Ryah Gorelick",
+   "Ella VanSkiver"
+  ],
+  "time": 153.69,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Kinsley Welch",
+   "Jaclynn Buzek",
+   "Reagan Hobbs",
+   "Piper Hobbs"
+  ],
+  "time": 168.62,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Medley Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Hayden Eggleston",
+   "Clara Lantz",
+   "Natalie Haas",
+   "Wren Snyder"
+  ],
+  "time": 177.66,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Christian Hunley",
+   "Luke Shnowske",
+   "Sam Shnowske",
+   "Jostin Keithley"
+  ],
+  "time": 126.12,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Wilson Pascoe",
+   "Canaan Gorelick",
+   "Cavan Perkins",
+   "Vince Husband"
+  ],
+  "time": 135.28,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Men Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Conor Greer",
+   "Parker Lantz",
+   "Victor Palacios",
+   "Ian Palacios"
+  ],
+  "time": 152.03,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Reagan Swartzel",
+   "Grey Childress",
+   "Michaela Hobbs",
+   "Anna Shnowske"
+  ],
+  "time": 134.4,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ },
+ {
+  "team": "WF",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Clara Shelley",
+   "Quinn McCormick",
+   "Olivia Jackson",
+   "Kensington Moore"
+  ],
+  "time": 158.33,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ },
+ {
+  "team": "WT",
+  "ageGroup": "Women Open",
+  "event": "200m Freestyle Relay",
+  "course": "SCM",
+  "swimmers": [
+   "Violet Lantz",
+   "Reese Warfield",
+   "Hayley Hobbs",
+   "Katelyn Whaley"
+  ],
+  "time": 168.97,
+  "date": "2026-07-20",
+  "meet": "WT vs WF",
+  "dq": false
+ }
 ]

@@ -1,2173 +1,2176 @@
 {
-  "seasons": [
+ "seasons": [
+  {
+   "year": 2022,
+   "wellingtonDivision": 2,
+   "divisionsInferred": true,
+   "divisions": [
     {
-      "year": 2022,
-      "wellingtonDivision": 2,
-      "divisionsInferred": true,
-      "divisions": [
-        {
-          "division": 1,
-          "teams": [
-            {
-              "abbr": "KW",
-              "name": "Kingswood"
-            },
-            {
-              "abbr": "FTC",
-              "name": "First Colony"
-            },
-            {
-              "abbr": "KM",
-              "name": "Kingsmill"
-            },
-            {
-              "abbr": "GS",
-              "name": "Greensprings Gators"
-            },
-            {
-              "abbr": "QL",
-              "name": "Queens Lake"
-            },
-            {
-              "abbr": "FDC",
-              "name": "Ford's Colony"
-            }
-          ]
-        },
-        {
-          "division": 2,
-          "teams": [
-            {
-              "abbr": "WF",
-              "name": "Windsor Forest"
-            },
-            {
-              "abbr": "WC",
-              "name": "Williamsburg Community"
-            },
-            {
-              "abbr": "KP",
-              "name": "Kingspoint"
-            },
-            {
-              "abbr": "WT",
-              "name": "Wellington"
-            },
-            {
-              "abbr": "GLT",
-              "name": "Governor's Land"
-            },
-            {
-              "abbr": "PS",
-              "name": "Powhatan Secondary"
-            }
-          ]
-        },
-        {
-          "division": 3,
-          "teams": [
-            {
-              "abbr": "EH",
-              "name": "Edgehill"
-            },
-            {
-              "abbr": "IP",
-              "name": "Indigo Park"
-            },
-            {
-              "abbr": "SH",
-              "name": "Stonehouse"
-            },
-            {
-              "abbr": "VG",
-              "name": "Village Green"
-            },
-            {
-              "abbr": "WGP",
-              "name": "Windsor Great Park"
-            },
-            {
-              "abbr": "VW",
-              "name": "Villages of Westminster"
-            }
-          ]
-        }
-      ],
-      "meets": [
-        {
-          "date": "2022-06-13",
-          "teamA": "EH",
-          "scoreA": null,
-          "teamB": "KM",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2022-06-13",
-          "teamA": "FTC",
-          "scoreA": null,
-          "teamB": "WC",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2022-06-13",
-          "teamA": "QL",
-          "scoreA": null,
-          "teamB": "WT",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2022-06-13",
-          "teamA": "VW",
-          "scoreA": null,
-          "teamB": "KP",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2022-06-13",
-          "teamA": "KW",
-          "scoreA": null,
-          "teamB": "SH",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2022-06-13",
-          "teamA": "WF",
-          "scoreA": null,
-          "teamB": "FDC",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2022-06-13",
-          "teamA": "WGP",
-          "scoreA": null,
-          "teamB": "VG",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2022-06-13",
-          "teamA": "PS",
-          "scoreA": null,
-          "teamB": "IP",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2022-06-13",
-          "teamA": "GLT",
-          "scoreA": null,
-          "teamB": "GS",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2022-06-20",
-          "teamA": "FTC",
-          "scoreA": 275,
-          "teamB": "FDC",
-          "scoreB": 215,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-20",
-          "teamA": "KM",
-          "scoreA": 272,
-          "teamB": "QL",
-          "scoreB": 218,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-20",
-          "teamA": "WF",
-          "scoreA": 264,
-          "teamB": "WT",
-          "scoreB": 223,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-20",
-          "teamA": "WC",
-          "scoreA": 292,
-          "teamB": "PS",
-          "scoreB": 192,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-20",
-          "teamA": "KP",
-          "scoreA": 281,
-          "teamB": "GLT",
-          "scoreB": 202,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-20",
-          "teamA": "IP",
-          "scoreA": 236,
-          "teamB": "VG",
-          "scoreB": 159,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-20",
-          "teamA": "SH",
-          "scoreA": 310,
-          "teamB": "WGP",
-          "scoreB": 139,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-20",
-          "teamA": "EH",
-          "scoreA": 308,
-          "teamB": "VW",
-          "scoreB": 116,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-20",
-          "teamA": "KW",
-          "scoreA": 319,
-          "teamB": "GS",
-          "scoreB": 174,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-27",
-          "teamA": "KW",
-          "scoreA": 329.5,
-          "teamB": "QL",
-          "scoreB": 155.5,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-27",
-          "teamA": "WC",
-          "scoreA": 271,
-          "teamB": "KP",
-          "scoreB": 223,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-27",
-          "teamA": "WT",
-          "scoreA": 244,
-          "teamB": "GLT",
-          "scoreB": 240,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-27",
-          "teamA": "WF",
-          "scoreA": 309,
-          "teamB": "PS",
-          "scoreB": 170,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-27",
-          "teamA": "SH",
-          "scoreA": 295,
-          "teamB": "VG",
-          "scoreB": 136,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-27",
-          "teamA": "EH",
-          "scoreA": 301,
-          "teamB": "IP",
-          "scoreB": 154,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-27",
-          "teamA": "WGP",
-          "scoreA": 194,
-          "teamB": "VW",
-          "scoreB": 171,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-27",
-          "teamA": "FTC",
-          "scoreA": 249,
-          "teamB": "KM",
-          "scoreB": 246,
-          "friendly": false
-        },
-        {
-          "date": "2022-06-27",
-          "teamA": "GS",
-          "scoreA": 248,
-          "teamB": "FDC",
-          "scoreB": 248,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-05",
-          "teamA": "KW",
-          "scoreA": 300,
-          "teamB": "FDC",
-          "scoreB": 186,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-05",
-          "teamA": "KM",
-          "scoreA": 266,
-          "teamB": "GS",
-          "scoreB": 230,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-05",
-          "teamA": "FTC",
-          "scoreA": 252,
-          "teamB": "QL",
-          "scoreB": 242,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-05",
-          "teamA": "WF",
-          "scoreA": 302,
-          "teamB": "GLT",
-          "scoreB": 166,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-05",
-          "teamA": "WC",
-          "scoreA": 255,
-          "teamB": "WT",
-          "scoreB": 234,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-05",
-          "teamA": "SH",
-          "scoreA": 271,
-          "teamB": "VW",
-          "scoreB": 137,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-05",
-          "teamA": "EH",
-          "scoreA": 325,
-          "teamB": "VG",
-          "scoreB": 145,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-05",
-          "teamA": "IP",
-          "scoreA": 296,
-          "teamB": "WGP",
-          "scoreB": 130,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-05",
-          "teamA": "KP",
-          "scoreA": 289,
-          "teamB": "PS",
-          "scoreB": 194,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-11",
-          "teamA": "KW",
-          "scoreA": 261,
-          "teamB": "FTC",
-          "scoreB": 230,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-11",
-          "teamA": "GS",
-          "scoreA": 262,
-          "teamB": "QL",
-          "scoreB": 231,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-11",
-          "teamA": "KM",
-          "scoreA": 261,
-          "teamB": "FDC",
-          "scoreB": 225,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-11",
-          "teamA": "WF",
-          "scoreA": 311,
-          "teamB": "KP",
-          "scoreB": 182,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-11",
-          "teamA": "WT",
-          "scoreA": 306,
-          "teamB": "PS",
-          "scoreB": 178,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-11",
-          "teamA": "IP",
-          "scoreA": 236,
-          "teamB": "SH",
-          "scoreB": 220,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-11",
-          "teamA": "VG",
-          "scoreA": 259,
-          "teamB": "VW",
-          "scoreB": 149,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-11",
-          "teamA": "EH",
-          "scoreA": 359,
-          "teamB": "WGP",
-          "scoreB": 108,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-11",
-          "teamA": "WC",
-          "scoreA": 246,
-          "teamB": "GLT",
-          "scoreB": 246,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-18",
-          "teamA": "KW",
-          "scoreA": 282,
-          "teamB": "KM",
-          "scoreB": 213,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-18",
-          "teamA": "FTC",
-          "scoreA": 284,
-          "teamB": "GS",
-          "scoreB": 210,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-18",
-          "teamA": "WF",
-          "scoreA": 277.5,
-          "teamB": "WC",
-          "scoreB": 217.5,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-18",
-          "teamA": "KP",
-          "scoreA": 268,
-          "teamB": "WT",
-          "scoreB": 222,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-18",
-          "teamA": "GLT",
-          "scoreA": 242,
-          "teamB": "PS",
-          "scoreB": 234,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-18",
-          "teamA": "EH",
-          "scoreA": 300,
-          "teamB": "SH",
-          "scoreB": 193,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-18",
-          "teamA": "IP",
-          "scoreA": 222,
-          "teamB": "VW",
-          "scoreB": 148,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-18",
-          "teamA": "VG",
-          "scoreA": 255,
-          "teamB": "WGP",
-          "scoreB": 177,
-          "friendly": false
-        },
-        {
-          "date": "2022-07-18",
-          "teamA": "QL",
-          "scoreA": 266,
-          "teamB": "FDC",
-          "scoreB": 229,
-          "friendly": false
-        }
-      ]
+     "division": 1,
+     "teams": [
+      {
+       "abbr": "KW",
+       "name": "Kingswood"
+      },
+      {
+       "abbr": "FTC",
+       "name": "First Colony"
+      },
+      {
+       "abbr": "KM",
+       "name": "Kingsmill"
+      },
+      {
+       "abbr": "GS",
+       "name": "Greensprings Gators"
+      },
+      {
+       "abbr": "QL",
+       "name": "Queens Lake"
+      },
+      {
+       "abbr": "FDC",
+       "name": "Ford's Colony"
+      }
+     ]
     },
     {
-      "year": 2023,
-      "wellingtonDivision": 2,
-      "divisionsInferred": true,
-      "divisions": [
-        {
-          "division": 1,
-          "teams": [
-            {
-              "abbr": "KW",
-              "name": "Kingswood"
-            },
-            {
-              "abbr": "FTC",
-              "name": "First Colony"
-            },
-            {
-              "abbr": "GS",
-              "name": "Greensprings Gators"
-            },
-            {
-              "abbr": "KM",
-              "name": "Kingsmill"
-            },
-            {
-              "abbr": "FDC",
-              "name": "Ford's Colony"
-            },
-            {
-              "abbr": "QL",
-              "name": "Queens Lake"
-            }
-          ]
-        },
-        {
-          "division": 2,
-          "teams": [
-            {
-              "abbr": "WF",
-              "name": "Windsor Forest"
-            },
-            {
-              "abbr": "WT",
-              "name": "Wellington"
-            },
-            {
-              "abbr": "EH",
-              "name": "Edgehill"
-            },
-            {
-              "abbr": "WC",
-              "name": "Williamsburg Community"
-            },
-            {
-              "abbr": "KP",
-              "name": "Kingspoint"
-            },
-            {
-              "abbr": "GLT",
-              "name": "Governor's Land"
-            }
-          ]
-        },
-        {
-          "division": 3,
-          "teams": [
-            {
-              "abbr": "PS",
-              "name": "Powhatan Secondary"
-            },
-            {
-              "abbr": "VG",
-              "name": "Village Green"
-            },
-            {
-              "abbr": "IP",
-              "name": "Indigo Park"
-            },
-            {
-              "abbr": "WGP",
-              "name": "Windsor Great Park"
-            },
-            {
-              "abbr": "VW",
-              "name": "Villages of Westminster"
-            },
-            {
-              "abbr": "SH",
-              "name": "Stonehouse"
-            }
-          ]
-        }
-      ],
-      "meets": [
-        {
-          "date": "2023-06-16",
-          "teamA": "IP",
-          "scoreA": null,
-          "teamB": "FDC",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2023-06-16",
-          "teamA": "WT",
-          "scoreA": null,
-          "teamB": "VG",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2023-06-16",
-          "teamA": "WGP",
-          "scoreA": null,
-          "teamB": "EH",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2023-06-19",
-          "teamA": "KW",
-          "scoreA": 286,
-          "teamB": "FDC",
-          "scoreB": 200,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-19",
-          "teamA": "FTC",
-          "scoreA": 269,
-          "teamB": "GS",
-          "scoreB": 226,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-19",
-          "teamA": "QL",
-          "scoreA": 248,
-          "teamB": "KM",
-          "scoreB": 244,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-19",
-          "teamA": "WC",
-          "scoreA": 256,
-          "teamB": "KP",
-          "scoreB": 222,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-19",
-          "teamA": "WT",
-          "scoreA": 295,
-          "teamB": "EH",
-          "scoreB": 196,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-19",
-          "teamA": "IP",
-          "scoreA": 195,
-          "teamB": "WGP",
-          "scoreB": 167,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-19",
-          "teamA": "VW",
-          "scoreA": 186,
-          "teamB": "SH",
-          "scoreB": 120,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-19",
-          "teamA": "PS",
-          "scoreA": 298,
-          "teamB": "VG",
-          "scoreB": 171,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-19",
-          "teamA": "WF",
-          "scoreA": 286,
-          "teamB": "GLT",
-          "scoreB": 193,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-26",
-          "teamA": "KW",
-          "scoreA": 271,
-          "teamB": "QL",
-          "scoreB": 150,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-26",
-          "teamA": "KM",
-          "scoreA": 272,
-          "teamB": "FTC",
-          "scoreB": 223,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-26",
-          "teamA": "GS",
-          "scoreA": 253,
-          "teamB": "FDC",
-          "scoreB": 242,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-26",
-          "teamA": "WF",
-          "scoreA": 287,
-          "teamB": "EH",
-          "scoreB": 192,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-26",
-          "teamA": "WT",
-          "scoreA": 266,
-          "teamB": "WC",
-          "scoreB": 220,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-26",
-          "teamA": "KP",
-          "scoreA": 261,
-          "teamB": "GLT",
-          "scoreB": 201,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-26",
-          "teamA": "PS",
-          "scoreA": 323,
-          "teamB": "VW",
-          "scoreB": 106,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-26",
-          "teamA": "VG",
-          "scoreA": 241,
-          "teamB": "IP",
-          "scoreB": 170,
-          "friendly": false
-        },
-        {
-          "date": "2023-06-26",
-          "teamA": "SH",
-          "scoreA": 192,
-          "teamB": "WGP",
-          "scoreB": 190,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-03",
-          "teamA": "KW",
-          "scoreA": 293.5,
-          "teamB": "GS",
-          "scoreB": 202.5,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-03",
-          "teamA": "FTC",
-          "scoreA": 281,
-          "teamB": "QL",
-          "scoreB": 211,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-03",
-          "teamA": "KM",
-          "scoreA": 287,
-          "teamB": "FDC",
-          "scoreB": 205,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-03",
-          "teamA": "WF",
-          "scoreA": 291,
-          "teamB": "KP",
-          "scoreB": 203,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-03",
-          "teamA": "PS",
-          "scoreA": 304,
-          "teamB": "WGP",
-          "scoreB": 150,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-03",
-          "teamA": "IP",
-          "scoreA": 231,
-          "teamB": "SH",
-          "scoreB": 179,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-03",
-          "teamA": "EH",
-          "scoreA": 246,
-          "teamB": "WC",
-          "scoreB": 240,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-03",
-          "teamA": "WT",
-          "scoreA": 284,
-          "teamB": "GLT",
-          "scoreB": 199,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-03",
-          "teamA": "VG",
-          "scoreA": 228,
-          "teamB": "VW",
-          "scoreB": 185,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-10",
-          "teamA": "KW",
-          "scoreA": 286,
-          "teamB": "KM",
-          "scoreB": 210,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-10",
-          "teamA": "GS",
-          "scoreA": 289,
-          "teamB": "QL",
-          "scoreB": 204,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-10",
-          "teamA": "FTC",
-          "scoreA": 267,
-          "teamB": "FDC",
-          "scoreB": 228,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-10",
-          "teamA": "WF",
-          "scoreA": 262,
-          "teamB": "WT",
-          "scoreB": 220,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-10",
-          "teamA": "EH",
-          "scoreA": 249,
-          "teamB": "KP",
-          "scoreB": 246,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-10",
-          "teamA": "WC",
-          "scoreA": 315,
-          "teamB": "GLT",
-          "scoreB": 155,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-10",
-          "teamA": "PS",
-          "scoreA": 328,
-          "teamB": "SH",
-          "scoreB": 135,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-10",
-          "teamA": "VG",
-          "scoreA": 256,
-          "teamB": "WGP",
-          "scoreB": 184,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-10",
-          "teamA": "IP",
-          "scoreA": 195,
-          "teamB": "VW",
-          "scoreB": 121,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-17",
-          "teamA": "KW",
-          "scoreA": 282,
-          "teamB": "FTC",
-          "scoreB": 214,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-17",
-          "teamA": "GS",
-          "scoreA": 253,
-          "teamB": "KM",
-          "scoreB": 242,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-17",
-          "teamA": "FDC",
-          "scoreA": 257,
-          "teamB": "QL",
-          "scoreB": 236,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-17",
-          "teamA": "WF",
-          "scoreA": 263,
-          "teamB": "WC",
-          "scoreB": 232,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-17",
-          "teamA": "WT",
-          "scoreA": 313,
-          "teamB": "KP",
-          "scoreB": 183,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-17",
-          "teamA": "EH",
-          "scoreA": 258,
-          "teamB": "GLT",
-          "scoreB": 227,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-17",
-          "teamA": "PS",
-          "scoreA": 310,
-          "teamB": "IP",
-          "scoreB": 158,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-17",
-          "teamA": "VG",
-          "scoreA": 256,
-          "teamB": "SH",
-          "scoreB": 210,
-          "friendly": false
-        },
-        {
-          "date": "2023-07-17",
-          "teamA": "WGP",
-          "scoreA": 195,
-          "teamB": "VW",
-          "scoreB": 193,
-          "friendly": false
-        }
-      ]
+     "division": 2,
+     "teams": [
+      {
+       "abbr": "WF",
+       "name": "Windsor Forest"
+      },
+      {
+       "abbr": "WC",
+       "name": "Williamsburg Community"
+      },
+      {
+       "abbr": "KP",
+       "name": "Kingspoint"
+      },
+      {
+       "abbr": "WT",
+       "name": "Wellington"
+      },
+      {
+       "abbr": "GLT",
+       "name": "Governor's Land"
+      },
+      {
+       "abbr": "PS",
+       "name": "Powhatan Secondary"
+      }
+     ]
     },
     {
-      "year": 2024,
-      "wellingtonDivision": 2,
-      "divisions": [
-        {
-          "division": 1,
-          "teams": [
-            {
-              "abbr": "FTC",
-              "name": "First Colony Flyers"
-            },
-            {
-              "abbr": "KW",
-              "name": "Kingswood Klams"
-            },
-            {
-              "abbr": "FDC",
-              "name": "Ford's Colony Killer Whales"
-            },
-            {
-              "abbr": "KM",
-              "name": "Kingsmill Sharks Swim Team"
-            },
-            {
-              "abbr": "GS",
-              "name": "Greensprings Gators"
-            },
-            {
-              "abbr": "WF",
-              "name": "Windsor Forest Frogs Swim Team"
-            }
-          ]
-        },
-        {
-          "division": 2,
-          "teams": [
-            {
-              "abbr": "WT",
-              "name": "Wellington Waves Swim Team"
-            },
-            {
-              "abbr": "QL",
-              "name": "Queens Lake Eagles"
-            },
-            {
-              "abbr": "EH",
-              "name": "Edgehill Eels Swim Team"
-            },
-            {
-              "abbr": "PS",
-              "name": "Powhatan Secondary Seastars"
-            },
-            {
-              "abbr": "WC",
-              "name": "Williamsburg Community Pool Manta Rays"
-            },
-            {
-              "abbr": "KP",
-              "name": "Kingspoint Dolphins Swim Team"
-            }
-          ]
-        },
-        {
-          "division": 3,
-          "teams": [
-            {
-              "abbr": "VG",
-              "name": "Village Green Patriots"
-            },
-            {
-              "abbr": "GLT",
-              "name": "Governor's Land Typhoons"
-            },
-            {
-              "abbr": "IP",
-              "name": "Indigo Park Stingrays Swim Team"
-            },
-            {
-              "abbr": "SH",
-              "name": "Stonehouse Splash"
-            },
-            {
-              "abbr": "WGPRA",
-              "name": "Windsor Great Park Waves"
-            },
-            {
-              "abbr": "VW",
-              "name": "Villages of Westminster Swim Team"
-            }
-          ]
-        }
-      ],
-      "meets": [
-        {
-          "date": "2024-06-24",
-          "teamA": "KW",
-          "scoreA": 327,
-          "teamB": "WF",
-          "scoreB": 162,
-          "friendly": false
-        },
-        {
-          "date": "2024-06-24",
-          "teamA": "FDC",
-          "scoreA": 267,
-          "teamB": "GS",
-          "scoreB": 227,
-          "friendly": false
-        },
-        {
-          "date": "2024-06-24",
-          "teamA": "FTC",
-          "scoreA": 309,
-          "teamB": "KM",
-          "scoreB": 187,
-          "friendly": false
-        },
-        {
-          "date": "2024-06-24",
-          "teamA": "QL",
-          "scoreA": 303,
-          "teamB": "PS",
-          "scoreB": 184,
-          "friendly": false
-        },
-        {
-          "date": "2024-06-24",
-          "teamA": "WT",
-          "scoreA": 311,
-          "teamB": "WC",
-          "scoreB": 182,
-          "friendly": false
-        },
-        {
-          "date": "2024-06-24",
-          "teamA": "EH",
-          "scoreA": 265,
-          "teamB": "KP",
-          "scoreB": 217,
-          "friendly": false
-        },
-        {
-          "date": "2024-06-24",
-          "teamA": "GLT",
-          "scoreA": 294,
-          "teamB": "WGPRA",
-          "scoreB": 174,
-          "friendly": false
-        },
-        {
-          "date": "2024-06-24",
-          "teamA": "VG",
-          "scoreA": 311,
-          "teamB": "VW",
-          "scoreB": 88,
-          "friendly": false
-        },
-        {
-          "date": "2024-06-24",
-          "teamA": "IP",
-          "scoreA": 207,
-          "teamB": "SH",
-          "scoreB": 198,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-01",
-          "teamA": "KW",
-          "scoreA": 279,
-          "teamB": "FDC",
-          "scoreB": 213,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-01",
-          "teamA": "FTC",
-          "scoreA": 287,
-          "teamB": "GS",
-          "scoreB": 208,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-01",
-          "teamA": "KM",
-          "scoreA": 297,
-          "teamB": "WF",
-          "scoreB": 197,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-01",
-          "teamA": "QL",
-          "scoreA": 292,
-          "teamB": "KP",
-          "scoreB": 193,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-01",
-          "teamA": "WT",
-          "scoreA": 316,
-          "teamB": "EH",
-          "scoreB": 178,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-01",
-          "teamA": "PS",
-          "scoreA": 263,
-          "teamB": "WC",
-          "scoreB": 228,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-01",
-          "teamA": "GLT",
-          "scoreA": 282,
-          "teamB": "IP",
-          "scoreB": 166,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-01",
-          "teamA": "VG",
-          "scoreA": 291,
-          "teamB": "SH",
-          "scoreB": 165,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-01",
-          "teamA": "WGPRA",
-          "scoreA": 222,
-          "teamB": "VW",
-          "scoreB": 113,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-08",
-          "teamA": "FTC",
-          "scoreA": 259,
-          "teamB": "FDC",
-          "scoreB": 235,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-08",
-          "teamA": "GS",
-          "scoreA": 318,
-          "teamB": "WF",
-          "scoreB": 177,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-08",
-          "teamA": "KW",
-          "scoreA": 317,
-          "teamB": "KM",
-          "scoreB": 179,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-08",
-          "teamA": "QL",
-          "scoreA": 343,
-          "teamB": "WC",
-          "scoreB": 143,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-08",
-          "teamA": "WT",
-          "scoreA": 320,
-          "teamB": "KP",
-          "scoreB": 174,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-08",
-          "teamA": "EH",
-          "scoreA": 251,
-          "teamB": "PS",
-          "scoreB": 243,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-08",
-          "teamA": "GLT",
-          "scoreA": 280,
-          "teamB": "SH",
-          "scoreB": 176,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-08",
-          "teamA": "VG",
-          "scoreA": 235,
-          "teamB": "WGPRA",
-          "scoreB": 189,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-08",
-          "teamA": "IP",
-          "scoreA": 261,
-          "teamB": "VW",
-          "scoreB": 76,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-15",
-          "teamA": "KW",
-          "scoreA": 288,
-          "teamB": "GS",
-          "scoreB": 207,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-15",
-          "teamA": "FDC",
-          "scoreA": 260,
-          "teamB": "KM",
-          "scoreB": 236,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-15",
-          "teamA": "FTC",
-          "scoreA": 339,
-          "teamB": "WF",
-          "scoreB": 157,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-15",
-          "teamA": "QL",
-          "scoreA": 280,
-          "teamB": "EH",
-          "scoreB": 205,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-15",
-          "teamA": "WT",
-          "scoreA": 331,
-          "teamB": "PS",
-          "scoreB": 158,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-15",
-          "teamA": "WC",
-          "scoreA": 253,
-          "teamB": "KP",
-          "scoreB": 236,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-15",
-          "teamA": "VG",
-          "scoreA": 287,
-          "teamB": "IP",
-          "scoreB": 160,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-15",
-          "teamA": "GLT",
-          "scoreA": 301,
-          "teamB": "VW",
-          "scoreB": 81,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-15",
-          "teamA": "SH",
-          "scoreA": 264,
-          "teamB": "WGPRA",
-          "scoreB": 166,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-22",
-          "teamA": "FTC",
-          "scoreA": 289,
-          "teamB": "KW",
-          "scoreB": 206,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-22",
-          "teamA": "KM",
-          "scoreA": 280,
-          "teamB": "GS",
-          "scoreB": 216,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-22",
-          "teamA": "FDC",
-          "scoreA": 296,
-          "teamB": "WF",
-          "scoreB": 199,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-22",
-          "teamA": "WT",
-          "scoreA": 248,
-          "teamB": "QL",
-          "scoreB": 243,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-22",
-          "teamA": "WC",
-          "scoreA": 279,
-          "teamB": "EH",
-          "scoreB": 197,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-22",
-          "teamA": "PS",
-          "scoreA": 301,
-          "teamB": "KP",
-          "scoreB": 186,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-22",
-          "teamA": "VG",
-          "scoreA": 244,
-          "teamB": "GLT",
-          "scoreB": 224,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-22",
-          "teamA": "WGPRA",
-          "scoreA": 216,
-          "teamB": "IP",
-          "scoreB": 214,
-          "friendly": false
-        },
-        {
-          "date": "2024-07-22",
-          "teamA": "SH",
-          "scoreA": 267,
-          "teamB": "VW",
-          "scoreB": 108,
-          "friendly": false
-        }
-      ]
-    },
-    {
-      "year": 2025,
-      "wellingtonDivision": 1,
-      "divisions": [
-        {
-          "division": 1,
-          "teams": [
-            {
-              "abbr": "KW",
-              "name": "Kingswood Klams"
-            },
-            {
-              "abbr": "FTC",
-              "name": "First Colony Flyers"
-            },
-            {
-              "abbr": "GS",
-              "name": "Greensprings Gators"
-            },
-            {
-              "abbr": "KM",
-              "name": "Kingsmill Sharks Swim Team"
-            },
-            {
-              "abbr": "FDC",
-              "name": "Ford's Colony Killer Whales"
-            },
-            {
-              "abbr": "WT",
-              "name": "Wellington Waves Swim Team"
-            }
-          ]
-        },
-        {
-          "division": 2,
-          "teams": [
-            {
-              "abbr": "QL",
-              "name": "Queens Lake Eagles"
-            },
-            {
-              "abbr": "WF",
-              "name": "Windsor Forest Frogs Swim Team"
-            },
-            {
-              "abbr": "EH",
-              "name": "Edgehill Eels Swim Team"
-            },
-            {
-              "abbr": "PS",
-              "name": "Powhatan Secondary Seastars"
-            },
-            {
-              "abbr": "KP",
-              "name": "Kingspoint Dolphins Swim Team"
-            },
-            {
-              "abbr": "WC",
-              "name": "Williamsburg Community Pool Manta Rays"
-            }
-          ]
-        },
-        {
-          "division": 3,
-          "teams": [
-            {
-              "abbr": "WGPRA",
-              "name": "Windsor Great Park Waves"
-            },
-            {
-              "abbr": "GLT",
-              "name": "Governor's Land Typhoons"
-            },
-            {
-              "abbr": "SH",
-              "name": "Stonehouse Splash"
-            },
-            {
-              "abbr": "IP",
-              "name": "Indigo Park Stingrays Swim Team"
-            },
-            {
-              "abbr": "VG",
-              "name": "Village Green Patriots"
-            },
-            {
-              "abbr": "VW",
-              "name": "Villages of Westminster Swim Team"
-            }
-          ]
-        }
-      ],
-      "meets": [
-        {
-          "date": "2025-06-23",
-          "teamA": "GS",
-          "scoreA": 267,
-          "teamB": "FDC",
-          "scoreB": 228,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-23",
-          "teamA": "KW",
-          "scoreA": 316,
-          "teamB": "KM",
-          "scoreB": 178,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-23",
-          "teamA": "FTC",
-          "scoreA": 313,
-          "teamB": "WT",
-          "scoreB": 182,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-23",
-          "teamA": "WF",
-          "scoreA": 290,
-          "teamB": "EH",
-          "scoreB": 204,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-23",
-          "teamA": "PS",
-          "scoreA": 282,
-          "teamB": "WC",
-          "scoreB": 192,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-23",
-          "teamA": "QL",
-          "scoreA": 327,
-          "teamB": "KP",
-          "scoreB": 164,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-23",
-          "teamA": "IP",
-          "scoreA": 223,
-          "teamB": "VG",
-          "scoreB": 136,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-23",
-          "teamA": "WGPRA",
-          "scoreA": 249,
-          "teamB": "GLT",
-          "scoreB": 179,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-23",
-          "teamA": "SH",
-          "scoreA": 256,
-          "teamB": "VW",
-          "scoreB": 96,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-30",
-          "teamA": "FTC",
-          "scoreA": 295.5,
-          "teamB": "FDC",
-          "scoreB": 200.5,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-30",
-          "teamA": "GS",
-          "scoreA": 308,
-          "teamB": "KM",
-          "scoreB": 188,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-30",
-          "teamA": "KW",
-          "scoreA": 316,
-          "teamB": "WT",
-          "scoreB": 180,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-30",
-          "teamA": "EH",
-          "scoreA": 268,
-          "teamB": "KP",
-          "scoreB": 226,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-30",
-          "teamA": "WF",
-          "scoreA": 272,
-          "teamB": "PS",
-          "scoreB": 220,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-30",
-          "teamA": "QL",
-          "scoreA": 311,
-          "teamB": "WC",
-          "scoreB": 169,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-30",
-          "teamA": "WGPRA",
-          "scoreA": 287,
-          "teamB": "VG",
-          "scoreB": 156,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-30",
-          "teamA": "GLT",
-          "scoreA": 257,
-          "teamB": "SH",
-          "scoreB": 183,
-          "friendly": false
-        },
-        {
-          "date": "2025-06-30",
-          "teamA": "IP",
-          "scoreA": 220,
-          "teamB": "VW",
-          "scoreB": 135,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-07",
-          "teamA": "FTC",
-          "scoreA": 310,
-          "teamB": "KM",
-          "scoreB": 185,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-07",
-          "teamA": "KW",
-          "scoreA": 291,
-          "teamB": "GS",
-          "scoreB": 204,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-07",
-          "teamA": "FDC",
-          "scoreA": 281,
-          "teamB": "WT",
-          "scoreB": 214,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-07",
-          "teamA": "WF",
-          "scoreA": 303,
-          "teamB": "WC",
-          "scoreB": 189,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-07",
-          "teamA": "QL",
-          "scoreA": 306,
-          "teamB": "EH",
-          "scoreB": 185,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-07",
-          "teamA": "KP",
-          "scoreA": 247,
-          "teamB": "PS",
-          "scoreB": 235,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-07",
-          "teamA": "GLT",
-          "scoreA": 277,
-          "teamB": "VW",
-          "scoreB": 103,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-07",
-          "teamA": "SH",
-          "scoreA": 255,
-          "teamB": "VG",
-          "scoreB": 210,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-07",
-          "teamA": "WGPRA",
-          "scoreA": 276,
-          "teamB": "IP",
-          "scoreB": 151,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-14",
-          "teamA": "KW",
-          "scoreA": 295,
-          "teamB": "FDC",
-          "scoreB": 201,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-14",
-          "teamA": "FTC",
-          "scoreA": 259,
-          "teamB": "GS",
-          "scoreB": 208,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-14",
-          "teamA": "KM",
-          "scoreA": 233,
-          "teamB": "WT",
-          "scoreB": 208,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-14",
-          "teamA": "QL",
-          "scoreA": 297,
-          "teamB": "PS",
-          "scoreB": 188,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-14",
-          "teamA": "WF",
-          "scoreA": 295,
-          "teamB": "KP",
-          "scoreB": 195,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-14",
-          "teamA": "EH",
-          "scoreA": 288.5,
-          "teamB": "WC",
-          "scoreB": 199.5,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-14",
-          "teamA": "WGPRA",
-          "scoreA": 261,
-          "teamB": "SH",
-          "scoreB": 199,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-14",
-          "teamA": "GLT",
-          "scoreA": 215,
-          "teamB": "IP",
-          "scoreB": 167,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-14",
-          "teamA": "VG",
-          "scoreA": 222,
-          "teamB": "VW",
-          "scoreB": 138,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-21",
-          "teamA": "KW",
-          "scoreA": 249,
-          "teamB": "FTC",
-          "scoreB": 246,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-21",
-          "teamA": "KM",
-          "scoreA": 279,
-          "teamB": "FDC",
-          "scoreB": 212,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-21",
-          "teamA": "GS",
-          "scoreA": 284,
-          "teamB": "WT",
-          "scoreB": 212,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-21",
-          "teamA": "QL",
-          "scoreA": 324,
-          "teamB": "WF",
-          "scoreB": 164,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-21",
-          "teamA": "PS",
-          "scoreA": 266,
-          "teamB": "EH",
-          "scoreB": 228,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-21",
-          "teamA": "WC",
-          "scoreA": 256,
-          "teamB": "KP",
-          "scoreB": 222,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-21",
-          "teamA": "GLT",
-          "scoreA": 231,
-          "teamB": "VG",
-          "scoreB": 179,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-21",
-          "teamA": "SH",
-          "scoreA": 290,
-          "teamB": "IP",
-          "scoreB": 151,
-          "friendly": false
-        },
-        {
-          "date": "2025-07-21",
-          "teamA": "WGPRA",
-          "scoreA": 325,
-          "teamB": "VW",
-          "scoreB": 102,
-          "friendly": false
-        }
-      ]
-    },
-    {
-      "year": 2026,
-      "wellingtonDivision": 2,
-      "divisions": [
-        {
-          "division": 1,
-          "teams": [
-            {
-              "abbr": "FTC",
-              "name": "First Colony Flyers",
-              "mascot": "Flyers"
-            },
-            {
-              "abbr": "FDC",
-              "name": "Ford's Colony Killer Whales",
-              "mascot": "Killer Whales"
-            },
-            {
-              "abbr": "GS",
-              "name": "Greensprings Gators",
-              "mascot": "Gators"
-            },
-            {
-              "abbr": "KM",
-              "name": "Kingsmill Sharks Swim Team",
-              "mascot": "Sharks"
-            },
-            {
-              "abbr": "KW",
-              "name": "Kingswood Klams",
-              "mascot": "Klams"
-            },
-            {
-              "abbr": "QL",
-              "name": "Queens Lake Eagles",
-              "mascot": "Eagles"
-            }
-          ]
-        },
-        {
-          "division": 2,
-          "teams": [
-            {
-              "abbr": "EH",
-              "name": "Edgehill Eels Swim Team",
-              "mascot": "Eels"
-            },
-            {
-              "abbr": "PS",
-              "name": "Powhatan Secondary Seastars",
-              "mascot": "Seastars"
-            },
-            {
-              "abbr": "WT",
-              "name": "Wellington Waves Swim Team",
-              "mascot": "Waves"
-            },
-            {
-              "abbr": "WPD",
-              "name": "West Point Dolphins",
-              "mascot": "Dolphins"
-            },
-            {
-              "abbr": "WC",
-              "name": "Williamsburg Community Pool Manta Rays",
-              "mascot": "Manta Rays"
-            },
-            {
-              "abbr": "WF",
-              "name": "Windsor Forest Frogs Swim Team",
-              "mascot": "Frogs"
-            }
-          ]
-        },
-        {
-          "division": 3,
-          "teams": [
-            {
-              "abbr": "GLT",
-              "name": "Governor's Land Typhoons",
-              "mascot": "Typhoons"
-            },
-            {
-              "abbr": "IP",
-              "name": "Indigo Park Stingrays Swim Team",
-              "mascot": "Stingrays"
-            },
-            {
-              "abbr": "KP",
-              "name": "Kingspoint Dolphins Swim Team",
-              "mascot": "Dolphins"
-            },
-            {
-              "abbr": "SH",
-              "name": "Stonehouse Splash",
-              "mascot": "Splash"
-            },
-            {
-              "abbr": "VW",
-              "name": "Villages of Westminster Swim Team",
-              "mascot": "VW"
-            },
-            {
-              "abbr": "WGPRA",
-              "name": "Windsor Great Park Waves",
-              "mascot": "Waves"
-            }
-          ]
-        }
-      ],
-      "meets": [
-        {
-          "date": "2026-06-15",
-          "teamA": "WT",
-          "scoreA": null,
-          "teamB": "FDC",
-          "scoreB": null,
-          "friendly": true
-        },
-        {
-          "date": "2026-06-22",
-          "teamA": "WPD",
-          "scoreA": 86,
-          "teamB": "WT",
-          "scoreB": 203,
-          "winner": "WT",
-          "friendly": false,
-          "note": "Meet called after first half due to thunderstorms — Free and Breast only swum; times are official"
-        },
-        {
-          "date": "2026-06-22",
-          "teamA": "WF",
-          "scoreA": 257,
-          "teamB": "EH",
-          "scoreB": 237,
-          "winner": "WF",
-          "friendly": false
-        },
-        {
-          "date": "2026-06-22",
-          "teamA": "PS",
-          "scoreA": 232,
-          "teamB": "WC",
-          "scoreB": 240,
-          "winner": "WC",
-          "friendly": false
-        },
-        {
-          "date": "2026-06-29",
-          "teamA": "WT",
-          "scoreA": 352,
-          "teamB": "WC",
-          "scoreB": 152,
-          "winner": "WT",
-          "friendly": false
-        },
-        {
-          "date": "2026-06-29",
-          "teamA": "WF",
-          "scoreA": 301,
-          "teamB": "PS",
-          "scoreB": 182,
-          "winner": "WF",
-          "friendly": false
-        },
-        {
-          "date": "2026-06-29",
-          "teamA": "EH",
-          "scoreA": 384,
-          "teamB": "WPD",
-          "scoreB": 102,
-          "winner": "EH",
-          "friendly": false
-        },
-        {
-          "date": "2026-07-08",
-          "teamA": "PS",
-          "scoreA": 176,
-          "teamB": "WT",
-          "scoreB": 301,
-          "winner": "WT",
-          "friendly": false
-        },
-        {
-          "date": "2026-07-06",
-          "teamA": "WPD",
-          "scoreA": 130,
-          "teamB": "WF",
-          "scoreB": 263,
-          "winner": "WF",
-          "friendly": false
-        },
-        {
-          "date": "2026-07-08",
-          "teamA": "WC",
-          "scoreA": 150,
-          "teamB": "EH",
-          "scoreB": 332,
-          "winner": "EH",
-          "friendly": false
-        },
-        {
-          "date": "2026-07-13",
-          "teamA": "EH",
-          "scoreA": 210,
-          "teamB": "WT",
-          "scoreB": 300,
-          "friendly": false
-        },
-        {
-          "date": "2026-07-13",
-          "teamA": "WF",
-          "scoreA": 272,
-          "teamB": "WC",
-          "scoreB": 214,
-          "friendly": false
-        },
-        {
-          "date": "2026-07-13",
-          "teamA": "WPD",
-          "scoreA": 181,
-          "teamB": "PS",
-          "scoreB": 293,
-          "friendly": false
-        },
-        {
-          "date": "2026-07-20",
-          "teamA": "WT",
-          "scoreA": null,
-          "teamB": "WF",
-          "scoreB": null,
-          "friendly": false
-        },
-        {
-          "date": "2026-07-20",
-          "teamA": "WC",
-          "scoreA": null,
-          "teamB": "WPD",
-          "scoreB": null,
-          "friendly": false
-        },
-        {
-          "date": "2026-07-20",
-          "teamA": "PS",
-          "scoreA": null,
-          "teamB": "EH",
-          "scoreB": null,
-          "friendly": false
-        }
-      ]
+     "division": 3,
+     "teams": [
+      {
+       "abbr": "EH",
+       "name": "Edgehill"
+      },
+      {
+       "abbr": "IP",
+       "name": "Indigo Park"
+      },
+      {
+       "abbr": "SH",
+       "name": "Stonehouse"
+      },
+      {
+       "abbr": "VG",
+       "name": "Village Green"
+      },
+      {
+       "abbr": "WGP",
+       "name": "Windsor Great Park"
+      },
+      {
+       "abbr": "VW",
+       "name": "Villages of Westminster"
+      }
+     ]
     }
-  ]
+   ],
+   "meets": [
+    {
+     "date": "2022-06-13",
+     "teamA": "EH",
+     "scoreA": null,
+     "teamB": "KM",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2022-06-13",
+     "teamA": "FTC",
+     "scoreA": null,
+     "teamB": "WC",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2022-06-13",
+     "teamA": "QL",
+     "scoreA": null,
+     "teamB": "WT",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2022-06-13",
+     "teamA": "VW",
+     "scoreA": null,
+     "teamB": "KP",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2022-06-13",
+     "teamA": "KW",
+     "scoreA": null,
+     "teamB": "SH",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2022-06-13",
+     "teamA": "WF",
+     "scoreA": null,
+     "teamB": "FDC",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2022-06-13",
+     "teamA": "WGP",
+     "scoreA": null,
+     "teamB": "VG",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2022-06-13",
+     "teamA": "PS",
+     "scoreA": null,
+     "teamB": "IP",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2022-06-13",
+     "teamA": "GLT",
+     "scoreA": null,
+     "teamB": "GS",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2022-06-20",
+     "teamA": "FTC",
+     "scoreA": 275,
+     "teamB": "FDC",
+     "scoreB": 215,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-20",
+     "teamA": "KM",
+     "scoreA": 272,
+     "teamB": "QL",
+     "scoreB": 218,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-20",
+     "teamA": "WF",
+     "scoreA": 264,
+     "teamB": "WT",
+     "scoreB": 223,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-20",
+     "teamA": "WC",
+     "scoreA": 292,
+     "teamB": "PS",
+     "scoreB": 192,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-20",
+     "teamA": "KP",
+     "scoreA": 281,
+     "teamB": "GLT",
+     "scoreB": 202,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-20",
+     "teamA": "IP",
+     "scoreA": 236,
+     "teamB": "VG",
+     "scoreB": 159,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-20",
+     "teamA": "SH",
+     "scoreA": 310,
+     "teamB": "WGP",
+     "scoreB": 139,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-20",
+     "teamA": "EH",
+     "scoreA": 308,
+     "teamB": "VW",
+     "scoreB": 116,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-20",
+     "teamA": "KW",
+     "scoreA": 319,
+     "teamB": "GS",
+     "scoreB": 174,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-27",
+     "teamA": "KW",
+     "scoreA": 329.5,
+     "teamB": "QL",
+     "scoreB": 155.5,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-27",
+     "teamA": "WC",
+     "scoreA": 271,
+     "teamB": "KP",
+     "scoreB": 223,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-27",
+     "teamA": "WT",
+     "scoreA": 244,
+     "teamB": "GLT",
+     "scoreB": 240,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-27",
+     "teamA": "WF",
+     "scoreA": 309,
+     "teamB": "PS",
+     "scoreB": 170,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-27",
+     "teamA": "SH",
+     "scoreA": 295,
+     "teamB": "VG",
+     "scoreB": 136,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-27",
+     "teamA": "EH",
+     "scoreA": 301,
+     "teamB": "IP",
+     "scoreB": 154,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-27",
+     "teamA": "WGP",
+     "scoreA": 194,
+     "teamB": "VW",
+     "scoreB": 171,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-27",
+     "teamA": "FTC",
+     "scoreA": 249,
+     "teamB": "KM",
+     "scoreB": 246,
+     "friendly": false
+    },
+    {
+     "date": "2022-06-27",
+     "teamA": "GS",
+     "scoreA": 248,
+     "teamB": "FDC",
+     "scoreB": 248,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-05",
+     "teamA": "KW",
+     "scoreA": 300,
+     "teamB": "FDC",
+     "scoreB": 186,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-05",
+     "teamA": "KM",
+     "scoreA": 266,
+     "teamB": "GS",
+     "scoreB": 230,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-05",
+     "teamA": "FTC",
+     "scoreA": 252,
+     "teamB": "QL",
+     "scoreB": 242,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-05",
+     "teamA": "WF",
+     "scoreA": 302,
+     "teamB": "GLT",
+     "scoreB": 166,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-05",
+     "teamA": "WC",
+     "scoreA": 255,
+     "teamB": "WT",
+     "scoreB": 234,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-05",
+     "teamA": "SH",
+     "scoreA": 271,
+     "teamB": "VW",
+     "scoreB": 137,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-05",
+     "teamA": "EH",
+     "scoreA": 325,
+     "teamB": "VG",
+     "scoreB": 145,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-05",
+     "teamA": "IP",
+     "scoreA": 296,
+     "teamB": "WGP",
+     "scoreB": 130,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-05",
+     "teamA": "KP",
+     "scoreA": 289,
+     "teamB": "PS",
+     "scoreB": 194,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-11",
+     "teamA": "KW",
+     "scoreA": 261,
+     "teamB": "FTC",
+     "scoreB": 230,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-11",
+     "teamA": "GS",
+     "scoreA": 262,
+     "teamB": "QL",
+     "scoreB": 231,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-11",
+     "teamA": "KM",
+     "scoreA": 261,
+     "teamB": "FDC",
+     "scoreB": 225,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-11",
+     "teamA": "WF",
+     "scoreA": 311,
+     "teamB": "KP",
+     "scoreB": 182,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-11",
+     "teamA": "WT",
+     "scoreA": 306,
+     "teamB": "PS",
+     "scoreB": 178,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-11",
+     "teamA": "IP",
+     "scoreA": 236,
+     "teamB": "SH",
+     "scoreB": 220,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-11",
+     "teamA": "VG",
+     "scoreA": 259,
+     "teamB": "VW",
+     "scoreB": 149,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-11",
+     "teamA": "EH",
+     "scoreA": 359,
+     "teamB": "WGP",
+     "scoreB": 108,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-11",
+     "teamA": "WC",
+     "scoreA": 246,
+     "teamB": "GLT",
+     "scoreB": 246,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-18",
+     "teamA": "KW",
+     "scoreA": 282,
+     "teamB": "KM",
+     "scoreB": 213,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-18",
+     "teamA": "FTC",
+     "scoreA": 284,
+     "teamB": "GS",
+     "scoreB": 210,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-18",
+     "teamA": "WF",
+     "scoreA": 277.5,
+     "teamB": "WC",
+     "scoreB": 217.5,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-18",
+     "teamA": "KP",
+     "scoreA": 268,
+     "teamB": "WT",
+     "scoreB": 222,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-18",
+     "teamA": "GLT",
+     "scoreA": 242,
+     "teamB": "PS",
+     "scoreB": 234,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-18",
+     "teamA": "EH",
+     "scoreA": 300,
+     "teamB": "SH",
+     "scoreB": 193,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-18",
+     "teamA": "IP",
+     "scoreA": 222,
+     "teamB": "VW",
+     "scoreB": 148,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-18",
+     "teamA": "VG",
+     "scoreA": 255,
+     "teamB": "WGP",
+     "scoreB": 177,
+     "friendly": false
+    },
+    {
+     "date": "2022-07-18",
+     "teamA": "QL",
+     "scoreA": 266,
+     "teamB": "FDC",
+     "scoreB": 229,
+     "friendly": false
+    }
+   ]
+  },
+  {
+   "year": 2023,
+   "wellingtonDivision": 2,
+   "divisionsInferred": true,
+   "divisions": [
+    {
+     "division": 1,
+     "teams": [
+      {
+       "abbr": "KW",
+       "name": "Kingswood"
+      },
+      {
+       "abbr": "FTC",
+       "name": "First Colony"
+      },
+      {
+       "abbr": "GS",
+       "name": "Greensprings Gators"
+      },
+      {
+       "abbr": "KM",
+       "name": "Kingsmill"
+      },
+      {
+       "abbr": "FDC",
+       "name": "Ford's Colony"
+      },
+      {
+       "abbr": "QL",
+       "name": "Queens Lake"
+      }
+     ]
+    },
+    {
+     "division": 2,
+     "teams": [
+      {
+       "abbr": "WF",
+       "name": "Windsor Forest"
+      },
+      {
+       "abbr": "WT",
+       "name": "Wellington"
+      },
+      {
+       "abbr": "EH",
+       "name": "Edgehill"
+      },
+      {
+       "abbr": "WC",
+       "name": "Williamsburg Community"
+      },
+      {
+       "abbr": "KP",
+       "name": "Kingspoint"
+      },
+      {
+       "abbr": "GLT",
+       "name": "Governor's Land"
+      }
+     ]
+    },
+    {
+     "division": 3,
+     "teams": [
+      {
+       "abbr": "PS",
+       "name": "Powhatan Secondary"
+      },
+      {
+       "abbr": "VG",
+       "name": "Village Green"
+      },
+      {
+       "abbr": "IP",
+       "name": "Indigo Park"
+      },
+      {
+       "abbr": "WGP",
+       "name": "Windsor Great Park"
+      },
+      {
+       "abbr": "VW",
+       "name": "Villages of Westminster"
+      },
+      {
+       "abbr": "SH",
+       "name": "Stonehouse"
+      }
+     ]
+    }
+   ],
+   "meets": [
+    {
+     "date": "2023-06-16",
+     "teamA": "IP",
+     "scoreA": null,
+     "teamB": "FDC",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2023-06-16",
+     "teamA": "WT",
+     "scoreA": null,
+     "teamB": "VG",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2023-06-16",
+     "teamA": "WGP",
+     "scoreA": null,
+     "teamB": "EH",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2023-06-19",
+     "teamA": "KW",
+     "scoreA": 286,
+     "teamB": "FDC",
+     "scoreB": 200,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-19",
+     "teamA": "FTC",
+     "scoreA": 269,
+     "teamB": "GS",
+     "scoreB": 226,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-19",
+     "teamA": "QL",
+     "scoreA": 248,
+     "teamB": "KM",
+     "scoreB": 244,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-19",
+     "teamA": "WC",
+     "scoreA": 256,
+     "teamB": "KP",
+     "scoreB": 222,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-19",
+     "teamA": "WT",
+     "scoreA": 295,
+     "teamB": "EH",
+     "scoreB": 196,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-19",
+     "teamA": "IP",
+     "scoreA": 195,
+     "teamB": "WGP",
+     "scoreB": 167,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-19",
+     "teamA": "VW",
+     "scoreA": 186,
+     "teamB": "SH",
+     "scoreB": 120,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-19",
+     "teamA": "PS",
+     "scoreA": 298,
+     "teamB": "VG",
+     "scoreB": 171,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-19",
+     "teamA": "WF",
+     "scoreA": 286,
+     "teamB": "GLT",
+     "scoreB": 193,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-26",
+     "teamA": "KW",
+     "scoreA": 271,
+     "teamB": "QL",
+     "scoreB": 150,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-26",
+     "teamA": "KM",
+     "scoreA": 272,
+     "teamB": "FTC",
+     "scoreB": 223,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-26",
+     "teamA": "GS",
+     "scoreA": 253,
+     "teamB": "FDC",
+     "scoreB": 242,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-26",
+     "teamA": "WF",
+     "scoreA": 287,
+     "teamB": "EH",
+     "scoreB": 192,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-26",
+     "teamA": "WT",
+     "scoreA": 266,
+     "teamB": "WC",
+     "scoreB": 220,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-26",
+     "teamA": "KP",
+     "scoreA": 261,
+     "teamB": "GLT",
+     "scoreB": 201,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-26",
+     "teamA": "PS",
+     "scoreA": 323,
+     "teamB": "VW",
+     "scoreB": 106,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-26",
+     "teamA": "VG",
+     "scoreA": 241,
+     "teamB": "IP",
+     "scoreB": 170,
+     "friendly": false
+    },
+    {
+     "date": "2023-06-26",
+     "teamA": "SH",
+     "scoreA": 192,
+     "teamB": "WGP",
+     "scoreB": 190,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-03",
+     "teamA": "KW",
+     "scoreA": 293.5,
+     "teamB": "GS",
+     "scoreB": 202.5,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-03",
+     "teamA": "FTC",
+     "scoreA": 281,
+     "teamB": "QL",
+     "scoreB": 211,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-03",
+     "teamA": "KM",
+     "scoreA": 287,
+     "teamB": "FDC",
+     "scoreB": 205,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-03",
+     "teamA": "WF",
+     "scoreA": 291,
+     "teamB": "KP",
+     "scoreB": 203,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-03",
+     "teamA": "PS",
+     "scoreA": 304,
+     "teamB": "WGP",
+     "scoreB": 150,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-03",
+     "teamA": "IP",
+     "scoreA": 231,
+     "teamB": "SH",
+     "scoreB": 179,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-03",
+     "teamA": "EH",
+     "scoreA": 246,
+     "teamB": "WC",
+     "scoreB": 240,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-03",
+     "teamA": "WT",
+     "scoreA": 284,
+     "teamB": "GLT",
+     "scoreB": 199,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-03",
+     "teamA": "VG",
+     "scoreA": 228,
+     "teamB": "VW",
+     "scoreB": 185,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-10",
+     "teamA": "KW",
+     "scoreA": 286,
+     "teamB": "KM",
+     "scoreB": 210,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-10",
+     "teamA": "GS",
+     "scoreA": 289,
+     "teamB": "QL",
+     "scoreB": 204,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-10",
+     "teamA": "FTC",
+     "scoreA": 267,
+     "teamB": "FDC",
+     "scoreB": 228,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-10",
+     "teamA": "WF",
+     "scoreA": 262,
+     "teamB": "WT",
+     "scoreB": 220,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-10",
+     "teamA": "EH",
+     "scoreA": 249,
+     "teamB": "KP",
+     "scoreB": 246,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-10",
+     "teamA": "WC",
+     "scoreA": 315,
+     "teamB": "GLT",
+     "scoreB": 155,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-10",
+     "teamA": "PS",
+     "scoreA": 328,
+     "teamB": "SH",
+     "scoreB": 135,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-10",
+     "teamA": "VG",
+     "scoreA": 256,
+     "teamB": "WGP",
+     "scoreB": 184,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-10",
+     "teamA": "IP",
+     "scoreA": 195,
+     "teamB": "VW",
+     "scoreB": 121,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-17",
+     "teamA": "KW",
+     "scoreA": 282,
+     "teamB": "FTC",
+     "scoreB": 214,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-17",
+     "teamA": "GS",
+     "scoreA": 253,
+     "teamB": "KM",
+     "scoreB": 242,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-17",
+     "teamA": "FDC",
+     "scoreA": 257,
+     "teamB": "QL",
+     "scoreB": 236,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-17",
+     "teamA": "WF",
+     "scoreA": 263,
+     "teamB": "WC",
+     "scoreB": 232,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-17",
+     "teamA": "WT",
+     "scoreA": 313,
+     "teamB": "KP",
+     "scoreB": 183,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-17",
+     "teamA": "EH",
+     "scoreA": 258,
+     "teamB": "GLT",
+     "scoreB": 227,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-17",
+     "teamA": "PS",
+     "scoreA": 310,
+     "teamB": "IP",
+     "scoreB": 158,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-17",
+     "teamA": "VG",
+     "scoreA": 256,
+     "teamB": "SH",
+     "scoreB": 210,
+     "friendly": false
+    },
+    {
+     "date": "2023-07-17",
+     "teamA": "WGP",
+     "scoreA": 195,
+     "teamB": "VW",
+     "scoreB": 193,
+     "friendly": false
+    }
+   ]
+  },
+  {
+   "year": 2024,
+   "wellingtonDivision": 2,
+   "divisions": [
+    {
+     "division": 1,
+     "teams": [
+      {
+       "abbr": "FTC",
+       "name": "First Colony Flyers"
+      },
+      {
+       "abbr": "KW",
+       "name": "Kingswood Klams"
+      },
+      {
+       "abbr": "FDC",
+       "name": "Ford's Colony Killer Whales"
+      },
+      {
+       "abbr": "KM",
+       "name": "Kingsmill Sharks Swim Team"
+      },
+      {
+       "abbr": "GS",
+       "name": "Greensprings Gators"
+      },
+      {
+       "abbr": "WF",
+       "name": "Windsor Forest Frogs Swim Team"
+      }
+     ]
+    },
+    {
+     "division": 2,
+     "teams": [
+      {
+       "abbr": "WT",
+       "name": "Wellington Waves Swim Team"
+      },
+      {
+       "abbr": "QL",
+       "name": "Queens Lake Eagles"
+      },
+      {
+       "abbr": "EH",
+       "name": "Edgehill Eels Swim Team"
+      },
+      {
+       "abbr": "PS",
+       "name": "Powhatan Secondary Seastars"
+      },
+      {
+       "abbr": "WC",
+       "name": "Williamsburg Community Pool Manta Rays"
+      },
+      {
+       "abbr": "KP",
+       "name": "Kingspoint Dolphins Swim Team"
+      }
+     ]
+    },
+    {
+     "division": 3,
+     "teams": [
+      {
+       "abbr": "VG",
+       "name": "Village Green Patriots"
+      },
+      {
+       "abbr": "GLT",
+       "name": "Governor's Land Typhoons"
+      },
+      {
+       "abbr": "IP",
+       "name": "Indigo Park Stingrays Swim Team"
+      },
+      {
+       "abbr": "SH",
+       "name": "Stonehouse Splash"
+      },
+      {
+       "abbr": "WGPRA",
+       "name": "Windsor Great Park Waves"
+      },
+      {
+       "abbr": "VW",
+       "name": "Villages of Westminster Swim Team"
+      }
+     ]
+    }
+   ],
+   "meets": [
+    {
+     "date": "2024-06-24",
+     "teamA": "KW",
+     "scoreA": 327,
+     "teamB": "WF",
+     "scoreB": 162,
+     "friendly": false
+    },
+    {
+     "date": "2024-06-24",
+     "teamA": "FDC",
+     "scoreA": 267,
+     "teamB": "GS",
+     "scoreB": 227,
+     "friendly": false
+    },
+    {
+     "date": "2024-06-24",
+     "teamA": "FTC",
+     "scoreA": 309,
+     "teamB": "KM",
+     "scoreB": 187,
+     "friendly": false
+    },
+    {
+     "date": "2024-06-24",
+     "teamA": "QL",
+     "scoreA": 303,
+     "teamB": "PS",
+     "scoreB": 184,
+     "friendly": false
+    },
+    {
+     "date": "2024-06-24",
+     "teamA": "WT",
+     "scoreA": 311,
+     "teamB": "WC",
+     "scoreB": 182,
+     "friendly": false
+    },
+    {
+     "date": "2024-06-24",
+     "teamA": "EH",
+     "scoreA": 265,
+     "teamB": "KP",
+     "scoreB": 217,
+     "friendly": false
+    },
+    {
+     "date": "2024-06-24",
+     "teamA": "GLT",
+     "scoreA": 294,
+     "teamB": "WGPRA",
+     "scoreB": 174,
+     "friendly": false
+    },
+    {
+     "date": "2024-06-24",
+     "teamA": "VG",
+     "scoreA": 311,
+     "teamB": "VW",
+     "scoreB": 88,
+     "friendly": false
+    },
+    {
+     "date": "2024-06-24",
+     "teamA": "IP",
+     "scoreA": 207,
+     "teamB": "SH",
+     "scoreB": 198,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-01",
+     "teamA": "KW",
+     "scoreA": 279,
+     "teamB": "FDC",
+     "scoreB": 213,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-01",
+     "teamA": "FTC",
+     "scoreA": 287,
+     "teamB": "GS",
+     "scoreB": 208,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-01",
+     "teamA": "KM",
+     "scoreA": 297,
+     "teamB": "WF",
+     "scoreB": 197,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-01",
+     "teamA": "QL",
+     "scoreA": 292,
+     "teamB": "KP",
+     "scoreB": 193,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-01",
+     "teamA": "WT",
+     "scoreA": 316,
+     "teamB": "EH",
+     "scoreB": 178,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-01",
+     "teamA": "PS",
+     "scoreA": 263,
+     "teamB": "WC",
+     "scoreB": 228,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-01",
+     "teamA": "GLT",
+     "scoreA": 282,
+     "teamB": "IP",
+     "scoreB": 166,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-01",
+     "teamA": "VG",
+     "scoreA": 291,
+     "teamB": "SH",
+     "scoreB": 165,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-01",
+     "teamA": "WGPRA",
+     "scoreA": 222,
+     "teamB": "VW",
+     "scoreB": 113,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-08",
+     "teamA": "FTC",
+     "scoreA": 259,
+     "teamB": "FDC",
+     "scoreB": 235,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-08",
+     "teamA": "GS",
+     "scoreA": 318,
+     "teamB": "WF",
+     "scoreB": 177,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-08",
+     "teamA": "KW",
+     "scoreA": 317,
+     "teamB": "KM",
+     "scoreB": 179,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-08",
+     "teamA": "QL",
+     "scoreA": 343,
+     "teamB": "WC",
+     "scoreB": 143,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-08",
+     "teamA": "WT",
+     "scoreA": 320,
+     "teamB": "KP",
+     "scoreB": 174,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-08",
+     "teamA": "EH",
+     "scoreA": 251,
+     "teamB": "PS",
+     "scoreB": 243,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-08",
+     "teamA": "GLT",
+     "scoreA": 280,
+     "teamB": "SH",
+     "scoreB": 176,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-08",
+     "teamA": "VG",
+     "scoreA": 235,
+     "teamB": "WGPRA",
+     "scoreB": 189,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-08",
+     "teamA": "IP",
+     "scoreA": 261,
+     "teamB": "VW",
+     "scoreB": 76,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-15",
+     "teamA": "KW",
+     "scoreA": 288,
+     "teamB": "GS",
+     "scoreB": 207,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-15",
+     "teamA": "FDC",
+     "scoreA": 260,
+     "teamB": "KM",
+     "scoreB": 236,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-15",
+     "teamA": "FTC",
+     "scoreA": 339,
+     "teamB": "WF",
+     "scoreB": 157,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-15",
+     "teamA": "QL",
+     "scoreA": 280,
+     "teamB": "EH",
+     "scoreB": 205,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-15",
+     "teamA": "WT",
+     "scoreA": 331,
+     "teamB": "PS",
+     "scoreB": 158,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-15",
+     "teamA": "WC",
+     "scoreA": 253,
+     "teamB": "KP",
+     "scoreB": 236,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-15",
+     "teamA": "VG",
+     "scoreA": 287,
+     "teamB": "IP",
+     "scoreB": 160,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-15",
+     "teamA": "GLT",
+     "scoreA": 301,
+     "teamB": "VW",
+     "scoreB": 81,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-15",
+     "teamA": "SH",
+     "scoreA": 264,
+     "teamB": "WGPRA",
+     "scoreB": 166,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-22",
+     "teamA": "FTC",
+     "scoreA": 289,
+     "teamB": "KW",
+     "scoreB": 206,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-22",
+     "teamA": "KM",
+     "scoreA": 280,
+     "teamB": "GS",
+     "scoreB": 216,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-22",
+     "teamA": "FDC",
+     "scoreA": 296,
+     "teamB": "WF",
+     "scoreB": 199,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-22",
+     "teamA": "WT",
+     "scoreA": 248,
+     "teamB": "QL",
+     "scoreB": 243,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-22",
+     "teamA": "WC",
+     "scoreA": 279,
+     "teamB": "EH",
+     "scoreB": 197,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-22",
+     "teamA": "PS",
+     "scoreA": 301,
+     "teamB": "KP",
+     "scoreB": 186,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-22",
+     "teamA": "VG",
+     "scoreA": 244,
+     "teamB": "GLT",
+     "scoreB": 224,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-22",
+     "teamA": "WGPRA",
+     "scoreA": 216,
+     "teamB": "IP",
+     "scoreB": 214,
+     "friendly": false
+    },
+    {
+     "date": "2024-07-22",
+     "teamA": "SH",
+     "scoreA": 267,
+     "teamB": "VW",
+     "scoreB": 108,
+     "friendly": false
+    }
+   ]
+  },
+  {
+   "year": 2025,
+   "wellingtonDivision": 1,
+   "divisions": [
+    {
+     "division": 1,
+     "teams": [
+      {
+       "abbr": "KW",
+       "name": "Kingswood Klams"
+      },
+      {
+       "abbr": "FTC",
+       "name": "First Colony Flyers"
+      },
+      {
+       "abbr": "GS",
+       "name": "Greensprings Gators"
+      },
+      {
+       "abbr": "KM",
+       "name": "Kingsmill Sharks Swim Team"
+      },
+      {
+       "abbr": "FDC",
+       "name": "Ford's Colony Killer Whales"
+      },
+      {
+       "abbr": "WT",
+       "name": "Wellington Waves Swim Team"
+      }
+     ]
+    },
+    {
+     "division": 2,
+     "teams": [
+      {
+       "abbr": "QL",
+       "name": "Queens Lake Eagles"
+      },
+      {
+       "abbr": "WF",
+       "name": "Windsor Forest Frogs Swim Team"
+      },
+      {
+       "abbr": "EH",
+       "name": "Edgehill Eels Swim Team"
+      },
+      {
+       "abbr": "PS",
+       "name": "Powhatan Secondary Seastars"
+      },
+      {
+       "abbr": "KP",
+       "name": "Kingspoint Dolphins Swim Team"
+      },
+      {
+       "abbr": "WC",
+       "name": "Williamsburg Community Pool Manta Rays"
+      }
+     ]
+    },
+    {
+     "division": 3,
+     "teams": [
+      {
+       "abbr": "WGPRA",
+       "name": "Windsor Great Park Waves"
+      },
+      {
+       "abbr": "GLT",
+       "name": "Governor's Land Typhoons"
+      },
+      {
+       "abbr": "SH",
+       "name": "Stonehouse Splash"
+      },
+      {
+       "abbr": "IP",
+       "name": "Indigo Park Stingrays Swim Team"
+      },
+      {
+       "abbr": "VG",
+       "name": "Village Green Patriots"
+      },
+      {
+       "abbr": "VW",
+       "name": "Villages of Westminster Swim Team"
+      }
+     ]
+    }
+   ],
+   "meets": [
+    {
+     "date": "2025-06-23",
+     "teamA": "GS",
+     "scoreA": 267,
+     "teamB": "FDC",
+     "scoreB": 228,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-23",
+     "teamA": "KW",
+     "scoreA": 316,
+     "teamB": "KM",
+     "scoreB": 178,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-23",
+     "teamA": "FTC",
+     "scoreA": 313,
+     "teamB": "WT",
+     "scoreB": 182,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-23",
+     "teamA": "WF",
+     "scoreA": 290,
+     "teamB": "EH",
+     "scoreB": 204,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-23",
+     "teamA": "PS",
+     "scoreA": 282,
+     "teamB": "WC",
+     "scoreB": 192,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-23",
+     "teamA": "QL",
+     "scoreA": 327,
+     "teamB": "KP",
+     "scoreB": 164,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-23",
+     "teamA": "IP",
+     "scoreA": 223,
+     "teamB": "VG",
+     "scoreB": 136,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-23",
+     "teamA": "WGPRA",
+     "scoreA": 249,
+     "teamB": "GLT",
+     "scoreB": 179,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-23",
+     "teamA": "SH",
+     "scoreA": 256,
+     "teamB": "VW",
+     "scoreB": 96,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-30",
+     "teamA": "FTC",
+     "scoreA": 295.5,
+     "teamB": "FDC",
+     "scoreB": 200.5,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-30",
+     "teamA": "GS",
+     "scoreA": 308,
+     "teamB": "KM",
+     "scoreB": 188,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-30",
+     "teamA": "KW",
+     "scoreA": 316,
+     "teamB": "WT",
+     "scoreB": 180,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-30",
+     "teamA": "EH",
+     "scoreA": 268,
+     "teamB": "KP",
+     "scoreB": 226,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-30",
+     "teamA": "WF",
+     "scoreA": 272,
+     "teamB": "PS",
+     "scoreB": 220,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-30",
+     "teamA": "QL",
+     "scoreA": 311,
+     "teamB": "WC",
+     "scoreB": 169,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-30",
+     "teamA": "WGPRA",
+     "scoreA": 287,
+     "teamB": "VG",
+     "scoreB": 156,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-30",
+     "teamA": "GLT",
+     "scoreA": 257,
+     "teamB": "SH",
+     "scoreB": 183,
+     "friendly": false
+    },
+    {
+     "date": "2025-06-30",
+     "teamA": "IP",
+     "scoreA": 220,
+     "teamB": "VW",
+     "scoreB": 135,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-07",
+     "teamA": "FTC",
+     "scoreA": 310,
+     "teamB": "KM",
+     "scoreB": 185,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-07",
+     "teamA": "KW",
+     "scoreA": 291,
+     "teamB": "GS",
+     "scoreB": 204,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-07",
+     "teamA": "FDC",
+     "scoreA": 281,
+     "teamB": "WT",
+     "scoreB": 214,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-07",
+     "teamA": "WF",
+     "scoreA": 303,
+     "teamB": "WC",
+     "scoreB": 189,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-07",
+     "teamA": "QL",
+     "scoreA": 306,
+     "teamB": "EH",
+     "scoreB": 185,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-07",
+     "teamA": "KP",
+     "scoreA": 247,
+     "teamB": "PS",
+     "scoreB": 235,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-07",
+     "teamA": "GLT",
+     "scoreA": 277,
+     "teamB": "VW",
+     "scoreB": 103,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-07",
+     "teamA": "SH",
+     "scoreA": 255,
+     "teamB": "VG",
+     "scoreB": 210,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-07",
+     "teamA": "WGPRA",
+     "scoreA": 276,
+     "teamB": "IP",
+     "scoreB": 151,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-14",
+     "teamA": "KW",
+     "scoreA": 295,
+     "teamB": "FDC",
+     "scoreB": 201,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-14",
+     "teamA": "FTC",
+     "scoreA": 259,
+     "teamB": "GS",
+     "scoreB": 208,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-14",
+     "teamA": "KM",
+     "scoreA": 233,
+     "teamB": "WT",
+     "scoreB": 208,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-14",
+     "teamA": "QL",
+     "scoreA": 297,
+     "teamB": "PS",
+     "scoreB": 188,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-14",
+     "teamA": "WF",
+     "scoreA": 295,
+     "teamB": "KP",
+     "scoreB": 195,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-14",
+     "teamA": "EH",
+     "scoreA": 288.5,
+     "teamB": "WC",
+     "scoreB": 199.5,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-14",
+     "teamA": "WGPRA",
+     "scoreA": 261,
+     "teamB": "SH",
+     "scoreB": 199,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-14",
+     "teamA": "GLT",
+     "scoreA": 215,
+     "teamB": "IP",
+     "scoreB": 167,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-14",
+     "teamA": "VG",
+     "scoreA": 222,
+     "teamB": "VW",
+     "scoreB": 138,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-21",
+     "teamA": "KW",
+     "scoreA": 249,
+     "teamB": "FTC",
+     "scoreB": 246,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-21",
+     "teamA": "KM",
+     "scoreA": 279,
+     "teamB": "FDC",
+     "scoreB": 212,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-21",
+     "teamA": "GS",
+     "scoreA": 284,
+     "teamB": "WT",
+     "scoreB": 212,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-21",
+     "teamA": "QL",
+     "scoreA": 324,
+     "teamB": "WF",
+     "scoreB": 164,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-21",
+     "teamA": "PS",
+     "scoreA": 266,
+     "teamB": "EH",
+     "scoreB": 228,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-21",
+     "teamA": "WC",
+     "scoreA": 256,
+     "teamB": "KP",
+     "scoreB": 222,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-21",
+     "teamA": "GLT",
+     "scoreA": 231,
+     "teamB": "VG",
+     "scoreB": 179,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-21",
+     "teamA": "SH",
+     "scoreA": 290,
+     "teamB": "IP",
+     "scoreB": 151,
+     "friendly": false
+    },
+    {
+     "date": "2025-07-21",
+     "teamA": "WGPRA",
+     "scoreA": 325,
+     "teamB": "VW",
+     "scoreB": 102,
+     "friendly": false
+    }
+   ]
+  },
+  {
+   "year": 2026,
+   "wellingtonDivision": 2,
+   "divisions": [
+    {
+     "division": 1,
+     "teams": [
+      {
+       "abbr": "FTC",
+       "name": "First Colony Flyers",
+       "mascot": "Flyers"
+      },
+      {
+       "abbr": "FDC",
+       "name": "Ford's Colony Killer Whales",
+       "mascot": "Killer Whales"
+      },
+      {
+       "abbr": "GS",
+       "name": "Greensprings Gators",
+       "mascot": "Gators"
+      },
+      {
+       "abbr": "KM",
+       "name": "Kingsmill Sharks Swim Team",
+       "mascot": "Sharks"
+      },
+      {
+       "abbr": "KW",
+       "name": "Kingswood Klams",
+       "mascot": "Klams"
+      },
+      {
+       "abbr": "QL",
+       "name": "Queens Lake Eagles",
+       "mascot": "Eagles"
+      }
+     ]
+    },
+    {
+     "division": 2,
+     "teams": [
+      {
+       "abbr": "EH",
+       "name": "Edgehill Eels Swim Team",
+       "mascot": "Eels"
+      },
+      {
+       "abbr": "PS",
+       "name": "Powhatan Secondary Seastars",
+       "mascot": "Seastars"
+      },
+      {
+       "abbr": "WT",
+       "name": "Wellington Waves Swim Team",
+       "mascot": "Waves"
+      },
+      {
+       "abbr": "WPD",
+       "name": "West Point Dolphins",
+       "mascot": "Dolphins"
+      },
+      {
+       "abbr": "WC",
+       "name": "Williamsburg Community Pool Manta Rays",
+       "mascot": "Manta Rays"
+      },
+      {
+       "abbr": "WF",
+       "name": "Windsor Forest Frogs Swim Team",
+       "mascot": "Frogs"
+      }
+     ]
+    },
+    {
+     "division": 3,
+     "teams": [
+      {
+       "abbr": "GLT",
+       "name": "Governor's Land Typhoons",
+       "mascot": "Typhoons"
+      },
+      {
+       "abbr": "IP",
+       "name": "Indigo Park Stingrays Swim Team",
+       "mascot": "Stingrays"
+      },
+      {
+       "abbr": "KP",
+       "name": "Kingspoint Dolphins Swim Team",
+       "mascot": "Dolphins"
+      },
+      {
+       "abbr": "SH",
+       "name": "Stonehouse Splash",
+       "mascot": "Splash"
+      },
+      {
+       "abbr": "VW",
+       "name": "Villages of Westminster Swim Team",
+       "mascot": "VW"
+      },
+      {
+       "abbr": "WGPRA",
+       "name": "Windsor Great Park Waves",
+       "mascot": "Waves"
+      }
+     ]
+    }
+   ],
+   "meets": [
+    {
+     "date": "2026-06-15",
+     "teamA": "WT",
+     "scoreA": null,
+     "teamB": "FDC",
+     "scoreB": null,
+     "friendly": true
+    },
+    {
+     "date": "2026-06-22",
+     "teamA": "WPD",
+     "scoreA": 86,
+     "teamB": "WT",
+     "scoreB": 203,
+     "winner": "WT",
+     "friendly": false,
+     "note": "Meet called after first half due to thunderstorms — Free and Breast only swum; times are official"
+    },
+    {
+     "date": "2026-06-22",
+     "teamA": "WF",
+     "scoreA": 257,
+     "teamB": "EH",
+     "scoreB": 237,
+     "winner": "WF",
+     "friendly": false
+    },
+    {
+     "date": "2026-06-22",
+     "teamA": "PS",
+     "scoreA": 232,
+     "teamB": "WC",
+     "scoreB": 240,
+     "winner": "WC",
+     "friendly": false
+    },
+    {
+     "date": "2026-06-29",
+     "teamA": "WT",
+     "scoreA": 352,
+     "teamB": "WC",
+     "scoreB": 152,
+     "winner": "WT",
+     "friendly": false
+    },
+    {
+     "date": "2026-06-29",
+     "teamA": "WF",
+     "scoreA": 301,
+     "teamB": "PS",
+     "scoreB": 182,
+     "winner": "WF",
+     "friendly": false
+    },
+    {
+     "date": "2026-06-29",
+     "teamA": "EH",
+     "scoreA": 384,
+     "teamB": "WPD",
+     "scoreB": 102,
+     "winner": "EH",
+     "friendly": false
+    },
+    {
+     "date": "2026-07-08",
+     "teamA": "PS",
+     "scoreA": 176,
+     "teamB": "WT",
+     "scoreB": 301,
+     "winner": "WT",
+     "friendly": false
+    },
+    {
+     "date": "2026-07-06",
+     "teamA": "WPD",
+     "scoreA": 130,
+     "teamB": "WF",
+     "scoreB": 263,
+     "winner": "WF",
+     "friendly": false
+    },
+    {
+     "date": "2026-07-08",
+     "teamA": "WC",
+     "scoreA": 150,
+     "teamB": "EH",
+     "scoreB": 332,
+     "winner": "EH",
+     "friendly": false
+    },
+    {
+     "date": "2026-07-13",
+     "teamA": "EH",
+     "scoreA": 210,
+     "teamB": "WT",
+     "scoreB": 300,
+     "friendly": false
+    },
+    {
+     "date": "2026-07-13",
+     "teamA": "WF",
+     "scoreA": 272,
+     "teamB": "WC",
+     "scoreB": 214,
+     "friendly": false
+    },
+    {
+     "date": "2026-07-13",
+     "teamA": "WPD",
+     "scoreA": 181,
+     "teamB": "PS",
+     "scoreB": 293,
+     "friendly": false
+    },
+    {
+     "date": "2026-07-20",
+     "teamA": "WT",
+     "scoreA": 305,
+     "teamB": "WF",
+     "scoreB": 191,
+     "friendly": false,
+     "winner": "WT"
+    },
+    {
+     "date": "2026-07-20",
+     "teamA": "WC",
+     "scoreA": 237,
+     "teamB": "WPD",
+     "scoreB": 211,
+     "friendly": false,
+     "winner": "WC"
+    },
+    {
+     "date": "2026-07-20",
+     "teamA": "PS",
+     "scoreA": 200,
+     "teamB": "EH",
+     "scoreB": 307,
+     "friendly": false,
+     "winner": "EH"
+    }
+   ]
+  }
+ ]
 }
