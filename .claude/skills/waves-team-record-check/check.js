@@ -105,8 +105,10 @@ for (const entry of bestBySwimmerKey.values()) {
 // Remove near-miss entries for any record already broken this season
 for (const key of brokenByKey.keys()) nearMissByKey.delete(key);
 
-const broken  = [...brokenByKey.values()].sort((a, b) => a.date.localeCompare(b.date));
-const top10   = [...nearMissByKey.values()].sort((a, b) => a.gap - b.gap).slice(0, 10);
+const broken   = [...brokenByKey.values()].sort((a, b) => a.date.localeCompare(b.date));
+const nmSorted = [...nearMissByKey.values()].sort((a, b) => a.gap - b.gap);
+const nmCutoff = nmSorted.length >= 10 ? nmSorted[9].gap : Infinity;
+const top10    = nmSorted.filter(v => v.gap <= nmCutoff);
 
 // ── Output — Block 1: Broken Records ─────────────────────────────────────────
 console.log('🏆 WELLINGTON WAVES — TEAM RECORDS BROKEN THIS SEASON\n');
@@ -141,7 +143,8 @@ if (broken.length === 0) {
 }
 
 // ── Output — Block 2: Top 10 Near-Misses ─────────────────────────────────────
-console.log('📍 TOP 10 CLOSEST TO A WELLINGTON WAVES TEAM RECORD');
+const nearMissLabel = top10.length > 10 ? 'TOP 10+ (TIES AT BOUNDARY)' : 'TOP 10';
+console.log('📍 ' + nearMissLabel + ' CLOSEST TO A WELLINGTON WAVES TEAM RECORD');
 console.log('   (season-best times that have not yet broken the standing record)\n');
 
 if (top10.length === 0) {

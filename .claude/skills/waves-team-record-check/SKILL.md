@@ -61,10 +61,12 @@ Each broken record prints the swimmer, new time, previous record (holder + year)
 name and date, and a ready-to-post Facebook draft. Copy draft text directly; do not
 reformat manually.
 
-### Step 3 — Review Block 2 (near-miss top 10)
+### Step 3 — Review Block 2 (near-miss top 10+)
 
-Shows the 10 closest season-best times to each standing record, one per record, sorted
-by gap ascending. Any entry within 1 second carries a ⚠️ flag — verify the source data
+Shows the closest season-best times to each standing record, one per record, sorted by
+gap ascending. The list includes at least 10 entries; if multiple entries are tied at
+the exact gap value that sits at position 10, all of them are shown (never drop a tie
+at the boundary). Any entry within 1 second carries a ⚠️ flag — verify the source data
 before posting or commenting publicly.
 
 ---
@@ -78,6 +80,7 @@ before posting or commenting publicly.
 - `gap > 0` → near-miss candidate
 - If a record key appears in Block 1 (broken), it is excluded from Block 2 entirely
 - Block 2 shows **one entry per record key** (the closest swimmer for that record)
+- Block 2 cutoff: include all entries with `gap ≤ gap[9]` (the gap at position 10), so ties at the boundary are never silently dropped. If fewer than 10 entries exist, all are shown.
 
 ---
 
