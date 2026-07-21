@@ -210,11 +210,12 @@ console.log('Total: ' + totalSpots + ' qualifying spots | ' + uniqueSwimmers + '
 console.log('\n---\n');
 
 // ── Block 3: Top 10 near-misses ───────────────────────────────────────────────
-const top10 = [...nearMiss.entries()]
+const nmSorted = [...nearMiss.entries()]
   .filter(([nmkey]) => !qualifiers.has(nmkey))
   .map(([, v]) => v)
-  .sort((a, b) => a.gap - b.gap)
-  .slice(0, 10);
+  .sort((a, b) => a.gap - b.gap);
+const nmCutoff = nmSorted.length >= 10 ? nmSorted[9].gap : Infinity;
+const top10 = nmSorted.filter(v => v.gap <= nmCutoff);
 
 console.log('📍 TOP 10 CLOSEST TO A VPSU CHAMPS STANDARD');
 console.log("  (swimmers who haven't qualified in this event yet)");
