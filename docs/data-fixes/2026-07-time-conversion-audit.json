@@ -1,4 +1,4 @@
-{
+﻿{
   "_description": "Audit log: x100 time-conversion bug fix for data/league-results.json (current season). Criterion: time >= 100 AND (time%100) < 60. relay-results.json excluded — all 144 rows are 200m relay events whose legitimate times (127-230s) overlap with x100 artifact range; cannot be mechanically distinguished without source PDFs. relay-results.json is a separate manual-verification task. HISTORY BATCH (2026-07-16): Also corrects league-results-history.json (1284 rows) and relay-results-history.json (107 rows) using corrected criterion time>=100 AND (time%100)<60.",
   "_generated": "2026-07-16",
   "_file": "data/league-results.json",
