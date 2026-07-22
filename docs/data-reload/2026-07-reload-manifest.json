@@ -321,7 +321,7 @@
     "rowCountExpected": null,
     "rowCountParsed": 280,
     "plausibilityFlags": 0,
-    "notes": "Meet called after first half due to thunderstorms. Free and Breast only swum; times are official. No relays swum — relay-results-v2 will have no rows from this meet. PDF confirmed 4 of 4 pages, ends cleanly at event #33 (Boys 7-8 25m Backstroke) — no Backstroke 9+, Butterfly, or relay events. Consistent with a storm-shortened or early-called meet. Parser extracted all data present; this is treated as the complete official record for this meet, not a parsing gap."
+    "notes": "Meet confirmed cut short by Wade (storm/weather) — not a parsing gap. PDF is genuinely 4 of 4 pages, ends cleanly at event #33 (Boys 7-8 25m Backstroke); no Backstroke 9+, Butterfly, or relay events occurred. Parser correctly extracted all data present. This is the complete official record for this meet."
   },
   {
     "season": "2026",
