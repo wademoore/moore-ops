@@ -201,7 +201,7 @@ function parseIndividualRow(line) {
   //   group 8: points or EXH (optional)
   // Place may have an asterisk suffix (e.g. "3*") indicating a tied finish.
   const m = line.match(
-    /^(\d+)\*?\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+)?\s*$/i
+    /^(\d+)\*?\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+(?:\.\d+)?)?\s*$/i
   );
   if (m) {
     const place       = parseInt(m[1], 10);
@@ -272,9 +272,13 @@ function parseIndividualRow(line) {
 /**
  * Parses a relay result row.
  *
- * Meet Maestro format: "<place> <full team name>\t<relay-letter> <team-abbr>\t<seed> <official>"
+ * Meet Maestro format (2-tab variant, most teams):
+ *   "<place> <full team name>\t<relay-letter> <team-abbr>\t<seed> <official>"
  *   e.g. "1 Ford's Colony \tA FDC \tNT 2:23.26"
- *        "2 Wellington Waves \tA WT \tNT DQ"
+ *
+ * 1-tab variant (observed for WPD): relay-letter, abbreviation, and times
+ * are all collapsed into the second tab field:
+ *   "2 WP Dolphins \tA WPD 3:10.92 3:06.86"
  *
  * Returns a partial row object or null.
  */
@@ -288,15 +292,25 @@ function parseRelayRow(line) {
   if (!placeMatch) return null;
   const place = parseInt(placeMatch[1], 10);
 
-  // Field 1: "<relay-letter> <team-abbr>" — team abbr is the last space-delimited word
+  // Field 1: "<relay-letter> <team-abbr>" in the 2-tab layout, or
+  //          "<relay-letter> <team-abbr> <seed> <official>" in the 1-tab layout.
+  // Team abbreviation is the first ALL-CAPS 2–6 character token (relay letter "A"/"B"
+  // is only 1 char and is skipped; time strings contain digits/colons and also fail).
+  // Everything in parts[2+] (2-tab) or after the abbr token in parts[1] (1-tab) is times.
   const f1words = parts[1].trim().split(/\s+/);
   if (f1words.length < 2) return null;
-  const team = f1words[f1words.length - 1].toUpperCase();
-  if (!/^[A-Z]{2,6}$/.test(team)) return null;
 
-  // Remaining fields contain seed + official (may be space-sep in one field or tab-sep)
-  const timeStr   = parts.slice(2).join(' ').trim();
-  const timeParts = timeStr.split(/\s+/).filter(Boolean);
+  let teamIdx = -1;
+  for (let i = 0; i < f1words.length; i++) {
+    if (/^[A-Z]{2,6}$/.test(f1words[i])) { teamIdx = i; break; }
+  }
+  if (teamIdx === -1) return null;
+  const team = f1words[teamIdx].toUpperCase();
+
+  // Times: everything after the team abbreviation in f1, plus any further tab fields
+  const timesFromF1 = f1words.slice(teamIdx + 1);
+  const timesFromRest = parts.slice(2).join(' ').trim().split(/\s+/).filter(Boolean);
+  const timeParts = [...timesFromF1, ...timesFromRest].filter(Boolean);
   if (timeParts.length < 2) return null;
 
   const seedStr     = timeParts[0].toUpperCase();
@@ -776,4 +790,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
 }
 
-export { parseIndividualRow };
+export { parseIndividualRow, parseRelayRow };
