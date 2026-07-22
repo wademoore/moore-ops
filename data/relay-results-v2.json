@@ -1038,5 +1038,2085 @@
     "sourceEventNumber": 56,
     "verifiedAgainst": null,
     "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ballin, Christian",
+      "Finley, Jonathan",
+      "Saul, Robby",
+      "Johnson, Nate"
+    ],
+    "time": 156.07999999999998,
+    "date": "2026-06-22",
+    "meet": "WC vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WCP_Manta_Rays_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Matheson, Will",
+      "McGlamery, Joel",
+      "Lee, Coleman",
+      "Landers, Benjamin"
+    ],
+    "time": 186.94,
+    "date": "2026-06-22",
+    "meet": "WC vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WCP_Manta_Rays_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Fly, Harper",
+      "Bonyadlou, Taraneh",
+      "James, Hadley",
+      "Broughton, Emily"
+    ],
+    "time": 170.64,
+    "date": "2026-06-22",
+    "meet": "WC vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WCP_Manta_Rays_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Fischer, Camryn",
+      "Ballin, Alivia",
+      "Austin, Skyler",
+      "Herron, Vivian"
+    ],
+    "time": 174.06,
+    "date": "2026-06-22",
+    "meet": "WC vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WCP_Manta_Rays_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kurowski, Ryan",
+      "Finley, Cameron",
+      "Herron, Isaac",
+      "Guaspari, Aiden"
+    ],
+    "time": 146.19,
+    "date": "2026-06-22",
+    "meet": "WC vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WCP_Manta_Rays_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ready, Ryan",
+      "Stockburger, Ben",
+      "Pierce, Austin",
+      "Walker, Cameron"
+    ],
+    "time": 160.9,
+    "date": "2026-06-22",
+    "meet": "WC vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WCP_Manta_Rays_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Broughton, Chase",
+      "Newsome, Wyatt",
+      "Stehle, Carter",
+      "Lavender, Thad"
+    ],
+    "time": 196.34,
+    "date": "2026-06-22",
+    "meet": "WC vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WCP_Manta_Rays_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Matheson, Chelsea",
+      "Lee, Hope",
+      "Walker, Olivia",
+      "Burcham, Anya"
+    ],
+    "time": 149.77,
+    "date": "2026-06-22",
+    "meet": "WC vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WCP_Manta_Rays_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Johnson, Annie",
+      "Hamati, Gianina",
+      "Faucett, Jade",
+      "Leone, Morgan"
+    ],
+    "time": 169.13,
+    "date": "2026-06-22",
+    "meet": "WC vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WCP_Manta_Rays_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Trichler, Kate",
+      "Honenberger, Shirley",
+      "Murphy, Morgan",
+      "Burcham, Felicity"
+    ],
+    "time": 186.37,
+    "date": "2026-06-22",
+    "meet": "WC vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WCP_Manta_Rays_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Voss, Oliver",
+      "Butler, Anson",
+      "Walk, Callen",
+      "Pascoe, Wilson"
+    ],
+    "time": 137.3,
+    "date": "2026-06-22",
+    "meet": "EH vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_at_Edgehill_Eels_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Vasquez, Leon",
+      "Smelser, Marcus",
+      "Gunderman, AJ",
+      "Polk, Timothy"
+    ],
+    "time": 157.89,
+    "date": "2026-06-22",
+    "meet": "EH vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_at_Edgehill_Eels_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Sykes, Katharine",
+      "Long, Tessa",
+      "Gorelick, Ryah",
+      "Collado, Sophia"
+    ],
+    "time": 149.52,
+    "date": "2026-06-22",
+    "meet": "EH vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_at_Edgehill_Eels_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Gunderman, Katie",
+      "Pollock, Leora",
+      "Gunderman, Annalise",
+      "Lamb, Addley"
+    ],
+    "time": 167.06,
+    "date": "2026-06-22",
+    "meet": "EH vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_at_Edgehill_Eels_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Long, Tucker",
+      "Gorelick, Canaan",
+      "Perkins, Reddick",
+      "Husband, Vince"
+    ],
+    "time": 128.23,
+    "date": "2026-06-22",
+    "meet": "EH vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_at_Edgehill_Eels_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Sherman III, Tripp",
+      "Bordt, Jaxson",
+      "Campbell, Cooper",
+      "Petrie, Evan"
+    ],
+    "time": 134.15,
+    "date": "2026-06-22",
+    "meet": "EH vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_at_Edgehill_Eels_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Keene, Michelle",
+      "Jackson, Lucy",
+      "Polk, Abby",
+      "Pelletier, Zoey"
+    ],
+    "time": 145.46,
+    "date": "2026-06-22",
+    "meet": "EH vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_at_Edgehill_Eels_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Wilding, Emmie",
+      "McCormick, Quinn",
+      "Jackson, Olivia",
+      "Walk, Morgan"
+    ],
+    "time": 158.43,
+    "date": "2026-06-22",
+    "meet": "EH vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_at_Edgehill_Eels_06_22_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Gorelick, Canaan",
+      "Butler, Anson",
+      "Walk, Callen",
+      "Long, Tucker"
+    ],
+    "time": 143.53,
+    "date": "2026-06-29",
+    "meet": "WF vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._Powhatan_Secondary_Sea_Stars_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ballin, Christian",
+      "Finley, Jonathan",
+      "Long, Matthew",
+      "Finley, Cameron"
+    ],
+    "time": 150.32,
+    "date": "2026-06-29",
+    "meet": "WF vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._Powhatan_Secondary_Sea_Stars_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ballin, Alivia",
+      "Fischer, Camryn",
+      "Austin, Skyler",
+      "Case, Madelyn"
+    ],
+    "time": 158.84,
+    "date": "2026-06-29",
+    "meet": "WF vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._Powhatan_Secondary_Sea_Stars_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "McCormick, Quinn",
+      "Long, Tessa",
+      "Spicer, Brynn",
+      "Wilding, Emmie"
+    ],
+    "time": 169.97,
+    "date": "2026-06-29",
+    "meet": "WF vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._Powhatan_Secondary_Sea_Stars_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Pascoe, Wilson",
+      "Perkins, Reddick",
+      "Voss, Oliver",
+      "Husband, Vince"
+    ],
+    "time": 127.52,
+    "date": "2026-06-29",
+    "meet": "WF vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._Powhatan_Secondary_Sea_Stars_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kurowski, Ryan",
+      "Faucett, Marcellus",
+      "Kurowski, Kaleb",
+      "Saul, Robby"
+    ],
+    "time": 143.26,
+    "date": "2026-06-29",
+    "meet": "WF vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._Powhatan_Secondary_Sea_Stars_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Collado, Sophia",
+      "Sykes, Katharine",
+      "Jackson, Olivia",
+      "Walk, Morgan"
+    ],
+    "time": 141.65,
+    "date": "2026-06-29",
+    "meet": "WF vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._Powhatan_Secondary_Sea_Stars_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Fisher, Lily",
+      "Leone, Sarah",
+      "Cooke, Allyson",
+      "Leone, Morgan"
+    ],
+    "time": 182.12,
+    "date": "2026-06-29",
+    "meet": "WF vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._Powhatan_Secondary_Sea_Stars_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Takach, Natalie",
+      "Herron, Vivian",
+      "Vallejo, Sophia",
+      "Faucett, Jade"
+    ],
+    "time": 205.69,
+    "date": "2026-06-29",
+    "meet": "WF vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._Powhatan_Secondary_Sea_Stars_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bordt, Jaxson",
+      "Petrie, Evan",
+      "Gunderman, AJ",
+      "Wulczynski, Joey"
+    ],
+    "time": 152.03,
+    "date": "2026-07-08",
+    "meet": "WC vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_WCP_Manta_Rays_07_08_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Schum, Alfie",
+      "McGlamery, Joel",
+      "Moskal, Nathan",
+      "Landers, Benjamin"
+    ],
+    "time": 187.13,
+    "date": "2026-07-08",
+    "meet": "WC vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_WCP_Manta_Rays_07_08_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Pelletier, Zoey",
+      "Keene, Michelle",
+      "Gunderman, Annalise",
+      "Stephens, Keiryn"
+    ],
+    "time": 149.5,
+    "date": "2026-07-08",
+    "meet": "WC vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_WCP_Manta_Rays_07_08_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Fly, Harper",
+      "Murphy, Morgan",
+      "Fly, Kayla",
+      "Matheson, Chelsea"
+    ],
+    "time": 174.82999999999998,
+    "date": "2026-07-08",
+    "meet": "WC vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_WCP_Manta_Rays_07_08_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shobe, Sam",
+      "Vasquez, Leon",
+      "Campbell, Cooper",
+      "Vasquez, Max"
+    ],
+    "time": 146.34,
+    "date": "2026-07-08",
+    "meet": "WC vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_WCP_Manta_Rays_07_08_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Newsome, Wyatt",
+      "Stehle, Carter",
+      "Matheson, Will",
+      "Lee, Coleman"
+    ],
+    "time": 182.38,
+    "date": "2026-07-08",
+    "meet": "WC vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_WCP_Manta_Rays_07_08_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ready, Ryan",
+      "Gilligan, Bryce",
+      "Gilligan, Donovan",
+      "Moore, Brendan"
+    ],
+    "time": 212.82999999999998,
+    "date": "2026-07-08",
+    "meet": "WC vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_WCP_Manta_Rays_07_08_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lamb, Addley",
+      "Pollock, Leora",
+      "Radcliff, Zoe",
+      "Gunderman, Katie"
+    ],
+    "time": 152.19,
+    "date": "2026-07-08",
+    "meet": "WC vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_WCP_Manta_Rays_07_08_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Broughton, Emily",
+      "Lee, Hope",
+      "James, Hadley",
+      "Simone, Olivia"
+    ],
+    "time": 162.97,
+    "date": "2026-07-08",
+    "meet": "WC vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_WCP_Manta_Rays_07_08_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ready, Leah",
+      "Purse, Amelia",
+      "Honenberger, Shirley",
+      "Burcham, Felicity"
+    ],
+    "time": 183.5,
+    "date": "2026-07-08",
+    "meet": "WC vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_WCP_Manta_Rays_07_08_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Perkins, Reddick",
+      "Butler, Anson",
+      "Walk, Callen",
+      "Long, Tucker"
+    ],
+    "time": 137.71,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Matheson, Will",
+      "McGlamery, Joel",
+      "Sylvester, Wyatt",
+      "Stockburger, Ben"
+    ],
+    "time": 165.06,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Overton, Liam",
+      "Pascoe, Clark",
+      "Grizzle, Fletcher",
+      "McCartney, Nolan"
+    ],
+    "time": 192.83,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Fly, Harper",
+      "Bonyadlou, Taraneh",
+      "James, Hadley",
+      "Broughton, Emily"
+    ],
+    "time": 173.21,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hill, Summer",
+      "Moore, Kensington",
+      "McCormick, Quinn",
+      "Wilding, Emmie"
+    ],
+    "time": 195.7,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kordosky, Lucy",
+      "Lee, Grace",
+      "Walk, Morgan",
+      "Chess, Julia"
+    ],
+    "time": 230.64,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Pascoe, Wilson",
+      "Gorelick, Canaan",
+      "Perkins, Cavan",
+      "Husband, Vince"
+    ],
+    "time": 140.06,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Chess, Charlie",
+      "Larimer, Everett",
+      "Chess, Freddy",
+      "Gemerek, Theo"
+    ],
+    "time": 175.02,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ready, Ryan",
+      "Newsome, Wyatt",
+      "Pierce, Austin",
+      "Lee, Coleman"
+    ],
+    "time": 175.46,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Broughton, Chase",
+      "Peterson, JJ",
+      "Gilligan, Bryce",
+      "Lavender, Bram"
+    ],
+    "time": 185.19,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Collado, Sophia",
+      "Sykes, Katharine",
+      "Long, Tessa",
+      "Gorelick, Ryah"
+    ],
+    "time": 135.31,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Matheson, Chelsea",
+      "Lee, Hope",
+      "Walker, Olivia",
+      "Burcham, Anya"
+    ],
+    "time": 147.57999999999998,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kalloch, Lucy",
+      "Purse, Amelia",
+      "Murphy, Morgan",
+      "Kalloch, Grace"
+    ],
+    "time": 166.43,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Overton, Camilla",
+      "Larimer, June",
+      "Shelley, Clara",
+      "Grizzle, Abby"
+    ],
+    "time": 186.91,
+    "date": "2026-07-13",
+    "meet": "WC vs WF",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shnowske, Luke",
+      "Hibbard, Mason",
+      "Shnowske, Sam",
+      "Hunley, Christian"
+    ],
+    "time": 143.76,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Eason, Colin",
+      "Smelser, Marcus",
+      "Gunderman, AJ",
+      "Corbett, Sammy"
+    ],
+    "time": 162.81,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Radcliff, Zoe",
+      "Keene, Michelle",
+      "Gunderman, Katie",
+      "Pollock, Leora"
+    ],
+    "time": 165.39,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Eggleston, Hayden",
+      "Lantz, Clara",
+      "Whaley, Katelyn",
+      "Taylor, Delani"
+    ],
+    "time": 183.63,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hunley, Alexander",
+      "Lantz, Parker",
+      "Thrash, Nehemiah",
+      "Keithley, Jostin"
+    ],
+    "time": 135.18,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Wulczynski, Joey",
+      "Vasquez, Leon",
+      "Campbell, Cooper",
+      "Vasquez, Max"
+    ],
+    "time": 137.87,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Swartzel, Reagan",
+      "Childress, Grey",
+      "Bissette, Zurie",
+      "Shnowske, Anna"
+    ],
+    "time": 131.64,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lamb, Addley",
+      "Jorgensen, Aves",
+      "Stocki, Sutton",
+      "Stephens, Kimaya"
+    ],
+    "time": 155.13,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Mixed 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Stephens, Keiryn",
+      "Petrie, Evan",
+      "Gunderman, Annalise",
+      "Sherman III, Tripp"
+    ],
+    "time": 146.31,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 57,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Mixed 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Pate, Abigail",
+      "Buzek, Jaclynn",
+      "Childress, Wyatt",
+      "Welch, Sutton"
+    ],
+    "time": 154.23,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 57,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Mixed 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Polk, Timothy",
+      "Bordt, Jaxson",
+      "Polk, Abby",
+      "Pelletier, Zoey"
+    ],
+    "time": 139.71,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 58,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Mixed 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Snyder, Wren",
+      "Whaley, William",
+      "Ilardi, Nikolai",
+      "Haas, Natalie"
+    ],
+    "time": 146.23,
+    "date": "2026-07-13",
+    "meet": "EH vs WT",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 58,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Finley, Cameron",
+      "Finley, Jonathan",
+      "Long, Matthew",
+      "Ballin, Christian"
+    ],
+    "time": 145.89,
+    "date": "2026-07-20",
+    "meet": "PS vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bordt, Jaxson",
+      "Smelser, Marcus",
+      "Gunderman, AJ",
+      "Sherman III, Tripp"
+    ],
+    "time": 149.7,
+    "date": "2026-07-20",
+    "meet": "PS vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Pelletier, Zoey",
+      "Keene, Michelle",
+      "Gunderman, Annalise",
+      "Stephens, Keiryn"
+    ],
+    "time": 150.76,
+    "date": "2026-07-20",
+    "meet": "PS vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bravo, Frankie",
+      "Ballin, Alivia",
+      "Austin, Skyler",
+      "Hamati, Gianina"
+    ],
+    "time": 165.13,
+    "date": "2026-07-20",
+    "meet": "PS vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Polk, Timothy",
+      "Vasquez, Leon",
+      "Campbell, Cooper",
+      "Petrie, Evan"
+    ],
+    "time": 136.92000000000002,
+    "date": "2026-07-20",
+    "meet": "PS vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kurowski, Ryan",
+      "Johnson, Nate",
+      "Kurowski, Kaleb",
+      "Saul, Robby"
+    ],
+    "time": 144.46,
+    "date": "2026-07-20",
+    "meet": "PS vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lamb, Addley",
+      "Pollock, Leora",
+      "Polk, Abby",
+      "Gunderman, Katie"
+    ],
+    "time": 149.18,
+    "date": "2026-07-20",
+    "meet": "PS vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Johnson, Annie",
+      "Vallejo, Sophia",
+      "Styron, Rose",
+      "Leone, Morgan"
+    ],
+    "time": 169.27,
+    "date": "2026-07-20",
+    "meet": "PS vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Mixed 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Eason, Colin",
+      "Campbell, Colton",
+      "Luechauer, Moriah",
+      "Dodge, Avery"
+    ],
+    "time": 165.52,
+    "date": "2026-07-20",
+    "meet": "PS vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 57,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Mixed 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Faucett, Jade",
+      "Weaver, Grayson",
+      "Lamicella, AJ",
+      "Herron, Isaac"
+    ],
+    "time": 196.54,
+    "date": "2026-07-20",
+    "meet": "PS vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 57,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Mixed 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Montgomery, Gavin",
+      "Linton, Kate",
+      "Leone, Sarah",
+      "Guaspari, Aiden"
+    ],
+    "time": 152.98,
+    "date": "2026-07-20",
+    "meet": "PS vs EH",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 58,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bordt, Jaxson",
+      "Petrie, Evan",
+      "Gunderman, AJ",
+      "Sherman III, Tripp"
+    ],
+    "time": 157.41,
+    "date": "2026-06-29",
+    "meet": "EH vs WPD",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/West_Point_Dolphins_at_Edgehill_Eels_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Murphy, Tucker",
+      "Dameron, Harrison",
+      "Clark, Nethan",
+      "Amiss, Noah"
+    ],
+    "time": 186.86,
+    "date": "2026-06-29",
+    "meet": "EH vs WPD",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/West_Point_Dolphins_at_Edgehill_Eels_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Pelletier, Zoey",
+      "Keene, Michelle",
+      "Gunderman, Annalise",
+      "Stephens, Keiryn"
+    ],
+    "time": 152.68,
+    "date": "2026-06-29",
+    "meet": "EH vs WPD",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/West_Point_Dolphins_at_Edgehill_Eels_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Brizendine, Ella",
+      "Wills, Kennedy",
+      "Clark, Sofia",
+      "Rodriguez, Lydia"
+    ],
+    "time": 181.29,
+    "date": "2026-06-29",
+    "meet": "EH vs WPD",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/West_Point_Dolphins_at_Edgehill_Eels_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Polk, Timothy",
+      "Vasquez, Leon",
+      "Campbell, Cooper",
+      "Vasquez, Max"
+    ],
+    "time": 141.64,
+    "date": "2026-06-29",
+    "meet": "EH vs WPD",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/West_Point_Dolphins_at_Edgehill_Eels_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lewis, Jase",
+      "Lewis, Waylon",
+      "Lohr Jr, Bill",
+      "Rose, Blake"
+    ],
+    "time": 195.89,
+    "date": "2026-06-29",
+    "meet": "EH vs WPD",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/West_Point_Dolphins_at_Edgehill_Eels_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Dodge, Avery",
+      "Pollock, Leora",
+      "Polk, Abby",
+      "Gunderman, Katie"
+    ],
+    "time": 149.07999999999998,
+    "date": "2026-06-29",
+    "meet": "EH vs WPD",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/West_Point_Dolphins_at_Edgehill_Eels_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Paone, Mac",
+      "Evans, Kinley",
+      "Wills, Ava",
+      "Brizendine, Lily"
+    ],
+    "time": 168.17000000000002,
+    "date": "2026-06-29",
+    "meet": "EH vs WPD",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/West_Point_Dolphins_at_Edgehill_Eels_06_29_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Finley, Cameron",
+      "Finley, Jonathan",
+      "Long, Matthew",
+      "Ballin, Christian"
+    ],
+    "time": 154.84,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Poorman, Julian",
+      "Lohr Jr, Bill",
+      "Clark, Nethan",
+      "Kinstetter, Merick"
+    ],
+    "time": 195.29,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ballin, Alivia",
+      "Fischer, Camryn",
+      "Austin, Skyler",
+      "Case, Madelyn"
+    ],
+    "time": 159.72,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Newman, Alyssa",
+      "Wills, Kennedy",
+      "Hunsucker, Addison",
+      "Ronan, Brynnlee"
+    ],
+    "time": 165.7,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bravo, Frankie",
+      "Linton, Kate",
+      "Lamicella, AJ",
+      "Cooke, Allyson"
+    ],
+    "time": 205.78,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "BAker, Annabelle",
+      "Lamp, Sophie",
+      "Paone, Mac",
+      "Amiss, Bella"
+    ],
+    "time": 222.75,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kurowski, Ryan",
+      "Johnson, Nate",
+      "Kurowski, Kaleb",
+      "Saul, Robby"
+    ],
+    "time": 146.46,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Poorman, Jonathan",
+      "Dameron, Harrison",
+      "Amiss, Noah",
+      "Rose, Blake"
+    ],
+    "time": 162.68,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Murphy, Tucker",
+      "Hopson, Hunter",
+      "Romero, Roman",
+      "Hubbard, Camden"
+    ],
+    "time": 215.12,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Johnson, Annie",
+      "Hamati, Gianina",
+      "Hamati, Jacqueline",
+      "Leone, Morgan"
+    ],
+    "time": 159.11,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ronan, Everly",
+      "Allen, Amzie",
+      "Wills, Ava",
+      "Clark, Sofia"
+    ],
+    "time": 165.72,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hoang, Milana",
+      "Ronan, Harper",
+      "Lamp, Savannah",
+      "Dameron, Annabelle"
+    ],
+    "time": 174.7,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Takach, Natalie",
+      "Leone, Sarah",
+      "Vallejo, Sophia",
+      "Vallejo, Scarlett"
+    ],
+    "time": 192.72,
+    "date": "2026-07-13",
+    "meet": "WPD vs PS",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Murphy, Tucker",
+      "Lohr Jr, Bill",
+      "Clark, Nethan",
+      "Hubbard, Camden"
+    ],
+    "time": 185.43,
+    "date": "2026-07-20",
+    "meet": "WPD vs WC",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_WCP_Manta_Rays_at_WP_Dolphins_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Evans, Kinley",
+      "Wills, Kennedy",
+      "Ronan, Brynnlee",
+      "Ronan, Everly"
+    ],
+    "time": 177.93,
+    "date": "2026-07-20",
+    "meet": "WPD vs WC",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_WCP_Manta_Rays_at_WP_Dolphins_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Burcham, Felicity",
+      "Burcham, Anya",
+      "Fly, Harper",
+      "Broughton, Emily"
+    ],
+    "time": 199.18,
+    "date": "2026-07-20",
+    "meet": "WPD vs WC",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_WCP_Manta_Rays_at_WP_Dolphins_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Rodriguez, Lydia",
+      "Lamp, Sophie",
+      "BAker, Annabelle",
+      "Baker, Emmy"
+    ],
+    "time": 216.11,
+    "date": "2026-07-20",
+    "meet": "WPD vs WC",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_WCP_Manta_Rays_at_WP_Dolphins_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Peterson, JJ",
+      "Stehle, Carter",
+      "Pierce, Austin",
+      "Lee, Coleman"
+    ],
+    "time": 172.32,
+    "date": "2026-07-20",
+    "meet": "WPD vs WC",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_WCP_Manta_Rays_at_WP_Dolphins_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kinstetter, Merick",
+      "Lewis, Waylon",
+      "Amiss, Noah",
+      "Rose, Blake"
+    ],
+    "time": 178.34,
+    "date": "2026-07-20",
+    "meet": "WPD vs WC",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_WCP_Manta_Rays_at_WP_Dolphins_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Matheson, Chelsea",
+      "Lee, Hope",
+      "Walker, Olivia",
+      "James, Hadley"
+    ],
+    "time": 149.42000000000002,
+    "date": "2026-07-20",
+    "meet": "WPD vs WC",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_WCP_Manta_Rays_at_WP_Dolphins_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Brizendine, Ella",
+      "Ronan, Harper",
+      "Newman, Alyssa",
+      "Wills, Ava"
+    ],
+    "time": 165.99,
+    "date": "2026-07-20",
+    "meet": "WPD vs WC",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_WCP_Manta_Rays_at_WP_Dolphins_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Blair, Emmy",
+      "Walker, Ashlynn",
+      "Brizendine, Lily",
+      "Clark, Sofia"
+    ],
+    "time": 174.05,
+    "date": "2026-07-20",
+    "meet": "WPD vs WC",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_WCP_Manta_Rays_at_WP_Dolphins_07_20_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
   }
 ]
