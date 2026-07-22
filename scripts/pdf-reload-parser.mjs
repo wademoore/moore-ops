@@ -24,7 +24,7 @@ const ROOT = resolve(__dirname, '..');
 
 // pdf-parse is a CommonJS module; use createRequire to load it from ESM.
 const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 
 // timeToSeconds imported directly from the authoritative source.
 // CRITICAL: no other time conversion arithmetic is permitted in this file.
@@ -136,24 +136,24 @@ const MIN_TIMES = {
 /**
  * Parses an event header line.
  *
- * Expected Meet Maestro format:
- *   #6 Boys 9-10 100m Individual Medley  SCM
- *   #1 Men Open 200m Medley Relay  SCM
+ * Meet Maestro format (actual): #N <gender> <bracket> <event name>
+ * No course suffix in PDFs; course is derived from the manifest entry's
+ * `course` field (passed as defaultCourse) rather than a hardcoded literal.
  *
  * Returns { eventNum, ageGroup, eventName, course } or null.
  */
-function parseEventHeader(line) {
-  // Match: #N <gender> <bracket> <event name> <course>
+function parseEventHeader(line, defaultCourse) {
+  // Course suffix (SCM|SCY) is optional — actual Meet Maestro PDFs omit it.
   const m = line.match(
-    /^#(\d+)\s+(Boys|Girls|Men|Women|Mixed)\s+(\d+\s*&\s*[Uu]nder|\d+-\d+|Open)\s+(.*?)\s+(SCM|SCY)\s*$/i
+    /^#(\d+)\s+(Boys|Girls|Men|Women|Mixed)\s+(\d+\s*&\s*[Uu]nder|\d+-\d+|Open)\s+(.*?)(?:\s+(SCM|SCY))?\s*$/i
   );
   if (!m) return null;
 
   const eventNum  = parseInt(m[1], 10);
   const gender    = m[2];
   const bracket   = normalizeAgeGroup(m[3]);
-  const eventName = normalizeEventName(m[4]);
-  const course    = m[5].toUpperCase();
+  const eventName = normalizeEventName(m[4].trim());
+  const course    = (m[5] || defaultCourse).toUpperCase();
 
   return { eventNum, ageGroup: `${gender} ${bracket}`, eventName, course };
 }
@@ -174,6 +174,8 @@ function isSkipLine(line) {
   if (/^HY-?TEK/i.test(line)) return true;
   if (/^Page\s+\d+/i.test(line)) return true;
   if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(line)) return true; // date headers
+  if (/^Results\s/i.test(line)) return true; // "Results \t2026 Meet Name \tPage N of M"
+  if (/^SwimTopia/i.test(line)) return true; // SwimTopia Meet Maestro footer
   return false;
 }
 
@@ -197,8 +199,9 @@ function parseIndividualRow(line) {
   //   group 6: seed time (NT or time string)
   //   group 7: official time (DQ or time string)
   //   group 8: points or EXH (optional)
+  // Place may have an asterisk suffix (e.g. "3*") indicating a tied finish.
   const m = line.match(
-    /^(\d+)\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+)?\s*$/i
+    /^(\d+)\*?\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+)?\s*$/i
   );
   if (m) {
     const place       = parseInt(m[1], 10);
@@ -234,14 +237,31 @@ function parseIndividualRow(line) {
   // abbreviation is more likely a PDF-extraction truncation glitch than a genuine DQ,
   // and should fall through to the digit-prefix parse warning instead.
   const m2 = line.match(
-    /^(\d+)\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+NT\s*$/i
+    /^(\d+)\*?\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+NT\s*$/i
   );
-  if (!m2) return null;
+  if (m2) {
+    return {
+      swimmer:    `${m2[2].trim()} ${m2[3].trim()}`,
+      age:        parseInt(m2[4], 10),
+      team:       m2[5].trim().toUpperCase(),
+      place:      null,
+      time:       null,
+      dq:         true,
+      exhibition: false,
+    };
+  }
+
+  // DQ/NS/DNF rows with "--" place prefix — actual Meet Maestro PDF format.
+  // Per league-results.json convention, all three markers → dq: true, time: null.
+  const m3 = line.match(
+    /^--\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|NS|DNF)\s*$/i
+  );
+  if (!m3) return null;
 
   return {
-    swimmer:    `${m2[2].trim()} ${m2[3].trim()}`,
-    age:        parseInt(m2[4], 10),
-    team:       m2[5].trim().toUpperCase(),
+    swimmer:    `${m3[1].trim()} ${m3[2].trim()}`,
+    age:        parseInt(m3[3], 10),
+    team:       m3[4].trim().toUpperCase(),
     place:      null,
     time:       null,
     dq:         true,
@@ -252,23 +272,38 @@ function parseIndividualRow(line) {
 /**
  * Parses a relay result row.
  *
- * Expected format:
- *   1   WT          Men Open 200m Medley Relay  2:27.45   2:27.45   7
- *   2   EH          Men Open 200m Medley Relay  NT        DQ
+ * Meet Maestro format: "<place> <full team name>\t<relay-letter> <team-abbr>\t<seed> <official>"
+ *   e.g. "1 Ford's Colony \tA FDC \tNT 2:23.26"
+ *        "2 Wellington Waves \tA WT \tNT DQ"
  *
  * Returns a partial row object or null.
  */
 function parseRelayRow(line) {
-  // Pattern: place, team, relay descriptor (ignored — comes from event header),
-  //   seed time, official time, optional points
-  const m = line.match(
-    /^(\d+)\s+([A-Z]{2,6})\s+.+?\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(\d+)?\s*$/i
-  );
-  if (!m) return null;
+  const parts = line.split('\t');
+  if (parts.length < 2) return null;
 
-  const place       = parseInt(m[1], 10);
-  const team        = m[2].trim().toUpperCase();
-  const officialStr = m[4].trim().toUpperCase();
+  // Field 0: "<place> <full team name>" — place must be a digit at start
+  const f0 = parts[0].trim();
+  const placeMatch = f0.match(/^(\d+)\s+/);
+  if (!placeMatch) return null;
+  const place = parseInt(placeMatch[1], 10);
+
+  // Field 1: "<relay-letter> <team-abbr>" — team abbr is the last space-delimited word
+  const f1words = parts[1].trim().split(/\s+/);
+  if (f1words.length < 2) return null;
+  const team = f1words[f1words.length - 1].toUpperCase();
+  if (!/^[A-Z]{2,6}$/.test(team)) return null;
+
+  // Remaining fields contain seed + official (may be space-sep in one field or tab-sep)
+  const timeStr   = parts.slice(2).join(' ').trim();
+  const timeParts = timeStr.split(/\s+/).filter(Boolean);
+  if (timeParts.length < 2) return null;
+
+  const seedStr     = timeParts[0].toUpperCase();
+  const officialStr = timeParts[1].toUpperCase();
+
+  if (!/^(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(seedStr)) return null;
+  if (!/^(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(officialStr)) return null;
 
   const isDQ = officialStr === 'DQ';
   const time = isDQ ? null : timeToSeconds(officialStr);
@@ -278,26 +313,37 @@ function parseRelayRow(line) {
     place: isDQ ? null : place,
     time,
     dq: isDQ,
-    swimmers: null, // filled in by roster line, or stays null
+    swimmers: null, // filled in by roster lines, or stays null
   };
 }
 
 /**
- * Parses a relay roster line (indented, slash-delimited swimmer names).
+ * Parses a relay roster line containing swimmer names.
  *
- * Expected format:
- *   Shnowske, Luke / Hibbard, Mason / Shnowske, Sam / Kimball, Declan
+ * Meet Maestro format (2 per line, tab-separated):
+ *   "1) Cockrill, Beau (12) \t2) Barrell, Rhodes (14)"
+ *   "3) Brenner, Cole (16) \t4) Cockrill, Hunter (10)"
+ *
+ * Legacy format (slash-delimited, fallback):
+ *   "Shnowske, Luke / Hibbard, Mason / Shnowske, Sam / Kimball, Declan"
  *
  * Returns array of "Last, First" strings, or null if line doesn't look like a roster.
  */
 function parseRosterLine(line) {
-  if (!line.includes('/')) return null;
-  // Must contain at least one comma (Last, First)
-  if (!line.includes(',')) return null;
-  const names = line.split('/').map(n => n.trim()).filter(Boolean);
-  // Validate: each name should look like "Last, First"
-  if (names.every(n => /^[\w'.\-]+(?:\s+[\w'.\-]+)*,\s*[\w'.\-]+(?:\s+[\w'.\-]+)*$/.test(n))) {
-    return names;
+  // Meet Maestro: "N) Last, First (age)" entries
+  const mmRe = /\d+\)\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+\(\d{1,2}\)/g;
+  const names = [];
+  let mm;
+  while ((mm = mmRe.exec(line)) !== null) {
+    names.push(`${mm[1].trim()}, ${mm[2].trim()}`);
+  }
+  if (names.length > 0) return names;
+
+  // Legacy slash-delimited format (fallback)
+  if (!line.includes('/') || !line.includes(',')) return null;
+  const slashNames = line.split('/').map(n => n.trim()).filter(Boolean);
+  if (slashNames.every(n => /^[\w'.\-]+(?:\s+[\w'.\-]+)*,\s*[\w'.\-]+(?:\s+[\w'.\-]+)*$/.test(n))) {
+    return slashNames;
   }
   return null;
 }
@@ -372,7 +418,7 @@ function runPlausibilityChecks(row, records, inMemoryRows) {
 // ---------------------------------------------------------------------------
 
 function parsePdfText(text, entry, records) {
-  const { date, teams, sourcePdfPath, season } = entry;
+  const { date, teams, sourcePdfPath, season, course: defaultCourse } = entry;
   const meetName = `${teams[0]} vs ${teams[1]}`;
   const sourcePdf = sourcePdfPath;
 
@@ -382,19 +428,17 @@ function parsePdfText(text, entry, records) {
   const relayRows  = [];
   const parseWarnings = [];
 
-  let currentEvent       = null;
-  let lastRelayRow       = null;
-  let rosterAssignedFor  = null;
+  let currentEvent   = null;
+  let lastRelayRow   = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
 
     // Event header takes priority
-    const eventHeader = parseEventHeader(line);
+    const eventHeader = parseEventHeader(line, defaultCourse);
     if (eventHeader) {
-      currentEvent  = eventHeader;
-      lastRelayRow  = null;
-      rosterAssignedFor = null;
+      currentEvent = eventHeader;
+      lastRelayRow = null;
       continue;
     }
 
@@ -403,13 +447,15 @@ function parsePdfText(text, entry, records) {
 
     const isRelay = currentEvent.eventName.toLowerCase().includes('relay');
 
-    // Relay roster line: indented line with slashes following a relay result row
-    if (isRelay && lastRelayRow && lastRelayRow !== rosterAssignedFor) {
-      const roster = parseRosterLine(line);
-      if (roster) {
-        lastRelayRow.swimmers = roster;
-        rosterAssignedFor = lastRelayRow;
-        continue;
+    // Relay roster: up to 4 swimmer names collected from consecutive roster lines
+    if (isRelay && lastRelayRow) {
+      const needsMoreRoster = !lastRelayRow.swimmers || lastRelayRow.swimmers.length < 4;
+      if (needsMoreRoster) {
+        const roster = parseRosterLine(line);
+        if (roster && roster.length > 0) {
+          lastRelayRow.swimmers = [...(lastRelayRow.swimmers || []), ...roster];
+          continue;
+        }
       }
     }
 
@@ -465,8 +511,8 @@ function parsePdfText(text, entry, records) {
     }
 
     // If we get here, the line looked like a result but didn't match.
-    // Only warn if it starts with a digit (likely a result row we failed to parse).
-    if (/^\d/.test(line)) {
+    // Only warn for digit-starting lines; exclude relay roster lines ("N) Last, First...").
+    if (/^\d/.test(line) && !/^\d+\)/.test(line)) {
       parseWarnings.push(`Line ${i + 1} starts with digit but did not match result pattern: ${line.slice(0, 80)}`);
     }
   }
@@ -574,10 +620,12 @@ async function main() {
   // Extract PDF text
   console.log(`Parsing: ${entry.meetSlug} (${entry.date}, ${entry.teams.join(' vs ')})`);
   const pdfBuffer = readFileSync(pdfPath);
-  const pdfData   = await pdfParse(pdfBuffer);
+  const parser    = new PDFParse({ data: pdfBuffer });
+  const pdfData   = await parser.getText();
   const text      = pdfData.text;
+  await parser.destroy();
 
-  console.log(`  PDF pages: ${pdfData.numpages}, text length: ${text.length} chars`);
+  console.log(`  text length: ${text.length} chars`);
 
   // Parse
   const { indivRows, relayRows, parseWarnings } = parsePdfText(text, entry, records);
