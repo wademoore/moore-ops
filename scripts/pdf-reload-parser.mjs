@@ -199,32 +199,50 @@ function parseIndividualRow(line) {
   const m = line.match(
     /^(\d+)\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+)?\s*$/i
   );
-  if (!m) return null;
+  if (m) {
+    const place       = parseInt(m[1], 10);
+    const lastName    = m[2].trim();
+    const firstName   = m[3].trim();
+    const age         = parseInt(m[4], 10);
+    const team        = m[5].trim().toUpperCase();
+    const officialStr = m[7].trim().toUpperCase();
+    const ptsOrExh    = (m[8] || '').trim().toUpperCase();
 
-  const place       = parseInt(m[1], 10);
-  const lastName    = m[2].trim();
-  const firstName   = m[3].trim();
-  const age         = parseInt(m[4], 10);
-  const team        = m[5].trim().toUpperCase();
-  const officialStr = m[7].trim().toUpperCase();
-  const ptsOrExh    = (m[8] || '').trim().toUpperCase();
+    const isDQ       = officialStr === 'DQ';
+    const exhibition = ptsOrExh === 'EXH';
 
-  const isDQ       = officialStr === 'DQ';
-  const exhibition = ptsOrExh === 'EXH';
+    // Name format: "Last First" (no comma) — matches league-results.json convention
+    const swimmer = `${lastName} ${firstName}`;
 
-  // Name format: "Last First" (no comma) — matches league-results.json convention
-  const swimmer = `${lastName} ${firstName}`;
+    const time = isDQ ? null : timeToSeconds(officialStr);
 
-  const time = isDQ ? null : timeToSeconds(officialStr);
+    return {
+      swimmer,
+      age,
+      team,
+      place: isDQ ? null : place,
+      time,
+      dq: isDQ,
+      exhibition,
+    };
+  }
+
+  // DQ row with official-time column fully omitted — some Meet Maestro layouts
+  // produce: "5   Smith, John   10   WT   NT" with no official-time column at all.
+  // Seed time (NT) is also optional — some rows omit even that.
+  const m2 = line.match(
+    /^(\d+)\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})(?:\s+NT)?\s*$/i
+  );
+  if (!m2) return null;
 
   return {
-    swimmer,
-    age,
-    team,
-    place: isDQ ? null : place,
-    time,
-    dq: isDQ,
-    exhibition,
+    swimmer:    `${m2[2].trim()} ${m2[3].trim()}`,
+    age:        parseInt(m2[4], 10),
+    team:       m2[5].trim().toUpperCase(),
+    place:      null,
+    time:       null,
+    dq:         true,
+    exhibition: false,
   };
 }
 
@@ -405,7 +423,7 @@ function parsePdfText(text, entry, records) {
           date,
           meet:             meetName,
           dq:               partial.dq,
-          season:           String(season),
+          ...(String(season) !== '2026' && { season: String(season) }),
           sourcePdf,
           sourceEventNumber: currentEvent.eventNum,
           verifiedAgainst:  null,
@@ -700,7 +718,11 @@ async function main() {
   console.log(`\nDone.`);
 }
 
-main().catch(err => {
-  console.error('FATAL:', err);
-  process.exit(1);
-});
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch(err => {
+    console.error('FATAL:', err);
+    process.exit(1);
+  });
+}
+
+export { parseIndividualRow };
