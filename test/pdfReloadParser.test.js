@@ -26,6 +26,11 @@ describe('parseIndividualRow — DQ handling', () => {
     assert.equal(result.age, 10);
   });
 
+  it('line with no time-related content (no NT, no DQ) → null, not a DQ row', () => {
+    const result = parseIndividualRow('5   Smith, John   10   WT');
+    assert.equal(result, null, 'should not match — falls through to parse warning');
+  });
+
   it('normal timed row → dq: false, time set, place set', () => {
     const result = parseIndividualRow('1   Hunley, Christian   8   WT   1:39.26   1:39.26   7');
     assert.ok(result, 'should match');

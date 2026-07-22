@@ -34,11 +34,12 @@ import { timeToSeconds } from '../digest/dateUtils.js';
 // Paths
 // ---------------------------------------------------------------------------
 
-const MANIFEST_PATH = resolve(ROOT, 'docs/data-reload/2026-07-reload-manifest.json');
-const RECORDS_PATH  = resolve(ROOT, 'data/waves-team-records.json');
+const MANIFEST_PATH  = resolve(ROOT, 'docs/data-reload/2026-07-reload-manifest.json');
+const RECORDS_PATH   = resolve(ROOT, 'data/waves-team-records.json');
+const CURRENT_SEASON = '2026';
 
 function v2Path(season, type) {
-  const isHistory = String(season) !== '2026';
+  const isHistory = String(season) !== CURRENT_SEASON;
   if (type === 'individual') {
     return isHistory
       ? resolve(ROOT, 'data/league-results-history-v2.json')
@@ -229,9 +230,11 @@ function parseIndividualRow(line) {
 
   // DQ row with official-time column fully omitted — some Meet Maestro layouts
   // produce: "5   Smith, John   10   WT   NT" with no official-time column at all.
-  // Seed time (NT) is also optional — some rows omit even that.
+  // NT in the seed-time position is required: a row with nothing at all after the team
+  // abbreviation is more likely a PDF-extraction truncation glitch than a genuine DQ,
+  // and should fall through to the digit-prefix parse warning instead.
   const m2 = line.match(
-    /^(\d+)\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})(?:\s+NT)?\s*$/i
+    /^(\d+)\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+NT\s*$/i
   );
   if (!m2) return null;
 
@@ -423,7 +426,7 @@ function parsePdfText(text, entry, records) {
           date,
           meet:             meetName,
           dq:               partial.dq,
-          ...(String(season) !== '2026' && { season: String(season) }),
+          ...(String(season) !== CURRENT_SEASON && { season: String(season) }),
           sourcePdf,
           sourceEventNumber: currentEvent.eventNum,
           verifiedAgainst:  null,
