@@ -155,7 +155,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-**✓ 430 unit tests passing, 0 failing (current baseline as of July 2026, post timezone bug fixes, age-field addition, July skill-file work, `waves-champs-qualifier` hasAnyPriorQual redesign, and ageGroup spacing fix — confirm CLAUDE.md is synced to this number via Documenter)**
+**✓ 452 unit tests passing, 0 failing (current baseline as of July 2026 — 430 post ageGroup fix, +12 from fractional-points / 1-tab relay / DQ-handling fixes, +10 from FIX 1 Unicode names / FIX 2 multi-line wrap / FIX 3 relay NT — confirm CLAUDE.md is synced to this number via Documenter)**
 
 Run via: `npm test` (uses Node's built-in `node:test` runner).
 

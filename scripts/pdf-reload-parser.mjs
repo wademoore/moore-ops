@@ -201,7 +201,7 @@ function parseIndividualRow(line) {
   //   group 8: points or EXH (optional)
   // Place may have an asterisk suffix (e.g. "3*") indicating a tied finish.
   const m = line.match(
-    /^(\d+)\*?\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+(?:\.\d+)?)?\s*$/i
+    /^(\d+)\*?\s+([\p{L}\p{M}'.\-"“”]+(?:\s+[\p{L}\p{M}'.\-"“”]+)*),\s*([\p{L}\p{M}'.\-"“”]+(?:\s+[\p{L}\p{M}'.\-"“”]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+(?:\.\d+)?)?\s*$/iu
   );
   if (m) {
     const place       = parseInt(m[1], 10);
@@ -237,7 +237,7 @@ function parseIndividualRow(line) {
   // abbreviation is more likely a PDF-extraction truncation glitch than a genuine DQ,
   // and should fall through to the digit-prefix parse warning instead.
   const m2 = line.match(
-    /^(\d+)\*?\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+NT\s*$/i
+    /^(\d+)\*?\s+([\p{L}\p{M}'.\-"“”]+(?:\s+[\p{L}\p{M}'.\-"“”]+)*),\s*([\p{L}\p{M}'.\-"“”]+(?:\s+[\p{L}\p{M}'.\-"“”]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+NT\s*$/iu
   );
   if (m2) {
     return {
@@ -254,7 +254,7 @@ function parseIndividualRow(line) {
   // DQ/NS/DNF rows with "--" place prefix — actual Meet Maestro PDF format.
   // Per league-results.json convention, all three markers → dq: true, time: null.
   const m3 = line.match(
-    /^--\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|NS|DNF)\s*$/i
+    /^--\s+([\p{L}\p{M}'.\-"“”]+(?:\s+[\p{L}\p{M}'.\-"“”]+)*),\s*([\p{L}\p{M}'.\-"“”]+(?:\s+[\p{L}\p{M}'.\-"“”]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|NS|DNF)\s*$/iu
   );
   if (!m3) return null;
 
@@ -317,9 +317,9 @@ function parseRelayRow(line) {
   const officialStr = timeParts[1].toUpperCase();
 
   if (!/^(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(seedStr)) return null;
-  if (!/^(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(officialStr)) return null;
+  if (!/^(NT|DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(officialStr)) return null;
 
-  const isDQ = officialStr === 'DQ';
+  const isDQ = officialStr === 'DQ' || officialStr === 'NT';
   const time = isDQ ? null : timeToSeconds(officialStr);
 
   return {
@@ -345,7 +345,7 @@ function parseRelayRow(line) {
  */
 function parseRosterLine(line) {
   // Meet Maestro: "N) Last, First (age)" entries
-  const mmRe = /\d+\)\s+([\w'.\-]+(?:\s+[\w'.\-]+)*),\s*([\w'.\-]+(?:\s+[\w'.\-]+)*)\s+\(\d{1,2}\)/g;
+  const mmRe = /\d+\)\s+([\p{L}\p{M}'.\-"“”]+(?:\s+[\p{L}\p{M}'.\-"“”]+)*),\s*([\p{L}\p{M}'.\-"“”]+(?:\s+[\p{L}\p{M}'.\-"“”]+)*)\s+\(\d{1,2}\)/gu;
   const names = [];
   let mm;
   while ((mm = mmRe.exec(line)) !== null) {
@@ -356,7 +356,7 @@ function parseRosterLine(line) {
   // Legacy slash-delimited format (fallback)
   if (!line.includes('/') || !line.includes(',')) return null;
   const slashNames = line.split('/').map(n => n.trim()).filter(Boolean);
-  if (slashNames.every(n => /^[\w'.\-]+(?:\s+[\w'.\-]+)*,\s*[\w'.\-]+(?:\s+[\w'.\-]+)*$/.test(n))) {
+  if (slashNames.every(n => /^[\p{L}\p{M}'.\-"“”]+(?:\s+[\p{L}\p{M}'.\-"“”]+)*,\s*[\p{L}\p{M}'.\-"“”]+(?:\s+[\p{L}\p{M}'.\-"“”]+)*$/u.test(n))) {
     return slashNames;
   }
   return null;
@@ -425,6 +425,86 @@ function runPlausibilityChecks(row, records, inMemoryRows) {
   const f3 = checkAgeEventSanity(row);
   if (f3) flags.push(f3);
   return flags;
+}
+
+// ---------------------------------------------------------------------------
+// FIX 2 — Multi-line name-wrap detection
+// ---------------------------------------------------------------------------
+
+// A wrapped entry's continuation line contains age, team, seed, and official time —
+// no swimmer name. Must start with a 1-2 digit age followed by an ALL-CAPS team abbr.
+const DATA_ONLY_LINE = /^\d{1,2}\s+[A-Z]{2,6}\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(?:DQ|NS|DNF|NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)(?:\s+\S+)?\s*$/i;
+
+// If a line's remainder (after the place prefix) already ends with team+times, it's a
+// complete result line that parseIndividualRow should handle directly.
+const FULL_RESULT_END = /[A-Z]{2,6}\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(?:DQ|NS|DNF|NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)(?:\s+\S+)?\s*$/i;
+
+/**
+ * Detects multi-line name-wrapped entries and returns the stitched line + skip index.
+ *
+ * Handles cases where the PDF text extractor splits an entry across 2–3 lines:
+ *   “5 Romesburg, Anne”  +  “Katherine”       +  “14 KM  NT  1:41.75”
+ *   “4 McDonald-Scanlon,”  +  “Coleman”         +  “18 KM  27.56 28.48”
+ *   “11 Dafashy, Elizabeth, Ellie or””  +  “Ellie D.””  +  “12 QL  44.31 43.23”
+ *   “-- Dafashy, Elizabeth”  +  “9 QL  NT  NS”
+ *
+ * Returns { stitched, nextI } when a wrap is detected and parseable, or null.
+ */
+function tryWrapStitch(lines, i) {
+  const line = lines[i];
+
+  // Line must start with a place number or “--” (result-entry prefix).
+  const headMatch = line.match(/^(\d+\*?|--)\s+([\s\S]+)/);
+  if (!headMatch) return null;
+
+  const prefix    = headMatch[1];
+  const remainder = headMatch[2];
+
+  // If the remainder already ends with team+times, it's a complete result line —
+  // let parseIndividualRow handle it (may succeed after FIX 1 for Unicode names).
+  if (FULL_RESULT_END.test(remainder)) return null;
+
+  // Collect the name-start content and any continuation lines until the data line.
+  const nameParts = [remainder];
+  let dataLine = null;
+  let nextI    = -1;
+
+  for (let j = i + 1; j <= Math.min(i + 5, lines.length - 1); j++) {
+    const next = lines[j];
+    if (!next) continue; // skip blank lines
+    if (DATA_ONLY_LINE.test(next)) {
+      dataLine = next;
+      nextI    = j;
+      break;
+    }
+    // Stop if the line looks like an event header, column header, or next result entry.
+    if (/^\d/.test(next) || /^#/.test(next) || /^Pl /.test(next)) break;
+    nameParts.push(next); // additional name fragment (e.g. “Katherine”, “Coleman”)
+  }
+
+  if (!dataLine) return null;
+
+  // Reconstruct the full name string from all collected fragments.
+  const fullNameStr = nameParts.join(' ').trim();
+
+  // Split on the first comma to get last vs. first name.
+  const commaIdx = fullNameStr.indexOf(',');
+  if (commaIdx === -1) return null;
+
+  const lastName  = fullNameStr.slice(0, commaIdx).trim();
+  const afterComma = fullNameStr.slice(commaIdx + 1);
+
+  // If there's a second comma (e.g. nickname annotation “Dafashy, Elizabeth, Ellie or...”),
+  // discard everything from the second comma onward — keep only the primary first name.
+  const secondCommaIdx = afterComma.indexOf(',');
+  const firstName = (secondCommaIdx === -1 ? afterComma : afterComma.slice(0, secondCommaIdx)).trim();
+
+  if (!lastName || !firstName) return null;
+
+  return {
+    stitched: `${prefix} ${lastName}, ${firstName}   ${dataLine}`,
+    nextI,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -497,6 +577,36 @@ function parsePdfText(text, entry, records) {
         continue;
       }
     } else {
+      // FIX 2: detect two-line name wrap (placed and silent NS/DQ variants)
+      const wrapResult = tryWrapStitch(lines, i);
+      if (wrapResult) {
+        const partial = parseIndividualRow(wrapResult.stitched);
+        if (partial) {
+          indivRows.push({
+            swimmer:           partial.swimmer,
+            team:              partial.team,
+            ageGroup:          currentEvent.ageGroup,
+            age:               partial.age,
+            event:             currentEvent.eventName,
+            course:            currentEvent.course,
+            time:              partial.time,
+            date,
+            meet:              meetName,
+            overallPlace:      partial.place,
+            overallCount:      null,
+            dq:                partial.dq,
+            exhibition:        partial.exhibition,
+            season:            String(season),
+            sourcePdf,
+            sourceEventNumber: currentEvent.eventNum,
+            verifiedAgainst:   null,
+            plausibilityFlags: [],
+          });
+          i = wrapResult.nextI;
+          continue;
+        }
+      }
+
       const partial = parseIndividualRow(line);
       if (partial) {
         const row = {
@@ -790,4 +900,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
 }
 
-export { parseIndividualRow, parseRelayRow };
+export { parseIndividualRow, parseRelayRow, tryWrapStitch };

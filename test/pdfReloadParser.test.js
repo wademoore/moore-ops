@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseIndividualRow, parseRelayRow } from '../scripts/pdf-reload-parser.mjs';
+import { parseIndividualRow, parseRelayRow, tryWrapStitch } from '../scripts/pdf-reload-parser.mjs';
 
 describe('parseIndividualRow — DQ handling', () => {
   it('normal DQ row (DQ in official-time column) → dq: true, time: null', () => {
@@ -124,5 +124,112 @@ describe('parseRelayRow — 1-tab WPD format', () => {
     assert.equal(result.team, 'WPD');
     assert.equal(result.dq, true);
     assert.equal(result.time, null);
+  });
+});
+
+describe('FIX 1 — Unicode characters in swimmer names', () => {
+  it('Unicode modifier apostrophe (U+02BC) in last name → parsed correctly', () => {
+    // Oʼbrien: the apostrophe is U+02BC, a modifier letter, matched by \\p{L}
+    const result = parseIndividualRow('3 Oʼbrien, Lucy   10   FTC   1:23.45   1:20.00');
+    assert.ok(result, 'should match');
+    assert.equal(result.swimmer, 'Oʼbrien Lucy');
+    assert.equal(result.team, 'FTC');
+    assert.equal(result.age, 10);
+    assert.equal(result.dq, false);
+  });
+
+  it('Accented character in first name → parsed correctly', () => {
+    const result = parseIndividualRow('-- Croly, Sofía   9   QL   NT   NS');
+    assert.ok(result, 'should match');
+    assert.equal(result.swimmer, 'Croly Sofía');
+    assert.equal(result.team, 'QL');
+    assert.equal(result.dq, true);
+  });
+
+  it('Double-quote nickname in first name → parsed correctly', () => {
+    const result = parseIndividualRow('-- Delaney, "Hok"   11   KW   NT   NS');
+    assert.ok(result, 'should match');
+    assert.equal(result.swimmer, 'Delaney "Hok"');
+    assert.equal(result.team, 'KW');
+    assert.equal(result.dq, true);
+  });
+});
+
+describe('FIX 2 — two-line name wrap stitching', () => {
+  it('placed wrap: name-only line + data line → stitched and parseable', () => {
+    const lines = [
+      '5 Romesburg, Anne Marie',
+      '',
+      '12 KM   NT   1:23.45',
+    ];
+    const result = tryWrapStitch(lines, 0);
+    assert.ok(result, 'should detect wrap');
+    assert.equal(result.nextI, 2);
+    const parsed = parseIndividualRow(result.stitched);
+    assert.ok(parsed, 'stitched line should parse');
+    assert.equal(parsed.swimmer, 'Romesburg Anne Marie');
+    assert.equal(parsed.age, 12);
+    assert.equal(parsed.team, 'KM');
+    assert.equal(parsed.dq, false);
+  });
+
+  it('silent wrap (-- prefix): name-only line + adjacent data line → stitched and parseable', () => {
+    const lines = [
+      '-- Dafashy, Elizabeth',
+      '9 QL   NT   NS',
+    ];
+    const result = tryWrapStitch(lines, 0);
+    assert.ok(result, 'should detect wrap');
+    assert.equal(result.nextI, 1);
+    const parsed = parseIndividualRow(result.stitched);
+    assert.ok(parsed, 'stitched line should parse');
+    assert.equal(parsed.swimmer, 'Dafashy Elizabeth');
+    assert.equal(parsed.team, 'QL');
+    assert.equal(parsed.dq, true);
+  });
+
+  it('full result line is not mistaken for a name-only wrap', () => {
+    const lines = ['5 Smith, John   10   WT   NT   DQ'];
+    const result = tryWrapStitch(lines, 0);
+    assert.equal(result, null, 'full line should not trigger wrap detection');
+  });
+
+  it('hyphenated last name wraps correctly', () => {
+    const lines = [
+      '3 McDonald-Scanlon, Kira',
+      '11 KM   2:10.00   2:05.30',
+    ];
+    const result = tryWrapStitch(lines, 0);
+    assert.ok(result, 'should detect wrap');
+    const parsed = parseIndividualRow(result.stitched);
+    assert.ok(parsed, 'stitched line should parse');
+    assert.equal(parsed.swimmer, 'McDonald-Scanlon Kira');
+    assert.equal(parsed.team, 'KM');
+  });
+});
+
+describe('FIX 3 — relay NT official time (team registered but did not swim)', () => {
+  it('2-tab relay NT/NT row → dq: true, time: null, place: null', () => {
+    const result = parseRelayRow("1 Ford's Colony \tA FDC \tNT\tNT");
+    assert.ok(result, 'should match');
+    assert.equal(result.team, 'FDC');
+    assert.equal(result.dq, true);
+    assert.equal(result.time, null);
+    assert.equal(result.place, null);
+  });
+
+  it('1-tab relay NT/NT row → dq: true, time: null', () => {
+    const result = parseRelayRow("1 WP Dolphins \tA WPD NT NT");
+    assert.ok(result, 'should match');
+    assert.equal(result.team, 'WPD');
+    assert.equal(result.dq, true);
+    assert.equal(result.time, null);
+  });
+
+  it('timed relay row still parses correctly after NT-official fix', () => {
+    const result = parseRelayRow("1 Edgehill Eels \tA EH \tNT 2:32.68 7");
+    assert.ok(result, 'should match');
+    assert.equal(result.dq, false);
+    assert.ok(result.time !== null);
   });
 });
