@@ -50,6 +50,8 @@
 - `vpsu-rankings.json` — VPSU league top-50 rankings per event; updated weekly via Updater during Waves season
 - `league-results.json` — current-season individual swim results for all VPSU teams; Updater-managed. **DQ/NS/DNF rows are included, not omitted** — shape: `dq: true, time: null, overallPlace: null, overallCount: null`. Filter on `dq: false` before any time-based analysis. **BOM risk:** this file carried a UTF-8 BOM that broke `JSON.parse` until it was stripped during a Week 3 append (2026). Strip defensively on read in any script that touches it.
 - `relay-results.json` — current-season relay results for all VPSU teams; Updater-managed
+- `league-results-v2.json` — **v2 schema** of current-season individual results; 20,132 rows (all 54 2026 meets: all 6 Div 2 teams + Div 1 + Div 3 + friendlies). Extends v1 schema with: `age`, `exhibition`, `season`, `sourcePdf`, `sourceEventNumber`, `verifiedAgainst` (null until PDF-confirmed), `plausibilityFlags` (array). Populated by `scripts/pdf-reload-parser.mjs`. **`league-results.json` (v1) is untouched** — v2 is additive, not a replacement, except for the two skills noted below.
+- `relay-results-v2.json` — **v2 schema** of current-season relay results; 455 rows; same 54-meet scope as `league-results-v2.json`. Same provenance fields (no `exhibition` field). **`relay-results.json` (v1) is untouched.**
 - `league-results-history.json` — individual swim results for prior seasons (2022–2025), all teams
 - `relay-results-history.json` — relay results for prior seasons (2022–2025)
 - `waves-team-records.json` — Wellington Waves all-time team records by age group and event; Updater-managed
@@ -75,6 +77,28 @@ These files are read directly by `digest/builder.js` via `fs.readFile` — no Dr
 
 ## Meet results txt pipeline — removed June 2026
 Pipeline removed June 2026. Updater manual entry (`pb-records.json`, `swim-results.json`) is the authoritative workflow for swim data.
+
+## v2 Data Reload Pipeline (2026)
+
+### scripts/pdf-reload-parser.mjs
+ESM script; parses SwimTopia Meet Maestro PDF results into the v2 JSON schema. Key properties:
+- **Deterministic time conversion:** all time arithmetic delegates exclusively to `timeToSeconds()` imported from `digest/dateUtils.js`. No other time conversion arithmetic is permitted in the file — this eliminates the `minutes × 100` encoding bug that produced systematic +40s errors in v1 Updater entries.
+- **Provenance on every row:** each parsed row carries `sourcePdf` (relative path to the source PDF), `sourceEventNumber` (event number within that PDF), `verifiedAgainst` (null until manually PDF-confirmed), and `plausibilityFlags` (array — e.g. `["faster-than-team-record"]` when a time is anomalously fast).
+- **Manifest-driven:** reads `docs/data-reload/2026-07-reload-manifest.json` to locate the source PDF and record parse state per meet slug. `--force` flag re-parses even if `parsedIntoV2: true` (clears prior rows for that slug first); `--dry-run` parses and reports without writing.
+- **CommonJS interop:** `pdf-parse` is a CommonJS module loaded via `createRequire` from ESM context.
+
+### docs/data-reload/2026-07-reload-manifest.json
+54-entry array covering all 2026 VPSU meets and pre-season friendlies. Each entry: `season`, `date`, `meetSlug`, `teams`, `division`, `course`, `sourcePdfPath`, `pdfAvailable`, `parsedIntoV2`, `rowCountExpected`, `rowCountParsed`, `plausibilityFlags` (count), `notes`. As of July 2026: all 54 entries have `parsedIntoV2: true`.
+
+### v2 vs v1 file summary
+| File | Rows | Notes |
+|------|------|-------|
+| `data/league-results-v2.json` | 20,132 | All 54 2026 meets; repointed from skills |
+| `data/relay-results-v2.json` | 455 | All 54 2026 meets; repointed from skills |
+| `data/league-results.json` (v1) | 6,772 | 2026 WT meets only; untouched — still read by dashboard + digest |
+| `data/relay-results.json` (v1) | 178 | 2026 WT meets only; untouched |
+
+Only `waves-champs-qualifier/check.js` and `waves-team-record-check/check.js` have been repointed to v2 (2026 season only). All other consumers (dashboard, daily digest builder, `swimParser.js`) remain on v1 and are unaffected.
 
 ## OAuth Re-authorization
 Run `reauthorize.js` (project root, gitignored) when the OAuth token needs new scopes or has expired.
@@ -143,6 +167,8 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 **Note:** the two committed-script skills (`waves-champs-qualifier`, `waves-team-record-check`) run via `node <path>/check.js` and must not be re-derived manually from their SKILL.md — the script is authoritative. Prose-only skills are re-derived fresh from SKILL.md each invocation.
 
+**Both committed scripts were repointed to v2 data files in July 2026** (scoped, reviewed change — not a full v1→v2 cutover). `waves-champs-qualifier/check.js` reads `league-results-v2.json`; `waves-team-record-check/check.js` reads `league-results-v2.json` and `relay-results-v2.json`. This caught previously-undetected v1 encoding errors (e.g. Kinsley Welch's 100m IM at WT vs WC and Imogen Bissette's times, each +40.00s from the `minutes × 100` Updater bug). The week anchor in `waves-champs-qualifier/check.js` is currently **Week 6 / 2026-07-20** (`WEEK_NUM = 6`, `WEEK_DATE = '2026-07-20'`, `WEEK_LABEL = 'July 20'`). Advance these constants before each weekly run.
+
 ## Key source files
 
 - **`digest/builder.js`** — main digest assembly; fetches calendar events, routes them through parsers, produces `digestData`. `today` anchor changed from `new Date(); setHours(0,0,0,0)` (UTC-anchored, wrong at ≥8 PM ET) to `startOfTodayET()` (Jul 2026).
@@ -155,7 +181,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-**✓ 452 unit tests passing, 0 failing (current baseline as of July 2026 — 430 post ageGroup fix, +12 from fractional-points / 1-tab relay / DQ-handling fixes, +10 from FIX 1 Unicode names / FIX 2 multi-line wrap / FIX 3 relay NT — confirm CLAUDE.md is synced to this number via Documenter)**
+**✓ 452 unit tests passing, 0 failing (current baseline as of July 2026 — 430 post ageGroup fix, +12 from fractional-points / 1-tab relay / DQ-handling fixes, +10 from FIX 1 Unicode names / FIX 2 multi-line wrap / FIX 3 relay NT)**
 
 Run via: `npm test` (uses Node's built-in `node:test` runner).
 
@@ -194,6 +220,8 @@ Coder mode must keep tests at 430+. If the number changes, the Documenter should
 
   **SCY/yards rows silently skipped — known, intentional:** `swim-results.json` contains USA Swimming (SCY, yards) meet results alongside VPSU (SCM, meters) Waves results. Event strings like `"25y Backstroke"` and `"50y Freestyle"` have no matching entry in the VPSU standards table, so `hasAnyPriorQual` silently skips them (`std == null → return false`). This is **correct and intentional behavior** — a yards time and a meters time for the same stroke/distance number are not comparable against a meters-only standard. Not a bug; not something to fix. Documented here so it is not rediscovered as a mystery.
 
+- **2026 VPSU season fully reloaded into v2; skills repointed; records reassessed (July 2026):** All 54 meets (6 Div 2 teams + Div 1 + Div 3 + friendlies) parsed into `league-results-v2.json` (20,132 rows) and `relay-results-v2.json` (455 rows) via `scripts/pdf-reload-parser.mjs`. `waves-champs-qualifier/check.js` and `waves-team-record-check/check.js` repointed to v2 — scoped, reviewed, validated. Repoint caught previously-undetected v1 encoding errors (Kinsley Welch 100m IM at WT vs WC, Imogen Bissette, and 6 others: all +40.00s discrepancies from the `minutes × 100` Updater bug). Team records reassessed: 9 unverified in-season additions temporarily reverted; 4 since reinstated with PDF verification (Anna Shnowske 50m Back 31.14 and 50m Fly 29.13 both PDF-confirmed, `verifiedAgainst` backfilled). Champs qualifier advanced to Week 6 anchor (2026-07-20): 125 qualifying spots across 45 swimmers. Full-list output redesigned to group all events per swimmer on one line within each bracket (commit `0e80c05`).
+
 ## Key learnings & principles
 
 **The dashboard "today" anchor must be built from the ET calendar date, not the UTC date.** At ≥8 PM ET (≥7 PM EST) the UTC date is already tomorrow, so a plain `new Date(); setHours(0,0,0,0)` in Lambda anchors the whole dashboard a day ahead, and the 8 PM scheduled refresh trips this daily. Use `startOfTodayET()`. Corollary to the double-convert rule below: the anchor is effectively local-midnight-of-the-ET-date, so downstream consumers (TODAY heading, day bucketing) must still read it via direct `getMonth()/getDate()/getFullYear()` — never `toLocaleDateString(ET)` on the anchor itself, or it double-converts backward a day. The two rules cover opposite directions of the same underlying trap (UTC-instant vs. already-ET-anchored-date) and should be read together.
@@ -208,3 +236,7 @@ Coder mode must keep tests at 430+. If the number changes, the Documenter should
 - **Reviewer requested full `parseEventDate` body for both branches (all-day and timed) to confirm both anchor consistently on local-midnight-of-ET-date** — not yet explicitly pasted/confirmed across three review passes; low risk given tests pass, but flagged as an open verification item.
 - **Myles `tryQualify`/`tryNearMiss` calls use hardcoded `'9-10'` age-group literal** — unlike Ophelia, which uses the `opheliaAG(event)` function to derive the correct bracket per event. Pre-existing; flagged by Reviewer during the original "first time ever" feature review but not yet cleaned up. Low priority — Myles is only in one bracket for the foreseeable current season so no bug has been observed, but it's a latent inconsistency. Fix whenever `check.js` is next touched for an unrelated reason.
 - **No regression test coverage for boundary-tie near-miss behavior** — the July 2026 `.slice(0,10)` fix in both `waves-team-record-check/check.js` and `waves-champs-qualifier/check.js` (Block 3) has no unit test exercising the tie-at-boundary case specifically. Neither script has any test coverage at all (they're run via live data only). If either script is next touched for another reason, a test that seeds exactly 11 near-miss entries where entries 10 and 11 share the same gap value — and asserts all 11 appear in the output — would lock in this behavior so it can't silently regress.
+- **2022–2025 season history not yet rebuilt into v2** — `league-results-history.json` and `relay-results-history.json` remain as v1 files with no provenance fields. Rebuilding them into a v2 schema (`league-results-history-v2.json`, `relay-results-history-v2.json`) is the next major data task after the current-season reload.
+- **Full v1→v2 cutover not yet scoped** — the dashboard, daily digest builder, and `swimParser.js` all remain on v1 data files. A full cutover is a separate, larger, not-yet-scoped future task. The repoint of `waves-champs-qualifier` and `waves-team-record-check` to v2 is explicitly not this cutover.
+- **`waves-champs-qualifier` "new this week" logic has no persistent memory** — the delta is purely date-anchored against `WEEK_DATE`. If a weekly run is skipped (e.g. July 13 results were never posted before advancing the anchor to July 20), qualifiers from the skipped week fall through silently — they appear in the full bracket list but not in "new this week." Not urgent while no public posts are being made (system is being built ahead of next season), but worth addressing before active use.
+- **`moore-ops-updater` skill authorized-file list should formally include v2 files** — `league-results-v2.json` and `relay-results-v2.json` are not in the Updater skill's authorized-edit table. Any v2 edits (e.g. `verifiedAgainst` backfills) currently require explicit per-session scoping. Low priority while `scripts/pdf-reload-parser.mjs` is the primary write path, but should be added before v2 becomes the primary Updater target.
