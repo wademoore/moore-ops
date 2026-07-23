@@ -191,17 +191,30 @@ console.log('📋 FULL QUALIFIER LIST — ' + WEEK_LABEL + ', 2026');
 console.log('');
 for (const { label, entries } of allGroups) {
   console.log(label);
+  // Group entries by swimmer, preserving event sort order within each swimmer
+  const bySwimmer = new Map();
   for (const q of entries) {
-    console.log('  ' + q.name + ' — ' + fmtEvent(q.event) + ' (' + fmtTime(q.time) + ') — ' + q.meet + ', ' + q.date);
-    const qkey = q.name + '|' + q.event;
-    const isNewThisWeek = earliestQualDate.get(qkey) >= WEEK_DATE;
-    if (isNewThisWeek) {
-      const histRows = (q.name === 'Myles Moore' || q.name === 'Ophelia Moore')
-        ? swimHistoryRows : allNonMooreRows;
-      const beforeDate = earliestQualDate.get(qkey);
-      if (!hasAnyPriorQual(q.name, histRows, beforeDate))
-        console.log('  ✨ FIRST TIME EVER');
+    if (!bySwimmer.has(q.name)) bySwimmer.set(q.name, []);
+    bySwimmer.get(q.name).push(q);
+  }
+  for (const [name, swimmerEntries] of bySwimmer) {
+    const eventsStr = swimmerEntries
+      .map(q => fmtEvent(q.event) + ' (' + fmtTime(q.time) + ')')
+      .join(', ');
+    // Mark first-timers: any new-this-week event with no prior champs qual
+    let firstEver = false;
+    for (const q of swimmerEntries) {
+      const qkey = q.name + '|' + q.event;
+      if (earliestQualDate.get(qkey) >= WEEK_DATE) {
+        const histRows = (q.name === 'Myles Moore' || q.name === 'Ophelia Moore')
+          ? swimHistoryRows : allNonMooreRows;
+        if (!hasAnyPriorQual(q.name, histRows, earliestQualDate.get(qkey))) {
+          firstEver = true;
+          break;
+        }
+      }
     }
+    console.log('  ' + name + ' — ' + eventsStr + (firstEver ? '  ✨ FIRST TIME EVER' : ''));
   }
   console.log('');
 }
