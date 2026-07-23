@@ -5,9 +5,9 @@ import path from 'path';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, '..', '..', '..', 'data');
 
-const league  = JSON.parse(readFileSync(path.join(dataDir, 'league-results.json'),      'utf8').replace(/^﻿/, ''));
+const league  = JSON.parse(readFileSync(path.join(dataDir, 'league-results-v2.json'),      'utf8').replace(/^﻿/, ''));
 const swim    = JSON.parse(readFileSync(path.join(dataDir, 'swim-results.json'),         'utf8').replace(/^﻿/, ''));
-const relays  = JSON.parse(readFileSync(path.join(dataDir, 'relay-results.json'),        'utf8').replace(/^﻿/, ''));
+const relays  = JSON.parse(readFileSync(path.join(dataDir, 'relay-results-v2.json'),        'utf8').replace(/^﻿/, ''));
 const records = JSON.parse(readFileSync(path.join(dataDir, 'waves-team-records.json'),   'utf8').replace(/^﻿/, ''));
 
 function fmtTime(s) {

@@ -6,7 +6,7 @@ import { getLookupKey, hasAnyPriorQual, standards } from './helpers.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataDir = path.join(__dirname, '..', '..', '..', 'data');
 
-const league   = JSON.parse(readFileSync(path.join(dataDir, 'league-results.json'),         'utf8').replace(/^﻿/, ''));
+const league   = JSON.parse(readFileSync(path.join(dataDir, 'league-results-v2.json'),         'utf8').replace(/^﻿/, ''));
 const swim     = JSON.parse(readFileSync(path.join(dataDir, 'swim-results.json'),            'utf8').replace(/^﻿/, ''));
 const history  = JSON.parse(readFileSync(path.join(dataDir, 'league-results-history.json'), 'utf8').replace(/^﻿/, ''));
 
