@@ -4,7 +4,9 @@
     "ageGroup": "6&Under",
     "event": "25m Freestyle",
     "course": "SCM",
-    "holders": ["Lexi O'Neil"],
+    "holders": [
+      "Lexi O'Neil"
+    ],
     "time": 21.51,
     "displayTime": "21.51",
     "year": 2013,
@@ -17,7 +19,9 @@
     "ageGroup": "6&Under",
     "event": "25m Backstroke",
     "course": "SCM",
-    "holders": ["Wren Snyder"],
+    "holders": [
+      "Wren Snyder"
+    ],
     "time": 26.52,
     "displayTime": "26.52",
     "year": 2023,
@@ -30,7 +34,9 @@
     "ageGroup": "6&Under",
     "event": "25m Freestyle",
     "course": "SCM",
-    "holders": ["Logan Timberg"],
+    "holders": [
+      "Logan Timberg"
+    ],
     "time": 20.34,
     "displayTime": "20.34",
     "year": 2014,
@@ -43,7 +49,9 @@
     "ageGroup": "6&Under",
     "event": "25m Backstroke",
     "course": "SCM",
-    "holders": ["Braden Kimball"],
+    "holders": [
+      "Braden Kimball"
+    ],
     "time": 27.72,
     "displayTime": "27.72",
     "year": 2024,
@@ -56,7 +64,9 @@
     "ageGroup": "8&Under",
     "event": "25m Freestyle",
     "course": "SCM",
-    "holders": ["Alyssa Brungot"],
+    "holders": [
+      "Alyssa Brungot"
+    ],
     "time": 17.77,
     "displayTime": "17.77",
     "year": 2009,
@@ -69,8 +79,10 @@
     "ageGroup": "8&Under",
     "event": "25m Breaststroke",
     "course": "SCM",
-    "holders": ["Jaclynn Buzek"],
-    "time": 25.50,
+    "holders": [
+      "Jaclynn Buzek"
+    ],
+    "time": 25.5,
     "displayTime": "25.50",
     "year": 2019,
     "meetDate": "2019-08-03",
@@ -82,7 +94,9 @@
     "ageGroup": "8&Under",
     "event": "25m Backstroke",
     "course": "SCM",
-    "holders": ["Alyssa Brungot"],
+    "holders": [
+      "Alyssa Brungot"
+    ],
     "time": 22.05,
     "displayTime": "22.05",
     "year": 2009,
@@ -95,8 +109,10 @@
     "ageGroup": "8&Under",
     "event": "25m Butterfly",
     "course": "SCM",
-    "holders": ["Reagan Swartzel"],
-    "time": 20.70,
+    "holders": [
+      "Reagan Swartzel"
+    ],
+    "time": 20.7,
     "displayTime": "20.70",
     "year": 2024,
     "meetDate": "2024-08-03",
@@ -108,7 +124,9 @@
     "ageGroup": "8&Under",
     "event": "25m Freestyle",
     "course": "SCM",
-    "holders": ["Logan Timberg"],
+    "holders": [
+      "Logan Timberg"
+    ],
     "time": 16.78,
     "displayTime": "16.78",
     "year": 2016,
@@ -121,12 +139,14 @@
     "ageGroup": "8&Under",
     "event": "25m Breaststroke",
     "course": "SCM",
-    "holders": ["Christian Hunley"],
-    "time": 25.07,
-    "displayTime": "25.07",
-    "year": 2026,
-    "meetDate": "2026-06-29",
-    "meet": "WC at WT",
+    "holders": [
+      "Braden Kimball"
+    ],
+    "time": 26.21,
+    "displayTime": "26.21",
+    "year": 2025,
+    "meetDate": "2025-07-21",
+    "meet": "Gators at Wellington Waves",
     "location": "Wellington Waves Swim Team"
   },
   "Boys 8&Under|25m Backstroke|SCM": {
@@ -134,7 +154,9 @@
     "ageGroup": "8&Under",
     "event": "25m Backstroke",
     "course": "SCM",
-    "holders": ["Logan Timberg"],
+    "holders": [
+      "Logan Timberg"
+    ],
     "time": 22.01,
     "displayTime": "22.01",
     "year": 2016,
@@ -147,12 +169,14 @@
     "ageGroup": "8&Under",
     "event": "25m Butterfly",
     "course": "SCM",
-    "holders": ["Christian Hunley"],
-    "time": 19.89,
-    "displayTime": "19.89",
-    "year": 2026,
-    "meetDate": "2026-07-13",
-    "meet": "WT vs EH",
+    "holders": [
+      "Benjamin Youngs"
+    ],
+    "time": 21.96,
+    "displayTime": "21.96",
+    "year": 2014,
+    "meetDate": null,
+    "meet": null,
     "location": null
   },
   "Girls 9-10|50m Freestyle|SCM": {
@@ -160,12 +184,14 @@
     "ageGroup": "9-10",
     "event": "50m Freestyle",
     "course": "SCM",
-    "holders": ["Reagan Swartzel"],
-    "time": 34.12,
-    "displayTime": "34.12",
-    "year": 2026,
-    "meetDate": "2026-06-22",
-    "meet": "WT vs WPD",
+    "holders": [
+      "Lexi O'Neil"
+    ],
+    "time": 34.47,
+    "displayTime": "34.47",
+    "year": 2017,
+    "meetDate": "2017-08-06",
+    "meet": "VPSU Championship Meet",
     "location": "Fort Eustis Pool"
   },
   "Girls 9-10|100m Individual Medley|SCM": {
@@ -173,7 +199,9 @@
     "ageGroup": "9-10",
     "event": "100m Individual Medley",
     "course": "SCM",
-    "holders": ["Lexi O'Neil"],
+    "holders": [
+      "Lexi O'Neil"
+    ],
     "time": 89.18,
     "displayTime": "1:29.18",
     "year": 2017,
@@ -186,7 +214,9 @@
     "ageGroup": "9-10",
     "event": "50m Backstroke",
     "course": "SCM",
-    "holders": ["Jaclynn Buzek"],
+    "holders": [
+      "Jaclynn Buzek"
+    ],
     "time": 43.37,
     "displayTime": "43.37",
     "year": 2021,
@@ -199,12 +229,14 @@
     "ageGroup": "9-10",
     "event": "50m Butterfly",
     "course": "SCM",
-    "holders": ["Reagan Swartzel"],
-    "time": 38.94,
-    "displayTime": "38.94",
-    "year": 2026,
-    "meetDate": "2026-06-29",
-    "meet": "WC at WT",
+    "holders": [
+      "Reagan Swartzel"
+    ],
+    "time": 42.81,
+    "displayTime": "42.81",
+    "year": 2025,
+    "meetDate": "2025-07-07",
+    "meet": "Ford's Colony at Wellington Waves",
     "location": "Wellington Waves Swim Team"
   },
   "Girls 9-10|50m Breaststroke|SCM": {
@@ -212,7 +244,9 @@
     "ageGroup": "9-10",
     "event": "50m Breaststroke",
     "course": "SCM",
-    "holders": ["Jaclynn Buzek"],
+    "holders": [
+      "Jaclynn Buzek"
+    ],
     "time": 46.33,
     "displayTime": "46.33",
     "year": 2021,
@@ -225,7 +259,9 @@
     "ageGroup": "9-10",
     "event": "50m Freestyle",
     "course": "SCM",
-    "holders": ["Jostin Keithley"],
+    "holders": [
+      "Jostin Keithley"
+    ],
     "time": 35.19,
     "displayTime": "35.19",
     "year": 2019,
@@ -238,7 +274,9 @@
     "ageGroup": "9-10",
     "event": "100m Individual Medley",
     "course": "SCM",
-    "holders": ["Jostin Keithley"],
+    "holders": [
+      "Jostin Keithley"
+    ],
     "time": 88.86,
     "displayTime": "1:28.86",
     "year": 2019,
@@ -251,8 +289,10 @@
     "ageGroup": "9-10",
     "event": "50m Backstroke",
     "course": "SCM",
-    "holders": ["Jackson Jones"],
-    "time": 40.70,
+    "holders": [
+      "Jackson Jones"
+    ],
+    "time": 40.7,
     "displayTime": "40.70",
     "year": 2022,
     "meetDate": "2022-07-30",
@@ -264,7 +304,9 @@
     "ageGroup": "9-10",
     "event": "50m Butterfly",
     "course": "SCM",
-    "holders": ["Jackson Jones"],
+    "holders": [
+      "Jackson Jones"
+    ],
     "time": 37.63,
     "displayTime": "37.63",
     "year": 2022,
@@ -277,7 +319,9 @@
     "ageGroup": "9-10",
     "event": "50m Breaststroke",
     "course": "SCM",
-    "holders": ["Luke Shnowske"],
+    "holders": [
+      "Luke Shnowske"
+    ],
     "time": 46.88,
     "displayTime": "46.88",
     "year": 2024,
@@ -290,7 +334,9 @@
     "ageGroup": "11-12",
     "event": "100m Individual Medley",
     "course": "SCM",
-    "holders": ["Jaclynn Buzek"],
+    "holders": [
+      "Jaclynn Buzek"
+    ],
     "time": 76.59,
     "displayTime": "1:16.59",
     "year": 2023,
@@ -303,7 +349,9 @@
     "ageGroup": "11-12",
     "event": "50m Freestyle",
     "course": "SCM",
-    "holders": ["Ellerie Tobler"],
+    "holders": [
+      "Ellerie Tobler"
+    ],
     "time": 31.28,
     "displayTime": "31.28",
     "year": 2016,
@@ -316,7 +364,9 @@
     "ageGroup": "11-12",
     "event": "50m Breaststroke",
     "course": "SCM",
-    "holders": ["Jaclynn Buzek"],
+    "holders": [
+      "Jaclynn Buzek"
+    ],
     "time": 37.88,
     "displayTime": "37.88",
     "year": 2023,
@@ -329,7 +379,9 @@
     "ageGroup": "11-12",
     "event": "50m Backstroke",
     "course": "SCM",
-    "holders": ["Ellerie Tobler"],
+    "holders": [
+      "Ellerie Tobler"
+    ],
     "time": 38.32,
     "displayTime": "38.32",
     "year": 2016,
@@ -342,7 +394,9 @@
     "ageGroup": "11-12",
     "event": "50m Butterfly",
     "course": "SCM",
-    "holders": ["Daryn Olsen"],
+    "holders": [
+      "Daryn Olsen"
+    ],
     "time": 35.55,
     "displayTime": "35.55",
     "year": 2014,
@@ -355,7 +409,9 @@
     "ageGroup": "11-12",
     "event": "100m Individual Medley",
     "course": "SCM",
-    "holders": ["Jostin Keithley"],
+    "holders": [
+      "Jostin Keithley"
+    ],
     "time": 73.07,
     "displayTime": "1:13.07",
     "year": 2021,
@@ -368,8 +424,10 @@
     "ageGroup": "11-12",
     "event": "50m Freestyle",
     "course": "SCM",
-    "holders": ["Jostin Keithley"],
-    "time": 29.20,
+    "holders": [
+      "Jostin Keithley"
+    ],
+    "time": 29.2,
     "displayTime": "29.20",
     "year": 2021,
     "meetDate": "2021-07-12",
@@ -381,7 +439,9 @@
     "ageGroup": "11-12",
     "event": "50m Breaststroke",
     "course": "SCM",
-    "holders": ["Jostin Keithley"],
+    "holders": [
+      "Jostin Keithley"
+    ],
     "time": 39.88,
     "displayTime": "39.88",
     "year": 2021,
@@ -394,7 +454,9 @@
     "ageGroup": "11-12",
     "event": "50m Backstroke",
     "course": "SCM",
-    "holders": ["Jostin Keithley"],
+    "holders": [
+      "Jostin Keithley"
+    ],
     "time": 35.04,
     "displayTime": "35.04",
     "year": 2021,
@@ -407,7 +469,9 @@
     "ageGroup": "11-12",
     "event": "50m Butterfly",
     "course": "SCM",
-    "holders": ["Jostin Keithley"],
+    "holders": [
+      "Jostin Keithley"
+    ],
     "time": 33.14,
     "displayTime": "33.14",
     "year": 2021,
@@ -420,7 +484,9 @@
     "ageGroup": "13-14",
     "event": "100m Individual Medley",
     "course": "SCM",
-    "holders": ["Jaclynn Buzek"],
+    "holders": [
+      "Jaclynn Buzek"
+    ],
     "time": 70.38,
     "displayTime": "1:10.38",
     "year": 2025,
@@ -433,7 +499,9 @@
     "ageGroup": "13-14",
     "event": "50m Freestyle",
     "course": "SCM",
-    "holders": ["Jaclynn Buzek"],
+    "holders": [
+      "Jaclynn Buzek"
+    ],
     "time": 29.75,
     "displayTime": "29.75",
     "year": 2025,
@@ -446,8 +514,10 @@
     "ageGroup": "13-14",
     "event": "50m Breaststroke",
     "course": "SCM",
-    "holders": ["Jaclynn Buzek"],
-    "time": 35.70,
+    "holders": [
+      "Jaclynn Buzek"
+    ],
+    "time": 35.7,
     "displayTime": "35.70",
     "year": 2025,
     "meetDate": "2025-06-23",
@@ -459,7 +529,9 @@
     "ageGroup": "13-14",
     "event": "50m Backstroke",
     "course": "SCM",
-    "holders": ["Allison Chaney"],
+    "holders": [
+      "Allison Chaney"
+    ],
     "time": 35.83,
     "displayTime": "35.83",
     "year": 2017,
@@ -472,7 +544,9 @@
     "ageGroup": "13-14",
     "event": "50m Butterfly",
     "course": "SCM",
-    "holders": ["Ellerie Tobler"],
+    "holders": [
+      "Ellerie Tobler"
+    ],
     "time": 33.76,
     "displayTime": "33.76",
     "year": 2017,
@@ -485,12 +559,14 @@
     "ageGroup": "13-14",
     "event": "100m Individual Medley",
     "course": "SCM",
-    "holders": ["Sam Shnowske"],
-    "time": 64.36,
-    "displayTime": "1:04.36",
-    "year": 2026,
-    "meetDate": "2026-06-15",
-    "meet": "WT vs FDC",
+    "holders": [
+      "Jostin Keithley"
+    ],
+    "time": 68.38,
+    "displayTime": "1:08.38",
+    "year": 2023,
+    "meetDate": "2023-06-16",
+    "meet": "Wellington Waves at Village Green",
     "location": "Village Green Patriots"
   },
   "Boys 13-14|50m Freestyle|SCM": {
@@ -498,12 +574,14 @@
     "ageGroup": "13-14",
     "event": "50m Freestyle",
     "course": "SCM",
-    "holders": ["Sam Shnowske"],
-    "time": 26.84,
-    "displayTime": "26.84",
-    "year": 2026,
-    "meetDate": "2026-06-22",
-    "meet": "WT vs WPD",
+    "holders": [
+      "Michael Casanave"
+    ],
+    "time": 27.27,
+    "displayTime": "27.27",
+    "year": 2018,
+    "meetDate": "2018-08-04",
+    "meet": "Champs! @ WISC Pool",
     "location": "WISC Aquatic Center"
   },
   "Boys 13-14|50m Breaststroke|SCM": {
@@ -511,12 +589,14 @@
     "ageGroup": "13-14",
     "event": "50m Breaststroke",
     "course": "SCM",
-    "holders": ["Sam Shnowske"],
-    "time": 34.49,
-    "displayTime": "34.49",
-    "year": 2026,
-    "meetDate": "2026-07-13",
-    "meet": "WT vs EH",
+    "holders": [
+      "Walker Keithley"
+    ],
+    "time": 35.28,
+    "displayTime": "35.28",
+    "year": 2019,
+    "meetDate": "2019-08-03",
+    "meet": "VPSU Championship Meet",
     "location": "WISC Pool"
   },
   "Boys 13-14|50m Backstroke|SCM": {
@@ -524,7 +604,9 @@
     "ageGroup": "13-14",
     "event": "50m Backstroke",
     "course": "SCM",
-    "holders": ["Jostin Keithley"],
+    "holders": [
+      "Jostin Keithley"
+    ],
     "time": 32.32,
     "displayTime": "32.32",
     "year": 2023,
@@ -537,12 +619,14 @@
     "ageGroup": "13-14",
     "event": "50m Butterfly",
     "course": "SCM",
-    "holders": ["Sam Shnowske"],
-    "time": 29.69,
-    "displayTime": "29.69",
-    "year": 2026,
-    "meetDate": "2026-06-15",
-    "meet": "WT vs FDC",
+    "holders": [
+      "Michael Casanave"
+    ],
+    "time": 30.37,
+    "displayTime": "30.37",
+    "year": 2018,
+    "meetDate": "2018-08-04",
+    "meet": "Champs! @ WISC Pool",
     "location": "WISC Aquatic Center"
   },
   "Women 15-18|100m Individual Medley|SCM": {
@@ -550,7 +634,9 @@
     "ageGroup": "15-18",
     "event": "100m Individual Medley",
     "course": "SCM",
-    "holders": ["Anna Shnowske"],
+    "holders": [
+      "Anna Shnowske"
+    ],
     "time": 65.42,
     "displayTime": "1:05.42",
     "year": 2024,
@@ -563,7 +649,9 @@
     "ageGroup": "15-18",
     "event": "50m Freestyle",
     "course": "SCM",
-    "holders": ["Anna Shnowske"],
+    "holders": [
+      "Anna Shnowske"
+    ],
     "time": 27.23,
     "displayTime": "27.23",
     "year": 2024,
@@ -576,12 +664,14 @@
     "ageGroup": "15-18",
     "event": "50m Breaststroke",
     "course": "SCM",
-    "holders": ["Jaclynn Buzek"],
-    "time": 35.55,
-    "displayTime": "35.55",
-    "year": 2026,
-    "meetDate": "2026-06-29",
-    "meet": "WC at WT",
+    "holders": [
+      "Anna Shnowske"
+    ],
+    "time": 36.78,
+    "displayTime": "36.78",
+    "year": 2025,
+    "meetDate": "2025-06-30",
+    "meet": "Kingswood Klams at Wellington Waves",
     "location": "Wellington Waves Swim Team"
   },
   "Women 15-18|50m Backstroke|SCM": {
@@ -589,7 +679,9 @@
     "ageGroup": "15-18",
     "event": "50m Backstroke",
     "course": "SCM",
-    "holders": ["Anna Shnowske"],
+    "holders": [
+      "Anna Shnowske"
+    ],
     "time": 31.14,
     "displayTime": "31.14",
     "year": 2026,
@@ -602,7 +694,9 @@
     "ageGroup": "15-18",
     "event": "50m Butterfly",
     "course": "SCM",
-    "holders": ["Anna Shnowske"],
+    "holders": [
+      "Anna Shnowske"
+    ],
     "time": 29.13,
     "displayTime": "29.13",
     "year": 2026,
@@ -615,7 +709,9 @@
     "ageGroup": "15-18",
     "event": "100m Individual Medley",
     "course": "SCM",
-    "holders": ["Matt Shnowske"],
+    "holders": [
+      "Matt Shnowske"
+    ],
     "time": 59.59,
     "displayTime": "59.59",
     "year": 2024,
@@ -628,7 +724,9 @@
     "ageGroup": "15-18",
     "event": "50m Freestyle",
     "course": "SCM",
-    "holders": ["Matt Shnowske"],
+    "holders": [
+      "Matt Shnowske"
+    ],
     "time": 24.37,
     "displayTime": "24.37",
     "year": 2024,
@@ -641,7 +739,9 @@
     "ageGroup": "15-18",
     "event": "50m Breaststroke",
     "course": "SCM",
-    "holders": ["Michael Keller"],
+    "holders": [
+      "Michael Keller"
+    ],
     "time": 32.82,
     "displayTime": "32.82",
     "year": 2018,
@@ -654,7 +754,9 @@
     "ageGroup": "15-18",
     "event": "50m Backstroke",
     "course": "SCM",
-    "holders": ["Finn Leggett"],
+    "holders": [
+      "Finn Leggett"
+    ],
     "time": 28.87,
     "displayTime": "28.87",
     "year": 2025,
@@ -667,7 +769,9 @@
     "ageGroup": "15-18",
     "event": "50m Butterfly",
     "course": "SCM",
-    "holders": ["Matt Shnowske"],
+    "holders": [
+      "Matt Shnowske"
+    ],
     "time": 26.22,
     "displayTime": "26.22",
     "year": 2024,
@@ -680,7 +784,12 @@
     "ageGroup": "Open",
     "event": "200m Medley Relay",
     "course": "SCM",
-    "holders": ["Zurie Bissette", "Jaclynn Buzek", "Anna Shnowske", "Reagan Swartzel"],
+    "holders": [
+      "Zurie Bissette",
+      "Jaclynn Buzek",
+      "Anna Shnowske",
+      "Reagan Swartzel"
+    ],
     "time": 141.81,
     "displayTime": "2:21.81",
     "year": 2025,
@@ -693,7 +802,12 @@
     "ageGroup": "Open",
     "event": "200m Freestyle Relay",
     "course": "SCM",
-    "holders": ["Lexi O'Neil", "Emma Timberg", "Nikolett Kormos", "Daryn Olsen"],
+    "holders": [
+      "Lexi O'Neil",
+      "Emma Timberg",
+      "Nikolett Kormos",
+      "Daryn Olsen"
+    ],
     "time": 131.35,
     "displayTime": "2:11.35",
     "year": 2017,
@@ -706,7 +820,12 @@
     "ageGroup": "Open",
     "event": "200m Medley Relay",
     "course": "SCM",
-    "holders": ["Sam Shnowske", "Jostin Keithley", "Matt Shnowske", "Luke Shnowske"],
+    "holders": [
+      "Sam Shnowske",
+      "Jostin Keithley",
+      "Matt Shnowske",
+      "Luke Shnowske"
+    ],
     "time": 138.76,
     "displayTime": "2:18.76",
     "year": 2023,
@@ -719,7 +838,12 @@
     "ageGroup": "Open",
     "event": "200m Freestyle Relay",
     "course": "SCM",
-    "holders": ["Luke Shnowske", "Sam Shnowske", "Adin Shackley", "Matt Shnowske"],
+    "holders": [
+      "Luke Shnowske",
+      "Sam Shnowske",
+      "Adin Shackley",
+      "Matt Shnowske"
+    ],
     "time": 117.58,
     "displayTime": "1:57.58",
     "year": 2024,
