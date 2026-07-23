@@ -34,7 +34,7 @@ import { timeToSeconds } from '../digest/dateUtils.js';
 // Paths
 // ---------------------------------------------------------------------------
 
-const MANIFEST_PATH  = resolve(ROOT, 'docs/data-reload/2026-07-reload-manifest.json');
+const MANIFEST_PATH  = resolve(ROOT, 'docs/data-reload/reload-manifest.json');
 const RECORDS_PATH   = resolve(ROOT, 'data/waves-team-records.json');
 const CURRENT_SEASON = '2026';
 
@@ -709,14 +709,19 @@ async function main() {
     process.exit(1);
   }
 
-  // Load manifest
+  // Load manifest (season-keyed object: { "2022": [...], ..., "2026": [...] })
   const manifest = readJson(MANIFEST_PATH);
-  const entryIndex = manifest.findIndex(e => e.meetSlug === slugArg);
+  let seasonKey  = null;
+  let entryIndex = -1;
+  for (const [sk, entries] of Object.entries(manifest)) {
+    const idx = entries.findIndex(e => e.meetSlug === slugArg);
+    if (idx !== -1) { seasonKey = sk; entryIndex = idx; break; }
+  }
   if (entryIndex === -1) {
     console.error(`ERROR: No manifest entry found for slug "${slugArg}"`);
     process.exit(1);
   }
-  const entry = manifest[entryIndex];
+  const entry = manifest[seasonKey][entryIndex];
 
   // Check availability
   if (!entry.pdfAvailable) {
@@ -801,7 +806,7 @@ async function main() {
     writeJson(relayFilePath, [...existingRelay, ...relayRows]);
 
     // Update manifest
-    manifest[entryIndex] = {
+    manifest[seasonKey][entryIndex] = {
       ...entry,
       parsedIntoV2:     true,
       rowCountParsed:   totalRows,

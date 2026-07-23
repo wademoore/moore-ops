@@ -1,0 +1,980 @@
+{
+  "2022": [],
+  "2023": [],
+  "2024": [],
+  "2025": [],
+  "2026": [
+    {
+      "season": "2026",
+      "date": "2026-06-15",
+      "meetSlug": "2026-06-15-eh-at-gs",
+      "teams": [
+        "GS",
+        "EH"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Gators_06_15_2026___Meet_Maestro™ (2).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 479,
+      "plausibilityFlags": 0,
+      "notes": "Pre-season cross-div friendly. EH (Div 2) at GS (Div 1)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-15",
+      "meetSlug": "2026-06-15-fdc-at-wt",
+      "teams": [
+        "WT",
+        "FDC"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Ford's_Colony_at_Wellington_Waves_06_15_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 553,
+      "plausibilityFlags": 0,
+      "notes": "Pre-season cross-div friendly. FDC (Div 1) at WT (Div 2). Meet name in v1: WT vs FDC."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-15",
+      "meetSlug": "2026-06-15-ftc-at-kp",
+      "teams": [
+        "KP",
+        "FTC"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_First_Colony_at_Kingspoint_06_15_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 378,
+      "plausibilityFlags": 0,
+      "notes": "Pre-season cross-div friendly. FTC (Div 1) at KP (Div 3)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-15",
+      "meetSlug": "2026-06-15-glt-at-km",
+      "teams": [
+        "KM",
+        "GLT"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Typhoons_at_Kingsmill_Sharks-_Hawaiian_Luau_06_15_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 389,
+      "plausibilityFlags": 0,
+      "notes": "Pre-season cross-div friendly. GLT (Div 3) at KM (Div 1). PDF title notes Hawaiian Luau theme."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-15",
+      "meetSlug": "2026-06-15-kw-at-wf",
+      "teams": [
+        "WF",
+        "KW"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._Kingswood_Klams_Friendship_Meet_06_15_2026___Meet_Maestro™ (2).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 515,
+      "plausibilityFlags": 0,
+      "notes": "Pre-season cross-div friendly. KW (Div 1) at WF (Div 2). PDF filename uses 'vs.' — home/away confirmed via Windsor Forest's published team schedule, not filename inference alone."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-15",
+      "meetSlug": "2026-06-15-sh-at-ql",
+      "teams": [
+        "QL",
+        "SH"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Splash_at_Queens_Lake_06_15_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 313,
+      "plausibilityFlags": 0,
+      "notes": "Pre-season cross-div friendly. SH (Div 3) at QL (Div 1)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-15",
+      "meetSlug": "2026-06-15-wc-at-vw",
+      "teams": [
+        "VW",
+        "WC"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_WCP_Manta_Rays_at_VW_Kraken_06_15_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 176,
+      "plausibilityFlags": 0,
+      "notes": "Pre-season cross-div friendly. WC (Div 2) at VW (Div 3)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-15",
+      "meetSlug": "2026-06-15-wgpra-at-ps",
+      "teams": [
+        "PS",
+        "WGPRA"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_WGP_WAVES_at_Seastars_06_15_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 233,
+      "plausibilityFlags": 0,
+      "notes": "Pre-season cross-div friendly. WGPRA (Div 3) at PS (Div 2)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-15",
+      "meetSlug": "2026-06-15-wpd-at-ip",
+      "teams": [
+        "IP",
+        "WPD"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_West_Point_at_Indigo_Park_06_15_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 311,
+      "plausibilityFlags": 0,
+      "notes": "Pre-season cross-div friendly. WPD (Div 2) at IP (Div 3)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-22",
+      "meetSlug": "2026-06-22-glt-at-sh",
+      "teams": [
+        "SH",
+        "GLT"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Typhoons_at_Splash_06_22_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 202,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-22",
+      "meetSlug": "2026-06-22-gs-at-ftc",
+      "teams": [
+        "FTC",
+        "GS"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/Greensprings_at_First_Colony_06_22_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 531,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-22",
+      "meetSlug": "2026-06-22-ip-at-wgpra",
+      "teams": [
+        "WGPRA",
+        "IP"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_IP_Stingrays_at_WGP_WAVES_06_22_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 223,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-22",
+      "meetSlug": "2026-06-22-km-at-fdc",
+      "teams": [
+        "FDC",
+        "KM"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Kingsmill_Sharks_at_Ford's_Colony_06_22_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 594,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-22",
+      "meetSlug": "2026-06-22-kp-at-vw",
+      "teams": [
+        "VW",
+        "KP"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Kingspoint_at_VW_Kraken_06_22_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 161,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-22",
+      "meetSlug": "2026-06-22-ps-at-wc",
+      "teams": [
+        "WC",
+        "PS"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Seastars_at_WCP_Manta_Rays_06_22_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 253,
+      "plausibilityFlags": 0,
+      "notes": "Slug corrected to match PDF title (original manifest had home/away reversed)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-22",
+      "meetSlug": "2026-06-22-ql-at-kw",
+      "teams": [
+        "KW",
+        "QL"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Queens_Lake_at_Kingswood_Klams_06_22_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 480,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-22",
+      "meetSlug": "2026-06-22-wf-at-eh",
+      "teams": [
+        "EH",
+        "WF"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/Windsor_Forest_Frogs_at_Edgehill_Eels_06_22_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 464,
+      "plausibilityFlags": 0,
+      "notes": "Slug corrected to match PDF title (original manifest had home/away reversed)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-22",
+      "meetSlug": "2026-06-22-wpd-at-wt",
+      "teams": [
+        "WT",
+        "WPD"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_West_Point_Dolphins_at_Wellington_Waves_06_22_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 280,
+      "plausibilityFlags": 0,
+      "notes": "Meet confirmed cut short by Wade (storm/weather) — not a parsing gap. PDF is genuinely 4 of 4 pages, ends cleanly at event #33 (Boys 7-8 25m Backstroke); no Backstroke 9+, Butterfly, or relay events occurred. Parser correctly extracted all data present. This is the complete official record for this meet."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-29",
+      "meetSlug": "2026-06-29-fdc-at-kw",
+      "teams": [
+        "KW",
+        "FDC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Ford's_Colony_at_Kingswood_Klams_06_29_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 676,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-29",
+      "meetSlug": "2026-06-29-ftc-at-km",
+      "teams": [
+        "KM",
+        "FTC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_First_Colony_at_Kingsmill_Sharks_06_29_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 598,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-29",
+      "meetSlug": "2026-06-29-ip-at-glt",
+      "teams": [
+        "GLT",
+        "IP"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_IP_Stingrays_at_Typhoons_06_29_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 225,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-29",
+      "meetSlug": "2026-06-29-ps-at-wf",
+      "teams": [
+        "WF",
+        "PS"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._Powhatan_Secondary_Sea_Stars_06_29_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 374,
+      "plausibilityFlags": 0,
+      "notes": "v1 meet name: 'Windsor Forest Frogs vs. Powhatan Secondary Sea Stars'. v2 canonical name: WF vs PS. PDF filename uses 'vs.' — home/away confirmed via Windsor Forest's published team schedule, not filename inference alone."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-29",
+      "meetSlug": "2026-06-29-ql-at-gs",
+      "teams": [
+        "GS",
+        "QL"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Queens_Lake_at_Gators_06_29_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 460,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-29",
+      "meetSlug": "2026-06-29-vw-at-sh",
+      "teams": [
+        "SH",
+        "VW"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_VW_Kraken_at_Splash_06_29_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 199,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-29",
+      "meetSlug": "2026-06-29-wc-at-wt",
+      "teams": [
+        "WT",
+        "WC"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Williamsburg_Community_at_Wellington_Waves_06_29_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 441,
+      "plausibilityFlags": 0,
+      "notes": "v1 meet name: '2026 Williamsburg Community at Wellington Waves'. v2 canonical name: WT vs WC."
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-29",
+      "meetSlug": "2026-06-29-wgpra-at-kp",
+      "teams": [
+        "KP",
+        "WGPRA"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_WGP_WAVES_at_Kingspoint_06_29_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 253,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-06-29",
+      "meetSlug": "2026-06-29-wpd-at-eh",
+      "teams": [
+        "EH",
+        "WPD"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/West_Point_Dolphins_at_Edgehill_Eels_06_29_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 453,
+      "plausibilityFlags": 0,
+      "notes": "v1 meet name: 'West Point Dolphins at Edgehill Eels'. v2 canonical name: EH vs WPD."
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-06",
+      "meetSlug": "2026-07-06-ftc-at-ql",
+      "teams": [
+        "QL",
+        "FTC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_First_Colony_at_Queens_Lake_07_06_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 462,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-06",
+      "meetSlug": "2026-07-06-glt-at-vw",
+      "teams": [
+        "VW",
+        "GLT"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Typhoons_at_VW_Kraken_07_06_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 143,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-06",
+      "meetSlug": "2026-07-06-gs-at-fdc",
+      "teams": [
+        "FDC",
+        "GS"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Gators_at_Ford's_Colony_07_06_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 568,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-06",
+      "meetSlug": "2026-07-06-km-at-kw",
+      "teams": [
+        "KW",
+        "KM"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Kingsmill_Sharks_at_Kingswood_Klams_07_06_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 460,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-06",
+      "meetSlug": "2026-07-06-kp-at-ip",
+      "teams": [
+        "IP",
+        "KP"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Kingspoint_at_Indigo_Park_07_06_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 224,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-06",
+      "meetSlug": "2026-07-06-sh-at-wgpra",
+      "teams": [
+        "WGPRA",
+        "SH"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Splash_at_WGP_WAVES_07_06_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 189,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-06",
+      "meetSlug": "2026-07-06-wpd-at-wf",
+      "teams": [
+        "WF",
+        "WPD"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/Windsor_Forest_Frogs_vs._West_Point_Dolphins_07_06_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 399,
+      "plausibilityFlags": 0,
+      "notes": "PDF filename uses 'vs.' — home/away confirmed via Windsor Forest's published team schedule, not filename inference alone. | Confirmed: PDF contains no relay events and no 50m Butterfly for ages 9-10+ (events stop at #44, Butterfly 8&Under only). Not a parsing gap — content genuinely absent from source PDF."
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-08",
+      "meetSlug": "2026-07-08-eh-at-wc",
+      "teams": [
+        "WC",
+        "EH"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Edgehill_Eels_at_WCP_Manta_Rays_07_08_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 357,
+      "plausibilityFlags": 0,
+      "notes": "Slug corrected to match PDF title (original manifest had home/away reversed)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-08",
+      "meetSlug": "2026-07-08-wt-at-ps",
+      "teams": [
+        "PS",
+        "WT"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Wellington_Waves_at_Seastars_07_08_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 344,
+      "plausibilityFlags": 0,
+      "notes": "v1 individual results name: 'WT vs Powhatan Secondary'. Slug corrected to match PDF title (original manifest had home/away reversed)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-13",
+      "meetSlug": "2026-07-13-fdc-at-ftc",
+      "teams": [
+        "FTC",
+        "FDC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/Fords_Colony_at_First_Colony_07_13_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 617,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-13",
+      "meetSlug": "2026-07-13-km-at-ql",
+      "teams": [
+        "QL",
+        "KM"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Kingsmill_Sharks_at_Queens_Lake_07_13_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 515,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-13",
+      "meetSlug": "2026-07-13-kw-at-gs",
+      "teams": [
+        "GS",
+        "KW"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Kingswood_at_Gators_07_13_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 570,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-13",
+      "meetSlug": "2026-07-13-ps-at-wpd",
+      "teams": [
+        "WPD",
+        "PS"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Seastars_at_WP_Dolphins_07_13_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 370,
+      "plausibilityFlags": 0,
+      "notes": "Slug corrected to match PDF title (original manifest had home/away reversed)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-13",
+      "meetSlug": "2026-07-13-sh-at-kp",
+      "teams": [
+        "KP",
+        "SH"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Stonehouse_Splash_at_Kingspoint_07_13_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 256,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-13",
+      "meetSlug": "2026-07-13-vw-at-ip",
+      "teams": [
+        "IP",
+        "VW"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Villages_of_Westminster_at_Indigo_Park_07_13_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 144,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-13",
+      "meetSlug": "2026-07-13-wf-at-wc",
+      "teams": [
+        "WC",
+        "WF"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Windsor_Forest_at_WCP_Manta_Rays_SENIOR_NIGHT_07_13_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 350,
+      "plausibilityFlags": 0,
+      "notes": "Senior Night. Slug corrected to match PDF title (original manifest had home/away reversed)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-13",
+      "meetSlug": "2026-07-13-wgpra-at-glt",
+      "teams": [
+        "GLT",
+        "WGPRA"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_WGP_WAVES_at_Typhoons_07_13_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 211,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-13",
+      "meetSlug": "2026-07-13-wt-at-eh",
+      "teams": [
+        "EH",
+        "WT"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/Wellington_Waves_at_Edgehill_Eels__Senior_Night_07_13_2026___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 557,
+      "plausibilityFlags": 0,
+      "notes": "Senior Night. Slug corrected to match PDF title (original manifest had home/away reversed)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-20",
+      "meetSlug": "2026-07-20-eh-at-ps",
+      "teams": [
+        "PS",
+        "EH"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Edgehill_Eels_at_Seastars_07_20_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 421,
+      "plausibilityFlags": 0,
+      "notes": "Slug corrected to match PDF title (original manifest had home/away reversed)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-20",
+      "meetSlug": "2026-07-20-gs-at-km",
+      "teams": [
+        "KM",
+        "GS"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Gators_at_Kingsmill_Sharks_07_20_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 546,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-20",
+      "meetSlug": "2026-07-20-ip-at-sh",
+      "teams": [
+        "SH",
+        "IP"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_IP_Stingrays_at_Splash_07_20_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 263,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-20",
+      "meetSlug": "2026-07-20-kp-at-glt",
+      "teams": [
+        "GLT",
+        "KP"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Kingspoint_at_Typhoons_07_20_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 222,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-20",
+      "meetSlug": "2026-07-20-kw-at-ftc",
+      "teams": [
+        "FTC",
+        "KW"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/Kingswood_at_First_Colony_(Senior_Night)_07_20_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 668,
+      "plausibilityFlags": 0,
+      "notes": "Senior Night."
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-20",
+      "meetSlug": "2026-07-20-ql-at-fdc",
+      "teams": [
+        "FDC",
+        "QL"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Queens_Lake_at_Ford's_Colony_07_20_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 505,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-20",
+      "meetSlug": "2026-07-20-vw-at-wgpra",
+      "teams": [
+        "WGPRA",
+        "VW"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_VW_Kraken_at_WGP_WAVES_07_20_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 185,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-20",
+      "meetSlug": "2026-07-20-wc-at-wpd",
+      "teams": [
+        "WPD",
+        "WC"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_WCP_Manta_Rays_at_WP_Dolphins_07_20_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 330,
+      "plausibilityFlags": 0,
+      "notes": "Slug corrected to match PDF title (original manifest had home/away reversed)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-20",
+      "meetSlug": "2026-07-20-wf-at-wt",
+      "teams": [
+        "WT",
+        "WF"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Windsor_Forest_at_Wellington_Waves_07_20_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 497,
+      "plausibilityFlags": 4,
+      "notes": "EXH swimmer confirmed in PDF: Holley, Scarlett (WT)."
+    }
+  ]
+}

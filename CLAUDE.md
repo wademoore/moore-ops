@@ -84,11 +84,11 @@ Pipeline removed June 2026. Updater manual entry (`pb-records.json`, `swim-resul
 ESM script; parses SwimTopia Meet Maestro PDF results into the v2 JSON schema. Key properties:
 - **Deterministic time conversion:** all time arithmetic delegates exclusively to `timeToSeconds()` imported from `digest/dateUtils.js`. No other time conversion arithmetic is permitted in the file — this eliminates the `minutes × 100` encoding bug that produced systematic +40s errors in v1 Updater entries.
 - **Provenance on every row:** each parsed row carries `sourcePdf` (relative path to the source PDF), `sourceEventNumber` (event number within that PDF), `verifiedAgainst` (null until manually PDF-confirmed), and `plausibilityFlags` (array — e.g. `["faster-than-team-record"]` when a time is anomalously fast).
-- **Manifest-driven:** reads `docs/data-reload/2026-07-reload-manifest.json` to locate the source PDF and record parse state per meet slug. `--force` flag re-parses even if `parsedIntoV2: true` (clears prior rows for that slug first); `--dry-run` parses and reports without writing.
+- **Manifest-driven:** reads `docs/data-reload/reload-manifest.json` to locate the source PDF and record parse state per meet slug. `--force` flag re-parses even if `parsedIntoV2: true` (clears prior rows for that slug first); `--dry-run` parses and reports without writing.
 - **CommonJS interop:** `pdf-parse` is a CommonJS module loaded via `createRequire` from ESM context.
 
-### docs/data-reload/2026-07-reload-manifest.json
-54-entry array covering all 2026 VPSU meets and pre-season friendlies. Each entry: `season`, `date`, `meetSlug`, `teams`, `division`, `course`, `sourcePdfPath`, `pdfAvailable`, `parsedIntoV2`, `rowCountExpected`, `rowCountParsed`, `plausibilityFlags` (count), `notes`. As of July 2026: all 54 entries have `parsedIntoV2: true`.
+### docs/data-reload/reload-manifest.json
+Season-keyed object (`"2022"` / `"2023"` / `"2024"` / `"2025"` / `"2026"`), each holding an array of that season's meet entries. Per-entry fields: `season`, `date`, `meetSlug`, `teams`, `division`, `course`, `sourcePdfPath`, `pdfAvailable`, `parsedIntoV2`, `rowCountExpected`, `rowCountParsed`, `plausibilityFlags` (count), `notes`. The 2026 array has 54 entries, all `parsedIntoV2: true`. The 2022–2025 arrays are empty pending the history reload.
 
 ### v2 vs v1 file summary
 | File | Rows | Notes |
