@@ -39,9 +39,9 @@ const allNonMooreRows = [...historyRows, ...currentLeagueRows];
 // WEEK_NUM  → week number (e.g. 2)
 // WEEK_DATE → meet date ISO string (e.g. '2026-06-22')  used for new-this-week delta
 // WEEK_LABEL → display date (e.g. 'June 22')
-const WEEK_NUM   = 6;
-const WEEK_DATE  = '2026-07-20';
-const WEEK_LABEL = 'July 20';
+const WEEK_NUM   = 5;
+const WEEK_DATE  = '2026-07-13';
+const WEEK_LABEL = 'July 13';
 // ─────────────────────────────────────────────────────────────────────────────
 
 // standards and getLookupKey imported from helpers.js
