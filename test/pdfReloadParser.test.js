@@ -233,3 +233,130 @@ describe('FIX 3 — relay NT official time (team registered but did not swim)', 
     assert.ok(result.time !== null);
   });
 });
+
+describe('HIST EXT 1 — null-byte colon preprocessing regex', () => {
+  it('digit + null-byte + two-digit.two-digit → colon substituted', () => {
+    const raw = '1\x0040.25';
+    const fixed = raw.replace(/(\d)\x00(\d{2}\.\d{2})/g, '$1:$2');
+    assert.equal(fixed, '1:40.25');
+  });
+
+  it('multi-occurrence in one string: all instances corrected', () => {
+    const raw = 'swimmer 1\x0040.25 seed 2\x0012.67 official';
+    const fixed = raw.replace(/(\d)\x00(\d{2}\.\d{2})/g, '$1:$2');
+    assert.equal(fixed, 'swimmer 1:40.25 seed 2:12.67 official');
+  });
+
+  it('string with no null bytes is unchanged (2025/2026 PDFs)', () => {
+    const raw = 'swimmer 1:40.25 seed 2:12.67 official';
+    const fixed = raw.replace(/(\d)\x00(\d{2}\.\d{2})/g, '$1:$2');
+    assert.equal(fixed, raw);
+  });
+
+  it('lone null byte not in time position is not replaced', () => {
+    const raw = 'foo\x00bar';
+    const fixed = raw.replace(/(\d)\x00(\d{2}\.\d{2})/g, '$1:$2');
+    assert.equal(fixed, raw);
+  });
+});
+
+describe('HIST EXT 2 — m4: historical EXH individual row (2022–2025)', () => {
+  it('standard EXH row → exhibition: true, dq: false, time set', () => {
+    const result = parseIndividualRow('X Hobbs, Michaela EXH\t9 WT\tNT 2:12.97');
+    assert.ok(result, 'should match m4');
+    assert.equal(result.exhibition, true);
+    assert.equal(result.dq, false);
+    assert.equal(result.swimmer, 'Hobbs Michaela');
+    assert.equal(result.age, 9);
+    assert.equal(result.team, 'WT');
+    assert.equal(result.place, null);
+    assert.ok(result.time !== null, 'time should be set from official');
+  });
+
+  it('EXH row with DQ official → exhibition: true, dq: true, time: null', () => {
+    const result = parseIndividualRow('X Walker, Elliot EXH\t10 EH\t2:09.41 DQ');
+    assert.ok(result, 'should match m4');
+    assert.equal(result.exhibition, true);
+    assert.equal(result.dq, true);
+    assert.equal(result.time, null);
+    assert.equal(result.swimmer, 'Walker Elliot');
+    assert.equal(result.team, 'EH');
+  });
+
+  it('EXH row with NS official → exhibition: true, dq: true, time: null', () => {
+    const result = parseIndividualRow('X Hood, Allister EXH\t8 QL\tNT NS');
+    assert.ok(result, 'should match m4');
+    assert.equal(result.exhibition, true);
+    assert.equal(result.dq, true);
+    assert.equal(result.time, null);
+    assert.equal(result.swimmer, 'Hood Allister');
+    assert.equal(result.team, 'QL');
+  });
+
+  it('EXH row with SCR official → scrSkip: true', () => {
+    const result = parseIndividualRow('X Lamb, Junie EXH\t6 EH\t51.84 SCR');
+    assert.ok(result, 'should match m4');
+    assert.equal(result.scrSkip, true);
+    assert.equal(result.swimmer, 'Lamb Junie');
+    assert.equal(result.team, 'EH');
+  });
+});
+
+describe('HIST EXT 3 — m3 SCR extension (scratch with -- prefix)', () => {
+  it('-- row with SCR official → scrSkip: true (not dq)', () => {
+    const result = parseIndividualRow('-- Broderick, Preston\t17 KW\t28.74 SCR');
+    assert.ok(result, 'should match m3 SCR branch');
+    assert.equal(result.scrSkip, true);
+    assert.equal(result.swimmer, 'Broderick Preston');
+    assert.equal(result.team, 'KW');
+  });
+
+  it('-- row with NS official still returns dq: true (not scrSkip)', () => {
+    const result = parseIndividualRow('-- Croly, Sofia\t9 QL\tNT NS');
+    assert.ok(result, 'should match m3');
+    assert.equal(result.dq, true);
+    assert.ok(!result.scrSkip, 'should not be scrSkip');
+  });
+});
+
+describe('HIST EXT 4 — m5: non-scoring finisher (-- row with numeric official)', () => {
+  it('-- row with numeric official time → nonScoringFinisher: true, dq: false, time set', () => {
+    const result = parseIndividualRow('-- Malone, Charlie\t9 KM\tNT 2:03.00');
+    assert.ok(result, 'should match m5');
+    assert.equal(result.dq, false);
+    assert.equal(result.nonScoringFinisher, true);
+    assert.equal(result.swimmer, 'Malone Charlie');
+    assert.equal(result.team, 'KM');
+    assert.equal(result.place, null);
+    assert.ok(result.time !== null, 'time should be set');
+  });
+
+  it('-- row with DQ official is NOT matched by m5 (falls to m3)', () => {
+    const result = parseIndividualRow('-- Smith, John\t10 WT\tNT DQ');
+    assert.ok(result, 'should match m3');
+    assert.equal(result.dq, true);
+    assert.ok(!result.nonScoringFinisher, 'should not be non-scoring-finisher');
+  });
+});
+
+describe('HIST EXT 5 — relay EXH row and relay -- DQ row', () => {
+  it('X <team> EXH relay row → exhibitionRelay: true, place: null, dq: false, time set', () => {
+    const result = parseRelayRow('X Queens Lake EXH\tB QL\tNT 2:51.33');
+    assert.ok(result, 'should match relay EXH branch');
+    assert.equal(result.exhibitionRelay, true);
+    assert.equal(result.place, null);
+    assert.equal(result.dq, false);
+    assert.equal(result.team, 'QL');
+    assert.ok(result.time !== null, 'time should be set');
+  });
+
+  it('-- <team> relay row with DQ official → dq: true, place: null, team set', () => {
+    const result = parseRelayRow('-- Wellington Waves\tB WT\tNT DQ');
+    assert.ok(result, 'should match relay -- DQ branch');
+    assert.equal(result.dq, true);
+    assert.equal(result.place, null);
+    assert.equal(result.team, 'WT');
+    assert.equal(result.time, null);
+    assert.ok(!result.exhibitionRelay, 'should not be exhibitionRelay');
+  });
+});

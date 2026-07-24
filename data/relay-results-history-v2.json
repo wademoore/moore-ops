@@ -1,1 +1,407 @@
-[]
+[
+  {
+    "team": "WT",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shackley, Adin",
+      "Pierce, Hunter",
+      "Keithley, Jostin",
+      "Jones, Jackson"
+    ],
+    "time": 145.63,
+    "date": "2022-06-13",
+    "meet": "WT vs QL",
+    "dq": false,
+    "season": "2022",
+    "sourcePdf": "data-source-pdfs/2022/2022_Queens_Lake_at_Wellington_Waves_06_13_2022___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Check, Gryphon",
+      "Thompson, Riley",
+      "Hayes, Kemper",
+      "Mitchell, Micah"
+    ],
+    "time": 147.09,
+    "date": "2022-06-13",
+    "meet": "WT vs QL",
+    "dq": false,
+    "season": "2022",
+    "sourcePdf": "data-source-pdfs/2022/2022_Queens_Lake_at_Wellington_Waves_06_13_2022___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hutto, Addison",
+      "Edmonds, Ella",
+      "Cleary, Peyton",
+      "Smith, Giana"
+    ],
+    "time": 157.57,
+    "date": "2022-06-13",
+    "meet": "WT vs QL",
+    "dq": false,
+    "season": "2022",
+    "sourcePdf": "data-source-pdfs/2022/2022_Queens_Lake_at_Wellington_Waves_06_13_2022___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Maynor, Lily",
+      "Buzek, Jaclynn",
+      "Kastner, Niamh",
+      "Bissette, Zurie or Z"
+    ],
+    "time": 161.26,
+    "date": "2022-06-13",
+    "meet": "WT vs QL",
+    "dq": false,
+    "season": "2022",
+    "sourcePdf": "data-source-pdfs/2022/2022_Queens_Lake_at_Wellington_Waves_06_13_2022___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Waldron-Kolloff, Ezra",
+      "Bennett, Andrew",
+      "Schweitzer, Christoph",
+      "Hubbard, Zach"
+    ],
+    "time": 177.02,
+    "date": "2022-06-13",
+    "meet": "WT vs QL",
+    "dq": false,
+    "season": "2022",
+    "sourcePdf": "data-source-pdfs/2022/2022_Queens_Lake_at_Wellington_Waves_06_13_2022___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hayes, Hudson",
+      "Shouse, Charlie",
+      "Biondi, Nick",
+      "Downey, Joe"
+    ],
+    "time": 171.32999999999998,
+    "date": "2022-06-13",
+    "meet": "WT vs QL",
+    "dq": false,
+    "season": "2022",
+    "sourcePdf": "data-source-pdfs/2022/2022_Queens_Lake_at_Wellington_Waves_06_13_2022___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": [
+      "exhibition-relay"
+    ]
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Childress, Wyatt",
+      "Peck, Landon",
+      "Hibbard, Mason",
+      "Childress, Lincoln"
+    ],
+    "time": null,
+    "date": "2022-06-13",
+    "meet": "WT vs QL",
+    "dq": true,
+    "season": "2022",
+    "sourcePdf": "data-source-pdfs/2022/2022_Queens_Lake_at_Wellington_Waves_06_13_2022___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Sanford, Natalie",
+      "Edmonds, Holly",
+      "Fields, Trinity",
+      "Check, Chloe"
+    ],
+    "time": 138,
+    "date": "2022-06-13",
+    "meet": "WT vs QL",
+    "dq": false,
+    "season": "2022",
+    "sourcePdf": "data-source-pdfs/2022/2022_Queens_Lake_at_Wellington_Waves_06_13_2022___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Vermeire, Abi",
+      "Maynor, Jenna",
+      "Brisson, Bethany",
+      "O'Neil, Lexi"
+    ],
+    "time": 147.94,
+    "date": "2022-06-13",
+    "meet": "WT vs QL",
+    "dq": false,
+    "season": "2022",
+    "sourcePdf": "data-source-pdfs/2022/2022_Queens_Lake_at_Wellington_Waves_06_13_2022___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Nelson, Charlie",
+      "Thompson, Ali",
+      "Sanford, Audrey",
+      "White, Alyssa"
+    ],
+    "time": 146.84,
+    "date": "2022-06-13",
+    "meet": "WT vs QL",
+    "dq": false,
+    "season": "2022",
+    "sourcePdf": "data-source-pdfs/2022/2022_Queens_Lake_at_Wellington_Waves_06_13_2022___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": [
+      "exhibition-relay"
+    ]
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Pinciaro, Lilliana",
+      "Wargo, Grace",
+      "Phillips, Chloe",
+      "Check, Izzie"
+    ],
+    "time": 158.51,
+    "date": "2022-06-13",
+    "meet": "WT vs QL",
+    "dq": false,
+    "season": "2022",
+    "sourcePdf": "data-source-pdfs/2022/2022_Queens_Lake_at_Wellington_Waves_06_13_2022___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": [
+      "exhibition-relay"
+    ]
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bavuso, Connor",
+      "Hoercher, Camden",
+      "Smelser, Marcus",
+      "Hoglund, Miles"
+    ],
+    "time": 171.44,
+    "date": "2023-07-17",
+    "meet": "GLT vs EH",
+    "dq": false,
+    "season": "2023",
+    "sourcePdf": "data-source-pdfs/2023/2023_Edgehill_Eels_at_Typhoons_07_17_2023___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GLT",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hafl, Broc",
+      "Gonzalez-Jones, Jesus",
+      "Trant, John Luke",
+      "Wall, Camden"
+    ],
+    "time": 185.88,
+    "date": "2023-07-17",
+    "meet": "GLT vs EH",
+    "dq": false,
+    "season": "2023",
+    "sourcePdf": "data-source-pdfs/2023/2023_Edgehill_Eels_at_Typhoons_07_17_2023___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Corbett, Hannah",
+      "Persson, Lilyanna",
+      "Gunderman, Katie",
+      "Pollock, Leora"
+    ],
+    "time": 175.14,
+    "date": "2023-07-17",
+    "meet": "GLT vs EH",
+    "dq": false,
+    "season": "2023",
+    "sourcePdf": "data-source-pdfs/2023/2023_Edgehill_Eels_at_Typhoons_07_17_2023___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GLT",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Almeida, Lucy",
+      "Younica, Elly",
+      "Trant, Julia",
+      "Fornshell, Sally"
+    ],
+    "time": 176.62,
+    "date": "2023-07-17",
+    "meet": "GLT vs EH",
+    "dq": false,
+    "season": "2023",
+    "sourcePdf": "data-source-pdfs/2023/2023_Edgehill_Eels_at_Typhoons_07_17_2023___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Villagra, Caleb",
+      "Gunderman, AJ",
+      "Petrie, Evan",
+      "Pelletier, Ryan"
+    ],
+    "time": 134.12,
+    "date": "2023-07-17",
+    "meet": "GLT vs EH",
+    "dq": false,
+    "season": "2023",
+    "sourcePdf": "data-source-pdfs/2023/2023_Edgehill_Eels_at_Typhoons_07_17_2023___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GLT",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Linkenauger, Owen",
+      "Linkenauger, Oliver",
+      "Hafl, Brody",
+      "Graham, Jack"
+    ],
+    "time": 138.07,
+    "date": "2023-07-17",
+    "meet": "GLT vs EH",
+    "dq": false,
+    "season": "2023",
+    "sourcePdf": "data-source-pdfs/2023/2023_Edgehill_Eels_at_Typhoons_07_17_2023___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GLT",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Fornshell, Eleanore",
+      "Younica, Lilly",
+      "Haas, Natalie",
+      "McMahan, Ainsley"
+    ],
+    "time": 135.03,
+    "date": "2023-07-17",
+    "meet": "GLT vs EH",
+    "dq": false,
+    "season": "2023",
+    "sourcePdf": "data-source-pdfs/2023/2023_Edgehill_Eels_at_Typhoons_07_17_2023___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "EH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Gunderman, Annalise",
+      "Vermeire, Abi",
+      "Pelletier, Zoey",
+      "Tingen, Casey"
+    ],
+    "time": 135.49,
+    "date": "2023-07-17",
+    "meet": "GLT vs EH",
+    "dq": false,
+    "season": "2023",
+    "sourcePdf": "data-source-pdfs/2023/2023_Edgehill_Eels_at_Typhoons_07_17_2023___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  }
+]

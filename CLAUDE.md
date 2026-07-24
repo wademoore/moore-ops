@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 419+ passing
+- Run npm test after changes — must stay at 430+ passing
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
 
@@ -88,7 +88,22 @@ ESM script; parses SwimTopia Meet Maestro PDF results into the v2 JSON schema. K
 - **CommonJS interop:** `pdf-parse` is a CommonJS module loaded via `createRequire` from ESM context.
 
 ### docs/data-reload/reload-manifest.json
-Season-keyed object (`"2022"` / `"2023"` / `"2024"` / `"2025"` / `"2026"`), each holding an array of that season's meet entries. Per-entry fields: `season`, `date`, `meetSlug`, `teams`, `division`, `course`, `sourcePdfPath`, `pdfAvailable`, `parsedIntoV2`, `rowCountExpected`, `rowCountParsed`, `plausibilityFlags` (count), `notes`. The 2026 array has 54 entries, all `parsedIntoV2: true`. The 2022–2025 arrays are empty pending the history reload.
+Season-keyed object (`"2022"` / `"2023"` / `"2024"` / `"2025"` / `"2026"`), each holding an array of that season's meet entries. Per-entry fields: `season`, `date`, `meetSlug`, `teams`, `division`, `course`, `sourcePdfPath`, `pdfAvailable`, `parsedIntoV2`, `rowCountExpected`, `rowCountParsed`, `plausibilityFlags` (count), `notes`. The 2026 array has 54 entries, all `parsedIntoV2: true`. The 2022–2025 arrays each have 1 trial entry (see History Parser Extensions below); remaining history entries to be added in a future batch task.
+
+### History Parser Extensions (July 2026 — trial phase)
+Four extensions to `scripts/pdf-reload-parser.mjs` enable parsing of 2022–2025 PDFs:
+
+1. **Null-byte colon preprocessing** — 2022–2024 PDFs use U+0000 instead of `:` in minute-format times. Preprocessing regex `(\d)\x00(\d{2}\.\d{2})` normalizes before row matching. No-op on 2025/2026 PDFs. `nullByteCorrections` count is printed in HISTORY EXTENSION DIAGNOSTICS.
+2. **Historical EXH format (m4)** — `X Last, First EXH  age  TEAM  seed  official` rows. Official may be a time (→ `exhibition: true, dq: false`), DQ/NS/DNF (→ `exhibition: true, dq: true`), or SCR (→ `scrSkip: true`, logged and skipped).
+3. **Non-scoring finisher (m5)** — `--` row where the official is a numeric time (not DQ/NS/DNF/SCR). Captured as `dq: false, time: <official>, nonScoringFinisher: true`; plausibilityFlag `'non-scoring-finisher'` applied.
+4. **SCR handling** — `SCR` added to m3 (and m4) alternation. Returns `{ scrSkip: true }`; caller logs and skips with a parse warning.
+
+**Name-wrap limitation:** Long names that wrap across two PDF lines (e.g. `X Waldron-Kolloff, Ella Rea` / `14 QL  1:38.50 1:40.45`) are not yet stitched — `tryWrapStitch` doesn't handle X-prefix. These appear as "Unmatched X prefix" parse warnings. Expected count: ~3 per meet with a very long hyphenated name.
+
+**Trial output (3 meets):**
+- `2022-06-13-ql-at-wt`: 382 rows (371 ind + 11 relay), 178 null-byte corrections, 182 EXH ind, 3 EXH relay, 0 NSF, 3 name-wrap warnings
+- `2023-07-17-eh-at-glt`: 307 rows (299 ind + 8 relay), 137 null-byte corrections, 116 EXH ind, 0 EXH relay, 6 NSF, 5 name-wrap warnings, 1 SCR skip
+- `2025-07-14-wt-at-km`: 552 rows (all ind, 0 relay), 0 null-byte corrections, 158 EXH ind, 164 NSF, 0 warnings — **⚠ 0 relay rows needs PDF spot-check**
 
 ### v2 vs v1 file summary
 | File | Rows | Notes |
@@ -181,7 +196,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-**✓ 452 unit tests passing, 0 failing (current baseline as of July 2026 — 430 post ageGroup fix, +12 from fractional-points / 1-tab relay / DQ-handling fixes, +10 from FIX 1 Unicode names / FIX 2 multi-line wrap / FIX 3 relay NT)**
+**✓ 466 unit tests passing, 0 failing (current baseline as of July 2026 — 430 post ageGroup fix, +12 from fractional-points / 1-tab relay / DQ-handling fixes, +10 from FIX 1 Unicode names / FIX 2 multi-line wrap / FIX 3 relay NT, +14 from HIST EXT null-byte / EXH / non-scoring-finisher / SCR + pre-existing double-quote name fix)**
 
 Run via: `npm test` (uses Node's built-in `node:test` runner).
 
@@ -236,7 +251,7 @@ Coder mode must keep tests at 430+. If the number changes, the Documenter should
 - **Reviewer requested full `parseEventDate` body for both branches (all-day and timed) to confirm both anchor consistently on local-midnight-of-ET-date** — not yet explicitly pasted/confirmed across three review passes; low risk given tests pass, but flagged as an open verification item.
 - **Myles `tryQualify`/`tryNearMiss` calls use hardcoded `'9-10'` age-group literal** — unlike Ophelia, which uses the `opheliaAG(event)` function to derive the correct bracket per event. Pre-existing; flagged by Reviewer during the original "first time ever" feature review but not yet cleaned up. Low priority — Myles is only in one bracket for the foreseeable current season so no bug has been observed, but it's a latent inconsistency. Fix whenever `check.js` is next touched for an unrelated reason.
 - **No regression test coverage for boundary-tie near-miss behavior** — the July 2026 `.slice(0,10)` fix in both `waves-team-record-check/check.js` and `waves-champs-qualifier/check.js` (Block 3) has no unit test exercising the tie-at-boundary case specifically. Neither script has any test coverage at all (they're run via live data only). If either script is next touched for another reason, a test that seeds exactly 11 near-miss entries where entries 10 and 11 share the same gap value — and asserts all 11 appear in the output — would lock in this behavior so it can't silently regress.
-- **2022–2025 season history not yet rebuilt into v2** — `league-results-history.json` and `relay-results-history.json` remain as v1 files with no provenance fields. Rebuilding them into a v2 schema (`league-results-history-v2.json`, `relay-results-history-v2.json`) is the next major data task after the current-season reload.
+- **2022–2025 season history trial parse complete; bulk batch not yet run** — Parser extensions for 2022–2025 (null-byte, EXH, NSF, SCR) are implemented and trialled on 3 meets. The bulk add of remaining ~205 meets to the manifest and a full historical batch parse is the next task (pending Reviewer approval of the trial output). `league-results-history-v2.json` and `relay-results-history-v2.json` currently hold only the 3 trial meets.
 - **Full v1→v2 cutover not yet scoped** — the dashboard, daily digest builder, and `swimParser.js` all remain on v1 data files. A full cutover is a separate, larger, not-yet-scoped future task. The repoint of `waves-champs-qualifier` and `waves-team-record-check` to v2 is explicitly not this cutover.
 - **`waves-champs-qualifier` "new this week" logic has no persistent memory** — the delta is purely date-anchored against `WEEK_DATE`. If a weekly run is skipped (e.g. July 13 results were never posted before advancing the anchor to July 20), qualifiers from the skipped week fall through silently — they appear in the full bracket list but not in "new this week." Not urgent while no public posts are being made (system is being built ahead of next season), but worth addressing before active use.
 - **`moore-ops-updater` skill authorized-file list should formally include v2 files** — `league-results-v2.json` and `relay-results-v2.json` are not in the Updater skill's authorized-edit table. Any v2 edits (e.g. `verifiedAgainst` backfills) currently require explicit per-session scoping. Low priority while `scripts/pdf-reload-parser.mjs` is the primary write path, but should be added before v2 becomes the primary Updater target.
