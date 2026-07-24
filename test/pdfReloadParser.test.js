@@ -406,3 +406,28 @@ describe('HIST EXT 7 — m4: EXH row with NT official (no time recorded)', () =>
     assert.equal(result.team, 'WGP');
   });
 });
+
+describe('HIST EXT 8 — m4: EXH row with parenthetical nickname in first name', () => {
+  it('parenthetical nickname in first name → parses correctly, nickname included in swimmer field', () => {
+    const result = parseIndividualRow('X Holt, Isla (Eye- La) EXH 9 KM NT 1:07.14');
+    assert.ok(result, 'should match m4 with parenthetical first name');
+    assert.equal(result.exhibition, true);
+    assert.equal(result.dq, false);
+    assert.equal(result.swimmer, 'Holt Isla (Eye- La)');
+    assert.equal(result.age, 9);
+    assert.equal(result.team, 'KM');
+    assert.ok(result.time !== null, 'time should be set from official column');
+    assert.equal(result.place, null);
+  });
+
+  it('parenthetical nickname with DQ official → dq: true, time: null', () => {
+    const result = parseIndividualRow('X Holt, Isla (Eye- La) EXH 9 KM NT DQ');
+    assert.ok(result, 'should match m4 with parenthetical first name and DQ');
+    assert.equal(result.exhibition, true);
+    assert.equal(result.dq, true);
+    assert.equal(result.time, null);
+    assert.equal(result.swimmer, 'Holt Isla (Eye- La)');
+    assert.equal(result.age, 9);
+    assert.equal(result.team, 'KM');
+  });
+});

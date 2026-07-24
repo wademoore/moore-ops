@@ -177,6 +177,7 @@ function isSkipLine(line) {
   if (/^Results\s/i.test(line)) return true; // "Results \t2026 Meet Name \tPage N of M"
   if (/^SwimTopia/i.test(line)) return true; // SwimTopia Meet Maestro footer
   if (/^--\s+\d+\s+of\s+\d+\s+--$/.test(line)) return true; // "-- N of M --" page indicators (2022–2024)
+  if (/^\d{4}$/.test(line)) return true; // standalone year token (page-header artifact in 2022+ PDFs)
   return false;
 }
 
@@ -198,7 +199,7 @@ function parseIndividualRow(line) {
   // m: normal timed row, including 2026-style EXH suffix.
   // Place may have an asterisk suffix (e.g. “3*”) indicating a tied finish.
   const m = line.match(
-    /^(\d+)\*?\s+([\p{L}\p{M}'.\-“”"]+(?:\s+[\p{L}\p{M}'.\-“”"]+)*),\s*([\p{L}\p{M}'.\-“”"]+(?:\s+[\p{L}\p{M}'.\-“”"]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+(?:\.\d+)?)?\s*$/iu
+    /^(\d+)\*?\s+([\p{L}\p{M}'.\-“”"()]+(?:\s+[\p{L}\p{M}'.\-“”"()]+)*),\s*([\p{L}\p{M}'.\-“”"()]+(?:\s+[\p{L}\p{M}'.\-“”"()]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+(?:\.\d+)?)?\s*$/iu
   );
   if (m) {
     const place       = parseInt(m[1], 10);
@@ -228,7 +229,7 @@ function parseIndividualRow(line) {
 
   // m2: DQ row with official-time column fully omitted.
   const m2 = line.match(
-    /^(\d+)\*?\s+([\p{L}\p{M}'.\-“”"]+(?:\s+[\p{L}\p{M}'.\-“”"]+)*),\s*([\p{L}\p{M}'.\-“”"]+(?:\s+[\p{L}\p{M}'.\-“”"]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+NT\s*$/iu
+    /^(\d+)\*?\s+([\p{L}\p{M}'.\-“”"()]+(?:\s+[\p{L}\p{M}'.\-“”"()]+)*),\s*([\p{L}\p{M}'.\-“”"()]+(?:\s+[\p{L}\p{M}'.\-“”"()]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+NT\s*$/iu
   );
   if (m2) {
     return {
@@ -247,7 +248,7 @@ function parseIndividualRow(line) {
   // Official may be a time (→ dq: false), DQ/NS/DNF (→ dq: true), NT (→ dq: false, time: null),
   // or SCR (→ scrSkip: true — no result to capture).
   const m4 = line.match(
-    /^X\s+([\p{L}\p{M}'.\-”””]+(?:\s+[\p{L}\p{M}'.\-”””]+)*),\s*([\p{L}\p{M}'.\-”””]+(?:\s+[\p{L}\p{M}'.\-”””]+)*)\s+EXH\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(NT|DQ|NS|DNF|SCR|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*$/iu
+    /^X\s+([\p{L}\p{M}'.\-“”"()]+(?:\s+[\p{L}\p{M}'.\-“”"()]+)*),\s*([\p{L}\p{M}'.\-“”"()]+(?:\s+[\p{L}\p{M}'.\-“”"()]+)*)\s+EXH\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(NT|DQ|NS|DNF|SCR|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*$/iu
   );
   if (m4) {
     const officialStr = m4[6].trim().toUpperCase();
@@ -276,7 +277,7 @@ function parseIndividualRow(line) {
   // SCR = scratch (swimmer withdrew before the event — no official time).
   // SCR returns { scrSkip: true }; caller must log and skip without capturing a row.
   const m3 = line.match(
-    /^--\s+([\p{L}\p{M}'.\-“”"]+(?:\s+[\p{L}\p{M}'.\-“”"]+)*),\s*([\p{L}\p{M}'.\-“”"]+(?:\s+[\p{L}\p{M}'.\-“”"]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|NS|DNF|SCR)\s*$/iu
+    /^--\s+([\p{L}\p{M}'.\-“”"()]+(?:\s+[\p{L}\p{M}'.\-“”"()]+)*),\s*([\p{L}\p{M}'.\-“”"()]+(?:\s+[\p{L}\p{M}'.\-“”"()]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|NS|DNF|SCR)\s*$/iu
   );
   if (m3) {
     if (m3[5].toUpperCase() === 'SCR') {
@@ -302,7 +303,7 @@ function parseIndividualRow(line) {
   // Swimmer competed and received a time but was awarded no place/points.
   // Captured as dq: false with nonScoringFinisher: true (caller adds plausibility flag).
   const m5 = line.match(
-    /^--\s+([\p{L}\p{M}'.\-“”"]+(?:\s+[\p{L}\p{M}'.\-“”"]+)*),\s*([\p{L}\p{M}'.\-“”"]+(?:\s+[\p{L}\p{M}'.\-“”"]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*$/iu
+    /^--\s+([\p{L}\p{M}'.\-“”"()]+(?:\s+[\p{L}\p{M}'.\-“”"()]+)*),\s*([\p{L}\p{M}'.\-“”"()]+(?:\s+[\p{L}\p{M}'.\-“”"()]+)*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*$/iu
   );
   if (m5) {
     return {
