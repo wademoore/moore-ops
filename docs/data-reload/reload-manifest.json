@@ -1839,7 +1839,962 @@
       "notes": ""
     }
   ],
-  "2024": [],
+  "2024": [
+    {
+      "season": "2024",
+      "date": "2024-06-17",
+      "meetSlug": "2024-06-17-fdc-at-eh",
+      "teams": [
+        "EH",
+        "FDC"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Ford's_Colony_at_Edgehill_Eels_06_17_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 530,
+      "plausibilityFlags": 8,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-17",
+      "meetSlug": "2024-06-17-ftc-at-wc",
+      "teams": [
+        "WC",
+        "FTC"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_First_Colony_at_WCP_Manta_Rays_06_17_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 483,
+      "plausibilityFlags": 2,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-17",
+      "meetSlug": "2024-06-17-glt-at-gs",
+      "teams": [
+        "GS",
+        "GLT"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Typhoons_at_Gators_06_17_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 340,
+      "plausibilityFlags": 7,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-17",
+      "meetSlug": "2024-06-17-km-at-ps",
+      "teams": [
+        "PS",
+        "KM"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Kingsmill_Sharks_at_Seastars_06_17_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 433,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-17",
+      "meetSlug": "2024-06-17-kp-at-ip",
+      "teams": [
+        "IP",
+        "KP"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Kingspoint_at_IP_Stingrays_06_17_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 245,
+      "plausibilityFlags": 11,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-17",
+      "meetSlug": "2024-06-17-ql-at-wgpra",
+      "teams": [
+        "WGPRA",
+        "QL"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Queens_Lake_at_WGP_WAVES_06_17_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 253,
+      "plausibilityFlags": 62,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-17",
+      "meetSlug": "2024-06-17-sh-at-wf",
+      "teams": [
+        "WF",
+        "SH"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Splash_at_Windsor_Forest_06_17_2024___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 284,
+      "plausibilityFlags": 38,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-17",
+      "meetSlug": "2024-06-17-vg-at-kw",
+      "teams": [
+        "KW",
+        "VG"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 448,
+      "plausibilityFlags": 197,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-24",
+      "meetSlug": "2024-06-24-eh-at-kp",
+      "teams": [
+        "KP",
+        "EH"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Edgehill_Eels_at_Kingspoint_06_24_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 364,
+      "plausibilityFlags": 2,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-24",
+      "meetSlug": "2024-06-24-ftc-at-km",
+      "teams": [
+        "KM",
+        "FTC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_First_Colony_at_Kingsmill_Sharks_06_24_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 678,
+      "plausibilityFlags": 408,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-24",
+      "meetSlug": "2024-06-24-gs-at-fdc",
+      "teams": [
+        "FDC",
+        "GS"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Gators_at_Ford's_Colony_06_24_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 570,
+      "plausibilityFlags": 6,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-24",
+      "meetSlug": "2024-06-24-ip-at-sh",
+      "teams": [
+        "SH",
+        "IP"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_IP_Stingrays_at_Splash_06_24_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 206,
+      "plausibilityFlags": 16,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-24",
+      "meetSlug": "2024-06-24-kw-at-wf",
+      "teams": [
+        "WF",
+        "KW"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Kingswood_Klams_at_Windsor_Forest_06_24_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 526,
+      "plausibilityFlags": 232,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-24",
+      "meetSlug": "2024-06-24-ps-at-ql",
+      "teams": [
+        "QL",
+        "PS"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Seastars_at_Queens_Lake_06_24_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 428,
+      "plausibilityFlags": 3,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-24",
+      "meetSlug": "2024-06-24-vw-at-vg",
+      "teams": [
+        "VG",
+        "VW"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 153,
+      "plausibilityFlags": 6,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-24",
+      "meetSlug": "2024-06-24-wc-at-wt",
+      "teams": [
+        "WT",
+        "WC"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_WCP_Manta_Rays_at_Wellington_Waves_06_24_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 377,
+      "plausibilityFlags": 115,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-06-24",
+      "meetSlug": "2024-06-24-wgpra-at-glt",
+      "teams": [
+        "GLT",
+        "WGPRA"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_WGP_WAVES_at_Typhoons_06_24_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 233,
+      "plausibilityFlags": 3,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-01",
+      "meetSlug": "2024-07-01-fdc-at-kw",
+      "teams": [
+        "KW",
+        "FDC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Ford's_Colony_at_Kingswood_Klams_07_01_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 667,
+      "plausibilityFlags": 203,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-01",
+      "meetSlug": "2024-07-01-gs-at-ftc",
+      "teams": [
+        "FTC",
+        "GS"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Gators_at_First_Colony_07_01_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 596,
+      "plausibilityFlags": 262,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-01",
+      "meetSlug": "2024-07-01-ip-at-glt",
+      "teams": [
+        "GLT",
+        "IP"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_IP_Stingrays_at_Typhoons_07_01_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 224,
+      "plausibilityFlags": 19,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-01",
+      "meetSlug": "2024-07-01-ps-at-wc",
+      "teams": [
+        "WC",
+        "PS"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Powhatan_Secondary_at_WCP_Manta_Rays_07_01_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 329,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-01",
+      "meetSlug": "2024-07-01-ql-at-kp",
+      "teams": [
+        "KP",
+        "QL"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Queens_Lake_at_Kingspoint_07_01_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 363,
+      "plausibilityFlags": 2,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-01",
+      "meetSlug": "2024-07-01-sh-at-vg",
+      "teams": [
+        "VG",
+        "SH"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 210,
+      "plausibilityFlags": 23,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-01",
+      "meetSlug": "2024-07-01-wf-at-km",
+      "teams": [
+        "KM",
+        "WF"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Windsor_Forest_at_Kingsmill_Sharks_07_01_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 516,
+      "plausibilityFlags": 212,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-01",
+      "meetSlug": "2024-07-01-wgpra-at-vw",
+      "teams": [
+        "VW",
+        "WGPRA"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_WGP_WAVES_at_VW_Kraken_07_01_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 150,
+      "plausibilityFlags": 3,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-01",
+      "meetSlug": "2024-07-01-wt-at-eh",
+      "teams": [
+        "EH",
+        "WT"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Wellington_Waves_at_Edgehill_Eels_07_01_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 485,
+      "plausibilityFlags": 111,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-08",
+      "meetSlug": "2024-07-08-eh-at-ps",
+      "teams": [
+        "PS",
+        "EH"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Edgehill_Eels_at_Seastars_07_08_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 406,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-08",
+      "meetSlug": "2024-07-08-fdc-at-ftc",
+      "teams": [
+        "FTC",
+        "FDC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Ford's_Colony_at_First_Colony_07_08_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 723,
+      "plausibilityFlags": 270,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-08",
+      "meetSlug": "2024-07-08-glt-at-sh",
+      "teams": [
+        "SH",
+        "GLT"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Typhoons_at_Splash_07_08_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 255,
+      "plausibilityFlags": 53,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-08",
+      "meetSlug": "2024-07-08-km-at-kw",
+      "teams": [
+        "KW",
+        "KM"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Kingsmill_Sharks_at_Kingswood_Klams_07_08_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 589,
+      "plausibilityFlags": 328,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-08",
+      "meetSlug": "2024-07-08-kp-at-wt",
+      "teams": [
+        "WT",
+        "KP"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Kingspoint_at_Wellington_Waves_07_08_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 358,
+      "plausibilityFlags": 104,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-08",
+      "meetSlug": "2024-07-08-vg-at-wgpra",
+      "teams": [
+        "WGPRA",
+        "VG"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Village_Green_at_WGP_WAVES_07_08_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 253,
+      "plausibilityFlags": 3,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-08",
+      "meetSlug": "2024-07-08-vw-at-ip",
+      "teams": [
+        "IP",
+        "VW"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_VW_Kraken_at_IP_Stingrays_07_08_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 153,
+      "plausibilityFlags": 34,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-08",
+      "meetSlug": "2024-07-08-wc-at-ql",
+      "teams": [
+        "QL",
+        "WC"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_WCP_Manta_Rays_at_Queens_Lake_07_08_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 330,
+      "plausibilityFlags": 1,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-08",
+      "meetSlug": "2024-07-08-wf-at-gs",
+      "teams": [
+        "GS",
+        "WF"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Windsor_Forest_at_Gators_07_08_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 450,
+      "plausibilityFlags": 87,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-15",
+      "meetSlug": "2024-07-15-ftc-at-wf",
+      "teams": [
+        "WF",
+        "FTC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_First_Colony_at_Windsor_Forest_07_15_2024___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 604,
+      "plausibilityFlags": 343,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-15",
+      "meetSlug": "2024-07-15-glt-at-vw",
+      "teams": [
+        "VW",
+        "GLT"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Typhoons_at_VW_Kraken_07_15_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 168,
+      "plausibilityFlags": 13,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-15",
+      "meetSlug": "2024-07-15-ip-at-vg",
+      "teams": [
+        "VG",
+        "IP"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 235,
+      "plausibilityFlags": 21,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-15",
+      "meetSlug": "2024-07-15-km-at-fdc",
+      "teams": [
+        "FDC",
+        "KM"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Kingsmill_Sharks_at_Ford's_Colony_07_15_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 646,
+      "plausibilityFlags": 168,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-15",
+      "meetSlug": "2024-07-15-kw-at-gs",
+      "teams": [
+        "GS",
+        "KW"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Kingswood_Klams_at_Gators_07_15_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 587,
+      "plausibilityFlags": 314,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-15",
+      "meetSlug": "2024-07-15-ps-at-wt",
+      "teams": [
+        "WT",
+        "PS"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Seastars_at_Wellington_Waves_07_15_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 428,
+      "plausibilityFlags": 119,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-15",
+      "meetSlug": "2024-07-15-ql-at-eh",
+      "teams": [
+        "EH",
+        "QL"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Queens_Lake_at_Edgehill_Eels_07_15_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 436,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-15",
+      "meetSlug": "2024-07-15-sh-at-wgpra",
+      "teams": [
+        "WGPRA",
+        "SH"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Splash_at_WGP_WAVES_07_15_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 235,
+      "plausibilityFlags": 2,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-15",
+      "meetSlug": "2024-07-15-wc-at-kp",
+      "teams": [
+        "KP",
+        "WC"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_WCP_Manta_Rays_at_Kingspoint_07_15_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 328,
+      "plausibilityFlags": 4,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-22",
+      "meetSlug": "2024-07-22-eh-at-wc",
+      "teams": [
+        "WC",
+        "EH"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Edgehill_at_WCP_Manta_Rays_07_22_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 347,
+      "plausibilityFlags": 6,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-22",
+      "meetSlug": "2024-07-22-gs-at-km",
+      "teams": [
+        "KM",
+        "GS"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Gators_at_Kingsmill_Sharks_07_22_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 528,
+      "plausibilityFlags": 274,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-22",
+      "meetSlug": "2024-07-22-kp-at-ps",
+      "teams": [
+        "PS",
+        "KP"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Kingspoint_at_Seastars_07_22_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 344,
+      "plausibilityFlags": 5,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-22",
+      "meetSlug": "2024-07-22-kw-at-ftc",
+      "teams": [
+        "FTC",
+        "KW"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 767,
+      "plausibilityFlags": 465,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-22",
+      "meetSlug": "2024-07-22-vg-at-glt",
+      "teams": [
+        "GLT",
+        "VG"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Village_Green_at_Typhoons_07_22_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 206,
+      "plausibilityFlags": 3,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-22",
+      "meetSlug": "2024-07-22-vw-at-sh",
+      "teams": [
+        "SH",
+        "VW"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_VW_Kraken_at_Splash_07_22_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 184,
+      "plausibilityFlags": 9,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-22",
+      "meetSlug": "2024-07-22-wf-at-fdc",
+      "teams": [
+        "FDC",
+        "WF"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Windsor_Forest_at_Ford's_Colony_07_22_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 577,
+      "plausibilityFlags": 97,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-22",
+      "meetSlug": "2024-07-22-wgpra-at-ip",
+      "teams": [
+        "IP",
+        "WGPRA"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_WGP_WAVES_at_IP_Stingrays_07_22_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 247,
+      "plausibilityFlags": 32,
+      "notes": ""
+    },
+    {
+      "season": "2024",
+      "date": "2024-07-22",
+      "meetSlug": "2024-07-22-wt-at-ql",
+      "teams": [
+        "QL",
+        "WT"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2024/2024_Wellington_Waves_at_Queens_Lake_07_22_2024___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 506,
+      "plausibilityFlags": 77,
+      "notes": ""
+    }
+  ],
   "2025": [
     {
       "season": "2025",
