@@ -87,3 +87,54 @@ Open items carried forward from this session:
 - Known open caveat carried forward: The 2026-06-22 KW-vs-QL meet has zero relay rows in `relay-results-v2.json` with no documented explanation (unlike other zero-relay meets, which carry manifest notes). The script treats that meet's relay totals as unknown rather than zero in both directions. If a future re-parse of the KW June 22 PDF resolves this, the KW meet score and WT's simulated record for that meet would change.
 
 - Standings caveat documented inline in script output: the other five Division 1 teams' win-loss records reflect their actual games against the real QL, not a hypothetical WT — the simulation does not recursively re-simulate the full division.
+
+---
+
+## 2026-07-24
+
+**Session: First Editorial Meeting — WT vs WF (2026-07-20, season finale)**
+
+- Ran the first full Editorial Meeting (Documenter role) for the most recently completed meet: WT vs WF on 2026-07-20, the Division 2 regular season finale.
+- Read CLAUDE.md, all required editorial docs (PRINCIPLES.md, 01–07, 10, 12), PROJECT_LOG.md. No prior Editorial Meeting artifact existed (meetings/ directory did not exist).
+- Ran Part 1 Data Validation: confirmed league-results-v2.json (20,132 rows), relay-results-v2.json (455 rows), waves-season.json (all 15 dual meets scored through 7/20), pb-records.json (most recent date: 7/20), swim-results.json (6 rows from 7/20). VPSU rankings stale (asOf 2026-07-13). v2 history: 2022+2023+2025 individual (22,106 rows), 2022+2023 relay only (517 rows). 2024 individual and 2025 relay history not yet loaded.
+- Key spot-check finding: No formal spot-check manifest found in repo. `verifiedAgainst` in v2 rows shows only 3 verified rows (2 from 6/22, 1 from 7/13). Zero from 7/20. Case (b) applied: MEDIUM confidence cap on 7/20 meet-specific findings.
+- Ran waves-team-record-check and waves-champs-qualifier committed scripts fresh.
+- Key editorial findings this meet:
+  - 4 team records broken on 7/20: Christian Hunley broke Boys 8&Under 25m Butterfly (19.52 vs 21.96 from 2014, 12 years) and 25m Breaststroke (24.62 vs 26.21 from 2025); Sam Shnowske broke Boys 13-14 50m Butterfly (28.74 vs 30.37 from 2018) and 50m Freestyle (26.16 vs 27.27 from 2018).
+  - Season total: 9 team records broken in 2026 by 4 swimmers (Shnowske ×4, Swartzel ×2, Hunley C. ×2, Buzek ×1).
+  - WT finishes Division 2 regular season 5-0 (standings confirmed from waves-season.json: WF 4-1, EH 3-2, WC 2-3, PS 1-4, WPD 0-5).
+  - Historical context: WT went 5-0 in Div 2 in 2024, 0-5 in Div 1 in 2025, 5-0 in Div 2 in 2026.
+  - 13 new champs qualifiers at 7/20 (season total: 125 spots / 45 swimmers). 3 first-time-ever: Coen Greer, Nate Burnette, Ben Cox.
+  - Eleanor Wojtan missed Girls 7-8 25m Freestyle standard by 0.09s — narrowest near-miss of the season.
+  - EXH anomaly: manifest notes Holley Scarlett (WT) as exhibition swimmer confirmed in 7/20 PDF, but 0 exhibition rows in v2 for WT on 7/20. Data integrity flag; does not affect publishing.
+- Created `docs/editorial/meetings/` directory; committed artifact: `docs/editorial/meetings/editorial-meeting-2026-07-20.md`.
+- Open items carried forward:
+  - wf-at-wt 7/20 PDF spot-check status unconfirmed → Publisher to verify.
+  - VPSU rankings need refresh to cover 7/20 results.
+  - Championship Meet date not in waves-season.json → Publisher to provide.
+  - Holley Scarlett exhibition row missing from v2 → Publisher/Updater to investigate.
+
+**Session: 2027 Division 1 roster-aging projection — build and validation**
+
+- Built `.claude/skills/waves-div1-2027-projection/project.js`, a forward-looking projection answering "what would the 2027 VPSU Division 1 season look like with WT replacing QL, given every swimmer ages one year?" Distinct from the earlier retrospective `waves-div1-simulation` in a fundamental way: no real future data exists, so this uses frozen 2026 personal-best times (no improvement modeled) and a hypothetical 15-matchup round robin with no real calendar dates. All 6 projected 2027 Div 1 teams' rosters (FTC, FDC, GS, KM, KW, WT) were aged one year via VPSU's official age-bracket table; swimmers aging past 18 were excluded.
+
+- Projected standings (run 2026-07-24; subject to change if source 2026 data changes, or once a future historical-improvement-informed version replaces the frozen-time baseline):
+
+  | Rank | Team | W | L | T | Points |
+  |------|------|---|---|---|--------|
+  | 1 | KW | 5 | 0 | 0 | 1675.5 |
+  | 2 | GS | 4 | 1 | 0 | 1689 |
+  | 3 | FTC | 3 | 2 | 0 | 1499 |
+  | 4 | FDC | 2 | 3 | 0 | 1433 |
+  | 5 | KM | 1 | 4 | 0 | 1229 |
+  | 6 | WT | 0 | 5 | 0 | 1117.5 |
+
+  Returning roster sizes (excluding aged-out swimmers): FDC 142 (3 aged out), FTC 136 (2 aged out), GS 98 (2 aged out), KM 129 (2 aged out), KW 136 (2 aged out), WT 119 (3 aged out).
+
+- **Key finding — WT's last-place finish is a depth problem, not an age-out problem.** A follow-up investigation (prompted by the fact that WT's two strongest 15-18 swimmers, Hibbard Mason and Anna Shnowske, both aged out) found that only ~17% of WT's total scoring deficit (110 of 647 individual points) traces to the 15-18 brackets. Both 15-18 brackets remain competitive: Sam Shnowske moved up from Boys 13-14 and became WT's top Men 15-18 scorer, winning that bracket outright against FTC and KM; Buzek Jaclynn and Haas Natalie lead a 6-swimmer-deep Women 15-18 roster that won its bracket 38–7 against FDC. The remaining 83% of the deficit is spread across the middle brackets (9-10 through 13-14), correlating with WT's smaller returning roster (119) versus the other five teams (98–142). Notably, GS finished 2nd despite having the smallest roster (98) — flagged as a loose thread worth understanding later, not yet investigated.
+
+- Two script elevations above the spec worth noting: (1) a relay eligibility flags section that marks any relay bracket where the team has no individually-aged-eligible returning swimmer — no brackets triggered this flag in this run; (2) a full age-inconsistency report listing every (swimmer, team) pair where modal-age resolution fired, with complete row-count distribution, so near-even splits are distinguishable from noise.
+
+- Known caveats carried forward: no incoming/new 2027 swimmers modeled — returning roster only. No real 2027 schedule — 15-matchup round robin is hypothetical. Times frozen at 2026 personal best, no improvement projected — this is explicitly a structural-reshuffle-only baseline. Relay eligibility not re-evaluated post-aging (flagged but not fixed by the script).
+
+- Test coverage: 85 unit tests added across all 14 testable exported functions. Suite at 594 passing, 0 failing.
