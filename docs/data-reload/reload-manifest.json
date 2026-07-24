@@ -174,10 +174,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_Ford's_Colony_at_First_Colony_06_20_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 728,
+      "plausibilityFlags": 417,
       "notes": ""
     },
     {
@@ -192,10 +192,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_Kingsmill_Sharks_at_Queens_Lake_06_20_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 572,
+      "plausibilityFlags": 0,
       "notes": ""
     },
     {
@@ -210,10 +210,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/KW_at_GS_06_20_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 638,
+      "plausibilityFlags": 178,
       "notes": ""
     },
     {
@@ -228,10 +228,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_EH_at_VW_06_20_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 217,
+      "plausibilityFlags": 0,
       "notes": ""
     },
     {
@@ -246,10 +246,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_IP_Stingrays_at_Village_Green_06_20_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 172,
+      "plausibilityFlags": 2,
       "notes": ""
     },
     {
@@ -264,10 +264,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_Splash_at_WGP_WAVES_06_20_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 291,
+      "plausibilityFlags": 48,
       "notes": "Splash = SH."
     },
     {
@@ -282,10 +282,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_Kingspoint_at_Typhoons_06_20_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 315,
+      "plausibilityFlags": 12,
       "notes": "Typhoons = GLT."
     },
     {
@@ -300,10 +300,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_Seastars_at_WCP_Manta_Rays___SUPERHERO_NIGHT___06_20_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 376,
+      "plausibilityFlags": 2,
       "notes": "Seastars = PS; WCP = WC."
     },
     {
@@ -318,10 +318,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_Wellington_Waves_at_Windsor_Forest_06_20_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 377,
+      "plausibilityFlags": 9,
       "notes": ""
     },
     {
