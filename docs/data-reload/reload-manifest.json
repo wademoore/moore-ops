@@ -336,10 +336,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_FTC_at_KM_06_27_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 685,
+      "plausibilityFlags": 7,
       "notes": ""
     },
     {
@@ -354,10 +354,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_GS_at_FDC_06_27_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 608,
+      "plausibilityFlags": 168,
       "notes": ""
     },
     {
@@ -372,10 +372,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_QL_vs_KW_06_27_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 436,
+      "plausibilityFlags": 190,
       "notes": "Direction resolved from PDF header ('Queens Lake at Kingswood Klams'); filename says 'vs.' but PDF unambiguous."
     },
     {
@@ -390,10 +390,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_IP_at_EH_06_27_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 246,
+      "plausibilityFlags": 1,
       "notes": ""
     },
     {
@@ -408,10 +408,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_VG_at_SH_06_27_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 259,
+      "plausibilityFlags": 39,
       "notes": ""
     },
     {
@@ -426,10 +426,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_WGP_at_VW_06_27_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 180,
+      "plausibilityFlags": 1,
       "notes": ""
     },
     {
@@ -444,10 +444,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_WT_at_GLT_06_27_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 328,
+      "plausibilityFlags": 0,
       "notes": ""
     },
     {
@@ -462,10 +462,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/2022_WF_at_PS_06_27_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 310,
+      "plausibilityFlags": 31,
       "notes": ""
     },
     {
@@ -480,10 +480,10 @@
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2022/KP_vs._WCP_06_28_2022___Meet_Maestro™.pdf",
       "pdfAvailable": true,
-      "parsedIntoV2": false,
+      "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": null,
-      "plausibilityFlags": null,
+      "rowCountParsed": 361,
+      "plausibilityFlags": 0,
       "notes": "Tuesday makeup; waves-season.json records under 2022-06-27. PDF confirms 06/28. WCP = WC; KP is home."
     },
     {
