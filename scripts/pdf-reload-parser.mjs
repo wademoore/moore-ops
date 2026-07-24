@@ -518,8 +518,8 @@ const FULL_RESULT_END = /[A-Z]{2,6}\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(?:DQ|
 function tryWrapStitch(lines, i) {
   const line = lines[i];
 
-  // Line must start with a place number or “--” (result-entry prefix).
-  const headMatch = line.match(/^(\d+\*?|--)\s+([\s\S]+)/);
+  // Line must start with a place number, “--”, or “X” (EXH result-entry prefix).
+  const headMatch = line.match(/^(\d+\*?|--|X)\s+([\s\S]+)/);
   if (!headMatch) return null;
 
   const prefix    = headMatch[1];

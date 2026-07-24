@@ -360,3 +360,24 @@ describe('HIST EXT 5 — relay EXH row and relay -- DQ row', () => {
     assert.ok(!result.exhibitionRelay, 'should not be exhibitionRelay');
   });
 });
+
+describe('HIST EXT 6 — tryWrapStitch X-prefix wrap', () => {
+  it('X-prefix name-only + EXH-alone + data line → stitched and parseable as EXH row', () => {
+    const lines = [
+      'X Waldron-Kolloff, Ella Rea',
+      'EXH',
+      '14 QL \t1:38.50 1:40.45',
+    ];
+    const result = tryWrapStitch(lines, 0);
+    assert.ok(result, 'should detect X-prefix wrap');
+    assert.equal(result.nextI, 2);
+    const parsed = parseIndividualRow(result.stitched);
+    assert.ok(parsed, 'stitched X EXH line should parse via m4');
+    assert.equal(parsed.exhibition, true);
+    assert.equal(parsed.swimmer, 'Waldron-Kolloff Ella Rea');
+    assert.equal(parsed.team, 'QL');
+    assert.equal(parsed.age, 14);
+    assert.equal(parsed.dq, false);
+    assert.ok(parsed.time !== null, 'time should be set');
+  });
+});

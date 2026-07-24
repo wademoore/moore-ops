@@ -14,7 +14,7 @@
       "pdfAvailable": true,
       "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": 382,
+      "rowCountParsed": 385,
       "plausibilityFlags": 3,
       "notes": "Trial meet: null-byte colon + EXH format validation."
     }
@@ -34,7 +34,7 @@
       "pdfAvailable": true,
       "parsedIntoV2": true,
       "rowCountExpected": null,
-      "rowCountParsed": 307,
+      "rowCountParsed": 312,
       "plausibilityFlags": 6,
       "notes": "Trial meet: null-byte colon + EXH format validation."
     }

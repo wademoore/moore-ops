@@ -98,12 +98,12 @@ Four extensions to `scripts/pdf-reload-parser.mjs` enable parsing of 2022–2025
 3. **Non-scoring finisher (m5)** — `--` row where the official is a numeric time (not DQ/NS/DNF/SCR). Captured as `dq: false, time: <official>, nonScoringFinisher: true`; plausibilityFlag `'non-scoring-finisher'` applied.
 4. **SCR handling** — `SCR` added to m3 (and m4) alternation. Returns `{ scrSkip: true }`; caller logs and skips with a parse warning.
 
-**Name-wrap limitation:** Long names that wrap across two PDF lines (e.g. `X Waldron-Kolloff, Ella Rea` / `14 QL  1:38.50 1:40.45`) are not yet stitched — `tryWrapStitch` doesn't handle X-prefix. These appear as "Unmatched X prefix" parse warnings. Expected count: ~3 per meet with a very long hyphenated name.
+**Name-wrap fix (HIST EXT 6):** `tryWrapStitch` headMatch regex extended to include `X` prefix (`/^(\d+\*?|--|X)\s+([\s\S]+)/`). Handles the 3-line wrap structure: `X Last, First` / `EXH` / `age TEAM seed official`. Unit test: HIST EXT 6.
 
-**Trial output (3 meets):**
-- `2022-06-13-ql-at-wt`: 382 rows (371 ind + 11 relay), 178 null-byte corrections, 182 EXH ind, 3 EXH relay, 0 NSF, 3 name-wrap warnings
-- `2023-07-17-eh-at-glt`: 307 rows (299 ind + 8 relay), 137 null-byte corrections, 116 EXH ind, 0 EXH relay, 6 NSF, 5 name-wrap warnings, 1 SCR skip
-- `2025-07-14-wt-at-km`: 552 rows (all ind, 0 relay), 0 null-byte corrections, 158 EXH ind, 164 NSF, 0 warnings — **⚠ 0 relay rows needs PDF spot-check**
+**Trial output (3 meets — after X-wrap fix):**
+- `2022-06-13-ql-at-wt`: 385 rows (374 ind + 11 relay), 178 null-byte corrections, 185 EXH ind, 3 EXH relay, 0 NSF, 0 parse warnings (was 382 rows, 182 EXH ind, 3 unmatched-X warnings before fix)
+- `2023-07-17-eh-at-glt`: 312 rows (304 ind + 8 relay), 137 null-byte corrections, 121 EXH ind, 0 EXH relay, 6 NSF, 1 SCR skip, 0 unmatched-X warnings (was 307 rows, 116 EXH ind, 5 unmatched-X warnings before fix)
+- `2025-07-14-wt-at-km`: 552 rows (all ind, 0 relay), 0 null-byte corrections, 158 EXH ind, 164 NSF, 0 warnings — **0 relay rows confirmed correct: source PDF contains no relay events (0 "relay" lines in raw text)**
 
 ### v2 vs v1 file summary
 | File | Rows | Notes |
@@ -196,7 +196,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-**✓ 466 unit tests passing, 0 failing (current baseline as of July 2026 — 430 post ageGroup fix, +12 from fractional-points / 1-tab relay / DQ-handling fixes, +10 from FIX 1 Unicode names / FIX 2 multi-line wrap / FIX 3 relay NT, +14 from HIST EXT null-byte / EXH / non-scoring-finisher / SCR + pre-existing double-quote name fix)**
+**✓ 467 unit tests passing, 0 failing (current baseline as of July 2026 — 430 post ageGroup fix, +12 from fractional-points / 1-tab relay / DQ-handling fixes, +10 from FIX 1 Unicode names / FIX 2 multi-line wrap / FIX 3 relay NT, +14 from HIST EXT null-byte / EXH / non-scoring-finisher / SCR + pre-existing double-quote name fix, +1 from HIST EXT 6 X-prefix name-wrap)**
 
 Run via: `npm test` (uses Node's built-in `node:test` runner).
 
