@@ -244,10 +244,10 @@ function parseIndividualRow(line) {
 
   // m4: historical exhibition row format (2022–2025 PDFs).
   // “X Last, First EXH  age  TEAM  seed  official”
-  // Official may be DQ or SCR (exhibition swimmer withdrew or was DQ'd before the event).
-  // When official is SCR, return { scrSkip: true } — no time to capture.
+  // Official may be a time (→ dq: false), DQ/NS/DNF (→ dq: true), NT (→ dq: false, time: null),
+  // or SCR (→ scrSkip: true — no result to capture).
   const m4 = line.match(
-    /^X\s+([\p{L}\p{M}'.\-”””]+(?:\s+[\p{L}\p{M}'.\-”””]+)*),\s*([\p{L}\p{M}'.\-”””]+(?:\s+[\p{L}\p{M}'.\-”””]+)*)\s+EXH\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|NS|DNF|SCR|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*$/iu
+    /^X\s+([\p{L}\p{M}'.\-”””]+(?:\s+[\p{L}\p{M}'.\-”””]+)*),\s*([\p{L}\p{M}'.\-”””]+(?:\s+[\p{L}\p{M}'.\-”””]+)*)\s+EXH\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(NT|DQ|NS|DNF|SCR|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*$/iu
   );
   if (m4) {
     const officialStr = m4[6].trim().toUpperCase();
@@ -260,12 +260,13 @@ function parseIndividualRow(line) {
       };
     }
     const isNoResult = ['DQ', 'NS', 'DNF'].includes(officialStr);
+    const isNoTime   = officialStr === 'NT';
     return {
       swimmer:    `${m4[1].trim()} ${m4[2].trim()}`,
       age:        parseInt(m4[3], 10),
       team:       m4[4].trim().toUpperCase(),
       place:      null,
-      time:       isNoResult ? null : timeToSeconds(officialStr),
+      time:       (isNoResult || isNoTime) ? null : timeToSeconds(officialStr),
       dq:         isNoResult,
       exhibition: true,
     };

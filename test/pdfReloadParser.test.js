@@ -381,3 +381,28 @@ describe('HIST EXT 6 — tryWrapStitch X-prefix wrap', () => {
     assert.ok(parsed.time !== null, 'time should be set');
   });
 });
+
+describe('HIST EXT 7 — m4: EXH row with NT official (no time recorded)', () => {
+  it('EXH row with NT seed and NT official → exhibition: true, dq: false, time: null', () => {
+    const result = parseIndividualRow('X Holley, Moriyah EXH\t7 VG\tNT NT');
+    assert.ok(result, 'should match m4 with NT official');
+    assert.equal(result.exhibition, true);
+    assert.equal(result.dq, false);
+    assert.equal(result.time, null);
+    assert.equal(result.swimmer, 'Holley Moriyah');
+    assert.equal(result.age, 7);
+    assert.equal(result.team, 'VG');
+    assert.equal(result.place, null);
+  });
+
+  it('EXH row with seed time and NT official → exhibition: true, dq: false, time: null', () => {
+    const result = parseIndividualRow('X Moriah, Brinley EXH\t8 WGP\t1:11.55 NT');
+    assert.ok(result, 'should match m4 with seed time but NT official');
+    assert.equal(result.exhibition, true);
+    assert.equal(result.dq, false);
+    assert.equal(result.time, null);
+    assert.equal(result.swimmer, 'Moriah Brinley');
+    assert.equal(result.age, 8);
+    assert.equal(result.team, 'WGP');
+  });
+});
