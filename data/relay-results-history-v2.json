@@ -21933,237 +21933,6 @@
     "plausibilityFlags": []
   },
   {
-    "team": "KW",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ban-Boca, Nicholas",
-      "Watson, Tommy",
-      "Gillespie, Jayden",
-      "Cook, Carter"
-    ],
-    "time": 145.39,
-    "date": "2024-06-17",
-    "meet": "KW vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "KW",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Knick, Nathan",
-      "Howard, Gabriel",
-      "Kaczmarczyk, Reid",
-      "Jaroma, Connor"
-    ],
-    "time": 173.17000000000002,
-    "date": "2024-06-17",
-    "meet": "KW vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "KW",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Walters, Bailey",
-      "Robertson, Caroline",
-      "Mikels, Alana",
-      "Sullivan, Mickie"
-    ],
-    "time": 152.19,
-    "date": "2024-06-17",
-    "meet": "KW vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "KW",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Enzor, Erin",
-      "Harrison, Molly",
-      "Robertson, Logan",
-      "Ban-Boca, Maya"
-    ],
-    "time": 160.39,
-    "date": "2024-06-17",
-    "meet": "KW vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Dennis, Lexie",
-      "Davis, Emma",
-      "Maciejewski, MK",
-      "Herrera, Sofi"
-    ],
-    "time": 202.44,
-    "date": "2024-06-17",
-    "meet": "KW vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "KW",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Reynolds, Eli",
-      "Broderick, Logan",
-      "Pittman, Luke",
-      "Roose, Andy"
-    ],
-    "time": 131.58,
-    "date": "2024-06-17",
-    "meet": "KW vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "KW",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Schniepp, Ruben",
-      "Reynolds, Hunter",
-      "Witkowski, Lucjan",
-      "Broderick, Preston"
-    ],
-    "time": 147.56,
-    "date": "2024-06-17",
-    "meet": "KW vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Moore, Kam",
-      "Sawyer, Gio",
-      "Woodruff, Jacob",
-      "Woodruff, Connor"
-    ],
-    "time": 200.65,
-    "date": "2024-06-17",
-    "meet": "KW vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "KW",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Pittman, Nora",
-      "Bridges, Kenly",
-      "Cumber, Ande",
-      "Gregory, Gracie"
-    ],
-    "time": 140.97,
-    "date": "2024-06-17",
-    "meet": "KW vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "KW",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Emmett, Charlotte",
-      "Pittman, Maggie",
-      "Cook, Elly",
-      "Townsend, Leah"
-    ],
-    "time": 147.94,
-    "date": "2024-06-17",
-    "meet": "KW vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Mobley, Ava",
-      "Kraus, Izzy",
-      "Poole, Emma",
-      "Poole, Abigail"
-    ],
-    "time": 161.25,
-    "date": "2024-06-17",
-    "meet": "KW vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
     "team": "KP",
     "ageGroup": "Boys 9-18",
     "event": "200m Medley Relay",
@@ -23336,134 +23105,6 @@
     "plausibilityFlags": [
       "exhibition-relay"
     ]
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Holley, Misha'el",
-      "Woodruff, Jacob",
-      "Hardy, Brandon",
-      "Davis, Brody"
-    ],
-    "time": 245.28,
-    "date": "2024-06-24",
-    "meet": "VG vs VW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VW",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Carter, Peyton",
-      "Julio, Piper",
-      "Hofer, Jenny",
-      "Jackson, Ava"
-    ],
-    "time": 186.03,
-    "date": "2024-06-24",
-    "meet": "VG vs VW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "McBride, Norah",
-      "Davis, Emma",
-      "Poole, Emma",
-      "Dalton, Aeriana"
-    ],
-    "time": 189.37,
-    "date": "2024-06-24",
-    "meet": "VG vs VW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Moore, Kam",
-      "Sawyer, Gio",
-      "Harrison, Etcher",
-      "McBride, Nolan"
-    ],
-    "time": 182.37,
-    "date": "2024-06-24",
-    "meet": "VG vs VW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VW",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "VanFleet, Uriah",
-      "Carter, Dougie",
-      "Carter, Keenan",
-      "Yager, Aiden"
-    ],
-    "time": 171.9,
-    "date": "2024-06-24",
-    "meet": "VG vs VW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": [
-      "exhibition-relay"
-    ]
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Mobley, Ava",
-      "Kraus, Izzy",
-      "Reynolds, Mya",
-      "Maciejewski, MK"
-    ],
-    "time": 164.57,
-    "date": "2024-06-24",
-    "meet": "VG vs VW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
   },
   {
     "team": "WT",
@@ -25099,219 +24740,6 @@
     "sourceEventNumber": 56,
     "verifiedAgainst": null,
     "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Moore, Kam",
-      "McBride, Nolan",
-      "Harrison, Etcher",
-      "Harrison, Slater"
-    ],
-    "time": 193.13,
-    "date": "2024-07-01",
-    "meet": "VG vs SH",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "SH",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Lapetina, Cooper",
-      "Riley, Nate",
-      "Race, Philip",
-      "Giles, Owen"
-    ],
-    "time": 204.32,
-    "date": "2024-07-01",
-    "meet": "VG vs SH",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "McBride, Norah",
-      "Davis, Emma",
-      "Poole, Emma",
-      "Sawyer, Janaya"
-    ],
-    "time": 188.94,
-    "date": "2024-07-01",
-    "meet": "VG vs SH",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "SH",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "McGrath, Leyla",
-      "Jones, Elliette",
-      "Lapetina, Lucy",
-      "Koch, Mckenna"
-    ],
-    "time": 245.86,
-    "date": "2024-07-01",
-    "meet": "VG vs SH",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "SH",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Simakhov, Liam",
-      "Conklin, Kris",
-      "Loten, GianCarlo",
-      "Kline, Nolan"
-    ],
-    "time": 161.37,
-    "date": "2024-07-01",
-    "meet": "VG vs SH",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Harrison, Blaise",
-      "Sawyer, Gio",
-      "Woodruff, Jacob",
-      "Hardy, Brandon"
-    ],
-    "time": 188.3,
-    "date": "2024-07-01",
-    "meet": "VG vs SH",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Davis, Brody",
-      "Holley, Misha'el",
-      "Poole, Isaac"
-    ],
-    "time": 243.12,
-    "date": "2024-07-01",
-    "meet": "VG vs SH",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": [
-      "exhibition-relay"
-    ]
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Mobley, Ava",
-      "Kraus, Izzy",
-      "Maciejewski, MK",
-      "Poole, Abigail"
-    ],
-    "time": 165.15,
-    "date": "2024-07-01",
-    "meet": "VG vs SH",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "SH",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Jones, Emery",
-      "Barnes, Natalie",
-      "Burnett, Peyton",
-      "Pesce, Adah"
-    ],
-    "time": 334.57,
-    "date": "2024-07-01",
-    "meet": "VG vs SH",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Dalton, Rylee",
-      "Poole, Olivia",
-      "Reynolds, Mya",
-      "Dalton, Aeriana"
-    ],
-    "time": 197.07,
-    "date": "2024-07-01",
-    "meet": "VG vs SH",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": [
-      "exhibition-relay"
-    ]
   },
   {
     "team": "KM",
@@ -28151,197 +27579,6 @@
     "plausibilityFlags": []
   },
   {
-    "team": "VG",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Moore, Kam",
-      "McBride, Nolan",
-      "Harrison, Etcher",
-      "Harrison, Slater"
-    ],
-    "time": 188.19,
-    "date": "2024-07-15",
-    "meet": "VG vs IP",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "IP",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Ripley, Luke",
-      "Scheetz, Eliot",
-      "Waterman, Dash",
-      "Clifford, Auggie"
-    ],
-    "time": 216,
-    "date": "2024-07-15",
-    "meet": "VG vs IP",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "IP",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Fly, Harper",
-      "Herzog, Wyn",
-      "Daniel, Campbell",
-      "Clifford, Charlotte"
-    ],
-    "time": 160.57,
-    "date": "2024-07-15",
-    "meet": "VG vs IP",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Dennis, Lexie",
-      "Davis, Emma",
-      "Maciejewski, MK",
-      "Sawyer, Janaya"
-    ],
-    "time": 188.39,
-    "date": "2024-07-15",
-    "meet": "VG vs IP",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Davis, Brody",
-      "Harrison, Blaise",
-      "Sawyer, Gio",
-      "Poole, Isaac"
-    ],
-    "time": 182.21,
-    "date": "2024-07-15",
-    "meet": "VG vs IP",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "IP",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Nargi, Cullen",
-      "Engbersen, John",
-      "Lehmann, Toby",
-      "Matyjas, Zach"
-    ],
-    "time": 188.11,
-    "date": "2024-07-15",
-    "meet": "VG vs IP",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Mobley, Ava",
-      "Kraus, Izzy",
-      "Poole, Emma",
-      "Poole, Abigail"
-    ],
-    "time": 159.4,
-    "date": "2024-07-15",
-    "meet": "VG vs IP",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Holley, Moriyah",
-      "Poole, Olivia",
-      "Lee, Aubrianna",
-      "Reynolds, Mya"
-    ],
-    "time": 204,
-    "date": "2024-07-15",
-    "meet": "VG vs IP",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": [
-      "exhibition-relay"
-    ]
-  },
-  {
-    "team": "IP",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Lehmann, Betty",
-      "Matyjas, Meghan",
-      "Fly, Kayla",
-      "Anderson, Tabitha"
-    ],
-    "time": null,
-    "date": "2024-07-15",
-    "meet": "VG vs IP",
-    "dq": true,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
     "team": "FDC",
     "ageGroup": "Boys 9-18",
     "event": "200m Medley Relay",
@@ -30439,403 +29676,6 @@
     ]
   },
   {
-    "team": "KW",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Gillespie, Jayden",
-      "Watson, Tommy",
-      "Broderick, Logan",
-      "Reynolds, Eli"
-    ],
-    "time": 140.75,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "FTC",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Schroth, Mason",
-      "Harrell, Caleb",
-      "Trogdon, Davis",
-      "McKinney, Devon"
-    ],
-    "time": 150.19,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "FTC",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Marzana, Mateo",
-      "Lovelace, Nolan",
-      "Parker, Dell",
-      "Lovelace, Holden"
-    ],
-    "time": 168.4,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "FTC",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Trogdon, James",
-      "Lamerdin, Robert",
-      "Levin, Noah",
-      "Burke, Andrew"
-    ],
-    "time": 162.31,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "FTC",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Younica, Lilly",
-      "Henshaw, Emerson",
-      "Schleicher, Kaylynn",
-      "Evans, Elizabeth"
-    ],
-    "time": 140.85,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "KW",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Robertson, Caroline",
-      "Harrison, Molly",
-      "Gregory, Gracie",
-      "Sullivan, Mickie"
-    ],
-    "time": 142.85,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "FTC",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Lamerdin, Louisa",
-      "Margiano, Vicky",
-      "McHose, Eleanor"
-    ],
-    "time": 160.9,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "FTC",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "OʼBrien, Reagan",
-      "Fountain, Nora",
-      "Levin, Bella",
-      "O'Brien, Adeline"
-    ],
-    "time": 190.38,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "FTC",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Hamilton, Makai",
-      "Vahey, Mikey",
-      "Quinn, Owen",
-      "Landers, Lucas"
-    ],
-    "time": 128.59,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "FTC",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Lynch, Jonah",
-      "Sachse, Brad",
-      "Levin, Jacob",
-      "Miller, Winston"
-    ],
-    "time": 195.4,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "FTC",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Stratton, Eleanor",
-      "Freeman, Remington",
-      "Hamilton, Keller",
-      "Brundage, Holly"
-    ],
-    "time": 130.43,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "KW",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Emmett, Charlotte",
-      "Bridges, Kenly",
-      "Cumber, Ande",
-      "Gregory, Elizabeth"
-    ],
-    "time": 139.5,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "FTC",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Mortier, Julia",
-      "Mortier, Gracie",
-      "Mortier, Evelyn"
-    ],
-    "time": 182.22,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "FTC",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Simpson, Olivia",
-      "Houghton, Bailey",
-      "Burke, Tori",
-      "Miller, London"
-    ],
-    "time": 183.16,
-    "date": "2024-07-22",
-    "meet": "FTC vs KW",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Davis, Brody",
-      "Woodruff, Connor",
-      "Woodruff, Jacob",
-      "Holley, Misha'el"
-    ],
-    "time": 252.42,
-    "date": "2024-07-22",
-    "meet": "GLT vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Typhoons_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 53,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Medley Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Kraus, Izzy",
-      "Reynolds, Mya",
-      "Poole, Emma",
-      "Sawyer, Janaya"
-    ],
-    "time": 199,
-    "date": "2024-07-22",
-    "meet": "GLT vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Typhoons_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 54,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Boys 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Moore, Kam",
-      "Harrison, Blaise",
-      "Harrison, Slater",
-      "Hardy, Brandon"
-    ],
-    "time": 174.49,
-    "date": "2024-07-22",
-    "meet": "GLT vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Typhoons_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 55,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Mobley, Ava",
-      "Davis, Emma",
-      "Maciejewski, MK",
-      "Dennis, Lexie"
-    ],
-    "time": 162.66,
-    "date": "2024-07-22",
-    "meet": "GLT vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Typhoons_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
-    "team": "VG",
-    "ageGroup": "Girls 9-18",
-    "event": "200m Freestyle Relay",
-    "course": "SCM",
-    "swimmers": [
-      "Holley, Moriyah",
-      "Sawyer, Leilani",
-      "Lee, Aubrianna",
-      "Dalton, Aeriana"
-    ],
-    "time": 192.5,
-    "date": "2024-07-22",
-    "meet": "GLT vs VG",
-    "dq": false,
-    "season": "2024",
-    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Typhoons_07_22_2024___Meet_Maestro™.pdf",
-    "sourceEventNumber": 56,
-    "verifiedAgainst": null,
-    "plausibilityFlags": []
-  },
-  {
     "team": "SH",
     "ageGroup": "Boys 9-18",
     "event": "200m Medley Relay",
@@ -31873,6 +30713,1207 @@
     "dq": true,
     "season": "2024",
     "sourcePdf": "data-source-pdfs/2024/2024_Wellington_Waves_at_Queens_Lake_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ban-Boca, Nicholas",
+      "Watson, Tommy",
+      "Gillespie, Jayden",
+      "Cook, Carter"
+    ],
+    "time": 145.39,
+    "date": "2024-06-17",
+    "meet": "KW vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Knick, Nathan",
+      "Howard, Gabriel",
+      "Kaczmarczyk, Reid",
+      "Jaroma, Connor"
+    ],
+    "time": 173.17000000000002,
+    "date": "2024-06-17",
+    "meet": "KW vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Walters, Bailey",
+      "Robertson, Caroline",
+      "Mikels, Alana",
+      "Sullivan, Mickie"
+    ],
+    "time": 152.19,
+    "date": "2024-06-17",
+    "meet": "KW vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Enzor, Erin",
+      "Harrison, Molly",
+      "Robertson, Logan",
+      "Ban-Boca, Maya"
+    ],
+    "time": 160.39,
+    "date": "2024-06-17",
+    "meet": "KW vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Dennis, Lexie",
+      "Davis, Emma",
+      "Maciejewski, MK",
+      "Herrera, Sofi"
+    ],
+    "time": 202.44,
+    "date": "2024-06-17",
+    "meet": "KW vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Reynolds, Eli",
+      "Broderick, Logan",
+      "Pittman, Luke",
+      "Roose, Andy"
+    ],
+    "time": 131.58,
+    "date": "2024-06-17",
+    "meet": "KW vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Schniepp, Ruben",
+      "Reynolds, Hunter",
+      "Witkowski, Lucjan",
+      "Broderick, Preston"
+    ],
+    "time": 147.56,
+    "date": "2024-06-17",
+    "meet": "KW vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Moore, Kam",
+      "Sawyer, Gio",
+      "Woodruff, Jacob",
+      "Woodruff, Connor"
+    ],
+    "time": 200.65,
+    "date": "2024-06-17",
+    "meet": "KW vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Pittman, Nora",
+      "Bridges, Kenly",
+      "Cumber, Ande",
+      "Gregory, Gracie"
+    ],
+    "time": 140.97,
+    "date": "2024-06-17",
+    "meet": "KW vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Emmett, Charlotte",
+      "Pittman, Maggie",
+      "Cook, Elly",
+      "Townsend, Leah"
+    ],
+    "time": 147.94,
+    "date": "2024-06-17",
+    "meet": "KW vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Mobley, Ava",
+      "Kraus, Izzy",
+      "Poole, Emma",
+      "Poole, Abigail"
+    ],
+    "time": 161.25,
+    "date": "2024-06-17",
+    "meet": "KW vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Kingswood_Klams_06_17_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Holley, Misha'el",
+      "Woodruff, Jacob",
+      "Hardy, Brandon",
+      "Davis, Brody"
+    ],
+    "time": 245.28,
+    "date": "2024-06-24",
+    "meet": "VG vs VW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VW",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Carter, Peyton",
+      "Julio, Piper",
+      "Hofer, Jenny",
+      "Jackson, Ava"
+    ],
+    "time": 186.03,
+    "date": "2024-06-24",
+    "meet": "VG vs VW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "McBride, Norah",
+      "Davis, Emma",
+      "Poole, Emma",
+      "Dalton, Aeriana"
+    ],
+    "time": 189.37,
+    "date": "2024-06-24",
+    "meet": "VG vs VW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Moore, Kam",
+      "Sawyer, Gio",
+      "Harrison, Etcher",
+      "McBride, Nolan"
+    ],
+    "time": 182.37,
+    "date": "2024-06-24",
+    "meet": "VG vs VW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VW",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "VanFleet, Uriah",
+      "Carter, Dougie",
+      "Carter, Keenan",
+      "Yager, Aiden"
+    ],
+    "time": 171.9,
+    "date": "2024-06-24",
+    "meet": "VG vs VW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": [
+      "exhibition-relay"
+    ]
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Mobley, Ava",
+      "Kraus, Izzy",
+      "Reynolds, Mya",
+      "Maciejewski, MK"
+    ],
+    "time": 164.57,
+    "date": "2024-06-24",
+    "meet": "VG vs VW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_VW_Kraken_at_Village_Green_06_24_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Moore, Kam",
+      "McBride, Nolan",
+      "Harrison, Etcher",
+      "Harrison, Slater"
+    ],
+    "time": 193.13,
+    "date": "2024-07-01",
+    "meet": "VG vs SH",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "SH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lapetina, Cooper",
+      "Riley, Nate",
+      "Race, Philip",
+      "Giles, Owen"
+    ],
+    "time": 204.32,
+    "date": "2024-07-01",
+    "meet": "VG vs SH",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "McBride, Norah",
+      "Davis, Emma",
+      "Poole, Emma",
+      "Sawyer, Janaya"
+    ],
+    "time": 188.94,
+    "date": "2024-07-01",
+    "meet": "VG vs SH",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "SH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "McGrath, Leyla",
+      "Jones, Elliette",
+      "Lapetina, Lucy",
+      "Koch, Mckenna"
+    ],
+    "time": 245.86,
+    "date": "2024-07-01",
+    "meet": "VG vs SH",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "SH",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Simakhov, Liam",
+      "Conklin, Kris",
+      "Loten, GianCarlo",
+      "Kline, Nolan"
+    ],
+    "time": 161.37,
+    "date": "2024-07-01",
+    "meet": "VG vs SH",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Harrison, Blaise",
+      "Sawyer, Gio",
+      "Woodruff, Jacob",
+      "Hardy, Brandon"
+    ],
+    "time": 188.3,
+    "date": "2024-07-01",
+    "meet": "VG vs SH",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Davis, Brody",
+      "Holley, Misha'el",
+      "Poole, Isaac"
+    ],
+    "time": 243.12,
+    "date": "2024-07-01",
+    "meet": "VG vs SH",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": [
+      "exhibition-relay"
+    ]
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Mobley, Ava",
+      "Kraus, Izzy",
+      "Maciejewski, MK",
+      "Poole, Abigail"
+    ],
+    "time": 165.15,
+    "date": "2024-07-01",
+    "meet": "VG vs SH",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "SH",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Jones, Emery",
+      "Barnes, Natalie",
+      "Burnett, Peyton",
+      "Pesce, Adah"
+    ],
+    "time": 334.57,
+    "date": "2024-07-01",
+    "meet": "VG vs SH",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Dalton, Rylee",
+      "Poole, Olivia",
+      "Reynolds, Mya",
+      "Dalton, Aeriana"
+    ],
+    "time": 197.07,
+    "date": "2024-07-01",
+    "meet": "VG vs SH",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Splash_at_Village_Green_07_01_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": [
+      "exhibition-relay"
+    ]
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Moore, Kam",
+      "McBride, Nolan",
+      "Harrison, Etcher",
+      "Harrison, Slater"
+    ],
+    "time": 188.19,
+    "date": "2024-07-15",
+    "meet": "VG vs IP",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "IP",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ripley, Luke",
+      "Scheetz, Eliot",
+      "Waterman, Dash",
+      "Clifford, Auggie"
+    ],
+    "time": 216,
+    "date": "2024-07-15",
+    "meet": "VG vs IP",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "IP",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Fly, Harper",
+      "Herzog, Wyn",
+      "Daniel, Campbell",
+      "Clifford, Charlotte"
+    ],
+    "time": 160.57,
+    "date": "2024-07-15",
+    "meet": "VG vs IP",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Dennis, Lexie",
+      "Davis, Emma",
+      "Maciejewski, MK",
+      "Sawyer, Janaya"
+    ],
+    "time": 188.39,
+    "date": "2024-07-15",
+    "meet": "VG vs IP",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Davis, Brody",
+      "Harrison, Blaise",
+      "Sawyer, Gio",
+      "Poole, Isaac"
+    ],
+    "time": 182.21,
+    "date": "2024-07-15",
+    "meet": "VG vs IP",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "IP",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Nargi, Cullen",
+      "Engbersen, John",
+      "Lehmann, Toby",
+      "Matyjas, Zach"
+    ],
+    "time": 188.11,
+    "date": "2024-07-15",
+    "meet": "VG vs IP",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Mobley, Ava",
+      "Kraus, Izzy",
+      "Poole, Emma",
+      "Poole, Abigail"
+    ],
+    "time": 159.4,
+    "date": "2024-07-15",
+    "meet": "VG vs IP",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Holley, Moriyah",
+      "Poole, Olivia",
+      "Lee, Aubrianna",
+      "Reynolds, Mya"
+    ],
+    "time": 204,
+    "date": "2024-07-15",
+    "meet": "VG vs IP",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": [
+      "exhibition-relay"
+    ]
+  },
+  {
+    "team": "IP",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lehmann, Betty",
+      "Matyjas, Meghan",
+      "Fly, Kayla",
+      "Anderson, Tabitha"
+    ],
+    "time": null,
+    "date": "2024-07-15",
+    "meet": "VG vs IP",
+    "dq": true,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_IP_Stingrays_at_Village_Green_07_15_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Davis, Brody",
+      "Woodruff, Connor",
+      "Woodruff, Jacob",
+      "Holley, Misha'el"
+    ],
+    "time": 252.42,
+    "date": "2024-07-22",
+    "meet": "GLT vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Typhoons_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kraus, Izzy",
+      "Reynolds, Mya",
+      "Poole, Emma",
+      "Sawyer, Janaya"
+    ],
+    "time": 199,
+    "date": "2024-07-22",
+    "meet": "GLT vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Typhoons_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Moore, Kam",
+      "Harrison, Blaise",
+      "Harrison, Slater",
+      "Hardy, Brandon"
+    ],
+    "time": 174.49,
+    "date": "2024-07-22",
+    "meet": "GLT vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Typhoons_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Mobley, Ava",
+      "Davis, Emma",
+      "Maciejewski, MK",
+      "Dennis, Lexie"
+    ],
+    "time": 162.66,
+    "date": "2024-07-22",
+    "meet": "GLT vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Typhoons_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VG",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Holley, Moriyah",
+      "Sawyer, Leilani",
+      "Lee, Aubrianna",
+      "Dalton, Aeriana"
+    ],
+    "time": 192.5,
+    "date": "2024-07-22",
+    "meet": "GLT vs VG",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Village_Green_at_Typhoons_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Gillespie, Jayden",
+      "Watson, Tommy",
+      "Broderick, Logan",
+      "Reynolds, Eli"
+    ],
+    "time": 140.75,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Schroth, Mason",
+      "Harrell, Caleb",
+      "Trogdon, Davis",
+      "McKinney, Devon"
+    ],
+    "time": 150.19,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Marzana, Mateo",
+      "Lovelace, Nolan",
+      "Parker, Dell",
+      "Lovelace, Holden"
+    ],
+    "time": 168.4,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Trogdon, James",
+      "Lamerdin, Robert",
+      "Levin, Noah",
+      "Burke, Andrew"
+    ],
+    "time": 162.31,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 53,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Younica, Lilly",
+      "Henshaw, Emerson",
+      "Schleicher, Kaylynn",
+      "Evans, Elizabeth"
+    ],
+    "time": 140.85,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Robertson, Caroline",
+      "Harrison, Molly",
+      "Gregory, Gracie",
+      "Sullivan, Mickie"
+    ],
+    "time": 142.85,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lamerdin, Louisa",
+      "Margiano, Vicky",
+      "McHose, Eleanor"
+    ],
+    "time": 160.9,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "swimmers": [
+      "OʼBrien, Reagan",
+      "Fountain, Nora",
+      "Levin, Bella",
+      "O'Brien, Adeline"
+    ],
+    "time": 190.38,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 54,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hamilton, Makai",
+      "Vahey, Mikey",
+      "Quinn, Owen",
+      "Landers, Lucas"
+    ],
+    "time": 128.59,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Omasta, Paxton",
+      "Geisler, Anderson",
+      "Aponte, Georgie"
+    ],
+    "time": 138.37,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Jacobs, Christian",
+      "Ban-Boca, Nicholas",
+      "Witkowski, Lucjan",
+      "Roose, Andy"
+    ],
+    "time": 138.37,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Boys 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lynch, Jonah",
+      "Sachse, Brad",
+      "Levin, Jacob",
+      "Miller, Winston"
+    ],
+    "time": 195.4,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 55,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Stratton, Eleanor",
+      "Freeman, Remington",
+      "Hamilton, Keller",
+      "Brundage, Holly"
+    ],
+    "time": 130.43,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Emmett, Charlotte",
+      "Bridges, Kenly",
+      "Cumber, Ande",
+      "Gregory, Elizabeth"
+    ],
+    "time": 139.5,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Mortier, Julia",
+      "Mortier, Gracie",
+      "Mortier, Evelyn"
+    ],
+    "time": 182.22,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
+    "sourceEventNumber": 56,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Girls 9-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Simpson, Olivia",
+      "Houghton, Bailey",
+      "Burke, Tori",
+      "Miller, London"
+    ],
+    "time": 183.16,
+    "date": "2024-07-22",
+    "meet": "FTC vs KW",
+    "dq": false,
+    "season": "2024",
+    "sourcePdf": "data-source-pdfs/2024/2024_Kingswood_Klams_at_First_Colony_07_22_2024___Meet_Maestro™.pdf",
     "sourceEventNumber": 56,
     "verifiedAgainst": null,
     "plausibilityFlags": []

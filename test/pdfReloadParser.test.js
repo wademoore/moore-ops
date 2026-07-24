@@ -431,3 +431,40 @@ describe('HIST EXT 8 — m4: EXH row with parenthetical nickname in first name',
     assert.equal(result.team, 'KM');
   });
 });
+
+describe('HIST EXT 9 — ordinal-suffix token in swimmer name (e.g. "Kun 3rd")', () => {
+  it('scored row with ordinal-suffix last name → parses correctly', () => {
+    const result = parseIndividualRow('4 Kun 3rd, Kube 10 VG NT 1:24.69');
+    assert.ok(result, 'should match m pattern with ordinal-suffix last name');
+    assert.equal(result.swimmer, 'Kun 3rd Kube');
+    assert.equal(result.age, 10);
+    assert.equal(result.team, 'VG');
+    assert.equal(result.place, 4);
+    assert.equal(result.dq, false);
+    assert.equal(result.exhibition, false);
+    assert.ok(result.time !== null, 'time should be set from official column');
+  });
+
+  it('EXH row with ordinal-suffix last name → parses correctly via m4', () => {
+    const result = parseIndividualRow('X Kun 3rd, Kube EXH 10 VG NT 1:24.69');
+    assert.ok(result, 'should match m4 pattern with ordinal-suffix last name');
+    assert.equal(result.swimmer, 'Kun 3rd Kube');
+    assert.equal(result.age, 10);
+    assert.equal(result.team, 'VG');
+    assert.equal(result.place, null);
+    assert.equal(result.dq, false);
+    assert.equal(result.exhibition, true);
+    assert.ok(result.time !== null, 'time should be set from official column');
+  });
+});
+
+describe('HIST EXT 10 — tied relay place marker (e.g. "2*")', () => {
+  it('2* tied relay place → place parsed as 2, time set', () => {
+    const result = parseRelayRow('2* Kingsmill Swim Team\tA KW\tNT 2:24.55');
+    assert.ok(result, 'should match relay with tied place marker');
+    assert.equal(result.place, 2);
+    assert.equal(result.team, 'KW');
+    assert.equal(result.dq, false);
+    assert.ok(result.time !== null, 'time should be set');
+  });
+});
