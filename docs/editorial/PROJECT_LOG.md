@@ -53,3 +53,37 @@ Open items carried forward from this session:
 - Color palette decision still open (Publisher)
 - `waves-season.json` opponent field name still open (confirm before publishing meet scores)
 - Historical `vpsu-rankings.json` snapshot retention still open (Publisher)
+
+---
+
+## 2026-07-23
+
+**Session: Division 1 substitution simulation — build, methodology revision, and validation**
+
+- Built `.claude/skills/waves-div1-simulation/check.js`, a committed-script skill that answers "what if Wellington (WT) had replaced Queens Lake (QL) in Division 1 for the 2026 season?" Scored from individual swimmer-level results in `league-results-v2.json` and `relay-results-v2.json` per VPSU's official 2026 competitive rules (5/3/1 individual, 7/0 relay, tie-splitting, no 3rd-place point if opposing team has no valid entry in the event).
+
+- **Methodology evolution — preserved as a lesson, not just a fact:** The first version assembled WT's substitution roster from each swimmer's personal-best time anywhere in the 2026 season up to the target meet date. A manual sanity check against the real 2026-06-15 WT-vs-FDC friendly caught this as unreliable: the season-best approach pulled in swimmers who hadn't attended the meet being compared against (e.g., Men 15-18 swimmers from much later dates), assembling a lineup that never actually competed together on one day. The result — a simulated WT 258–238 win over FDC — did not hold up against the real friendly outcome. The first version had passed its own internal logic and unit tests cleanly; the failure mode was that the premise of the simulation was wrong, not the code. This is a good example of a simulation that verifies against itself but not against an external anchor until someone thinks to check. The methodology was revised: WT's roster is now drawn from their single nearest actual meet by absolute calendar distance, with per-event fallback to the next-nearest WT meet only when a specific event is missing from the primary meet (e.g., events dropped from a storm-shortened card). This is symmetric with how opponent entries are already handled — both sides draw from one real day's attendance.
+
+- Final results under the nearest-meet methodology (run 2026-07-23; subject to change if the June 22 relay gap below is ever resolved):
+
+  | Date | Opponent | WT | Opp | Winner |
+  |------|----------|-----|-----|--------|
+  | 2026-06-22 | KW | 121 | 284 | KW |
+  | 2026-06-29 | GS | 198 | 298 | GS |
+  | 2026-07-06 | FTC | 173 | 321 | FTC |
+  | 2026-07-13 | KM | 237 | 259 | KM |
+  | 2026-07-20 | FDC | 210 | 286 | FDC |
+
+  WT simulated record: 0–5. Hypothetical standings: WT 6th of 6 in Division 1.
+
+- Notable findings from the event-level breakdown:
+  - WT's Men 15-18 bracket (Hibbard Mason, Keithley Jostin) was genuinely competitive in meets they attended — won 4 of 5 individual events against KM on July 13. A confirmed strength in actual same-day attendance, not a methodology artifact.
+  - WT's Girls 11-12 bracket was a clean, legitimate weak point against KM: 5 points to 40 across 5 events, stable roster, real times, KM simply faster.
+  - 14 individual events across the 5 meets required fallback to WT's next-nearest meet; all 14 fallback windows were exactly 7 days, none stale.
+  - 0 relay fallbacks triggered in live data (code path covered by tests).
+
+- Test coverage: 17 new unit tests added for the four new core functions (`getWTMeetDates`, `rankWTMeetsByDistance`, `getWTEntriesForEvent`, `getWTRelayEntryForBracket`); 9 tests removed for the two retired season-best functions (`getWTBestTimesForEvent`, `getWTRelayTimeForBracket`). Net: +8. Suite at 507 at conclusion of this work (509 after a concurrent HIST EXT 8 patch landed in the same window).
+
+- Known open caveat carried forward: The 2026-06-22 KW-vs-QL meet has zero relay rows in `relay-results-v2.json` with no documented explanation (unlike other zero-relay meets, which carry manifest notes). The script treats that meet's relay totals as unknown rather than zero in both directions. If a future re-parse of the KW June 22 PDF resolves this, the KW meet score and WT's simulated record for that meet would change.
+
+- Standings caveat documented inline in script output: the other five Division 1 teams' win-loss records reflect their actual games against the real QL, not a hypothetical WT — the simulation does not recursively re-simulate the full division.
