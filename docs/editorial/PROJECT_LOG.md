@@ -138,3 +138,23 @@ Open items carried forward from this session:
 - Known caveats carried forward: no incoming/new 2027 swimmers modeled — returning roster only. No real 2027 schedule — 15-matchup round robin is hypothetical. Times frozen at 2026 personal best, no improvement projected — this is explicitly a structural-reshuffle-only baseline. Relay eligibility not re-evaluated post-aging (flagged but not fixed by the script).
 
 - Test coverage: 85 unit tests added across all 14 testable exported functions. Suite at 594 passing, 0 failing.
+
+---
+
+## 2026-07-25
+
+**Session: First live publish — wellington-wave GitHub Pages, July 20, 2026 issue**
+
+- Published the July 20, 2026 issue ("A Perfect Finish") as the first real end-to-end run of the publishing pipeline: approved self-contained HTML → `wellington-wave` GitHub Pages repo (https://github.com/wademoore/wellington-wave) → live public URLs.
+- Confirmed live:
+  - Homepage: https://wademoore.github.io/wellington-wave/ — 200 OK
+  - Issue: https://wademoore.github.io/wellington-wave/issues/2026-07-20/ — 200 OK
+- The self-contained HTML convention (all images base64-embedded, no external asset references, no `<script>` tags) worked as designed with zero adjustments needed on the hosting side.
+- One hosting-only bug surfaced and fixed: the homepage's latest-issue link used an absolute path (`/issues/2026-07-20/`) instead of a relative path, which 404'd on this GitHub Pages project site (served at `/wellington-wave/`, not the domain root). Fixed in the `wellington-wave` repo. Documented in that repo's README as a convention note — the homepage's latest-issue card link must always use a relative path; leading-slash absolute paths resolve to the wrong place on a project site.
+- Not an editorial or data issue. Nothing in this newsroom's docs or workflows required correction.
+
+**What this confirms — and what it does not:**
+
+The downstream publishing step (approved HTML → live site) is now confirmed working end-to-end. The self-contained HTML production process (which happens outside this repo) is proven compatible with the `wellington-wave` hosting setup.
+
+What this does not confirm: the editorial-meeting data handoff process defined by `07-editorial-meeting-spec.md`. The first Editorial Meeting artifact was produced in the previous session (for the July 20 meet), but the full chain — artifact → Publisher review → ChatGPT → approved HTML → live publish — has not yet been run for a real week. Publishing infrastructure being proven does not mean the editorial-meeting data handoff has been. That process is the next thing to actually exercise.

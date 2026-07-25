@@ -231,3 +231,19 @@ The `meetings/` subdirectory does not need to exist at charter time; create it w
 - It is not publication copy. No sentence from this artifact should appear verbatim in a published edition without rewriting by ChatGPT.
 - It is not a complete story list. ChatGPT may identify additional angles from the factual summaries provided.
 - It is not a final decision on coverage. The Publisher has override authority on any editorial choice.
+
+---
+
+## Pipeline Status (as of July 2026)
+
+**First live end-to-end publish completed: July 20, 2026 issue.**
+
+The July 20, 2026 issue ("A Perfect Finish") was the first real end-to-end run of the publishing pipeline: approved self-contained HTML → `wellington-wave` GitHub Pages repo → live public URLs (https://wademoore.github.io/wellington-wave/ and .../issues/2026-07-20/). Both URLs confirmed 200 OK, no console errors, no horizontal overflow.
+
+The self-contained HTML convention — all images base64-embedded, no external asset references, no `<script>` tags — worked as designed with zero adjustments needed on the hosting side.
+
+One hosting-only bug surfaced and was fixed: the homepage's latest-issue link used an absolute path (`/issues/2026-07-20/`) instead of a relative path, which 404'd on this project site (served at `/wellington-wave/`, not the domain root). Not an editorial or data issue — documented and fixed in the `wellington-wave` repo's own README as a convention note for future issues.
+
+**What is and is not confirmed by this publish:**
+
+The downstream publishing step (approved HTML → live site) is now confirmed working end-to-end. What this does not confirm: the editorial-meeting data handoff process defined by this document — the structured handoff from Claude Code to ChatGPT. As of July 2026, the first Editorial Meeting artifact was produced (for the July 20 meet; see `docs/editorial/meetings/editorial-meeting-2026-07-20.md`), but the full chain — artifact → Publisher review → ChatGPT → approved HTML → published — has not yet been run for a real week. Publishing infrastructure being proven does not mean the editorial-meeting data handoff has been. That process is the next thing to actually exercise.
