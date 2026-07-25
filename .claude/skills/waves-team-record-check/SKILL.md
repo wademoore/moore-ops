@@ -20,9 +20,9 @@ Team-wide in scope (any WT swimmer, not just Myles/Ophelia) — distinct from
 
 | File | Filter |
 |------|--------|
-| `data/league-results.json` | `team === "WT"` and `dq === false` |
+| `data/league-results-v2.json` | `team === "WT"` and `dq === false` |
 | `data/swim-results.json` | Myles and Ophelia only |
-| `data/relay-results.json` | `team === "WT"` and `dq === false` |
+| `data/relay-results-v2.json` | `team === "WT"` and `dq === false` |
 | `data/waves-team-records.json` | standing records to compare against |
 
 **Age-group mapping for swim-results.json (Myles/Ophelia):**

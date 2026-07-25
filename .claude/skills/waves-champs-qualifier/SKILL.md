@@ -3,7 +3,7 @@ name: waves-champs-qualifier
 description: >
   Generates Wellington Waves champs qualifier Facebook posts. Trigger whenever
   the user says "champs post", "qualifier post", "who has qualified", or asks
-  about Waves champs qualifiers. Reads league-results.json (all WT swimmers)
+  about Waves champs qualifiers. Reads league-results-v2.json (all WT swimmers)
   and swim-results.json (Myles and Ophelia). Produces three outputs: a full
   current qualifier list, a "new this week" delta list, and a "Top 10 closest
   to qualifying" near-miss list.
@@ -20,7 +20,7 @@ who helps manage the team. The post goes out weekly after each Monday meet.
 
 Two sources must be merged to get the full WT picture:
 
-**1. `data/league-results.json`** — all WT swimmers except Myles and Ophelia
+**1. `data/league-results-v2.json`** — all WT swimmers except Myles and Ophelia
 - Filter: `team === "WT"` and `dq === false`
 - Names stored as `"Last First"` — flip to `"First Last"` for output
 - `time` is decimal seconds
@@ -165,7 +165,7 @@ Use short stroke names in the post:
 
 To run this skill, the user should supply:
 1. The current week number and meet date (e.g. "Week 3, June 29")
-2. The data files are read from the local repo (`data/league-results.json` and
+2. The data files are read from the local repo (`data/league-results-v2.json` and
    `data/swim-results.json`) — no uploads needed
 
 ---
@@ -218,7 +218,7 @@ or 7-8/8&Under 100m IM, are not shown — no VPSU standard exists for those brac
 
 The ⚠️ warning appears on the Gap line when gap < 1.0s. The Meet/Date line immediately below is the source row to verify.
 
-**Single-best-swim caveat:** each near-miss entry shows only the swimmer's personal best (lowest time) for that event and the meet/date of that specific swim. Other swims of the same event in the same season are not surfaced. If a fuller history is needed for verification (e.g., to cross-check Nikolai Ilardi 50m Breast or William Whaley 50m Butterfly), pull it on request from `league-results.json` filtered by swimmer name and event.
+**Single-best-swim caveat:** each near-miss entry shows only the swimmer's personal best (lowest time) for that event and the meet/date of that specific swim. Other swims of the same event in the same season are not surfaced. If a fuller history is needed for verification (e.g., to cross-check Nikolai Ilardi 50m Breast or William Whaley 50m Butterfly), pull it on request from `league-results-v2.json` filtered by swimmer name and event.
 
 ---
 
@@ -227,9 +227,9 @@ The ⚠️ warning appears on the Gap line when gap < 1.0s. The Meet/Date line i
 - A swimmer can qualify in multiple events — each counts as a separate spot
 - If a swimmer hits the standard in Week 1 and again in Week 2, they are NOT
   a new qualifier in Week 2 for that event (already counted)
-- DQ rows are excluded (already filtered in league-results.json)
+- DQ rows are excluded (already filtered in league-results-v2.json)
 - Friendly meet (June 15) counts — include results from all dates
-- Do not include relay results — league-results.json already excludes them
+- Do not include relay results — league-results-v2.json already excludes them
 - Moore kids (Myles/Ophelia) must never appear in output unless they have actually
   hit a champs standard — check time <= standard before including them
 
