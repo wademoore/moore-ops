@@ -51,7 +51,59 @@ Division impact: WT finishes Division 2 regular season undefeated, 5–0.
 
 ---
 
-## Section 2: Candidate Cover Story
+## Section 2: New Qualifiers This Week
+
+**Meet:** WT vs WF, 2026-07-20  
+**Script:** `waves-champs-qualifier/check.js` — run fresh 2026-07-24 (WEEK_NUM = 6, WEEK_DATE = 2026-07-20)  
+**Week-anchor status:** Confirmed unbroken — advance from Week 5 (2026-07-13) to Week 6 (2026-07-20) is confirmed with no meet week skipped. Week 5 (2026-07-13) was treated as reviewed per Publisher direction prior to this artifact.
+
+### New qualifying spots this week: 13 (12 distinct swimmers)
+
+_Note: all 13 new qualifiers are male. No new female qualifiers at the 7/20 meet._
+
+**Boys 6&Under**
+- Coen Greer — 25m Freestyle (32.63S), 25m Backstroke (39.66S) ✨ FIRST TIME EVER
+
+**Boys 7-8**
+- Ryland Fidler — 25m Freestyle (21.75S)
+
+**Boys 9-10**
+- Conor Greer — 50m Freestyle (42.53S)
+- Gabriel Crowther — 50m Backstroke (56.88S)
+- Micah Thrash — 50m Backstroke (47.81S)
+- Nate Burnette — 50m Breaststroke (1:04.72S) ✨ FIRST TIME EVER
+
+**Boys 10&Under**
+- Sutton Welch — 100m IM (1:56.91S)
+
+**Boys 11-12**
+- Grayson Asbell — 100m IM (1:32.09S)
+- Parker Lantz — 50m Breaststroke (51.83S)
+- William Whaley — 50m Butterfly (46.47S)
+
+**Boys 13-14**
+- Ben Cox — 50m Backstroke (44.88S) ✨ FIRST TIME EVER
+- Nikolai Ilardi — 50m Breaststroke (47.51S)
+
+**Weekly total: 13 new qualifying spots**  
+**Confidence: MEDIUM** — Times from league-results-v2.json 7/20 meet data; the 7/20 meet has no PDF spot-check in repo (Case b applies throughout this artifact). Qualifying standard comparison logic is HIGH (sports-config.json); the individual swim times that trigger qualification are MEDIUM from unverified meet data.
+
+### Season total: 125 qualifying spots across 45 swimmers
+
+**Confidence: HIGH** — Cumulative across all 6 meets; multi-meet aggregation reduces the impact of any single-meet uncertainty. Standard comparison is deterministic against sports-config.json.
+
+### First-time-ever qualifiers this meet: 3 swimmers
+
+- Coen Greer (Boys 6&Under — no prior qualifying swim in any event in any prior season)
+- Nate Burnette (Boys 9-10 — no prior qualifying swim in any event in any prior season)
+- Ben Cox (Boys 13-14 — no prior qualifying swim in any event in any prior season)
+
+**Confidence: MEDIUM (cap applies regardless of meet verification status)**  
+The "first time ever" claim depends on two things beyond current-meet data accuracy: (1) the completeness and correctness of the history files used by `hasAnyPriorQual`; (2) no same-name match appearing for any of these swimmers across teams or seasons. This run used `league-results-history.json` (v1, 2022–2025 seasons, all teams) and `league-results.json` (v1, 2026 all-teams). The `hasAnyPriorQual` function is **not** wired to `league-results-history-v2.json` — v2 history backfill is in progress and those files are not yet consulted by this check. Even with full v1 coverage, v1 history files carry the known `minutes × 100` time-encoding bug, which affects times but not names; name-based lookups should be unaffected. Do not publish "first time ever" framing at HIGH confidence even if this meet's times are PDF-verified — the claim also depends on the completeness of everything prior, which is a separate and currently unresolved confidence question.
+
+---
+
+## Section 3: Candidate Cover Story
 
 The 2026 season finale produced four Wellington Waves team records broken in a single meet: Christian Hunley set new Boys 8&Under marks in the 25m Butterfly (19.52s, breaking Benjamin Youngs' 2014 record of 21.96s — held for 12 years) and the 25m Breaststroke (24.62s, breaking Braden Kimball's 2025 record of 26.21s); Sam Shnowske broke the Boys 13-14 records in both the 50m Butterfly (28.74s, breaking Michael Casanave's 2018 record of 30.37s — held for 8 years) and the 50m Freestyle (26.16s, breaking Casanave's 2018 record of 27.27s). Wellington won the meet 305–191 and completed the 2026 Division 2 regular season at 5–0.
 
@@ -60,7 +112,7 @@ The 2026 season finale produced four Wellington Waves team records broken in a s
 
 ---
 
-## Section 3: Additional Feature Candidates
+## Section 4: Additional Feature Candidates
 
 **1. WT's perfect season — and the full arc**  
 Wellington finishes the 2026 Division 2 regular season 5–0, with scores of 203, 352, 301, 300, and 305 against WPD, WC, PS, EH, and WF respectively. Historical context from `waves-season.json`: WT was also 5–0 in Division 2 in 2024 before being promoted to Division 1 in 2025, where they went 0–5. The 2026 season represents a return to Division 2 dominance — the team that couldn't win in Div 1 swept Div 2 for the second time in three years.  
@@ -89,7 +141,7 @@ Wyatt Childress (30.09s) and Luke Shnowske (30.30s) both swam under 31 seconds i
 
 ---
 
-## Section 4: Interesting Findings
+## Section 5: Interesting Findings
 
 - **WT relay depth:** WT fielded 8 relays at the season finale — both 200m Medley and 200m Freestyle in Boys 9-18 and Girls 9-18, two squads each. WF fielded 4 (one squad per event). No relay team records were broken (checked against `waves-team-records.json` relay entries). — MEDIUM confidence — `relay-results-v2.json`
 
@@ -133,7 +185,7 @@ Wyatt Childress (30.09s) and Luke Shnowske (30.30s) both swam under 31 seconds i
 
 ---
 
-## Section 5: Historical Comparisons
+## Section 6: Historical Comparisons
 
 - **Christian Hunley's 25m Butterfly breaks a 12-year record:** Benjamin Youngs set the Boys 8&Under 25m Butterfly record at 21.96s in 2014. Hunley's 19.52s is a 2.44s improvement (11.1% margin), breaking the longest-standing record among those broken in the 2026 season. — Compared against `waves-team-records.json` Boys 8&Under|25m Butterfly|SCM (year: 2014, time: 21.96). **Confidence: MEDIUM** (meet result unverified; record metadata year=2014, time confirmed HIGH).
 
@@ -149,7 +201,7 @@ Wyatt Childress (30.09s) and Luke Shnowske (30.30s) both swam under 31 seconds i
 
 ---
 
-## Section 6: Confidence Indicators
+## Section 7: Confidence Indicators
 
 | Finding | Level | Reason for level |
 |---------|-------|-----------------|
@@ -177,7 +229,7 @@ Wyatt Childress (30.09s) and Luke Shnowske (30.30s) both swam under 31 seconds i
 
 ---
 
-## Section 7: Warnings
+## Section 8: Warnings
 
 ⚠ **NO SPOT-CHECK MANIFEST IN REPO FOR 7/20 MEET**  
 Reason: No formal spot-check log or manifest file found in the repo that confirms `wf-at-wt` on 7/20 was PDF-verified. The `verifiedAgainst` field on v2 rows shows 0 verified rows for this meet (only 3 rows are verified across the entire 2026 season — 2 from wpd-at-wt 6/22, 1 from wt-at-eh 7/13). The task prompt listed wf-at-wt 7/20 as spot-checked, but this cannot be confirmed from repo contents.  
@@ -208,7 +260,7 @@ Action required: Publisher to provide Championship Meet date. Update waves-seaso
 
 ---
 
-## Section 8: Suggested Graphics
+## Section 9: Suggested Graphics
 
 **1. Season Finale Records Broken (stat card cluster)**  
 Type: 4-card stat cluster  
@@ -312,7 +364,7 @@ Notes: Time (18.75S), league rank (#3 of 50), meet context. Already a champs qua
 
 ---
 
-## Section 9: Methodology Notes
+## Section 10: Methodology Notes
 
 - **v2 current-season files used:** `league-results-v2.json` (20,132 rows, all 54 2026 meets) and `relay-results-v2.json` (455 rows) are the sole current-season sources. `league-results.json` (v1) and `relay-results.json` (v1) were not consulted per task instruction.
 
@@ -347,7 +399,7 @@ Notes: Time (18.75S), league rank (#3 of 50), meet context. Already a champs qua
 
 ---
 
-## Section 10: Open Questions
+## Section 11: Open Questions
 
 1. **Spot-check status of 7/20:** Was the wf-at-wt 7/20 PDF reviewed manually at any point? If so, where is that documented? Publisher to confirm. This determines whether findings can be elevated to HIGH confidence.
 
