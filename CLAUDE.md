@@ -74,6 +74,7 @@ These files are read directly by `digest/builder.js` via `fs.readFile` — no Dr
 - **Time field name differs by file:** `league-results.json` uses `time`; `swim-results.json` uses `seconds`. Do not assume these are interchangeable.
 - **UTF-8 BOM risk on JSON data files:** JSON files (not just CSVs) can carry a UTF-8 BOM. `league-results.json` was confirmed affected during a 2026 Week 3 append. Strip defensively on read in any script consuming files from `data/`.
 - **swim-results.json DQ convention (added July 2026, matching league-results.json's existing shape):** `dq: true` rows use `seconds: null`, `place: null`, `totalSwimmers: null`, `heat: null`, `totalHeats: null`, `heatPlace: null`. First applied to Ophelia's July 20, 2026 25m Butterfly DQ.
+- **VPSU name discrepancy:** Swimmer names in VPSU Top-50 data (`vpsu-rankings.json` league key) may differ from names in `league-results-v2.json` for the same swimmer. Confirmed 2026 case: "Ryland Fidler" (WT, Boys 7-8) in v2 = "Fidler, John" in VPSU — same swimmer, times match exactly. Do not silently correct VPSU-sourced data; preserve VPSU's name as ingested. Full caveat in `docs/editorial/05-editorial-evidence-guide.md` → `vpsu-rankings.json` Known caveats.
 
 ## Meet results txt pipeline — removed June 2026
 Pipeline removed June 2026. Updater manual entry (`pb-records.json`, `swim-results.json`) is the authoritative workflow for swim data.
