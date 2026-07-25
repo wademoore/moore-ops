@@ -19,7 +19,7 @@ This document defines exactly what Claude Code (Newsroom) is expected to produce
 
 **Location:** `docs/editorial/meetings/editorial-meeting-YYYY-MM-DD.md`
 
-**Contents:** Meet summary, cover story candidate, feature candidates, interesting findings, historical comparisons, confidence indicators, warnings, suggested graphics, methodology notes, open questions.
+**Contents:** Meet summary (§1), new qualifiers this week (§2), cover story candidate (§3), feature candidates (§4), interesting findings (§5), historical comparisons (§6), confidence indicators (§7), warnings (§8), suggested graphics (§9), methodology notes (§10), open questions (§11).
 
 **Format:** Markdown. No prose suitable for direct publication — findings are stated factually and labeled with confidence levels.
 

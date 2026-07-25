@@ -48,7 +48,24 @@ Division impact: [Brief note on division standing effect, or "Friendly — no di
 
 ---
 
-### Section 2: Candidate Cover Story
+### Section 2: New Qualifiers This Week
+
+For every meet, regardless of whether qualifiers are the lead story:
+
+- **Grouped by age group.** Each new qualifying swimmer listed under their age/gender bracket, with event and qualifying time.
+- **Weekly total.** Count of new qualifying spots earned this meet.
+- **Season total.** Cumulative qualifying spots across the season to date, and number of distinct qualifying swimmers.
+- **First-time-ever qualifiers.** Any swimmer earning their first-ever championship qualification (any event, any prior season) called out separately within the list.
+- **Confidence labels required on every subsection:**
+  - Weekly and season totals: confidence tied to whether the source meet's results were PDF-spot-checked (same convention as elsewhere in the artifact).
+  - First-time-ever tags specifically: always capped at MEDIUM or lower, with an explicit note that this depends on which history dataset (v1 vs v2) the qualifier check was run against, and that v2 history backfill may still be incomplete for older seasons. Do not present a first-time-ever claim as HIGH confidence even if the current meet's data is fully verified — the claim also depends on the completeness of everything *prior*, which is a separate and currently unresolved confidence question.
+  - Also note explicitly if the champs-qualifier week-anchor was confirmed unbroken (no skipped week) since the last Editorial Meeting, or flag if that couldn't be confirmed.
+
+This section is mandatory every week, independent of whether qualifiers are the cover story — it exists to make the season-long qualifier count reliably trackable and auditable over time, not just narratively useful in weeks where it's the headline.
+
+---
+
+### Section 3: Candidate Cover Story
 
 ```
 ## Candidate Cover Story
@@ -64,7 +81,7 @@ The cover story candidate is a recommendation, not a directive. ChatGPT and the 
 
 ---
 
-### Section 3: Additional Feature Candidates
+### Section 4: Additional Feature Candidates
 
 ```
 ## Additional Feature Candidates
@@ -81,7 +98,7 @@ Limit to 3–5 candidates. If there are more findings, move lower-priority ones 
 
 ---
 
-### Section 4: Interesting Findings
+### Section 5: Interesting Findings
 
 ```
 ## Interesting Findings
@@ -95,7 +112,7 @@ May include age-group results, relay notes, or depth observations.]
 
 ---
 
-### Section 5: Historical Comparisons
+### Section 6: Historical Comparisons
 
 ```
 ## Historical Comparisons
@@ -111,7 +128,7 @@ If no meaningful historical comparisons exist for this meet, write "None this me
 
 ---
 
-### Section 6: Confidence Indicators
+### Section 7: Confidence Indicators
 
 This section uses the same pattern established by `waves-champs-qualifier` and `waves-team-record-check`: findings are labeled with their confidence level, and any finding below HIGH is accompanied by an explanation of why.
 
@@ -129,7 +146,7 @@ All findings in Sections 2–5 must appear here. ChatGPT uses this table to cali
 
 ---
 
-### Section 7: Warnings
+### Section 8: Warnings
 
 Warnings are findings that appear significant but must be verified before publishing. Modeled on the proximity-flag convention used in `waves-team-record-check` (records within a defined threshold trigger a flag rather than immediate assertion) and the "verify before posting" discipline built into `waves-champs-qualifier`.
 
@@ -153,7 +170,7 @@ If there are no warnings, write "No warnings this meet."
 
 ---
 
-### Section 8: Suggested Graphics
+### Section 9: Suggested Graphics
 
 ```
 ## Suggested Graphics
@@ -170,7 +187,7 @@ Graphics are suggestions. The Publisher and ChatGPT determine what is actually p
 
 ---
 
-### Section 9: Methodology Notes
+### Section 10: Methodology Notes
 
 ```
 ## Methodology Notes
@@ -186,7 +203,7 @@ This section exists so the artifact is auditable. If a finding is challenged aft
 
 ---
 
-### Section 10: Open Questions
+### Section 11: Open Questions
 
 ```
 ## Open Questions
