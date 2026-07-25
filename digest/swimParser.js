@@ -94,6 +94,7 @@ const EVENT_NAME_MAP = {
   '50m Free':   '50m Freestyle',
   '50m Breast': '50m Breaststroke',
   '50m Fly':    '50m Butterfly',
+  '100m IM':    '100m Individual Medley',
 };
 
 /**
