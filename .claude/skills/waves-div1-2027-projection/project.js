@@ -19,6 +19,26 @@ const MAX_ENTRIES_PER_TEAM       = 2;
 const MALE_BRACKETS_9_18   = ['Boys 9-10', 'Boys 11-12', 'Boys 13-14', 'Men 15-18'];
 const FEMALE_BRACKETS_9_18 = ['Girls 9-10', 'Girls 11-12', 'Girls 13-14', 'Women 15-18'];
 
+// Legal individual events per 2027 bracket — empirically verified from league-results-v2.json.
+// 7-8 includes all 4 25m events: Free/Back appear under "Boys 7-8" ageGroup label, Breast/Fly
+// appear under the companion "Boys 8&Under" label; both are contested by the same age group.
+// 9-10 does NOT include 100m IM: IM appears only under "Boys 10&Under" ageGroup, a separate
+// cross-bracket contest distinct from the standard "Boys 9-10" events.
+export const BRACKET_LEGAL_EVENTS = {
+  'Boys 6&Under':  new Set(['25m Freestyle', '25m Backstroke']),
+  'Girls 6&Under': new Set(['25m Freestyle', '25m Backstroke']),
+  'Boys 7-8':      new Set(['25m Freestyle', '25m Backstroke', '25m Breaststroke', '25m Butterfly']),
+  'Girls 7-8':     new Set(['25m Freestyle', '25m Backstroke', '25m Breaststroke', '25m Butterfly']),
+  'Boys 9-10':     new Set(['50m Freestyle', '50m Backstroke', '50m Breaststroke', '50m Butterfly']),
+  'Girls 9-10':    new Set(['50m Freestyle', '50m Backstroke', '50m Breaststroke', '50m Butterfly']),
+  'Boys 11-12':    new Set(['50m Freestyle', '50m Backstroke', '50m Breaststroke', '50m Butterfly', '100m Individual Medley']),
+  'Girls 11-12':   new Set(['50m Freestyle', '50m Backstroke', '50m Breaststroke', '50m Butterfly', '100m Individual Medley']),
+  'Boys 13-14':    new Set(['50m Freestyle', '50m Backstroke', '50m Breaststroke', '50m Butterfly', '100m Individual Medley']),
+  'Girls 13-14':   new Set(['50m Freestyle', '50m Backstroke', '50m Breaststroke', '50m Butterfly', '100m Individual Medley']),
+  'Men 15-18':     new Set(['50m Freestyle', '50m Backstroke', '50m Breaststroke', '50m Butterfly', '100m Individual Medley']),
+  'Women 15-18':   new Set(['50m Freestyle', '50m Backstroke', '50m Breaststroke', '50m Butterfly', '100m Individual Medley']),
+};
+
 // ── HELPERS ───────────────────────────────────────────────────────────────────
 function readJson(absolutePath) {
   const raw = readFileSync(absolutePath, 'utf8').replace(/^﻿/, '');
@@ -163,11 +183,13 @@ export function buildAgedRoster(league, teams) {
       }
     }
 
-    // 6. Store in agedRoster
+    // 6. Store in agedRoster — only keep events legal for the destination bracket
     if (!agedRoster[team]) agedRoster[team] = {};
     if (!agedRoster[team][bracket2027]) agedRoster[team][bracket2027] = {};
 
+    const legalEvents = BRACKET_LEGAL_EVENTS[bracket2027];
     for (const [event, pbTime] of Object.entries(eventBests)) {
+      if (legalEvents && !legalEvents.has(event)) continue;
       if (!agedRoster[team][bracket2027][event]) {
         agedRoster[team][bracket2027][event] = [];
       }

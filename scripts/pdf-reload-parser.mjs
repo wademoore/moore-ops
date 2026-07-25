@@ -510,9 +510,10 @@ const FULL_RESULT_END = /[A-Z]{2,6}\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(?:DQ|
  * Detects multi-line name-wrapped entries and returns the stitched line + skip index.
  *
  * Handles cases where the PDF text extractor splits an entry across 2–3 lines:
- *   “5 Romesburg, Anne”  +  “Katherine”       +  “14 KM  NT  1:41.75”
- *   “4 McDonald-Scanlon,”  +  “Coleman”         +  “18 KM  27.56 28.48”
- *   “11 Dafashy, Elizabeth, Ellie or””  +  “Ellie D.””  +  “12 QL  44.31 43.23”
+ *   “5 Romesburg, Anne”  +  “Katherine”         +  “14 KM  NT  1:41.75”
+ *   “4 McDonald-Scanlon,”  +  “Coleman”           +  “18 KM  27.56 28.48”
+ *   “X Waldron-Kolloff, Ella Rea”  +  “EXH”       +  “14 QL  1:38.50 1:40.45”  (HIST EXT 6)
+ *   “X Dafashy, Elizabeth, Ellie or\””  +  “Ellie D.\” EXH”  +  “11 QL  50.14 49.15”  (HIST EXT 11)
  *   “-- Dafashy, Elizabeth”  +  “9 QL  NT  NS”
  *
  * Returns { stitched, nextI } when a wrap is detected and parseable, or null.
@@ -568,8 +569,14 @@ function tryWrapStitch(lines, i) {
 
   if (!lastName || !firstName) return null;
 
+  // HIST EXT 11: EXH marker on a continuation line with double-quoted nickname.
+  // When the second-comma truncation strips an EXH that lived on a continuation line
+  // (e.g. 'Ellie D.” EXH'), re-inject it before the data fields so m4 can match.
+  const exhInContinuation = nameParts.slice(1).some(p => /\bEXH\b/i.test(p));
+  const exhInfix = (exhInContinuation && !/\bEXH\b/i.test(firstName)) ? ' EXH' : '';
+
   return {
-    stitched: `${prefix} ${lastName}, ${firstName}   ${dataLine}`,
+    stitched: `${prefix} ${lastName}, ${firstName}${exhInfix}   ${dataLine}`,
     nextI,
   };
 }

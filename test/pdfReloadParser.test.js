@@ -468,3 +468,43 @@ describe('HIST EXT 10 — tied relay place marker (e.g. "2*")', () => {
     assert.ok(result.time !== null, 'time should be set');
   });
 });
+
+describe('HIST EXT 11 — tryWrapStitch: EXH marker on double-quoted-nickname continuation line', () => {
+  it('X-prefix with comma-separated nickname wrap + EXH on continuation → stitched and parseable as EXH row', () => {
+    const lines = [
+      'X Dafashy, Elizabeth, Ellie or"',
+      'Ellie D." EXH',
+      '11 QL \t50.14 49.15',
+    ];
+    const result = tryWrapStitch(lines, 0);
+    assert.ok(result, 'should detect wrap');
+    assert.equal(result.nextI, 2);
+    const parsed = parseIndividualRow(result.stitched);
+    assert.ok(parsed, 'stitched line should parse via m4');
+    assert.equal(parsed.exhibition, true);
+    assert.equal(parsed.swimmer, 'Dafashy Elizabeth');
+    assert.equal(parsed.team, 'QL');
+    assert.equal(parsed.age, 11);
+    assert.equal(parsed.dq, false);
+    assert.ok(parsed.time !== null, 'official time should be set');
+  });
+
+  it('HIST EXT 6 regression: EXH-on-own-line case still works after HIST EXT 11 change', () => {
+    const lines = [
+      'X Waldron-Kolloff, Ella Rea',
+      'EXH',
+      '14 QL \t1:38.50 1:40.45',
+    ];
+    const result = tryWrapStitch(lines, 0);
+    assert.ok(result, 'should detect X-prefix wrap');
+    assert.equal(result.nextI, 2);
+    const parsed = parseIndividualRow(result.stitched);
+    assert.ok(parsed, 'stitched X EXH line should parse via m4');
+    assert.equal(parsed.exhibition, true);
+    assert.equal(parsed.swimmer, 'Waldron-Kolloff Ella Rea');
+    assert.equal(parsed.team, 'QL');
+    assert.equal(parsed.age, 14);
+    assert.equal(parsed.dq, false);
+    assert.ok(parsed.time !== null, 'time should be set');
+  });
+});

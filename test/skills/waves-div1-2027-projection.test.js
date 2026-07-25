@@ -18,6 +18,7 @@ import {
   computeRosterCoverageGaps,
   computeRelayEligibilityFlags,
   DIV1_2027_TEAMS,
+  BRACKET_LEGAL_EVENTS,
 } from '../../.claude/skills/waves-div1-2027-projection/project.js';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -334,12 +335,12 @@ test('buildAgedRoster — swimmer ages one year and bracket shifts', () => {
   assert.ok(agedRoster['WT']?.['Girls 9-10']?.['50m Freestyle']);
 });
 
-test('buildAgedRoster — swimmer crossing bracket boundary (Boys 7-8 → Boys 9-10)', () => {
-  // age 8 → 9: from Boys 7-8 to Boys 9-10
+test('buildAgedRoster — swimmer crossing bracket boundary (Boys 7-8 → Boys 9-10): illegal 25m event filtered out', () => {
+  // age 8 → 9: 25m Freestyle is NOT a legal Boys 9-10 event and must be dropped
   const rows = [mkRow({ swimmer: 'Jones Bob', team: 'WT', age: 8, ageGroup: 'Boys 7-8', event: '25m Freestyle', time: 20 })];
   const { agedRoster } = buildAgedRoster(rows, TEAMS_2);
-  assert.ok(agedRoster['WT']?.['Boys 9-10']?.['25m Freestyle'], 'should be in Boys 9-10 bracket');
-  assert.equal(agedRoster['WT']?.['Boys 7-8']?.['25m Freestyle'], undefined, 'should NOT be in Boys 7-8 bracket');
+  assert.equal(agedRoster['WT']?.['Boys 9-10']?.['25m Freestyle'], undefined, 'illegal 25m event must be filtered from Boys 9-10');
+  assert.equal(agedRoster['WT']?.['Boys 7-8']?.['25m Freestyle'], undefined, 'must not appear in source bracket either');
 });
 
 test('buildAgedRoster — 18-year-old ages out entirely', () => {
@@ -436,6 +437,35 @@ test('buildAgedRoster — swimmer with only null times gets no event entry', () 
   const { agedRoster } = buildAgedRoster(rows, TEAMS_2);
   const events = agedRoster['WT']?.['Girls 9-10'] ?? {};
   assert.equal(Object.keys(events).length, 0);
+});
+
+test('buildAgedRoster — age2026=8 Boys 7-8 25m PB filtered from Boys 9-10; swimmer surfaces as full coverage gap', () => {
+  // Swimmer was age 8 (Boys 7-8) in 2026 with only a 25m Freestyle PB.
+  // Ages to Boys 9-10 in 2027. 25m Freestyle is illegal for Boys 9-10 (4 × 50m only).
+  // After fix: PB absent, no events stored, swimmer counted in bracket = pure coverage gap.
+  const rows = [
+    mkRow({ swimmer: 'Hunley Chris', team: 'WT', age: 8, ageGroup: 'Boys 7-8', event: '25m Freestyle', time: 18.5 }),
+  ];
+  const { agedRoster, swimmerBracketLog } = buildAgedRoster(rows, TEAMS_2);
+  assert.equal(agedRoster['WT']?.['Boys 9-10']?.['25m Freestyle'], undefined, 'illegal 25m PB must not appear in Boys 9-10');
+  assert.equal(Object.keys(agedRoster['WT']?.['Boys 9-10'] ?? {}).length, 0, 'zero events stored = full coverage gap');
+  assert.equal(swimmerBracketLog['WT']?.['Boys 9-10'], 1, 'swimmer still counted in bracket despite no legal PBs');
+});
+
+test('buildAgedRoster — returning age2026=9 Boys 9-10 swimmer retains 50m PBs; Boys 10&Under IM filtered', () => {
+  // Swimmer was age 9 (Boys 9-10) in 2026, ages to 10 (still Boys 9-10) in 2027.
+  // Legal 50m events must be retained; 100m IM from the companion "Boys 10&Under"
+  // ageGroup label must be filtered out since IM is not a standard Boys 9-10 event.
+  const rows = [
+    mkRow({ swimmer: 'Owen Tommy', team: 'KM', age: 9, ageGroup: 'Boys 9-10',    event: '50m Freestyle',         time: 38.0 }),
+    mkRow({ swimmer: 'Owen Tommy', team: 'KM', age: 9, ageGroup: 'Boys 9-10',    event: '50m Backstroke',         time: 42.0 }),
+    mkRow({ swimmer: 'Owen Tommy', team: 'KM', age: 9, ageGroup: 'Boys 10&Under', event: '100m Individual Medley', time: 95.0 }),
+  ];
+  const TEAMS_KM = new Set(['KM']);
+  const { agedRoster } = buildAgedRoster(rows, TEAMS_KM);
+  assert.equal(agedRoster['KM']?.['Boys 9-10']?.['50m Freestyle']?.[0]?.pbTime,  38.0, '50m Free retained');
+  assert.equal(agedRoster['KM']?.['Boys 9-10']?.['50m Backstroke']?.[0]?.pbTime, 42.0, '50m Back retained');
+  assert.equal(agedRoster['KM']?.['Boys 9-10']?.['100m Individual Medley'],       undefined, 'IM from Boys 10&Under filtered out');
 });
 
 // ── buildRelayBaseline ────────────────────────────────────────────────────────

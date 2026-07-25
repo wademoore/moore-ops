@@ -2798,13 +2798,697 @@
   "2025": [
     {
       "season": "2025",
+      "date": "2025-06-16",
+      "meetSlug": "2025-06-16-eh-at-ftc",
+      "teams": [
+        "FTC",
+        "EH"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Edgehill_at_First_Colony_06_16_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 541,
+      "plausibilityFlags": 191,
+      "notes": "Opener; cross-div friendly. EH (Div 2) at FTC (Div 1)."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-16",
+      "meetSlug": "2025-06-16-gs-at-sh",
+      "teams": [
+        "SH",
+        "GS"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Gators_at_Splash_06_16_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 366,
+      "plausibilityFlags": 4,
+      "notes": "Opener; cross-div friendly. GS (Div 1) at SH (Div 3). Splash = SH."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-16",
+      "meetSlug": "2025-06-16-ip-at-wc",
+      "teams": [
+        "WC",
+        "IP"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_IP_Stingrays_at_WCP_Manta_Rays_06_16_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 245,
+      "plausibilityFlags": 13,
+      "notes": "Opener; cross-div friendly. IP (Div 3) at WC (Div 2). WCP = WC."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-16",
+      "meetSlug": "2025-06-16-km-at-kp",
+      "teams": [
+        "KP",
+        "KM"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Kingsmill_Sharks_at_Kingspoint_06_16_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 348,
+      "plausibilityFlags": 102,
+      "notes": "Opener; cross-div friendly. KM (Div 1) at KP (Div 2)."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-16",
+      "meetSlug": "2025-06-16-ps-at-fdc",
+      "teams": [
+        "FDC",
+        "PS"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Seastars_at_Ford's_Colony_06_16_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 497,
+      "plausibilityFlags": 4,
+      "notes": "Opener; cross-div friendly. PS (Div 2) at FDC (Div 1). Seastars = PS."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-16",
+      "meetSlug": "2025-06-16-vg-at-ql",
+      "teams": [
+        "QL",
+        "VG"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Village_Green_at_Queens_Lake_06_16_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 344,
+      "plausibilityFlags": 6,
+      "notes": "Opener; cross-div friendly. VG (Div 3) at QL (Div 2)."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-16",
+      "meetSlug": "2025-06-16-vw-at-wf",
+      "teams": [
+        "WF",
+        "VW"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_VW_Kraken_at_Windsor_Forest_06_16_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 218,
+      "plausibilityFlags": 82,
+      "notes": "Opener; cross-div friendly. VW (Div 3) at WF (Div 2)."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-16",
+      "meetSlug": "2025-06-16-wt-at-glt",
+      "teams": [
+        "GLT",
+        "WT"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Wellington_Waves_at_Typhoons_06_16_2025___Meet_Maestro™ (1).pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 330,
+      "plausibilityFlags": 2,
+      "notes": "Opener; cross-div friendly. WT (Div 1) at GLT (Div 3). Typhoons = GLT. Filename has ' (1)' suffix."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-16",
+      "meetSlug": "2025-06-16-wgpra-at-kw",
+      "teams": [
+        "KW",
+        "WGPRA"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_WGP_WAVES_at_Kingswood_Klams_06_16_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 462,
+      "plausibilityFlags": 210,
+      "notes": "Opener; cross-div friendly. WGPRA (Div 3) at KW (Div 1). WGP WAVES = WGPRA."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-23",
+      "meetSlug": "2025-06-23-fdc-at-gs",
+      "teams": [
+        "GS",
+        "FDC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Ford's_Colony_at_Gators_06_23_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 581,
+      "plausibilityFlags": 6,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-23",
+      "meetSlug": "2025-06-23-kw-at-km",
+      "teams": [
+        "KM",
+        "KW"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Kingswood_Klams_at_Kingsmill_Sharks_06_23_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 603,
+      "plausibilityFlags": 314,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-23",
+      "meetSlug": "2025-06-23-wt-at-ftc",
+      "teams": [
+        "FTC",
+        "WT"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Wellington_at_First_Colony_06_23_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 561,
+      "plausibilityFlags": 216,
+      "notes": "'Wellington' abbreviated in filename."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-23",
+      "meetSlug": "2025-06-23-eh-at-wf",
+      "teams": [
+        "WF",
+        "EH"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Edgehill_Eels_at_Windsor_Forest_06_23_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 408,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-23",
+      "meetSlug": "2025-06-23-wc-at-ps",
+      "teams": [
+        "PS",
+        "WC"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_WCP_Manta_Rays_at_Seastars_06_23_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 275,
+      "plausibilityFlags": 3,
+      "notes": "WCP = WC; Seastars = PS."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-23",
+      "meetSlug": "2025-06-23-kp-at-ql",
+      "teams": [
+        "QL",
+        "KP"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Kingspoint_at_Queens_Lake_06_23_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 361,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-23",
+      "meetSlug": "2025-06-23-vg-at-ip",
+      "teams": [
+        "IP",
+        "VG"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Village_Green_at_IP_Stingrays_06_23_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 198,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-23",
+      "meetSlug": "2025-06-23-glt-at-wgpra",
+      "teams": [
+        "WGPRA",
+        "GLT"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Typhoons_at_WGP_WAVES_06_23_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 225,
+      "plausibilityFlags": 7,
+      "notes": "Typhoons = GLT; WGP WAVES = WGPRA."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-23",
+      "meetSlug": "2025-06-23-sh-at-vw",
+      "teams": [
+        "VW",
+        "SH"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Splash_at_VW_Kraken_06_23_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 144,
+      "plausibilityFlags": 9,
+      "notes": "Splash = SH."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-30",
+      "meetSlug": "2025-06-30-ftc-at-fdc",
+      "teams": [
+        "FDC",
+        "FTC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_First_Colony_at_Ford's_Colony_06_30_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 743,
+      "plausibilityFlags": 242,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-30",
+      "meetSlug": "2025-06-30-km-at-gs",
+      "teams": [
+        "GS",
+        "KM"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Kingsmill_Sharks_at_Gators_06_30_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 528,
+      "plausibilityFlags": 120,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-30",
+      "meetSlug": "2025-06-30-kw-at-wt",
+      "teams": [
+        "WT",
+        "KW"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Kingswood_Klams_at_Wellington_Waves_06_30_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 543,
+      "plausibilityFlags": 185,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-30",
+      "meetSlug": "2025-06-30-kp-at-eh",
+      "teams": [
+        "EH",
+        "KP"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Kingspoint_at_Edgehill_Eels_06_30_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 385,
+      "plausibilityFlags": 4,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-30",
+      "meetSlug": "2025-06-30-wf-at-ps",
+      "teams": [
+        "PS",
+        "WF"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Windsor_Forest_at_Seastars_06_30_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 342,
+      "plausibilityFlags": 0,
+      "notes": "Seastars = PS."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-30",
+      "meetSlug": "2025-06-30-ql-at-wc",
+      "teams": [
+        "WC",
+        "QL"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Queens_Lake_at_WCP_Manta_Rays_06_30_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 361,
+      "plausibilityFlags": 4,
+      "notes": "WCP = WC."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-30",
+      "meetSlug": "2025-06-30-wgpra-at-vg",
+      "teams": [
+        "VG",
+        "WGPRA"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_WGP_WAVES_at_Village_Green_06_30_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 257,
+      "plausibilityFlags": 2,
+      "notes": "WGP WAVES = WGPRA."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-30",
+      "meetSlug": "2025-06-30-sh-at-glt",
+      "teams": [
+        "GLT",
+        "SH"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Splash_at_Typhoons_06_30_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 192,
+      "plausibilityFlags": 1,
+      "notes": "Splash = SH; Typhoons = GLT."
+    },
+    {
+      "season": "2025",
+      "date": "2025-06-30",
+      "meetSlug": "2025-06-30-ip-at-vw",
+      "teams": [
+        "VW",
+        "IP"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_IP_Stingrays_at_VW_Kraken_06_30_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 148,
+      "plausibilityFlags": 20,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-07",
+      "meetSlug": "2025-07-07-km-at-ftc",
+      "teams": [
+        "FTC",
+        "KM"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Kingsmill_at_First_Colony_07_07_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 660,
+      "plausibilityFlags": 383,
+      "notes": "'Kingsmill' abbreviated in filename."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-07",
+      "meetSlug": "2025-07-07-gs-at-kw",
+      "teams": [
+        "KW",
+        "GS"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Gators_at_Kingswood_Klams_07_07_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 618,
+      "plausibilityFlags": 223,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-07",
+      "meetSlug": "2025-07-07-fdc-at-wt",
+      "teams": [
+        "WT",
+        "FDC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Ford's_Colony_at_Wellington_Waves_07_07_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 541,
+      "plausibilityFlags": 12,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-07",
+      "meetSlug": "2025-07-07-wc-at-wf",
+      "teams": [
+        "WF",
+        "WC"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_WCP_Manta_Rays_at_Windsor_Forest_07_07_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 371,
+      "plausibilityFlags": 6,
+      "notes": "WCP = WC."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-07",
+      "meetSlug": "2025-07-07-eh-at-ql",
+      "teams": [
+        "QL",
+        "EH"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Edgehill_Eels_at_Queens_Lake_07_07_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 441,
+      "plausibilityFlags": 5,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-07",
+      "meetSlug": "2025-07-07-ps-at-kp",
+      "teams": [
+        "KP",
+        "PS"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Seastars_at_Kingspoint_07_07_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 279,
+      "plausibilityFlags": 1,
+      "notes": "Seastars = PS."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-07",
+      "meetSlug": "2025-07-07-vw-at-glt",
+      "teams": [
+        "GLT",
+        "VW"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_VW_Kraken_at_Typhoons_07_07_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 146,
+      "plausibilityFlags": 7,
+      "notes": "Typhoons = GLT."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-07",
+      "meetSlug": "2025-07-07-vg-at-sh",
+      "teams": [
+        "SH",
+        "VG"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Village_Green_at_Splash_07_07_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 253,
+      "plausibilityFlags": 1,
+      "notes": "Splash = SH."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-07",
+      "meetSlug": "2025-07-07-ip-at-wgpra",
+      "teams": [
+        "WGPRA",
+        "IP"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_IP_Stingrays_at_WGP_WAVES_07_07_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 232,
+      "plausibilityFlags": 2,
+      "notes": "WGP WAVES = WGPRA."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-14",
+      "meetSlug": "2025-07-14-kw-at-fdc",
+      "teams": [
+        "FDC",
+        "KW"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Kingswood_Klams_at_Ford's_Colony_07_14_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 747,
+      "plausibilityFlags": 225,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-14",
+      "meetSlug": "2025-07-14-ftc-at-gs",
+      "teams": [
+        "GS",
+        "FTC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_First_Colony_at_Gators_(Senior_Night)_07_14_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 654,
+      "plausibilityFlags": 259,
+      "notes": "Senior Night."
+    },
+    {
+      "season": "2025",
       "date": "2025-07-14",
       "meetSlug": "2025-07-14-wt-at-km",
       "teams": [
         "KM",
         "WT"
       ],
-      "division": 2,
+      "division": 1,
       "course": "SCM",
       "sourcePdfPath": "data-source-pdfs/2025/2025_Wellington_Waves_at_Kingsmill_Sharks_07_14_2025___Meet_Maestro™.pdf",
       "pdfAvailable": true,
@@ -2812,7 +3496,277 @@
       "rowCountExpected": null,
       "rowCountParsed": 552,
       "plausibilityFlags": 164,
-      "notes": "Trial meet: non-scoring-finisher row validation."
+      "notes": "Trial meet: non-scoring-finisher row validation. Division corrected from 2 to 1 (WT in Div 1 in 2025)."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-14",
+      "meetSlug": "2025-07-14-ql-at-ps",
+      "teams": [
+        "PS",
+        "QL"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Queens_Lake_at_Seastars_07_14_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 349,
+      "plausibilityFlags": 2,
+      "notes": "Seastars = PS."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-14",
+      "meetSlug": "2025-07-14-wf-at-kp",
+      "teams": [
+        "KP",
+        "WF"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Windsor_Forest_at_Kingspoint_07_14_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 309,
+      "plausibilityFlags": 3,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-14",
+      "meetSlug": "2025-07-14-wc-at-eh",
+      "teams": [
+        "EH",
+        "WC"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_WCP_Manta_Rays_at_Edgehill_Eels_07_14_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 426,
+      "plausibilityFlags": 4,
+      "notes": "WCP = WC."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-14",
+      "meetSlug": "2025-07-14-wgpra-at-sh",
+      "teams": [
+        "SH",
+        "WGPRA"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_WGP_WAVES_at_Splash_07_14_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 258,
+      "plausibilityFlags": 0,
+      "notes": "WGP WAVES = WGPRA; Splash = SH."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-14",
+      "meetSlug": "2025-07-14-glt-at-ip",
+      "teams": [
+        "IP",
+        "GLT"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Typhoons_at_IP_Stingrays_07_14_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 194,
+      "plausibilityFlags": 4,
+      "notes": "Typhoons = GLT."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-14",
+      "meetSlug": "2025-07-14-vg-at-vw",
+      "teams": [
+        "VW",
+        "VG"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Village_Green_at_VW_Kraken_07_14_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 153,
+      "plausibilityFlags": 14,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-21",
+      "meetSlug": "2025-07-21-ftc-at-kw",
+      "teams": [
+        "KW",
+        "FTC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_First_Colony_at_Kingswood_Klams_07_21_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 712,
+      "plausibilityFlags": 435,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-21",
+      "meetSlug": "2025-07-21-fdc-at-km",
+      "teams": [
+        "KM",
+        "FDC"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Ford's_Colony_at_Kingsmill_Sharks_07_21_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 604,
+      "plausibilityFlags": 154,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-21",
+      "meetSlug": "2025-07-21-gs-at-wt",
+      "teams": [
+        "WT",
+        "GS"
+      ],
+      "division": 1,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Gators_at_Wellington_Waves_07_21_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 543,
+      "plausibilityFlags": 164,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-21",
+      "meetSlug": "2025-07-21-wf-at-ql",
+      "teams": [
+        "QL",
+        "WF"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Windsor_Forest_at_Queens_Lake_07_21_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 401,
+      "plausibilityFlags": 0,
+      "notes": ""
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-21",
+      "meetSlug": "2025-07-21-ps-at-eh",
+      "teams": [
+        "EH",
+        "PS"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Seastars_at_Edgehill_Eels_07_21_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 362,
+      "plausibilityFlags": 4,
+      "notes": "Seastars = PS."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-21",
+      "meetSlug": "2025-07-21-kp-at-wc",
+      "teams": [
+        "WC",
+        "KP"
+      ],
+      "division": 2,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Kingspoint_at_WCP_Manta_Rays_07_21_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 295,
+      "plausibilityFlags": 2,
+      "notes": "WCP = WC."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-21",
+      "meetSlug": "2025-07-21-glt-at-vg",
+      "teams": [
+        "VG",
+        "GLT"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Typhoons_at_Village_Green_07_21_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 197,
+      "plausibilityFlags": 5,
+      "notes": "Typhoons = GLT."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-21",
+      "meetSlug": "2025-07-21-sh-at-ip",
+      "teams": [
+        "IP",
+        "SH"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_Splash_at_IP_Stingrays_07_21_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 229,
+      "plausibilityFlags": 3,
+      "notes": "Splash = SH."
+    },
+    {
+      "season": "2025",
+      "date": "2025-07-21",
+      "meetSlug": "2025-07-21-vw-at-wgpra",
+      "teams": [
+        "WGPRA",
+        "VW"
+      ],
+      "division": 3,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2025/2025_VW_Kraken_at_WGP_WAVES_07_21_2025___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 191,
+      "plausibilityFlags": 12,
+      "notes": "WGP WAVES = WGPRA."
     }
   ],
   "2026": [
