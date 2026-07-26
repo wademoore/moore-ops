@@ -8,7 +8,7 @@ const dataDir = path.join(__dirname, '..', '..', '..', 'data');
 
 const league   = JSON.parse(readFileSync(path.join(dataDir, 'league-results-v2.json'),         'utf8').replace(/^﻿/, ''));
 const swim     = JSON.parse(readFileSync(path.join(dataDir, 'swim-results.json'),            'utf8').replace(/^﻿/, ''));
-const history  = JSON.parse(readFileSync(path.join(dataDir, 'league-results-history.json'), 'utf8').replace(/^﻿/, ''));
+const history  = JSON.parse(readFileSync(path.join(dataDir, 'league-results-history-v2.json'), 'utf8').replace(/^﻿/, ''));
 
 // Normalize history to the { swimmer, event, dq, seconds, ageGroup, date } shape hasAnyPriorQual expects.
 // league-results-history.json (and league-results.json) store time under r.time; only
