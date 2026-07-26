@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 430+ passing
+- Run npm test after changes — must stay at 624+ passing
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
 
@@ -242,7 +242,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-**✓ 604 unit tests passing, 0 failing (current baseline as of July 2026 — 430 post ageGroup fix, +12 from fractional-points / 1-tab relay / DQ-handling fixes, +10 from FIX 1 Unicode names / FIX 2 multi-line wrap / FIX 3 relay NT, +14 from HIST EXT null-byte / EXH / non-scoring-finisher / SCR + pre-existing double-quote name fix, +1 from HIST EXT 6 X-prefix name-wrap, +2 from HIST EXT 7 NT-official EXH rows, +8 from waves-div1-simulation nearest-meet rewrite (17 new / 9 removed), +2 from HIST EXT 8 parenthetical-nickname EXH rows, +85 from waves-div1-2027-projection skill commit 868c84c, +5 from HIST EXT 9 ordinal-suffix / HIST EXT 10 tied-relay-place / HIST EXT 11 double-quoted EXH continuation, +2 from BRACKET_LEGAL_EVENTS cross-bracket event filter in waves-div1-2027-projection, +3 from v2 path tests in swimParser.test.js)**
+**✓ 624 unit tests passing, 0 failing (current baseline as of July 2026 — 430 post ageGroup fix, +12 from fractional-points / 1-tab relay / DQ-handling fixes, +10 from FIX 1 Unicode names / FIX 2 multi-line wrap / FIX 3 relay NT, +14 from HIST EXT null-byte / EXH / non-scoring-finisher / SCR + pre-existing double-quote name fix, +1 from HIST EXT 6 X-prefix name-wrap, +2 from HIST EXT 7 NT-official EXH rows, +8 from waves-div1-simulation nearest-meet rewrite (17 new / 9 removed), +2 from HIST EXT 8 parenthetical-nickname EXH rows, +85 from waves-div1-2027-projection skill commit 868c84c, +5 from HIST EXT 9 ordinal-suffix / HIST EXT 10 tied-relay-place / HIST EXT 11 double-quoted EXH continuation, +2 from BRACKET_LEGAL_EVENTS cross-bracket event filter in waves-div1-2027-projection, +3 from v2 path tests in swimParser.test.js, +1 from SA FIX 1 Delaney U+201C nickname regression test)**
 
 Run via: `npm test` (uses Node's built-in `node:test` runner).
 
