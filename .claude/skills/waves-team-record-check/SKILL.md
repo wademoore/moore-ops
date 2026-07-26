@@ -32,8 +32,12 @@ Team-wide in scope (any WT swimmer, not just Myles/Ophelia) — distinct from
 | Myles   | 9   | Boys 9-10            |
 | Ophelia | 7   | Girls 8&Under        |
 
-League results carry `ageGroup` directly; relay results carry a combined gender+bracket
-string (`"Women Open"`, `"Boys 9-10"`, etc.) — no derivation needed for either.
+League results carry `ageGroup` directly. `relay-results-v2.json` stores relay ageGroups
+as age-range labels (`"Girls 9-18"`, `"Boys 9-18"`, `"Mixed 9-18"`); `check.js` normalizes
+these to the `"Women Open"` / `"Men Open"` format used in `waves-team-records.json` via
+`RELAY_AGEGRP_MAP` at the read boundary. `"Mixed 9-18"` has no corresponding record
+category and is silently dropped pending Wade's decision on whether Mixed Open records
+should exist.
 
 Results whose `ageGroup` has no matching entry in `waves-team-records.json`
 (e.g. `"Girls 7-8"`, `"Boys 10&Under"`) are silently skipped — those brackets have
@@ -88,5 +92,7 @@ before posting or commenting publicly.
 
 - **Read-only.** Never modifies `waves-team-records.json` — updating the record file
   after a confirmed break is a separate Updater task.
-- Relay records (`Women Open`, `Men Open`) are included in both blocks; Mixed Open
-  relay results are checked but currently no Mixed Open record exists.
+- Relay records (`Women Open`, `Men Open`) are included in both blocks. `relay-results-v2.json`
+  stores relay ageGroups as `"Girls 9-18"` / `"Boys 9-18"` — `check.js` normalizes these
+  to `"Women Open"` / `"Men Open"` via `RELAY_AGEGRP_MAP`. `"Mixed 9-18"` rows are silently
+  skipped (no record category exists).

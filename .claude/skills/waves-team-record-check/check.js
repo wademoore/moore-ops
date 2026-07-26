@@ -55,10 +55,21 @@ for (const r of league.filter(r => r.team === 'WT' && !r.dq)) {
   consider(recordKey, flipName(r.swimmer || 'Unknown'), r.time, r.date, r.meet);
 }
 
+// relay-results-v2.json uses age-range brackets ("Girls 9-18", "Boys 9-18");
+// waves-team-records.json relay keys use "Women Open" / "Men Open". Normalize
+// at read boundary so relay rows produce matching record keys.
+// "Mixed 9-18" has no record category — silently unmatched pending Wade's
+// decision on whether a Mixed Open record should exist.
+const RELAY_AGEGRP_MAP = {
+  'Girls 9-18': 'Women Open',
+  'Boys 9-18':  'Men Open',
+};
+
 // ── Ingest relay results (WT, !dq) ───────────────────────────────────────────
 for (const r of relays.filter(r => r.team === 'WT' && !r.dq)) {
   if (!r.ageGroup || !r.event || r.time == null) continue;
-  const recordKey = r.ageGroup + '|' + r.event + '|' + (r.course || 'SCM');
+  const ageGroup  = RELAY_AGEGRP_MAP[r.ageGroup] ?? r.ageGroup;
+  const recordKey = ageGroup + '|' + r.event + '|' + (r.course || 'SCM');
   const displayName = fmtRelayNames(r.swimmers);
   consider(recordKey, displayName, r.time, r.date, r.meet);
 }
