@@ -1,0 +1,18 @@
+{
+  "awards": [
+    {
+      "year": 2025,
+      "awardName": "Most Improved",
+      "ageGroup": "Boys 7-8",
+      "recipient": "Myles Moore",
+      "team": "WT"
+    },
+    {
+      "year": 2025,
+      "awardName": "Most Improved",
+      "ageGroup": "Girls 6&Under",
+      "recipient": "Ophelia Moore",
+      "team": "WT"
+    }
+  ]
+}
