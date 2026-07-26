@@ -116,6 +116,7 @@ const MIN_TIMES = {
   '100m Individual Medley SCM': 50.0,
   '200m Medley Relay SCM':     100.0,
   '200m Freestyle Relay SCM':   90.0,
+  '100m Freestyle Relay SCM':   55.0,
   '25m Freestyle SCY':          10.0,
   '50m Freestyle SCY':          22.0,
   '25m Backstroke SCY':         13.0,
@@ -147,15 +148,31 @@ function parseEventHeader(line, defaultCourse) {
   const m = line.match(
     /^#(\d+)\s+(Boys|Girls|Men|Women|Mixed)\s+(\d+\s*&\s*[Uu]nder|\d+-\d+|Open)\s+(.*?)(?:\s+(SCM|SCY))?\s*$/i
   );
-  if (!m) return null;
+  if (m) {
+    const eventNum  = parseInt(m[1], 10);
+    const gender    = m[2];
+    const bracket   = normalizeAgeGroup(m[3]);
+    const eventName = normalizeEventName(m[4].trim());
+    const course    = (m[5] || defaultCourse).toUpperCase();
+    return { eventNum, ageGroup: `${gender} ${bracket}`, eventName, course };
+  }
 
-  const eventNum  = parseInt(m[1], 10);
-  const gender    = m[2];
-  const bracket   = normalizeAgeGroup(m[3]);
-  const eventName = normalizeEventName(m[4].trim());
-  const course    = (m[5] || defaultCourse).toUpperCase();
+  // "N Year Olds" bracket format — Summer Awards / Meet Maestro invitational.
+  // 7 or 8 Year Olds → 7-8; 9 or 10 Year Olds → 9-10.
+  const myo = line.match(
+    /^#(\d+)\s+(Boys|Girls|Men|Women|Mixed)\s+(\d+)\s+Year\s+Old[s]?\s+(.*?)(?:\s+(SCM|SCY))?\s*$/i
+  );
+  if (myo) {
+    const eventNum  = parseInt(myo[1], 10);
+    const gender    = myo[2];
+    const age       = parseInt(myo[3], 10);
+    const bracket   = (age === 7 || age === 8) ? '7-8' : (age === 9 || age === 10) ? '9-10' : `${age}-${age}`;
+    const eventName = normalizeEventName(myo[4].trim());
+    const course    = (myo[5] || defaultCourse).toUpperCase();
+    return { eventNum, ageGroup: `${gender} ${bracket}`, eventName, course };
+  }
 
-  return { eventNum, ageGroup: `${gender} ${bracket}`, eventName, course };
+  return null;
 }
 
 /**
@@ -178,6 +195,7 @@ function isSkipLine(line) {
   if (/^SwimTopia/i.test(line)) return true; // SwimTopia Meet Maestro footer
   if (/^--\s+\d+\s+of\s+\d+\s+--$/.test(line)) return true; // "-- N of M --" page indicators (2022–2024)
   if (/^\d{4}$/.test(line)) return true; // standalone year token (page-header artifact in 2022+ PDFs)
+  if (/^CHMP\b/.test(line)) return true; // Summer Awards CHMP achievement header lines
   return false;
 }
 
@@ -199,7 +217,7 @@ function parseIndividualRow(line) {
   // m: normal timed row, including 2026-style EXH suffix.
   // Place may have an asterisk suffix (e.g. “3*”) indicating a tied finish.
   const m = line.match(
-    /^(\d+)\*?\s+((?:[\p{L}\p{M}'.\-““”"()]+|\d+(?:st|nd|rd|th))(?:\s+(?:[\p{L}\p{M}'.\-““”"()]+|\d+(?:st|nd|rd|th)))*),\s*((?:[\p{L}\p{M}'.\-““”"()]+|\d+(?:st|nd|rd|th))(?:\s+(?:[\p{L}\p{M}'.\-““”"()]+|\d+(?:st|nd|rd|th)))*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+(?:\.\d+)?)?\s*$/iu
+    /^(\d+)\*?\s+((?:[\p{L}\p{M}'.\-””””()]+|\d+(?:st|nd|rd|th))(?:\s+(?:[\p{L}\p{M}'.\-””””()]+|\d+(?:st|nd|rd|th)))*),\s*((?:[\p{L}\p{M}'.\-””””()]+|\d+(?:st|nd|rd|th))(?:\s+(?:[\p{L}\p{M}'.\-””””()]+|\d+(?:st|nd|rd|th)))*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+(?:\.\d+)?)?(?:\s+(CHMP))?\s*$/iu
   );
   if (m) {
     const place       = parseInt(m[1], 10);
@@ -224,6 +242,7 @@ function parseIndividualRow(line) {
       time,
       dq: isDQ,
       exhibition,
+      achievedChamps: (m[9] || '').toUpperCase() === 'CHMP',
     };
   }
 
@@ -370,7 +389,33 @@ function parseRelayRow(line) {
   for (let i = 0; i < f1words.length; i++) {
     if (/^[A-Z]{2,6}$/.test(f1words[i])) { teamIdx = i; break; }
   }
-  if (teamIdx === -1) return null;
+  if (teamIdx === -1) {
+    // Fallback for Summer Awards 1-tab variant where team abbr lands at the end of parts[0]:
+    // parts[0] = "place fullName relayLetter abbr", parts[1] = times only.
+    const f0words = f0.split(/\s+/);
+    let f0TeamIdx = -1;
+    for (let j = f0words.length - 1; j >= 0; j--) {
+      if (/^[A-Z]{2,6}$/.test(f0words[j])) { f0TeamIdx = j; break; }
+    }
+    if (f0TeamIdx === -1) return null;
+    const team0 = f0words[f0TeamIdx];
+    const timeParts0 = parts[1].trim().split(/\s+/).filter(Boolean);
+    if (timeParts0.length < 2) return null;
+    const seedStr0   = timeParts0[0].toUpperCase();
+    const official0  = timeParts0[1].toUpperCase();
+    if (!/^(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(seedStr0))  return null;
+    if (!/^(NT|DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(official0)) return null;
+    const isDQ0 = official0 === 'DQ' || official0 === 'NT';
+    const time0 = isDQ0 ? null : timeToSeconds(official0);
+    return {
+      team: team0,
+      place: isDQ0 ? null : place,
+      time: time0,
+      dq: isDQ0,
+      swimmers: null,
+      ...(exhibitionRelay && { exhibitionRelay: true }),
+    };
+  }
   const team = f1words[teamIdx].toUpperCase();
 
   // Times: everything after the team abbreviation in f1, plus any further tab fields
@@ -586,8 +631,8 @@ function tryWrapStitch(lines, i) {
 // ---------------------------------------------------------------------------
 
 function parsePdfText(text, entry, records) {
-  const { date, teams, sourcePdfPath, season, course: defaultCourse } = entry;
-  const meetName = `${teams[0]} vs ${teams[1]}`;
+  const { date, teams, meetName: meetNameOverride, sourcePdfPath, season, course: defaultCourse } = entry;
+  const meetName = meetNameOverride || `${teams[0]} vs ${teams[1]}`;
   const sourcePdf = sourcePdfPath;
 
   // Null-byte colon preprocessing: 2022–2024 PDFs (both browser-printed and native-export)
@@ -687,6 +732,7 @@ function parsePdfText(text, entry, records) {
             overallCount:      null,
             dq:                partial.dq,
             exhibition:        partial.exhibition,
+            achievedChamps:    partial.achievedChamps ?? false,
             season:            String(season),
             sourcePdf,
             sourceEventNumber: currentEvent.eventNum,
@@ -721,6 +767,7 @@ function parsePdfText(text, entry, records) {
           overallCount:     null,  // filled in post-parse
           dq:               partial.dq,
           exhibition:       partial.exhibition,
+          achievedChamps:   partial.achievedChamps ?? false,
           season:           String(season),
           sourcePdf,
           sourceEventNumber: currentEvent.eventNum,
@@ -1056,4 +1103,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
 }
 
-export { parseIndividualRow, parseRelayRow, tryWrapStitch };
+export { parseIndividualRow, parseRelayRow, tryWrapStitch, parseEventHeader, isSkipLine };

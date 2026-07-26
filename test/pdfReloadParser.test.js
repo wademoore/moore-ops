@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseIndividualRow, parseRelayRow, tryWrapStitch } from '../scripts/pdf-reload-parser.mjs';
+import { parseIndividualRow, parseRelayRow, tryWrapStitch, parseEventHeader, isSkipLine } from '../scripts/pdf-reload-parser.mjs';
 
 describe('parseIndividualRow — DQ handling', () => {
   it('normal DQ row (DQ in official-time column) → dq: true, time: null', () => {
@@ -506,5 +506,127 @@ describe('HIST EXT 11 — tryWrapStitch: EXH marker on double-quoted-nickname co
     assert.equal(parsed.age, 14);
     assert.equal(parsed.dq, false);
     assert.ok(parsed.time !== null, 'time should be set');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SA EXT 1 — "Year Olds" event header (Summer Awards / Meet Maestro invitational)
+// ---------------------------------------------------------------------------
+
+describe('SA EXT 1 — parseEventHeader Year Olds brackets', () => {
+  it('7 Year Olds → Girls 7-8', () => {
+    const r = parseEventHeader('#5 Girls 7 Year Olds 25m Freestyle', 'SCM');
+    assert.ok(r, 'should parse');
+    assert.equal(r.eventNum, 5);
+    assert.equal(r.ageGroup, 'Girls 7-8');
+    assert.equal(r.eventName, '25m Freestyle');
+    assert.equal(r.course, 'SCM');
+  });
+  it('8 Year Olds → Boys 7-8', () => {
+    const r = parseEventHeader('#6 Boys 8 Year Olds 25m Freestyle', 'SCM');
+    assert.ok(r, 'should parse');
+    assert.equal(r.ageGroup, 'Boys 7-8');
+  });
+  it('9 Year Olds → Girls 9-10', () => {
+    const r = parseEventHeader('#19 Girls 9 Year Olds 25m Backstroke', 'SCM');
+    assert.ok(r, 'should parse');
+    assert.equal(r.ageGroup, 'Girls 9-10');
+  });
+  it('10 Year Olds → Boys 9-10', () => {
+    const r = parseEventHeader('#20 Boys 10 Year Olds 25m Backstroke', 'SCM');
+    assert.ok(r, 'should parse');
+    assert.equal(r.ageGroup, 'Boys 9-10');
+  });
+  it('standard bracket still parses after Year Olds added', () => {
+    const r = parseEventHeader('#1 Girls 6&Under 25m Freestyle', 'SCM');
+    assert.ok(r, 'should parse');
+    assert.equal(r.ageGroup, 'Girls 6&Under');
+  });
+  it('Year Old (singular) also matches', () => {
+    const r = parseEventHeader('#7 Boys 7 Year Old 25m Freestyle', 'SCM');
+    assert.ok(r, 'should parse singular form');
+    assert.equal(r.ageGroup, 'Boys 7-8');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SA EXT 2 — achievedChamps flag on m1 rows
+// ---------------------------------------------------------------------------
+
+describe('SA EXT 2 — achievedChamps flag', () => {
+  it('row with CHMP marker → achievedChamps: true', () => {
+    const r = parseIndividualRow('1   Hunley, Christian   8   WT   NT   30.50   7   CHMP');
+    assert.ok(r, 'should parse');
+    assert.equal(r.achievedChamps, true);
+    assert.equal(r.dq, false);
+    assert.equal(r.place, 1);
+  });
+  it('row without CHMP marker → achievedChamps: false', () => {
+    const r = parseIndividualRow('1   Hunley, Christian   8   WT   NT   30.50   7');
+    assert.ok(r, 'should parse');
+    assert.equal(r.achievedChamps, false);
+  });
+  it('EXH row without CHMP → achievedChamps: false', () => {
+    const r = parseIndividualRow('4   Holley, Scarlett   12   WT   1:45.00   1:45.00   EXH');
+    assert.ok(r, 'should parse');
+    assert.equal(r.achievedChamps, false);
+    assert.equal(r.exhibition, true);
+  });
+  it('DQ row (m1 pattern) → achievedChamps: false', () => {
+    const r = parseIndividualRow('5   Smith, John   10   WC   NT   DQ');
+    assert.ok(r, 'should parse');
+    assert.equal(r.achievedChamps, false);
+    assert.equal(r.dq, true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SA EXT 3 — CHMP header line skip
+// ---------------------------------------------------------------------------
+
+describe('SA EXT 3 — isSkipLine skips CHMP headers', () => {
+  it('CHMP\\t... header line is skipped', () => {
+    assert.equal(isSkipLine('CHMP\t#5 Girls 7 Year Olds'), true);
+  });
+  it('CHMP standalone word line is skipped', () => {
+    assert.equal(isSkipLine('CHMP standard'), true);
+  });
+  it('non-CHMP digit-start line is not skipped', () => {
+    assert.equal(isSkipLine('1   Smith, John   8   WT   NT   30.50   7'), false);
+  });
+  it('empty line is skipped (pre-existing)', () => {
+    assert.equal(isSkipLine(''), true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SA EXT 4 — relay 1-tab variant with team abbr in parts[0]
+// ---------------------------------------------------------------------------
+
+describe('SA EXT 4 — parseRelayRow parts[0] fallback', () => {
+  it('KW abbr at end of parts[0] → team KW, place 2', () => {
+    const r = parseRelayRow('2 Kingswood Klams A KW\t1:18.84 1:18.26 26');
+    assert.ok(r, 'should parse');
+    assert.equal(r.team, 'KW');
+    assert.equal(r.place, 2);
+    assert.equal(r.dq, false);
+    assert.ok(r.time !== null, 'time should be set');
+  });
+  it('WT abbr at end of parts[0] → team WT, place 5', () => {
+    const r = parseRelayRow('5 Wellington Waves A WT\t1:38.50 1:44.10 20');
+    assert.ok(r, 'should parse');
+    assert.equal(r.team, 'WT');
+    assert.equal(r.place, 5);
+    assert.equal(r.dq, false);
+  });
+  it('existing 2-tab variant unaffected', () => {
+    const r = parseRelayRow("1 Ford's Colony \tA FDC \tNT 2:23.26");
+    assert.ok(r, 'should still parse');
+    assert.equal(r.team, 'FDC');
+  });
+  it('existing 1-tab WPD variant unaffected', () => {
+    const r = parseRelayRow('2 WP Dolphins \tA WPD 3:10.92 3:06.86');
+    assert.ok(r, 'should still parse');
+    assert.equal(r.team, 'WPD');
   });
 });
