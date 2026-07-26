@@ -61,6 +61,17 @@ These files are read directly by `digest/builder.js` via `fs.readFile` — no Dr
 **Retired Lambda env vars** (can be removed from Lambda configuration — no longer used):
 `DRIVE_SPORTS_CONFIG_FILE_ID`, `DRIVE_FLAG_FOOTBALL_FILE_ID`, `DRIVE_PB_RECORDS_FILE_ID`, `DRIVE_SWIM_RESULTS_FILE_ID`, `DRIVE_WAVES_SEASON_FILE_ID`, `DRIVE_VPSU_RANKINGS_FILE_ID`
 
+### Sports season calendar (2026)
+
+| Sport | seasonStart | seasonEnd | bufferDays | Effective window |
+|-------|-------------|-----------|------------|-----------------|
+| Wellington Waves | 2026-06-08 | 2026-08-02 | 3 | Jun 8 – Aug 5 |
+| Flag Football | 2026-04-26 | 2026-06-07 | 0 | Apr 26 – Jun 7 |
+
+**Waves window note:** `seasonEnd` is set to the Waves end-of-year banquet date (Aug 2). The 3-day `bufferDays` extends the visible window through Aug 5, giving time to enter banquet award results without the card disappearing mid-window. VPSU Champs is Aug 1. If either event shifts in future years, update `seasonEnd` and `bufferDays` in `data/sports-config.json` accordingly.
+
+`isSeasonActive()` in `digest/sportsConfig.js` computes the effective display window as `[seasonStart − bufferDays, seasonEnd + bufferDays]` inclusive. Changing these values in `data/sports-config.json` is the only thing needed to show or hide a sport's card on the dashboard.
+
 ### Parser modules
 - `digest/flagFootballParser.js` — internal module; derives season record, standings, captains, snack, opponent from flag-football.json
 - `digest/swimParser.js` — internal module; derives PB rows, season labels from pb-records.json + sports-config.json

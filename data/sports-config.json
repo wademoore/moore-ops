@@ -8,8 +8,8 @@
   "wellingtonWaves": {
     "active": true,
     "seasonStart": "2026-06-08",
-    "seasonEnd": "2026-07-20",
-    "bufferDays": 0
+    "seasonEnd": "2026-08-02",
+    "bufferDays": 3
   },
   "swim757": {
     "active": false,
