@@ -78,3 +78,16 @@ test('hasAnyPriorQual: Case J — current-season earlier swim in different event
   const historyRows = [{ swimmer: 'Smith Jane', event: '50m Backstroke', dq: false, seconds: 50.0, ageGroup: 'Girls 9-10', date: '2026-06-15' }];
   assert.equal(hasAnyPriorQual('Jane Smith', historyRows, '2026-07-13'), true);
 });
+
+test('hasAnyPriorQual: Case L — "Men 15-18" ageGroup must be normalized to "Boys 15-18" before passing', () => {
+  // Mason Hibbard's exact row from league-results-v2.json (Summer Awards 2026-07-25).
+  // league-results-v2.json uses "Men 15-18" / "Women 15-18" labels; the standards table
+  // uses "Boys 15-18" / "Girls 15-18". Without normalization the lookup returns null and
+  // the row is skipped. Callers must normalize via .replace('Men ', 'Boys ').replace('Women ', 'Girls ').
+  const rawRow = {
+    swimmer: 'Hibbard Mason', event: '50m Backstroke', dq: false, seconds: 33.79,
+    ageGroup: 'Men 15-18', date: '2026-07-25',
+  };
+  const normalized = [{ ...rawRow, ageGroup: rawRow.ageGroup.replace('Men ', 'Boys ').replace('Women ', 'Girls ') }];
+  assert.equal(hasAnyPriorQual('Mason Hibbard', normalized, '2026-07-26'), true);
+});

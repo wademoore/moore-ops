@@ -29,7 +29,7 @@ const currentLeagueRows = league
     event:    r.event,
     dq:       r.dq,
     seconds:  r.time,
-    ageGroup: r.ageGroup,
+    ageGroup: r.ageGroup.replace('Men ', 'Boys ').replace('Women ', 'Girls '),
     date:     r.date,
   }));
 
@@ -92,7 +92,7 @@ function tryNearMiss(name, time, date, meet, event, gender, ageGroup) {
 // League results — WT only, no DQ, skip Moore kids
 for (const r of league.filter(r => r.team === 'WT' && !r.dq)) {
   const parts = r.ageGroup.split(' ');
-  const gender = parts[0];
+  const gender = parts[0] === 'Men' ? 'Boys' : parts[0] === 'Women' ? 'Girls' : parts[0];
   const ag = parts.slice(1).join(' ');
   const nameParts = r.swimmer.trim().split(' ');
   const displayName = nameParts.slice(1).join(' ') + ' ' + nameParts[0];
