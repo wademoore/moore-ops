@@ -1,0 +1,29 @@
+[
+  {
+    "meet": "Summer Awards",
+    "date": "2026-07-25",
+    "type": "combined",
+    "throughEvent": 68,
+    "totalScore": 6055,
+    "teams": [
+      { "abbr": "KW",    "name": "Kingswood Klams",  "score": 1185.5, "rank": 1 },
+      { "abbr": "GS",    "name": "Gators",            "score": 1077,   "rank": 2 },
+      { "abbr": "WT",    "name": "Wellington Waves",  "score": 642,    "rank": 3 },
+      { "abbr": "WPD",   "name": "WP Dolphins",       "score": 405,    "rank": 4 },
+      { "abbr": "FTC",   "name": "First Colony",      "score": 404.5,  "rank": 5 },
+      { "abbr": "QL",    "name": "Queens Lake",       "score": 396,    "rank": 6 },
+      { "abbr": "WF",    "name": "Windsor Forest",    "score": 368,    "rank": 7 },
+      { "abbr": "FDC",   "name": "Ford's Colony",     "score": 355,    "rank": 8 },
+      { "abbr": "KM",    "name": "Kingsmill Sharks",  "score": 240,    "rank": 9 },
+      { "abbr": "SH",    "name": "Splash",            "score": 228,    "rank": 10 },
+      { "abbr": "WGPRA", "name": "WGP WAVES",         "score": 189,    "rank": 11 },
+      { "abbr": "PS",    "name": "Seastars",          "score": 152,    "rank": 12 },
+      { "abbr": "EH",    "name": "Edgehill Eels",     "score": 137,    "rank": 13 },
+      { "abbr": "IP",    "name": "IP Stingrays",      "score": 92,     "rank": 14 },
+      { "abbr": "GLT",   "name": "Typhoons",          "score": 62,     "rank": 15 },
+      { "abbr": "VW",    "name": "VW Kraken",         "score": 53,     "rank": 16 },
+      { "abbr": "KP",    "name": "Kingspoint",        "score": 52,     "rank": 17 },
+      { "abbr": "WC",    "name": "WCP Manta Rays",    "score": 17,     "rank": 18 }
+    ]
+  }
+]
