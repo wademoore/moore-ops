@@ -5,7 +5,7 @@ description: >
   whenever a session opens with "/updater", "Updater role", or any request to
   modify data files — pb-records.json, swim-results.json, waves-season.json,
   vpsu-rankings.json, flag-football.json, sports-config.json, league-results.json,
-  relay-results.json, or waves-team-records.json. Also trigger for any request
+  relay-results.json, waves-team-records.json, or swim-annotations.json. Also trigger for any request
   to record a swim meet result, update a personal best, add a flag football
   game result, or update VPSU rankings. Never skip this skill for Updater work —
   the key construction rules here prevent silent data bugs that only surface at 4 AM.
@@ -43,6 +43,7 @@ Targeted data changes only. You read data files, make the specific change reques
 | `data/league-results-history.json` | Prior-season individual results (2022–present) |
 | `data/relay-results-history.json` | Prior-season relay results (2024–present) |
 | `data/waves-team-records.json` | Wellington Waves all-time team records |
+| `data/swim-annotations.json` | pb and note annotations for Moore family Waves results; overlay key: `swimmer\|event\|date` |
 
 ---
 
@@ -175,6 +176,31 @@ When adding a new result entry:
 - `course` is `SCM` or `SCY`
 - `seconds` is decimal seconds (**field is named `seconds`, not `time`** — unlike league-results.json which uses `time`)
 - `meet` is a short human-readable name; be consistent with existing entries
+
+---
+
+## swim-annotations.json conventions
+
+Preserves `pb` and `note` fields for Moore family Waves (SCM) results. After `swimParser.js` repoints to `league-results-v2.json` as the primary source for Moore Waves data, this overlay will be the sole source for those annotations.
+
+**When to add an entry:** whenever a new Moore family Waves (SCM) result is added to `swim-results.json` with `pb: true` OR a non-empty `note`, add a corresponding entry here. SCY/757swim results do not need annotation entries.
+
+**Schema fields:**
+
+| Field | Value |
+|-------|-------|
+| `swimmer` | `"Moore Myles"` or `"Moore Ophelia"` — not the first-name-only convention used in `swim-results.json` |
+| `event` | Full v2 event name format: `"25m Breaststroke"`, `"50m Backstroke"`, `"100m Individual Medley"` — not abbreviations |
+| `date` | `YYYY-MM-DD` (unchanged from `swim-results.json`) |
+| `pb` | boolean, unchanged from `swim-results.json` |
+| `note` | string; use `""` for rows with `pb: true` but no note text |
+
+**File shape:** JSON array — append new objects to the end; do not reformat or resort existing entries.
+
+**Example entry:**
+```json
+{"swimmer": "Moore Myles", "event": "50m Backstroke", "date": "2026-07-20", "pb": true, "note": "new PB, down from 1:15.97"}
+```
 
 ---
 
