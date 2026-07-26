@@ -629,4 +629,12 @@ describe('SA EXT 4 — parseRelayRow parts[0] fallback', () => {
     assert.ok(r, 'should still parse');
     assert.equal(r.team, 'WPD');
   });
+  it('NT-seed variant (WT): NT in parts[1] not treated as team code', () => {
+    const r = parseRelayRow('2 Wellington Waves A WT\tNT 2:14.47 26');
+    assert.ok(r, 'should parse');
+    assert.equal(r.team, 'WT');
+    assert.equal(r.place, 2);
+    assert.equal(r.dq, false);
+    assert.ok(r.time !== null, 'time should be set');
+  });
 });

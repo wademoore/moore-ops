@@ -385,9 +385,12 @@ function parseRelayRow(line) {
   const f1words = parts[1].trim().split(/\s+/);
   if (f1words.length < 2) return null;
 
+  // Exclude time-related ALL-CAPS tokens so they are not misidentified as team abbreviations.
+  // NT/DQ/NS/DNF/SCR/EXH can appear at the start of parts[1] when the seed slot is a placeholder.
+  const TIME_TOKENS = new Set(['NT', 'DQ', 'NS', 'DNF', 'SCR', 'EXH']);
   let teamIdx = -1;
   for (let i = 0; i < f1words.length; i++) {
-    if (/^[A-Z]{2,6}$/.test(f1words[i])) { teamIdx = i; break; }
+    if (/^[A-Z]{2,6}$/.test(f1words[i]) && !TIME_TOKENS.has(f1words[i])) { teamIdx = i; break; }
   }
   if (teamIdx === -1) {
     // Fallback for Summer Awards 1-tab variant where team abbr lands at the end of parts[0]:
