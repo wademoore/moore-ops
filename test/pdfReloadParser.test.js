@@ -638,3 +638,23 @@ describe('SA EXT 4 — parseRelayRow parts[0] fallback', () => {
     assert.ok(r.time !== null, 'time should be set');
   });
 });
+
+// ---------------------------------------------------------------------------
+// SA FIX 1 — Delaney left-curly-quote nickname regression
+// ---------------------------------------------------------------------------
+
+describe('SA FIX 1 — U+201C left curly quote in swimmer nickname', () => {
+  // Fixture: exact line L131 from 2026 Summer Awards PDF (meet 2026-07-25).
+  // The nickname "Hok" uses U+201C (left curly quote) + U+201D (right curly quote).
+  // Before fix: m1 char class contained only U+201D, so U+201C caused a no-match.
+  it('row with U+201C/U+201D curly-quote nickname parses (was silent drop before fix)', () => {
+    const r = parseIndividualRow('18 Delaney, “Hok” \t7 KW \t43.77 47.61');
+    assert.ok(r, 'should match — was null before U+201C fix');
+    assert.equal(r.place, 18);
+    assert.equal(r.age, 7);
+    assert.equal(r.team, 'KW');
+    assert.equal(r.dq, false);
+    assert.ok(r.time !== null, 'time should be set');
+    assert.equal(r.achievedChamps, false);
+  });
+});
