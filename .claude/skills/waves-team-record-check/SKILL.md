@@ -92,7 +92,7 @@ before posting or commenting publicly.
 
 - **Read-only.** Never modifies `waves-team-records.json` — updating the record file
   after a confirmed break is a separate Updater task.
-- Relay records (`Women Open`, `Men Open`) are included in both blocks. `relay-results-v2.json`
-  stores relay ageGroups as `"Girls 9-18"` / `"Boys 9-18"` — `check.js` normalizes these
-  to `"Women Open"` / `"Men Open"` via `RELAY_AGEGRP_MAP`. `"Mixed 9-18"` rows are silently
-  skipped (no record category exists).
+- Relay records (`Women Open`, `Men Open`, `Mixed Open`) are included in both blocks.
+  `relay-results-v2.json` stores relay ageGroups as `"Girls 9-18"` / `"Boys 9-18"` /
+  `"Mixed 9-18"` — `check.js` normalizes these to `"Women Open"` / `"Men Open"` /
+  `"Mixed Open"` via `RELAY_AGEGRP_MAP`.
