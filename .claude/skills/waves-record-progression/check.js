@@ -9,10 +9,10 @@ function readJson(name) {
   return JSON.parse(readFileSync(path.join(dataDir, name), 'utf8').replace(/^﻿/, ''));
 }
 
-const leagueHistory = readJson('league-results-history.json');
-const relayHistory  = readJson('relay-results-history.json');
-const leagueCurrent = readJson('league-results.json');
-const relayCurrent  = readJson('relay-results.json');
+const leagueHistory = readJson('league-results-history-v2.json');
+const relayHistory  = readJson('relay-results-history-v2.json');
+const leagueCurrent = readJson('league-results-v2.json');
+const relayCurrent  = readJson('relay-results-v2.json');
 const records       = readJson('waves-team-records.json');
 
 // ── Step 1: Compute coverage window ──────────────────────────────────────────

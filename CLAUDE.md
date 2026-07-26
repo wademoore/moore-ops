@@ -126,7 +126,7 @@ Four extensions to `scripts/pdf-reload-parser.mjs` enable parsing of 2022–2025
 | `data/league-results.json` (v1) | 6,772 | 2026 WT meets only; untouched — still read by dashboard + digest |
 | `data/relay-results.json` (v1) | 178 | 2026 WT meets only; untouched |
 
-Only `waves-champs-qualifier/check.js` and `waves-team-record-check/check.js` have been repointed to v2 (2026 season only). All other consumers (dashboard, daily digest builder, `swimParser.js`) remain on v1 and are unaffected.
+Only `waves-champs-qualifier/check.js`, `waves-team-record-check/check.js`, and `waves-record-progression/check.js` have been repointed to v2. All other consumers (dashboard, daily digest builder, `swimParser.js`) remain on v1 and are unaffected.
 
 ## OAuth Re-authorization
 Run `reauthorize.js` (project root, gitignored) when the OAuth token needs new scopes or has expired.
@@ -194,11 +194,11 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 | `waves-team-record-check` | **committed** `.claude/skills/waves-team-record-check/check.js` | Team all-time record check; "did anyone break a record", "record post", Facebook draft |
 | `waves-div1-simulation` | **committed** `.claude/skills/waves-div1-simulation/check.js` | Manual — "simulate WT in Division 1", "what if WT replaced QL" |
 | `waves-div1-2027-projection` | **committed** `.claude/skills/waves-div1-2027-projection/project.js` | Forward-looking 2027 Div 1 projection — "what would 2027 look like with WT in Div 1, swimmers aged one year" |
-| `waves-record-progression` | **committed** `.claude/skills/waves-record-progression/check.js` | Manual — WT all-time record progression history; reads `league-results-history.json`, `relay-results-history.json`, `league-results.json`, `relay-results.json` (pending Step 3 repoint to v2 equivalents); WT-only filter; console-only output; no test coverage |
+| `waves-record-progression` | **committed** `.claude/skills/waves-record-progression/check.js` | Manual — WT all-time record progression history; reads `league-results-history-v2.json`, `relay-results-history-v2.json`, `league-results-v2.json`, `relay-results-v2.json`; WT-only filter; console-only output; no test coverage. **Note:** v2 relay files use `"Boys/Girls 9-18"` ageGroup labels, while `waves-team-records.json` uses `"Men/Women Open"` — relay record progressions (3 records) are unreconstructable until record keys or v2 ageGroup labels are aligned. Individual record progressions are unaffected. |
 
 **Note:** the five committed-script skills (`waves-champs-qualifier`, `waves-team-record-check`, `waves-div1-simulation`, `waves-div1-2027-projection`, `waves-record-progression`) run via `node <path>/check.js` (or `project.js`) and must not be re-derived manually from their SKILL.md — the script is authoritative. Prose-only skills are re-derived fresh from SKILL.md each invocation.
 
-**Both committed scripts were repointed to v2 data files in July 2026** (scoped, reviewed change — not a full v1→v2 cutover). `waves-champs-qualifier/check.js` reads `league-results-v2.json`; `waves-team-record-check/check.js` reads `league-results-v2.json` and `relay-results-v2.json`. This caught previously-undetected v1 encoding errors (e.g. Kinsley Welch's 100m IM at WT vs WC and Imogen Bissette's times, each +40.00s from the `minutes × 100` Updater bug). The week anchor in `waves-champs-qualifier/check.js` is currently **Week 6 / 2026-07-20** (`WEEK_NUM = 6`, `WEEK_DATE = '2026-07-20'`, `WEEK_LABEL = 'July 20'`). Advance these constants before each weekly run.
+**Three committed-script skills repointed to v2 data files in July 2026** (scoped, reviewed change — not a full v1→v2 cutover). `waves-champs-qualifier/check.js` reads `league-results-v2.json`; `waves-team-record-check/check.js` reads `league-results-v2.json` and `relay-results-v2.json`; `waves-record-progression/check.js` reads all four v2 files (history + current, individual + relay). This caught previously-undetected v1 encoding errors (e.g. Kinsley Welch's 100m IM at WT vs WC and Imogen Bissette's times, each +40.00s from the `minutes × 100` Updater bug). The week anchor in `waves-champs-qualifier/check.js` is currently **Week 6 / 2026-07-20** (`WEEK_NUM = 6`, `WEEK_DATE = '2026-07-20'`, `WEEK_LABEL = 'July 20'`). Advance these constants before each weekly run.
 
 ### Division 1 substitution simulation (waves-div1-simulation)
 
