@@ -850,5 +850,41 @@
     "meetDate": "2024-08-03",
     "meet": "VPSU Championship Meet",
     "location": "757swim Aquatic Center"
+  },
+  "Mixed Open|200m Medley Relay|SCM": {
+    "gender": "Mixed",
+    "ageGroup": "Open",
+    "event": "200m Medley Relay",
+    "course": "SCM",
+    "holders": [
+      "Luke Shnowske",
+      "Sam Shnowske",
+      "Anna Shnowske",
+      "Reagan Swartzel"
+    ],
+    "time": 133.84,
+    "displayTime": "2:13.84",
+    "year": 2026,
+    "meetDate": "2026-06-15",
+    "meet": "WT vs FDC",
+    "location": "Wellington Waves Swim Team"
+  },
+  "Mixed Open|200m Freestyle Relay|SCM": {
+    "gender": "Mixed",
+    "ageGroup": "Open",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "holders": [
+      "Wren Snyder",
+      "Hayden Eggleston",
+      "Nehemiah Thrash",
+      "Gabe Palacios"
+    ],
+    "time": 142.88,
+    "displayTime": "2:22.88",
+    "year": 2026,
+    "meetDate": "2026-06-29",
+    "meet": "WT vs WC",
+    "location": "Wellington Waves Swim Team"
   }
 }
