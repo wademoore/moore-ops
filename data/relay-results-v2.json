@@ -9076,5 +9076,1275 @@
     "sourceEventNumber": 56,
     "verifiedAgainst": null,
     "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Boys 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hastings II, Ronald",
+      "Brown, Braden",
+      "Mazzitti, Ethan",
+      "Wang, Anthony"
+    ],
+    "time": 78.21000000000001,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 31,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Link, Fletcher",
+      "Brown, Beckham",
+      "Sexton, Palmer",
+      "Kimball, Braden"
+    ],
+    "time": 78.26,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 31,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Smith, Ilya",
+      "Hack, Vincent",
+      "Springer, Samuel",
+      "Singley, Joey"
+    ],
+    "time": 95.28,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 31,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Boys 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lynch, Grady",
+      "Hohn, Teddy",
+      "Qi, Jiarei",
+      "Coker, Caleb"
+    ],
+    "time": 97.24000000000001,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 31,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Boys 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Mullinax, Walker",
+      "Luke, Grayson",
+      "Fincham, Nolan",
+      "Pittman, William"
+    ],
+    "time": 104.1,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 31,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shelley, Ben",
+      "McCormick, James",
+      "Marley, Easton",
+      "Rice, Andrew"
+    ],
+    "time": 108.35,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 31,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Wilson, Wraylan",
+      "Veltre, Kieran",
+      "Smith, George",
+      "Brothers, Dean"
+    ],
+    "time": 114.49000000000001,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 31,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Boys 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bose, Owen",
+      "Sisler, Owen",
+      "Peay, John Robert",
+      "Bose, Luke"
+    ],
+    "time": 141.29,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 31,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Boys 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Adams, Jensen",
+      "Scianandre, Connor",
+      "Ainsley, Decklin",
+      "McGuire, Luke"
+    ],
+    "time": 153.05,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 31,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Fenlason, Theo",
+      "Hill, Canyon",
+      "Pascoe, Porter",
+      "Sande, Connor"
+    ],
+    "time": 177.96,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 31,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bosworth, Carolyn",
+      "Peters, Aby",
+      "Chen, Violet",
+      "Hutto, Gracie"
+    ],
+    "time": 84.41,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Currier, Rylee",
+      "Roberts, Everleigh",
+      "Jacobsen, Rowan",
+      "Tumbaga, Evelia"
+    ],
+    "time": 84.92,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Dameron, Molly",
+      "Scianandre, Brooke",
+      "Murillo, Neala",
+      "Blessing, Harper"
+    ],
+    "time": 91.78999999999999,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Burnette, Sophia",
+      "Greer, Cora",
+      "Aeillo, Adelyn",
+      "Wojtan, Eleanor"
+    ],
+    "time": 95.91,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Scott, Marilyn",
+      "Scott, Mollie",
+      "Parker, Emerson",
+      "Mortier, Violet"
+    ],
+    "time": 107.64,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ainsley, Victoria",
+      "Noel, Lydia",
+      "Lynch, Rowan",
+      "Evans, Eloise"
+    ],
+    "time": 113.44,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KM",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Dudley, Holland",
+      "Chopra, Suri",
+      "Dudley, Evie",
+      "Garner, Klara"
+    ],
+    "time": 115.85,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "SH",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Pesce, Elli",
+      "Legawiec, Caroline",
+      "Williams, Jocelynn",
+      "Jones, Emery"
+    ],
+    "time": 121.51,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hubbard, Charlotte",
+      "Evans, Carrington",
+      "Hummel, Emery",
+      "Sisler, Emery"
+    ],
+    "time": 127.82,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Howard, Rina",
+      "Kimball, Noelle",
+      "Bartusiak, Caroline",
+      "Hack, Alexandria"
+    ],
+    "time": 129.53,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Chen, Hazel",
+      "Bosworth, Helen",
+      "Peters, Jordyn",
+      "Croly, Sofía"
+    ],
+    "time": 132.17,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Efird, Stella",
+      "Overton, Mallory",
+      "Pascoe, Landry",
+      "Marley, Collins"
+    ],
+    "time": 140.89,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hastings, Marianne",
+      "Wilkins, Delaynie",
+      "Burge, Avery",
+      "Aycock, Libbie"
+    ],
+    "time": 145.82999999999998,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Sweaney, Clare",
+      "Wilson, Tenley",
+      "Sullivan, Joey",
+      "Peters, Reese"
+    ],
+    "time": 151.67000000000002,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Girls 8&Under",
+    "event": "100m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Parker, Marley",
+      "Luke, Rosie",
+      "Eggleston, Everleigh",
+      "Wojtan, Oliva"
+    ],
+    "time": 170.3,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 32,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Boys 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Mazzitti, Jackson",
+      "McGuire, Aidan",
+      "Wang, Anthony",
+      "Mazzitti, Ethan"
+    ],
+    "time": 178.03,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 33,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Boys 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Greer, Conor",
+      "Burnette, Nate",
+      "Chiesa, Charlie",
+      "Thrash, Micah"
+    ],
+    "time": 187.32,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 33,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Boys 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Kopriva, Jack",
+      "Butler, Justice",
+      "Fincham, Aiden",
+      "Hummel, Noah"
+    ],
+    "time": 227.76,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 33,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Boys 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Futrell, Christian",
+      "Hubbard, John David",
+      "Kohler, Mason",
+      "Kinstetter, Merick"
+    ],
+    "time": 259.61,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 33,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Boys 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Brown, Braden",
+      "Coker, Caleb",
+      "Lynch, Grady",
+      "Hastings II, Ronald"
+    ],
+    "time": null,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": true,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 33,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Mosher, Gideon",
+      "Back, Colton",
+      "McCartney, Nolan",
+      "Lloyd, Patrick"
+    ],
+    "time": null,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": true,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 33,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Girls 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ainsley, Sophia",
+      "Foster, Rylin",
+      "Wall, Hallie",
+      "Watts, Annalise"
+    ],
+    "time": 177.44,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 34,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ward, Shelby",
+      "Sexton, Mason Lee",
+      "Springer, Penny",
+      "Foster, Ava"
+    ],
+    "time": 205.95,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 34,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Girls 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Taylor, Delani",
+      "Dunkle, Olivia",
+      "Chiesa, Audrey",
+      "Lantz, Violet"
+    ],
+    "time": 209.91,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 34,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Girls 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Scianandre, Brooke",
+      "Blessing, Harper",
+      "Dameron, Molly",
+      "Murillo, Neala"
+    ],
+    "time": 211.81,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 34,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Girls 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Shelley, Clara",
+      "Kordosky, Lucy",
+      "McKowan, Rosemary",
+      "Lee, Grace"
+    ],
+    "time": 214.98,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 34,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Takach, Natalie",
+      "Weaver, Nora",
+      "Bravo, Frankie",
+      "Fischer, Camryn"
+    ],
+    "time": 219.04,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 34,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Girls 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Fountain, Ellie",
+      "Barba, Jenica",
+      "Workman, Nina",
+      "Leiker, Julia"
+    ],
+    "time": 225.75,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 34,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Girls 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Noel, Lydia",
+      "Evans, Eloise",
+      "Ainsley, Victoria",
+      "Shepherd, Locksley"
+    ],
+    "time": 244.3,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 34,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Girls 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": null,
+    "time": 252.14,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 34,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "PS",
+    "ageGroup": "Girls 9-10",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Fisher, Lily",
+      "Scarborough, Lillie",
+      "Rose, Virginia",
+      "Takach, Autumn"
+    ],
+    "time": 281.65999999999997,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 34,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Boys 11-12",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Grimm, Bryce",
+      "Wallis, John",
+      "Dameron, Cal",
+      "Sleeth, Ben"
+    ],
+    "time": 152.88,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 65,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KM",
+    "ageGroup": "Boys 11-12",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Dahnke, Colin",
+      "Dahnke, Holden",
+      "Smith, Nolan",
+      "Hill, Lincoln"
+    ],
+    "time": 162.86,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 65,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WF",
+    "ageGroup": "Boys 11-12",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Schoff, Charlie",
+      "Mosher, Zeke",
+      "Gorelick, Canaan",
+      "Efird, Alex"
+    ],
+    "time": 168.05,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 65,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 11-12",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Jacobs, Christian",
+      "Ward, Silas",
+      "Jaroma, Connor",
+      "Ilea, Andrew"
+    ],
+    "time": 182.24,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 65,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Girls 11-12",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bermudez, Megan",
+      "Ainsley, Sophia",
+      "Watts, Annalise",
+      "Buch, Cora"
+    ],
+    "time": 176.26,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 66,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 11-12",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Howard, Kara",
+      "Stuart, Maren",
+      "Hack, Anastasia",
+      "Ban-Boca, Maya"
+    ],
+    "time": 176.35,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 66,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Girls 11-12",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Gaudet, Stella",
+      "Shields, Keira",
+      "Wall, Hallie",
+      "Wallis, Maddy"
+    ],
+    "time": 178.16,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 66,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 11-12",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lamp, Sophie",
+      "Stoner, Esther",
+      "Wills, Kennedy",
+      "Evans, Kinley"
+    ],
+    "time": 178.76,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 66,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bartusiak, Kai",
+      "Stuart, Kale",
+      "Kaczmarczyk, Reid",
+      "Broderick, Logan"
+    ],
+    "time": 128.19,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 67,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Boys 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Hibbard, Mason",
+      "Ilardi, Nikolai",
+      "Lantz, Parker",
+      "Thrash, Nehemiah"
+    ],
+    "time": 134.47,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 67,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FDC",
+    "ageGroup": "Boys 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": null,
+    "time": 139.75,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 67,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Boys 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Moser, Brendan",
+      "Wilson, Jack",
+      "Carnegie, Leo",
+      "Krebsbach, Oran"
+    ],
+    "time": 141.57999999999998,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 67,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Boys 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Sleeth, Jack",
+      "Sleeth, Ben",
+      "Grimm, Bryce",
+      "Zheng, Ryan"
+    ],
+    "time": 142.21,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 67,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "FTC",
+    "ageGroup": "Boys 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Miller, Revell",
+      "Knapp, Abe",
+      "Hampton, Arian",
+      "Sachse, Brad"
+    ],
+    "time": 153.77,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 67,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Boys 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Witkowski, Emil",
+      "Rogers, Ethan",
+      "Mansisidor, Zach",
+      "Jacobs, JD"
+    ],
+    "time": 155.02,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 67,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Robertson, Caroline",
+      "Townsend, Leah",
+      "Guillory, Marissa",
+      "Gregory, Elizabeth"
+    ],
+    "time": 124.14,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 68,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "KW",
+    "ageGroup": "Girls 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ilea, Alexandra",
+      "Sullivan, Bri",
+      "Cumber, Ande",
+      "Harrison, Molly"
+    ],
+    "time": 137.07,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 68,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Girls 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Ericsson, Brooke",
+      "Budde, Reese",
+      "Murillo, Amelia",
+      "Basic, Charlotte"
+    ],
+    "time": 137.45,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 68,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WPD",
+    "ageGroup": "Girls 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lamp, Savannah",
+      "Brizendine, Lily",
+      "Wills, Ava",
+      "Clark, Sofia"
+    ],
+    "time": 158.49,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 68,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "QL",
+    "ageGroup": "Girls 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Krebsbach, Ilana",
+      "Knoth, Charlotte",
+      "Nabors, Ryleigh",
+      "Kannegieser, Alana"
+    ],
+    "time": 160.06,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 68,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "WT",
+    "ageGroup": "Girls 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Lantz, Clara",
+      "Pate, Abigail",
+      "Knaul, Finley",
+      "Eggleston, Hayden"
+    ],
+    "time": 160.37,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 68,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "VW",
+    "ageGroup": "Girls 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Leonard, Rylynne",
+      "DeNault, Syd",
+      "Waible, Ryan",
+      "Cartwright, Audrey"
+    ],
+    "time": 172.26,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": false,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 68,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
+  },
+  {
+    "team": "GS",
+    "ageGroup": "Girls 13-18",
+    "event": "200m Freestyle Relay",
+    "course": "SCM",
+    "swimmers": [
+      "Bermudez, Megan",
+      "Grayson, Abby",
+      "Buch, Cora",
+      "Grimm, Kami"
+    ],
+    "time": null,
+    "date": "2026-07-25",
+    "meet": "Summer Awards",
+    "dq": true,
+    "sourcePdf": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+    "sourceEventNumber": 68,
+    "verifiedAgainst": null,
+    "plausibilityFlags": []
   }
 ]

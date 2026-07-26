@@ -4741,6 +4741,41 @@
       "rowCountParsed": 497,
       "plausibilityFlags": 4,
       "notes": "EXH swimmer confirmed in PDF: Holley, Scarlett (WT)."
+    },
+    {
+      "season": "2026",
+      "date": "2026-07-25",
+      "meetSlug": "2026-07-25-summer-awards",
+      "meetName": "Summer Awards",
+      "teams": [
+        "EH",
+        "FDC",
+        "FTC",
+        "GLT",
+        "GS",
+        "IP",
+        "KM",
+        "KP",
+        "KW",
+        "PS",
+        "QL",
+        "SH",
+        "VW",
+        "WC",
+        "WF",
+        "WGPRA",
+        "WPD",
+        "WT"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/2026_Summer_Awards_Meet_07_25_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 1002,
+      "plausibilityFlags": 0,
+      "notes": "18-team invitational (non-champs-qualifying swimmers). Year Olds bracket format (events 5-12, 19-26). CHMP achievement markers present."
     }
   ]
 }
