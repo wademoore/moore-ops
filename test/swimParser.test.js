@@ -259,7 +259,7 @@ describe('parseSwim — trend indicator PBRow', () => {
 
 describe('parseSwim — placement fields', () => {
 
-  it('full placement (all 5 fields) → correct string with both overall and heat segments', () => {
+  it('heat fields present → "Nth of M" only (heat clause no longer produced)', () => {
     const swimResults = [
       {
         swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM',
@@ -269,7 +269,7 @@ describe('parseSwim — placement fields', () => {
       },
     ];
     const result = parseSwim({}, swimResults, IN_SEASON_FF, FIXTURE_CONFIG);
-    assert.equal(result.mylesPBRows[0].lastSwim.placement, '3rd of 24 · 1st in Heat 2');
+    assert.equal(result.mylesPBRows[0].lastSwim.placement, '3rd of 24');
   });
 
   it('overall only (overallPlace + overallCount, no heat fields) → correct string, no heat segment', () => {
@@ -314,6 +314,52 @@ describe('parseSwim — placement fields', () => {
     assert.equal(ordinalSuffix(21), 'st');
     assert.equal(ordinalSuffix(22), 'nd');
     assert.equal(ordinalSuffix(23), 'rd');
+  });
+
+});
+
+// ── parseSwim — v2 path ───────────────────────────────────────────────────────
+
+describe('parseSwim — v2 path', () => {
+
+  const V2_REF = new Date('2026-07-19T12:00:00'); // within Waves season
+
+  it('v2 row replaces swim-results.json row for same swimmer/event/date — meet and placement from v2', () => {
+    const swimResults = [
+      { swimmer: 'Myles', event: '50m Breaststroke', course: 'SCM',
+        dq: false, relay: false, seconds: 65.0, date: '2026-06-22', meet: 'v1 meet' },
+    ];
+    const v2Results = [
+      { swimmer: 'Moore Myles', event: '50m Breaststroke', course: 'SCM',
+        dq: false, time: 65.0, date: '2026-06-22', meet: 'v2 meet',
+        overallPlace: 3, overallCount: 10 },
+    ];
+    const result = parseSwim({}, swimResults, V2_REF, FIXTURE_CONFIG, null, v2Results, null);
+    assert.equal(result.mylesPBRows[0].lastSwim.meet, 'v2 meet');
+    assert.equal(result.mylesPBRows[0].lastSwim.placement, '3rd of 10');
+  });
+
+  it('annotation overlay sets pb on v2 row', () => {
+    const v2Results = [
+      { swimmer: 'Moore Myles', event: '50m Breaststroke', course: 'SCM',
+        dq: false, time: 65.0, date: '2026-06-22', meet: 'v2 meet',
+        overallPlace: 3, overallCount: 10 },
+    ];
+    const annotations = [
+      { swimmer: 'Moore Myles', event: '50m Breaststroke', date: '2026-06-22', pb: true, note: '' },
+    ];
+    const result = parseSwim({}, [], V2_REF, FIXTURE_CONFIG, null, v2Results, annotations);
+    assert.equal(result.mylesPBRows[0].lastSwim.pb, true);
+  });
+
+  it('non-Moore v2 row is ignored and does not appear in PB rows', () => {
+    const v2Results = [
+      { swimmer: 'Other Swimmer', event: '50m Breaststroke', course: 'SCM',
+        dq: false, time: 65.0, date: '2026-06-22', meet: 'v2 meet',
+        overallPlace: 1, overallCount: 5 },
+    ];
+    const result = parseSwim({}, [], V2_REF, FIXTURE_CONFIG, null, v2Results, null);
+    assert.equal(result.mylesPBRows[0].lastSwim, null);
   });
 
 });

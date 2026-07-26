@@ -28,25 +28,18 @@ export function ordinalSuffix(n) {
 }
 
 /**
- * Derives a placement string from a swim result entry, or returns null.
- * Requires overallPlace and overallCount. Optionally appends heat info
- * if heatPlace, heatNumber, and heatCount are all present.
+ * Derives a placement string ("Nth of M") from a swim result entry, or returns null.
+ * v2 rows do not carry heat fields; heat output is no longer produced.
  * @param {object} entry  A swim result entry
  * @returns {string|null}
  */
 function derivePlacementString(entry) {
   if (entry == null) return null;
-  const { overallPlace, overallCount, heatPlace, heatNumber, heatCount } = entry;
+  const { overallPlace, overallCount } = entry;
   if (overallPlace == null) return null;
-  let s = overallCount != null
+  return overallCount != null
     ? `${overallPlace}${ordinalSuffix(overallPlace)} of ${overallCount}`
     : `${overallPlace}${ordinalSuffix(overallPlace)}`;
-  if (heatPlace != null && heatNumber != null) {
-    s += ` · ${heatPlace}${ordinalSuffix(heatPlace)} in Heat ${heatNumber}`;
-  } else if (heatPlace != null) {
-    s += ` · ${heatPlace}${ordinalSuffix(heatPlace)} in Heat`;
-  }
-  return s;
 }
 
 // Stroke mapping — VPSU rankings use full stroke names; config uses abbreviated names.
@@ -98,20 +91,80 @@ const EVENT_NAME_MAP = {
 };
 
 /**
- * @param {object}      pbRecords     Flat key-value: "Swimmer|Event|Course" → { seconds, date, meet }
- * @param {object[]}    swimResults   Array of swim result objects
- * @param {Date}        referenceDate
- * @param {object}      config        sports-config.json
- * @param {object|null} vpsuRankings  vpsu-rankings.json parsed object, or null
+ * @param {object}        pbRecords     Flat key-value: "Swimmer|Event|Course" → { seconds, date, meet }
+ * @param {object[]}      swimResults   Array of swim result objects (swim-results.json)
+ * @param {Date}          referenceDate
+ * @param {object}        config        sports-config.json
+ * @param {object|null}   vpsuRankings  vpsu-rankings.json parsed object, or null
+ * @param {object[]|null} v2Results     league-results-v2.json rows (authoritative for Moore Waves); or null
+ * @param {object[]|null} annotations   swim-annotations.json rows (pb/note overlay for v2 rows); or null
  * @returns {object}
  */
-export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRankings = null) {
+export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRankings = null, v2Results = null, annotations = null) {
   const records       = pbRecords || {};
   const wavesActive   = isSeasonActive(config.wellingtonWaves, referenceDate);
   const swim757Active = isSeasonActive(config.swim757, referenceDate);
 
+  // Build annotation Map keyed by "swimmer|event|date"
+  const annotationMap = new Map();
+  if (annotations) {
+    for (const a of annotations) {
+      annotationMap.set(`${a.swimmer}|${a.event}|${a.date}`, a);
+    }
+  }
+
+  // Build v2 match-set: one composite key per Moore row in league-results-v2.json
+  const v2MatchSet = new Set();
+  if (v2Results) {
+    for (const r of v2Results) {
+      if (r.swimmer !== 'Moore Myles' && r.swimmer !== 'Moore Ophelia') continue;
+      const normEvent = EVENT_NAME_MAP[r.event] || r.event;
+      const key = `${r.swimmer}|${normEvent}|${r.date}`;
+      if (v2MatchSet.has(key)) console.warn(`[swimParser] duplicate v2 row: ${key}`);
+      v2MatchSet.add(key);
+    }
+  }
+
+  // Convert v2 Moore rows to the internal row format used by the PB-row loops
+  const v2InternalRows = v2Results
+    ? v2Results
+        .filter(r => r.swimmer === 'Moore Myles' || r.swimmer === 'Moore Ophelia')
+        .map(r => {
+          const shortName = r.swimmer === 'Moore Myles' ? 'Myles' : 'Ophelia';
+          const ann = !r.dq
+            ? annotationMap.get(`${r.swimmer}|${r.event}|${r.date}`)
+            : undefined;
+          return {
+            swimmer:      shortName,
+            event:        r.event,
+            course:       r.course,
+            dq:           r.dq,
+            relay:        false,
+            seconds:      r.time,
+            date:         r.date,
+            meet:         r.meet,
+            overallPlace: r.overallPlace ?? null,
+            overallCount: r.overallCount ?? null,
+            pb:           ann?.pb ?? false,
+            note:         ann?.note ?? '',
+          };
+        })
+    : [];
+
+  // Retain swim-results.json rows with no v2 equivalent (prior seasons, 757/SCY, no-PDF-match)
+  const retainedSwimResults = v2Results
+    ? (swimResults || []).filter(r => {
+        const canonical = r.swimmer === 'Myles'   ? 'Moore Myles'
+          : r.swimmer === 'Ophelia' ? 'Moore Ophelia'
+          : null;
+        if (!canonical) return true;
+        const normEvent = EVENT_NAME_MAP[r.event] || r.event;
+        return !v2MatchSet.has(`${canonical}|${normEvent}|${r.date}`);
+      })
+    : (swimResults || []);
+
   // Pre-sort once, date descending — reused by both Myles and Ophelia loops
-  const sortedResults = [...(swimResults || [])].sort(
+  const sortedResults = [...v2InternalRows, ...retainedSwimResults].sort(
     (a, b) => b.date.localeCompare(a.date)
   );
   const wavesSeasonStart = config.wellingtonWaves.seasonStart;

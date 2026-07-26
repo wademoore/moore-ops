@@ -165,7 +165,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.vpsuRankings]     VPSU league rankings (data/vpsu-rankings.json); null on file error
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -178,6 +178,14 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   if (vpsuRankings     === undefined) {
     try { vpsuRankings = await readDataFile('vpsu-rankings.json'); }
     catch { vpsuRankings = null; }  // non-critical — treat missing file as no rankings
+  }
+  if (v2Results        === undefined) {
+    try { v2Results    = await readDataFile('league-results-v2.json'); }
+    catch { v2Results  = null; }
+  }
+  if (annotations      === undefined) {
+    try { annotations  = await readDataFile('swim-annotations.json'); }
+    catch { annotations = null; }
   }
 
   if (!config) throw new Error('[buildDigest] config is required — ensure data/sports-config.json is valid');
@@ -271,7 +279,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   const activityComms = buildActivityCommsLines(emails, gmailHits);
 
   // ── 12. Athletics data ───────────────────────────────────────────────────
-  const athletics = parseAthleticsDoc(today, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings);
+  const athletics = parseAthleticsDoc(today, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations);
 
   // Cross-reference calendar for flag game this week
   const flagGameEvent = allResolved.find(ev => ev.isFlagGame);
