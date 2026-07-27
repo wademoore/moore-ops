@@ -600,6 +600,101 @@ describe('SA EXT 3 — isSkipLine skips CHMP headers', () => {
 });
 
 // ---------------------------------------------------------------------------
+// RELAY DROP FIX — NS/DNF/SCR token recognition + 1-tab fallback DQ (July 2026)
+// ---------------------------------------------------------------------------
+// Bug 1: officialStr regex in parseRelayRow() previously excluded NS, DNF, SCR,
+//        silently dropping those relay rows (no output, no warning).
+//        39 NS + 3 DNF drops confirmed across 22 meets (2022–2026) in planner audit.
+// Bug 2: 1-tab SA fallback only read parts[1] for time tokens; when seed is in
+//        parts[1] and official (DQ) is in parts[2], timeParts0 had length 1 and
+//        the guard returned null. Confirmed in exactly 1 row: KW B, Girls 9-10,
+//        Summer Awards 2026. Fix: collect times from parts.slice(1) instead.
+// ---------------------------------------------------------------------------
+
+describe('RELAY DROP FIX — NS relay row (4-tab format, NS at parts[3])', () => {
+  // Verbatim Summer Awards format: parts = ["-- WP Dolphins ", "B WPD ", "NT ", "NS"]
+  it('NS relay row (4-tab) → dq: true, time: null, place: null, team set', () => {
+    const r = parseRelayRow("-- WP Dolphins \tB WPD \tNT \tNS");
+    assert.ok(r, 'should match — was silently dropped before fix');
+    assert.equal(r.team, 'WPD');
+    assert.equal(r.dq, true);
+    assert.equal(r.time, null);
+    assert.equal(r.place, null);
+  });
+});
+
+describe('RELAY DROP FIX — NS relay row (3-tab format, NS at parts[2])', () => {
+  // 2022-era format: parts = ["-- Village Green ", "A VG 2:43.48 ", "NS"]
+  // Seed time is folded into parts[1] alongside the relay letter and abbreviation.
+  it('NS relay row (3-tab) → dq: true, time: null, place: null, team set', () => {
+    const r = parseRelayRow("-- Village Green \tA VG 2:43.48 \tNS");
+    assert.ok(r, 'should match — was silently dropped before fix');
+    assert.equal(r.team, 'VG');
+    assert.equal(r.dq, true);
+    assert.equal(r.time, null);
+    assert.equal(r.place, null);
+  });
+});
+
+describe('RELAY DROP FIX — DNF relay row (same root cause as NS)', () => {
+  // DNF was excluded from the same officialStr regex as NS.
+  // Confirmed in 3 rows across 2 meets in 2025 (vg-at-ql, ps-at-eh).
+  it('DNF relay row (4-tab) → dq: true, time: null, team set', () => {
+    const r = parseRelayRow("-- Village Green \tA VG \tNT \tDNF");
+    assert.ok(r, 'should match — was silently dropped before fix');
+    assert.equal(r.team, 'VG');
+    assert.equal(r.dq, true);
+    assert.equal(r.time, null);
+    assert.equal(r.place, null);
+  });
+});
+
+describe('RELAY DROP FIX — 1-tab fallback DQ with split seed/official (Bug 2)', () => {
+  // Exact KW B row from Summer Awards 2026, Girls 9-10 200m Freestyle Relay.
+  // parts = ["-- Kingswood Klams B KW", "3:44.19", "DQ"]
+  // Team abbr (KW) is at the end of parts[0]; main path teamIdx === -1 → fallback.
+  // Old fallback: timeParts0 = parts[1].split() → ["3:44.19"], length 1 → return null.
+  // Fixed fallback: timeParts0 = parts.slice(1).join(' ').split() → ["3:44.19", "DQ"] ✓
+  it('KW B DQ row (1-tab fallback, DQ at parts[2]) → dq: true, time: null, team KW', () => {
+    const r = parseRelayRow("-- Kingswood Klams B KW\t3:44.19\tDQ");
+    assert.ok(r, 'should match — was silently dropped before fix');
+    assert.equal(r.team, 'KW');
+    assert.equal(r.dq, true);
+    assert.equal(r.time, null);
+    assert.equal(r.place, null);
+  });
+
+  it('1-tab fallback NS row (NS at parts[2]) → also fixed by Bug 2 change', () => {
+    // Hypothetical: team abbr in parts[0], NS as official in parts[2]
+    const r = parseRelayRow("-- Kingswood Klams B KW\tNT\tNS");
+    assert.ok(r, 'should match — both fixes required');
+    assert.equal(r.team, 'KW');
+    assert.equal(r.dq, true);
+    assert.equal(r.time, null);
+  });
+});
+
+describe('RELAY DROP FIX — regression guard: existing rows unchanged after fix', () => {
+  it('standard timed relay row still produces correct result', () => {
+    const r = parseRelayRow("1 Edgehill Eels \tA EH \tNT 2:32.68 7");
+    assert.ok(r, 'should still match');
+    assert.equal(r.team, 'EH');
+    assert.equal(r.place, 1);
+    assert.equal(r.dq, false);
+    assert.ok(r.time !== null, 'time should be set');
+  });
+
+  it('existing DQ relay row shape unchanged', () => {
+    const r = parseRelayRow("-- Wellington Waves\tB WT\tNT DQ");
+    assert.ok(r, 'should still match');
+    assert.equal(r.team, 'WT');
+    assert.equal(r.dq, true);
+    assert.equal(r.time, null);
+    assert.equal(r.place, null);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // SA EXT 4 — relay 1-tab variant with team abbr in parts[0]
 // ---------------------------------------------------------------------------
 

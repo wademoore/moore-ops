@@ -383,7 +383,7 @@ function parseRelayRow(line) {
   // is only 1 char and is skipped; time strings contain digits/colons and also fail).
   // Everything in parts[2+] (2-tab) or after the abbr token in parts[1] (1-tab) is times.
   const f1words = parts[1].trim().split(/\s+/);
-  if (f1words.length < 2) return null;
+  if (f1words.length < 2 && parts.length < 3) return null;
 
   // Exclude time-related ALL-CAPS tokens so they are not misidentified as team abbreviations.
   // NT/DQ/NS/DNF/SCR/EXH can appear at the start of parts[1] when the seed slot is a placeholder.
@@ -402,13 +402,15 @@ function parseRelayRow(line) {
     }
     if (f0TeamIdx === -1) return null;
     const team0 = f0words[f0TeamIdx];
-    const timeParts0 = parts[1].trim().split(/\s+/).filter(Boolean);
+    // Collect time tokens from parts[1] onward (Bug 2 fix: seed may be in parts[1] and
+    // official in parts[2] when the 1-tab SA format splits them across separate tab fields).
+    const timeParts0 = parts.slice(1).join(' ').trim().split(/\s+/).filter(Boolean);
     if (timeParts0.length < 2) return null;
     const seedStr0   = timeParts0[0].toUpperCase();
     const official0  = timeParts0[1].toUpperCase();
     if (!/^(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(seedStr0))  return null;
-    if (!/^(NT|DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(official0)) return null;
-    const isDQ0 = official0 === 'DQ' || official0 === 'NT';
+    if (!/^(NT|DQ|NS|DNF|SCR|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(official0)) return null;
+    const isDQ0 = ['DQ', 'NT', 'NS', 'DNF', 'SCR'].includes(official0);
     const time0 = isDQ0 ? null : timeToSeconds(official0);
     return {
       team: team0,
@@ -431,9 +433,9 @@ function parseRelayRow(line) {
   const officialStr = timeParts[1].toUpperCase();
 
   if (!/^(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(seedStr)) return null;
-  if (!/^(NT|DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(officialStr)) return null;
+  if (!/^(NT|DQ|NS|DNF|SCR|\d+:\d+\.\d+|\d+\.\d+[YM]?)$/i.test(officialStr)) return null;
 
-  const isDQ = officialStr === 'DQ' || officialStr === 'NT';
+  const isDQ = ['DQ', 'NT', 'NS', 'DNF', 'SCR'].includes(officialStr);
   const time = isDQ ? null : timeToSeconds(officialStr);
 
   return {
