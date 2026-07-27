@@ -698,6 +698,8 @@ function parsePdfText(text, entry, records) {
           date,
           meet:             meetName,
           dq:               partial.dq,
+          overallPlace:     partial.place,
+          overallCount:     null,  // filled in post-parse
           ...(String(season) !== CURRENT_SEASON && { season: String(season) }),
           sourcePdf,
           sourceEventNumber: currentEvent.eventNum,
@@ -808,6 +810,21 @@ function parsePdfText(text, entry, records) {
   for (const row of indivRows) {
     if (!row.dq && !row._nonScoringFinisher) {
       row.overallCount = countByEvent[row.sourceEventNumber] ?? null;
+    }
+  }
+
+  // Post-process: compute overallCount per event for relay rows.
+  // Exhibition relays are included (they have a time and a place); DQ/NS rows are excluded.
+  const relayCountByEvent = {};
+  for (const row of relayRows) {
+    if (!row.dq) {
+      const key = row.sourceEventNumber;
+      relayCountByEvent[key] = (relayCountByEvent[key] || 0) + 1;
+    }
+  }
+  for (const row of relayRows) {
+    if (!row.dq) {
+      row.overallCount = relayCountByEvent[row.sourceEventNumber] ?? null;
     }
   }
 
@@ -1106,4 +1123,4 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   });
 }
 
-export { parseIndividualRow, parseRelayRow, tryWrapStitch, parseEventHeader, isSkipLine };
+export { parseIndividualRow, parseRelayRow, parsePdfText, tryWrapStitch, parseEventHeader, isSkipLine };

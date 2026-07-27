@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseIndividualRow, parseRelayRow, tryWrapStitch, parseEventHeader, isSkipLine } from '../scripts/pdf-reload-parser.mjs';
+import { parseIndividualRow, parseRelayRow, parsePdfText, tryWrapStitch, parseEventHeader, isSkipLine } from '../scripts/pdf-reload-parser.mjs';
 
 describe('parseIndividualRow — DQ handling', () => {
   it('normal DQ row (DQ in official-time column) → dq: true, time: null', () => {
@@ -645,7 +645,7 @@ describe('SA EXT 4 — parseRelayRow parts[0] fallback', () => {
 
 describe('SA FIX 1 — U+201C left curly quote in swimmer nickname', () => {
   // Fixture: exact line L131 from 2026 Summer Awards PDF (meet 2026-07-25).
-  // The nickname "Hok" uses U+201C (left curly quote) + U+201D (right curly quote).
+  // The nickname “Hok” uses U+201C (left curly quote) + U+201D (right curly quote).
   // Before fix: m1 char class contained only U+201D, so U+201C caused a no-match.
   it('row with U+201C/U+201D curly-quote nickname parses (was silent drop before fix)', () => {
     const r = parseIndividualRow('18 Delaney, “Hok” \t7 KW \t43.77 47.61');
@@ -656,5 +656,76 @@ describe('SA FIX 1 — U+201C left curly quote in swimmer nickname', () => {
     assert.equal(r.dq, false);
     assert.ok(r.time !== null, 'time should be set');
     assert.equal(r.achievedChamps, false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SA EXT 5 — relay overallPlace + overallCount from native PDF Pl column
+// ---------------------------------------------------------------------------
+
+describe('SA EXT 5 — relay overallPlace and overallCount', () => {
+  // The source PDF prints an explicit Pl column for relay events (same format as individual
+  // events). parsePdfText must include overallPlace (from the native Pl value) and
+  // overallCount (count of non-DQ entries in that event) in every relay row.
+  // Prior to this fix the relay row schema had neither field.
+  const entry = {
+    season: '2026',
+    date: '2026-07-25',
+    meetSlug: 'test-sa-relay',
+    teams: ['GS', 'WT'],
+    course: 'SCM',
+    sourcePdfPath: 'test.pdf',
+  };
+  const records = {};
+
+  // Two-event text: one relay with 2 legal + 1 DQ, one with a single entry.
+  const text = [
+    '#31 Boys 8 & Under 100m Freestyle Relay',
+    'Pl Team\tRelay\tSeed Official Pts Achv',
+    '1 Gators\tA GS\tNT 1:18.21 32',
+    '1) Smith, Bob (8)\t2) Jones, Tom (7)',
+    '3) Doe, John (7)\t4) Roe, Mike (8)',
+    '2 Wellington Waves\tA WT\tNT 1:44.10 20',
+    '1) Mullinax, Walker (8)\t2) Luke, Grayson (8)',
+    '3) Fincham, Nolan (8)\t4) Pittman, William (8)',
+    '-- Windsor Forest\tA WF\tNT DQ',
+    '1) Smith, A (7)\t2) Jones, B (8)',
+    '3) Doe, C (7)\t4) Roe, D (8)',
+    '#32 Girls 8 & Under 100m Freestyle Relay',
+    'Pl Team\tRelay\tSeed Official Pts Achv',
+    '1 Queens Lake\tA QL\tNT 1:24.41 32',
+    '1) Peters, Aby (7)\t2) Hutto, Gracie (8)',
+    '3) Chen, Violet (8)\t4) Bosworth, Carolyn (8)',
+  ].join('\n');
+
+  it('non-DQ relay rows carry overallPlace from native Pl column', () => {
+    const { relayRows } = parsePdfText(text, entry, records);
+    const gs = relayRows.find(r => r.team === 'GS' && r.ageGroup === 'Boys 8&Under');
+    assert.ok(gs, 'GS row should exist');
+    assert.equal(gs.overallPlace, 1, 'GS placed 1st in PDF');
+    const wt = relayRows.find(r => r.team === 'WT');
+    assert.ok(wt, 'WT row should exist');
+    assert.equal(wt.overallPlace, 2, 'WT placed 2nd in PDF');
+  });
+
+  it('overallCount reflects count of non-DQ entries in each event', () => {
+    const { relayRows } = parsePdfText(text, entry, records);
+    const gs = relayRows.find(r => r.team === 'GS' && r.ageGroup === 'Boys 8&Under');
+    assert.equal(gs.overallCount, 2, 'event 31 has 2 non-DQ teams (GS + WT)');
+    const wt = relayRows.find(r => r.team === 'WT');
+    assert.equal(wt.overallCount, 2);
+    const ql = relayRows.find(r => r.team === 'QL');
+    assert.ok(ql, 'QL row should exist');
+    assert.equal(ql.overallPlace, 1, 'QL is sole legal entry in event 32');
+    assert.equal(ql.overallCount, 1, 'event 32 has 1 non-DQ team');
+  });
+
+  it('DQ relay row has overallPlace: null and overallCount: null', () => {
+    const { relayRows } = parsePdfText(text, entry, records);
+    const wf = relayRows.find(r => r.team === 'WF');
+    assert.ok(wf, 'WF DQ row should exist');
+    assert.equal(wf.dq, true);
+    assert.equal(wf.overallPlace, null, 'DQ has no place');
+    assert.equal(wf.overallCount, null, 'DQ has no count');
   });
 });
