@@ -299,6 +299,8 @@ Coder mode must keep tests at 430+. If the number changes, the Documenter should
 
 **Never pass an already-ET-anchored date through `toLocaleDateString(ET)` again.** Once a `Date` object has been constructed as local-midnight of the ET calendar date (via `startOfTodayET()` or `parseEventDate()`), reading it with `getMonth()/getDate()/getFullYear()` gives the correct ET values directly. Running it through `toLocaleDateString('en-CA', {timeZone: 'America/New_York'})` a second time shifts it backward a day (midnight ET → prior evening UTC → prior ET date). Apply the ET conversion exactly once, at the point where a raw UTC instant becomes a calendar date.
 
+**`date|team|ageGroup|event|dq|time` is not a safe uniqueness key for relay rows.** DQ'd relays have `time: null`, so two distinct relay squads from the same club (A, B, C teams all DQ'd in the same event on the same date) collide on that key despite having different swimmer rosters. Any duplicate-detection or dedup logic on relay data must include `swimmers` (or an equivalent roster-level field) in the key. Discovered during the Phase 2 dedup cleanup (July 2026): 3 of 5 initially-flagged "duplicate" pairs were false positives of this kind.
+
 ## Known open items
 
 - **`TZ=UTC` not yet pinned in test runner** — `dateUtils.test.js` currently validates against the ET dev machine's local timezone, not Lambda's UTC runtime. Recommended follow-up: add `TZ=UTC` to the npm test script so the suite deterministically validates production behavior.
