@@ -824,3 +824,105 @@ describe('SA EXT 5 — relay overallPlace and overallCount', () => {
     assert.equal(wf.overallCount, null, 'DQ has no count');
   });
 });
+
+// ---------------------------------------------------------------------------
+// VPSU CHAMPS EXT — VC achievement-tag handling (2025 Champs PDF format)
+// ---------------------------------------------------------------------------
+// The 2025 VPSU Champs PDF includes a "VC" (VPSU Championship Record) suffix
+// on result rows where a swimmer set a new championship record.  Three related
+// issues were fixed together:
+//   1. Year+time record lines ("2004 1:08.95") generated spurious warnings —
+//      added to isSkipLine to suppress them silently.
+//   2. parseIndividualRow regex m: "VC" in the Achv column caused no-match and
+//      dropped the row — fixed by extending (?:\s+(CHMP)) to (?:\s+(CHMP|VC)).
+//   3. DATA_ONLY_LINE / FULL_RESULT_END: "20 VC" (two trailing tokens) exceeded
+//      the single-token allowance — fixed by adding (?:\s+(?:CHMP|VC))? group.
+// ---------------------------------------------------------------------------
+
+describe('VPSU CHAMPS EXT — isSkipLine suppresses year+time record lines', () => {
+  it('skips "2004 1:08.95" (year + MM:SS.ss time)', () => {
+    assert.equal(isSkipLine('2004 1:08.95'), true, 'should be skipped');
+  });
+  it('skips "2012\t27.97" (year + tab + SS.ss time)', () => {
+    assert.equal(isSkipLine('2012\t27.97'), true, 'should be skipped');
+  });
+  it('skips "2017 30.16" (year + SS.ss time)', () => {
+    assert.equal(isSkipLine('2017 30.16'), true, 'should be skipped');
+  });
+  it('does NOT skip standalone year "2012" (existing rule)', () => {
+    // The standalone-year rule already handles this; verify it still fires.
+    assert.equal(isSkipLine('2012'), true, 'standalone year still skipped');
+  });
+  it('does NOT skip a result row that starts with a year-like number (e.g. place 2012 would not be valid)', () => {
+    // A result row beginning with "2012" as a place number is implausible in practice,
+    // but the year+time pattern requires a time field — "2012 Doe, John" should not skip.
+    assert.equal(isSkipLine('2012 Doe, John'), false, 'name line should not be skipped');
+  });
+});
+
+describe('VPSU CHAMPS EXT — parseIndividualRow accepts VC suffix', () => {
+  it('row with "VC" at end (verbatim from 2025 Champs PDF) → parses, achievedChamps false', () => {
+    // Verbatim line: "1 Jacobs, Jimmy\t14 FDC\t28.15 28.16 20 VC"
+    const r = parseIndividualRow('1 Jacobs, Jimmy\t14 FDC\t28.15 28.16 20 VC');
+    assert.ok(r, 'should match — was null before VC fix');
+    assert.equal(r.place, 1);
+    assert.equal(r.swimmer, 'Jacobs Jimmy');
+    assert.equal(r.age, 14);
+    assert.equal(r.team, 'FDC');
+    assert.equal(r.dq, false);
+    assert.ok(r.time !== null, 'time should be set');
+    assert.equal(r.achievedChamps, false, 'VC ≠ CHMP; achievedChamps must remain false');
+  });
+
+  it('row with "VC" suffix, place 2 → parses correctly', () => {
+    // Verbatim: "2 OBrien, Knox\t12 FDC\t30.04 29.85 17 VC"
+    const r = parseIndividualRow('2 OBrien, Knox\t12 FDC\t30.04 29.85 17 VC');
+    assert.ok(r, 'should match — was null before VC fix');
+    assert.equal(r.place, 2);
+    assert.equal(r.swimmer, 'OBrien Knox');
+    assert.equal(r.team, 'FDC');
+    assert.equal(r.dq, false);
+    assert.equal(r.achievedChamps, false);
+  });
+
+  it('CHMP suffix still recognised → achievedChamps true (no regression)', () => {
+    const r = parseIndividualRow('1 Moore, Ophelia\t10 WT\t32.41 31.88 20 CHMP');
+    assert.ok(r, 'should match');
+    assert.equal(r.achievedChamps, true, 'CHMP must still set achievedChamps');
+  });
+
+  it('row without achievement suffix still works (no regression)', () => {
+    const r = parseIndividualRow('3 Shnowske, Sam\t12 WT\t1:18.95 1:15.11 20');
+    assert.ok(r, 'should match');
+    assert.equal(r.achievedChamps, false);
+    assert.equal(r.place, 3);
+  });
+});
+
+describe('VPSU CHAMPS EXT — tryWrapStitch resolves VC-suffixed data line', () => {
+  // Verbatim wrap from 2025 Champs PDF:
+  //   L7:  "1 Simmons,"
+  //   L8:  "Benjamin"
+  //   L9:  "12 WGPRA 1:09.07 1:07.81 20 VC"
+  // DATA_ONLY_LINE must match line L9 now that (?:\s+(?:CHMP|VC))? is appended.
+  it('DATA_ONLY_LINE matches data line ending in "20 VC"', () => {
+    // Build a minimal lines array matching the L7/L8/L9 pattern and call tryWrapStitch.
+    const lines = [
+      '1 Simmons,',
+      'Benjamin',
+      '12 WGPRA 1:09.07 1:07.81 20 VC',
+    ];
+    const result = tryWrapStitch(lines, 0);
+    assert.ok(result, 'tryWrapStitch should return a stitched result — was null before fix');
+    assert.ok(result.stitched, 'stitched string should be non-empty');
+    // The stitched string should now be parseable by parseIndividualRow
+    const row = parseIndividualRow(result.stitched);
+    assert.ok(row, 'parseIndividualRow should succeed on the stitched line');
+    assert.equal(row.swimmer, 'Simmons Benjamin');
+    assert.equal(row.team, 'WGPRA');
+    assert.equal(row.age, 12);
+    assert.equal(row.dq, false);
+    assert.ok(row.time !== null, 'time should be set');
+    assert.equal(row.achievedChamps, false);
+  });
+});

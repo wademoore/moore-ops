@@ -195,6 +195,7 @@ function isSkipLine(line) {
   if (/^SwimTopia/i.test(line)) return true; // SwimTopia Meet Maestro footer
   if (/^--\s+\d+\s+of\s+\d+\s+--$/.test(line)) return true; // "-- N of M --" page indicators (2022–2024)
   if (/^\d{4}$/.test(line)) return true; // standalone year token (page-header artifact in 2022+ PDFs)
+  if (/^\d{4}[\t ]+(?:\d+:\d+\.\d+|\d+\.\d+)\s*$/.test(line)) return true; // Champs meet record year+time lines (e.g. "2004 1:08.95")
   if (/^CHMP\b/.test(line)) return true; // Summer Awards CHMP achievement header lines
   return false;
 }
@@ -217,7 +218,7 @@ function parseIndividualRow(line) {
   // m: normal timed row, including 2026-style EXH suffix.
   // Place may have an asterisk suffix (e.g. “3*”) indicating a tied finish.
   const m = line.match(
-    /^(\d+)\*?\s+((?:[\p{L}\p{M}'.\-””””“"()]+|\d+(?:st|nd|rd|th))(?:\s+(?:[\p{L}\p{M}'.\-””””“"()]+|\d+(?:st|nd|rd|th)))*),\s*((?:[\p{L}\p{M}'.\-””””“"()]+|\d+(?:st|nd|rd|th))(?:\s+(?:[\p{L}\p{M}'.\-””””“"()]+|\d+(?:st|nd|rd|th)))*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+(?:\.\d+)?)?(?:\s+(CHMP))?\s*$/iu
+    /^(\d+)\*?\s+((?:[\p{L}\p{M}'.\-””””“"()]+|\d+(?:st|nd|rd|th))(?:\s+(?:[\p{L}\p{M}'.\-””””“"()]+|\d+(?:st|nd|rd|th)))*),\s*((?:[\p{L}\p{M}'.\-””””“"()]+|\d+(?:st|nd|rd|th))(?:\s+(?:[\p{L}\p{M}'.\-””””“"()]+|\d+(?:st|nd|rd|th)))*)\s+(\d{1,2})\s+([A-Z]{2,6})\s+(NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(DQ|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s*(EXH|\d+(?:\.\d+)?)?(?:\s+(CHMP|VC))?\s*$/iu
   );
   if (m) {
     const place       = parseInt(m[1], 10);
@@ -550,11 +551,11 @@ function runPlausibilityChecks(row, records, inMemoryRows) {
 
 // A wrapped entry's continuation line contains age, team, seed, and official time —
 // no swimmer name. Must start with a 1-2 digit age followed by an ALL-CAPS team abbr.
-const DATA_ONLY_LINE = /^\d{1,2}\s+[A-Z]{2,6}\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(?:DQ|NS|DNF|SCR|NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)(?:\s+\S+)?\s*$/i;
+const DATA_ONLY_LINE = /^\d{1,2}\s+[A-Z]{2,6}\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(?:DQ|NS|DNF|SCR|NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)(?:\s+\S+)?(?:\s+(?:CHMP|VC))?\s*$/i;
 
 // If a line's remainder (after the place prefix) already ends with team+times, it's a
 // complete result line that parseIndividualRow should handle directly.
-const FULL_RESULT_END = /[A-Z]{2,6}\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(?:DQ|NS|DNF|SCR|NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)(?:\s+\S+)?\s*$/i;
+const FULL_RESULT_END = /[A-Z]{2,6}\s+(?:NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)\s+(?:DQ|NS|DNF|SCR|NT|\d+:\d+\.\d+|\d+\.\d+[YM]?)(?:\s+\S+)?(?:\s+(?:CHMP|VC))?\s*$/i;
 
 /**
  * Detects multi-line name-wrapped entries and returns the stitched line + skip index.
