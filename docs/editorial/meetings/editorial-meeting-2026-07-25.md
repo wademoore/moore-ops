@@ -4,7 +4,7 @@
 *Produced by: Claude Code (Newsroom)*
 *For: Publisher (Wade) review → ChatGPT (Editor-in-chief)*
 *Data sources: league-results-v2.json, relay-results-v2.json, summer-awards-scores.json, waves-team-records.json, pb-records.json, league-results-history-v2.json*
-*npm test confirmed: 624 passing / 0 failing — no data files modified*
+*npm test confirmed: 625 passing / 0 failing — no data files modified*
 
 ---
 
@@ -14,7 +14,7 @@
 Meet name:  VPSU Summer Awards
 Date:       2026-07-25
 Format:     League-wide invitational — all 18 VPSU teams (not a dual meet)
-Location:   Not available in data — see Open Questions
+Location:   Kingswood pool
 Score:      Wellington Waves — 642 points, 3rd of 18 teams
             Top 3: Kingswood Klams 1185.5 (1st) | Gators 1077 (2nd) | Wellington Waves 642 (3rd)
 Division context: KW and GS are both Division 1 teams.
@@ -51,7 +51,7 @@ Moore family: Neither Myles Moore nor Ophelia Moore competed at this meet.
 | 17 | KP | Kingspoint | 52 |
 | 18 | WC | WCP Manta Rays | 17 |
 
-Note: The Editor-in-chief has been provided logos for six teams: Edgehill, West Point, Powhatan Secondary, Windsor Forest, Williamsburg Community Pool, and Wellington. The actual field (18 teams) is substantially larger than those six, because Summer Awards is league-wide, not limited to Division 2. Publisher should confirm whether "West Point" = WPD (WP Dolphins) and "Powhatan Secondary" = PS (Seastars) before publication.
+Note: The Editor-in-chief has been provided logos for six teams: Edgehill, West Point, Powhatan Secondary, Windsor Forest, Williamsburg Community Pool, and Wellington. The actual field (18 teams) is substantially larger than those six, because Summer Awards is league-wide, not limited to Division 2. Confirmed: "West Point" = WPD (WP Dolphins) and "Powhatan Secondary" = PS (Seastars).
 
 ---
 
@@ -147,7 +147,7 @@ Supporting data: league-results-v2.json (achievedChamps, time history)
 
 - **Micah Thrash wins Boys 9-10 50m Butterfly (61.35s) without qualifying.** The 50m Butterfly standard is 60s. His SA time (61.35s) placed 1st of 6 but missed the standard by 1.35 seconds. His prior season bests in this event were 61.13s (July 20), 61.12s (July 20), 61.64s (July 13), 61.13s (June 29). Consistent near-miss pattern across the season. This is a near-miss finding only; editorial framing must avoid "still chasing" or anticipatory-pressure language. — MEDIUM — league-results-v2.json
 
-- **Season bests for 12 WT swimmers.** The following swimmers posted their 2026 season-best time in at least one event at SA: Walker Mullinax (25m Free −1.77s, 25m Butterfly −6.59s), Micah Thrash (50m Free −1.64s), Nehemiah Thrash (50m Butterfly), Sophia Burnette (25m Breaststroke, first SA entry), Eleanor Wojtan (25m Butterfly −3.44s), Thrash Joshua (50m Free −6.09s), Butler Justice (50m Back −1.20s), Schlicher Brooks (25m Back −1.84s), Snyder Ezra (50m Free −0.42s), Lantz Parker (50m Fly −0.45s), Luke Rosie (25m Free −0.24s), Wojtan Oliva (25m Free −1.35s, 25m Back −0.17s). *Note: "season best" means faster than all prior 2026 entries in league-results-v2.json for the same swimmer and event. Does not constitute a career PB claim for non-Moore swimmers, where only 2026 data is compared.* — MEDIUM — league-results-v2.json
+- **Season bests for 12 WT swimmers.** The following swimmers posted their 2026 season-best time in at least one event at SA: Walker Mullinax (25m Free −1.77s, 25m Butterfly −6.59s), Micah Thrash (50m Free −1.64s), Nehemiah Thrash (50m Butterfly), Sophia Burnette (25m Breaststroke, first SA entry), Eleanor Wojtan (25m Butterfly −3.44s), Thrash Joshua (50m Free −6.09s), Butler Justice (50m Back −1.20s), Schlicher Brooks (25m Back −1.84s), Snyder Ezra (50m Free −0.42s), Lantz Parker (50m Fly −0.45s), Luke Rosie (25m Free −0.24s), Wojtan Olivia (25m Free −1.35s, 25m Back −0.17s). *Note: "season best" means faster than all prior 2026 entries in league-results-v2.json for the same swimmer and event. Does not constitute a career PB claim for non-Moore swimmers, where only 2026 data is compared.* — MEDIUM — league-results-v2.json
 
 - **Thrash Joshua — 6.09-second drop in Boys 9-10 50m Freestyle.** 64.93s at SA vs. prior 2026 best of 71.02s. Placed 12th of 14 at SA. Developmental context: largest time drop (by absolute seconds) among SA season-best findings, though the absolute time is well above the qualifying standard. — MEDIUM — league-results-v2.json
 
@@ -188,8 +188,8 @@ No individual approached within 3.0s of any other team record at this meet.
 
 | Finding | Level | Reason |
 |---------|-------|--------|
-| WT team score (642 pts) and placement (3rd/18) | MEDIUM | Source file summer-awards-scores.json; no independent PDF for this file; scores recorded "through event 68" (see Open Questions re: finality) |
-| WT is highest-scoring Division 2 team | MEDIUM | Derived from team score + division assignment (waves-season.json); same source limitations as score finding |
+| WT team score (642 pts) and placement (3rd/18) | MEDIUM | Source file summer-awards-scores.json; no independent PDF for this file; score finality confirmed by Publisher (Wade) — "through event 68" caveat resolved |
+| WT is highest-scoring Division 2 team | MEDIUM | Derived from team score + division assignment (waves-season.json); score confirmed final; no independent PDF for summer-awards-scores.json |
 | 8 new event qualifications, all verified genuinely new | MEDIUM | achievedChamps field confirmed against standards; prior-season cross-reference complete through v2 history; SA rows not yet PDF-verified (verifiedAgainst: null for all 98 SA WT rows) |
 | First-time-ever: none of the 7 SA qualifiers | MEDIUM | Confirmed: all had prior qualifying swims in 2026 or history. History data 2022–2025 complete (80,145 rows). Walker Mullinax first qualifying swims occurred in 2026; no 2022–2025 history entries. |
 | Season bests (12 swimmers) | MEDIUM | Comparison limited to 2026 season rows in league-results-v2.json; career PB claims require pb-records.json (Moore family only) or manual Updater records (not available for the full roster) |
@@ -199,38 +199,32 @@ No individual approached within 3.0s of any other team record at this meet.
 | Participation counts (44 swimmers) | MEDIUM | Derived from full league-results-v2.json + relay-results-v2.json cross-reference; relay swimmer parsing confirmed from raw JSON structure ("Last, First" strings per relay row) |
 | Two Girls 8&Under relay teams | HIGH | Directly in relay-results-v2.json; two separate rows confirmed distinct (different times, different swimmer arrays) |
 | Micah Thrash 50m Butterfly near-miss | MEDIUM | SA row unverified; prior-season pattern corroborated across 4 separate meets |
-| Eggleston Hayden in Girls 13-18 relay | MEDIUM | Confirmed age 12 (Girls 11-12) from league-results-v2.json; VPSU rule confirmation pending (see Warnings) |
+| Eggleston Hayden in Girls 13-18 relay | HIGH | Confirmed age 12 (Girls 11-12) from league-results-v2.json; VPSU relay eligibility confirmed by Publisher (Wade) — age-12 swimmer in Girls 13-18 relay is a permitted practice; both the data fact and the rule question are resolved |
 
 ---
 
 ## 8. Warnings
 
-⚠ **Score finality — throughEvent: 68**
-summer-awards-scores.json records `throughEvent: 68` and `totalScore: 6,055`. It is not clear from the data whether event 68 is the final event in the meet or whether additional events were scored after this capture.
-Action required: Publisher must confirm with league records or the official meet results whether the scores are final. WT's 642-point placement is subject to change if events beyond #68 were scored.
+✅ **Score finality — confirmed**
+Publisher (Wade) confirmed that the WT score (642 points, 3rd of 18) and the full team standings are final. The `throughEvent: 68` / `totalScore: 6,055` figures in summer-awards-scores.json represent the complete meet results. No publisher action required.
 
 ⚠ **SA rows not PDF-verified (verifiedAgainst: null for all 98 WT rows)**
-None of the 98 WT rows from Summer Awards have been PDF-spot-checked (verifiedAgainst field is null). This caps all time-based findings — qualifications, season bests, placements — at MEDIUM confidence.
-Action required: Publisher should PDF-verify at minimum the 8 achievedChamps rows before publication.
+None of the 98 WT rows from Summer Awards carry a PDF spot-check (verifiedAgainst: null). Publisher (Wade) has reviewed and confirmed the three flagged integer times (Mullinax Walker 25m Freestyle 21s, 25m Butterfly 32s; Parker Marley 25m Breaststroke 38s) and considers the 8 achievedChamps rows sufficiently verified for publication. The remaining 90 WT SA rows (non-qualifying individual results, relay entries) have not been individually PDF-verified. Time-based findings for non-qualifying rows (season bests, placements, participation counts) remain at MEDIUM confidence.
 
-⚠ **Integer times — Walker Mullinax (21s, 32s) and Parker Marley (38s)**
-Three SA times are recorded as exact integers with no decimal component: Mullinax Walker 25m Freestyle = 21 (not 21.xx), Mullinax Walker 25m Butterfly = 32 (not 32.xx), Parker Marley 25m Breaststroke = 38 (not 38.xx). These could represent timing-equipment round numbers or data entry artifacts. The plausibilityFlags array is empty for all three (the parser does not flag integer times as anomalies). Both Mullinax Walker times carry achievedChamps: true (qualification impact).
-Action required: Publisher should confirm times against source PDF before publishing specific times for these swims. The integer form is unusual enough to warrant verification.
+✅ **Integer times — Walker Mullinax (21s, 32s) and Parker Marley (38s) — confirmed**
+Publisher (Wade) confirmed all three integer times are correct as recorded: Mullinax Walker 25m Freestyle = 21s, 25m Butterfly = 32s; Parker Marley 25m Breaststroke = 38s. No publisher action required.
 
 ✅ **Mason Hibbard — skill normalization gap resolved (commit 43f6323)**
 The normalization gap described here has been fixed. Mason Hibbard's current-season 15-18 qualifications are now correctly included in the skill output. No publisher action required on this item.
 
-⚠ **Eggleston Hayden (age 12) in Girls 13-18 relay**
-Hayden Eggleston competes individually in Girls 11-12 at age 12 throughout the 2026 season. She appears as a leg in the WT Girls 13-18 200m Freestyle Relay at Summer Awards. This may be VPSU's relay bracket for older-swimmer relays (age 13+) but the data indicates she is age 12.
-Action required: Publisher should confirm whether VPSU relay rules permit age-12 swimmers in the 13-18 relay bracket, or whether this is a data categorization issue in the source PDF.
+✅ **Eggleston Hayden (age 12) in Girls 13-18 relay — confirmed normal practice**
+Publisher (Wade) confirmed that an age-12 swimmer participating in the Girls 13-18 relay bracket is a normal, allowed practice under VPSU relay eligibility rules. This is not a data categorization issue. No publisher action required.
 
-⚠ **"Wojtan Oliva" spelling — possible variant of "Olivia"**
-A swimmer named "Wojtan Oliva" appears in both individual results (Girls 6&Under) and in relay data ("Wojtan, Oliva"). The individual results also include "Wojtan Eleanor." The name "Oliva" may be a recording variant of "Olivia" in the source PDF.
-Action required: Publisher should confirm the swimmer's correct name before publication.
+✅ **"Wojtan Olivia" spelling — confirmed**
+Publisher (Wade) confirmed the swimmer's correct name is Olivia (not Oliva). All occurrences in this artifact have been corrected. No publisher action required.
 
-⚠ **WPD team identity (logo teams)**
-The Editor-in-chief has logos for "West Point" but the score file uses "WPD" (WP Dolphins, 4th place). Similarly, "Powhatan Secondary" may correspond to "PS" (Seastars). Neither team identity is confirmed in the data.
-Action required: Publisher should confirm abbreviation-to-full-name mappings before ChatGPT uses team logos.
+✅ **WPD = West Point / PS = Powhatan Secondary — confirmed**
+Publisher (Wade) confirmed: WPD = West Point (WP Dolphins) and PS = Powhatan Secondary (Seastars). Both mappings are correct. No publisher action required.
 
 ---
 
@@ -310,7 +304,7 @@ Chart-ready data:
 | 2 | 10 | Fincham Aiden | Boys 9-10 | 50m Freestyle | 47.74s |
 | 2 | 7 | Butler Justice | Boys 9-10 | 50m Backstroke | 61.61s |
 | 2 | 3 | Hibbard Mason | Men 15-18 | 50m Backstroke | 33.79s |
-| 3 | 13 | Wojtan Oliva | Girls 6&Under | 25m Backstroke | 41.74s |
+| 3 | 13 | Wojtan Olivia | Girls 6&Under | 25m Backstroke | 41.74s |
 | 3 | 31 | Lantz Parker | Boys 11-12 | 50m Freestyle | 37.29s |
 | 3 | 16 | Pate Abigail | Girls 13-14 | 50m Backstroke | 43.94s |
 | 3 | 8 | Lantz Parker | Boys 11-12 | 50m Butterfly | 51.02s |
@@ -331,7 +325,7 @@ Chart-ready data:
 |-------|------|----------|
 | Boys 8&Under 100m Freestyle Relay | 1:44.10 | Walker Mullinax, Grayson Luke, Nolan Fincham, William Pittman |
 | Girls 8&Under 100m Freestyle Relay (Team A) | 1:35.91 | Sophia Burnette, Cora Greer, Adelyn Aeillo, Eleanor Wojtan |
-| Girls 8&Under 100m Freestyle Relay (Team B) | 2:50.30 | Marley Parker, Rosie Luke, Everleigh Eggleston, Oliva Wojtan |
+| Girls 8&Under 100m Freestyle Relay (Team B) | 2:50.30 | Marley Parker, Rosie Luke, Everleigh Eggleston, Olivia Wojtan |
 | Boys 9-10 200m Freestyle Relay (Team A) | 3:07.32 | Conor Greer, Nate Burnette, Charlie Chiesa, Micah Thrash |
 | Boys 9-10 200m Freestyle Relay (Team B) | 3:47.76 | Jack Kopriva, Justice Butler, Aiden Fincham, Noah Hummel |
 | Girls 9-10 200m Freestyle Relay | 3:29.91 | Delani Taylor, Olivia Dunkle, Audrey Chiesa, Violet Lantz |
@@ -366,19 +360,7 @@ Notes: Relay times expressed as MM:SS.xx. No relay placement data is available (
 
 ## 11. Open Questions
 
-- **Meet location:** Not present in any data file. Publisher should add to the artifact before handoff if it will appear in print.
-
-- **Score finality (throughEvent: 68):** Is the 6,055 total points figure and WT's 642-point / 3rd-place finish a final result, or were additional events scored after capture? Publisher should verify against official meet results.
-
-- **Walker Mullinax integer times (21s, 32s), Parker Marley integer time (38s):** These three SA times are exact integers with no decimal component, which is unusual for electronic timing. Publisher should verify against source PDF before publishing specific times for these swims.
-
 - **Mason Hibbard qualifier list — resolved (commit 43f6323):** The Men/Women→Boys/Girls normalization gap in the qualifier skill has been fixed. Mason Hibbard's current-season 15-18 qualifications now appear correctly in the skill output. No publisher action required.
-
-- **Eggleston Hayden (age 12) in Girls 13-18 relay:** Does VPSU relay rules allow age-12 swimmers in the 13-18 relay bracket at Summer Awards? Or is this a data entry issue that should be flagged for correction in relay-results-v2.json?
-
-- **"Wojtan Oliva" vs. "Olivia":** Is the correct spelling "Oliva" or "Olivia"? Publisher should confirm against team roster before any publication.
-
-- **WPD = "West Point"? PS = "Powhatan Secondary"?** Publisher should confirm abbreviation-to-full-name mappings for the logo teams.
 
 - **ribbon depth at this meet:** What placement depth does Summer Awards award ribbons to? The placement data goes to 30th place (bottom of field). Publisher should confirm the relevant cutoff (8th, 12th, etc.) if "ribbon winners" will be described in editorial copy.
 
