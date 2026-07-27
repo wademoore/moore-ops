@@ -128,8 +128,8 @@ Confidence: **MEDIUM**
 Supporting data: league-results-v2.json (achievedChamps, time, prior-season comparison); time recorded as integer (21 and 32) — see Data Integrity Warnings.
 
 **3. Boys 9-10 depth — 8 individual swimmers, two relay teams**
-The Boys 9-10 age group entered 8 individual swimmers (most of any single WT age group) and two full 4-person relay teams (187.32s and 227.76s in the 200m Freestyle Relay). Conor Greer (Boys 9-10) now qualifies in five events: 100m IM, 50m Freestyle, 50m Backstroke, 50m Butterfly (all from prior meets), and 50m Breaststroke (SA). Micah Thrash added 50m Freestyle, reaching the qualifying threshold by 0.18 seconds.
-Confidence: **MEDIUM** (for SA individual; relay times are non-DQ and directly recorded)
+The Boys 9-10 age group entered 8 individual swimmers (most of any single WT age group) and two full 4-person relay teams in the 200m Freestyle Relay. Team A (3:07.32) placed 2nd of 4 legal finishers; Team B (3:47.76) placed 3rd of 4. (Two teams — Gators B and Windsor Forest — were DQ'd, making the legal field 4 teams.) Conor Greer (Boys 9-10) now qualifies in five events: 100m IM, 50m Freestyle, 50m Backstroke, 50m Butterfly (all from prior meets), and 50m Breaststroke (SA). Micah Thrash added 50m Freestyle, reaching the qualifying threshold by 0.18 seconds.
+Confidence: **MEDIUM** (for SA individual; relay times and placements are directly recorded from PDF)
 Supporting data: league-results-v2.json, relay-results-v2.json
 
 **4. Nehemiah Thrash — 50m Butterfly qualifying margin**
@@ -157,7 +157,9 @@ Supporting data: league-results-v2.json (achievedChamps, time history)
 
 - **44 WT swimmers competed.** 37 had at least one non-DQ individual result. 7 additional swimmers competed (all individual entries were DQs); of those 7, four also participated in relay teams (Kopriva Jack, Eggleston Everleigh, Chiesa Audrey, Ilardi Nikolai). Three additional WT swimmers (Darne Mason, Carnevale Parker, Carnevale Noah) competed individually with all DQs and no relay entries. — MEDIUM — league-results-v2.json, relay-results-v2.json
 
-- **Two Girls 8&Under relay teams entered.** WT entered two Girls 8&Under 100m Freestyle Relay teams: 95.91s and 170.3s. Having enough Girls 8&Under swimmers to field two relay teams is a participation-depth finding. — HIGH — relay-results-v2.json
+- **Two Girls 8&Under relay teams entered.** WT entered two Girls 8&Under 100m Freestyle Relay teams: 95.91s (Team A) and 170.3s (Team B) in a field of 15. Team A placed 4th of 15 — solid for a young age group in the league's largest relay field at this meet. Team B placed 15th of 15 (last). Having enough Girls 8&Under swimmers to field two relay teams is a participation-depth finding. — HIGH — relay-results-v2.json
+
+- **Boys 13-18 relay placed 2nd of 7.** WT's Boys 13-18 200m Freestyle Relay (2:14.47) placed 2nd of 7 legal finishers, behind only Kingswood Klams A (2:08.19, 1st). Kingswood is a Division 1 team. — MEDIUM — relay-results-v2.json
 
 - **Girls 13-18 relay notable composition.** The WT Girls 13-18 200m Freestyle Relay included Clara Lantz, Abigail Pate, Finley Knaul, and Hayden Eggleston. Eggleston competes individually in Girls 11-12 (age 12 per v2 data). Publisher: confirm whether VPSU relay rules permit 11-12 age swimmers in a 13-18 relay bracket, or flag for data review. — MEDIUM — relay-results-v2.json (see Warnings)
 
@@ -193,7 +195,7 @@ No individual approached within 3.0s of any other team record at this meet.
 | 8 new event qualifications, all verified genuinely new | MEDIUM | achievedChamps field confirmed against standards; prior-season cross-reference complete through v2 history; SA rows not yet PDF-verified (verifiedAgainst: null for all 98 SA WT rows) |
 | First-time-ever: none of the 7 SA qualifiers | MEDIUM | Confirmed: all had prior qualifying swims in 2026 or history. History data 2022–2025 complete (80,145 rows). Walker Mullinax first qualifying swims occurred in 2026; no 2022–2025 history entries. |
 | Season bests (12 swimmers) | MEDIUM | Comparison limited to 2026 season rows in league-results-v2.json; career PB claims require pb-records.json (Moore family only) or manual Updater records (not available for the full roster) |
-| Relay times (all 8 WT relays) | MEDIUM | Times directly recorded in relay-results-v2.json; no PDF verification; no placement data available for relays |
+| Relay times and placements (all 8 WT relays) | MEDIUM | Times directly recorded in relay-results-v2.json; no PDF verification of times; overallPlace is native from source PDF Pl column (confirmed correct via spot-check; see Methodology Notes) |
 | Relay records: none broken/approached | HIGH | Record lookup is deterministic; relay ageGroups confirmed to not match Open relay record categories |
 | Individual records: none broken or within 1s | HIGH | Deterministic comparison against waves-team-records.json; all gaps exceed 3.0s |
 | Participation counts (44 swimmers) | MEDIUM | Derived from full league-results-v2.json + relay-results-v2.json cross-reference; relay swimmer parsing confirmed from raw JSON structure ("Last, First" strings per relay row) |
@@ -358,18 +360,18 @@ Notes: "Total Field" is the count of non-DQ finishers in that event across all 1
 Type: Table
 Chart-ready data:
 
-| Relay | Time | Swimmers |
-|-------|------|----------|
-| Boys 8&Under 100m Freestyle Relay | 1:44.10 | Walker Mullinax, Grayson Luke, Nolan Fincham, William Pittman |
-| Girls 8&Under 100m Freestyle Relay (Team A) | 1:35.91 | Sophia Burnette, Cora Greer, Adelyn Aeillo, Eleanor Wojtan |
-| Girls 8&Under 100m Freestyle Relay (Team B) | 2:50.30 | Marley Parker, Rosie Luke, Everleigh Eggleston, Olivia Wojtan |
-| Boys 9-10 200m Freestyle Relay (Team A) | 3:07.32 | Conor Greer, Nate Burnette, Charlie Chiesa, Micah Thrash |
-| Boys 9-10 200m Freestyle Relay (Team B) | 3:47.76 | Jack Kopriva, Justice Butler, Aiden Fincham, Noah Hummel |
-| Girls 9-10 200m Freestyle Relay | 3:29.91 | Delani Taylor, Olivia Dunkle, Audrey Chiesa, Violet Lantz |
-| Boys 13-18 200m Freestyle Relay | 2:14.47 | Mason Hibbard, Nikolai Ilardi, Parker Lantz, Nehemiah Thrash |
-| Girls 13-18 200m Freestyle Relay | 2:40.37 | Clara Lantz, Abigail Pate, Finley Knaul, Hayden Eggleston |
+| Relay | Time | Place | Field | Swimmers |
+|-------|------|-------|-------|----------|
+| Boys 8&Under 100m Freestyle Relay | 1:44.10 | 5th | 10 | Walker Mullinax, Grayson Luke, Nolan Fincham, William Pittman |
+| Girls 8&Under 100m Freestyle Relay (Team A) | 1:35.91 | 4th | 15 | Sophia Burnette, Cora Greer, Adelyn Aeillo, Eleanor Wojtan |
+| Girls 8&Under 100m Freestyle Relay (Team B) | 2:50.30 | 15th | 15 | Marley Parker, Rosie Luke, Everleigh Eggleston, Olivia Wojtan |
+| Boys 9-10 200m Freestyle Relay (Team A) | 3:07.32 | 2nd | 4 | Conor Greer, Nate Burnette, Charlie Chiesa, Micah Thrash |
+| Boys 9-10 200m Freestyle Relay (Team B) | 3:47.76 | 3rd | 4 | Jack Kopriva, Justice Butler, Aiden Fincham, Noah Hummel |
+| Girls 9-10 200m Freestyle Relay | 3:29.91 | 3rd | 10 | Delani Taylor, Olivia Dunkle, Audrey Chiesa, Violet Lantz |
+| Boys 13-18 200m Freestyle Relay | 2:14.47 | 2nd | 7 | Mason Hibbard, Nikolai Ilardi, Parker Lantz, Nehemiah Thrash |
+| Girls 13-18 200m Freestyle Relay | 2:40.37 | 6th | 7 | Clara Lantz, Abigail Pate, Finley Knaul, Hayden Eggleston |
 
-Notes: Relay times expressed as MM:SS.xx. No relay placement data is available (relay-results-v2.json does not include overallPlace). No relay records apply for these age group / event combinations. "Team A" / "Team B" labels are assigned by time; the source data does not label relay entries with team designators.
+Notes: Relay times expressed as MM:SS.xx. Place = overallPlace from relay-results-v2.json (native from PDF Pl column). Field = count of non-DQ legal finishers in that event across all 18 teams. No relay records apply for these age group / event combinations. "Team A" / "Team B" labels are assigned by time; the source data does not label relay entries with team designators.
 
 ---
 
@@ -392,6 +394,8 @@ Notes: Relay times expressed as MM:SS.xx. No relay placement data is available (
 - **Walker Mullinax age-group label note:** Walker Mullinax competes in both "Boys 7-8" (for 25m Freestyle and 25m Backstroke) and "Boys 8&Under" (for 25m Breaststroke and 25m Butterfly). This is consistent with his full 2026 history and reflects the VPSU practice of using different bracket labels for different event types (stroke/fly events use "8&Under"; free/back use "7-8"). The qualifier verification treated each ageGroup/event pair independently, as designed. This is not a data error.
 
 - **Qualifying-spots figure correction (commit 43f6323):** An earlier draft of this figure (133, marked as an estimate) undercounted qualifiers because a labeling gap in the qualifier skill silently excluded all Boys/Girls 15-18 bracket swimmers, whose ageGroup data uses "Men 15-18"/"Women 15-18" labels in league-results-v2.json. The skill's standards lookup only recognizes "Boys"/"Girls" prefixed keys; the current-season league row processing loop was extracting the raw gender prefix ("Men", "Women") without normalizing it before the lookup. This caused getLookupKey() to return "Men 15-18|event", which is absent from the standards table — std == null caused every Men/Women 15-18 row to be silently skipped. The bug was identified, fixed (two-line change in check.js:95 and check.js:32), Reviewer-approved, and pushed as commit 43f6323. The corrected total (168 spots, 54 swimmers) is used throughout this document. The pre-fix Week 6 figure (125/45) was also undercounting for the same reason; no separate corrected Week 6-only figure is computed here.
+
+- **Relay placement methodology (commits 229cc4f, 8ffe174):** Relay `overallPlace` values are native from the source PDF's explicit `Pl` column — the same printed column format used for individual events. The source PDF (2026 SA meet, Kingswood pool) prints `<place> <Team Name> <relay-letter> <abbr> <seed> <official> <pts>` for each non-DQ relay row. `parseRelayRow()` already extracted this place value; however, `parsePdfText()` was not including it in the row object it constructed. The fix (commit 229cc4f) adds `overallPlace: partial.place` to the relay row object and adds a post-process step that counts non-DQ entries per event to populate `overallCount` — mirroring the existing individual-row post-process pattern. The SA meet was re-parsed with `--force` (commit 8ffe174); 64 SA relay rows now carry `overallPlace` and `overallCount`. All 8 WT relay placements were verified against raw PDF text. Non-SA relay rows (455 rows from prior meets) were not backfilled — they retain `overallPlace: undefined`; the parser fix applies to future parses. DQ relay rows receive `overallPlace: null` and `overallCount: null` per the same convention as individual DQ rows.
 
 ---
 
