@@ -27,10 +27,10 @@ Path resolution is self-contained via `import.meta.url` — works from any worki
 
 | File | Filter |
 |------|--------|
-| `data/league-results-history.json` | `team === "WT"` and `dq === false` |
-| `data/league-results.json` | `team === "WT"` and `dq === false` |
-| `data/relay-results-history.json` | `team === "WT"` and `dq === false` |
-| `data/relay-results.json` | `team === "WT"` and `dq === false` |
+| `data/league-results-history-v2.json` | `team === "WT"` and `dq === false` |
+| `data/league-results-v2.json` | `team === "WT"` and `dq === false` |
+| `data/relay-results-history-v2.json` | `team === "WT"` and `dq === false` |
+| `data/relay-results-v2.json` | `team === "WT"` and `dq === false` |
 | `data/waves-team-records.json` | all entries |
 
 ---
