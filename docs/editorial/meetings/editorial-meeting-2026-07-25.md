@@ -285,7 +285,7 @@ Notes: Boys 10&Under and Girls 10&Under are VPSU bracket labels for 100m IM entr
 ---
 
 **Graphic 4: Individual ribbon results (selected)**
-Type: Table — top-8 finishes
+Type: Table — ribbon finishes (1st–12th confirmed)
 Chart-ready data:
 
 | Place | Total Field | Swimmer | Age Group | Event | Time |
@@ -312,8 +312,45 @@ Chart-ready data:
 | 4 | 7 | Lantz Clara | Girls 13-14 | 100m IM | 94.17s |
 | 4 | 14 | Schlicher Brooks | Boys 6&Under | 25m Backstroke | 42.97s |
 | 4 | 7 | Burnette Nate | Boys 9-10 | 50m Backstroke | 60.49s |
+| 5 | 19 | Lantz Clara | Girls 13-14 | 50m Freestyle | 36.92s |
+| 5 | 20 | Wojtan Olivia | Girls 6&Under | 25m Freestyle | 39.02s |
+| 6 | 7 | Fincham Aiden | Boys 9-10 | 50m Backstroke | 69.42s |
+| 6 | 23 | Lantz Violet | Girls 9-10 | 50m Breaststroke | 67.74s |
+| 6 | 6 | Chiesa Charlie | Boys 9-10 | 50m Butterfly | 80.14s |
+| 6 | 11 | Eggleston Hayden | Girls 11-12 | 50m Butterfly | 51.04s |
+| 6 | 19 | Wojtan Eleanor | Girls 7-8 | 25m Backstroke | 32.85s |
+| 7 | 14 | Butler Justice | Boys 9-10 | 50m Freestyle | 50.13s |
+| 7 | 11 | Butler Justice | Boys 9-10 | 50m Breaststroke | 75.28s |
+| 7 | 10 | Chiesa Charlie | Boys 9-10 | 50m Freestyle | 50.46s |
+| 7 | 7 | Cox Ben | Boys 13-14 | 100m Individual Medley | 107.81s |
+| 7 | 7 | Cox Ben | Boys 13-14 | 50m Breaststroke | 57.63s |
+| 7 | 25 | Eggleston Hayden | Girls 11-12 | 50m Backstroke | 51.82s |
+| 7 | 23 | Greer Cora | Girls 10&Under | 100m Individual Medley | 121.18s |
+| 7 | 7 | Pate Abigail | Girls 13-14 | 50m Butterfly | 55.18s |
+| 7 | 23 | Taylor Delani | Girls 9-10 | 50m Freestyle | 47.6s |
+| 8 | 10 | Burnette Nate | Boys 9-10 | 50m Freestyle | 51.03s |
+| 8 | 18 | Fincham Nolan | Boys 7-8 | 25m Freestyle | 25.28s |
+| 8 | 8 | Fincham Nolan | Boys 7-8 | 25m Backstroke | 41.39s |
+| 9 | 13 | Bristow Lexi | Girls 6&Under | 25m Backstroke | 57.3s |
+| 9 | 34 | Eggleston Hayden | Girls 11-12 | 50m Freestyle | 40.54s |
+| 9 | 16 | Lantz Clara | Girls 13-14 | 50m Backstroke | 45.63s |
+| 9 | 11 | Snyder Ezra | Girls 11-12 | 50m Butterfly | 53.36s |
+| 9 | 17 | Taylor Delani | Girls 9-10 | 50m Backstroke | 63.29s |
+| 10 | 12 | Greer Coen | Boys 8&Under | 25m Butterfly | 42.71s |
+| 10 | 16 | Knaul Finley | Girls 13-14 | 50m Backstroke | 48.18s |
+| 10 | 23 | Lantz Violet | Girls 9-10 | 50m Freestyle | 49.58s |
+| 11 | 11 | Hummel Noah | Boys 9-10 | 50m Breaststroke | 95.14s |
+| 11 | 19 | Knaul Finley | Girls 13-14 | 50m Freestyle | 39.34s |
+| 12 | 20 | Bristow Lexi | Girls 6&Under | 25m Freestyle | 46.98s |
+| 12 | 13 | Cox Ben | Boys 13-14 | 50m Freestyle | 40.9s |
+| 12 | 19 | Dunkle Olivia | Girls 9-10 | 50m Freestyle | 53.04s |
+| 12 | 23 | Dunkle Olivia | Girls 9-10 | 50m Breaststroke | 70.74s |
+| 12 | 14 | Knaul Finley | Girls 13-14 | 50m Breaststroke | 57.86s |
+| 12 | 19 | Luke Rosie | Girls 7-8 | 25m Freestyle | 32.63s |
+| 12 | 18 | Pittman William | Boys 7-8 | 25m Freestyle | 26.32s |
+| 12 | 14 | Thrash Joshua | Boys 9-10 | 50m Freestyle | 64.93s |
 
-Notes: "Total Field" is the count of non-DQ finishers in that event across all 18 teams. All 75 non-DQ WT individual rows have overallPlace populated. Publisher should confirm the depth of award ribbons at this meet (e.g., whether ribbons go to 8th, 12th, etc.) before presenting this as a "ribbon count."
+Notes: "Total Field" is the count of non-DQ finishers in that event across all 18 teams. All 75 non-DQ WT individual rows have overallPlace populated. Ribbon depth confirmed: Summer Awards awards ribbons through 12th place. All WT results at places 1–12 are included above.
 
 ---
 
@@ -362,8 +399,8 @@ Notes: Relay times expressed as MM:SS.xx. No relay placement data is available (
 
 - **Mason Hibbard qualifier list — resolved (commit 43f6323):** The Men/Women→Boys/Girls normalization gap in the qualifier skill has been fixed. Mason Hibbard's current-season 15-18 qualifications now appear correctly in the skill output. No publisher action required.
 
-- **ribbon depth at this meet:** What placement depth does Summer Awards award ribbons to? The placement data goes to 30th place (bottom of field). Publisher should confirm the relevant cutoff (8th, 12th, etc.) if "ribbon winners" will be described in editorial copy.
+- **ribbon depth at this meet — resolved:** Publisher (Wade) confirmed Summer Awards awards ribbons through 12th place. Ribbon winners may be described in editorial copy using that cutoff. Section 9 Graphic 4 has been updated to include all WT results at places 1–12.
 
 - **Season qualifier count — resolved (commit 43f6323):** The normalization fix was applied before this figure was finalized. The corrected total (168 qualifying spots, 54 swimmers) is used in Section 2. To include SA results in the "new this week" block on future runs, WEEK_DATE should be advanced to '2026-07-25'.
 
-- **Are Division 3 and other VPSU divisions represented in the Summer Awards field?** The 18-team field includes teams like SH, WGPRA, IP, GLT, VW, KP that are not in waves-season.json's 2026 Division 1 or Division 2 listings. Publisher may want to confirm how many VPSU divisions are represented in the Summer Awards field for editorial framing.
+- **VPSU divisions in Summer Awards field — resolved:** Publisher (Wade) confirmed the 18-team field represents all three VPSU divisions — this is a genuinely league-wide invitational, not limited to Division 1/2 teams. Editorial framing may use: "all three VPSU divisions competed." No publisher action required.
