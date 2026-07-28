@@ -1,4 +1,18 @@
 /**
+ * RETIRED — moved to scripts/archive/ (2026-07-27)
+ *
+ * This was a one-time script. It ran on 2026-07-27 (commit 9c833d8) to populate
+ * the now-legacy data/league-results-history.json and data/relay-results-history.json
+ * with 2024/2025 VPSU Champs and 2026 Summer Awards data. That output was subsequently
+ * migrated to the v2 history files in commits 032b078 and 6b3b7f9.
+ *
+ * DO NOT RERUN against the legacy files. If a future Champs/SA year needs to be loaded:
+ *   - The legacy target files are now archived at data/archive/
+ *   - This script has a known no-dedup-on-rerun limitation
+ *   - See CLAUDE.md Known Open Items for context and the recommended approach
+ *     (either a rewritten version targeting v2 with dedup, or a repeat of the
+ *     manual migration approach used in July 2026)
+ *
  * scripts/parse-champs-history.mjs
  *
  * Parses VPSU Championship Meet and Summer Awards PDFs into
