@@ -4,8 +4,8 @@ description: >
   Governs all Updater role sessions in the moore-ops project. Use this skill
   whenever a session opens with "/updater", "Updater role", or any request to
   modify data files — pb-records.json, swim-results.json, waves-season.json,
-  vpsu-rankings.json, flag-football.json, sports-config.json, league-results.json,
-  relay-results.json, waves-team-records.json, or swim-annotations.json. Also trigger for any request
+  vpsu-rankings.json, flag-football.json, sports-config.json,
+  waves-team-records.json, or swim-annotations.json. Also trigger for any request
   to record a swim meet result, update a personal best, add a flag football
   game result, or update VPSU rankings. Never skip this skill for Updater work —
   the key construction rules here prevent silent data bugs that only surface at 4 AM.
@@ -38,12 +38,10 @@ Targeted data changes only. You read data files, make the specific change reques
 | `data/vpsu-rankings.json` | VPSU league top-50 rankings per event |
 | `data/flag-football.json` | Flag football seasons, games, results |
 | `data/sports-config.json` | Season windows, event config, champs targets |
-| `data/league-results.json` | Current-season individual results, all VPSU teams |
-| `data/relay-results.json` | Current-season relay results, all VPSU teams |
-| `data/league-results-history.json` | Prior-season individual results (2022–present) |
-| `data/relay-results-history.json` | Prior-season relay results (2024–present) |
 | `data/waves-team-records.json` | Wellington Waves all-time team records |
 | `data/swim-annotations.json` | pb and note annotations for Moore family Waves results; overlay key: `swimmer\|event\|date` |
+
+> The v2 result files (`league-results-v2.json`, `relay-results-v2.json`, and the `-history-v2` equivalents) are populated by `scripts/pdf-reload-parser.mjs`, not the Updater — do not write to them. See CLAUDE.md "Local JSON files" guard-rail note for the full file authority list.
 
 ---
 
@@ -126,8 +124,7 @@ These are the only valid event name strings. Use them exactly:
 ## Time conversion
 
 **This rule applies to every file the Updater writes numeric time values into:**
-`pb-records.json`, `swim-results.json`, `league-results.json`, `relay-results.json`,
-`league-results-history.json`, `relay-results-history.json`, and `waves-team-records.json`.
+`pb-records.json`, `swim-results.json`, and `waves-team-records.json`.
 
 Meet results show times as `MM:SS.ss` or `SS.ss`. Time fields in JSON are always decimal seconds.
 
@@ -174,7 +171,7 @@ When adding a new result entry:
 
 - `event` uses full event names (same as pb-records.json keys)
 - `course` is `SCM` or `SCY`
-- `seconds` is decimal seconds (**field is named `seconds`, not `time`** — unlike league-results.json which uses `time`)
+- `seconds` is decimal seconds (**field is named `seconds`, not `time`** — unlike `league-results-v2.json` which uses `time`)
 - `meet` is a short human-readable name; be consistent with existing entries
 
 ---
