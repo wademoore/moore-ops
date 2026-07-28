@@ -1,0 +1,37 @@
+[
+  {
+    "meet": "se-8u-district-champs",
+    "date": "2026-02-07",
+    "course": "SCY",
+    "team": "757",
+    "relayTeam": "D",
+    "event": "100 Freestyle Relay",
+    "ageGroup": "8 & Under Girls",
+    "seconds": 121.37,
+    "heat": 1,
+    "totalHeats": 1,
+    "place": 12,
+    "legs": [
+      {
+        "leg": 1,
+        "memberId": "948",
+        "name": "Moult"
+      },
+      {
+        "leg": 2,
+        "memberId": "935",
+        "name": "Manni"
+      },
+      {
+        "leg": 3,
+        "memberId": "933",
+        "name": "Moore"
+      },
+      {
+        "leg": 4,
+        "memberId": "956",
+        "name": "Blanc"
+      }
+    ]
+  }
+]
