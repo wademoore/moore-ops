@@ -264,6 +264,12 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 - **`digest/flags.js`** — computes alert flags (gear reminders, bag-prep warnings, etc.) from resolved events.
 - **`digest/generateTasks.js`** — derives today's task list from events and school strip.
 
+## Key docs
+
+- **`docs/data-reload/757swim-parser-spec.md`** — fully verified Hy-Tek CommLink 2 format spec for the 757swim parser; covers D1/E1/E2/F1/F3 record layouts, all known format discrepancies, and open items.
+- **`docs/data-reload/reload-manifest.json`** — season-keyed manifest driving `scripts/pdf-reload-parser.mjs`; tracks parse state, row counts, and plausibility flags per meet slug.
+- **`docs/reference/scoring-rules.md`** — USA Swimming dual/triangular/multi-team meet scoring rules (Article 102.24–102.26, 2023 Rulebook). Reference only — moore-ops data files track win-loss margins, not points.
+
 ## Test baseline
 
 **✓ 645 unit tests passing, 0 failing (current baseline as of July 2026 — 430 post ageGroup fix, +12 from fractional-points / 1-tab relay / DQ-handling fixes, +10 from FIX 1 Unicode names / FIX 2 multi-line wrap / FIX 3 relay NT, +14 from HIST EXT null-byte / EXH / non-scoring-finisher / SCR + pre-existing double-quote name fix, +1 from HIST EXT 6 X-prefix name-wrap, +2 from HIST EXT 7 NT-official EXH rows, +8 from waves-div1-simulation nearest-meet rewrite (17 new / 9 removed), +2 from HIST EXT 8 parenthetical-nickname EXH rows, +85 from waves-div1-2027-projection skill commit 868c84c, +5 from HIST EXT 9 ordinal-suffix / HIST EXT 10 tied-relay-place / HIST EXT 11 double-quoted EXH continuation, +2 from BRACKET_LEGAL_EVENTS cross-bracket event filter in waves-div1-2027-projection, +3 from v2 path tests in swimParser.test.js, +1 from SA FIX 1 Delaney U+201C nickname regression test, +1 from Case L Men/Women→Boys/Girls normalization contract test in waves-champs-qualifier, +10 from Phase 1/2 relay parser fixes — NS/DNF/SCR token handling, 1-tab fallback, and DQ-row recovery regression tests, +10 from VPSU CHAMPS EXT — year+time record-line skip, VC suffix on individual rows, VC in wrap-stitch data lines)**
