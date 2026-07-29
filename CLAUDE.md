@@ -269,6 +269,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 - **`docs/data-reload/757swim-parser-spec.md`** — fully verified Hy-Tek CommLink 2 format spec for the 757swim parser; covers D1/E1/E2/F1/F3 record layouts, all known format discrepancies, and open items.
 - **`docs/data-reload/reload-manifest.json`** — season-keyed manifest driving `scripts/pdf-reload-parser.mjs`; tracks parse state, row counts, and plausibility flags per meet slug.
 - **`docs/reference/scoring-rules.md`** — USA Swimming dual/triangular/multi-team meet scoring rules (Article 102.24–102.26, 2023 Rulebook). Reference only — moore-ops data files track win-loss margins, not points.
+- **`docs/reference/motivational-standards.md`** — USA Swimming 2024-2028 age-group motivational time standards (B/BB/A/AA/AAA/AAAA) for SCY, SCM, and LCM across all age brackets.
 
 ## Test baseline
 
