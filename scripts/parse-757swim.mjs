@@ -1,3 +1,4 @@
+// DEPRECATED: Ophelia Moore results only. Full-field replacement: scripts/parse-757swim-full.mjs
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'

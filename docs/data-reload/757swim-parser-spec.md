@@ -1,98 +1,100 @@
-# 757swim Hy-Tek Parser Spec (Revised)
+# Full-Field 757swim Parser Spec — Full-Roster Ingestion
 
-**Status**: Revised — Debugger-verified  
-**Planner session**: 2026-07-27  
-**Scope**: Ophelia-only swimmer extracted from 757swim Hy-Tek CommLink 2 export files
-
-> **How to read the corrections**: Each section is labeled `[CORRECTED]` or `[UNCHANGED]` relative to the initial Planner spec. Corrected sections show what changed and why.
+**Status**: APPROVED  
+**Planner sessions**: 2026-07-27 (initial), 2026-07-27 (volume/E1[2] revision), 2026-07-28 (join-key/DQ/relay-volume/zero-relay revision)  
+**Scope**: Full-field ingestion of all swimmers' results from all 15 meets in `data/sources/757/`; Moore-family filtering at read time
 
 ---
 
-## 1. Meet Inventory [CORRECTED]
+## 1. Problem Statement
 
-**Original spec had 14 meets (7 SCY + 6 LCM + 1 SCM). Corrected to 15 meets: `sc-send-off` was omitted and is SCY; two slug names were wrong.**
+The existing `scripts/parse-757swim.mjs` filters to Ophelia Moore only at parse time:
 
-| Folder slug | Course | Notes |
-|---|---|---|
-| `2025-09-19-battle-of-the-burg` | SCY | |
-| `2025-10-10-imx-imr-kickoff` | SCY | |
-| `2025-10-25-fall-fiesta` | SCY | |
-| `2025-12-05-grand-illumination` | SCY | |
-| `2025-12-31-nye-distance-time-trial` | SCY | |
-| `2026-01-09-splash-and-dash` | SCY | |
-| `2026-02-07-se-8u-district-champs` | SCY | |
-| `2026-03-20-sc-send-off` | SCY | **added — was missing from original spec** |
-| `2026-04-25-spring-challenge` | SCM | only SCM meet in set |
-| `2026-05-01-nova-sr-lc-classic` | LCM | **slug corrected** (was `nova-lc-senior-classic`) |
-| `2026-05-01-tide-spring-shockwave` | LCM | |
-| `2026-05-02-bass-jim-frye-memorial` | LCM | |
-| `2026-05-14-srva-ez-super-sectional` | LCM | **slug corrected** (was `srva-ez-super-sectionals`, plural) |
-| `2026-05-15-nova-spring-splash` | LCM | |
-| `2026-07-09-va-lc-senior-champs` | LCM | |
+```javascript
+// individual filter
+inBlock = line.slice(8,28).trim() === 'Moore' && line.slice(28).includes('Ophelia')
+// relay filter
+.filter(p => p.team === '757' && p.sexCode === 'FF' && p.opheliaInRelay)
+```
 
-**Totals**: SCY × 8, LCM × 6, SCM × 1 = 15 meets.
+This contradicts the Waves pipeline precedent: `data/league-results-v2.json` captures all 20,132 rows from all 54 VPSU 2026 meets across all teams; Moore-family filtering happens at read time in `digest/swimParser.js`. The 757swim pipeline must follow the same architecture — full-field ingestion, filtering at read time.
 
-Each meet folder contains exactly one `.cl2` file and one `.hy3` file. File names include the meet name and date; the parser should `glob('*.cl2')` and `glob('*.hy3')` within each folder.
+Two latent bugs in the existing parser (§3.2 and §3.3) further underscore the need for a clean rewrite rather than a patch.
 
 ---
 
-## 2. Output Schemas [UNCHANGED]
+## 2. Output Design
 
-### 2.1 Individual Results — `data/swim-757-results.json`
+### 2.1 Naming Decision
+
+**Decision: Option A.**
+
+| Option | Individual file | Relay file |
+|--------|----------------|------------|
+| A (chosen) | `data/league-results-757.json` | `data/relay-results-757.json` |
+| B (rejected) | `data/swim-757-results-v2.json` | `data/swim-757-relays-v2.json` |
+
+**Rationale**: The `league-results-` prefix is the established repo convention for full-field per-swimmer result files. These new files will be consumed by `swimParser.js` identically to `league-results-v2.json`. Using the `swim-757-` prefix would falsely imply a versioned evolution of the deprecated Ophelia-only files rather than a structural replacement following the Waves pipeline pattern.
+
+No naming collision with any current, archived, or deprecated file in the repo.
+
+### 2.2 Individual Results — `data/league-results-757.json`
 
 ```json
 [
   {
-    "meet":         "se-8u-district-champs",
-    "date":         "2026-02-08",
-    "course":       "SCY",
-    "swimmer":      "Moore, Ophelia A",
-    "age":          7,
-    "sex":          "F",
-    "event":        "25 Backstroke",
-    "ageGroup":     "8 & Under",
-    "seconds":      30.01,
-    "heat":         5,
-    "totalHeats":   8,
-    "heatPlace":    3,
+    "meet":          "se-8u-district-champs",
+    "date":          "2026-02-08",
+    "course":        "SCY",
+    "team":          "757",
+    "swimmer":       "Moore, Ophelia A",
+    "memberId":      "933",
+    "age":           7,
+    "sex":           "F",
+    "event":         "25 Backstroke",
+    "ageGroup":      "8 & Under",
+    "seconds":       30.01,
+    "heat":          5,
+    "totalHeats":    8,
+    "heatPlace":     3,
     "totalSwimmers": 56,
-    "place":        56,
-    "dq":           false
+    "place":         56,
+    "dq":            false
   }
 ]
 ```
 
-**Field notes**:
-- `meet`: folder slug (without date prefix — e.g. `"se-8u-district-champs"`, not `"2026-02-07-se-8u-district-champs"`)
+**Field sources**:
+- `meet`: folder slug without date prefix (e.g. `"se-8u-district-champs"`)
 - `date`: ISO 8601 from D01 `[80:88]` (MMDDYYYY → YYYY-MM-DD)
-- `course`: `"SCY"` / `"LCM"` / `"SCM"` — derived from B2 `[98]`
-- `swimmer`: raw name from D01 `[11:39]`, stripped
+- `course`: from B2 `[98]` — `"SCY"`, `"LCM"`, or `"SCM"`
+- `team`: club code from C1 context tracking (see §3.1)
+- `swimmer`: D1 `[8:28]` (last name) + `", "` + D1 `[28:]` stripped; or from D01 `[11:39]`
+- `memberId`: D1 `[3:8]`, stripped (e.g. `'  933'` → `'933'`)
 - `age`: integer from D01 `[63:65]`
 - `sex`: `"F"` or `"M"` from D01 `[65]`
-- `event`: decoded from E1 event_code `[18:22]` (see §7)
-- `ageGroup`: human label derived from E1 age range `[22:28]` (see §9)
-- `seconds`: float from E2F `[4:13]` (decimal seconds, strip course suffix); for DQ records, still record the time (the 'Q' + DQ code suffix is stripped)
+- `event`: decoded from E1 `[18:22]` (see §9)
+- `ageGroup`: from E1 `[22:25]` / `[25:28]` (see §11)
+- `seconds`: float from E2F `[4:13]` (strip course suffix); `null` if zero or unparseable
 - `heat`, `totalHeats`, `heatPlace`: from E2F `[22]`, `[25]`, `[28]`
-- `totalSwimmers`: integer from E2F `[31:33]` — **authoritative source**
-- `place`: integer from D01 `[136:138]` (gender rank within event; equals overall place for single-gender age-group events)
-- `dq`: `true` if E2F `[4:13]` contains the character `'Q'`; also `true` if D01 time suffix contains `'Q'`
+- `totalSwimmers`: from E2F `[31:33]`
+- `place`: from D01 `[136:138]` (gender_rank — place among swimmers of same sex in event)
+- `dq`: `true` if E2F `[4:13]` contains `'Q'`
 
-### 2.2 Relay Results — `data/swim-757-relays.json`
+### 2.3 Relay Results — `data/relay-results-757.json`
 
 ```json
 [
   {
-    "meet":       "se-8u-district-champs",
-    "date":       "2026-02-07",
-    "course":     "SCY",
-    "team":       "757",
-    "relayTeam":  "A",
-    "event":      "100 Individual Medley Relay",
-    "ageGroup":   "8 & Under Girls",
-    "seconds":    80.07,
-    "heat":       1,
-    "totalHeats": 4,
-    "place":      1,
+    "meet":      "se-8u-district-champs",
+    "date":      "2026-02-07",
+    "course":    "SCY",
+    "team":      "757",
+    "relayTeam": "A",
+    "event":     "100 Medley Relay",
+    "ageGroup":  "8 & Under Girls",
+    "seconds":   80.07,
+    "dq":        false,
     "legs": [
       { "leg": 1, "memberId": "948", "name": "Moult" },
       { "leg": 2, "memberId": "935", "name": "Manni" },
@@ -103,325 +105,456 @@ Each meet folder contains exactly one `.cl2` file and one `.hy3` file. File name
 ]
 ```
 
-**Field notes**:
-- `date`: meet start date from B1 `[92:100]` (MMDDYYYY; convert to ISO 8601 YYYY-MM-DD); this is meet-level — relay events held on a later day of a multi-day meet will still show the start date
-- `team`: F1 `[2:6]`, stripped (e.g. `"757"`, `"BASS"`, `"NOVA"`)
+**Field sources**:
+- `date`: meet start date from B1 `[92:100]` (MMDDYYYY → ISO 8601). Relay events on later days of multi-day meets will show the meet start date — per-event date is not available in F1 records (known limitation)
+- `team`: F1 `[2:6]`, stripped
 - `relayTeam`: F1 `[7]` (`"A"`, `"B"`, `"C"`)
-- `event`: decoded from F1 `[18:22]` (see §7)
-- `ageGroup`: decoded from F1 age/sex fields (see §9)
-- `seconds`: from F1 time field (exact position TBD by Coder; left of timestamp at end of record)
-- `heat`, `totalHeats`, `place`: from F1 (exact sub-positions TBD by Coder from record structure)
-- `legs[].memberId`: F3 5-char right-justified ID per leg (call `.strip()` to get numeric part); `legs[].name`: F3 5-char name fragment per leg
+- `event`: decoded from F1 `[18:22]` (see §9)
+- `ageGroup`: combined from F1 sex (`[12]`) and division (`[14]`) with age range (see §11)
+- `seconds`: from F1 `[44:51]`, strip course suffix; `null` if zero
+- `dq`: see §4.3
+- `legs[].memberId`: F3 per-leg 5-char field, stripped; `legs[].name`: 5-char name fragment per leg
+
+Note: `heat`, `totalHeats`, and `place` sub-positions within F1 have not been confirmed. They are omitted from this schema version. The Coder must determine these positions and add them in a follow-on pass (see §13).
 
 ---
 
-## 3. Source File Structure [UNCHANGED]
+## 3. Parser Logic — Decisions and Corrections
+
+### 3.1 Full-Field Approach and C1 Team Context Tracking
+
+The new parser scans ALL D1/E1/E2 records in each .hy3 file without filtering by swimmer name at parse time.
+
+In multi-team meets, D1 swimmer blocks are grouped under their team's C1 record. The parser must track the current C1 as it scans linearly:
+
+```
+A1  (file header)
+B1/B2  (meet header)
+C1 [team_code=757]    ← sets currentTeam = '757'
+  C2/C3  (address/contact, ignored)
+  D1 [Moore, Ophelia A]  ← team = currentTeam = '757'
+    E1/E2 pairs
+  D1 [next swimmer]
+    E1/E2 pairs
+C1 [team_code=CGBD]   ← sets currentTeam = 'CGBD'
+  D1 [CGBD swimmer]   ← team = currentTeam = 'CGBD'
+    E1/E2 pairs
+F1/F3  (relay records — outside D1 blocks; team code embedded in F1[2:6])
+```
+
+`currentTeam = C1[2:6].strip()`. Every D1 record encountered after a C1 record inherits that team until the next C1. For single-team meets (most 757swim-hosted developmental meets), there is one C1 block and all swimmers share the same team code.
+
+### 3.2 laneMap — Prelim/Final Collision Fix
+
+**Latent bug in existing parser**: `parse-757swim.mjs` keys its laneMap by lane only:
+
+```javascript
+laneMap.set(pendingE1.lane, {...})
+```
+
+In meets with both prelims and finals (grand-illumination, tide-spring-shockwave, srva-ez-super-sectional, va-lc-senior-champs), a swimmer swims the same event in the same lane twice — once in prelims, once in finals. A lane-only key overwrites the first result with the second, silently dropping one round.
+
+**Fix**: key by `(lane, eventCode)` composite. Filter E2 records by `E2[2]='F'` to select finals output only.
+
+```
+laneMap.set(`${lane}|${eventCode}`, pendingE1Data)
+// E2[2]==='F'  → store result
+// E2[2]==='P'  → skip
+```
+
+**Verification** — traced through Austin Skyler 200E at tide-spring-shockwave:
+
+| Step | Line | Record | Action |
+|------|------|--------|--------|
+| 1 | 13 | E1 for 200E, lane=31 | `pendingE1 = {eventCode:'200E', lane:'31', ageMin:13, ageMax:14}` |
+| 2 | 14 | E2F (round='F') | store `laneMap[('31','200E')]` = finals result (167.21L) ✓ |
+| 3 | 16 | E1 for 200E, lane=31 (identical to line 13) | fresh `pendingE1` for prelim pair |
+| 4 | 17 | E2P (round='P') | `E2[2]='P'` → skip; `pendingE1` cleared ✓ |
+
+Final state: one output row, seconds=167.21. No collision. ✓
+
+### 3.3 E1[2] — Sex Code, Not Round Code
+
+**The existing parser reads E1[2] as round code. This is wrong.**
+
+E1 is the event *entry* record. It carries no round code — the round is determined at result time (E2[2]). E1[2] is the swimmer's **sex code** (`'F'`=female, `'M'`=male), matching D1[2] for the same swimmer.
+
+**Why the existing Ophelia-only parser appeared to work**: Ophelia is female. The filter `if (e1.slice(2,3) !== 'F') continue` coincidentally passed all of Ophelia's entries (sex='F'). A full-field parser cannot reuse this logic.
+
+**Empirical verification** — 19 swimmers across 4 meets, zero contradictions:
+
+| Meet | Swimmer | D1[2] | E1[2] | Match |
+|------|---------|-------|-------|-------|
+| sc-send-off | Braddick, Nicholas | M | M | ✓ |
+| sc-send-off | Buzek, Rowan | M | M | ✓ |
+| sc-send-off | 5 additional swimmers | mixed | same as D1[2] | ✓ |
+| battle-of-the-burg | Arne, Lars | M | M | ✓ |
+| battle-of-the-burg | Arslan, Asil | M | M | ✓ |
+| battle-of-the-burg | Austin, Skyler | F | F | ✓ |
+| battle-of-the-burg | 5 additional swimmers | mixed | same as D1[2] | ✓ |
+| tide-spring-shockwave | Austin, Skyler — prelim E1 | F | F | ✓ |
+| tide-spring-shockwave | Austin, Skyler — finals E1 | F | F | ✓ |
+| srva-ez-super-sectional | Hafl (male) | M | M | ✓ |
+| srva-ez-super-sectional | Buzek, Rowan (male) | M | M | ✓ |
+
+**Prelim/final confirmation**: Austin Skyler at tide-spring-shockwave swims 200E with one prelim entry (E1 line 16) and one finals entry (E1 line 13). Both E1 records for the same event show `E1[2]='F'` (sex=female). The corresponding results show `E2[2]='F'` (final, line 14) and `E2[2]='P'` (prelim, line 17). E1[2] is sex; E2[2] is round. ✓
+
+**Implication**: do not filter by E1[2] for round detection. Use `E2[2]='F'` to select finals output.
+
+### 3.4 Join Strategy — .hy3 to .cl2
+
+#### Why the join is needed
+
+The .hy3 provides: event code, age group, lane, heat, totalHeats, heatPlace, totalSwimmers, round code, time.  
+The .cl2 D01 provides: `place` (gender_rank at D01 `[136:138]`), `date` (per-swimmer event date at D01 `[80:88]`), `age` (D01 `[63:65]`), `sex` (D01 `[65]`).
+
+#### D01[3:5] is NOT a club code — verified finding
+
+The label "team_code, e.g. 'VA'" in prior documentation was wrong. Reviewer independently verified from tide-spring-shockwave (8 teams: 757swim, CGBD, ODAC, TIDE, UN-75, UN-CG, UN-TI, UN-VA) that D01[3:5]='VA' for every swimmer regardless of club:
+
+```
+D01VA      Austin, Skyler L...    ← 757swim swimmer
+D01VA      Ballin, Alivia D...    ← 757swim swimmer
+D01VA      [CGBD swimmer]...      ← different club, same 'VA'
+D01VA      [TIDE swimmer]...      ← different club, same 'VA'
+```
+
+All 25 sampled D01 records show `[3:5]='VA'` — a USAS LSC code, not a club discriminator. **D01[3:5] cannot be used to distinguish swimmers from different clubs at a multi-team meet.** Any join key incorporating D01[3:5] as a team component is invalid.
+
+#### Options evaluated
+
+**Option A — Positional/sequential pairing within swimmer's .hy3 block**
+
+Each swimmer's D1 block in the .hy3 contains E1/E2 pairs in entry order. D01 records in the .cl2 appear in the same per-swimmer order. Pair them positionally: swimmer N's D01 records pair with swimmer N's D1/E1/E2 block by position, no key needed.
+
+*Pros*: avoids the D01[3:5] problem entirely. No team discriminator required.  
+*Cons*: depends on D01 ordering in .cl2 matching D1 ordering in .hy3. This is not guaranteed by the CommLink 2 format spec. If a single meet's .cl2 and .hy3 swimmer orderings diverge, the result is silent misattribution at scale — undetectable without a per-row sanity check.
+
+**Option B — Name-based key; accept collision risk; runtime warning**
+
+Use `(nameWindow[11:22] + nameWindow[23:28] + sex + lane)` as the join key. Log a warning on any actual collision and skip the .cl2 join for affected rows.
+
+*Pros*: simple and specific. The four-part key is highly discriminating for the large majority of swimmers. Collisions are detectable at parse time rather than silently misattributing data.  
+*Cons*: collisions occur in the corpus (see below). Affected rows output null `place` and `date`.
+
+**Known collisions in this corpus — 7 confirmed collision keys in 2 of 15 meets:**
+
+| Meet | Collision keys | Swimmers | Collision lanes | Root cause |
+|------|:---:|---|---|---|
+| bass-jim-frye-memorial | 3 | Forsbach Sotelo, Bertram vs Forsbach Sotelo, Heinrich (different member IDs) | 24, 28, 68 | Long-last-name key-window failure |
+| bass-jim-frye-memorial | 2 | Phinyowattanachip, Parker vs Phinyowattanachip, Paxton (different member IDs) | 62, 68 | Long-last-name key-window failure |
+| srva-ez-super-sectional | 2 | Harris, Savannah (member 0CBE8B98C79CA) vs Harris, Savannah (member A4F163D4E702A) | 19, 27 | Genuine coincidental-name case |
+
+**Two distinct failure modes:**
+
+*Long-last-name key-window failure* (bass-jim-frye pairs): "Forsbach Sotelo" is 15 chars; "Phinyowattanachip" is 18 chars. The key window [11:22] captures 11 chars of the last name and [23:28] captures 5 more — both windows fall entirely within the last name for these swimmers. The first name ("Bertram" vs "Heinrich", "Parker" vs "Paxton") starts beyond position 28 and never appears in the key at all. The collision guard is the only protection; the key itself provides zero discriminating power between these siblings.
+
+*Coincidental-name case* (srva Harris pair): Two entirely different swimmers share the full name "Harris, Savannah" and the same sex. This is the scenario Option B was explicitly designed to catch — rare, but real. The key correctly collides on each shared lane; the warning fires; both rows output null place/date.
+
+**Option C — Drop the .cl2 join; derive from .hy3 only; accept nulls for place and date**
+
+Use only .hy3 data. Omit `place` and `date` from the schema (or output nulls). All other fields are available from .hy3.
+
+*Pros*: eliminates the join problem entirely; fully correct.  
+*Cons*: `place` (gender_rank) is only available from D01 `[136:138]` — not in .hy3. Losing finishing position is a meaningful data loss for any consumer sorting results.
+
+#### Recommendation — Option B
+
+**Recommended: Option B** — (nameWindow[11:22] + nameWindow[23:28] + sex + lane) as the four-part join key, with runtime collision detection.
+
+Reasoning:
+- Option A's implicit ordering assumption is unverifiable without inspecting every meet's .cl2 against its .hy3. Silent misattribution at scale is worse than a surface-visible, logged collision.
+- Option C loses `place`, a meaningful output field used by the downstream read-time layer for finishing-position queries.
+- Option B's collision detection is working as designed: the 7 known collisions in this corpus are caught (warning fired, null place/date written) rather than silently misattributed. This is confirmation that the design is functioning correctly, not a reason to change approach. The known collisions are a quality-documentation issue in the spec, not a correctness failure in the parser. Option A would have silently misattributed the same swimmers; Option C would have dropped `place` for all 21,491 rows to avoid misattributing it for 7.
+
+**Join key — four components**:
+
+| Component | Source | Bytes |
+|-----------|--------|-------|
+| nameWindow[11:22] (11 chars) | D01 | `[11:22]`, stripped |
+| nameWindow[23:28] (5 chars) | D01 | `[23:28]`, stripped |
+| sex | D01 | `[65]` |
+| lane | D01 | `[72:75]`, stripped |
+
+> **Note on nameWindow[23:28]**: this is NOT reliably a "first name prefix." For last names ≥ 12 chars (counting from position 11), the window at [23:28] falls entirely within the last name and contains zero first-name characters. The two long-last-name collision pairs at bass-jim-frye are the direct evidence: "Forsbach Sotelo" (15 chars) yields `[23:28]="elo, "` for both Bertram and Heinrich; "Phinyowattanachip" (18 chars) yields `[23:28]="achip"` for both Parker and Paxton. The Coder must not assume this window discriminates between siblings or relatives sharing a long surname — the collision guard is the only protection in those cases.
+
+Lane limits false matches to swimmers sharing a name, sex, AND lane in the same meet. Within a single meet, the four-part key uniquely identifies one swimmer's one event entry for the large majority of swimmers; the collision guard handles the remainder.
+
+**Collision handling**: if two D01 records match the same four-part key within a single meet, log a warning identifying the duplicated key and skip the .cl2 join for the affected rows — output the .hy3 fields only, leave `place` and `date` as `null`.
+
+**Team is NOT a join key component.** D01[3:5] is a USAS LSC code, not a club code — see §13.4.
+
+#### Implementation note: 3-part fallback for middle-initial mismatch
+
+The four-part join key is built from D01 data. The same key must be reconstructed from .hy3 D1 data to perform the lookup — but D1 records do not carry middle initials. For swimmers whose D01 name field includes a middle initial, this creates a systematic mismatch:
+
+- D01 name field: `"Bravo, Jocelyn A"` → `nw2 = D01[23:28].trim()` = `"lyn A"`
+- D1 first-name field (D1[28:48]): `"Jocelyn"` (no middle initial) → reconstructed `nw2` = `"elyn "`
+
+The mismatch causes the .hy3-side four-part key to produce no hit in the D01 map, even though the correct D01 record exists. To handle this without silently losing the join, the implementation builds two maps simultaneously during D01 ingestion:
+
+- **`map4`** (primary): 4-part key `nw1|nw2|sex|lane` → array of D01 records. Used for all collision detection and primary lookups.
+- **`map3`** (fallback): 3-part key `nw1|sex|lane` → array of D01 records. Used only when a 4-part lookup misses entirely.
+
+**Lookup order**:
+1. Try 4-part key in `map4`. If exactly 1 record and no collision on that key: return it.
+2. If 4-part key is present but has ≥2 records (collision): return `null`. Warning was already logged during map build.
+3. If 4-part key absent entirely (4-part miss — likely MI mismatch): try 3-part key in `map3`.
+4. If `map3` returns exactly 1 record: return it. Match resolved via fallback.
+5. If `map3` returns 0 or ≥2 records: return `null`. Fails closed — ambiguous or absent.
+
+**Safety against the known collision families**:
+
+The Forsbach Sotelo and Phinyowattanachip families are long-last-name cases where `nw2` (positions 23–28 in the nameWindow) falls entirely within the last name. Both siblings in each pair produce identical `nw2` values, so both D01 records map to the *same* 4-part key. `map4.get(key4).length > 1`, collision warning fires, and `collisions4.add(key4)`. The .hy3-side lookup for either sibling hits this key at step 2 and returns `null` — the 3-part fallback is never reached for these swimmers. They are handled entirely within the 4-part collision path.
+
+The 3-part fallback is only reached when the .hy3-side 4-part key produces *no* `map4` hit (a true miss, not a collision). For the fallback to produce a false match, two swimmers would need to share `(nw1, sex, lane)` while differing only in `nw2`, *and* the MI-mismatch swimmer's reconstructed 4-part key would also have to miss. In that scenario `map3` would hold ≥2 entries for the 3-part key, and step 5 returns `null` — fails closed, no misattribution.
+
+**Collision detection is unaffected by the fallback**:
+
+All collision warnings fire during `map4` construction (D01→D01 comparison), before any lookup is called. The fallback path touches only `map3` and has no interaction with the collision set or `collisions4`. The 5 warnings at bass-jim-frye and 2 at srva fire correctly regardless of whether any given swimmer later resolves via 4-part or 3-part lookup.
+
+**The fallback is silent**: no log entry fires when a swimmer resolves via the 3-part path. See Open Item 6 (§14).
+
+---
+
+## 4. Relay Parsing
+
+### 4.1 Algorithm
+
+1. Scan .hy3 linearly for F1 records. Output all teams — do not filter by team at parse time.
+2. For each F1: extract team, relay letter, event code, age/sex fields, and time from F1[44:51].
+3. Pair each F1 with its F3 (leg assignments) using a state machine — see "Orphaned F1 handling" below.
+4. Write one row per F1 to `data/relay-results-757.json`.
+
+**State machine (emit-on-F1, attach-on-F3)**:
+
+The implementation emits on F1 rather than on F3, so that orphaned F1 records (F1 records with no matching F3) are preserved rather than silently dropped. A `pendingF1` variable tracks the most-recent unprocessed F1; `pendingLegs` holds the F3 leg data if and when it arrives.
+
+```
+On F1:              emitPending() if pendingF1 set; then pendingF1 = thisLine, pendingLegs = null
+On F2, G1, H1:      skip (intermediate/supplemental records); keep pendingF1
+On F3:              if pendingF1 set → pendingLegs = parse legs from F3; emitPending()
+On C1, D1, or other non-intermediate: emitPending() (non-F-series breaks F1-F3 pairing)
+End of file:        emitPending()
+
+emitPending():
+  if pendingF1 is null → return
+  emit { ...parsedF1, legs: pendingLegs ?? [] }
+  pendingF1 = null; pendingLegs = null
+```
+
+**Orphaned F1 records — confirmed counts**:
+
+14 F1 records across 4 meets have no matching F3 in the source files. These represent relays that were entered but not swum (false starts, scratches), not parsing gaps. The per-meet F1−F3 row-count differences confirm the counts exactly:
+
+| Meet | Orphaned F1s | F1 total | F3 total |
+|------|:---:|:---:|:---:|
+| grand-illumination | 1 | 96 | 95 |
+| bass-jim-frye-memorial | 4 | 107 | 103 |
+| srva-ez-super-sectional | 4 | 176 | 172 |
+| va-lc-senior-champs | 5 | 229 | 224 |
+
+Orphaned F1 rows appear in the output with `legs: []`. The total relay row count (668) equals the `grep -c "^F1"` count across all 15 meets; no F1 records are dropped.
+
+**Seed-time propagation — known limitation for orphaned rows**:
+
+F1[44:51] sometimes carries a non-zero entry/seed time even when the relay was not swum (F2 shows `"0.00LR"` — relay scratched). Per §4.2, the parser reads `seconds` from F1[44:51] consistently. For orphaned rows (`legs: []`), `seconds` may therefore reflect a seed time rather than an officially-swum result. Downstream consumers should treat `legs: []` rows as incomplete entries and interpret their `seconds` value accordingly. Confirmed example: CA-Y bass-jim-frye relay has F1[44:51]="118.73L" while F2 shows "0.00LR".
+
+**`dq: false` for orphaned rows**:
+
+Per §4.3, the only confirmed non-finish signal in this corpus is zero time at F1[44:51]. No relay DQ (Q suffix in time field) has been observed. Orphaned rows receive `dq: false` as a default, consistent with the zero-time handling, though this has not been empirically verified for the false-start case specifically.
+
+### 4.2 F1 Time Field — Confirmed Position
+
+**F1[44:51] is the confirmed relay time field. This is not TBD.**
+
+The position is in the existing parser code (`f1.slice(44, 51)`) and was independently verified against two known relay times from se-8u-district-champs:
+
+| Relay | F1[44:51] raw | Parsed | Verification source |
+|-------|--------------|--------|---------------------|
+| 757 D, 100 Freestyle Relay | `'121.37Y'` | 121.37 s | matches `swim-757-relays.json` ✓ |
+| 757 A, 100 Medley Relay | `' 80.07Y'` | 80.07 s | matches `swim-757-relays.json` ✓ |
+
+Extract: `f1.slice(44, 51).trim()`, strip course suffix (`'Y'`/`'L'`/`'S'`), parse float.
+
+### 4.3 DNS/DNF and DQ Detection
+
+**DNS/DNF (zero time)**: F1[44:51] trimming to `'0.00Y'` or `'0.00L'` indicates a DNS/DNF entry. Write to output with `seconds: null, dq: false`. The existing parser's `if (!seconds) continue` skips these; the full-field parser should include them.
+
+**DQ ('Q' in the time field)**: **No relay DQ records with 'Q' in the time field were found in the 15-meet corpus.**
+
+A corpus-wide search of all 668 F1 records for the character 'Q' found only team codes containing 'Q' (clubs 'QSTS' at bass-jim-frye-memorial and va-lc-senior-champs; 'HYAQ' at srva-ez-super-sectional). Zero F1 records had 'Q' at position [44:51] or anywhere in the time field. The search that appeared to identify relay DQs was searching the entire F1 line — finding 'Q' in team codes (positions [2:6]), not in the time field. All confirmed non-finish relay entries in this corpus use zero time at [44:51].
+
+**Implementation guidance**:
+- **Confirmed signal**: zero time at F1[44:51] → `seconds: null, dq: false`
+- **'Q' suffix guard**: include the strip-and-parse logic from the existing parser (`timeRaw.replace(/Q.*$/, '')`) as a forward-compatible guard. No relay DQ case with 'Q' in the time field has been empirically confirmed in this corpus, but the code path costs nothing to retain
+- If the Coder observes 'Q' in a time field during implementation, treat that row as `dq: true, seconds: <parsed time or null>` and flag it for manual verification
+
+---
+
+## 5. Existing File Disposition
+
+| File | Action |
+|------|--------|
+| `scripts/parse-757swim.mjs` | Add deprecation comment at top: `// DEPRECATED: Ophelia Moore results only. Full-field replacement: scripts/parse-757swim-full.mjs`. Do not delete or modify the script's logic. |
+| `data/swim-757-results.json` | Leave in place. Used by `swimParser.js` until integration is complete. Not deleted in this pass. |
+| `data/swim-757-relays.json` | Leave in place. Same rationale. |
+| `data/league-results-757.json` | New file — created by the new parser. |
+| `data/relay-results-757.json` | New file — created by the new parser. |
+
+Integration of the new files into `swimParser.js` is a separately-tracked future task outside this spec's scope.
+
+---
+
+## 6. Source File Structure
 
 ```
 data/sources/757/
   {date}-{slug}/
     *.cl2    ← CommLink 2 individual results
     *.hy3    ← Hy-Tek 3 full meet data
+    *.pdf    ← meet results PDF (not parsed)
 ```
 
-Both files use **Latin-1 encoding** (Windows CP1252 compatible). Lines are `\r\n` or `\n` terminated; strip both.
+Both .cl2 and .hy3 use Latin-1 encoding. Lines end in `\r\n` or `\n`; strip both. The parser should `glob('*.cl2')` and `glob('*.hy3')` within each meet folder — file names include meet name and date.
 
-`.cl2` record types relevant to the parser:
-- `D01` — individual swimmer result (one per event entry)
+**.cl2 record types** relevant to the parser:
+- `D01` — individual swimmer result (one per swimmer per event entry)
 - `F01` — relay split time (not parsed in this phase)
 - `G01` — individual split time (not parsed in this phase)
 
-`.hy3` record types relevant to the parser:
-- `B1` — meet name and date range (first record in `.hy3`; source of relay `date` field via `[92:100]`)
-- `B2` — meet header (course, meet name, date)
-- `D1` — swimmer definition (name, member ID, team)
-- `E1` — event entry (event code, age group, lane, seed time)
-- `E2` — event result (final time, heat, place within heat, total swimmers in event)
-- `F1` — relay result (relay team, event code, time, place)
-- `F3` — relay leg assignment (leg order, member IDs and name fragments)
-- `G1` — split times (not parsed in this phase)
-- `H1` — DQ reason (attached to E2 records with 'Q' time suffix)
+**.hy3 record types** present in the 15-meet corpus:
 
-Record type is always the first 2 characters of the line. Round code (F=final, P=prelim, S=swimoff) is always the 3rd character (`[2]`).
+| Type | Description | Used by parser |
+|------|-------------|:--------------:|
+| `A1` | File header | No |
+| `B1` | Meet name and date range | Yes — relay `date` via `[92:100]` |
+| `B2` | Meet header (course, name) | Yes — course via `[98]` |
+| `C1` | Team definition | Yes — currentTeam tracking |
+| `C2` | Team address | No |
+| `C3` | Team contact info | No |
+| `D1` | Swimmer definition (sex, member ID, name) | Yes — swimmer identity |
+| `E1` | Event entry (sex, event code, age group, lane) | Yes |
+| `E2` | Event result (round, time, heat, totalSwimmers) | Yes — `E2[2]='F'` for finals |
+| `F1` | Relay result (team, event, time) | Yes |
+| `F2` | Relay result detail (supplemental; found alongside F1 in va-lc-senior-champs) | No — not needed in this phase |
+| `F3` | Relay leg assignments (member IDs and name fragments) | Yes |
+| `G1` | Individual split times (one per E2 where splits available) | No |
+| `H1` | DQ infraction text (attached to DQ results) | No |
 
----
+**G1 and H1**: both are present in all 15 meets. G1 records contain intermediate split times for individual swims (format: `G1[round][lap] [cumulative_time]`). H1 records contain human-readable DQ infraction descriptions (format: `H1[code][description]`, e.g. `H11ENon-simultaneous arms`). Neither type is relay-related; neither is needed by the parser in this phase.
 
-## 4. Field Position Tables
-
-All positions are **0-indexed, Python-slice notation** (`[start:end]` is exclusive of `end`). Positions verified against raw source files except where noted.
-
-### 4.1 B2 — Meet Header (.hy3) [CORRECTED]
-
-> **Correction**: course indicator is at position **98**, not 96. Position 96 = `'0'` in all 15 meets.
-
-```
-[0:2]   record_type   'B2'
-[98]    course_code   'Y'=SCY, 'L'=LCM, 'S'=SCM
-```
-
-All other B2 fields (meet name, date, etc.) are not used by the parser.
-
-**Course lookup** (verified against all 15 meets):
-
-| Course | Meets |
-|--------|-------|
-| SCY (`'Y'`) | battle-of-the-burg, imx-imr-kickoff, fall-fiesta, grand-illumination, nye-distance-time-trial, splash-and-dash, se-8u-district-champs, sc-send-off |
-| LCM (`'L'`) | nova-sr-lc-classic, tide-spring-shockwave, bass-jim-frye-memorial, srva-ez-super-sectional, nova-spring-splash, va-lc-senior-champs |
-| SCM (`'S'`) | spring-challenge |
-
-### 4.2 D01 — Individual Result (.cl2) [CORRECTED]
-
-> **Critical correction**: `[136:138]` is **gender_rank** (place within sex group), not total_swimmers. `[145:147]` is **two separate 1-char fields** (heat_place and heat_size), not a 2-char overall-place field. Neither `[136:138]` nor `[145:147]` gives total swimmers. See §4.5 (E2) for the authoritative total_swimmers source.
-
-```
-[0:3]     record_type   'D01'
-[3:5]     team_code     e.g. 'VA'
-[11:39]   name          28 chars, right-padded — "Last, First M" format
-[63:65]   age           2 chars, right-justified integer (e.g. ' 7', '10')
-[65]      sex_code      'F'=female, 'M'=male
-[69:72]   event_seq     3 chars, opaque sequential ID within this meet (join key)
-[72:75]   lane          3 chars, right-justified integer
-[80:88]   date          8 chars, MMDDYYYY (e.g. '02082026' = 2026-02-08)
-[88:97]   seed_time     9 chars, right-justified, format: [space*] mm:ss.ssX or ss.ssX
-                        X = course suffix ('Y'=SCY, 'L'=LCM, 'S'=SCM)
-[97:106]  prelim_time   9 chars, same format; all spaces if finals-only meet
-[106:115] (unknown)     9 chars — not confirmed; may be converted time or padding
-[115:124] final_time    9 chars, same format as seed_time (right-justified)
-[129]     heat          1 char digit
-[131]     total_heats   1 char digit
-[136:138] gender_rank   2 chars, right-justified integer
-                        ← PLACE of this swimmer among all swimmers of same sex in event
-                        ← For single-gender age-group events, equals overall event place
-[145]     heat_place    1 char digit
-[146]     heat_size     1 char digit (swimmers in this heat, not event total)
-```
-
-**Time parsing note**: strip the 9-char field, then strip the trailing course suffix ('Y', 'L', 'S', 'Q', 'Q2L', etc.). The time portion is either `ss.ss` (seconds) or `m:ss.ss` (minutes:seconds). Convert to decimal seconds for the output schema. DQ records append 'Q' + a DQ-reason code after the course letter (e.g. `'1:13.90YQ2L'`).
-
-**What `gender_rank` is and is not**: `[136:138]` counts 1 (fastest) through N (slowest) among all swimmers of the same sex entered in that event division. For Ophelia's age-group meets (sex-separated events), this equals overall place in the event. For mixed-sex events (uncommon in Ophelia's meets), this would differ from overall place.
-
-### 4.3 D1 — Swimmer Definition (.hy3) [UNCHANGED]
-
-D1 records in `.hy3` define the swimmer and are the parent of E1/E2 child records. They are used only to identify the swimmer for join purposes.
-
-```
-[0:2]    record_type   'D1'
-[2:27]   name          25 chars, "Last, First M" format — matches D01 [11:39] (stripped)
-```
-
-The name in D1 is the join key to D01. Within a `.hy3` file, E1/E2 records that follow a D1 record (until the next D1 or end of swimmer section) belong to that swimmer.
-
-### 4.4 E1 — Event Entry (.hy3) [CORRECTED]
-
-> **Corrections**: (1) Member ID is a right-justified 5-char field at `[3:8]` (was reported as `[6:9]` in the initial spec, off by 1). (2) Event code field is `[18:22]` (4 chars, right-justified) — 3-char codes like `'50B'` appear as `' 50B'`; 4-char codes like `'100E'` fill the field. (3) Age-group fields are at `[22:25]`/`[25:28]` — **freshly verified** across 3 meets (SE 8U, 14U Spring Challenge, SRVA open). Original spec's "positions 21-24" was wrong.
->
-> **Re-verified (2026-07-27)**: Two passes disagreed on event_code position — original Debugger reported `[19:22]`, later pass reported `[18:22]`. Resolved against raw files across 9 test cases (3-char and 4-char codes, 3 meets). **`[18:22]` with `.strip()` is correct.** `[19:22]` works for 3-char codes but clips the leading digit of 4-char codes (`'100E'` → `'00E'`). Original Debugger tested only 3-char events and did not catch the clip. Use `line[18:22].strip()` as the canonical extraction.
-
-```
-[0:2]    record_type     'E1'
-[2]      round_code      'F'=final, 'P'=prelim
-[3:8]    member_id       5 chars, right-justified (e.g. '  933' for 3-digit ID,
-                         '10848' for 5-digit ID)
-[8:13]   name_fragment   5 chars, right-padded (first chars of last name, e.g. 'Moore')
-[13]     sex_code        'F'=female, 'M'=male
-[14]     division_code   'G'=girls, 'B'=boys, 'M'=men, 'W'=women
-[18:22]  event_code      4 chars, right-justified (e.g. ' 25B', ' 50A', '100E', '200C')
-                         Strip leading space: event code is 3 or 4 chars
-[22:25]  age_min         3 chars, right-justified integer (0 = no lower age limit)
-[25:28]  age_max         3 chars, right-justified integer (109 = open/senior, no cap)
-[38:41]  lane            3 chars, right-justified integer (join key to D01 [72:75])
-```
-
-**Age-group verification** (confirmed across 3 meets):
-
-| Meet | Event | E1 `[22:25]` | E1 `[25:28]` | Decoded |
-|------|-------|--------------|--------------|---------|
-| SE 8U | 50 Back | `'  0'` | `'  8'` | 0–8 (8 & Under) |
-| Spring Challenge | 50 Back (F) | `'  0'` | `' 10'` | 0–10 (10 & Under) |
-| Spring Challenge | 50 Back (M) | `' 11'` | `' 14'` | 11–14 (11–14) |
-| SRVA | 200 Breast | `'  0'` | `'109'` | 0–109 (Open/Senior) |
-
-### 4.5 E2 — Event Result (.hy3) [CORRECTED — authoritative source for totalSwimmers and place]
-
-> **This section replaces D01 as the source for `totalSwimmers`.** The original spec read `totalSwimmers` from D01 `[136:138]`, which actually contains `gender_rank`. E2F `[31:33]` is the confirmed authoritative source.
-
-```
-[0:2]    record_type     'E2'
-[2]      round_code      'F'=final, 'P'=prelim, 'S'=swimoff
-[4:13]   time+course     9 chars, right-justified decimal seconds + course suffix
-                         e.g. '  30.01Y', '  73.90Y', ' 149.53L'
-                         DQ records: time + 'Q' + DQ code, e.g. '80.86YQ2L'
-[22]     heat            1 char digit (confirmed matches D01 [129])
-[25]     total_heats     1 char digit (confirmed matches D01 [131])
-[28]     heat_place      1 char digit (confirmed matches D01 [145])
-[31:33]  total_swimmers  2 chars, right-justified integer
-                         ← AUTHORITATIVE source for event total
-                         ← ' 0' for DQ records (DQ swimmer not counted in total)
-```
-
-**E2 time format**: decimal seconds, not mm:ss.ss. `'73.90Y'` = 73.90 seconds = 1:13.90. Strip the course suffix to get the float.
-
-**E2 DQ records**: time field contains `'Q'` after the course letter. `total_swimmers [31:33]` = `' 0'` for DQ entries. A DQ swimmer's result is still output with `dq: true`; use the time field value (stripping the 'Q...' suffix) as their time.
-
-**E2 position in .hy3 file**: E2 immediately follows its paired E1 record (within the same swimmer's D1 block). The Coder can assume E1 and E2 are adjacent siblings.
-
-### 4.6 F1 — Relay Result (.hy3) [CORRECTED]
-
-> **Corrections**: (1) event code is at `[18:22]` (was `[17:21]` in the original spec — off by 1). (2) `sex_code` is at `[12:14]` (was `[11:14]`); position `[11]` is an unidentified field that holds `'0'` in all verified records.
-
-**WARNING on relay team letter**: F1 `[7]` is the relay team designator (A/B/C) and is completely separate from the event code at `[18:22]`. A naive regex for event codes (e.g. `\b\d+[ABCDE]\b`) will false-positive on `[7]` and on place+team combinations like `'2B'` (2nd place, B team) in other fields. **Always extract the event code from the fixed position `[18:22]`, never via regex on the full record.**
-
-```
-[0:2]    record_type       'F1'
-[2:6]    team_code         4 chars, right-padded (e.g. '757 ', 'BASS', 'NOVA')
-[7]      relay_team_letter 'A'=first team, 'B'=second team, 'C'=third team
-[11]     unidentified      '0' in all verified records
-[12:14]  sex_code          'FF'=female, 'MM'=male
-[14]     division_code     'G'=girls, 'B'=boys, 'W'=women/mixed
-[18:22]  event_code        4 chars, right-justified (relay events only use 4-char codes:
-                           '100E', '100A', '200E', '200A', '800A')
-[22:25]  age_min           3 chars, right-justified (same format as E1)
-[25:28]  age_max           3 chars, right-justified (same format as E1)
-```
-
-**Relay stroke letters**: in 15 meets, relay events use only `'A'` (Freestyle/Medley anchor leg) and `'E'` (Individual Medley relay) as the stroke letter in the event code. The stroke letter `'E'` does NOT indicate an individual IM event when it appears in an F1 record — it indicates a medley relay. The individual vs. relay distinction is made by record type only (see §7).
-
-### 4.7 F3 — Relay Leg Assignment (.hy3) [CORRECTED]
-
-> **Correction**: `member_id` is a **5-char right-justified** field (was documented as 3-char). For 5-digit IDs (SRVA, BASS), all 5 chars are digits. For 3-digit IDs (SE 8U), the field is left-padded with spaces and must be `.strip()`ped. The old layout assumed a 2-char space separator before a 3-char ID; the actual 5-char field has no separator.
-
-F3 immediately follows its paired F1 record and lists the member IDs and name fragments for the four relay legs.
-
-```
-[0:2]   record_type   'F3'
-[2]     round_code    'F'=final
-
-Leg 1:  [3:8]=member_id (right-justified, .strip())  [8:13]=name_fragment  [13:15]='F1'
-Leg 2:  [15]='F'    [16:21]=member_id   [21:26]=name_fragment  [26:28]='F2'
-Leg 3:  [28]='F'    [29:34]=member_id   [34:39]=name_fragment  [39:41]='F3'
-Leg 4:  [41]='F'    [42:47]=member_id   [47:52]=name_fragment  [52:54]='F4'
-```
-
-`member_id` is a 5-char right-justified numeric string; call `.strip()` to get the numeric part (e.g. `'  933'` → `'933'`, `'10531'` → `'10531'`). `name_fragment` is 5 chars of the swimmer's last name, right-padded with spaces (e.g. `'Moore'`).
-
-> **Corpus-width lesson**: the original positions were verified only against SE 8U (3-digit IDs); 5-digit IDs from SRVA and BASS revealed the discrepancy. Always verify field boundaries against the widest-value record in the full 15-meet corpus. This is the second instance of this failure pattern — the first was E1 `[19:22]` clipping 4-char event codes.
-
-**Example — 3-digit IDs** (SE 8U, Ophelia swims leg 3):
-```
-F3F  948MoultF1F  935ManniF2F  933MooreF3F  956BlancF4
-```
-- Leg 1: `[3:8]='  948'` → id='948', name='Moult'
-- Leg 2: `[16:21]='  935'` → id='935', name='Manni'
-- Leg 3: `[29:34]='  933'` → id='933', name='Moore' ← Ophelia
-- Leg 4: `[42:47]='  956'` → id='956', name='Blanc'
-
-**Example — 5-digit IDs** (SRVA):
-```
-F3F10531SokolF1F10534YouniF2F10529QuinnF3F10522EricsF4      
-```
-- Leg 1: `[3:8]='10531'` → id='10531', name='Sokol'
-- Leg 2: `[16:21]='10534'` → id='10534', name='Youni'
-- Leg 3: `[29:34]='10529'` → id='10529', name='Quinn'
-- Leg 4: `[42:47]='10522'` → id='10522', name='Erics'
+Record type is always the first 2 characters of the line. Round code (`F`=final, `P`=prelim, `S`=swimoff) appears at position `[2]` of E2, F1, and F3 records. **E1[2] is sex code, not round code** — see §3.3.
 
 ---
 
-## 5. Join Logic [CORRECTED]
+## 7. Volume Estimate
 
-> **Correction**: the original spec used D01 as the source for `totalSwimmers` via `[136:138]`. That field is `gender_rank`, not total swimmers. The join now links D01 individual records to E2F records (via `.hy3`) to get `totalSwimmers`.
+### 7.1 Individual Results
 
-### 5.1 Individual Results Join
+Actual counts from `grep -c` against each meet's .hy3 file. E2F rows are the parser's output rows. E2P rows are skipped by the `E2[2]='F'` filter.
 
-The `.cl2` file contains one D01 record per swimmer per event. The `.hy3` file contains the corresponding E1/E2 pair for each entry. The join is needed because:
-- `.cl2 D01` has the final time in human-readable format (mm:ss.ss) and gender rank
-- `.hy3 E2F` has total_swimmers (the count of valid finishers in the event)
-- `.hy3 E1` has the decoded event code (distance + stroke)
+| Meet | D1 (swimmers) | E2F (output rows) | E2P (skipped) |
+|------|:---:|:---:|:---:|
+| battle-of-the-burg | 187 | 546 | 0 |
+| imx-imr-kickoff | 262 | 1,422 | 0 |
+| fall-fiesta | 256 | 1,431 | 0 |
+| grand-illumination | 425 | 1,965 | 1,513 |
+| nye-distance-time-trial | 59 | 60 | 0 |
+| splash-and-dash | 416 | 2,065 | 0 |
+| se-8u-district-champs | 181 | 1,071 | 0 |
+| sc-send-off | 58 | 216 | 0 |
+| spring-challenge | 51 | 188 | 0 |
+| nova-sr-lc-classic | 142 | 664 | 0 |
+| tide-spring-shockwave | 477 | 1,789 | 1,637 |
+| bass-jim-frye-memorial | 535 | 3,027 | 0 |
+| srva-ez-super-sectional | 728 | 1,133 | 3,692 |
+| nova-spring-splash | 940 | 4,734 | 0 |
+| va-lc-senior-champs | 606 | 1,180 | 2,737 |
+| **TOTAL** | **5,323** | **21,491** | **9,579** |
 
-**Join algorithm** (for Ophelia-specific parser, assuming target swimmer is known by name):
+**E2F = 21,491** is the exact expected individual result row count for `data/league-results-757.json`. This is the direct `grep -c "^E2F"` count across all 15 .hy3 files, not an estimate.
 
-1. **Identify swimmer in `.hy3`**: scan `.hy3` for a `D1` record where the name (stripped) matches `"Moore, Ophelia A"`. Record the block of `E1`/`E2` pairs that follow this `D1` record until the next `D1`.
+**4 of 15 meets have prelim rounds** (grand-illumination, tide-spring-shockwave, srva-ez-super-sectional, va-lc-senior-champs). The `E2[2]='F'` filter must be active for these meets or output will double-count.
 
-2. **Identify swimmer in `.cl2`**: collect all `D01` records where `[11:39]` (stripped) matches `"Moore, Ophelia A"`.
+### 7.2 Relay Results
 
-3. **Pair D01 to E1/E2 by lane**: for each D01 record, find the E1 record with matching `lane`: `D01[72:75]` == `E1[38:41]`. This uniquely identifies the event within a single swimmer's block. (Lane is constant across the D01/E1/E2 for the same event entry.) **Assumption**: lane is unique within a single swimmer's block for a given meet; verified empirically across all 6 meets where Ophelia has D01 records — no duplicate lanes observed within her block.
+Actual F1 counts from `grep -c "^F1"` against each meet's .hy3 file:
 
-4. **Extract fields**:
-   - `event` from E1 `[18:22]` (decode per §7)
-   - `ageGroup` from E1 `[22:25]` / `[25:28]` (decode per §9)
-   - `seconds` from E2F `[4:13]` (strip course suffix, parse float)
-   - `heat`, `totalHeats`, `heatPlace` from E2F `[22]`, `[25]`, `[28]`
-   - `totalSwimmers` from E2F `[31:33]`
-   - `place` from D01 `[136:138]` (gender_rank)
-   - `date` from D01 `[80:88]`
-   - `dq` from E2F `[4:13]` contains `'Q'`
+| Meet | F1 relay rows |
+|------|:---:|
+| battle-of-the-burg | 16 |
+| grand-illumination | 96 |
+| se-8u-district-champs | 44 |
+| bass-jim-frye-memorial | 107 |
+| srva-ez-super-sectional | 176 |
+| va-lc-senior-champs | 229 |
+| all other 9 meets | 0 |
+| **TOTAL** | **668** |
 
-**Edge case — prelims and finals**: if a meet has both prelims and finals, each swimmer has two D01 records for the same event (different `[97:106]` prelim_time vs `[115:124]` final_time) and two E1/E2 pairs (round code `'P'` vs `'F'`). Filter by round code `E2[2]` = `'F'` to get only finals. If prelims-only data is needed, filter for `'P'`.
+**668** is the expected relay row count for `data/relay-results-757.json`.
 
-### 5.2 Relay Results Join
+### 7.3 Zero-Relay Meets — Confirmed Finding
 
-Relay records in `.hy3` are self-contained (F1 has team, event, time; F3 has legs). No `.cl2` join is needed for relay results. The Coder should:
-1. Read the first `B1` record in the `.hy3` file. Extract relay `date` from `B1[92:100]` (MMDDYYYY → ISO 8601). This is the meet start date; relay events on a later day of a multi-day meet will use this date.
-2. Scan `.hy3` for all `F1` records.
-3. For each `F1`, the immediately following `F3` record contains the leg assignments.
-4. Filter `F1` records to find those where any F3 leg matches Ophelia's member_id or name_fragment. Note: Ophelia's member_id may differ across meets (look up from the `D1` record for `"Moore, Ophelia A"` in the same `.hy3` file); `name_fragment` `'Moore'` is the more portable primary key.
+**9 of 15 meets have zero F1 records. This is not a parsing gap, a missing export, or file corruption.**
+
+A Debugger investigation confirmed:
+- All 9 zero-relay meets have zero F1, zero F2, and zero F3 records — no relay data exists under any record type in the .hy3.
+- No companion file contains relay data: each meet folder has exactly one .hy3 and one .cl2 (plus a PDF).
+- File sizes and individual-event record counts (D1, E1, E2, G1, H1) are structurally normal and comparable to relay-containing meets of similar scale.
+- The zero-relay pattern is consistent with meet type: specialty formats (imx-imr-kickoff, nye-distance-time-trial), smaller developmental meets, and spring invitationals hosted by external clubs. Meets with relay data are championships, regional qualifiers, and 757swim's flagship invitationals.
+
+**The parser correctly outputs zero relay rows for these meets.** No code path change is needed. A future reader encountering zero relay rows for tide-spring-shockwave (477 swimmers, 8 teams) or nova-spring-splash (940 swimmers, 14 teams) should not interpret this as a bug.
+
+*Unconfirmed hypothesis*: TIDE Swimming and NOVA Aquatics may typically program their spring invitationals as individual-events-only meets. This is a plausible explanation consistent with the evidence but has not been verified against meet entry forms, sanctioning documents, or prior-year data. It is noted here as a possible explanation, not an established fact.
 
 ---
 
-## 6. Relay vs. Individual Disambiguation [UNCHANGED]
+## 8. Scope Boundary
 
-**Rule**: use record type only. Do not rely on event code or any other field.
+This spec covers ingestion only: parsing the 15 .hy3/.cl2 meet packages and writing `data/league-results-757.json` and `data/relay-results-757.json`.
 
-| Record type | Meaning |
-|---|---|
-| `E1` / `E2` (`.hy3`) | Individual event entry/result |
-| `F1` / `F3` (`.hy3`) | Relay result / leg assignments |
-| `D01` (`.cl2`) | Individual result (no relay equivalent in `.cl2`) |
-| `F01` (`.cl2`) | Relay team split (not parsed in this phase) |
+**Explicitly out of scope**:
+- No changes to `digest/swimParser.js`
+- No changes to `digest/athleticsParser.js`
+- No changes to `digest/builder.js`
+- No changes to any skill or digest configuration
+- No integration of the new output files into the existing read pipeline
 
-The event code `'100E'` means "100 Individual Medley" in an E1/E2 context and "100 Medley Relay" in an F1 context. The record type is the only reliable distinguisher.
+Integration is a separately-tracked future task. The new output files will be consumed by `swimParser.js` following the same read-time filtering pattern as `league-results-v2.json`, but that wiring is not part of this spec.
 
 ---
 
-## 7. Event-Code Decoding [UNCHANGED]
+## 9. Event-Code Decoding
 
-Event codes are in the format `{distance}{stroke_letter}` where distance is the number in yards/meters.
+Event codes are in the format `{distance}{stroke_letter}`. The record type (`E1`/`E2` vs `F1`/`F3`) is the only reliable way to distinguish individual events from relay events — the same code (e.g. `100E`) means different things in each context.
 
-| Stroke letter | Individual | Relay |
+| Stroke letter | Individual meaning | Relay meaning |
 |---|---|---|
-| `A` | Freestyle | Freestyle relay / Medley anchor leg |
+| `A` | Freestyle | Freestyle relay |
 | `B` | Backstroke | *(not a relay stroke code)* |
 | `C` | Breaststroke | *(not a relay stroke code)* |
 | `D` | Butterfly | *(not a relay stroke code)* |
 | `E` | Individual Medley | Medley relay |
 
-**Individual event name mapping**:
+**Individual event names** (E1/E2 records):
 
-| Code | Name |
-|---|---|
-| `25B` | 25 Backstroke |
-| `25A` | 25 Freestyle |
-| `25C` | 25 Breaststroke |
-| `25D` | 25 Butterfly |
-| `50B` | 50 Backstroke |
-| `50A` | 50 Freestyle |
-| `50C` | 50 Breaststroke |
-| `50D` | 50 Butterfly |
-| `50E` | 50 Individual Medley |
-| `100A` | 100 Freestyle |
-| `100B` | 100 Backstroke |
-| `100C` | 100 Breaststroke |
-| `100D` | 100 Butterfly |
-| `100E` | 100 Individual Medley |
-| `200A` | 200 Freestyle |
-| `200C` | 200 Breaststroke |
-| `200E` | 200 Individual Medley |
-| `400A` | 400 Freestyle |
-| `500A` | 500 Freestyle |
-| `800A` | 800 Freestyle |
-| `1000A` | 1000 Freestyle |
-| `1650A` | 1650 Freestyle |
+| Code | Name | Code | Name |
+|---|---|---|---|
+| `25A` | 25 Freestyle | `100D` | 100 Butterfly |
+| `25B` | 25 Backstroke | `100E` | 100 Individual Medley |
+| `25C` | 25 Breaststroke | `200A` | 200 Freestyle |
+| `25D` | 25 Butterfly | `200B` | 200 Backstroke |
+| `50A` | 50 Freestyle | `200C` | 200 Breaststroke |
+| `50B` | 50 Backstroke | `200D` | 200 Butterfly |
+| `50C` | 50 Breaststroke | `200E` | 200 Individual Medley |
+| `50D` | 50 Butterfly | `400A` | 400 Freestyle |
+| `50E` | 50 Individual Medley | `400E` | 400 Individual Medley |
+| `100A` | 100 Freestyle | `500A` | 500 Freestyle |
+| `100B` | 100 Backstroke | `800A` | 800 Freestyle |
+| `100C` | 100 Breaststroke | | |
 
-**Relay event name mapping** (F1 records only):
+**Relay event names** (F1/F3 records only):
 
 | Code | Name |
 |---|---|
@@ -431,32 +564,39 @@ Event codes are in the format `{distance}{stroke_letter}` where distance is the 
 | `200A` | 200 Freestyle Relay |
 | `800A` | 800 Freestyle Relay |
 
-**Extraction**: use `event_code = line[18:22].strip()`. For E1/F1 records, always extract from `[18:22]`, never by regex on the full record.
+**Extraction**: `event_code = line[18:22].strip()`. Always extract from fixed position `[18:22]`, never via regex on the full record line.
 
 ---
 
-## 8. Course Detection [CORRECTED]
+## 10. Course Detection
 
-> **Correction**: course indicator is at B2 position **98**, not 96. Position 96 = `'0'` (constant) for all 15 verified meets.
+1. Read the first `B2` record in the .hy3 file.
+2. `course_code = line[98]`
+3. Map: `'Y'` → `"SCY"`, `'L'` → `"LCM"`, `'S'` → `"SCM"`
 
-**Algorithm**:
-1. Read the first `B2` record in the `.hy3` file.
-2. Extract `course_code = line[98]`.
-3. Map: `'Y'` → `"SCY"`, `'L'` → `"LCM"`, `'S'` → `"SCM"`.
+> Note: `line[96]` = `'0'` for all 15 verified meets. The course code is at `[98]`, not `[96]`.
 
-The course is meet-wide; all results in a meet share the same course. The course suffix embedded in time strings (D01, E2) is redundant with B2 but can be used as a sanity check.
+Course is meet-wide; all results in a meet share the same value.
+
+**Course-by-meet** (all 15 verified):
+
+| Course | Meets |
+|--------|-------|
+| SCY | battle-of-the-burg, imx-imr-kickoff, fall-fiesta, grand-illumination, nye-distance-time-trial, splash-and-dash, se-8u-district-champs, sc-send-off |
+| LCM | nova-sr-lc-classic, tide-spring-shockwave, bass-jim-frye-memorial, srva-ez-super-sectional, nova-spring-splash, va-lc-senior-champs |
+| SCM | spring-challenge |
 
 ---
 
-## 9. Age-Group Derivation [CORRECTED — freshly verified]
+## 11. Age-Group Derivation
 
-> **Correction**: original spec stated age-group field "at positions 21-24" (unverified). The confirmed positions from fresh verification across 3 meets are `[22:25]` (age_min) and `[25:28]` (age_max) in E1 records. These positions are the same regardless of whether the event code is 3 or 4 characters, because the event_code field `[18:22]` is right-justified and always ends at position 22.
+From E1 records:
+```
+age_min = int(line[22:25].strip() or '0')
+age_max = int(line[25:28].strip() or '0')
+```
 
-**From E1 records**:
-- `age_min = int(line[22:25].strip() or '0')`
-- `age_max = int(line[25:28].strip() or '0')`
-
-**Age group label rules**:
+**Label rules**:
 
 | age_min | age_max | Label |
 |---|---|---|
@@ -465,93 +605,242 @@ The course is meet-wide; all results in a meet share the same course. The course
 | 0 | 109 | `"Open"` |
 | > 0 | 109 | `"{age_min} & Over"` |
 
-**For relay `ageGroup`**: combine sex (from F1 `[12]`) and division (from F1 `[14]`) with the age label. Examples:
-- 8 & Under Girls (`age_max=8`, `division='G'`) → `"8 & Under Girls"`
-- Open Women (`age_max=109`, `division='W'`) → `"Open Women"`
-- 13–14 Boys (`age_min=13`, `age_max=14`, `division='B'`) → `"13–14 Boys"`
+**For relay `ageGroup`**: combine sex (F1 `[12]`=`'F'` or `'M'`) and division (F1 `[14]`=`'G'`/`'B'`/`'W'`) with the age label. Examples:
+- F1 age 0–8, `[12]='F'`, `[14]='G'` → `"8 & Under Girls"`
+- F1 age 0–109, `[12]='F'`, `[14]='W'` → `"Open Women"`
+- F1 age 13–14, `[12]='M'`, `[14]='B'` → `"13–14 Boys"`
+
+**Known labeling gap**: `ageLabel(0, 12)` returns `"0–12"` rather than `"12 & Under"`. The `min === 0 && max ≤ 10` condition does not cover cases where `min = 0` and `max > 10` (but `max ≠ 109`). This affects any age-group bracket with no lower bound and an upper bound between 11 and 108 inclusive — observed in the corpus as `"0–12"`. This is a pre-existing gap in the `ageLabel` function, not introduced by this implementation. No fix is required before push.
 
 ---
 
-## 10. DQ Handling [UNCHANGED]
+## 12. DQ Handling
+
+### 12.1 Individual Results
 
 **Detection**:
-- E2F `[4:13]` contains the character `'Q'` (e.g. `'80.86YQ2L'`)
+- E2F `[4:13]` contains `'Q'` (e.g. `'80.86YQ2L'`)
 - D01 `[115:124]` time suffix contains `'Q'` (e.g. `'1:13.90YQ2L'`)
 
 **Behavior**:
-- Output the record with `dq: true`
-- Include the time (strip the `'Q...'` suffix to get the float)
-- `totalSwimmers` will be `0` for DQ events from E2F `[31:33]` = `' 0'`; use `0` in the output schema
+- Output with `dq: true`
+- Include the time: strip `'Q...'` suffix after the course letter to get the float
+- `totalSwimmers` from E2F `[31:33]` = `' 0'` for DQ entries; output `0`
+
+### 12.2 Relay Results
+
+See §4.3. No relay DQ records with 'Q' in the time field have been observed in this corpus. Zero time at F1[44:51] is the only confirmed non-finish signal. Retain the 'Q' strip guard for forward compatibility.
 
 ---
 
-## 11. Multi-Team Handling [UNCHANGED]
+## 13. Field Position Tables
 
-757swim meets include multiple teams. The parser filters by swimmer name, not by team code. If Ophelia ever appears on a team other than `757`, the name-based filter will still find her. No special multi-team handling is needed for the Ophelia-specific parser.
+All positions are 0-indexed, Python-slice notation (`[start:end]` exclusive of `end`). Verified against raw source files in `data/sources/757/` except where noted.
 
-If the parser is later extended to handle all swimmers, group by D01 `[3:5]` (team_code) or by D1 team field.
+### 13.1 B1 — Meet Header (.hy3)
 
----
-
-## 12. Integration Recommendation [UNCHANGED]
-
-**Recommendation**: implement as a standalone Node.js script (`scripts/parse-757swim.js`) that writes directly to `data/swim-757-results.json` and `data/swim-757-relays.json`. Do not embed in `swimParser.js` (the existing parser handles a different input format).
-
-**Rationale**:
-- The `.cl2`/`.hy3` format is specific to 757swim and differs structurally from other meet input formats in the repo.
-- Hy-Tek CommLink 2 format uses fixed-width binary-like encoding; the existing `swimParser.js` handles line-by-line human-readable formats.
-- Keeping them separate avoids coupling the two parsing pipelines and simplifies future maintenance.
-
-**Suggested invocation**:
 ```
-node scripts/parse-757swim.js data/sources/757
+[0:2]    record_type   'B1'
+[92:100] start_date    8 chars, MMDDYYYY (source for relay 'date' field)
 ```
 
-The script should iterate over each meet folder, detect `.cl2` and `.hy3` files, parse the records, filter for Ophelia, and append/replace entries in the output JSON files.
+All other B1 fields (meet name, facility, end date) are not used by the parser.
+
+### 13.2 B2 — Meet Header (.hy3)
+
+```
+[0:2]   record_type   'B2'
+[98]    course_code   'Y'=SCY, 'L'=LCM, 'S'=SCM
+```
+
+> Note: `[96]` = `'0'` (constant) for all 15 verified meets. Course is at `[98]`.
+
+### 13.3 D1 — Swimmer Definition (.hy3)
+
+```
+[0:2]   record_type   'D1'
+[2]     sex_code      'F'=female, 'M'=male
+[3:8]   member_id     5 chars, right-justified (e.g. '  933' for 3-digit, '10848' for 5-digit)
+[8:28]  last_name     20 chars, right-padded with spaces
+[28:]   first_name    right-padded; use .strip() to extract
+```
+
+D1 is the parent record for a swimmer's E1/E2 pairs. Every E1/E2 pair encountered between one D1 and the next D1 belongs to the swimmer defined in the preceding D1.
+
+### 13.4 D01 — Individual Result (.cl2)
+
+```
+[0:3]     record_type   'D01'
+[3:5]     lsc_code      USAS LSC code for the swimmer's home registration (NOT club code — see §3.4).
+                        'VA' for Virginia-registered swimmers. At regional meets,
+                        other LSC codes appear: e.g. srva-ez-super-sectional has
+                        PV (1,820 swimmers), VA (1,453), MR (208), MD (133), CT (93),
+                        AM (90), MA (68). Not used in the join key.
+[11:39]   name          28 chars, "Last, First M" format, right-padded
+[63:65]   age           2 chars, right-justified integer
+[65]      sex_code      'F'=female, 'M'=male
+[69:72]   event_seq     3 chars, opaque sequential event ID within this meet
+[72:75]   lane          3 chars, right-justified integer (join key component)
+[80:88]   date          8 chars, MMDDYYYY (per-swimmer event date)
+[88:97]   seed_time     9 chars, right-justified (mm:ss.ssX or ss.ssX format)
+[97:106]  prelim_time   9 chars; spaces if finals-only meet
+[106:115] (unknown)     9 chars — not confirmed; possibly converted/alternate time
+[115:124] final_time    9 chars (same format as seed_time)
+[129]     heat          1 char digit
+[131]     total_heats   1 char digit
+[136:138] gender_rank   2 chars, right-justified integer
+                        ← place of this swimmer among all swimmers of same sex in event
+                        ← equals overall place for single-sex age-group events
+[145]     heat_place    1 char digit
+[146]     heat_size     1 char digit (swimmers in this heat, not event total)
+```
+
+**Time format**: strip 9-char field, then strip trailing course suffix ('Y', 'L', 'S', 'Q', 'Q2L', etc.). Time is either `ss.ss` (seconds) or `m:ss.ss` (convert to decimal seconds). DQ records append 'Q' + DQ code after the course letter (e.g. `'1:13.90YQ2L'`).
+
+### 13.5 E1 — Event Entry (.hy3)
+
+> **Correction from prior spec**: E1[2] is **sex_code** (`'F'`/`'M'`), not round_code. See §3.3.
+
+```
+[0:2]    record_type     'E1'
+[2]      sex_code        'F'=female, 'M'=male  ← NOT round code
+[3:8]    member_id       5 chars, right-justified
+[8:13]   name_fragment   5 chars of last name, right-padded
+[13]     sex_code        'F'=female, 'M'=male  (redundant with [2])
+[14]     division_code   'G'=girls, 'B'=boys, 'M'=men, 'W'=women
+[18:22]  event_code      4 chars, right-justified (e.g. ' 25B', '100E', '200A')
+[22:25]  age_min         3 chars, right-justified integer (0 = no lower limit)
+[25:28]  age_max         3 chars, right-justified integer (109 = open/senior)
+[38:41]  lane            3 chars, right-justified integer (join key to D01 [72:75])
+```
+
+> **Event code extraction**: `line[18:22].strip()`. 3-char codes (e.g. `'50B'`) appear left-padded as `' 50B'`; 4-char codes (`'100E'`) fill the field. Always extract from `[18:22]`, never by regex.
+
+**Age-group verification** (confirmed across 3 meets):
+
+| Meet | Event | `[22:25]` | `[25:28]` | Decoded |
+|------|-------|-----------|-----------|---------|
+| SE 8U | 50 Back | `'  0'` | `'  8'` | 0–8 (8 & Under) |
+| Spring Challenge | 50 Back (F) | `'  0'` | `' 10'` | 0–10 (10 & Under) |
+| Spring Challenge | 50 Back (M) | `' 11'` | `' 14'` | 11–14 |
+| SRVA | 200 Breast | `'  0'` | `'109'` | 0–109 (Open/Senior) |
+
+### 13.6 E2 — Event Result (.hy3)
+
+```
+[0:2]    record_type     'E2'
+[2]      round_code      'F'=final, 'P'=prelim, 'S'=swimoff
+[4:13]   time+course     9 chars, right-justified decimal seconds + course suffix
+                         e.g. '  30.01Y', ' 149.53L'
+                         DQ records: time + 'Q' + DQ code, e.g. '80.86YQ2L'
+[22]     heat            1 char digit
+[25]     total_heats     1 char digit
+[28]     heat_place      1 char digit
+[31:33]  total_swimmers  2 chars, right-justified integer
+                         ← authoritative source for event total
+                         ← ' 0' for DQ entries
+```
+
+E2 immediately follows its paired E1 record in the swimmer's D1 block. Filter by `E2[2]='F'` to select finals output.
+
+### 13.7 F1 — Relay Result (.hy3)
+
+> **Warning on relay team letter**: F1 `[7]` is the relay team designator (A/B/C) and is completely separate from the event code at `[18:22]`. A naive regex for event codes will false-positive on `[7]` and on field combinations like `'2B'` elsewhere. Always extract event code from fixed position `[18:22]`.
+
+```
+[0:2]    record_type       'F1'
+[2:6]    team_code         4 chars, right-padded (e.g. '757 ', 'BASS', 'NOVA')
+[7]      relay_team_letter 'A'=first team, 'B'=second team, 'C'=third team
+[11]     unidentified      '0' in all verified records
+[12:14]  sex_code          'FF'=female, 'MM'=male
+[14]     division_code     'G'=girls, 'B'=boys, 'W'=women/mixed
+[18:22]  event_code        4 chars, right-justified (relay events only: '100E', '100A', '200E', '200A', '800A')
+[22:25]  age_min           3 chars, right-justified (same format as E1)
+[25:28]  age_max           3 chars, right-justified (same format as E1)
+[44:51]  time+course       7 chars — CONFIRMED position (see §4.2)
+                           e.g. '121.37Y', ' 80.07Y', '  0.00Y' (DNS/DNF)
+```
+
+**F1 heat, totalHeats, place sub-fields**: confirmed these fields exist but exact byte positions have not been verified. The Coder must determine them empirically from a meet with relay heats and add them to the relay output schema in a follow-on pass.
+
+### 13.8 F3 — Relay Leg Assignment (.hy3)
+
+F3 immediately follows its paired F1 record and lists member IDs and name fragments for the four relay legs.
+
+```
+[0:2]   record_type   'F3'
+[2]     round_code    'F'=final
+
+Leg 1:  [3:8]=member_id   [8:13]=name_fragment   [13:15]='F1'
+Leg 2:  [15]='F'   [16:21]=member_id   [21:26]=name_fragment   [26:28]='F2'
+Leg 3:  [28]='F'   [29:34]=member_id   [34:39]=name_fragment   [39:41]='F3'
+Leg 4:  [41]='F'   [42:47]=member_id   [47:52]=name_fragment   [52:54]='F4'
+```
+
+`member_id` is 5 chars, right-justified: `.strip()` to get the numeric part (e.g. `'  933'` → `'933'`, `'10531'` → `'10531'`). `name_fragment` is 5 chars of last name, right-padded.
+
+**Example — 3-digit IDs** (se-8u-district-champs, Ophelia swims leg 3):
+```
+F3F  948MoultF1F  935ManniF2F  933MooreF3F  956BlancF4
+```
+- Leg 1: `[3:8]='  948'` → id='948', name='Moult'
+- Leg 2: `[16:21]='  935'` → id='935', name='Manni'
+- Leg 3: `[29:34]='  933'` → id='933', name='Moore'
+- Leg 4: `[42:47]='  956'` → id='956', name='Blanc'
+
+**Example — 5-digit IDs** (srva-ez-super-sectional):
+```
+F3F10531SokolF1F10534YouniF2F10529QuinnF3F10522EricsF4
+```
+- Leg 1: `[3:8]='10531'` → id='10531', name='Sokol'
+- Leg 2: `[16:21]='10534'` → id='10534', name='Youni'
 
 ---
 
-## 13. Remaining Unknowns
+## 14. Open Items
 
-These fields were not verified and should be treated as unknown until the Coder investigates:
+These fields and behaviors must be resolved by the Coder before the parser is complete.
 
-1. **D01 `[106:115]`** (9-char field between prelim_time and final_time): possibly a converted time, alternate course time, or padding. All Ophelia records show spaces here (finals-only meets).
+1. **F1 heat, totalHeats, place sub-positions**: exact byte positions not confirmed. The Coder should extract these empirically from F1 records in a meet that has relay heats (se-8u-district-champs, grand-illumination, or va-lc-senior-champs). Once confirmed, add to the relay output schema and this spec's §13.7.
 
-2. **F1 heat, totalHeats, place sub-fields**: confirmed field exists but exact byte positions were not part of the Debugger's verification scope. The Coder should extract these empirically from F1 records in a meet that has relay heats.
+2. **D01 `[106:115]`** (9-char field between prelim_time and final_time): observed as spaces in all Ophelia records (finals-only meets). Content for prelim+final meets is unknown.
 
-3. **E1 seed time position**: the E1 record contains a seed time (visible in raw records as e.g. `'   30.90Y'`), but its byte position was not confirmed. It is not needed for the output schema (E2F is authoritative for result time), but may be useful as a secondary join key if lane-based join is ambiguous.
+3. **D01 `[76:80]`**: four characters between `lane [72:75]` and `date [80:88]`. Observed as `' UN0'` in some records. Possibly an "unattached" team indicator for national reporting. Not used by the parser.
 
-4. **Prelim records in this dataset**: none of the 15 meets in the current dataset appear to have prelim rounds for Ophelia. Prelim/final handling is specced by inference from the format (round code at `[2]` in E1/E2). Verify against a multi-round meet if one is added.
+4. **Relay `date` accuracy for multi-day meets (known limitation)**: relay `date` is sourced from B1 `[92:100]` (meet start date). F1 and F3 records carry no embedded date. 10 of the 15 meets span multiple days. For relay events held on a day after the meet start, the `date` field will be incorrect by 1–3 days. This is an accepted limitation; implement with this awareness.
 
-5. **D01 `[76:80]`**: four characters between `lane [72:75]` and `date [80:88]`. Observed as `' UN0'` in Ophelia's records (`'UN'` may be the "unattached" team indicator for the national reporting system). Not used by the parser.
+5. **Join key collision validation (required, not optional)**: 7 collision keys are confirmed in 2 meets (§3.4). The collision detection logic must be validated on first parse run before output is accepted. Required pass/fail checks:
+   - bass-jim-frye-memorial: the collision warning must fire **at least 5 times** (3 keys for Forsbach Sotelo pair + 2 keys for Phinyowattanachip pair).
+   - srva-ez-super-sectional: the collision warning must fire **at least 2 times** (2 keys for the Harris, Savannah pair).
+   - If warnings do not fire at these meets, the collision detection logic has a bug and must be corrected before output is accepted. Fewer-than-expected warnings are a failing condition, not a sign that collisions were resolved.
 
-6. **Relay `date` field accuracy for multi-day meets (known limitation)**: the relay `date` field is sourced from B1 `[92:100]` (meet start date), because the `.hy3` format contains no per-event date for relay records — F1 and F3 records carry no embedded date. 10 of the 15 meets in the current corpus are multi-day (span 2–4 days): `imx-imr-kickoff`, `fall-fiesta`, `grand-illumination`, `splash-and-dash`, `se-8u-district-champs`, `nova-sr-lc-classic`, `tide-spring-shockwave`, `bass-jim-frye-memorial`, `srva-ez-super-sectional`, `nova-spring-splash`, `va-lc-senior-champs`. For any relay event actually held on a day after the meet's start date, the parsed `date` field will be incorrect by 1–3 days. This is a known, accepted limitation of the current spec — implement with this awareness rather than treating it as a bug to fix in this pass.
-
----
-
-*Spec written by Planner role. Verified by Debugger role against raw source files in `data/sources/757/`. Ready for Coder implementation.*
+6. **3-part fallback resolution is silent (low-priority follow-up)**: The 3-part fallback in §3.4 resolves swimmer-to-D01 matches without any log entry when it fires. When a swimmer resolves via the 3-part path (typically due to middle-initial mismatch), no diagnostic trace exists. If a future corpus addition introduces an edge case not covered by the known collision families, a bug in the fallback logic would be invisible. Recommend adding a per-run debug-level count (e.g. `"N rows resolved via 3-part fallback at [meetSlug]"`) in a low-priority follow-up pass. Not a blocker for this push.
 
 ---
 
 ## Appendix — Revision History
 
-| Date | Field | Claim before | Claim after | Notes |
-|---|---|---|---|---|
-| 2026-07-27 | Meet inventory | 14 meets (7 SCY, 6 LCM, 1 SCM) | 15 meets (8 SCY, 6 LCM, 1 SCM) | `sc-send-off` missing from original |
-| 2026-07-27 | Meet slug | `nova-lc-senior-classic` | `nova-sr-lc-classic` | Corrected against actual folder name |
-| 2026-07-27 | Meet slug | `srva-ez-super-sectionals` | `srva-ez-super-sectional` | Singular, corrected against folder |
-| 2026-07-27 | B2 course position | `[96]` | `[98]` | `[96]='0'` for all 15 meets; `[98]` holds Y/L/S |
-| 2026-07-27 | D01 `[136:138]` | `total_swimmers` | `gender_rank` | Cross-verified by sex-sorted sort; E2F is authoritative for total_swimmers |
-| 2026-07-27 | D01 `[145:147]` | 2-char overall place | Two 1-char fields: `heat_place[145]` + `heat_size[146]` | Direct inspection of Ophelia records |
-| 2026-07-27 | E1 member_id | `[6:9]` | `[3:8]` (5-char right-justified) | Original off by 1; Python `s[5:8]='933'` confirmed |
-| 2026-07-27 | E1 event_code | `[19:22]` (original Debugger) | `[18:22].strip()` | `[19:22]` clips 4-char codes; re-verified 2026-07-27 against 9 cases in 3 meets (see note in §4.4) |
-| 2026-07-27 | §2.2/§5.1 cross-refs | `(see §8)`, `(see §10)`, `(decode per §8)`, `(decode per §10)` — 6 occurrences | `§7`, `§9` respectively | §7 = Event-Code Decoding, §9 = Age-Group Derivation; §8 and §10 were Course Detection and DQ Handling |
-| 2026-07-27 | §4.4 age-group table | `` \` 10'\` `` (missing opening single-quote) | `` \`' 10'\` `` | Markdown typo; Spring Challenge 50 Back (F) age_max cell |
-| 2026-07-27 | F1 `sex_code` position | `[11:14]` | `[12:14]` | `[11]='0'` is an unidentified 1-char field; sex code is `'FF'`/`'MM'` at `[12:14]`. Also fixes §9 relay ageGroup reference from `F1 [11]` to `F1 [12]` |
-| 2026-07-27 | F3 `member_id` positions | Leg 1: `[5:8]` (3-char); Leg 2: `[18:21]`; Leg 3: `[31:34]`; Leg 4: `[44:47]` | Leg 1: `[3:8]` (5-char, `.strip()`); Leg 2: `[16:21]`; Leg 3: `[29:34]`; Leg 4: `[42:47]` | 5-digit IDs (SRVA, BASS) fill all 5 chars; old layout assumed 2-char space separator before 3-char ID. Corpus-width failure — original spec verified against SE 8U only |
-| 2026-07-27 | Relay `date` source | undocumented | B1 `[92:100]` (meet start date, MMDDYYYY) | F1 has no embedded date; B2 has no usable date; B1 is authoritative. Multi-day meets: start date used; per-event date unavailable in format |
-| 2026-07-27 | §5.1 step 3 lane assumption | silent | explicit: lane unique within swimmer's block, verified across 6 meets | Added to document the empirical basis of the join key |
-| 2026-07-27 | E1 age_min/age_max | "positions 21-24" (unverified) | `[22:25]` / `[25:28]` | Freshly verified across SE 8U, Spring Challenge, SRVA |
-| 2026-07-27 | E1 lane | unspecified | `[38:41]` | Confirmed matches D01 `[72:75]` for all Ophelia events |
-| 2026-07-27 | F1 event_code | `[17:21]` | `[18:22]` | Off by 1 in original; corrected |
-| 2026-07-27 | totalSwimmers source | D01 `[136:138]` | E2F `[31:33]` | D01 field is gender_rank; E2F is authoritative |
+| Date | Section | Change | Reason |
+|------|---------|--------|--------|
+| 2026-07-27 | §1 | New spec for full-field ingestion | Ophelia-only parser contradicts Waves pipeline precedent |
+| 2026-07-27 | §2.1 | Defined Option A vs B | Naming decision required before Coder |
+| 2026-07-27 | §3.2 | laneMap composite key (lane, eventCode) | Existing parser overwrites prelim with finals in prelim+final meets |
+| 2026-07-27 | §3.3 | E1[2] corrected from round_code to sex_code | Male swimmers in corpus show E1[2]='M', not 'F'; round code is at E2[2] |
+| 2026-07-27 | §3.3 | Expanded to 19-swimmer evidence table | Initial 2-example evidence insufficient; re-verified across 4 meets |
+| 2026-07-27 | §7.1 | Volume table replaced with actual grep counts | Prior version used file-size eyeballing; E2F total = 21,491 confirmed |
+| 2026-07-28 | §2.1 | Option A confirmed (Reviewer decision) | Option A matches Waves precedent; Option B implies version history |
+| 2026-07-28 | §3.4 | D01[3:5] confirmed as state code, not club code | Reviewer verified 25 D01 records at tide-spring-shockwave; all show 'VA' regardless of club |
+| 2026-07-28 | §3.4 | Join strategy redesigned: Option B with runtime collision warning | D01[3:5]-based team discriminator invalid; positional pairing has undetectable failure mode; dropping .cl2 loses `place` |
+| 2026-07-28 | §4.2 | F1[44:51] documented as confirmed position (was TBD) | Verified against two known relay times matching swim-757-relays.json |
+| 2026-07-28 | §4.3 | Relay DQ 'Q' detection clarified | 'Q' in full F1 line = team codes (QSTS, HYAQ), not time-field DQ; zero relay DQs observed in 668-record corpus |
+| 2026-07-28 | §7.2 | Relay volume updated with actual F1 counts (668 total) | Reviewer grep counts; prior version said "TBD" |
+| 2026-07-28 | §7.3 | Zero-relay meet note added | Debugger confirmed 9 meets have zero F1/F2/F3; no parsing gap |
+| 2026-07-28 | §6 | G1 and H1 record types added to .hy3 inventory | Discovered during Debugger investigation; both individual-event-only, not relay-related |
+| 2026-07-29 | §3.4 | "Zero collisions" claim corrected to 7 confirmed collision keys in 2 meets | Reviewer independently verified all 15 .cl2 files; found 5 keys at bass-jim-frye (long-last-name window failure) and 2 at srva (coincidental same-name) |
+| 2026-07-29 | §3.4 | "firstNamePrefix" renamed to "nameWindow[23:28]" with note on long-last-name failure | Window falls entirely within the last name for Forsbach Sotelo (15 chars) and Phinyowattanachip (18 chars); first name never reached |
+| 2026-07-29 | §3.4 / Open Item 5 | Collision monitoring elevated to concrete pass/fail validation requirement | 7 confirmed collisions make "monitor" insufficient; now a named failing condition |
+| 2026-07-29 | §13.4 | D01[3:5] corrected from "state_code 'VA' for all Virginia meets" to USAS LSC code | Reviewer found 7 distinct LSC codes at srva-ez-super-sectional; PV (1,820) is the majority, not VA |
+| 2026-07-29 | §3.4 | 3-part fallback mechanism documented as implementation note | Reviewer found undocumented deviation from approved 4-part-key-only spec; fallback is correct and safe but was unspecified |
+| 2026-07-29 | §4.1 | Algorithm updated from "F3 immediately follows each F1" to emit-on-F1 state machine; 14 orphaned F1s documented with per-meet breakdown | Reviewer verified 14 orphaned F1 records across 4 meets; prior algorithm description was incorrect for false-start relays |
+| 2026-07-29 | §11 | ageLabel(0, 12) → "0–12" gap noted | Reviewer flagged pre-existing labeling gap (min=0, max not covered by ≤10 branch); documented, no fix required |
+| 2026-07-29 | §14 | Open Item 6 added: 3-part fallback is silent | Reviewer flagged absence of diagnostic trace when fallback resolves; low-priority follow-up, not a blocker |
