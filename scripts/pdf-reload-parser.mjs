@@ -231,6 +231,7 @@ function parseIndividualRow(line) {
 
     const isDQ       = officialStr === 'DQ';
     const exhibition = ptsOrExh === 'EXH';
+    const achvMarker = (m[9] || '').toUpperCase();
 
     const swimmer = `${lastName} ${firstName}`;
     const time = isDQ ? null : timeToSeconds(officialStr);
@@ -243,7 +244,11 @@ function parseIndividualRow(line) {
       time,
       dq: isDQ,
       exhibition,
-      achievedChamps: (m[9] || '').toUpperCase() === 'CHMP',
+      achievedChamps: achvMarker === 'CHMP',
+      // VC = VPSU Championship record suffix. Not persisted to the row schema (no
+      // downstream consumer needs it), but surfaced via parsePdfText's vcFlaggedRows
+      // for the post-run report so a Champs-record swim doesn't go unnoticed.
+      achievedVpsuRecord: achvMarker === 'VC',
     };
   }
 
@@ -637,7 +642,7 @@ function tryWrapStitch(lines, i) {
 // ---------------------------------------------------------------------------
 
 function parsePdfText(text, entry, records) {
-  const { date, teams, meetName: meetNameOverride, sourcePdfPath, season, course: defaultCourse } = entry;
+  const { date, teams, meetName: meetNameOverride, sourcePdfPath, season, course: defaultCourse, meetType } = entry;
   const meetName = meetNameOverride || `${teams[0]} vs ${teams[1]}`;
   const sourcePdf = sourcePdfPath;
 
@@ -656,6 +661,7 @@ function parsePdfText(text, entry, records) {
   const relayRows     = [];
   const parseWarnings = [];
   const scrSkippedLines = [];
+  const vcFlaggedRows = [];
 
   let currentEvent   = null;
   let lastRelayRow   = null;
@@ -704,6 +710,7 @@ function parsePdfText(text, entry, records) {
           overallPlace:     partial.place,
           overallCount:     null,  // filled in post-parse
           ...(String(season) !== CURRENT_SEASON && { season: String(season) }),
+          ...(meetType && { meetType }),
           sourcePdf,
           sourceEventNumber: currentEvent.eventNum,
           verifiedAgainst:  null,
@@ -742,12 +749,16 @@ function parsePdfText(text, entry, records) {
             exhibition:        partial.exhibition,
             achievedChamps:    partial.achievedChamps ?? false,
             season:            String(season),
+            ...(meetType && { meetType }),
             sourcePdf,
             sourceEventNumber: currentEvent.eventNum,
             verifiedAgainst:   null,
             plausibilityFlags: [],
           };
           if (partial.nonScoringFinisher) wRow._nonScoringFinisher = true;
+          if (partial.achievedVpsuRecord) {
+            vcFlaggedRows.push({ swimmer: wRow.swimmer, team: wRow.team, ageGroup: wRow.ageGroup, event: wRow.event, time: wRow.time, sourceEventNumber: wRow.sourceEventNumber });
+          }
           indivRows.push(wRow);
           i = wrapResult.nextI;
           continue;
@@ -777,12 +788,16 @@ function parsePdfText(text, entry, records) {
           exhibition:       partial.exhibition,
           achievedChamps:   partial.achievedChamps ?? false,
           season:           String(season),
+          ...(meetType && { meetType }),
           sourcePdf,
           sourceEventNumber: currentEvent.eventNum,
           verifiedAgainst:  null,
           plausibilityFlags: [],
         };
         if (partial.nonScoringFinisher) row._nonScoringFinisher = true;
+        if (partial.achievedVpsuRecord) {
+          vcFlaggedRows.push({ swimmer: row.swimmer, team: row.team, ageGroup: row.ageGroup, event: row.event, time: row.time, sourceEventNumber: row.sourceEventNumber });
+        }
         indivRows.push(row);
         continue;
       }
@@ -853,7 +868,7 @@ function parsePdfText(text, entry, records) {
     }
   }
 
-  return { indivRows, relayRows, parseWarnings, nullByteCorrections, scrSkippedLines };
+  return { indivRows, relayRows, parseWarnings, nullByteCorrections, scrSkippedLines, vcFlaggedRows };
 }
 
 // ---------------------------------------------------------------------------
@@ -943,7 +958,7 @@ async function main() {
   console.log(`  text length: ${text.length} chars`);
 
   // Parse
-  const { indivRows, relayRows, parseWarnings, nullByteCorrections, scrSkippedLines } =
+  const { indivRows, relayRows, parseWarnings, nullByteCorrections, scrSkippedLines, vcFlaggedRows } =
     parsePdfText(text, entry, records);
 
   // Determine output files
@@ -1087,6 +1102,16 @@ async function main() {
     console.log(`  Non-scoring-finisher rows captured: ${nsfRows.length}`);
     nsfRows.forEach(r => {
       console.log(`    NSF: swimmer=${r.swimmer} age=${r.age} team=${r.team} event=${r.event} time=${r.time}`);
+    });
+  }
+
+  // VC (VPSU Championship record) achievement-tag report
+  console.log(`\nVPSU CHAMPIONSHIP RECORD (VC) TAGS: ${vcFlaggedRows.length} row(s)`);
+  if (vcFlaggedRows.length === 0) {
+    console.log('  (none)');
+  } else {
+    vcFlaggedRows.forEach(r => {
+      console.log(`    VC: swimmer=${r.swimmer} team=${r.team} ageGroup=${r.ageGroup} event=${r.event} time=${r.time} eventNum=${r.sourceEventNumber}`);
     });
   }
 

@@ -4776,6 +4776,42 @@
       "rowCountParsed": 1004,
       "plausibilityFlags": 0,
       "notes": "18-team invitational (non-champs-qualifying swimmers). Year Olds bracket format (events 5-12, 19-26). CHMP achievement markers present."
+    },
+    {
+      "season": "2026",
+      "date": "2026-08-01",
+      "meetSlug": "2026-08-01-vpsu-champs",
+      "meetName": "2026 VPSU Championship Meet",
+      "meetType": "Champs",
+      "teams": [
+        "EH",
+        "FDC",
+        "FTC",
+        "GLT",
+        "GS",
+        "IP",
+        "KM",
+        "KP",
+        "KW",
+        "PS",
+        "QL",
+        "SH",
+        "VW",
+        "WC",
+        "WF",
+        "WGPRA",
+        "WPD",
+        "WT"
+      ],
+      "division": null,
+      "course": "SCM",
+      "sourcePdfPath": "data-source-pdfs/2026/VPSU_Championship_Meet_Entire_Meet_Results_08_01_2026___Meet_Maestro™.pdf",
+      "pdfAvailable": true,
+      "parsedIntoV2": true,
+      "rowCountExpected": null,
+      "rowCountParsed": 1369,
+      "plausibilityFlags": 4,
+      "notes": "First Champs meet parsed directly into league-results-v2.json/relay-results-v2.json (not the history-v2 migration path). meetType field added to pdf-reload-parser.mjs to support this."
     }
   ]
 }
