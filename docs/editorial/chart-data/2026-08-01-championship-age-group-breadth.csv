@@ -1,0 +1,16 @@
+# _meta: source=data/league-results-v2.json (filtered meetType=Champs, team=WT, dq=false); generated=2026-08-02; edition=editorial-meeting-2026-08-01.md Appendix E item 5; note=counts are distinct non-DQ swimmers per bracket -- 4 swimmers (Piper Hobbs, Sophia Burnette, Cora Greer, Maya Hige) each appear in two brackets, so the sum of this column (46) exceeds the 42 distinct non-DQ competitors; Walker Mullinax (Boys 8/7-8) is excluded entirely -- all 3 of his entries were DQ, so he has zero non-DQ rows and does not appear in any bracket here despite being 1 of the 43 total Champs competitors
+ageGroup,distinctNonDQSwimmers
+Girls 6&Under,1
+Boys 6&Under,4
+Girls 7-8,3
+Boys 7-8,1
+Girls 8&Under,5
+Girls 9-10,3
+Boys 9-10,10
+Girls 10&Under,1
+Girls 11-12,2
+Boys 11-12,5
+Girls 13-14,4
+Boys 13-14,2
+Women 15-18,3
+Men 15-18,2

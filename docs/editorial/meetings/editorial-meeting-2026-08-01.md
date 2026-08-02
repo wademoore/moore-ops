@@ -240,48 +240,32 @@ No other warnings this meet.
 
 ## 9. Suggested Graphics
 
+Chart-ready data for all five graphics below is committed as standalone files at `docs/editorial/chart-data/`, per `12-claude-deliverables.md` §2 (see Methodology Notes for the prior-session correction that established this convention for this edition).
+
 **Graphic 1: Championship results by age group**
 Type: Table (one block per age group) or faceted stat-card grid
-Data source: Appendix — Championship Results Ledger (below)
+Data source: [`chart-data/2026-08-01-championship-results-ledger.csv`](../chart-data/2026-08-01-championship-results-ledger.csv) (97 rows — Appendix A carries a per-bracket summary and points here for full detail)
 Notes: Do not rank swimmers against each other within a bracket. Present as parallel achievement, consistent with Principle 6.
 
 **Graphic 2: Team records broken in 2026 — season vs. Championship**
 Type: Stat card / callout, 15 total with 4 highlighted as "set at Champs"
-Chart-ready data:
-
-| Swimmer | Event | Age Group | Time | Set at Champs? |
-|---------|-------|-----------|------|-----------------|
-| Reagan Swartzel | 50m Freestyle | Girls 9-10 | 33.75 | Yes |
-| Reagan Swartzel | 50m Backstroke | Girls 9-10 | 42.45 | Yes |
-| Reagan Swartzel | 50m Butterfly | Girls 9-10 | 37.36 | Yes |
-| Luke Shnowske | 50m Breaststroke | Boys 11-12 | 38.92 | Yes |
-| Sam Shnowske | 100m Individual Medley | Boys 13-14 | 64.36 | No (2026-06-15) |
-| Sam Shnowske | 50m Freestyle | Boys 13-14 | 26.16 | No (2026-07-20) |
-| Sam Shnowske | 50m Breaststroke | Boys 13-14 | 34.49 | No (2026-07-13) |
-| Sam Shnowske | 50m Butterfly | Boys 13-14 | 28.74 | No (2026-07-20) |
-| Christian Hunley | 25m Breaststroke | Boys 8&Under | 24.62 | No (2026-07-20) |
-| Christian Hunley | 25m Butterfly | Boys 8&Under | 19.52 | No (2026-07-20) |
-| Jaclynn Buzek | 50m Breaststroke | Women 15-18 | 35.55 | No (2026-06-29) |
-| Anna Shnowske | 50m Backstroke | Women 15-18 | 31.14 | No (2026-07-13) |
-| Anna Shnowske | 50m Butterfly | Women 15-18 | 29.13 | No (2026-07-13) |
-| Luke/Sam/Anna Shnowske + Reagan Swartzel | 200m Medley Relay | Mixed Open | 133.84 | No (2026-06-15, inaugural) |
-| Wren Snyder/Hayden Eggleston/Nehemiah Thrash/Gabe Palacios | 200m Freestyle Relay | Mixed Open | 142.88 | No (2026-06-29, inaugural) |
-
-Notes: Mark the two Mixed Open relay records as "inaugural" (first-ever entries in a new category), not as broken records.
+Data source: [`chart-data/2026-08-01-records-broken-2026.json`](../chart-data/2026-08-01-records-broken-2026.json)
+Notes: Mark the two Mixed Open relay records (`setAtChamps: false`, both dated regular-season) as "inaugural" (first-ever entries in a new category, per each record's `note` field), not as broken records.
 
 **Graphic 3: Championship relay results and season comparison**
 Type: Table
-Data source: Appendix — Championship Relay Ledger (below)
+Data source: [`chart-data/2026-08-01-championship-relay-ledger.csv`](../chart-data/2026-08-01-championship-relay-ledger.csv) (4 rows — Appendix B carries a summary and points here for full detail)
+Notes: The `gapVsRecordUNCONFIRMED` column is named to make its confidence status visible in the raw file itself, not just in this artifact's prose — see the file's `_meta` line and §8 Warnings before using that column in any published graphic.
 
 **Graphic 4: Division movement, 2022–2026**
 Type: Timeline / small-multiple line
-Chart-ready data: `{2022: "Div 2", 2023: "Div 2", 2024: "Div 2 (5-0, champion)", 2025: "Div 1 (0-5)", 2026: "Div 2 (5-0, champion)"}`
-Notes: This is the clearest visual for the season-closing frame — a dip-and-recovery shape.
+Data source: [`chart-data/2026-08-01-division-movement-2022-2026.json`](../chart-data/2026-08-01-division-movement-2022-2026.json)
+Notes: This is the clearest visual for the season-closing frame — a dip-and-recovery shape. 2022/2023 entries carry `division: "Div 2"` but no record, reflecting `divisionsInferred: true` in the source data — do not extend the "won division" framing to those years.
 
 **Graphic 5: Qualifiers → Competitors funnel**
 Type: Funnel or stacked bar
-Chart-ready data: `{roster: 122, qualifiedSwimmers: 54, championshipCompetitors: 43}`
-Notes: Label clearly that "qualified" and "competed" are different counts — do not collapse them into one bar.
+Data source: [`chart-data/2026-08-01-qualifiers-competitors-funnel.json`](../chart-data/2026-08-01-qualifiers-competitors-funnel.json)
+Notes: Label clearly that "qualified" and "competed" are different counts — do not collapse them into one bar. See the file's `note` field for the exact definitions used.
 
 ---
 
@@ -301,7 +285,16 @@ Notes: Label clearly that "qualified" and "competed" are different counts — do
 
 - **Team-record bracket coverage.** `waves-team-records.json` has no entries for the `"Boys 7-8"`/`"Girls 7-8"` brackets (documented, pre-existing gap) — 8 Champs rows in those brackets are marked "N/A — no record exists for this bracket," not "no record broken."
 
-- **Chart data format — deviates from `12-claude-deliverables.md`, deliberately.** `12-claude-deliverables.md` §2 ("Chart Data Files") is not silent on this and does not present inline tables as an option: it specifies standalone CSV/JSON files at `docs/editorial/chart-data/YYYY-MM-DD-[description].csv`/`.json`, each with a `_meta`/comment line citing source and generation date. This artifact instead used inline markdown tables throughout Appendix E, per this specific task's own instruction ("as a committed data file or inline table — your choice, but it must be reusable"). That instruction is a one-off Publisher directive for this edition, not a revision to the standing project convention — future editions should default back to standalone chart-data files per `12-claude-deliverables.md` unless told otherwise. No standalone chart-data files were produced for this edition.
+- **Chart data format — corrected to match `12-claude-deliverables.md`.** An earlier draft of this artifact used inline markdown tables for all chart-ready data, on the reasoning that this specific task's own instruction ("as a committed data file or inline table — your choice") permitted it. On review, `12-claude-deliverables.md` §2 ("Chart Data Files") is not silent and does not offer inline tables as an alternative — it specifies standalone CSV/JSON files at `docs/editorial/chart-data/YYYY-MM-DD-[description].csv`/`.json`, each with a `_meta`/comment line citing source and generation date. All six chart-ready datasets in this edition — including the full Championship Results and Relay Ledgers (Appendices A and B) — were converted to that format and committed at `docs/editorial/chart-data/` (listed in the table below). The full per-row tables were removed from Appendices A and B; each now carries a compact per-bracket/per-relay summary plus a direct link to its file, which is the sole source of the complete, reusable row-level detail.
+
+  | File | Rows | Source |
+  |------|------|--------|
+  | `2026-08-01-championship-results-ledger.csv` | 97 | `league-results-v2.json` + `waves-team-records.json` + `pb-records.json` |
+  | `2026-08-01-championship-relay-ledger.csv` | 4 | `relay-results-v2.json` (record-gap column bridged, see Warnings) |
+  | `2026-08-01-records-broken-2026.json` | 15 | `waves-team-records.json` |
+  | `2026-08-01-division-movement-2022-2026.json` | 5 | `waves-standings` skill + `waves-season.json` |
+  | `2026-08-01-qualifiers-competitors-funnel.json` | 3 counts | `league-results-v2.json` + `relay-results-v2.json` + `waves-champs-qualifier` skill |
+  | `2026-08-01-championship-age-group-breadth.csv` | 14 | `league-results-v2.json` |
 
 ---
 
@@ -315,192 +308,53 @@ Notes: Label clearly that "qualified" and "competed" are different counts — do
 
 ## Appendix A: Championship Results Ledger
 
-Every Wellington individual Championship swim. Source for all rows: `data/league-results-v2.json`, filtered to `meetType: "Champs"`, `team: "WT"`. Confidence is **MEDIUM** throughout (unverified-PDF cap) except where noted.
+Every Wellington individual Championship swim (97 rows: swimmer, age group, event, time, official placement, PB status, team-record status, confidence, source file/field) is committed as a standalone file, per `12-claude-deliverables.md` §2 (see Methodology Notes):
 
-**Girls 6&Under**
+**[`chart-data/2026-08-01-championship-results-ledger.csv`](../chart-data/2026-08-01-championship-results-ledger.csv)**
 
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Marley Parker | 25m Backstroke | 39.37 | 23/28 | Not 2026 season-best | No (record stands: 26.52, Wren Snyder 2023) |
-| Marley Parker | 25m Freestyle | 34.7 | 23/27 | Not 2026 season-best | No (record stands: 21.51, Lexi O'Neil 2013) |
+Source: `data/league-results-v2.json` (filtered `meetType: "Champs"`, `team: "WT"`), cross-referenced against `data/waves-team-records.json` (record status) and `data/pb-records.json` (Ophelia's PB status only — see Methodology Notes on why non-Moore PB claims aren't supportable). Confidence is **MEDIUM** throughout (unverified-PDF cap) except where the file's `confidence` column notes otherwise; DQ rows carry `N/A`.
 
-**Boys 6&Under**
+**Summary by age group** (full per-swim detail is in the file; this table is a count, not a substitute):
 
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Beau Marcotte | 25m Backstroke | 37.19 | 15/25 | Not 2026 season-best | No (record stands: 27.72, Braden Kimball 2024) |
-| Coen Greer | 25m Backstroke | 41.26 | 21/25 | Not 2026 season-best | No (record stands: 27.72, Braden Kimball 2024) |
-| Thomas DeMeola | 25m Backstroke | 38.61 | 17/25 | Not 2026 season-best | No (record stands: 27.72, Braden Kimball 2024) |
-| Beau Marcotte | 25m Freestyle | 25.27 | 3/29 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 20.34, Logan Timberg 2014) |
-| Coen Greer | 25m Freestyle | 38.9 | 29/29 | Not 2026 season-best | No (record stands: 20.34, Logan Timberg 2014) |
-| Jack Brown | 25m Freestyle | 27.45 | 6/29 | Not 2026 season-best | No (record stands: 20.34, Logan Timberg 2014) |
-| Thomas DeMeola | 25m Freestyle | 36.66 | 27/29 | Not 2026 season-best | No (record stands: 20.34, Logan Timberg 2014) |
+| Age Group | Non-DQ swims | Records broken |
+|---|---|---|
+| Girls 6&Under | 2 | 0 |
+| Boys 6&Under | 7 | 0 |
+| Girls 7-8 | 6 | 0 (no record exists for this bracket) |
+| Boys 7-8 | 1 (+1 DQ) | 0 (no record exists for this bracket) |
+| Girls 8&Under | 6 | 0 |
+| Boys 8&Under | 0 (2 DQ) | — |
+| Girls 9-10 | 8 | 3 (Reagan Swartzel — Freestyle, Backstroke, Butterfly) |
+| Boys 9-10 | 17 | 0 |
+| Girls 10&Under | 1 | Not evaluated (ageGroup label mismatch, see Warnings) |
+| Girls 11-12 | 5 | 0 |
+| Boys 11-12 | 13 (+1 DQ) | 1 (Luke Shnowske — Breaststroke) |
+| Girls 13-14 | 8 | 0 |
+| Boys 13-14 | 4 | 0 |
+| Women 15-18 | 9 | 0 |
+| Men 15-18 | 6 | 0 |
+| **Total** | **93 (+4 DQ = 97)** | **4** |
 
-**Girls 7-8**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Cora Greer | 25m Backstroke | 25.2 | 13/31 | 2026 season-best (MEDIUM — not a verified career PB) | N/A — no record exists for this bracket |
-| Maya Hige | 25m Backstroke | 28.99 | 30/31 | Not 2026 season-best | N/A — no record exists for this bracket |
-| Sophia Burnette | 25m Backstroke | 24.15 | 6/31 | Not 2026 season-best | N/A — no record exists for this bracket |
-| Cora Greer | 25m Freestyle | 21.55 | 22/35 | Not 2026 season-best | N/A — no record exists for this bracket |
-| Maya Hige | 25m Freestyle | 22.11 | 28/35 | Not 2026 season-best | N/A — no record exists for this bracket |
-| Sophia Burnette | 25m Freestyle | 19.45 | 5/35 | Not 2026 season-best | N/A — no record exists for this bracket |
-
-**Boys 7-8**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| William Pittman | 25m Backstroke | 26.32 | 20/32 | 2026 season-best (MEDIUM — not a verified career PB) | N/A — no record exists for this bracket |
-| Walker Mullinax | 25m Freestyle | DQ | — | N/A (DQ) | N/A (DQ) |
-
-**Girls 8&Under**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Eleanor Wojtan | 25m Breaststroke | 29.35 | 16/24 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 25.50, Jaclynn Buzek 2019) |
-| Sophia Burnette | 25m Breaststroke | 28.35 | 13/24 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 25.50, Jaclynn Buzek 2019) |
-| Cora Greer | 25m Butterfly | 26.04 | 13/42 | Not 2026 season-best | No (record stands: 20.70, Reagan Swartzel 2024) |
-| Eleanor Wojtan | 25m Butterfly | 34.17 | 37/42 | Not 2026 season-best | No (record stands: 20.70, Reagan Swartzel 2024) |
-| Maya Hige | 25m Butterfly | 35.8 | 39/42 | Not 2026 season-best | No (record stands: 20.70, Reagan Swartzel 2024) |
-| Ophelia Moore | 25m Butterfly | 34.11 | 36/42 | **PB** (HIGH — pb-records.json) | No (record stands: 20.70, Reagan Swartzel 2024) |
-
-**Boys 8&Under**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Walker Mullinax | 25m Breaststroke | DQ | — | N/A (DQ) | N/A (DQ) |
-| Walker Mullinax | 25m Butterfly | DQ | — | N/A (DQ) | N/A (DQ) |
-
-**Girls 9-10**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Piper Hobbs | 50m Backstroke | 49.19 | 12/23 | Not 2026 season-best | No (record stands: 42.45, Reagan Swartzel 2026) |
-| Reagan Swartzel | 50m Backstroke | 42.45 | 3/23 | 2026 season-best (MEDIUM — not a verified career PB) | **NEW RECORD** |
-| Wren Snyder | 50m Backstroke | 45.71 | 8/23 | Not 2026 season-best | No (record stands: 42.45, Reagan Swartzel 2026) |
-| Wren Snyder | 50m Breaststroke | 52.85 | 10/24 | Not 2026 season-best | No (record stands: 46.33, Jaclynn Buzek 2021) |
-| Reagan Swartzel | 50m Butterfly | 37.36 | 1/17 | 2026 season-best (MEDIUM — not a verified career PB) | **NEW RECORD** |
-| Wren Snyder | 50m Butterfly | 47.81 | 7/17 | Not 2026 season-best | No (record stands: 37.36, Reagan Swartzel 2026) |
-| Piper Hobbs | 50m Freestyle | 38.47 | 6/18 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 33.75, Reagan Swartzel 2026) |
-| Reagan Swartzel | 50m Freestyle | 33.75 | 1/18 | 2026 season-best (MEDIUM — not a verified career PB) | **NEW RECORD** |
-
-**Boys 9-10**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Andrew Shayeson | 50m Backstroke | 53.41 | 26/35 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 40.70, Jackson Jones 2022) |
-| Charlie Chiesa | 50m Backstroke | 53.21 | 25/35 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 40.70, Jackson Jones 2022) |
-| Conor Greer | 50m Backstroke | 52.27 | 21/35 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 40.70, Jackson Jones 2022) |
-| Gabriel Crowther | 50m Backstroke | 52.97 | 22/35 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 40.70, Jackson Jones 2022) |
-| Jack Kopriva | 50m Backstroke | 46.84 | 8/35 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 40.70, Jackson Jones 2022) |
-| Micah Thrash | 50m Backstroke | 51.15 | 17/35 | Not 2026 season-best | No (record stands: 40.70, Jackson Jones 2022) |
-| Noah Hummel | 50m Backstroke | 54.87 | 29/35 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 40.70, Jackson Jones 2022) |
-| Sutton Welch | 50m Backstroke | 57.43 | 34/35 | Not 2026 season-best | No (record stands: 40.70, Jackson Jones 2022) |
-| Aiden Fincham | 50m Breaststroke | 55.92 | 14/32 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 46.88, Luke Shnowske 2024) |
-| Charlie Chiesa | 50m Breaststroke | 63.14 | 32/32 | Not 2026 season-best | No (record stands: 46.88, Luke Shnowske 2024) |
-| Micah Thrash | 50m Breaststroke | 54.61 | 9/32 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 46.88, Luke Shnowske 2024) |
-| Nate Burnette | 50m Breaststroke | 62.18 | 28/32 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 46.88, Luke Shnowske 2024) |
-| Sutton Welch | 50m Breaststroke | 56.16 | 16/32 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 46.88, Luke Shnowske 2024) |
-| Conor Greer | 50m Butterfly | 50.46 | 10/12 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 37.63, Jackson Jones 2022) |
-| Conor Greer | 50m Freestyle | 39.56 | 8/27 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 35.19, Jostin Keithley 2019) |
-| Micah Thrash | 50m Freestyle | 41.2 | 17/27 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 35.19, Jostin Keithley 2019) |
-| Sutton Welch | 50m Freestyle | 40.63 | 12/27 | Not 2026 season-best | No (record stands: 35.19, Jostin Keithley 2019) |
-
-**Girls 10&Under**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Piper Hobbs | 100m Individual Medley | 100.04 | 11/23 | 2026 season-best (MEDIUM — not a verified career PB) | Not evaluated — ageGroup label mismatch (see Warnings) |
-
-**Girls 11-12**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Grey Childress | 50m Backstroke | 43.29 | 13/26 | Not 2026 season-best | No (record stands: 38.32, Ellerie Tobler 2016) |
-| Grey Childress | 50m Breaststroke | 49.27 | 14/22 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 37.88, Jaclynn Buzek 2023) |
-| Kinsley Welch | 50m Breaststroke | 50.33 | 21/22 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 37.88, Jaclynn Buzek 2023) |
-| Grey Childress | 50m Freestyle | 35.21 | 10/23 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 31.28, Ellerie Tobler 2016) |
-| Kinsley Welch | 50m Freestyle | 36.81 | 17/23 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 31.28, Ellerie Tobler 2016) |
-
-**Boys 11-12**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Grayson Asbell | 100m Individual Medley | 91.69 | 18/24 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 1:13.07, Jostin Keithley 2021) |
-| Luke Shnowske | 100m Individual Medley | 76.23 | 3/24 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 1:13.07, Jostin Keithley 2021) |
-| Parker Lantz | 100m Individual Medley | 94.81 | 19/24 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 1:13.07, Jostin Keithley 2021) |
-| Wyatt Childress | 100m Individual Medley | 78.59 | 4/24 | Not 2026 season-best | No (record stands: 1:13.07, Jostin Keithley 2021) |
-| Grayson Asbell | 50m Backstroke | 41.71 | 13/25 | Not 2026 season-best | No (record stands: 35.04, Jostin Keithley 2021) |
-| Parker Lantz | 50m Backstroke | 43.85 | 18/25 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 35.04, Jostin Keithley 2021) |
-| Luke Shnowske | 50m Breaststroke | 38.92 | 1/26 | Not 2026 season-best | **NEW RECORD** — bracket eligibility confirmed by Publisher: a faster 2026-07-08 swim (38.58s) was swum up in the 13-14 bracket and is not 11-12-eligible; this Champs swim is his legitimate 11-12 record (HIGH) |
-| Parker Lantz | 50m Breaststroke | 52.8 | 24/26 | Not 2026 season-best | No (record stands: 38.92, Luke Shnowske 2026) |
-| William Whaley | 50m Breaststroke | 49.74 | 20/26 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 38.92, Luke Shnowske 2026) |
-| Grayson Asbell | 50m Butterfly | 41.96 | 8/15 | Not 2026 season-best | No (record stands: 33.14, Jostin Keithley 2021) |
-| William Whaley | 50m Butterfly | DQ | — | N/A (DQ) | N/A (DQ) |
-| Wyatt Childress | 50m Butterfly | 35.07 | 4/15 | Not 2026 season-best | No (record stands: 33.14, Jostin Keithley 2021) |
-| Luke Shnowske | 50m Freestyle | 31.23 | 5/17 | Not 2026 season-best | No (record stands: 29.20, Jostin Keithley 2021) |
-| Wyatt Childress | 50m Freestyle | 30.62 | 4/17 | Not 2026 season-best | No (record stands: 29.20, Jostin Keithley 2021) |
-
-**Girls 13-14**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Michaela Hobbs | 50m Backstroke | 40.36 | 17/23 | Not 2026 season-best | No (record stands: 35.83, Allison Chaney 2017) |
-| Zurie Bissette | 50m Backstroke | 38.01 | 11/23 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 35.83, Allison Chaney 2017) |
-| Clara Lantz | 50m Breaststroke | 45.83 | 16/22 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 35.70, Jaclynn Buzek 2025) |
-| Reagan Hobbs | 50m Breaststroke | 46.28 | 18/22 | Not 2026 season-best | No (record stands: 35.70, Jaclynn Buzek 2025) |
-| Zurie Bissette | 50m Butterfly | 38.6 | 19/22 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 33.76, Ellerie Tobler 2017) |
-| Michaela Hobbs | 50m Freestyle | 35.21 | 19/23 | Not 2026 season-best | No (record stands: 29.75, Jaclynn Buzek 2025) |
-| Reagan Hobbs | 50m Freestyle | 35.74 | 20/23 | Not 2026 season-best | No (record stands: 29.75, Jaclynn Buzek 2025) |
-| Zurie Bissette | 50m Freestyle | 32.37 | 11/23 | Not 2026 season-best | No (record stands: 29.75, Jaclynn Buzek 2025) |
-
-**Boys 13-14**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Nikolai Ilardi | 100m Individual Medley | 84.45 | 16/20 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 1:04.36, Sam Shnowske 2026) |
-| Ben Cox | 50m Backstroke | 45.72 | 31/31 | Not 2026 season-best | No (record stands: 32.32, Jostin Keithley 2023) |
-| Nikolai Ilardi | 50m Backstroke | 37.3 | 9/31 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 32.32, Jostin Keithley 2023) |
-| Nikolai Ilardi | 50m Butterfly | 37.67 | 18/24 | Not 2026 season-best | No (record stands: 28.74, Sam Shnowske 2026) |
-
-**Women 15-18**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Emjay Bissette | 100m Individual Medley | 84.23 | 20/21 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 1:05.42, Anna Shnowske 2024) |
-| Katelyn Whaley | 100m Individual Medley | 81.05 | 17/21 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 1:05.42, Anna Shnowske 2024) |
-| Natalie Haas | 100m Individual Medley | 76.68 | 10/21 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 1:05.42, Anna Shnowske 2024) |
-| Emjay Bissette | 50m Backstroke | 38.03 | 14/26 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 31.14, Anna Shnowske 2026) |
-| Natalie Haas | 50m Backstroke | 35.7 | 9/26 | Not 2026 season-best | No (record stands: 31.14, Anna Shnowske 2026) |
-| Emjay Bissette | 50m Breaststroke | 43.63 | 15/23 | Not 2026 season-best | No (record stands: 35.55, Jaclynn Buzek 2026) |
-| Katelyn Whaley | 50m Breaststroke | 44.77 | 18/23 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 35.55, Jaclynn Buzek 2026) |
-| Katelyn Whaley | 50m Butterfly | 35.17 | 16/22 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 29.13, Anna Shnowske 2026) |
-| Natalie Haas | 50m Butterfly | 33.22 | 10/22 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 29.13, Anna Shnowske 2026) |
-
-**Men 15-18**
-
-| Swimmer | Event | Time | Place | PB Status | Team-Record Status |
-|---|---|---|---|---|---|
-| Mason Hibbard | 100m Individual Medley | 65.53 | 3/18 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 59.59, Matt Shnowske 2024) |
-| Jostin Keithley | 50m Backstroke | 30.59 | 5/20 | Not 2026 season-best | No (record stands: 28.87, Finn Leggett 2025) |
-| Jostin Keithley | 50m Breaststroke | 35.87 | 11/26 | Not 2026 season-best | No (record stands: 32.82, Michael Keller 2018) |
-| Mason Hibbard | 50m Breaststroke | 33.86 | 7/26 | Not 2026 season-best | No (record stands: 32.82, Michael Keller 2018) |
-| Jostin Keithley | 50m Butterfly | 30.36 | 14/25 | Not 2026 season-best | No (record stands: 26.22, Matt Shnowske 2024) |
-| Mason Hibbard | 50m Butterfly | 28.42 | 4/25 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 26.22, Matt Shnowske 2024) |
+Notable individual entries called out elsewhere in this artifact (Reagan Swartzel's sweep, Luke Shnowske's record, Mason Hibbard's near-record, Ophelia Moore's PB, Wyatt Childress's three top-5s) are all drawn from this file — see §4, §5, and the Warnings/Methodology sections for the full context each one requires.
 
 ---
 
 ## Appendix B: Championship Relay Ledger
 
-Every Wellington relay result at the 2026 Championship Meet. Source: `data/relay-results-v2.json`, filtered to `meetType: "Champs"`, `team: "WT"`. Regular-season comparison uses the `"Boys/Girls 9-18"` label (see Methodology Notes for the label-bridging caveat) — this comparison is HIGH confidence, no bridging required. Team-record comparison bridges `"18&Under"` to `"Men/Women Open"`, a mapping confirmed **not** to match the project's existing `RELAY_AGEGRP_MAP` — confidence capped at LOW for the record-gap column only; treat as unconfirmed pending Publisher review (see Warnings).
+Every Wellington relay result at the 2026 Championship Meet (4 rows: age group, event, roster, time, placement, regular-season comparison, team-record status, confidence, source) is committed as a standalone file, per `12-claude-deliverables.md` §2:
 
-| Age Group | Event | Swimmers | Time | Place | Regular-season WT best (same bracket/event) | Gap vs. season best | Team-record status | Confidence |
-|---|---|---|---|---|---|---|---|---|
-| Boys 18&Under | 200m Medley Relay | Wyatt Childress, Luke Shnowske, Mason Hibbard, Sutton Welch | 147.19 | 7/10 | 143.37 (2026-07-20) | +3.82s | No — Men Open record 138.76 (2023), gap +8.43s | MEDIUM |
-| Girls 18&Under | 200m Medley Relay | Wren Snyder, Reagan Hobbs, Katelyn Whaley, Kinsley Welch | 163.87 | 8/11 | 153.72 (2026-06-29) | +10.15s | No — Women Open record 141.81 (2025), gap +22.06s | MEDIUM |
-| Boys 18&Under | 200m Freestyle Relay | Conor Greer, Parker Lantz, Grayson Asbell, Jostin Keithley | 137.16 | 9/14 | 126.12 (2026-07-20) | +11.04s | No — Men Open record 117.58 (2024), gap +19.58s | MEDIUM |
-| Girls 18&Under | 200m Freestyle Relay | Reagan Swartzel, Grey Childress, Zurie Bissette, Natalie Haas | 131.72 | 5/13 | 131.64 (2026-07-13) | +0.08s | No — Women Open record 131.35 (2017), gap **+0.37s** — **UNCONFIRMED: computed via an ad hoc `"Girls 18&Under"`→`"Women Open"` bridge not present in the committed `RELAY_AGEGRP_MAP`; do not present as a confirmed near-miss (see Warnings)** | LOW (record-gap column only; placement/regular-season columns are HIGH) |
+**[`chart-data/2026-08-01-championship-relay-ledger.csv`](../chart-data/2026-08-01-championship-relay-ledger.csv)**
+
+Source: `data/relay-results-v2.json` (filtered `meetType: "Champs"`, `team: "WT"`). The `seasonBest`/`gapVsSeasonBest` columns use the `"Boys/Girls 9-18"` regular-season label directly (HIGH confidence, no bridging). The `recordBridgeLabel`/`gapVsRecordUNCONFIRMED` columns bridge `"18&Under"` to `"Men/Women Open"` — a mapping confirmed **not** to match the project's existing `RELAY_AGEGRP_MAP` in `waves-team-record-check/check.js` (LOW confidence, unconfirmed pending Publisher review — see Warnings; the column name itself carries the caveat into the raw file).
+
+**Summary:**
+
+| Age Group | Event | Time | Place | vs. Season Best | vs. Record (UNCONFIRMED bridge) |
+|---|---|---|---|---|---|
+| Boys 18&Under | 200m Medley Relay | 147.19 | 7/10 | +3.82s | +8.43s (Men Open, 2023) |
+| Girls 18&Under | 200m Medley Relay | 163.87 | 8/11 | +10.15s | +22.06s (Women Open, 2025) |
+| Boys 18&Under | 200m Freestyle Relay | 137.16 | 9/14 | +11.04s | +19.58s (Men Open, 2024) |
+| Girls 18&Under | 200m Freestyle Relay | 131.72 | 5/13 | +0.08s | **+0.37s (Women Open, 2017) — UNCONFIRMED, see Warnings** |
 
 No relay records were broken at Championships (per the ad hoc bridging above, pending Publisher confirmation — the committed record-check tooling does not itself evaluate this bracket at all, so "no records broken" for these 4 relays is this artifact's inference, not the skill's finding). No DQs among WT's 4 relay entries.
 
@@ -549,34 +403,36 @@ Expands on §9. Each entry: editorial point, display type, exact values, source,
 **1. Division movement timeline, 2022–2026**
 - Editorial point: visualizes the bounce-back arc that frames the season
 - Display: 5-point timeline or small-multiple line chart
-- Data: `{"2022":"Div 2","2023":"Div 2","2024":"Div 2 — 5-0-0, won division","2025":"Div 1 — 0-5-0, relegated","2026":"Div 2 — 5-0-0, won division"}`
+- Data file: [`chart-data/2026-08-01-division-movement-2022-2026.json`](../chart-data/2026-08-01-division-movement-2022-2026.json)
 - Source: `waves-standings --movement` + Mode 1 runs for 2024/2025/2026
-- Caveats: 2022/2023 division assignments are marked `divisionsInferred: true` in `waves-season.json` — do not extend the "won division" framing to those years, only 2024/2026
+- Caveats: 2022/2023 entries carry `record: null` — those seasons are marked `divisionsInferred: true` in `waves-season.json`; do not extend the "won division" framing to those years, only 2024/2026 (see file's `note` field per entry)
 - Accessibility: label each point with year + division + record; do not rely on color alone to distinguish divisions
 
 **2. Team records broken in 2026 — full list with Champs-set records highlighted**
 - Editorial point: connects the Championship Meet's 4 records to the season's full 15
-- Display: table or annotated stat-card row (see §9 Graphic 2 for exact data)
+- Display: table or annotated stat-card row
+- Data file: [`chart-data/2026-08-01-records-broken-2026.json`](../chart-data/2026-08-01-records-broken-2026.json)
 - Source: `waves-team-records.json`
 - Caveats: none outstanding — Luke Shnowske's Boys 11-12 Breaststroke record credit was confirmed correct by the Publisher (see Appendix A note)
 - Accessibility: table format preferred over a chart for this data — 15 rows with mixed individual/relay attribution is clearer as text than as a bar chart
 
 **3. Championship relay results with regular-season and record comparison**
-- Editorial point: the Girls 18&Under 200m Freestyle Relay's near-record approach
-- Display: table (see Appendix B for exact data)
+- Editorial point: the Girls 18&Under 200m Freestyle Relay's placement and near-matched season-best time (both HIGH confidence, no bridging)
+- Display: table
+- Data file: [`chart-data/2026-08-01-championship-relay-ledger.csv`](../chart-data/2026-08-01-championship-relay-ledger.csv)
 - Source: `relay-results-v2.json`, `waves-team-records.json`
-- Caveats: the "Gap vs. record" column depends on this artifact's three-way ageGroup label bridging (§8, §10) — Publisher should confirm this bridging before publishing the 0.37s figure
+- Caveats: the file's `gapVsRecordUNCONFIRMED` column is named to carry its own caveat — it depends on this artifact's three-way ageGroup label bridging (§8, §10), confirmed not to match the project's existing `RELAY_AGEGRP_MAP`. Publisher must confirm this bridging before that column (including the 0.37s figure) is used in any published graphic; the `seasonBest`/`gapVsSeasonBest` columns require no such confirmation
 
 **4. Qualifiers → Competitors funnel**
 - Editorial point: distinguishes qualified (54) from competed (43) from full roster (122) — the task's required distinction, made visual
 - Display: funnel or stacked/segmented bar
-- Data: `{"roster":122,"qualifiedSwimmers":54,"championshipCompetitors":43}`
+- Data file: [`chart-data/2026-08-01-qualifiers-competitors-funnel.json`](../chart-data/2026-08-01-qualifiers-competitors-funnel.json)
 - Source: direct join, `league-results-v2.json` + `relay-results-v2.json` + qualifier skill
 - Accessibility: label each segment with both the count and a plain-language descriptor ("full roster," "reached a qualifying standard," "competed at Championships") — do not rely on funnel shape alone to convey the relationship
 
 **5. Championship age-group breadth**
 - Editorial point: 14 brackets represented, spanning 6-and-under to 15-18
 - Display: horizontal bar (swimmer count per bracket) or grid
-- Data: derived from Appendix A — count of distinct swimmers per age group with a non-DQ Champs entry: Girls 6&Under (1), Boys 6&Under (4), Girls 7-8 (3), Boys 7-8 (1), Girls 8&Under (5), Girls 9-10 (3), Boys 9-10 (10), Girls 10&Under (1), Girls 11-12 (2), Boys 11-12 (5), Girls 13-14 (4), Boys 13-14 (2), Women 15-18 (3), Men 15-18 (2)
+- Data file: [`chart-data/2026-08-01-championship-age-group-breadth.csv`](../chart-data/2026-08-01-championship-age-group-breadth.csv)
 - Source: `league-results-v2.json`, direct count
-- Caveats: these 14 bracket counts sum to 46, not 42 — because 4 swimmers (Piper Hobbs, Sophia Burnette, Cora Greer, Maya Hige) each swam in two different age-group brackets at Champs (e.g., both "Girls 7-8" and "Girls 8&Under" events on the same day, a real and intentional VPSU convention, not a data error). 42 is the count of distinct non-DQ swimmers; the 43rd Champs competitor, Walker Mullinax, had all 3 of his Boys 7-8/8&Under entries DQ'd and so does not appear in this non-DQ-only breakdown at all — footnote this rather than omit it silently
+- Caveats: these 14 bracket counts sum to 46, not 42 — because 4 swimmers (Piper Hobbs, Sophia Burnette, Cora Greer, Maya Hige) each swam in two different age-group brackets at Champs (e.g., both "Girls 7-8" and "Girls 8&Under" events on the same day, a real and intentional VPSU convention, not a data error). 42 is the count of distinct non-DQ swimmers; the 43rd Champs competitor, Walker Mullinax, had all 3 of his Boys 7-8/8&Under entries DQ'd and so does not appear in this non-DQ-only breakdown at all — the file's `_meta` note explains this explicitly rather than omitting it silently

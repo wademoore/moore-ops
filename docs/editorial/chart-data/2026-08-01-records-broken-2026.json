@@ -1,0 +1,144 @@
+{
+  "_meta": {
+    "source": [
+      "data/waves-team-records.json"
+    ],
+    "generated": "2026-08-02",
+    "edition": "editorial-meeting-2026-08-01.md Section 9 Graphic 2 / Appendix E item 2",
+    "note": "All 15 Wellington all-time team records broken during the full 2026 season. setAtChamps=true for the 4 broken specifically at the 2026-08-01 VPSU Championship Meet."
+  },
+  "records": [
+    {
+      "swimmer": "Reagan Swartzel",
+      "event": "50m Freestyle",
+      "ageGroup": "Girls 9-10",
+      "time": 33.75,
+      "setAtChamps": true,
+      "date": "2026-08-01"
+    },
+    {
+      "swimmer": "Reagan Swartzel",
+      "event": "50m Backstroke",
+      "ageGroup": "Girls 9-10",
+      "time": 42.45,
+      "setAtChamps": true,
+      "date": "2026-08-01"
+    },
+    {
+      "swimmer": "Reagan Swartzel",
+      "event": "50m Butterfly",
+      "ageGroup": "Girls 9-10",
+      "time": 37.36,
+      "setAtChamps": true,
+      "date": "2026-08-01"
+    },
+    {
+      "swimmer": "Luke Shnowske",
+      "event": "50m Breaststroke",
+      "ageGroup": "Boys 11-12",
+      "time": 38.92,
+      "setAtChamps": true,
+      "date": "2026-08-01"
+    },
+    {
+      "swimmer": "Sam Shnowske",
+      "event": "100m Individual Medley",
+      "ageGroup": "Boys 13-14",
+      "time": 64.36,
+      "setAtChamps": false,
+      "date": "2026-06-15"
+    },
+    {
+      "swimmer": "Sam Shnowske",
+      "event": "50m Freestyle",
+      "ageGroup": "Boys 13-14",
+      "time": 26.16,
+      "setAtChamps": false,
+      "date": "2026-07-20"
+    },
+    {
+      "swimmer": "Sam Shnowske",
+      "event": "50m Breaststroke",
+      "ageGroup": "Boys 13-14",
+      "time": 34.49,
+      "setAtChamps": false,
+      "date": "2026-07-13"
+    },
+    {
+      "swimmer": "Sam Shnowske",
+      "event": "50m Butterfly",
+      "ageGroup": "Boys 13-14",
+      "time": 28.74,
+      "setAtChamps": false,
+      "date": "2026-07-20"
+    },
+    {
+      "swimmer": "Christian Hunley",
+      "event": "25m Breaststroke",
+      "ageGroup": "Boys 8&Under",
+      "time": 24.62,
+      "setAtChamps": false,
+      "date": "2026-07-20"
+    },
+    {
+      "swimmer": "Christian Hunley",
+      "event": "25m Butterfly",
+      "ageGroup": "Boys 8&Under",
+      "time": 19.52,
+      "setAtChamps": false,
+      "date": "2026-07-20"
+    },
+    {
+      "swimmer": "Jaclynn Buzek",
+      "event": "50m Breaststroke",
+      "ageGroup": "Women 15-18",
+      "time": 35.55,
+      "setAtChamps": false,
+      "date": "2026-06-29"
+    },
+    {
+      "swimmer": "Anna Shnowske",
+      "event": "50m Backstroke",
+      "ageGroup": "Women 15-18",
+      "time": 31.14,
+      "setAtChamps": false,
+      "date": "2026-07-13"
+    },
+    {
+      "swimmer": "Anna Shnowske",
+      "event": "50m Butterfly",
+      "ageGroup": "Women 15-18",
+      "time": 29.13,
+      "setAtChamps": false,
+      "date": "2026-07-13"
+    },
+    {
+      "swimmers": [
+        "Luke Shnowske",
+        "Sam Shnowske",
+        "Anna Shnowske",
+        "Reagan Swartzel"
+      ],
+      "event": "200m Medley Relay",
+      "ageGroup": "Mixed Open",
+      "time": 133.84,
+      "setAtChamps": false,
+      "date": "2026-06-15",
+      "note": "inaugural Mixed Open category record, not a broken prior record"
+    },
+    {
+      "swimmers": [
+        "Wren Snyder",
+        "Hayden Eggleston",
+        "Nehemiah Thrash",
+        "Gabe Palacios"
+      ],
+      "event": "200m Freestyle Relay",
+      "ageGroup": "Mixed Open",
+      "time": 142.88,
+      "setAtChamps": false,
+      "date": "2026-06-29",
+      "note": "inaugural Mixed Open category record, not a broken prior record"
+    }
+  ]
+}

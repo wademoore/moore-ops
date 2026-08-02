@@ -1,0 +1,99 @@
+# _meta: source=data/league-results-v2.json (filtered meetType=Champs, team=WT); cross-referenced data/waves-team-records.json (record status), data/pb-records.json (Ophelia PB status only); generated=2026-08-02; edition=editorial-meeting-2026-08-01.md Appendix A
+swimmer,ageGroup,event,time,place,field,pbStatus,recordStatus,confidence
+Grayson Asbell,Boys 11-12,100m Individual Medley,91.69,18,24,2026 season-best (MEDIUM),"No (record stands: 1:13.07, Jostin Keithley 2021)",MEDIUM
+Luke Shnowske,Boys 11-12,100m Individual Medley,76.23,3,24,2026 season-best (MEDIUM),"No (record stands: 1:13.07, Jostin Keithley 2021)",MEDIUM
+Parker Lantz,Boys 11-12,100m Individual Medley,94.81,19,24,2026 season-best (MEDIUM),"No (record stands: 1:13.07, Jostin Keithley 2021)",MEDIUM
+Wyatt Childress,Boys 11-12,100m Individual Medley,78.59,4,24,Not 2026 season-best,"No (record stands: 1:13.07, Jostin Keithley 2021)",MEDIUM
+Grayson Asbell,Boys 11-12,50m Backstroke,41.71,13,25,Not 2026 season-best,"No (record stands: 35.04, Jostin Keithley 2021)",MEDIUM
+Parker Lantz,Boys 11-12,50m Backstroke,43.85,18,25,2026 season-best (MEDIUM),"No (record stands: 35.04, Jostin Keithley 2021)",MEDIUM
+Luke Shnowske,Boys 11-12,50m Breaststroke,38.92,1,26,Not 2026 season-best,NEW RECORD,MEDIUM
+Parker Lantz,Boys 11-12,50m Breaststroke,52.8,24,26,Not 2026 season-best,"No (record stands: 38.92, Luke Shnowske 2026)",MEDIUM
+William Whaley,Boys 11-12,50m Breaststroke,49.74,20,26,2026 season-best (MEDIUM),"No (record stands: 38.92, Luke Shnowske 2026)",MEDIUM
+Grayson Asbell,Boys 11-12,50m Butterfly,41.96,8,15,Not 2026 season-best,"No (record stands: 33.14, Jostin Keithley 2021)",MEDIUM
+William Whaley,Boys 11-12,50m Butterfly,DQ,,,N/A (DQ),N/A (DQ),N/A
+Wyatt Childress,Boys 11-12,50m Butterfly,35.07,4,15,Not 2026 season-best,"No (record stands: 33.14, Jostin Keithley 2021)",MEDIUM
+Luke Shnowske,Boys 11-12,50m Freestyle,31.23,5,17,Not 2026 season-best,"No (record stands: 29.20, Jostin Keithley 2021)",MEDIUM
+Wyatt Childress,Boys 11-12,50m Freestyle,30.62,4,17,Not 2026 season-best,"No (record stands: 29.20, Jostin Keithley 2021)",MEDIUM
+Nikolai Ilardi,Boys 13-14,100m Individual Medley,84.45,16,20,2026 season-best (MEDIUM),"No (record stands: 1:04.36, Sam Shnowske 2026)",MEDIUM
+Ben Cox,Boys 13-14,50m Backstroke,45.72,31,31,Not 2026 season-best,"No (record stands: 32.32, Jostin Keithley 2023)",MEDIUM
+Nikolai Ilardi,Boys 13-14,50m Backstroke,37.3,9,31,2026 season-best (MEDIUM),"No (record stands: 32.32, Jostin Keithley 2023)",MEDIUM
+Nikolai Ilardi,Boys 13-14,50m Butterfly,37.67,18,24,Not 2026 season-best,"No (record stands: 28.74, Sam Shnowske 2026)",MEDIUM
+Beau Marcotte,Boys 6&Under,25m Backstroke,37.19,15,25,Not 2026 season-best,"No (record stands: 27.72, Braden Kimball 2024)",MEDIUM
+Coen Greer,Boys 6&Under,25m Backstroke,41.26,21,25,Not 2026 season-best,"No (record stands: 27.72, Braden Kimball 2024)",MEDIUM
+Thomas DeMeola,Boys 6&Under,25m Backstroke,38.61,17,25,Not 2026 season-best,"No (record stands: 27.72, Braden Kimball 2024)",MEDIUM
+Beau Marcotte,Boys 6&Under,25m Freestyle,25.27,3,29,2026 season-best (MEDIUM),"No (record stands: 20.34, Logan Timberg 2014)",MEDIUM
+Coen Greer,Boys 6&Under,25m Freestyle,38.9,29,29,Not 2026 season-best,"No (record stands: 20.34, Logan Timberg 2014)",MEDIUM
+Jack Brown,Boys 6&Under,25m Freestyle,27.45,6,29,Not 2026 season-best,"No (record stands: 20.34, Logan Timberg 2014)",MEDIUM
+Thomas DeMeola,Boys 6&Under,25m Freestyle,36.66,27,29,Not 2026 season-best,"No (record stands: 20.34, Logan Timberg 2014)",MEDIUM
+William Pittman,Boys 7-8,25m Backstroke,26.32,20,32,2026 season-best (MEDIUM),N/A - no record exists for this bracket,MEDIUM
+Walker Mullinax,Boys 7-8,25m Freestyle,DQ,,,N/A (DQ),N/A (DQ),N/A
+Walker Mullinax,Boys 8&Under,25m Breaststroke,DQ,,,N/A (DQ),N/A (DQ),N/A
+Walker Mullinax,Boys 8&Under,25m Butterfly,DQ,,,N/A (DQ),N/A (DQ),N/A
+Andrew Shayeson,Boys 9-10,50m Backstroke,53.41,26,35,2026 season-best (MEDIUM),"No (record stands: 40.70, Jackson Jones 2022)",MEDIUM
+Charlie Chiesa,Boys 9-10,50m Backstroke,53.21,25,35,2026 season-best (MEDIUM),"No (record stands: 40.70, Jackson Jones 2022)",MEDIUM
+Conor Greer,Boys 9-10,50m Backstroke,52.27,21,35,2026 season-best (MEDIUM),"No (record stands: 40.70, Jackson Jones 2022)",MEDIUM
+Gabriel Crowther,Boys 9-10,50m Backstroke,52.97,22,35,2026 season-best (MEDIUM),"No (record stands: 40.70, Jackson Jones 2022)",MEDIUM
+Jack Kopriva,Boys 9-10,50m Backstroke,46.84,8,35,2026 season-best (MEDIUM),"No (record stands: 40.70, Jackson Jones 2022)",MEDIUM
+Micah Thrash,Boys 9-10,50m Backstroke,51.15,17,35,Not 2026 season-best,"No (record stands: 40.70, Jackson Jones 2022)",MEDIUM
+Noah Hummel,Boys 9-10,50m Backstroke,54.87,29,35,2026 season-best (MEDIUM),"No (record stands: 40.70, Jackson Jones 2022)",MEDIUM
+Sutton Welch,Boys 9-10,50m Backstroke,57.43,34,35,Not 2026 season-best,"No (record stands: 40.70, Jackson Jones 2022)",MEDIUM
+Aiden Fincham,Boys 9-10,50m Breaststroke,55.92,14,32,2026 season-best (MEDIUM),"No (record stands: 46.88, Luke Shnowske 2024)",MEDIUM
+Charlie Chiesa,Boys 9-10,50m Breaststroke,63.14,32,32,Not 2026 season-best,"No (record stands: 46.88, Luke Shnowske 2024)",MEDIUM
+Micah Thrash,Boys 9-10,50m Breaststroke,54.61,9,32,2026 season-best (MEDIUM),"No (record stands: 46.88, Luke Shnowske 2024)",MEDIUM
+Nate Burnette,Boys 9-10,50m Breaststroke,62.18,28,32,2026 season-best (MEDIUM),"No (record stands: 46.88, Luke Shnowske 2024)",MEDIUM
+Sutton Welch,Boys 9-10,50m Breaststroke,56.16,16,32,2026 season-best (MEDIUM),"No (record stands: 46.88, Luke Shnowske 2024)",MEDIUM
+Conor Greer,Boys 9-10,50m Butterfly,50.46,10,12,2026 season-best (MEDIUM),"No (record stands: 37.63, Jackson Jones 2022)",MEDIUM
+Conor Greer,Boys 9-10,50m Freestyle,39.56,8,27,2026 season-best (MEDIUM),"No (record stands: 35.19, Jostin Keithley 2019)",MEDIUM
+Micah Thrash,Boys 9-10,50m Freestyle,41.2,17,27,2026 season-best (MEDIUM),"No (record stands: 35.19, Jostin Keithley 2019)",MEDIUM
+Sutton Welch,Boys 9-10,50m Freestyle,40.63,12,27,Not 2026 season-best,"No (record stands: 35.19, Jostin Keithley 2019)",MEDIUM
+Piper Hobbs,Girls 10&Under,100m Individual Medley,100.03999999999999,11,23,2026 season-best (MEDIUM),Not evaluated - ageGroup label mismatch,MEDIUM
+Grey Childress,Girls 11-12,50m Backstroke,43.29,13,26,Not 2026 season-best,"No (record stands: 38.32, Ellerie Tobler 2016)",MEDIUM
+Grey Childress,Girls 11-12,50m Breaststroke,49.27,14,22,2026 season-best (MEDIUM),"No (record stands: 37.88, Jaclynn Buzek 2023)",MEDIUM
+Kinsley Welch,Girls 11-12,50m Breaststroke,50.33,21,22,2026 season-best (MEDIUM),"No (record stands: 37.88, Jaclynn Buzek 2023)",MEDIUM
+Grey Childress,Girls 11-12,50m Freestyle,35.21,10,23,2026 season-best (MEDIUM),"No (record stands: 31.28, Ellerie Tobler 2016)",MEDIUM
+Kinsley Welch,Girls 11-12,50m Freestyle,36.81,17,23,2026 season-best (MEDIUM),"No (record stands: 31.28, Ellerie Tobler 2016)",MEDIUM
+Michaela Hobbs,Girls 13-14,50m Backstroke,40.36,17,23,Not 2026 season-best,"No (record stands: 35.83, Allison Chaney 2017)",MEDIUM
+Zurie Bissette,Girls 13-14,50m Backstroke,38.01,11,23,2026 season-best (MEDIUM),"No (record stands: 35.83, Allison Chaney 2017)",MEDIUM
+Clara Lantz,Girls 13-14,50m Breaststroke,45.83,16,22,2026 season-best (MEDIUM),"No (record stands: 35.70, Jaclynn Buzek 2025)",MEDIUM
+Reagan Hobbs,Girls 13-14,50m Breaststroke,46.28,18,22,Not 2026 season-best,"No (record stands: 35.70, Jaclynn Buzek 2025)",MEDIUM
+Zurie Bissette,Girls 13-14,50m Butterfly,38.6,19,22,2026 season-best (MEDIUM),"No (record stands: 33.76, Ellerie Tobler 2017)",MEDIUM
+Michaela Hobbs,Girls 13-14,50m Freestyle,35.21,19,23,Not 2026 season-best,"No (record stands: 29.75, Jaclynn Buzek 2025)",MEDIUM
+Reagan Hobbs,Girls 13-14,50m Freestyle,35.74,20,23,Not 2026 season-best,"No (record stands: 29.75, Jaclynn Buzek 2025)",MEDIUM
+Zurie Bissette,Girls 13-14,50m Freestyle,32.37,11,23,Not 2026 season-best,"No (record stands: 29.75, Jaclynn Buzek 2025)",MEDIUM
+Marley Parker,Girls 6&Under,25m Backstroke,39.37,23,28,Not 2026 season-best,"No (record stands: 26.52, Wren Snyder 2023)",MEDIUM
+Marley Parker,Girls 6&Under,25m Freestyle,34.7,23,27,Not 2026 season-best,"No (record stands: 21.51, Lexi O'Neil 2013)",MEDIUM
+Cora Greer,Girls 7-8,25m Backstroke,25.2,13,31,2026 season-best (MEDIUM),N/A - no record exists for this bracket,MEDIUM
+Maya Hige,Girls 7-8,25m Backstroke,28.99,30,31,Not 2026 season-best,N/A - no record exists for this bracket,MEDIUM
+Sophia Burnette,Girls 7-8,25m Backstroke,24.15,6,31,Not 2026 season-best,N/A - no record exists for this bracket,MEDIUM
+Cora Greer,Girls 7-8,25m Freestyle,21.55,22,35,Not 2026 season-best,N/A - no record exists for this bracket,MEDIUM
+Maya Hige,Girls 7-8,25m Freestyle,22.11,28,35,Not 2026 season-best,N/A - no record exists for this bracket,MEDIUM
+Sophia Burnette,Girls 7-8,25m Freestyle,19.45,5,35,Not 2026 season-best,N/A - no record exists for this bracket,MEDIUM
+Eleanor Wojtan,Girls 8&Under,25m Breaststroke,29.35,16,24,2026 season-best (MEDIUM),"No (record stands: 25.50, Jaclynn Buzek 2019)",MEDIUM
+Sophia Burnette,Girls 8&Under,25m Breaststroke,28.35,13,24,2026 season-best (MEDIUM),"No (record stands: 25.50, Jaclynn Buzek 2019)",MEDIUM
+Cora Greer,Girls 8&Under,25m Butterfly,26.04,13,42,Not 2026 season-best,"No (record stands: 20.70, Reagan Swartzel 2024)",MEDIUM
+Eleanor Wojtan,Girls 8&Under,25m Butterfly,34.17,37,42,Not 2026 season-best,"No (record stands: 20.70, Reagan Swartzel 2024)",MEDIUM
+Maya Hige,Girls 8&Under,25m Butterfly,35.8,39,42,Not 2026 season-best,"No (record stands: 20.70, Reagan Swartzel 2024)",MEDIUM
+Ophelia Moore,Girls 8&Under,25m Butterfly,34.11,36,42,PB (HIGH),"No (record stands: 20.70, Reagan Swartzel 2024)",MEDIUM
+Piper Hobbs,Girls 9-10,50m Backstroke,49.19,12,23,Not 2026 season-best,"No (record stands: 42.45, Reagan Swartzel 2026)",MEDIUM
+Reagan Swartzel,Girls 9-10,50m Backstroke,42.45,3,23,2026 season-best (MEDIUM),NEW RECORD,MEDIUM
+Wren Snyder,Girls 9-10,50m Backstroke,45.71,8,23,Not 2026 season-best,"No (record stands: 42.45, Reagan Swartzel 2026)",MEDIUM
+Wren Snyder,Girls 9-10,50m Breaststroke,52.85,10,24,Not 2026 season-best,"No (record stands: 46.33, Jaclynn Buzek 2021)",MEDIUM
+Reagan Swartzel,Girls 9-10,50m Butterfly,37.36,1,17,2026 season-best (MEDIUM),NEW RECORD,MEDIUM
+Wren Snyder,Girls 9-10,50m Butterfly,47.81,7,17,Not 2026 season-best,"No (record stands: 37.36, Reagan Swartzel 2026)",MEDIUM
+Piper Hobbs,Girls 9-10,50m Freestyle,38.47,6,18,2026 season-best (MEDIUM),"No (record stands: 33.75, Reagan Swartzel 2026)",MEDIUM
+Reagan Swartzel,Girls 9-10,50m Freestyle,33.75,1,18,2026 season-best (MEDIUM),NEW RECORD,MEDIUM
+Mason Hibbard,Men 15-18,100m Individual Medley,65.53,3,18,2026 season-best (MEDIUM),"No (record stands: 59.59, Matt Shnowske 2024)",MEDIUM
+Jostin Keithley,Men 15-18,50m Backstroke,30.59,5,20,Not 2026 season-best,"No (record stands: 28.87, Finn Leggett 2025)",MEDIUM
+Jostin Keithley,Men 15-18,50m Breaststroke,35.87,11,26,Not 2026 season-best,"No (record stands: 32.82, Michael Keller 2018)",MEDIUM
+Mason Hibbard,Men 15-18,50m Breaststroke,33.86,7,26,Not 2026 season-best,"No (record stands: 32.82, Michael Keller 2018)",MEDIUM
+Jostin Keithley,Men 15-18,50m Butterfly,30.36,14,25,Not 2026 season-best,"No (record stands: 26.22, Matt Shnowske 2024)",MEDIUM
+Mason Hibbard,Men 15-18,50m Butterfly,28.42,4,25,2026 season-best (MEDIUM),"No (record stands: 26.22, Matt Shnowske 2024)",MEDIUM
+Emjay Bissette,Women 15-18,100m Individual Medley,84.23,20,21,2026 season-best (MEDIUM),"No (record stands: 1:05.42, Anna Shnowske 2024)",MEDIUM
+Katelyn Whaley,Women 15-18,100m Individual Medley,81.05,17,21,2026 season-best (MEDIUM),"No (record stands: 1:05.42, Anna Shnowske 2024)",MEDIUM
+Natalie Haas,Women 15-18,100m Individual Medley,76.68,10,21,2026 season-best (MEDIUM),"No (record stands: 1:05.42, Anna Shnowske 2024)",MEDIUM
+Emjay Bissette,Women 15-18,50m Backstroke,38.03,14,26,2026 season-best (MEDIUM),"No (record stands: 31.14, Anna Shnowske 2026)",MEDIUM
+Natalie Haas,Women 15-18,50m Backstroke,35.7,9,26,Not 2026 season-best,"No (record stands: 31.14, Anna Shnowske 2026)",MEDIUM
+Emjay Bissette,Women 15-18,50m Breaststroke,43.63,15,23,Not 2026 season-best,"No (record stands: 35.55, Jaclynn Buzek 2026)",MEDIUM
+Katelyn Whaley,Women 15-18,50m Breaststroke,44.77,18,23,2026 season-best (MEDIUM),"No (record stands: 35.55, Jaclynn Buzek 2026)",MEDIUM
+Katelyn Whaley,Women 15-18,50m Butterfly,35.17,16,22,2026 season-best (MEDIUM),"No (record stands: 29.13, Anna Shnowske 2026)",MEDIUM
+Natalie Haas,Women 15-18,50m Butterfly,33.22,10,22,2026 season-best (MEDIUM),"No (record stands: 29.13, Anna Shnowske 2026)",MEDIUM

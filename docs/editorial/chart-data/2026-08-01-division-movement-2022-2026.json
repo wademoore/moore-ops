@@ -1,0 +1,46 @@
+{
+  "_meta": {
+    "source": [
+      ".claude/skills/waves-standings/standings.js output, --movement mode",
+      ".claude/skills/waves-standings/standings.js output, Mode 1 runs for 2024/2025/2026",
+      "data/waves-season.json"
+    ],
+    "generated": "2026-08-02",
+    "edition": "editorial-meeting-2026-08-01.md Section 9 Graphic 4 / Appendix E item 1"
+  },
+  "timeline": [
+    {
+      "year": 2022,
+      "division": "Div 2",
+      "record": null,
+      "note": "divisionsInferred=true in waves-season.json"
+    },
+    {
+      "year": 2023,
+      "division": "Div 2",
+      "record": null,
+      "note": "divisionsInferred=true in waves-season.json"
+    },
+    {
+      "year": 2024,
+      "division": "Div 2",
+      "record": "5-0-0",
+      "outcome": "won division, promoted to Div 1",
+      "pointDifferential": 591
+    },
+    {
+      "year": 2025,
+      "division": "Div 1",
+      "record": "0-5-0",
+      "outcome": "last of 6, relegated to Div 2",
+      "pointDifferential": -431
+    },
+    {
+      "year": 2026,
+      "division": "Div 2",
+      "record": "5-0-0",
+      "outcome": "won division",
+      "pointDifferential": 646
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "_meta": {
+    "source": [
+      "data/league-results-v2.json",
+      "data/relay-results-v2.json",
+      ".claude/skills/waves-champs-qualifier/check.js output"
+    ],
+    "generated": "2026-08-02",
+    "edition": "editorial-meeting-2026-08-01.md Section 9 Graphic 5 / Appendix E item 4",
+    "note": "roster = full 2026 WT roster (individual + relay-only swimmers); qualifiedSwimmers = distinct swimmers reaching a VPSU qualifying standard at any point in 2026; championshipCompetitors = distinct WT swimmers who actually swam at the 2026-08-01 Championship Meet. Do not collapse these three counts into one bar -- they measure different things."
+  },
+  "roster": 122,
+  "qualifiedSwimmers": 54,
+  "championshipCompetitors": 43
+}
