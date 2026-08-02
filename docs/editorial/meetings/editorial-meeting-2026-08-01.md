@@ -184,7 +184,7 @@ Supporting data: `waves-standings` skill output (Mode 1 for 2024/2025/2026, Mode
 | 11 qualified swimmers did not compete at Champs | MEDIUM | Depends on the 54-swimmer qualifier figure above (MEDIUM) |
 | 6 qualifying spots earned at Champs itself; 2 first-time-ever tags | MEDIUM | First-time-ever always capped at MEDIUM per editorial policy regardless of current-meet verification |
 | 4 team records broken at Championships (Swartzel ×3, L. Shnowske ×1) | HIGH | Direct from `waves-team-records.json`, `meetDate: "2026-08-01"` |
-| Luke Shnowske Boys 11-12 50m Breaststroke record — which swim/date should be credited | LOW | Internal ageGroup-label inconsistency found this session — see Warnings |
+| Luke Shnowske Boys 11-12 50m Breaststroke record (2026-08-01 Champs swim, 38.92s) | HIGH | Resolved — Publisher confirmed his faster 2026-07-08 swim (38.58s) was swum up in the 13-14 bracket and is not 11-12-eligible; see §Appendix A note |
 | Girls 10&Under 100m IM (Piper Hobbs) not evaluated against team record | LOW | ageGroup-label mismatch between live data ("10&Under") and record-book key ("9-10") — see Warnings |
 | Girls 18&Under 200m Freestyle Relay — 0.37s from Women Open record | MEDIUM | Requires bridging three different relay ageGroup label conventions (see Methodology Notes) — not independently verified against a fourth source |
 | 15 team records broken over the full 2026 season | HIGH | Direct inspection of `waves-team-records.json`, matches the `ac33bd5` commit message swimmer-for-swimmer |
@@ -198,11 +198,6 @@ Supporting data: `waves-standings` skill output (Mode 1 for 2024/2025/2026, Mode
 ---
 
 ## 8. Warnings
-
-⚠ **Luke Shnowske's Boys 11-12 50m Breaststroke record — which swim should be credited is unresolved**
-`waves-team-records.json` currently credits his 2026-08-01 Championship swim (38.92s) as the record-setting swim. But a faster swim by the same swimmer in the same event (38.58s, 2026-07-08) is recorded in `league-results-v2.json` under `ageGroup: "Boys 13-14"` — every other 2026 entry for him in this event uses `"Boys 11-12"` (his actual bracket at age 12), and his July 8 100m IM and Freestyle rows that same meet are also labeled "Boys 13-14," suggesting a meet-wide bracket mislabel rather than an isolated typo.
-Reason: Both times comfortably beat the pre-2026 record (46.88s, 2024), so a Boys 11-12 record was broken either way — but if the July 8 swim is relabeled to its correct bracket, it would be the faster, earlier record-setting swim, not the Champs swim. This changes which meet and date get editorial credit.
-Action required: Publisher/Updater to confirm the correct ageGroup for the 2026-07-08 WT vs Powhatan Secondary meet and correct it if it's a genuine mislabel — not something this Data Desk task should silently reconcile.
 
 ⚠ **Championship venue — internal conflict, now resolved by Publisher confirmation**
 Before this session, the 4 records set at the 2026-08-01 Championship Meet disagreed on `location` (3 said "Wellington Waves Swim Team," 1 said "Fort Eustis Pool") despite sharing the same `meet` and `meetDate`. Publisher confirmed the actual venue was 757swim Aquatic Center; all 4 records were corrected this session (commit `2159f38`). Flagged here for the record, since the artifact's Meet Summary venue line depends on this correction and no independent third file corroborates the Publisher's answer.
@@ -236,7 +231,7 @@ Chart-ready data:
 | Reagan Swartzel | 50m Freestyle | Girls 9-10 | 33.75 | Yes |
 | Reagan Swartzel | 50m Backstroke | Girls 9-10 | 42.45 | Yes |
 | Reagan Swartzel | 50m Butterfly | Girls 9-10 | 37.36 | Yes |
-| Luke Shnowske | 50m Breaststroke | Boys 11-12 | 38.92 | Yes (see Warnings — date disputed) |
+| Luke Shnowske | 50m Breaststroke | Boys 11-12 | 38.92 | Yes |
 | Sam Shnowske | 100m Individual Medley | Boys 13-14 | 64.36 | No (2026-06-15) |
 | Sam Shnowske | 50m Freestyle | Boys 13-14 | 26.16 | No (2026-07-20) |
 | Sam Shnowske | 50m Breaststroke | Boys 13-14 | 34.49 | No (2026-07-13) |
@@ -287,7 +282,6 @@ Notes: Label clearly that "qualified" and "competed" are different counts — do
 
 ## 11. Open Questions
 
-- Luke Shnowske's Boys 11-12 50m Breaststroke ageGroup-label discrepancy (§8) — needs Publisher/Updater resolution before the record's credited date/time can be considered final.
 - Whether the three-way relay ageGroup bridging (§8, §10) is editorially sound to publish, or whether the near-record framing for the Girls 18&Under 200m Freestyle Relay should wait for a documented mapping.
 - Whether `RELAY_AGEGRP_MAP` and the 100m IM 10&Under/9-10 label gap (§8) should be fixed in the committed skills before the next time either is run — flagged for a future Coder session, not resolved here.
 - No PDF spot-check exists yet for any 2026-08-01 row (`verifiedAgainst: null` on all 101 WT Champs entries) — consistent with how Summer Awards was handled, but noted again since this is the highest-visibility edition of the season.
@@ -414,7 +408,7 @@ Every Wellington individual Championship swim. Source for all rows: `data/league
 | Wyatt Childress | 100m Individual Medley | 78.59 | 4/24 | Not 2026 season-best | No (record stands: 1:13.07, Jostin Keithley 2021) |
 | Grayson Asbell | 50m Backstroke | 41.71 | 13/25 | Not 2026 season-best | No (record stands: 35.04, Jostin Keithley 2021) |
 | Parker Lantz | 50m Backstroke | 43.85 | 18/25 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 35.04, Jostin Keithley 2021) |
-| Luke Shnowske | 50m Breaststroke | 38.92 | 1/26 | Not 2026 season-best | **NEW RECORD** |
+| Luke Shnowske | 50m Breaststroke | 38.92 | 1/26 | Not 2026 season-best | **NEW RECORD** — bracket eligibility confirmed by Publisher: a faster 2026-07-08 swim (38.58s) was swum up in the 13-14 bracket and is not 11-12-eligible; this Champs swim is his legitimate 11-12 record (HIGH) |
 | Parker Lantz | 50m Breaststroke | 52.8 | 24/26 | Not 2026 season-best | No (record stands: 38.92, Luke Shnowske 2026) |
 | William Whaley | 50m Breaststroke | 49.74 | 20/26 | 2026 season-best (MEDIUM — not a verified career PB) | No (record stands: 38.92, Luke Shnowske 2026) |
 | Grayson Asbell | 50m Butterfly | 41.96 | 8/15 | Not 2026 season-best | No (record stands: 33.14, Jostin Keithley 2021) |
@@ -502,7 +496,7 @@ For every season-level finding: statement, confidence, source, methodology/cavea
 | 7 | The 2 relay records broken in 2026 (Mixed Open 200m Medley, 200m Freestyle) were the first-ever entries in a newly established Mixed Open category | HIGH | `waves-team-records.json` + git history (commit `2946701`) | — | Historically distinct from a "broken" record — no prior holder was displaced | This issue |
 | 8 | Championship-specific historical comparison is limited to 2024 and 2025 — no earlier Champs-meet history is loaded | LOW (as a limitation statement, not a finding) | `league-results-history-v2.json` / `relay-results-history-v2.json` | Regular-season history goes to 2022; the Champs/SA migration only covered 2024–2026 | Caps every "first Championship appearance" claim at a 2-year lookback, not "ever" | This issue (as caveat) |
 | 9 | Full age-group breadth: 14 distinct individual age/gender brackets represented in non-DQ Championship swims (Boys 10&Under had no 2026 entrant at all; Boys 8&Under had one entrant, Walker Mullinax, whose only bracket entries were both DQ'd — see Appendix E Graphic 5 footnote) | HIGH | Direct from `league-results-v2.json` | — | Direct evidence for Principle 2 ("celebrate many forms of excellence") | This issue |
-| 10 | Reagan Swartzel's and Luke Shnowske's in-season progressions culminating in Championship record swims | HIGH (records) / MEDIUM (progression) | `league-results-v2.json`, full-season per-swimmer/event query | Luke Shnowske's progression has an unresolved ageGroup-label question (§8 Warnings) affecting which swim should be credited | Concrete evidence that the Championship result was the visible endpoint of season-long work, not an isolated meet | This issue |
+| 10 | Reagan Swartzel's and Luke Shnowske's in-season progressions culminating in Championship record swims | HIGH (records) / MEDIUM (progression) | `league-results-v2.json`, full-season per-swimmer/event query | Luke Shnowske's apparent 2026-07-08 faster swim is not a competing progression data point — Publisher confirmed it was swum up in the 13-14 bracket and is not 11-12-eligible; his Champs swim is his legitimate in-bracket season-best and record swim | Concrete evidence that the Championship result was the visible endpoint of season-long work, not an isolated meet | This issue |
 | 11 | Full multi-year individual progression studies (beyond the 2 examples above), complete VPSU top-50 rankings inventory, and a full roster/participation breakdown by age group | Not yet assessed this session | `vpsu-rankings.json`, `league-results-v2.json`, full roster join | Out of scope for this edition's turnaround; each is a legitimate, larger analysis | Appropriate for the Annual's deeper season retrospective, not a Championship-edition finding | **Annual** (held — see Appendix D) |
 
 ---
@@ -539,7 +533,7 @@ Expands on §9. Each entry: editorial point, display type, exact values, source,
 - Editorial point: connects the Championship Meet's 4 records to the season's full 15
 - Display: table or annotated stat-card row (see §9 Graphic 2 for exact data)
 - Source: `waves-team-records.json`
-- Caveats: Luke Shnowske's Boys 11-12 Breaststroke record has an unresolved credited-date question (§8) — do not finalize this graphic until that's resolved, or footnote it
+- Caveats: none outstanding — Luke Shnowske's Boys 11-12 Breaststroke record credit was confirmed correct by the Publisher (see Appendix A note)
 - Accessibility: table format preferred over a chart for this data — 15 rows with mixed individual/relay attribution is clearer as text than as a bar chart
 
 **3. Championship relay results with regular-season and record comparison**
