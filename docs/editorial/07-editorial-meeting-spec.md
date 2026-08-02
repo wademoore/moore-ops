@@ -23,7 +23,7 @@ ChatGPT does not receive raw JSON. ChatGPT receives this artifact.
 | Role | Responsibility |
 |------|---------------|
 | **Claude Code** | Produces the Editorial Meeting artifact after Updater confirms data is complete. Labels every finding with a confidence level. Flags all warnings and open questions. Does not write publication prose. |
-| **Publisher (Wade)** | Reviews the artifact before passing it to ChatGPT. Resolves any Publisher-only decisions (coverage sensitivity, family recognition) flagged in the artifact. Approves the artifact for handoff. |
+| **Publisher (Wade)** | Reviews the artifact before passing it to ChatGPT. Resolves any Publisher-only decisions (coverage sensitivity, family recognition) flagged in the artifact. Approves the artifact for handoff. Before publishing, spot-checks ChatGPT's rendered output against the artifact for numerical accuracy and confidence/caveat framing (see Post-Layout Fact-Check below). |
 | **ChatGPT** | Receives the approved artifact. Writes publication prose from it. Does not consult raw data files. Flags to Publisher if a finding needs clarification before publishing. |
 
 ---
@@ -215,6 +215,21 @@ This section exists so the artifact is auditable. If a finding is challenged aft
 ```
 
 If there are no open questions, write "None."
+
+---
+
+## Post-Layout Fact-Check (Publisher, before publishing)
+
+The Editorial Meeting artifact's confidence ratings, sourcing, and caveats (Sections 7–8) attach to the *artifact* — they do not automatically survive ChatGPT's narrative/layout pass into the rendered HTML. Prose and graphics can restate a data-completeness caveat as an unqualified fact, drop context that changed a finding's confidence level, or otherwise drift from what the artifact actually supports, and no existing step in this workflow catches that: Sections 7–8 describe the artifact itself, not the final rendered output ChatGPT produces from it.
+
+**Before publishing, the Publisher must spot-check the rendered HTML against the original Editorial Meeting artifact for:**
+- **Numerical claims** — do records, standings, differentials, and counts in the rendered copy match the artifact's stated values?
+- **Caveats and confidence framing** — did a MEDIUM/LOW-confidence finding get stated as fact, or did a caveat get dropped, during the writing pass?
+- **Data-completeness framing** — does any copy imply data is missing, unreliable, or "not asserted" in a way the artifact's own confidence table doesn't support (or vice versa — does copy assert something the artifact only supports at LOW confidence)?
+
+This is a manual visual review of the rendered page, not a re-run of the newsroom scripts — it is checking that ChatGPT's writing pass didn't misread or overstate/understate what Claude Code actually found.
+
+**Precedent:** the August 1, 2026 Championship & Season Finale edition's "Shape of the Return" division-movement graphic understated 2022/2023, presenting them as "Division recorded / No title claim in supplied data" — treating the `divisionsInferred: true` provenance flag on those seasons as a data-completeness caveat, when the underlying win-loss records and standings were in fact fully derivable, the same way as 2024–2026. That framing was not something the Editorial Meeting artifact's own confidence table asserted; it was introduced during the ChatGPT prose/layout pass and caught only by Wade visually reviewing the published output against the source data *after* publish. This section exists so that check happens before publishing, not after.
 
 ---
 
