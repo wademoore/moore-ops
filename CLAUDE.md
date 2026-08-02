@@ -39,6 +39,10 @@
 - Update CLAUDE.md after any significant change
 - Use /plan before Planner prompts to enforce no-edit mode
 
+## Branching policy
+
+Direct-to-main after Reviewer sign-off remains this project's default for all Coder/Updater work, including small, well-specified changes. Feature branches are not the default safety mechanism — the Reviewer gate is. Use a feature branch as a deliberate escalation, not routine practice, specifically for changes where the risk is environment-dependent in a way local testing can't fully rule out (e.g. timezone/locale logic, dependency version bumps, anything sensitive to the Lambda runtime specifically) — in those cases, a branch + PR gets a free independent confirmation from CI (which runs under UTC, matching Lambda) before merge, which is a real benefit local subprocess-spawned tests can't fully replicate.
+
 ## Sports data architecture (as of June 2026)
 
 ### Local JSON files (`data/` folder — committed to repo)
@@ -352,6 +356,8 @@ Coder mode must keep tests at 430+. If the number changes, the Documenter should
 **`date|team|ageGroup|event|dq|time` is not a safe uniqueness key for relay rows.** DQ'd relays have `time: null`, so two distinct relay squads from the same club (A, B, C teams all DQ'd in the same event on the same date) collide on that key despite having different swimmer rosters. Any duplicate-detection or dedup logic on relay data must include `swimmers` (or an equivalent roster-level field) in the key. Discovered during the Phase 2 dedup cleanup (July 2026): 3 of 5 initially-flagged "duplicate" pairs were false positives of this kind.
 
 - **Champs/Summer Awards history migration: COMPLETE (August 2026).** Full project history: `docs/data-reload/champs-sa-migration-history.md`. Summary: 2024 Champs, 2025 Champs, and 2026 Summer Awards individual + relay results (3,844 individual + 172 relay rows) parsed and loaded into `league-results-history-v2.json`/`relay-results-history-v2.json`. Includes the wrong-file-write incident and correction that led to the current "current vs. archived" guard rail. Legacy files archived to `data/archive/` as part of this project.
+
+**Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut.
 
 ## Known open items
 
