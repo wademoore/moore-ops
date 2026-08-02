@@ -140,13 +140,13 @@
     "event": "25m Breaststroke",
     "course": "SCM",
     "holders": [
-      "Braden Kimball"
+      "Christian Hunley"
     ],
-    "time": 26.21,
-    "displayTime": "26.21",
-    "year": 2025,
-    "meetDate": "2025-07-21",
-    "meet": "Gators at Wellington Waves",
+    "time": 24.62,
+    "displayTime": "24.62",
+    "year": 2026,
+    "meetDate": "2026-07-20",
+    "meet": "WT vs WF",
     "location": "Wellington Waves Swim Team"
   },
   "Boys 8&Under|25m Backstroke|SCM": {
@@ -170,13 +170,13 @@
     "event": "25m Butterfly",
     "course": "SCM",
     "holders": [
-      "Benjamin Youngs"
+      "Christian Hunley"
     ],
-    "time": 21.96,
-    "displayTime": "21.96",
-    "year": 2014,
-    "meetDate": null,
-    "meet": null,
+    "time": 19.52,
+    "displayTime": "19.52",
+    "year": 2026,
+    "meetDate": "2026-07-20",
+    "meet": "WT vs WF",
     "location": null
   },
   "Girls 9-10|50m Freestyle|SCM": {
@@ -185,13 +185,13 @@
     "event": "50m Freestyle",
     "course": "SCM",
     "holders": [
-      "Lexi O'Neil"
+      "Reagan Swartzel"
     ],
-    "time": 34.47,
-    "displayTime": "34.47",
-    "year": 2017,
-    "meetDate": "2017-08-06",
-    "meet": "VPSU Championship Meet",
+    "time": 33.75,
+    "displayTime": "33.75",
+    "year": 2026,
+    "meetDate": "2026-08-01",
+    "meet": "2026 VPSU Championship Meet",
     "location": "Fort Eustis Pool"
   },
   "Girls 9-10|100m Individual Medley|SCM": {
@@ -215,13 +215,13 @@
     "event": "50m Backstroke",
     "course": "SCM",
     "holders": [
-      "Jaclynn Buzek"
+      "Reagan Swartzel"
     ],
-    "time": 43.37,
-    "displayTime": "43.37",
-    "year": 2021,
-    "meetDate": "2021-06-21",
-    "meet": "Typhoons at Wellington Waves",
+    "time": 42.45,
+    "displayTime": "42.45",
+    "year": 2026,
+    "meetDate": "2026-08-01",
+    "meet": "2026 VPSU Championship Meet",
     "location": "Wellington Waves Swim Team"
   },
   "Girls 9-10|50m Butterfly|SCM": {
@@ -232,11 +232,11 @@
     "holders": [
       "Reagan Swartzel"
     ],
-    "time": 42.81,
-    "displayTime": "42.81",
-    "year": 2025,
-    "meetDate": "2025-07-07",
-    "meet": "Ford's Colony at Wellington Waves",
+    "time": 37.36,
+    "displayTime": "37.36",
+    "year": 2026,
+    "meetDate": "2026-08-01",
+    "meet": "2026 VPSU Championship Meet",
     "location": "Wellington Waves Swim Team"
   },
   "Girls 9-10|50m Breaststroke|SCM": {
@@ -440,13 +440,13 @@
     "event": "50m Breaststroke",
     "course": "SCM",
     "holders": [
-      "Jostin Keithley"
+      "Luke Shnowske"
     ],
-    "time": 39.88,
-    "displayTime": "39.88",
-    "year": 2021,
-    "meetDate": "2021-07-05",
-    "meet": "Kingspoint at Wellington Waves",
+    "time": 38.92,
+    "displayTime": "38.92",
+    "year": 2026,
+    "meetDate": "2026-08-01",
+    "meet": "2026 VPSU Championship Meet",
     "location": "Wellington Waves Swim Team"
   },
   "Boys 11-12|50m Backstroke|SCM": {
@@ -560,13 +560,13 @@
     "event": "100m Individual Medley",
     "course": "SCM",
     "holders": [
-      "Jostin Keithley"
+      "Sam Shnowske"
     ],
-    "time": 68.38,
-    "displayTime": "1:08.38",
-    "year": 2023,
-    "meetDate": "2023-06-16",
-    "meet": "Wellington Waves at Village Green",
+    "time": 64.36,
+    "displayTime": "1:04.36",
+    "year": 2026,
+    "meetDate": "2026-06-15",
+    "meet": "WT vs FDC",
     "location": "Village Green Patriots"
   },
   "Boys 13-14|50m Freestyle|SCM": {
@@ -575,13 +575,13 @@
     "event": "50m Freestyle",
     "course": "SCM",
     "holders": [
-      "Michael Casanave"
+      "Sam Shnowske"
     ],
-    "time": 27.27,
-    "displayTime": "27.27",
-    "year": 2018,
-    "meetDate": "2018-08-04",
-    "meet": "Champs! @ WISC Pool",
+    "time": 26.16,
+    "displayTime": "26.16",
+    "year": 2026,
+    "meetDate": "2026-07-20",
+    "meet": "WT vs WF",
     "location": "WISC Aquatic Center"
   },
   "Boys 13-14|50m Breaststroke|SCM": {
@@ -590,13 +590,13 @@
     "event": "50m Breaststroke",
     "course": "SCM",
     "holders": [
-      "Walker Keithley"
+      "Sam Shnowske"
     ],
-    "time": 35.28,
-    "displayTime": "35.28",
-    "year": 2019,
-    "meetDate": "2019-08-03",
-    "meet": "VPSU Championship Meet",
+    "time": 34.49,
+    "displayTime": "34.49",
+    "year": 2026,
+    "meetDate": "2026-07-13",
+    "meet": "EH vs WT",
     "location": "WISC Pool"
   },
   "Boys 13-14|50m Backstroke|SCM": {
@@ -620,13 +620,13 @@
     "event": "50m Butterfly",
     "course": "SCM",
     "holders": [
-      "Michael Casanave"
+      "Sam Shnowske"
     ],
-    "time": 30.37,
-    "displayTime": "30.37",
-    "year": 2018,
-    "meetDate": "2018-08-04",
-    "meet": "Champs! @ WISC Pool",
+    "time": 28.74,
+    "displayTime": "28.74",
+    "year": 2026,
+    "meetDate": "2026-07-20",
+    "meet": "WT vs WF",
     "location": "WISC Aquatic Center"
   },
   "Women 15-18|100m Individual Medley|SCM": {
@@ -665,13 +665,13 @@
     "event": "50m Breaststroke",
     "course": "SCM",
     "holders": [
-      "Anna Shnowske"
+      "Jaclynn Buzek"
     ],
-    "time": 36.78,
-    "displayTime": "36.78",
-    "year": 2025,
-    "meetDate": "2025-06-30",
-    "meet": "Kingswood Klams at Wellington Waves",
+    "time": 35.55,
+    "displayTime": "35.55",
+    "year": 2026,
+    "meetDate": "2026-06-29",
+    "meet": "WT vs WC",
     "location": "Wellington Waves Swim Team"
   },
   "Women 15-18|50m Backstroke|SCM": {
