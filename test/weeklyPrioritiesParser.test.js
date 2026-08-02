@@ -1,5 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 
 import {
   extractAssignee,
@@ -7,6 +10,9 @@ import {
   classifyEvent,
   partitionEvents,
 } from '../digest/weeklyPrioritiesParser.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const WEEKDAY_FIXTURE = path.join(__dirname, 'fixtures', 'weekday-check.mjs');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -118,5 +124,38 @@ describe('partitionEvents(events, todayMidnight, thisSundayMidnight)', () => {
     assert.equal(result.completed.length, 1);
     assert.equal(result.overdue.length, 1);
     assert.equal(result.active.length, 1);
+    // 2026-05-24 is a Sunday; closes the blind spot where this line ran with no assertion.
+    assert.equal(result.active[0].dueDay, 'Sunday');
+  });
+});
+
+// ── dueDay TZ-independence (subprocess, TZ=UTC) ────────────────────────────────
+//
+// In-process mutation of process.env.TZ mid-test is not reliable — V8's Intl
+// timezone resolution has historically cached at process startup in various
+// versions, so it could silently test nothing while appearing to cover the gap.
+// A real subprocess with TZ=UTC set in the child's env mirrors exactly how the
+// original double-convert bug was validated (buggy code produced a deterministic
+// one-day-backward shift under UTC; 14/14 dates failed before the getDay() fix).
+
+describe('classifyEvent dueDay — TZ=UTC subprocess verification', () => {
+  it('matches expected weekdays for all 9 required dates under TZ=UTC', () => {
+    const output = execFileSync('node', [WEEKDAY_FIXTURE], {
+      env: { ...process.env, TZ: 'UTC' },
+      encoding: 'utf8',
+    });
+    const results = JSON.parse(output);
+
+    assert.deepEqual(results, {
+      '2026-05-18': 'Monday',
+      '2026-05-19': 'Tuesday',
+      '2026-05-20': 'Wednesday',
+      '2026-05-21': 'Thursday',
+      '2026-05-22': 'Friday',
+      '2026-05-23': 'Saturday',
+      '2026-05-24': 'Sunday',
+      '2026-03-08': 'Sunday', // DST spring-forward day
+      '2026-11-01': 'Sunday', // DST fall-back day
+    });
   });
 });

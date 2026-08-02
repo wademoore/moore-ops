@@ -7,6 +7,8 @@ const CALENDAR_ID = '6ac1de94baada01a89e5bcf845d71c5d02301b5a62d9406c1069430341e
 // Pure helpers — exported for unit testing
 // ---------------------------------------------------------------------------
 
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 export function extractAssignee(title) {
   const colonIdx = title.indexOf(':');
   if (colonIdx <= 0) return 'Unassigned';
@@ -34,6 +36,11 @@ export function classifyEvent(event, todayMidnight, thisSundayMidnight) {
     const [y, m, d] = event.end.date.split('-').map(Number);
     endDateMidnight = new Date(y, m - 1, d);
   } else if (event.end?.dateTime) {
+    // NOTE: unlike the all-day branch above, this constructs local-midnight
+    // directly from a raw UTC-instant Date with no ET-anchoring step first —
+    // plausible sibling of the dueDay timezone bug fixed below, but unverified
+    // (no current test exercises event.end.dateTime). Out of scope here — flag
+    // for a future session, do not fix as part of this task.
     const dt = new Date(event.end.dateTime);
     endDateMidnight = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
   }
@@ -47,10 +54,7 @@ export function classifyEvent(event, todayMidnight, thisSundayMidnight) {
 
   let dueDay = null;
   if (endDateMidnight && endDateMidnight.getTime() < thisSundayMidnight.getTime()) {
-    dueDay = endDateMidnight.toLocaleDateString('en-US', {
-      weekday: 'long',
-      timeZone: 'America/New_York',
-    });
+    dueDay = WEEKDAYS[endDateMidnight.getDay()];
   }
 
   return { bucket: 'active', title, assignee, dueDay };
