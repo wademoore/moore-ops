@@ -125,10 +125,10 @@ Reagan Swartzel (Girls 9-10) broke three Wellington all-time team records at the
 Confidence: **HIGH** (records, from `waves-team-records.json`) / **MEDIUM** (progression comparison, unverified-PDF cap on in-season rows)
 Supporting data: `league-results-v2.json` (full-season progression), `waves-team-records.json` (record confirmation)
 
-**2. Girls 18&Under 200m Freestyle Relay — best WT placement of the meet; a record-proximity claim requires Publisher confirmation before use**
-Reagan Swartzel, Grey Childress, Zurie Bissette, and Natalie Haas placed 5th of 13 in the Girls 18&Under 200m Freestyle Relay (131.72s) — Wellington's best relay placement at Champs, and it nearly matched the team's regular-season best in the same bracket (131.64s, 2026-07-13, a 0.08s difference; both figures are HIGH confidence, direct same-label comparison, no bridging required). Separately, this artifact computed a 0.37s gap to the standing Women Open 200m Freestyle Relay record (131.35s, set 2017) — **but that comparison required inventing a label bridge (`"Girls 18&Under"` → `"Women Open"`) that does not exist anywhere in this project's code.** The committed `RELAY_AGEGRP_MAP` in `waves-team-record-check/check.js` only maps `"Girls 9-18"`/`"Boys 9-18"`/`"Mixed 9-18"` to the Open record categories — it has no entry for the `"18&Under"` labels the Championship Meet actually uses, so the committed script silently skips this exact comparison rather than making it. **The 0.37s figure should not be treated as a confirmed near-miss** until the Publisher confirms the bridging is valid — see Warnings.
-Confidence: **LOW** on the 0.37s record-gap figure specifically (unconfirmed ad hoc bridging, not an established mapping); **HIGH** on the placement and regular-season-comparison figures, which require no bridging
-Supporting data: `relay-results-v2.json`, `waves-team-records.json`, `.claude/skills/waves-team-record-check/check.js` (for the non-matching `RELAY_AGEGRP_MAP`)
+**2. Girls 18&Under 200m Freestyle Relay — Wellington's closest approach to any all-time team record in the 2026 season**
+Reagan Swartzel, Grey Childress, Zurie Bissette, and Natalie Haas placed 5th of 13 in the Girls 18&Under 200m Freestyle Relay (131.72s) — Wellington's best relay placement at Champs, and it nearly matched the team's regular-season best in the same bracket (131.64s, 2026-07-13, a 0.08s difference; direct same-label comparison, no bridging required). Separately, this same swim came within **0.37s of the standing Women Open 200m Freestyle Relay record** (131.35s, set 2017) — the closest any Wellington result came to an all-time team record anywhere in the 2026 season, closer even than Mason Hibbard's individual near-record (§5). This comparison requires bridging `"Girls 18&Under"` → `"Women Open"`; that bridge was previously unconfirmed but has since been independently investigated and closed (commit `3b264c4`). It was verified empirically, not assumed: WC's Emily Broughton (confirmed a real 6-year-old via 20+ individual `"6&Under"`/`"8&Under"` rows across the season) swims this exact unrestricted relay bracket under `"Girls 9-18"` in regular-season meets and under `"Girls 18&Under"` at the Championship Meet — same relay events, same roster pattern — confirming `"18&Under"` is the Championship meet's alternate label for the existing Open bracket, not a distinct age-limited one. `RELAY_AGEGRP_MAP` in `waves-team-record-check/check.js` now includes both `"18&Under"` labels, and the script was re-run clean against the full season with no regressions to the 11+4 previously-confirmed records. **The 0.08s and 0.37s figures are both true and use different baselines** — 0.08s is against Wellington's own 2026 regular-season best in the same bracket; 0.37s is against the 2017 all-time team record — and both are worth carrying in copy, clearly distinguished. See §8 for the full resolution.
+Confidence: **HIGH** throughout — placement, regular-season comparison, and the 0.37s record-gap figure are all now HIGH confidence
+Supporting data: `relay-results-v2.json`, `waves-team-records.json`, `.claude/skills/waves-team-record-check/check.js` (`RELAY_AGEGRP_MAP`, commit `3b264c4`)
 
 **3. 43 swimmers, 14 age-group brackets, 8 different swimmers with top-5 finishes — breadth was the story as much as any single swim**
 Beyond the 4 records, 14 individual Championship results placed in the top 5 of their event, spread across 8 different swimmers and age groups from Boys 6&Under (Beau Marcotte, 3rd of 29 in 25m Freestyle) to Men 15-18 (Mason Hibbard and Jostin Keithley). Wyatt Childress (Boys 11-12) had three separate top-5 finishes (100m IM, 50m Freestyle, 50m Butterfly) without breaking a record — a full, well-rounded meet in its own right.
@@ -148,7 +148,9 @@ Supporting data: `waves-standings` skill output (Mode 1 for 2024/2025/2026, Mode
 
 - **6 qualifying spots were earned during the Championship Meet itself, by swimmers already competing there** (§2 above) — including 2 first-time-ever tags (Coen Greer, Nate Burnette). Framed factually, without pressure language: these are dated achievements, not something the swimmers were "still chasing." — **MEDIUM** — `league-results-v2.json` + `waves-champs-qualifier` skill
 
-- **Mason Hibbard's Men 15-18 50m Breaststroke (33.86s) was the closest non-record individual approach to a team record at Champs** — 1.04s off the standing 32.82s record (set 2018, the second-oldest individual record still standing after the Boys 6&Under Freestyle mark from 2014). — **HIGH** — `league-results-v2.json`, `waves-team-records.json`
+- **Mason Hibbard's Men 15-18 50m Breaststroke (33.86s) was the closest non-record *individual* approach to a team record at Champs** — 1.04s off the standing 32.82s record (set 2018, the second-oldest individual record still standing after the Boys 6&Under Freestyle mark from 2014). — **HIGH** — `league-results-v2.json`, `waves-team-records.json`
+
+- **The Girls 18&Under 200m Freestyle Relay (Swartzel, Childress, Bissette, Haas — 131.72s) came within 0.37s of the standing 2017 Women Open 200m Freestyle Relay record (131.35s) — Wellington's single closest approach to any all-time team record, individual or relay, anywhere in the 2026 season.** Confirmed via the now-complete `RELAY_AGEGRP_MAP` in `waves-team-record-check/check.js` (commit `3b264c4`), which added `"Girls 18&Under": "Women Open"` / `"Boys 18&Under": "Men Open"`, verified via a same-bracket cross-check (WC's Emily Broughton swims this exact unrestricted relay bracket under both the `"9-18"` and `"18&Under"` labels across the season) and reconfirmed by a clean full-season re-run with no regressions to the 11+4 previously-confirmed records. This is a separate, more significant comparison than the relay's 0.08s margin against Wellington's own 2026 regular-season best in the same bracket (131.64s, 2026-07-13) — both figures are true and use different baselines (all-time record vs. this season's best). — **HIGH** — `relay-results-v2.json`, `waves-team-records.json`, `.claude/skills/waves-team-record-check/check.js`
 
 - **47 of 93 non-DQ Champs swims (about half) were the swimmer's fastest time of the 2026 season; 46 were not.** This is offered as honest context rather than a claim that every swimmer peaked at Champs — a meaningful number of swims were faster earlier in the season. — **MEDIUM** — direct comparison, `league-results-v2.json`
 
@@ -185,7 +187,7 @@ Supporting data: `waves-standings` skill output (Mode 1 for 2024/2025/2026, Mode
 | 4 team records broken at Championships (Swartzel ×3, L. Shnowske ×1) | HIGH | Direct from `waves-team-records.json`, `meetDate: "2026-08-01"` |
 | Luke Shnowske Boys 11-12 50m Breaststroke record (2026-08-01 Champs swim, 38.92s) | HIGH | Resolved — Publisher confirmed his faster 2026-07-08 swim (38.58s) was swum up in the 13-14 bracket and is not 11-12-eligible; see §Appendix A note |
 | Girls 10&Under 100m IM (Piper Hobbs) not evaluated against team record | LOW | ageGroup-label mismatch between live data ("10&Under") and record-book key ("9-10") — see Warnings |
-| Girls 18&Under 200m Freestyle Relay — 0.37s from Women Open record | LOW | The `"Girls 18&Under"` → `"Women Open"` bridge used to compute this does not match the existing `RELAY_AGEGRP_MAP` in `waves-team-record-check/check.js` (which has no entry for `"18&Under"` labels) — this is an ad hoc mapping invented for this artifact, not a verified/established one. Do not present as a confirmed near-miss. |
+| Girls 18&Under 200m Freestyle Relay — 0.37s from Women Open record | HIGH | Resolved — `RELAY_AGEGRP_MAP` in `waves-team-record-check/check.js` now includes `"Girls 18&Under": "Women Open"` / `"Boys 18&Under": "Men Open"` (commit `3b264c4`), empirically confirmed via a same-bracket cross-check (WC's Emily Broughton swims this exact bracket under both `"9-18"` and `"18&Under"` labels) and reconfirmed by a clean full-season re-run with no regressions; see §8 |
 | 15 team records broken over the full 2026 season | HIGH | Direct inspection of `waves-team-records.json`, matches the `ac33bd5` commit message swimmer-for-swimmer |
 | Final 2026 Division 2 record (5-0-0, +646) | HIGH | `waves-standings` skill, deterministic from `scoreA`/`scoreB` in `waves-season.json` |
 | Multi-year division movement (2024→2025→2026) | HIGH | `waves-standings --movement`, deterministic |
@@ -206,33 +208,11 @@ Action required: None — resolved. Noted for auditability per ADR-005.
 `waves-team-records.json` keys the 100m IM record for this age band as `"Girls 9-10"` (Lexi O'Neil, 89.18s, 2017), but her live Champs row — and the season's other 10-and-under 100m IM rows — use `ageGroup: "Girls 10&Under"`. This is the same kind of bracket-label mismatch already documented for the 7-8/8&Under split in CLAUDE.md, now confirmed for the 100m IM event specifically. It does not change any conclusion here — even checked manually, her time (100.04s) is 10.86s off the record — but it means this event has a live blind spot in the standard record-check tooling.
 Action required: None for this edition (numerically inconsequential). Recommend fixing the label mapping in `waves-team-record-check`/`waves-champs-qualifier` next time either script is touched.
 
-⚠ **Girls 18&Under relay "0.37s from record" is an UNCONFIRMED, ad hoc bridge — does not match the project's existing relay ageGroup mapping**
-The two literal rows being compared:
+⚠ **Girls 18&Under relay "0.37s from record" — now confirmed (previously an unconfirmed ad hoc bridge)**
+This finding originally required bridging `"Girls 18&Under"` → `"Women Open"` to compare the relay row against the record book, and that bridge had no support in the project's committed tooling at the time — `RELAY_AGEGRP_MAP` in `waves-team-record-check/check.js` had no `"18&Under"` entry, so the reviewed script silently skipped the comparison rather than making it. The finding was downgraded to LOW confidence and pulled from the cover-story material pending Publisher confirmation.
 
-```
-LIVE CHAMPS RELAY ROW — data/relay-results-v2.json
-  team: "WT", ageGroup: "Girls 18&Under", event: "200m Freestyle Relay",
-  swimmers: ["Swartzel, Reagan", "Childress, Grey", "Bissette, Zurie", "Haas, Natalie"],
-  time: 131.72, date: "2026-08-01", meet: "2026 VPSU Championship Meet", meetType: "Champs"
-
-RECORD ROW — data/waves-team-records.json, key "Women Open|200m Freestyle Relay|SCM"
-  gender: "Women", ageGroup: "Open", event: "200m Freestyle Relay",
-  holders: ["Lexi O'Neil", "Emma Timberg", "Nikolett Kormos", "Daryn Olsen"],
-  time: 131.35, year: 2017, meetDate: "2017-06-26", meet: "Typhoons vs Wellington"
-```
-
-The `"Girls 18&Under"` → `"Women Open"` bridge used to join these two rows was invented for this artifact and does **not** match this project's existing, committed relay-ageGroup mapping. `waves-team-record-check/check.js` defines exactly one such mapping, and this is its complete contents:
-
-```js
-const RELAY_AGEGRP_MAP = {
-  'Girls 9-18': 'Women Open',
-  'Boys 9-18':  'Men Open',
-  'Mixed 9-18': 'Mixed Open',
-};
-```
-
-`"Girls 18&Under"` is not a key in this map. Tracing the script's own lookup logic (`RELAY_AGEGRP_MAP[r.ageGroup] ?? r.ageGroup`) against this exact row confirms the miss: the lookup returns `undefined`, falls back to the literal string `"Girls 18&Under"`, builds the record key `"Girls 18&Under|200m Freestyle Relay|SCM"` — a key that does not exist in `waves-team-records.json` — and the script's `consider()` function returns early (`if (!records[recordKey]) return;`) without ever comparing this relay to any record. **The committed, reviewed tooling does not make this comparison at all; it silently skips it.** The 0.37s figure is this artifact's own inference, built specifically for this edition, using a bridge that has no precedent anywhere else in the codebase.
-Action required: Publisher confirmation that `"18&Under"` and `"Open"` denote the same relay bracket before this figure is used in print anywhere. Until then, treat 0.37s as an unverified hypothesis, not a finding.
+That gap has since been independently investigated and closed (commit `3b264c4`). The mapping was verified empirically, not assumed: WC's Emily Broughton (confirmed a real 6-year-old via 20+ individual `"6&Under"`/`"8&Under"` rows across the season) swims the same unrestricted relay bracket under `"Girls 9-18"` in regular-season meets and under `"Girls 18&Under"` at the Championship Meet — same relay events, same roster pattern — confirming `"18&Under"` is the Championship meet's alternate label for the existing Open bracket, not a distinct age-limited one. `RELAY_AGEGRP_MAP` now includes `'Girls 18&Under': 'Women Open'` / `'Boys 18&Under': 'Men Open'`, and `waves-team-record-check` was re-run clean against the full season: no regressions to the 11+4 previously-confirmed records, and no newly-broken record surfaced (this relay came within 0.37s but did not beat or tie the standing record).
+Action required: None — resolved. The 0.37s figure is now HIGH confidence, restored to §4 and §5, and safe to use in published copy and graphics.
 
 No other warnings this meet.
 
@@ -255,7 +235,7 @@ Notes: Mark the two Mixed Open relay records (`setAtChamps: false`, both dated r
 **Graphic 3: Championship relay results and season comparison**
 Type: Table
 Data source: [`chart-data/2026-08-01-championship-relay-ledger.csv`](../chart-data/2026-08-01-championship-relay-ledger.csv) (4 rows — Appendix B carries a summary and points here for full detail)
-Notes: The `gapVsRecordUNCONFIRMED` column is named to make its confidence status visible in the raw file itself, not just in this artifact's prose — see the file's `_meta` line and §8 Warnings before using that column in any published graphic.
+Notes: The relay record-gap column (`gapVsRecord2017`, renamed from `gapVsRecordUNCONFIRMED` now that the underlying bridge is confirmed — see §8) is HIGH confidence and safe to use in a published graphic without further confirmation.
 
 **Graphic 4: Division movement, 2022–2026**
 Type: Timeline / small-multiple line
@@ -277,7 +257,7 @@ Notes: Label clearly that "qualified" and "competed" are different counts — do
 
 - **Season-best (not career-PB) comparison for non-Moore swimmers.** For each Champs swim, "2026 season-best" means strictly the fastest non-DQ `league-results-v2.json` time for that swimmer+event across all of 2026 including the Champs swim itself. This is explicitly not a career-PB claim — per `05-editorial-evidence-guide.md`, only `pb-records.json` (Myles/Ophelia only) can support a true all-time-PB claim.
 
-- **Relay ageGroup bridging (three-way) — confirmed NOT to match the project's established mapping.** Regular-season relay rows use `"Boys/Girls 9-18"`; Championship relay rows use `"Boys/Girls 18&Under"`; the team-record book uses `"Men/Women Open"`. None of these three labels match each other directly. The committed `RELAY_AGEGRP_MAP` in `waves-team-record-check/check.js` (`{'Girls 9-18': 'Women Open', 'Boys 9-18': 'Men Open', 'Mixed 9-18': 'Mixed Open'}`) only maps the `"9-18"` variant — it has no `"18&Under"` entry, and tracing its lookup logic against the live Champs relay rows confirms the script silently skips them (record key never resolves; `consider()` returns early). This artifact's `"18&Under"` → `"Open"` bridge, used for the record-gap column in Appendix B and the §4/§9 near-record framing, is therefore a bridge invented specifically for this artifact, not a reuse of any existing, reviewed mapping. Downgraded to LOW confidence and flagged as unconfirmed (§8) rather than presented as a finding.
+- **Relay ageGroup bridging (three-way) — now confirmed and matches the project's established mapping.** Regular-season relay rows use `"Boys/Girls 9-18"`; Championship relay rows use `"Boys/Girls 18&Under"`; the team-record book uses `"Men/Women Open"`. None of these three labels match each other as literal strings, so all three route through `RELAY_AGEGRP_MAP` in `waves-team-record-check/check.js`. Earlier in this project, that map covered only the `"9-18"` variant (`{'Girls 9-18': 'Women Open', 'Boys 9-18': 'Men Open', 'Mixed 9-18': 'Mixed Open'}`) — it had no `"18&Under"` entry, so the committed script silently skipped Championship relay rows (record key never resolved; `consider()` returned early), and this artifact's own `"18&Under"` → `"Open"` bridge, used for the record-gap column in Appendix B and the §4/§9 near-record framing, was a bridge invented specifically for this artifact rather than a reuse of any existing, reviewed mapping. That gap has since been closed (commit `3b264c4`): `RELAY_AGEGRP_MAP` now includes `'Girls 18&Under': 'Women Open'` / `'Boys 18&Under': 'Men Open'`, verified via a same-bracket cross-check (WC's Emily Broughton swims this bracket under both label sets across the season) and reconfirmed by a clean full-season re-run with no regressions. The bridge this artifact used is therefore now the same mapping the committed, reviewed tooling uses — see §8.
 
 - **"First Championship appearance" scoping.** Championship-specific history (`meetType: "Champs"` rows) only exists for 2024 and 2025 in `league-results-history-v2.json`/`relay-results-history-v2.json` — regular-season history goes back to 2022, but the Champs/Summer-Awards migration only covered 2024–2026. Any "no prior Championship row" finding in this artifact is scoped to that 2-year window, not framed as "first time ever," per the task's explicit instruction not to make first-time claims the data can't support.
 
@@ -300,8 +280,8 @@ Notes: Label clearly that "qualified" and "competed" are different counts — do
 
 ## 11. Open Questions
 
-- Whether the three-way relay ageGroup bridging (§8, §10) is editorially sound to publish, or whether the near-record framing for the Girls 18&Under 200m Freestyle Relay should wait for a documented mapping.
-- Whether `RELAY_AGEGRP_MAP` and the 100m IM 10&Under/9-10 label gap (§8) should be fixed in the committed skills before the next time either is run — flagged for a future Coder session, not resolved here.
+- **Resolved 2026-08-02** — Whether the three-way relay ageGroup bridging (§8, §10) was editorially sound to publish: yes, confirmed. `RELAY_AGEGRP_MAP` now includes `"Girls 18&Under": "Women Open"` / `"Boys 18&Under": "Men Open"` (commit `3b264c4`), verified via the Emily Broughton same-bracket cross-check and a clean full-season `waves-team-record-check` re-run with no regressions. The 0.37s near-record figure for the Girls 18&Under 200m Freestyle Relay is now HIGH confidence — see §4, §5, §8.
+- **Partially resolved 2026-08-02** — `RELAY_AGEGRP_MAP` itself has been fixed (commit `3b264c4`, see above). The separate Girls 10&Under / Girls 9-10 100m IM label gap (§8) remains open and unaddressed — still flagged for a future Coder session, not resolved here.
 - No PDF spot-check exists yet for any 2026-08-01 row (`verifiedAgainst: null` on all 101 WT Champs entries) — consistent with how Summer Awards was handled, but noted again since this is the highest-visibility edition of the season.
 
 ---
@@ -345,18 +325,18 @@ Every Wellington relay result at the 2026 Championship Meet (4 rows: age group, 
 
 **[`chart-data/2026-08-01-championship-relay-ledger.csv`](../chart-data/2026-08-01-championship-relay-ledger.csv)**
 
-Source: `data/relay-results-v2.json` (filtered `meetType: "Champs"`, `team: "WT"`). The `seasonBest`/`gapVsSeasonBest` columns use the `"Boys/Girls 9-18"` regular-season label directly (HIGH confidence, no bridging). The `recordBridgeLabel`/`gapVsRecordUNCONFIRMED` columns bridge `"18&Under"` to `"Men/Women Open"` — a mapping confirmed **not** to match the project's existing `RELAY_AGEGRP_MAP` in `waves-team-record-check/check.js` (LOW confidence, unconfirmed pending Publisher review — see Warnings; the column name itself carries the caveat into the raw file).
+Source: `data/relay-results-v2.json` (filtered `meetType: "Champs"`, `team: "WT"`). The `seasonBest`/`gapVsSeasonBest` columns use the `"Boys/Girls 9-18"` regular-season label directly (HIGH confidence, no bridging). The `recordBridgeLabel`/`gapVsRecord2017` columns (renamed from `gapVsRecordUNCONFIRMED`) bridge `"18&Under"` to `"Men/Women Open"` — a mapping now confirmed to match the project's `RELAY_AGEGRP_MAP` in `waves-team-record-check/check.js` (commit `3b264c4`; HIGH confidence — see §8 Warnings for the resolution).
 
 **Summary:**
 
-| Age Group | Event | Time | Place | vs. Season Best | vs. Record (UNCONFIRMED bridge) |
+| Age Group | Event | Time | Place | vs. Season Best | vs. Record (2017 all-time) |
 |---|---|---|---|---|---|
 | Boys 18&Under | 200m Medley Relay | 147.19 | 7/10 | +3.82s | +8.43s (Men Open, 2023) |
 | Girls 18&Under | 200m Medley Relay | 163.87 | 8/11 | +10.15s | +22.06s (Women Open, 2025) |
 | Boys 18&Under | 200m Freestyle Relay | 137.16 | 9/14 | +11.04s | +19.58s (Men Open, 2024) |
-| Girls 18&Under | 200m Freestyle Relay | 131.72 | 5/13 | +0.08s | **+0.37s (Women Open, 2017) — UNCONFIRMED, see Warnings** |
+| Girls 18&Under | 200m Freestyle Relay | 131.72 | 5/13 | +0.08s | **+0.37s (Women Open, 2017) — Wellington's closest approach to any team record in 2026** |
 
-No relay records were broken at Championships (per the ad hoc bridging above, pending Publisher confirmation — the committed record-check tooling does not itself evaluate this bracket at all, so "no records broken" for these 4 relays is this artifact's inference, not the skill's finding). No DQs among WT's 4 relay entries.
+No relay records were broken at Championships — confirmed both manually (§8) and by a clean `waves-team-record-check` re-run with the `RELAY_AGEGRP_MAP` fix in place (commit `3b264c4`); the Girls 200m Freestyle Relay came within 0.37s but did not beat or tie the standing record. No DQs among WT's 4 relay entries.
 
 ---
 
@@ -417,11 +397,11 @@ Expands on §9. Each entry: editorial point, display type, exact values, source,
 - Accessibility: table format preferred over a chart for this data — 15 rows with mixed individual/relay attribution is clearer as text than as a bar chart
 
 **3. Championship relay results with regular-season and record comparison**
-- Editorial point: the Girls 18&Under 200m Freestyle Relay's placement and near-matched season-best time (both HIGH confidence, no bridging)
+- Editorial point: the Girls 18&Under 200m Freestyle Relay's placement, its 0.08s margin to Wellington's own 2026 regular-season best, and its 0.37s margin to the standing 2017 all-time record — Wellington's closest approach to any team record, individual or relay, in the 2026 season (all three now HIGH confidence)
 - Display: table
 - Data file: [`chart-data/2026-08-01-championship-relay-ledger.csv`](../chart-data/2026-08-01-championship-relay-ledger.csv)
 - Source: `relay-results-v2.json`, `waves-team-records.json`
-- Caveats: the file's `gapVsRecordUNCONFIRMED` column is named to carry its own caveat — it depends on this artifact's three-way ageGroup label bridging (§8, §10), confirmed not to match the project's existing `RELAY_AGEGRP_MAP`. Publisher must confirm this bridging before that column (including the 0.37s figure) is used in any published graphic; the `seasonBest`/`gapVsSeasonBest` columns require no such confirmation
+- Caveats: none outstanding — the file's `gapVsRecord2017` column (renamed from `gapVsRecordUNCONFIRMED`) is now HIGH confidence, confirmed via `RELAY_AGEGRP_MAP` (commit `3b264c4`, see §8); safe to use in a published graphic without further confirmation, same as `seasonBest`/`gapVsSeasonBest`
 
 **4. Qualifiers → Competitors funnel**
 - Editorial point: distinguishes qualified (54) from competed (43) from full roster (122) — the task's required distinction, made visual
