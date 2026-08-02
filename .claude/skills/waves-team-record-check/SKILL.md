@@ -34,10 +34,8 @@ Team-wide in scope (any WT swimmer, not just Myles/Ophelia) — distinct from
 
 League results carry `ageGroup` directly. `relay-results-v2.json` stores relay ageGroups
 as age-range labels (`"Girls 9-18"`, `"Boys 9-18"`, `"Mixed 9-18"`); `check.js` normalizes
-these to the `"Women Open"` / `"Men Open"` format used in `waves-team-records.json` via
-`RELAY_AGEGRP_MAP` at the read boundary. `"Mixed 9-18"` has no corresponding record
-category and is silently dropped pending Wade's decision on whether Mixed Open records
-should exist.
+these to the `"Women Open"` / `"Men Open"` / `"Mixed Open"` format used in
+`waves-team-records.json` via `RELAY_AGEGRP_MAP` at the read boundary.
 
 Results whose `ageGroup` has no matching entry in `waves-team-records.json`
 (e.g. `"Girls 7-8"`, `"Boys 10&Under"`) are silently skipped — those brackets have
