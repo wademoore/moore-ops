@@ -301,6 +301,8 @@ Notes: Label clearly that "qualified" and "competed" are different counts — do
 
 - **Team-record bracket coverage.** `waves-team-records.json` has no entries for the `"Boys 7-8"`/`"Girls 7-8"` brackets (documented, pre-existing gap) — 8 Champs rows in those brackets are marked "N/A — no record exists for this bracket," not "no record broken."
 
+- **Chart data format — deviates from `12-claude-deliverables.md`, deliberately.** `12-claude-deliverables.md` §2 ("Chart Data Files") is not silent on this and does not present inline tables as an option: it specifies standalone CSV/JSON files at `docs/editorial/chart-data/YYYY-MM-DD-[description].csv`/`.json`, each with a `_meta`/comment line citing source and generation date. This artifact instead used inline markdown tables throughout Appendix E, per this specific task's own instruction ("as a committed data file or inline table — your choice, but it must be reusable"). That instruction is a one-off Publisher directive for this edition, not a revision to the standing project convention — future editions should default back to standalone chart-data files per `12-claude-deliverables.md` unless told otherwise. No standalone chart-data files were produced for this edition.
+
 ---
 
 ## 11. Open Questions
