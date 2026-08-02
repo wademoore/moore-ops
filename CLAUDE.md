@@ -57,6 +57,7 @@
 - `relay-results-v2.json` — **v2 schema** of current-season relay results; 575 rows (Phase 2 re-parse + dedup, July 2026 — up from pre-Phase-2 count of 455; recovered NS/DNF/DQ rows and B/C relay entries); same 54-meet scope as `league-results-v2.json`. Same provenance fields (no `exhibition` field). The v1 `relay-results.json` is archived at `data/archive/`.
 - `waves-team-records.json` — Wellington Waves all-time team records by age group and event; Updater-managed
 - `waves-awards.json` — Wellington Waves end-of-season banquet awards; Updater-managed. Schema: `awards` array with `year`, `awardName`, `ageGroup`, `recipient` (First Last format), `team`. Currently seeded with Moore family entries only (Myles and Ophelia, 2025 Most Improved), by Wade's explicit choice — schema supports any swimmer. **Not yet read by any code** — dashboard integration is a future task, not yet scoped.
+- `waves-champs-team-scores.json` — combined team standings for VPSU Championship meets, Updater-managed. Not yet read by any code (no digest/render integration).
 
 The current files above are read directly by `digest/builder.js` via `fs.readFile` — no Drive fetch. To update them, edit the files in the repo and redeploy, or use the Updater agent to push new versions.
 

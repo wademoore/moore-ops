@@ -4811,7 +4811,7 @@
       "rowCountExpected": null,
       "rowCountParsed": 1369,
       "plausibilityFlags": 4,
-      "notes": "First Champs meet parsed directly into league-results-v2.json/relay-results-v2.json (not the history-v2 migration path). meetType field added to pdf-reload-parser.mjs to support this."
+      "notes": "First Champs meet parsed directly into league-results-v2.json/relay-results-v2.json (not the history-v2 migration path). meetType field added to pdf-reload-parser.mjs to support this. Correction: a combined team-score result does exist for this meet, in a separate one-page PDF not covered by the original individual-results check — see data/waves-champs-team-scores.json and its source PDF (data-source-pdfs/2026/Team_Scores_VPSU_Champs_08_01_2026___Meet_Maestro™.pdf). This is Updater-managed manual entry, not pdf-reload-parser.mjs output — rowCountParsed/parsedIntoV2 above do not reflect it."
     }
   ]
 }

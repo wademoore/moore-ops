@@ -9,6 +9,13 @@ certainly follows the dual-meet convention below for its own dual meets,
 but this hasn't been confirmed against a VPSU-specific bylaw supplement —
 treat as a working assumption, not verified VPSU policy.
 
+**Exception:** `data/waves-champs-team-scores.json` tracks combined
+points-based team standings for VPSU Championship meets specifically,
+sourced directly from VPSU's own team-scores report. This is distinct
+from the win-loss/point-differential tracking used for dual and
+triangular meets (waves-season.json), which remains this project's
+default convention.
+
 **Dual meets** (2 teams — most VPSU regular-season meets):
 - Individual events: 5-3-1-0
 - Relays: 7-0

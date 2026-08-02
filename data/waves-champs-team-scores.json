@@ -1,0 +1,31 @@
+{
+  "champsTeamScores": [
+    {
+      "year": 2026,
+      "meet": "2026 VPSU Championship Meet",
+      "date": "2026-08-01",
+      "throughEvent": 56,
+      "teamTotal": 9199,
+      "standings": [
+        { "rank": 1, "team": "FTC", "teamName": "First Colony", "points": 1639 },
+        { "rank": 2, "team": "KW", "teamName": "Kingswood Klams", "points": 1341.5 },
+        { "rank": 3, "team": "FDC", "teamName": "Ford's Colony", "points": 1044 },
+        { "rank": 4, "team": "GS", "teamName": "Gators", "points": 909.5 },
+        { "rank": 5, "team": "QL", "teamName": "Queens Lake", "points": 703.5 },
+        { "rank": 6, "team": "WF", "teamName": "Windsor Forest", "points": 641.5 },
+        { "rank": 7, "team": "KM", "teamName": "Kingsmill Sharks", "points": 568 },
+        { "rank": 8, "team": "WT", "teamName": "Wellington Waves", "points": 559.5 },
+        { "rank": 9, "team": "EH", "teamName": "Edgehill Eels", "points": 495.5 },
+        { "rank": 10, "team": "PS", "teamName": "Seastars", "points": 328 },
+        { "rank": 11, "team": "WGPRA", "teamName": "WGP WAVES", "points": 258 },
+        { "rank": 12, "team": "WC", "teamName": "WCP Manta Rays", "points": 217.5 },
+        { "rank": 13, "team": "KP", "teamName": "Kingspoint", "points": 171 },
+        { "rank": 14, "team": "WPD", "teamName": "WP Dolphins", "points": 97 },
+        { "rank": 15, "team": "GLT", "teamName": "Typhoons", "points": 78.5 },
+        { "rank": 16, "team": "SH", "teamName": "Splash", "points": 73 },
+        { "rank": 17, "team": "IP", "teamName": "IP Stingrays", "points": 43 },
+        { "rank": 18, "team": "VW", "teamName": "VW Kraken", "points": 31 }
+      ]
+    }
+  ]
+}
