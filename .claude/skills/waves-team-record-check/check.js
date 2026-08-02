@@ -56,12 +56,19 @@ for (const r of league.filter(r => r.team === 'WT' && !r.dq)) {
 }
 
 // relay-results-v2.json uses age-range brackets ("Girls 9-18", "Boys 9-18",
-// "Mixed 9-18"); waves-team-records.json relay keys use "Women Open" / "Men Open"
-// / "Mixed Open". Normalize at read boundary so relay rows produce matching keys.
+// "Mixed 9-18") for regular-season meets and "Girls 18&Under" / "Boys 18&Under"
+// for the VPSU Championship Meet — both label the same unrestricted Open relay
+// bracket (confirmed 2026-08-02: WC's Emily Broughton, age 6, swims the "9-18"
+// bracket in regular-season relays and the "18&Under" bracket at Championships
+// with the same roster pattern). waves-team-records.json relay keys use
+// "Women Open" / "Men Open" / "Mixed Open". Normalize at read boundary so relay
+// rows from either label set produce matching keys.
 const RELAY_AGEGRP_MAP = {
-  'Girls 9-18': 'Women Open',
-  'Boys 9-18':  'Men Open',
-  'Mixed 9-18': 'Mixed Open',
+  'Girls 9-18':       'Women Open',
+  'Boys 9-18':        'Men Open',
+  'Mixed 9-18':       'Mixed Open',
+  'Girls 18&Under':   'Women Open',
+  'Boys 18&Under':    'Men Open',
 };
 
 // ── Ingest relay results (WT, !dq) ───────────────────────────────────────────
