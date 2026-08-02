@@ -24,5 +24,6 @@
   {"swimmer": "Moore Myles",   "event": "50m Breaststroke",       "date": "2026-07-20", "pb": false, "note": "off-day swim, not a PB (PB remains 1:09.01 from Jul 8)"},
   {"swimmer": "Moore Myles",   "event": "50m Backstroke",         "date": "2026-07-20", "pb": true,  "note": "new PB, down from 1:15.97"},
   {"swimmer": "Moore Ophelia", "event": "25m Breaststroke",       "date": "2026-07-20", "pb": false, "note": "off her 36.52 PB from Jul 8"},
-  {"swimmer": "Moore Ophelia", "event": "25m Butterfly",          "date": "2026-07-20", "pb": false, "note": "DQ; does not affect existing Champs qualification (qualified Jun 29, PB stands at 34.38 from Jul 8)"}
+  {"swimmer": "Moore Ophelia", "event": "25m Butterfly",          "date": "2026-07-20", "pb": false, "note": "DQ; does not affect existing Champs qualification (qualified Jun 29, PB stands at 34.38 from Jul 8)"},
+  {"swimmer": "Moore Ophelia", "event": "25m Butterfly",          "date": "2026-08-01", "pb": true,  "note": "new PB at 2026 VPSU Championship Meet, down from 34.38 (Jul 8)"}
 ]
