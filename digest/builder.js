@@ -163,9 +163,10 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object[]}     [params.swimResults]      Swim results array (data/swim-results.json)
  * @param {object}       [params.wavesSeasonData]  Waves season data (data/waves-season.json)
  * @param {object|null}  [params.vpsuRankings]     VPSU league rankings (data/vpsu-rankings.json); null on file error
+ * @param {object|null}  [params.sharksData]       Tidewater Sharks soccer season data (data/sharks-soccer.json)
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -175,6 +176,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   if (pbRecords        === undefined) pbRecords        = await readDataFile('pb-records.json');
   if (swimResults      === undefined) swimResults      = await readDataFile('swim-results.json');
   if (wavesSeasonData  === undefined) wavesSeasonData  = await readDataFile('waves-season.json');
+  if (sharksData       === undefined) sharksData       = await readDataFile('sharks-soccer.json');
   if (vpsuRankings     === undefined) {
     try { vpsuRankings = await readDataFile('vpsu-rankings.json'); }
     catch { vpsuRankings = null; }  // non-critical — treat missing file as no rankings
@@ -279,7 +281,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   const activityComms = buildActivityCommsLines(emails, gmailHits);
 
   // ── 12. Athletics data ───────────────────────────────────────────────────
-  const athletics = parseAthleticsDoc(today, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations);
+  const athletics = parseAthleticsDoc(today, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData);
 
   // Cross-reference calendar for flag game this week
   const flagGameEvent = allResolved.find(ev => ev.isFlagGame);

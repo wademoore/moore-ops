@@ -13,12 +13,13 @@ import { isSeasonActive }     from './sportsConfig.js';
 import { parseFlagFootball }  from './flagFootballParser.js';
 import { parseSwim }          from './swimParser.js';
 import { parseWaves }         from './wavesParser.js';
+import { parseSharks }        from './sharksParser.js';
 
 // ---------------------------------------------------------------------------
 // PUBLIC EXPORTS
 // ---------------------------------------------------------------------------
 
-export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings = null, v2Results = null, annotations = null) {
+export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings = null, v2Results = null, annotations = null, sharksSoccerData = null) {
   if (!config) throw new Error('[athleticsParser] config is required — ensure data/sports-config.json is present and valid');
   if (!flagFootballData) return buildEmptyAthletics();
 
@@ -38,6 +39,14 @@ export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootba
 
   // ── Swim fields ───────────────────────────────────────────────────────────
   const swim = parseSwim(pbRecords || {}, swimResults || [], referenceDate, config, vpsuRankings, v2Results, annotations);
+
+  // ── Sharks soccer fields ─────────────────────────────────────────────────
+  const sharks = parseSharks(sharksSoccerData || null, referenceDate);
+
+  const sharksRecord = `${sharks.seasonRecord.wins}-${sharks.seasonRecord.losses}-${sharks.seasonRecord.ties}`;
+  const sharksLastResult = sharks.lastResult
+    ? `${sharks.lastResult.result} ${sharks.lastResult.sharksScore}–${sharks.lastResult.opponentScore} vs ${sharks.lastResult.opponent}`
+    : '';
 
   return {
     // Season-active flags (consumed by render/dashboard.js for card visibility)
@@ -79,6 +88,20 @@ export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootba
     opheliaSeason:    swim.opheliaSeason,
     opheliaPBRows:    swim.opheliaPBRows,
     opheliaFooter:    swim.opheliaFooter,
+
+    // Tidewater Sharks soccer
+    // Flat fields (sharksRecord/sharksLastResult/sharksNextOpponent/sharksNextTime)
+    // preserve the pre-existing renderSharksCard contract. sharksNextGame /
+    // sharksDivisionStanding / sharksDivisionLabel / sharksLastResultDetail
+    // are the richer fields the extended card reads for venue/home-away/standing.
+    sharksRecord:             sharksRecord,
+    sharksLastResult:         sharksLastResult,
+    sharksNextOpponent:       sharks.nextGame?.opponent ?? null,
+    sharksNextTime:           sharks.nextGame?.time ?? null,
+    sharksNextGame:           sharks.nextGame,
+    sharksDivisionStanding:   sharks.divisionStanding,
+    sharksDivisionLabel:      sharks.divisionLabel,
+    sharksLastResultDetail:   sharks.lastResult,
   };
 }
 
@@ -107,5 +130,10 @@ export function buildEmptyAthletics() {
 
     // Ophelia swim
     opheliaSeason: 'Pre-Season', opheliaPBRows: [], opheliaFooter: '',
+
+    // Tidewater Sharks soccer
+    sharksRecord: '0-0-0', sharksLastResult: '', sharksNextOpponent: null,
+    sharksNextTime: null, sharksNextGame: null, sharksDivisionStanding: null,
+    sharksDivisionLabel: null, sharksLastResultDetail: null,
   };
 }

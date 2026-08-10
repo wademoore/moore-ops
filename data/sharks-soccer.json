@@ -1,0 +1,92 @@
+{
+  "seasons": [
+    {
+      "season": "Fall 2026",
+      "league": "TASL",
+      "division": "U11 Boys Sky Division",
+      "team": {
+        "name": "Tidewater Sharks Premier White",
+        "displayName": "Tidewater Sharks U11 Premier White",
+        "headCoach": "Kyle Grizzard"
+      },
+      "divisionSchedule": {
+        "division": "U11 Boys Sky Division",
+        "bracket": "Bracket A",
+        "asOf": "2026-08-10",
+        "note": "Partial schedule (8 games/team, not full round-robin of 10 opponents). Venue discrepancy flagged: match #673 shown as '9v9 #8b' on the TASL schedule page vs '9v9 #6b' on Myles's calendar invite — verify against the live GotSport page before treating either as authoritative.",
+        "matches": [
+          { "matchNumber": 636, "date": "2026-08-29", "time": "08:00", "homeTeam": "Beach FC B2015/16 Perkins Dragons", "awayTeam": "VA Rush Soccer Club VAR U11B Coastal Strikers", "venue": "Hampton Roads Soccer Complex - 9v9 #8a", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 637, "date": "2026-08-29", "time": "12:30", "homeTeam": "Chesapeake United SC 2015/2016B Reapers", "awayTeam": "VA Rush Soccer Club VAR U11B Killer Bees", "venue": "Centerville Soccer Complex - 9B 9v9 CUSC", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 633, "date": "2026-08-29", "time": "13:00", "homeTeam": "Carolina United (CUSA) Lightning - U11B (Daniels)", "awayTeam": "Beach FC B2015/16 Anderson Waves", "venue": "River Road Middle School - RRMS 2", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 634, "date": "2026-08-29", "time": "16:00", "homeTeam": "VIP United TASL B2015/2016 Red (VA)", "awayTeam": "Beach FC B2015/16 Brammer Breakers", "venue": "Fort Monroe Soccer Fields - Field #2", "played": false, "homeScore": null, "awayScore": null },
+
+          { "matchNumber": 639, "date": "2026-09-12", "time": "08:00", "homeTeam": "Chesapeake United SC 2015/2016B Reapers", "awayTeam": "Beach FC B2015/16 Perkins Dragons", "venue": "Centerville Soccer Complex - 9B 9v9 CUSC", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 642, "date": "2026-09-12", "time": "08:00", "homeTeam": "Beach FC B2015/16 Brammer Breakers", "awayTeam": "Beach FC B2015/16 Anderson Waves", "venue": "Hampton Roads Soccer Complex - 9v9 #8a", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 674, "date": "2026-09-12", "time": "09:30", "homeTeam": "VA Rush Soccer Club VAR U11B Coastal Strikers", "awayTeam": "Carolina United (CUSA) Lightning - U11B (Daniels)", "venue": "Hampton Roads Soccer Complex - 9v9 #8a", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 640, "date": "2026-09-12", "time": "11:00", "homeTeam": "VA Rush Soccer Club VAR U11B Coastal Strikers", "awayTeam": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "venue": "Hampton Roads Soccer Complex - 9v9 #8a", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 641, "date": "2026-09-12", "time": "13:15", "homeTeam": "Tidewater Sharks Premier White", "awayTeam": "VIP United TASL B2015/2016 Red (VA)", "venue": "Blayton Elem School - BLAY 3", "address": "800 Jolly Pond Rd, Williamsburg, VA 23188", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 638, "date": "2026-09-12", "time": "13:30", "homeTeam": "Baystars FC TASL B2015/16 Tsunami", "awayTeam": "VA Rush Soccer Club VAR U11B Killer Bees", "venue": "Woodville Park - Wood 6 9v9", "played": false, "homeScore": null, "awayScore": null },
+
+          { "matchNumber": 646, "date": "2026-09-19", "time": "08:00", "homeTeam": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "awayTeam": "Chesapeake United SC 2015/2016B Reapers", "venue": "Centerville Soccer Complex - 6A CSC", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 676, "date": "2026-09-19", "time": "11:00", "homeTeam": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "awayTeam": "VA Rush Soccer Club VAR U11B Killer Bees", "venue": "Centerville Soccer Complex - 6A CSC", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 643, "date": "2026-09-19", "time": "11:00", "homeTeam": "Beach FC B2015/16 Brammer Breakers", "awayTeam": "Carolina United (CUSA) Lightning - U11B (Daniels)", "venue": "Hampton Roads Soccer Complex - HRSC #1", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 645, "date": "2026-09-19", "time": "13:00", "homeTeam": "VIP United TASL B2015/2016 Red (VA)", "awayTeam": "VA Rush Soccer Club VAR U11B Coastal Strikers", "venue": "Fort Monroe Soccer Fields - Field #2 9v9", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 647, "date": "2026-09-19", "time": "13:30", "homeTeam": "Baystars FC TASL B2015/16 Tsunami", "awayTeam": "Beach FC B2015/16 Perkins Dragons", "venue": "Woodville Park - WOOD 2 7v7", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 644, "date": "2026-09-19", "time": "14:00", "homeTeam": "Beach FC B2015/16 Anderson Waves", "awayTeam": "Tidewater Sharks Premier White", "venue": "Hampton Roads Soccer Complex - HRSC #1", "address": "2276 Recreation Dr, Virginia Beach, VA 23456", "note": "Same day as W&M Football home game vs Fordham — check family calendar for conflicts.", "played": false, "homeScore": null, "awayScore": null },
+
+          { "matchNumber": 648, "date": "2026-09-26", "time": "08:00", "homeTeam": "VA Rush Soccer Club VAR U11B Killer Bees", "awayTeam": "Beach FC B2015/16 Perkins Dragons", "venue": "Hampton Roads Soccer Complex - 9v9 #8a", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 652, "date": "2026-09-26", "time": "11:00", "homeTeam": "Tidewater Sharks Premier White", "awayTeam": "Carolina United (CUSA) Lightning - U11B (Daniels)", "venue": "Blayton Elem School - BLAY 3", "address": "800 Jolly Pond Rd, Williamsburg, VA 23188", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 649, "date": "2026-09-26", "time": "11:00", "homeTeam": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "awayTeam": "Baystars FC TASL B2015/16 Tsunami", "venue": "Centerville Soccer Complex - 6A CSC", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 650, "date": "2026-09-26", "time": "12:30", "homeTeam": "Chesapeake United SC 2015/2016B Reapers", "awayTeam": "VIP United TASL B2015/2016 Red (VA)", "venue": "Centerville Soccer Complex - 9B 9v9 CUSC", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 651, "date": "2026-09-26", "time": "14:00", "homeTeam": "VA Rush Soccer Club VAR U11B Coastal Strikers", "awayTeam": "Beach FC B2015/16 Anderson Waves", "venue": "Hampton Roads Soccer Complex - 9v9 #8a", "played": false, "homeScore": null, "awayScore": null },
+
+          { "matchNumber": 657, "date": "2026-10-03", "time": "08:30", "homeTeam": "VA Rush Soccer Club VAR U11B Coastal Strikers", "awayTeam": "Beach FC B2015/16 Brammer Breakers", "venue": "Hampton Roads Soccer Complex - HRSC #1", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 653, "date": "2026-10-03", "time": "09:30", "homeTeam": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "awayTeam": "Beach FC B2015/16 Perkins Dragons", "venue": "Centerville Soccer Complex - 6A CSC", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 655, "date": "2026-10-03", "time": "11:00", "homeTeam": "Beach FC B2015/16 Anderson Waves", "awayTeam": "Baystars FC TASL B2015/16 Tsunami", "venue": "Hampton Roads Soccer Complex - HRSC #1", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 654, "date": "2026-10-03", "time": "13:00", "homeTeam": "VIP United TASL B2015/2016 Red (VA)", "awayTeam": "VA Rush Soccer Club VAR U11B Killer Bees", "venue": "Fort Monroe Soccer Fields - Field #2 9v9", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 656, "date": "2026-10-03", "time": "16:30", "homeTeam": "Carolina United (CUSA) Lightning - U11B (Daniels)", "awayTeam": "Chesapeake United SC 2015/2016B Reapers", "venue": "River Road Middle School - RRMS 2", "played": false, "homeScore": null, "awayScore": null },
+
+          { "matchNumber": 661, "date": "2026-10-17", "time": "08:30", "homeTeam": "VA Rush Soccer Club VAR U11B Killer Bees", "awayTeam": "Beach FC B2015/16 Anderson Waves", "venue": "Hampton Roads Soccer Complex - 9v9 #8a", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 659, "date": "2026-10-17", "time": "08:30", "homeTeam": "Beach FC B2015/16 Brammer Breakers", "awayTeam": "Chesapeake United SC 2015/2016B Reapers", "venue": "Hampton Roads Soccer Complex - 9v9 #8b", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 658, "date": "2026-10-17", "time": "10:30", "homeTeam": "Tidewater Sharks Premier White", "awayTeam": "VA Rush Soccer Club VAR U11B Coastal Strikers", "venue": "Blayton Elem School - BLAY 3", "address": "800 Jolly Pond Rd, Williamsburg, VA 23188", "note": "Doubleheader day — second game (vs Chesapeake SC Galaxy Gold, match #635) at 1:30 PM, same field.", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 635, "date": "2026-10-17", "time": "13:30", "homeTeam": "Tidewater Sharks Premier White", "awayTeam": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "venue": "Blayton Elem School - BLAY 3", "address": "800 Jolly Pond Rd, Williamsburg, VA 23188", "note": "Doubleheader day — first game (vs VA Rush, match #658) at 10:30 AM, same field.", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 660, "date": "2026-10-17", "time": "13:30", "homeTeam": "Baystars FC TASL B2015/16 Tsunami", "awayTeam": "Carolina United (CUSA) Lightning - U11B (Daniels)", "venue": "Woodville Park - Wood 6 9v9", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 662, "date": "2026-10-17", "time": "14:00", "homeTeam": "Beach FC B2015/16 Perkins Dragons", "awayTeam": "VIP United TASL B2015/2016 Red (VA)", "venue": "Hampton Roads Soccer Complex - 9v9 #8a", "played": false, "homeScore": null, "awayScore": null },
+
+          { "matchNumber": 667, "date": "2026-10-24", "time": "11:00", "homeTeam": "Chesapeake United SC 2015/2016B Reapers", "awayTeam": "Tidewater Sharks Premier White", "venue": "Centerville Soccer Complex - 9B 9v9 CUSC", "address": "1857 Centerville Turnpike S, Chesapeake, VA 23322", "note": "Game ends ~noon; same day as W&M Homecoming (3:30 PM) — likely requires adults to split coverage.", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 663, "date": "2026-10-24", "time": "13:00", "homeTeam": "VIP United TASL B2015/2016 Red (VA)", "awayTeam": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "venue": "Fort Monroe Soccer Fields - Field #2 9v9", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 666, "date": "2026-10-24", "time": "13:30", "homeTeam": "Beach FC B2015/16 Brammer Breakers", "awayTeam": "Baystars FC TASL B2015/16 Tsunami", "venue": "Hampton Roads Soccer Complex - HRSC #13B", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 665, "date": "2026-10-24", "time": "15:30", "homeTeam": "VA Rush Soccer Club VAR U11B Killer Bees", "awayTeam": "Carolina United (CUSA) Lightning - U11B (Daniels)", "venue": "Hampton Roads Soccer Complex - HRSC #1", "played": false, "homeScore": null, "awayScore": null },
+
+          { "matchNumber": 670, "date": "2026-10-31", "time": "08:00", "homeTeam": "Beach FC B2015/16 Brammer Breakers", "awayTeam": "VA Rush Soccer Club VAR U11B Killer Bees", "venue": "Hampton Roads Soccer Complex - 9v9 #8b", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 671, "date": "2026-10-31", "time": "10:30", "homeTeam": "Carolina United (CUSA) Lightning - U11B (Daniels)", "awayTeam": "Beach FC B2015/16 Perkins Dragons", "venue": "River Road Middle School - RRMS 2", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 669, "date": "2026-10-31", "time": "10:30", "homeTeam": "Baystars FC TASL B2015/16 Tsunami", "awayTeam": "Tidewater Sharks Premier White", "venue": "Woodville Park - Wood 7", "address": "3904 Woodville Park Rd, Gloucester, VA 23061", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 668, "date": "2026-10-31", "time": "12:00", "homeTeam": "VA Rush Soccer Club VAR U11B Coastal Strikers", "awayTeam": "Chesapeake United SC 2015/2016B Reapers", "venue": "Hampton Roads Soccer Complex - HRSC #13B", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 675, "date": "2026-10-31", "time": "13:30", "homeTeam": "Baystars FC TASL B2015/16 Tsunami", "awayTeam": "VIP United TASL B2015/2016 Red (VA)", "venue": "Woodville Park - Wood 7", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 672, "date": "2026-10-31", "time": "14:00", "homeTeam": "Beach FC B2015/16 Anderson Waves", "awayTeam": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "venue": "Hampton Roads Soccer Complex - 9v9 #8b", "played": false, "homeScore": null, "awayScore": null },
+
+          { "matchNumber": 664, "date": "2026-11-07", "time": "08:30", "homeTeam": "Beach FC B2015/16 Perkins Dragons", "awayTeam": "Beach FC B2015/16 Anderson Waves", "venue": "Hampton Roads Soccer Complex - 9v9 #8b", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 673, "date": "2026-11-07", "time": "10:00", "homeTeam": "Beach FC B2015/16 Brammer Breakers", "awayTeam": "Tidewater Sharks Premier White", "venue": "Hampton Roads Soccer Complex - 9v9 #8b", "address": "2276 Recreation Dr, Virginia Beach, VA 23456", "note": "Venue label discrepancy — shown as '9v9 #8b' on the TASL schedule page, '9v9 #6b' on the original calendar invite. Same day as W&M Football home game vs Lafayette — check family calendar for conflicts.", "played": false, "homeScore": null, "awayScore": null }
+        ]
+      },
+      "standings": {
+        "asOf": "2026-08-10",
+        "bracket": "Bracket A",
+        "source": "manual paste from GotSport division page (automated fetch blocked, same as TASL schedule pages)",
+        "teams": [
+          { "rank": 1, "team": "Beach FC B2015/16 Anderson Waves", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
+          { "rank": 2, "team": "VIP United TASL B2015/2016 Red (VA)", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
+          { "rank": 3, "team": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
+          { "rank": 4, "team": "Beach FC B2015/16 Perkins Dragons", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
+          { "rank": 5, "team": "VA Rush Soccer Club VAR U11B Killer Bees", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
+          { "rank": 6, "team": "Baystars FC TASL B2015/16 Tsunami", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
+          { "rank": 7, "team": "Chesapeake United SC 2015/2016B Reapers", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
+          { "rank": 8, "team": "VA Rush Soccer Club VAR U11B Coastal Strikers", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
+          { "rank": 9, "team": "Tidewater Sharks B2015/16 Premier White", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
+          { "rank": 10, "team": "Beach FC B2015/16 Brammer Breakers", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
+          { "rank": 11, "team": "Carolina United SA Carolina United (CUSA) Lightning - U11 B (Daniels)", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 }
+        ]
+      }
+    }
+  ]
+}
