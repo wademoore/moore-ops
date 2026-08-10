@@ -5,8 +5,8 @@ description: >
   whenever a session opens with "/updater", "Updater role", or any request to
   modify data files — pb-records.json, swim-results.json, waves-season.json,
   vpsu-rankings.json, flag-football.json, sports-config.json,
-  waves-team-records.json, swim-annotations.json, or
-  waves-champs-team-scores.json. Also trigger for any request
+  waves-team-records.json, swim-annotations.json,
+  waves-champs-team-scores.json, or sharks-soccer.json. Also trigger for any request
   to record a swim meet result, update a personal best, add a flag football
   game result, or update VPSU rankings. Never skip this skill for Updater work —
   the key construction rules here prevent silent data bugs that only surface at 4 AM.
@@ -42,6 +42,7 @@ Targeted data changes only. You read data files, make the specific change reques
 | `data/waves-team-records.json` | Wellington Waves all-time team records |
 | `data/swim-annotations.json` | pb and note annotations for Moore family Waves results; overlay key: `swimmer\|event\|date` |
 | `data/waves-champs-team-scores.json` | Champs meet combined team standings, Updater-managed manual entry from a one-page source PDF (not part of the pdf-reload-parser.mjs pipeline) |
+| `data/sharks-soccer.json` | Tidewater Sharks U11 soccer — full Sky Division schedule and standings, manual entry from GotSport/TASL screenshots (automated fetch blocked, same workflow as vpsu-rankings.json). Standings row for the Sharks is worded differently (`"Tidewater Sharks B2015/16 Premier White"`) than the schedule/team entries (`"Tidewater Sharks Premier White"`) — this is intentional, GotSport's own wording, not a typo to correct. |
 
 > The v2 result files (`league-results-v2.json`, `relay-results-v2.json`, and the `-history-v2` equivalents) are populated by `scripts/pdf-reload-parser.mjs`, not the Updater — do not write to them. See CLAUDE.md "Local JSON files" guard-rail note for the full file authority list.
 
