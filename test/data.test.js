@@ -46,6 +46,22 @@ describe('data/flag-football.json', () => {
   });
 });
 
+// ── data/sharks-soccer.json ───────────────────────────────────────────────────
+
+describe('data/sharks-soccer.json', () => {
+  it('parses as an object with a non-empty seasons array, each with divisionSchedule.matches and standings.teams', async () => {
+    const data = await readJson('sharks-soccer.json');
+    assert.ok(Array.isArray(data.seasons), 'seasons must be an array');
+    assert.ok(data.seasons.length > 0,     'seasons must not be empty');
+    for (const season of data.seasons) {
+      assert.ok(Array.isArray(season.divisionSchedule?.matches), 'season.divisionSchedule.matches must be an array');
+      assert.ok(season.divisionSchedule.matches.length > 0,      'matches must not be empty');
+      assert.ok(Array.isArray(season.standings?.teams),          'season.standings.teams must be an array');
+      assert.ok(season.standings.teams.length > 0,                'standings.teams must not be empty');
+    }
+  });
+});
+
 // ── data/pb-records.json ──────────────────────────────────────────────────────
 
 describe('data/pb-records.json', () => {

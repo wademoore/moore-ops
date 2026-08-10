@@ -19,6 +19,7 @@ import {
   renderFlagCard,
   renderMylesCard,
   renderOpheliaCard,
+  renderSharksCard,
   renderAlerts,
   renderTicker,
   renderBanner,
@@ -740,5 +741,103 @@ describe('daysFrom helper', () => {
 
   it('14 days out → 14', () => {
     assert.equal(daysFrom(d('2026-05-18'), d('2026-06-01')), 14);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 17: renderSharksCard
+// ---------------------------------------------------------------------------
+
+describe('renderSharksCard', () => {
+  it('0-0-0 / no-last-result / no-standings — today\'s actual live data state — renders without crashing and shows placeholder record', () => {
+    const athletics = {
+      ...BASE_ATHLETICS,
+      sharksActive: true,
+      sharksRecord: '0-0-0',
+      sharksLastResult: '',
+      sharksNextOpponent: null,
+      sharksNextTime: null,
+      sharksNextGame: null,
+      sharksDivisionStanding: null,
+      sharksDivisionLabel: null,
+      sharksLastResultDetail: null,
+    };
+    const html = renderSharksCard(athletics);
+    assert.ok(html.includes('0-0-0'));
+    assert.ok(html.includes('Sharks Soccer'));
+    assert.ok(!html.includes('Last game'));
+    assert.ok(!html.includes('flag-game-box'));
+    assert.ok(!/\bof\s+\d+\s+·/.test(html), 'no standing line should render when sharksDivisionStanding is null');
+  });
+
+  it('renders division/league label when sharksDivisionLabel is present', () => {
+    const html = renderSharksCard({ ...BASE_ATHLETICS, sharksActive: true, sharksDivisionLabel: 'TASL U11 Boys Sky Division' });
+    assert.ok(html.includes('TASL U11 Boys Sky Division'));
+  });
+
+  it('next game shows venue and home/away tag when sharksNextGame is present, preferring it over legacy flat fields', () => {
+    const athletics = {
+      ...BASE_ATHLETICS,
+      sharksActive: true,
+      sharksNextOpponent: 'Legacy Opponent (should not appear)',
+      sharksNextTime: '99:99',
+      sharksNextGame: {
+        opponent: 'VIP United Red', date: '2026-09-12', time: '13:15',
+        homeAway: 'home', venue: 'Blayton Elem School - BLAY 3', address: '800 Jolly Pond Rd, Williamsburg, VA 23188',
+      },
+    };
+    const html = renderSharksCard(athletics);
+    assert.ok(html.includes('VIP United Red'));
+    assert.ok(html.includes('Blayton Elem School - BLAY 3'));
+    assert.ok(html.includes('13:15'));
+    assert.ok(!html.includes('Legacy Opponent'));
+    assert.ok(!html.includes('99:99'));
+  });
+
+  it('next game falls back to legacy flat sharksNextOpponent/sharksNextTime when sharksNextGame is absent', () => {
+    const athletics = {
+      ...BASE_ATHLETICS,
+      sharksActive: true,
+      sharksNextOpponent: 'Beach FC Anderson Waves',
+      sharksNextTime: '14:00',
+      sharksNextGame: null,
+    };
+    const html = renderSharksCard(athletics);
+    assert.ok(html.includes('Beach FC Anderson Waves'));
+    assert.ok(html.includes('14:00'));
+  });
+
+  it('last result shows home/away and venue when sharksLastResultDetail is present', () => {
+    const athletics = {
+      ...BASE_ATHLETICS,
+      sharksActive: true,
+      sharksLastResult: 'W 3–1 vs Beach FC Anderson Waves',
+      sharksLastResultDetail: {
+        opponent: 'Beach FC Anderson Waves', homeAway: 'home', sharksScore: 3, opponentScore: 1,
+        result: 'W', date: '2026-08-01', venue: 'Field A',
+      },
+    };
+    const html = renderSharksCard(athletics);
+    assert.ok(html.includes('W 3–1 vs Beach FC Anderson Waves'));
+    assert.ok(html.includes('Home'));
+    assert.ok(html.includes('Field A'));
+  });
+
+  it('division-standing line renders "Nth of M · P pts" only when sharksDivisionStanding is non-null', () => {
+    const athletics = {
+      ...BASE_ATHLETICS,
+      sharksActive: true,
+      sharksDivisionStanding: { rank: 9, of: 11, pts: 0, record: { w: 0, l: 0, d: 0 }, gf: 0, ga: 0, gd: 0 },
+    };
+    const html = renderSharksCard(athletics);
+    assert.ok(html.includes('9th of 11'));
+    assert.ok(html.includes('0 pts'));
+  });
+
+  it('renderAthleticsCard includes the Sharks card only when sharksActive is true', () => {
+    const activeHtml   = renderAthleticsCard({ ...BASE_ATHLETICS, sharksActive: true });
+    const inactiveHtml = renderAthleticsCard({ ...BASE_ATHLETICS, sharksActive: false });
+    assert.ok(activeHtml.includes('Sharks Soccer'));
+    assert.ok(!inactiveHtml.includes('Sharks Soccer'));
   });
 });
