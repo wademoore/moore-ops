@@ -73,11 +73,17 @@ import { secondsToTime, timeToSeconds } from '../digest/dateUtils.js';
  *   wavesDivision:       number|null        e.g. 2
  *   wavesSeasonYear:     number|null        e.g. 2026
  *
- *   // Tidewater Sharks soccer — populated by builder.js when sharksActive is true
- *   sharksRecord:        string|undefined   e.g. "3-1"
- *   sharksLastResult:    string|undefined   e.g. "W 2–0"
- *   sharksNextOpponent:  string|undefined
- *   sharksNextTime:      string|undefined
+ *   // Tidewater Sharks soccer — populated by athleticsParser.js (sharksParser.js)
+ *   // when sharksActive is true. Flat fields are the original card contract;
+ *   // the object fields below carry venue/home-away/standing detail.
+ *   sharksRecord:            string|undefined   e.g. "3-1-2" (W-L-T)
+ *   sharksLastResult:        string|undefined   e.g. "W 2–0 vs Beach FC ..."
+ *   sharksNextOpponent:      string|undefined
+ *   sharksNextTime:          string|undefined
+ *   sharksNextGame:          object|null        { opponent, date, time, homeAway, venue, address }
+ *   sharksDivisionStanding:  object|null        { rank, of, pts, record:{w,l,d}, gf, ga, gd } — null until standings show separation
+ *   sharksDivisionLabel:     string|null        e.g. "TASL U11 Boys Sky Division"
+ *   sharksLastResultDetail:  object|null        { opponent, homeAway, sharksScore, opponentScore, result, date, venue }
  * }
  *
  * StandingsRow { team, w, l, pf, pa, isMe }
@@ -673,15 +679,35 @@ function renderOpheliaCard(athletics) {
 // Add LOGOS.sharks URL when activating.
 
 function renderSharksCard(athletics) {
-  const record      = athletics.sharksRecord      || '?-?';
-  const lastResult  = athletics.sharksLastResult  || '';
-  const nextOpponent = athletics.sharksNextOpponent || null;
-  const nextTime     = athletics.sharksNextTime     || null;
+  const {
+    sharksRecord, sharksLastResult, sharksNextOpponent, sharksNextTime,
+    sharksNextGame, sharksDivisionStanding, sharksDivisionLabel, sharksLastResultDetail,
+  } = athletics;
+
+  const record      = sharksRecord      || '?-?';
+  const lastResult  = sharksLastResult  || '';
+
+  // Prefer the richer sharksNextGame object (venue, home/away) when present;
+  // fall back to the legacy flat fields so old callers/fixtures keep working.
+  const nextOpponent = sharksNextGame?.opponent ?? sharksNextOpponent ?? null;
+  const nextTime      = sharksNextGame?.time     ?? sharksNextTime     ?? null;
+  const nextHomeAway  = sharksNextGame?.homeAway ?? null;
+  const nextVenue     = sharksNextGame?.venue    ?? null;
 
   const nextGameBox = nextOpponent ? `
 <div class="flag-game-box" style="margin-top:10px;">
-  <div class="flag-game-title">vs. ${nextOpponent}</div>
-  ${nextTime ? `<div class="flag-game-sub">${nextTime}</div>` : ''}
+  <div class="flag-game-title">${nextHomeAway === 'home' ? 'vs.' : nextHomeAway === 'away' ? '@' : 'vs.'} ${nextOpponent}</div>
+  ${(nextTime || nextVenue) ? `<div class="flag-game-sub">${[nextTime, nextVenue].filter(Boolean).join(' · ')}</div>` : ''}
+</div>` : '';
+
+  const lastResultSub = sharksLastResultDetail
+    ? [sharksLastResultDetail.homeAway === 'home' ? 'Home' : sharksLastResultDetail.homeAway === 'away' ? 'Away' : null, sharksLastResultDetail.venue]
+        .filter(Boolean).join(' · ')
+    : '';
+
+  const standingLine = sharksDivisionStanding ? `
+<div class="flag-result-lbl" style="margin-top:6px;">
+  ${sharksDivisionStanding.rank}${ordinalSuffix(sharksDivisionStanding.rank)} of ${sharksDivisionStanding.of} · ${sharksDivisionStanding.pts} pts
 </div>` : '';
 
   return `
@@ -690,15 +716,29 @@ function renderSharksCard(athletics) {
     ${LOGOS.sharks ? sportLogo(LOGOS.sharks) : ''}
     <span class="sport-name">Sharks Soccer · U11 Premier</span>
   </div>
+  ${sharksDivisionLabel ? `<div class="sport-record-lbl" style="margin:-4px 0 8px;">${sharksDivisionLabel}</div>` : ''}
   <div class="flag-top">
     <div>
       <div class="sport-record">${record}</div>
       <div class="sport-record-lbl">2026 Season</div>
     </div>
-    ${lastResult ? `<div><div class="flag-result">${lastResult}</div><div class="flag-result-lbl">Last game</div></div>` : ''}
+    ${lastResult ? `<div><div class="flag-result">${lastResult}</div><div class="flag-result-lbl">Last game${lastResultSub ? ` · ${lastResultSub}` : ''}</div></div>` : ''}
   </div>
   ${nextGameBox}
+  ${standingLine}
 </div>`;
+}
+
+// Minimal ordinal suffix helper (1st/2nd/3rd/4th...) for the division-standing line.
+function ordinalSuffix(n) {
+  const rem100 = n % 100;
+  if (rem100 >= 11 && rem100 <= 13) return 'th';
+  switch (n % 10) {
+    case 1: return 'st';
+    case 2: return 'nd';
+    case 3: return 'rd';
+    default: return 'th';
+  }
 }
 
 // ── 6e-2. Card — Wellington Waves Division Standings ────────────────────────
