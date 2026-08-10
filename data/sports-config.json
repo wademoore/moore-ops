@@ -18,7 +18,7 @@
     "bufferDays": 7
   },
   "sharks": {
-    "active": false,
+    "active": true,
     "seasonStart": "2026-09-01",
     "seasonEnd": "2026-11-30",
     "bufferDays": 7
