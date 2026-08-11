@@ -8,7 +8,14 @@
 
 import { buildDigest, generateTasks } from './builder.js';
 import { isSchoolDay } from './schoolRotation.js';
+import { startOfTodayET } from './dateUtils.js';
 import { FIXTURE_CONFIG } from '../test/fixtures/sports-config.fixture.js';
+
+// Separate from this file's own home-grown assert()/section() harness below —
+// used only by the regression test at the bottom of the file, which needs
+// node:test's mock.timers to pin the clock to a specific instant.
+import { describe, it, mock } from 'node:test';
+import nodeAssert from 'node:assert/strict';
 
 let passed = 0;
 let failed = 0;
@@ -76,10 +83,14 @@ function parseNewsletterItems(text) {
   return [...new Set(items)].slice(0, 8);
 }
 
-// Dynamic date helpers — always relative to today in LOCAL time
-// (avoids UTC/local mismatch near midnight in non-UTC timezones)
+// Dynamic date helpers — anchored to the same ET calendar date builder.js's
+// own `today` (startOfTodayET()) uses, not the process/OS local timezone.
+// A bare `new Date()` + local getters disagrees with startOfTodayET() for
+// anyone running with TZ=UTC (or any zone west of ET) roughly 8 PM–midnight
+// ET, when the UTC calendar date is already tomorrow — see CLAUDE.md Key
+// Learnings on the ET-anchor / double-convert trap this mirrors.
 function isoDate(daysOffset = 0) {
-  const d = new Date();
+  const d = startOfTodayET(); // already local-midnight of the ET calendar date — read directly, no further conversion
   d.setDate(d.getDate() + daysOffset);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -476,6 +487,41 @@ const athResult   = await buildDigest({ rawEvents: [cowboysGame], emails: [], do
 assert(athResult.athletics.hasGameThisWeek === true,              'Flag game in rawEvents → athletics.hasGameThisWeek true');
 assert(typeof athResult.athletics.thisWeekOpponent === 'string',  'Flag game → thisWeekOpponent is a string');
 assert(/Eagles/i.test(athResult.athletics.thisWeekOpponent),      'Flag game → thisWeekOpponent contains opponent name');
+
+// ---------------------------------------------------------------------------
+// REGRESSION — isoDate()/startOfTodayET() ET-anchor agreement
+// ---------------------------------------------------------------------------
+// Pins the clock to 2026-08-11T02:09:00Z — the exact timestamp that surfaced
+// this bug during the Sharks soccer merge session. At that instant the UTC
+// calendar date (Aug 11) and the ET calendar date (Aug 10, since it's
+// 10:09 PM ET) disagree. Before the fix, isoDate() used bare `new Date()` +
+// local/OS getters, so under TZ=UTC it computed "2026-08-11" while
+// builder.js's actual `today` (startOfTodayET()) computed "2026-08-10" —
+// a mock event dated via isoDate(0) landed one day off from where builder.js
+// buckets "today", and any lookup expecting it in days[0] failed. This test
+// fails deterministically on the pre-fix isoDate() implementation and passes
+// on the fixed one, regardless of the real wall-clock time the suite runs at.
+describe('builder.test.js date-helper regression — disagreement-window timestamp', () => {
+  it('isoDate(0) agrees with startOfTodayET() at 2026-08-11T02:09:00Z under TZ=UTC, and the resulting mock event resolves in days[0]', async () => {
+    mock.timers.enable({ apis: ['Date'], now: new Date('2026-08-11T02:09:00Z') });
+    try {
+      const prodToday = startOfTodayET();
+      const prodTodayStr = `${prodToday.getFullYear()}-${String(prodToday.getMonth() + 1).padStart(2, '0')}-${String(prodToday.getDate()).padStart(2, '0')}`;
+
+      nodeAssert.equal(isoDate(0), prodTodayStr, 'isoDate(0) must match startOfTodayET()\'s calendar date at the disagreement-window instant');
+
+      const raw = [
+        { summary: 'ADP Practice', calendarName: 'Myles', start: { dateTime: isoDateTime(0, 18) } },
+      ];
+      const result = await buildDigest({ rawEvents: raw, emails: [], docs: {}, banner: null, ...SPORTS_PARAMS });
+      const soccer = result.days[0].events.find(e => e.title === 'ADP Soccer Practice');
+      nodeAssert.ok(soccer != null, 'mock event dated isoDate(0) must resolve in days[0] at the disagreement-window instant');
+      nodeAssert.equal(soccer._calName, 'Myles');
+    } finally {
+      mock.timers.reset();
+    }
+  });
+});
 
 // ---------------------------------------------------------------------------
 // RESULT
