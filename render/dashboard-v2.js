@@ -151,16 +151,101 @@ function activityLogo(event) {
   return '';
 }
 
-function activityCategory(event) {
+function analyzeEventSemantics(event) {
   const text = `${event?.title || ''} ${event?.subtitle || ''} ${event?._calName || ''}`.toLowerCase();
-  if (/dentist|doctor|orthodont|pediatric|therapy|medical|appointment|pharmacy|physical\b/.test(text)) return 'appointment';
-  if (/flight|airport|trip|vacation|hotel|train|travel|road trip/.test(text)) return 'travel';
-  if (/school|grade|teacher|library|pta|color games|field day|parent panel/.test(text)) return 'school';
-  if (/\bidance\b|institute for dance|recital|dance|theater|theatre|concert|performance|music|choir|art/.test(text)) return 'arts';
-  if (/recycl|trash|pickup|plumber|terminix|pest|repair|maintenance|house|vehicle|car detail|tesla detail|detail appointment/.test(text)) return 'household';
-  if (/swim|pool|practice|meet|game|match|soccer|football|baseball|athletic|sports/.test(text)) return 'sports';
-  if (/birthday|party|family|celebration/.test(text)) return 'family';
-  return 'generic';
+  const reasonCodes = [];
+  const reason = code => { if (!reasonCodes.includes(code)) reasonCodes.push(code); };
+
+  const firstLastDay = /\b(first|last) day\b|graduation|school milestone|major milestone/.test(text);
+  const birthday = /birthday/.test(text);
+  const openHouse = /open house|orientation/.test(text);
+  const performance = /recital|concert|performance|championship|tournament|ceremony/.test(text);
+  const camp = /\bcamp\b/.test(text);
+  const decision = /\bdecide\b|\bdecision\b/.test(text);
+  const deadline = /deadline|\bdue\b|registration|register\b/.test(text);
+  const ticketPurchase = /buy\s+(?:the\s+)?tickets?|ticket purchase|purchase tickets?/.test(text);
+  const recurringHousehold = /recycl|trash|curbside|routine household/.test(text);
+  const vehicleDetail = /(?:vehicle|car|tesla|pacifica)\s+(?:detail|detailing)|detail(?:ing)?\s+(?:appointment|appt)|drop off .*\b(?:vehicle|car|tesla|pacifica|detail)/.test(text);
+  const pickupDropoff = !recurringHousehold && /drop[ -]?off|pick[ -]?up|pickup/.test(text);
+  const appointment = /dentist|dental|doctor|orthodont|pediatric|therapy|medical|appointment|\bappt\b|pharmacy|physical\b|pcp\b/.test(text);
+  const travel = /flight|airport|family trip|vacation|hotel|train|\btravel\b|road trip|departure/.test(text);
+  const sportsContext = /swim|pool|sharks|waves|cowboys|nfl|w&m|duke|practice|meet|game|match|soccer|football|baseball|athletic|sports|tailgate/.test(text);
+  const sportsPlanning = sportsContext && /schedule|kickoff|tailgate|\bplan(?:ning)?\b|\bdecide\b|tickets?/.test(text);
+  const routinePractice = /practice|routine lesson|regular class/.test(text);
+  const sportsParticipation = sportsContext && /practice|meet|game|match|tournament|championship|tryout|clinic|night\b/.test(text);
+  const genericPreparation = /prepare|pack\b|assessment|tryout|parent panel/.test(text);
+  const preparationSensitive = decision || deadline || ticketPurchase || pickupDropoff
+    || sportsPlanning || genericPreparation;
+
+  if (firstLastDay) reason('MILESTONE_FIRST_LAST');
+  if (birthday) reason('SPECIAL_BIRTHDAY');
+  if (openHouse) reason('SPECIAL_OPEN_HOUSE');
+  if (performance) reason('SPECIAL_PERFORMANCE');
+  if (camp) reason('CHILD_CAMP');
+  if (decision) reason('PREP_DECISION');
+  if (deadline) reason('PREP_DEADLINE_REGISTRATION');
+  if (ticketPurchase) reason('PREP_TICKET_PURCHASE');
+  if (pickupDropoff) reason('PREP_PICKUP_DROPOFF');
+  if (genericPreparation) reason('PREP_ACTION');
+  if (sportsPlanning) reason('SPORTS_PLANNING');
+  if (appointment) reason(/physical\b|pcp\b/.test(text) ? 'APPOINTMENT_PHYSICAL' : 'APPOINTMENT_MEDICAL_DENTAL');
+  if (sportsParticipation) reason('SPORTS_PARTICIPATION');
+  if (routinePractice) reason('ROUTINE_PRACTICE');
+  if (recurringHousehold) reason('ROUTINE_HOUSEHOLD');
+  if (vehicleDetail) reason('HOUSEHOLD_VEHICLE');
+  if (travel) reason('TRAVEL_FAMILY');
+
+  const mentionsChild = /myles|ophelia|child|kid|school|grade|camp|idance|sharks/.test(text);
+  const mentionsAdult = /robyn|wade/.test(text);
+  const audience = mentionsChild ? 'child' : (mentionsAdult ? 'adult' : 'family');
+
+  let classification = 'generic';
+  if (travel) classification = 'travel';
+  else if (vehicleDetail || recurringHousehold || pickupDropoff || /plumber|terminix|pest|repair|maintenance|\bhousehold\b/.test(text)) classification = 'household';
+  else if (appointment) classification = 'appointment';
+  else if (/school|grade|teacher|library|pta|color games|field day|parent panel|open house/.test(text) && !/\bidance\b/.test(text)) classification = 'school';
+  else if (/\bidance\b|institute for dance|recital|dance|theater|theatre|concert|performance|music|choir|art/.test(text)) classification = 'arts';
+  else if (sportsContext) classification = 'sports';
+  else if (birthday || camp || firstLastDay || /party|family|celebration/.test(text)) classification = 'family';
+
+  let importanceTier = 'default';
+  let baseScore = mentionsChild ? 45 : 20;
+  if (firstLastDay || travel) {
+    importanceTier = 'highest';
+    baseScore = 110;
+  } else if (birthday || openHouse || performance || preparationSensitive) {
+    importanceTier = 'very-high';
+    baseScore = 100;
+  } else if (camp || (appointment && audience === 'child') || (sportsParticipation && !routinePractice)) {
+    importanceTier = 'high';
+    baseScore = 75;
+  } else if (appointment) {
+    importanceTier = 'medium';
+    baseScore = 35;
+  } else if (routinePractice || recurringHousehold || /routine|regular class|routine lesson/.test(text)) {
+    importanceTier = 'low';
+    baseScore = 5;
+  }
+  if (!reasonCodes.length) reason(classification === 'generic' ? 'UNCLASSIFIED' : `CATEGORY_${classification.toUpperCase()}`);
+
+  return {
+    classification,
+    audience,
+    importanceTier,
+    baseScore,
+    routine: routinePractice || recurringHousehold || /routine|regular class|routine lesson/.test(text),
+    milestone: firstLastDay || birthday,
+    preparationSensitive,
+    travel,
+    appointment,
+    sportsParticipation,
+    sportsPlanning,
+    reasonCodes,
+  };
+}
+
+function activityCategory(event) {
+  return analyzeEventSemantics(event).classification;
 }
 
 function categorySvg(category) {
@@ -323,8 +408,8 @@ function rangeDetail(item) {
 }
 
 function upcomingUtility(item, today) {
-  const base = Math.max(0, comingUpScore(item.event, today));
-  const proximity = Math.max(0, 15 - daysFrom(today, item.startKey)) / 20;
+  const base = analyzeEventSemantics(item.event).baseScore;
+  const proximity = Math.max(0, 15 - daysFrom(today, item.startKey)) / 100;
   return base + proximity;
 }
 
@@ -497,35 +582,10 @@ function weatherIcon(kind) {
 }
 
 function comingUpScore(event, today) {
-  const text = `${event?.title || ''} ${event?.subtitle || ''}`.toLowerCase();
   const key = eventDateKey(event);
   if (!key || event?.cardType === 'menu') return Number.NEGATIVE_INFINITY;
-
-  let score = 0;
-  if (/dentist|doctor|orthodont|therapy|appointment|medical/.test(text)) score += 8;
-  if (/flight|airport|trip|vacation|departure|recital|concert|performance|championship/.test(text)) score += 7;
-  if (/birthday|party|field day|color games|parent panel|ceremony/.test(text)) score += 5;
-  if (/meet|game|match|tournament/.test(text)) score += 4;
-  if (/myles/.test(text) && /ophelia/.test(text)) score += 1;
-  if (/practice|lesson|class|recycl|trash|pickup/.test(text)) score -= 4;
-
   const distance = daysFrom(today, key);
-  if (distance <= 2) score += 3;
-  else if (distance <= 7) score += 1;
-  return score;
-}
-
-function comingUpImportance(event) {
-  const text = `${event?.title || ''} ${event?.subtitle || ''}`.toLowerCase();
-  const child = /myles|ophelia|child|kid|school|camp|idance|sharks|swim/.test(text);
-  if (/first day|last day|graduation|school milestone/.test(text)) return 110;
-  if (/orientation|open house|recital|performance|championship|tournament|birthday|family trip|flight|airport|vacation|travel/.test(text)) return 100;
-  if (/registration|deadline|due\b|prepare|pack\b|drop off|assessment|tryout|parent panel/.test(text)) return 85;
-  if (child && /dentist|doctor|orthodont|physical|appointment|party|field trip|camp/.test(text)) return 75;
-  if (child && /game|match|meet|event/.test(text)) return 65;
-  if (/dentist|doctor|orthodont|physical|appointment/.test(text)) return 35;
-  if (/practice|lesson|class|recycl|trash|routine/.test(text)) return 5;
-  return child ? 45 : 20;
+  return analyzeEventSemantics(event).baseScore + Math.max(0, 15 - distance) / 100;
 }
 
 function eventSortTime(event) {
@@ -537,13 +597,14 @@ function selectComingUpEvent(events, today) {
 }
 
 function selectComingUpEvents(events, today, limit = 3) {
-  return (events || [])
+  return collapseUpcomingEvents(events, today)
+    .map(item => item.event)
     .filter(event => event.cardType !== 'menu' && eventDateKey(event))
     .filter(event => {
       const distance = daysFrom(today, eventDateKey(event));
       return distance >= 1 && distance <= 14;
     })
-    .map(event => ({ event, importance: comingUpImportance(event), distance: daysFrom(today, eventDateKey(event)) }))
+    .map(event => ({ event, importance: analyzeEventSemantics(event).baseScore, distance: daysFrom(today, eventDateKey(event)) }))
     .filter(item => item.importance > 5)
     .sort((a, b) => b.importance - a.importance || a.distance - b.distance || eventSortTime(a.event) - eventSortTime(b.event))
     .slice(0, limit)
@@ -824,6 +885,7 @@ export {
   renderAthletics,
   renderRightRail,
   peopleForEvent,
+  analyzeEventSemantics,
   activityCategory,
   collapseUpcomingEvents,
   comingUpScore,

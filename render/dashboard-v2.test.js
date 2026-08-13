@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   activityCategory,
+  analyzeEventSemantics,
   cleanDisplayText,
   collapseUpcomingEvents,
   conversationalMatchDate,
@@ -143,6 +144,30 @@ describe('person identity color classification', () => {
 });
 
 describe('runtime display policies', () => {
+  it('shares deterministic semantics and reason codes across audited real events', () => {
+    const cases = [
+      ['⚑ DECIDE: W&M at Duke (Sep 26) — Buy tickets?', 'sports', 100, ['PREP_DECISION', 'PREP_TICKET_PURCHASE', 'SPORTS_PLANNING']],
+      ['Physical — PCP Office Visit', 'appointment', 35, ['APPOINTMENT_PHYSICAL']],
+      ["Spirit Week: Summer's Final Wave — last day of camp!", 'family', 110, ['MILESTONE_FIRST_LAST']],
+      ['iDance Open House', 'arts', 100, ['SPECIAL_OPEN_HOUSE']],
+      ['Stonehouse Open House (Grades 1-5)', 'school', 100, ['SPECIAL_OPEN_HOUSE']],
+      ['Drop off Pacifica for detail (Fri 9 AM appt)', 'household', 100, ['PREP_PICKUP_DROPOFF', 'HOUSEHOLD_VEHICLE']],
+      ['Pacifica Detail', 'household', 20, ['HOUSEHOLD_VEHICLE']],
+      ['Check W&M Football Schedule — Add Kickoff Times & Tailgate Plans', 'sports', 100, ['SPORTS_PLANNING']],
+      ['Myles: Sharks Practice - Warhill Turf 4', 'sports', 5, ['SPORTS_PARTICIPATION', 'ROUTINE_PRACTICE']],
+      ['Recycling Pickup', 'household', 5, ['ROUTINE_HOUSEHOLD']],
+    ];
+    for (const [title, classification, baseScore, reasons] of cases) {
+      const semantic = analyzeEventSemantics({ title });
+      assert.equal(semantic.classification, classification, title);
+      assert.equal(semantic.baseScore, baseScore, title);
+      for (const reason of reasons) assert.ok(semantic.reasonCodes.includes(reason), `${title}: ${reason}`);
+    }
+    assert.equal(analyzeEventSemantics({ title: 'Physical — PCP Office Visit' }).appointment, true);
+    assert.equal(analyzeEventSemantics({ title: 'Check W&M Football Schedule — Add Kickoff Times & Tailgate Plans' }).preparationSensitive, true);
+    assert.equal(analyzeEventSemantics({ title: 'Myles: Sharks Practice' }).routine, true);
+  });
+
   it('uses semantic event marks instead of diagnostic yellow circles', () => {
     const semanticHtml = renderDashboardV2(sampleDashboardV2Data);
     assert.equal(activityCategory({ title: 'Dentist appointment' }), 'appointment');
@@ -218,6 +243,19 @@ describe('real-data resilience policies', () => {
     assert.equal((html.match(/<div class="upcoming-day/g) || []).length, 2);
     assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 3);
     assert.match(html, /Aug 17–21 · 7:30 AM/);
+  });
+
+  it('selects a preparation-sensitive ticket decision ahead of a standalone routine practice', () => {
+    const today = new Date(2026, 7, 13);
+    const practices = Array.from({ length: 14 }, (_, index) => event(
+      `Myles: Sharks Practice ${index + 1}`,
+      `2026-08-${String(index + 14).padStart(2, '0')}T18:00:00-04:00`,
+    ));
+    const ticketDecision = event('⚑ DECIDE: W&M at Duke (Sep 26) — Buy tickets?', '2026-08-27T09:00:00-04:00');
+    const html = renderUpcoming({ today, upcomingEvents: [...practices, ticketDecision], athletics: { sharksActive: true } });
+    assert.match(html, /DECIDE: W&amp;M at Duke/);
+    assert.doesNotMatch(html, /Sharks Practice 13</);
+    assert.match(html, /class="upcoming-more">\+1 more/);
   });
 
   it('adapts the center for one athletics card and formats its match date conversationally', () => {
