@@ -236,6 +236,20 @@ describe('real-data resilience policies', () => {
     assert.equal(conversationalMatchDate('2026-09-12', '13:15'), 'Sat, Sep 12 · 1:15 PM');
   });
 
+  it('uses organization and team names only on dedicated athletics ribbons', () => {
+    const sharks = renderDashboardV2({ ...sampleDashboardV2Data, athletics: { sharksActive: true } });
+    assert.match(sharks, /<span>Tidewater Sharks<\/span>/);
+    assert.doesNotMatch(sharks, /Myles .* Tidewater Sharks/);
+
+    const swim757 = renderDashboardV2({ ...sampleDashboardV2Data, athletics: { swim757Active: true, opheliaPBRows: [] } });
+    assert.match(swim757, /<span>757 Swim<\/span>/);
+    assert.doesNotMatch(swim757, /Ophelia .* 757 Swim/);
+
+    const flag = renderDashboardV2({ ...sampleDashboardV2Data, athletics: { flagFootballActive: true } });
+    assert.match(flag, /<span>NFL FLAG .* Cowboys<\/span>/);
+    assert.doesNotMatch(flag, /Myles .* Cowboys/);
+  });
+
   it('ranks family milestones before nearer routine appointments and normalizes owner shorthand', () => {
     const today = new Date(2026, 7, 13);
     const events = [

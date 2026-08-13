@@ -390,7 +390,7 @@ function renderWavesCard(a) {
   </article>`;
 }
 
-function renderSwimmerCard(name, tone, rows, season, footer) {
+function renderSwimmerCard(organization, logoAsset, tone, rows, season, footer) {
   const rendered = (rows || []).slice(0, 5).map(row => {
     const last = row.lastSwim?.seconds ?? row.pb?.seconds;
     const display = last == null ? '—' : Number(last).toFixed(2);
@@ -403,7 +403,7 @@ function renderSwimmerCard(name, tone, rows, season, footer) {
   }).join('');
 
   return `<article class="athletic-card tone-${tone}">
-    <div class="athletic-ribbon">${logo(V2_LOGOS.waves, 'athletic-logo')}<span>${esc(name)} · Wellington Waves</span></div>
+    <div class="athletic-ribbon">${logo(logoAsset, 'athletic-logo')}<span>${esc(organization)}</span></div>
     <div class="season-tag">${esc(season || 'Season')}</div>
     <div class="swim-rows">${rendered || '<div class="empty-state">No results yet.</div>'}</div>
     ${footer ? `<div class="athletic-footer">${esc(footer)}</div>` : ''}
@@ -426,7 +426,7 @@ function conversationalMatchDate(dateValue, timeValue) {
 function renderSharksCard(a) {
   const next = a.sharksNextGame;
   return `<article class="athletic-card tone-red">
-    <div class="athletic-ribbon">${logo(V2_LOGOS.sharks, 'athletic-logo')}<span>Myles · Tidewater Sharks</span></div>
+    <div class="athletic-ribbon">${logo(V2_LOGOS.sharks, 'athletic-logo')}<span>Tidewater Sharks</span></div>
     <div class="record">${esc(a.sharksRecord || '0-0-0')}</div>
     <small>${esc(a.sharksDivisionLabel || 'U11 Premier')}</small>
     ${a.sharksLastResult ? `<div class="result-line"><b>${esc(a.sharksLastResult)}</b><span>Latest result</span></div>` : ''}
@@ -437,7 +437,7 @@ function renderSharksCard(a) {
 
 function renderCowboysCard(a) {
   return `<article class="athletic-card tone-red">
-    <div class="athletic-ribbon">${logo(V2_LOGOS.cowboys, 'athletic-logo')}<span>Myles · Cowboys Flag</span></div>
+    <div class="athletic-ribbon">${logo(V2_LOGOS.cowboys, 'athletic-logo')}<span>NFL FLAG · Cowboys</span></div>
     <div class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</div>
     <small>${esc(a.seasonLabel || 'Season')}</small>
     ${a.lastResult ? `<div class="result-line"><b>${esc(a.lastResult)}</b><span>Latest result</span></div>` : ''}
@@ -451,8 +451,15 @@ function renderAthletics(data) {
   const cards = [];
   if (a.flagFootballActive) cards.push(renderCowboysCard(a));
   if (a.wavesActive) cards.push(renderWavesCard(a));
-  if (a.wavesActive) cards.push(renderSwimmerCard('Myles', 'red', a.mylesPBRows, a.mylesSeason, a.mylesFooter));
-  if (a.wavesActive || a.swim757Active) cards.push(renderSwimmerCard('Ophelia', 'purple', a.opheliaPBRows, a.opheliaSeason, a.opheliaFooter));
+  if (a.wavesActive) cards.push(renderSwimmerCard('Wellington Waves', V2_LOGOS.waves, 'red', a.mylesPBRows, a.mylesSeason, a.mylesFooter));
+  if (a.wavesActive || a.swim757Active) cards.push(renderSwimmerCard(
+    a.wavesActive ? 'Wellington Waves' : '757 Swim',
+    a.wavesActive ? V2_LOGOS.waves : V2_LOGOS.swim757,
+    'purple',
+    a.opheliaPBRows,
+    a.opheliaSeason,
+    a.opheliaFooter,
+  ));
   if (a.sharksActive) cards.push(renderSharksCard(a));
 
   return `<section class="paper-panel athletics-panel card-count-${cards.length}">
