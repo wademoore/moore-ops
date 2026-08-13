@@ -14,16 +14,6 @@ import { fileURLToPath } from 'node:url';
  * Browser JavaScript is limited to live clock/date/countdown updates.
  */
 
-const V2_LOGOS = {
-  cowboys: 'https://icon2.cleanpng.com/lnd/20250214/pl/31638e3658752f9b36758b1b225699.webp',
-  waves: 'https://swimtopia.s3.amazonaws.com/3012/embed/20b4b978-fdc5-42fc-a893-9a9ee582ced6',
-  swim757: 'https://757-swim.com/wp-content/uploads/2024/05/cropped-New-orange-button-270x270.png',
-  nationals: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/Washington_Nationals_logo.svg/250px-Washington_Nationals_logo.svg.png',
-  commanders: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Washington_Commanders_logo.svg/1280px-Washington_Commanders_logo.svg.png',
-  tennessee: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Tennessee_Volunteers_logo.svg/960px-Tennessee_Volunteers_logo.svg.png',
-  tribe: 'https://upload.wikimedia.org/wikipedia/en/thumb/e/e1/William_%26_Mary_Tribe_logo.svg/240px-William_%26_Mary_Tribe_logo.svg.png',
-};
-
 const COLORS = {
   ink: '#14281f',
   green: '#0f4a36',
@@ -43,14 +33,28 @@ function optionalAssetDataUrl(filename) {
     const bytes = readFileSync(path);
     const mime = filename.endsWith('.webp')
       ? 'image/webp'
-      : filename.endsWith('.woff2')
-        ? 'font/woff2'
-        : 'image/png';
+      : filename.endsWith('.svg')
+        ? 'image/svg+xml'
+        : filename.endsWith('.woff2')
+          ? 'font/woff2'
+          : 'image/png';
     return `data:${mime};base64,${bytes.toString('base64')}`;
   } catch {
     return '';
   }
 }
+
+const V2_LOGOS = {
+  cowboys: '',
+  waves: optionalAssetDataUrl('logo-waves.png'),
+  sharks: optionalAssetDataUrl('logo-sharks.png'),
+  swim757: optionalAssetDataUrl('logo-757swim.png'),
+  idance: optionalAssetDataUrl('logo-idance.png'),
+  nationals: optionalAssetDataUrl('logo-nationals.png'),
+  commanders: optionalAssetDataUrl('logo-commanders.png'),
+  tennessee: optionalAssetDataUrl('logo-tennessee.png'),
+  tribe: optionalAssetDataUrl('logo-tribe.svg'),
+};
 
 function esc(value) {
   return String(value ?? '')
@@ -79,17 +83,24 @@ function formatEventTime(event) {
   });
 }
 
+function cleanDisplayText(value) {
+  return String(value || '')
+    .replace(/^[\p{Extended_Pictographic}\p{Emoji_Presentation}\uFE0F\u200D\s\u2022\u25CF]+/u, '')
+    .trim();
+}
+
+function eventSubtitleWithoutTime(event) {
+  const subtitle = cleanDisplayText(event?.subtitle);
+  if (!subtitle) return '';
+  const time = formatEventTime(event);
+  const escapedTime = time.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return subtitle.replace(new RegExp(`^${escapedTime}\\s*(?:[·|—|-])?\\s*`, 'i'), '').trim();
+}
+
 function eventDetailLine(event) {
   const time = formatEventTime(event);
-  const subtitle = String(event?.subtitle || '').trim();
+  const subtitle = eventSubtitleWithoutTime(event);
   if (!subtitle) return time;
-
-  const normalizedTime = time.replace(/\s+/g, ' ').toLowerCase();
-  const normalizedSubtitle = subtitle.replace(/\s+/g, ' ').toLowerCase();
-  if (normalizedSubtitle === normalizedTime) return time;
-  if (normalizedSubtitle.startsWith(`${normalizedTime} · `)) {
-    return `${time} · ${subtitle.slice(subtitle.indexOf('·') + 1).trim()}`;
-  }
   return `${time} · ${subtitle}`;
 }
 
@@ -130,19 +141,19 @@ function peopleForEvent(event) {
 
 function activityLogo(event) {
   const text = `${event?.title || ''} ${event?.subtitle || ''}`.toLowerCase();
-  if (/cowboys|flag football/.test(text)) return V2_LOGOS.cowboys;
-  if (/wellington|waves/.test(text)) return V2_LOGOS.waves;
+  if (/tidewater sharks|sharks soccer/.test(text)) return V2_LOGOS.sharks;
   if (/757/.test(text)) return V2_LOGOS.swim757;
+  if (/\bidance\b|institute for dance/.test(text)) return V2_LOGOS.idance;
   return '';
 }
 
 function activityCategory(event) {
   const text = `${event?.title || ''} ${event?.subtitle || ''} ${event?._calName || ''}`.toLowerCase();
-  if (/dentist|doctor|orthodont|pediatric|therapy|medical|appointment|pharmacy/.test(text)) return 'appointment';
+  if (/dentist|doctor|orthodont|pediatric|therapy|medical|appointment|pharmacy|physical\b/.test(text)) return 'appointment';
   if (/flight|airport|trip|vacation|hotel|train|travel|road trip/.test(text)) return 'travel';
   if (/school|grade|teacher|library|pta|color games|field day|parent panel/.test(text)) return 'school';
-  if (/recycl|trash|pickup|plumber|terminix|pest|repair|maintenance|house/.test(text)) return 'household';
-  if (/recital|dance|theater|theatre|concert|performance|music|choir|art/.test(text)) return 'arts';
+  if (/\bidance\b|institute for dance|recital|dance|theater|theatre|concert|performance|music|choir|art/.test(text)) return 'arts';
+  if (/recycl|trash|pickup|plumber|terminix|pest|repair|maintenance|house|vehicle|car detail|tesla detail|detail appointment/.test(text)) return 'household';
   if (/swim|pool|practice|meet|game|match|soccer|football|baseball|athletic|sports/.test(text)) return 'sports';
   if (/birthday|party|family|celebration/.test(text)) return 'family';
   return 'generic';
@@ -214,8 +225,8 @@ function renderToday(data) {
           <time>${esc(formatEventTime(event))}</time>
           ${activityVisual(event, 'event-logo')}
           <div class="today-event-copy">
-            <strong>${esc(event.title)}</strong>
-            ${event.subtitle ? `<span>${esc(event.subtitle)}</span>` : ''}
+            <strong>${esc(cleanDisplayText(event.title))}</strong>
+            ${eventSubtitleWithoutTime(event) ? `<span>${esc(eventSubtitleWithoutTime(event))}</span>` : ''}
           </div>
         </div>`;
       }).join('')
@@ -235,6 +246,11 @@ function renderToday(data) {
     </div>`).join('');
 
   const school = data.schoolStrip || {};
+  const meaningfulSchool = value => {
+    const normalized = String(value || '').trim().toLowerCase();
+    return normalized && !['—', '-', 'none', 'n/a', 'no school', 'unknown'].includes(normalized);
+  };
+  const showSchool = meaningfulSchool(school.myles?.center) || meaningfulSchool(school.ophelia?.center);
   const dinner = data.menuEvent;
   const tomorrow = data.tomorrowMenu;
 
@@ -245,10 +261,10 @@ function renderToday(data) {
     ${taskRows ? `<div class="subhead">Tasks</div><div class="tasks">${taskRows}</div>` : ''}
     ${priorityRows ? `<div class="subhead">Weekly priorities</div><div class="priorities">${priorityRows}</div>` : ''}
     <div class="today-bottom">
-      <div class="school-line">
+      ${showSchool ? `<div class="school-line">
         <strong>School today</strong>
         <span><b class="myles-text">Myles</b> — ${esc(school.myles?.center || '—')} · <b class="ophelia-text">Ophelia</b> — ${esc(school.ophelia?.center || '—')}</span>
-      </div>
+      </div>` : ''}
       <div class="dinner-block">
         ${renderSectionTitle("Tonight's Dinner", 'green', 'dinner')}
         <strong>${esc(dinner?.title || 'Not set')}</strong>
@@ -259,37 +275,85 @@ function renderToday(data) {
   </section>`;
 }
 
-function renderUpcoming(data) {
-  const todayKey = `${data.today.getFullYear()}-${String(data.today.getMonth() + 1).padStart(2, '0')}-${String(data.today.getDate()).padStart(2, '0')}`;
-  const groups = new Map();
+function athleticsCardCount(data) {
+  const a = data.athletics || {};
+  return Number(Boolean(a.flagFootballActive))
+    + Number(Boolean(a.wavesActive)) * 3
+    + Number(Boolean(!a.wavesActive && a.swim757Active))
+    + Number(Boolean(a.sharksActive));
+}
 
-  for (const event of data.upcomingEvents || []) {
-    if (event.cardType === 'menu') continue;
-    const key = eventDateKey(event);
-    if (!key || key === todayKey) continue;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key).push(event);
+function collapseUpcomingEvents(events, today) {
+  const eligible = (events || [])
+    .filter(event => event.cardType !== 'menu' && eventDateKey(event))
+    .filter(event => {
+      const distance = daysFrom(today, eventDateKey(event));
+      return distance >= 1 && distance <= 14;
+    })
+    .sort((a, b) => eventSortTime(a) - eventSortTime(b) || cleanDisplayText(a.title).localeCompare(cleanDisplayText(b.title)));
+  const collapsed = [];
+
+  for (const event of eligible) {
+    const dateKey = eventDateKey(event);
+    const identity = `${cleanDisplayText(event.title).toLowerCase()}|${formatEventTime(event).toLowerCase()}`;
+    const prior = collapsed.findLast(item => item.identity === identity);
+    if (prior && daysFrom(dateAtNoon(prior.endKey), dateKey) === 1) {
+      prior.endKey = dateKey;
+      prior.count += 1;
+    } else {
+      collapsed.push({ event, identity, startKey: dateKey, endKey: dateKey, count: 1 });
+    }
   }
+  return collapsed;
+}
 
-  const rows = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b)).slice(0, 8).map(([key, events]) => {
-    const date = dateAtNoon(key);
-    const days = daysFrom(data.today, key);
-    const people = new Set(events.map(peopleForEvent));
-    const person = people.has('both') || (people.has('myles') && people.has('ophelia')) ? 'both' : (people.values().next().value || 'family');
-    const eventLines = events.map(event => `<div class="upcoming-event">
-      ${activityVisual(event, 'upcoming-logo')}
-      <div><strong>${esc(event.title)}</strong><span>${esc(eventDetailLine(event))}</span></div>
-    </div>`).join('');
+function rangeDetail(item) {
+  if (item.startKey === item.endKey) return eventDetailLine(item.event);
+  const start = dateAtNoon(item.startKey);
+  const end = dateAtNoon(item.endKey);
+  const startLabel = formatDate(start, { month: 'short', day: 'numeric' });
+  const endLabel = start.getMonth() === end.getMonth()
+    ? formatDate(end, { day: 'numeric' })
+    : formatDate(end, { month: 'short', day: 'numeric' });
+  return `${startLabel}–${endLabel} · ${formatEventTime(item.event)}`;
+}
+
+function upcomingUtility(item, today) {
+  const base = Math.max(0, comingUpScore(item.event, today));
+  const proximity = Math.max(0, 15 - daysFrom(today, item.startKey)) / 20;
+  return base + proximity;
+}
+
+function renderUpcoming(data) {
+  const allItems = collapseUpcomingEvents(data.upcomingEvents, data.today);
+  const oneCard = athleticsCardCount(data) === 1;
+  const capacity = oneCard ? 11 : 7;
+  const visibleCapacity = allItems.length > capacity ? capacity - 1 : capacity;
+  const visible = allItems.length > visibleCapacity
+    ? [...allItems]
+      .sort((a, b) => upcomingUtility(b, data.today) - upcomingUtility(a, data.today) || a.startKey.localeCompare(b.startKey))
+      .slice(0, visibleCapacity)
+      .sort((a, b) => a.startKey.localeCompare(b.startKey) || eventSortTime(a.event) - eventSortTime(b.event))
+    : allItems;
+  const hiddenCount = allItems.length - visible.length;
+  const rows = visible.map(item => {
+    const date = dateAtNoon(item.startKey);
+    const days = daysFrom(data.today, item.startKey);
+    const person = peopleForEvent(item.event);
     return `<div class="upcoming-day person-${person}">
       <div class="date-tile"><span>${formatDate(date, { weekday: 'short' }).toUpperCase()}</span><b>${date.getDate()}</b></div>
-      <div class="upcoming-events">${eventLines}</div>
+      <div class="upcoming-events"><div class="upcoming-event">
+        ${activityVisual(item.event, 'upcoming-logo')}
+        <div><strong>${esc(cleanDisplayText(item.event.title))}</strong><span>${esc(rangeDetail(item))}</span></div>
+      </div></div>
       <div class="count-chip">${esc(countdownLabel(days))}</div>
     </div>`;
   }).join('');
+  const more = hiddenCount > 0 ? `<div class="upcoming-more">+${hiddenCount} more</div>` : '';
 
   return `<section class="paper-panel upcoming-panel">
     ${renderSectionTitle('Next Two Weeks', 'green', 'calendar')}
-    <div class="upcoming-list">${rows || '<div class="empty-state">No upcoming events.</div>'}</div>
+    <div class="upcoming-list">${rows || '<div class="empty-state">No upcoming events.</div>'}${more}</div>
   </section>`;
 }
 
@@ -329,14 +393,27 @@ function renderSwimmerCard(name, tone, rows, season, footer) {
   </article>`;
 }
 
+function conversationalMatchDate(dateValue, timeValue) {
+  if (!dateValue) return String(timeValue || '').trim();
+  const dateKey = String(dateValue).slice(0, 10);
+  const date = dateAtNoon(dateKey);
+  let time = String(timeValue || '').trim();
+  if (/^\d{1,2}:\d{2}$/.test(time)) {
+    const [hour, minute] = time.split(':').map(Number);
+    time = new Date(2000, 0, 1, hour, minute).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  }
+  const label = formatDate(date, { weekday: 'short', month: 'short', day: 'numeric' });
+  return time ? `${label} · ${time}` : label;
+}
+
 function renderSharksCard(a) {
   const next = a.sharksNextGame;
   return `<article class="athletic-card tone-red">
-    <div class="athletic-ribbon"><span class="shark-mark" aria-hidden="true"></span><span>Myles · Tidewater Sharks</span></div>
+    <div class="athletic-ribbon">${logo(V2_LOGOS.sharks, 'athletic-logo')}<span>Myles · Tidewater Sharks</span></div>
     <div class="record">${esc(a.sharksRecord || '0-0-0')}</div>
     <small>${esc(a.sharksDivisionLabel || 'U11 Premier')}</small>
     ${a.sharksLastResult ? `<div class="result-line"><b>${esc(a.sharksLastResult)}</b><span>Latest result</span></div>` : ''}
-    ${next ? `<div class="next-box"><b>Next match</b><span>${next.homeAway === 'away' ? '@' : 'vs.'} ${esc(next.opponent)} · ${esc(next.date || '')} ${esc(next.time || '')}</span><small>${esc(next.venue || '')}</small></div>` : ''}
+    ${next ? `<div class="next-box"><b>Next match</b><span>${next.homeAway === 'away' ? '@' : 'vs.'} ${esc(next.opponent)}</span><strong>${esc(conversationalMatchDate(next.date, next.time))}</strong><small>${esc(next.venue || '')}</small></div>` : ''}
     ${a.sharksDivisionStanding ? `<div class="standing-line">${esc(a.sharksDivisionStanding.rank)} of ${esc(a.sharksDivisionStanding.of)} · ${esc(a.sharksDivisionStanding.pts)} pts</div>` : ''}
   </article>`;
 }
@@ -361,7 +438,7 @@ function renderAthletics(data) {
   if (a.wavesActive || a.swim757Active) cards.push(renderSwimmerCard('Ophelia', 'purple', a.opheliaPBRows, a.opheliaSeason, a.opheliaFooter));
   if (a.sharksActive) cards.push(renderSharksCard(a));
 
-  return `<section class="paper-panel athletics-panel">
+  return `<section class="paper-panel athletics-panel card-count-${cards.length}">
     ${renderSectionTitle('Athletics', 'green', 'soccer')}
     <i class="athletics-arrows" aria-hidden="true"></i>
     <div class="athletics-grid count-${cards.length}">${cards.join('') || '<div class="empty-state">Athletics are between seasons.</div>'}</div>
@@ -373,7 +450,7 @@ function renderAlerts(flags) {
   if (!items.length) return '<section class="alerts-panel"><div class="alert-card calm"><b>All clear</b><span>No open operational alerts.</span></div></section>';
   return `<section class="alerts-panel">${items.map(flag => `<div class="alert-card level-${esc(flag.level || 'blue')}">
     <span class="alert-mark" aria-hidden="true"></span>
-    <div><b>${esc(flag.title || 'Family note')}</b><span>${esc(flag.body || flag.message || '')}</span></div>
+    <div><b>${esc(cleanDisplayText(flag.title || 'Family note'))}</b><span>${esc(cleanDisplayText(flag.body || flag.message || ''))}</span></div>
   </div>`).join('')}</section>`;
 }
 
@@ -410,17 +487,47 @@ function comingUpScore(event, today) {
   return score;
 }
 
+function comingUpImportance(event) {
+  const text = `${event?.title || ''} ${event?.subtitle || ''}`.toLowerCase();
+  const child = /myles|ophelia|child|kid|school|camp|idance|sharks|swim/.test(text);
+  if (/first day|last day|graduation|school milestone/.test(text)) return 110;
+  if (/orientation|open house|recital|performance|championship|tournament|birthday|family trip|flight|airport|vacation|travel/.test(text)) return 100;
+  if (/registration|deadline|due\b|prepare|pack\b|drop off|assessment|tryout|parent panel/.test(text)) return 85;
+  if (child && /dentist|doctor|orthodont|physical|appointment|party|field trip|camp/.test(text)) return 75;
+  if (child && /game|match|meet|event/.test(text)) return 65;
+  if (/dentist|doctor|orthodont|physical|appointment/.test(text)) return 35;
+  if (/practice|lesson|class|recycl|trash|routine/.test(text)) return 5;
+  return child ? 45 : 20;
+}
+
 function eventSortTime(event) {
   return new Date(event?.raw?.start?.dateTime || `${eventDateKey(event)}T12:00:00`).getTime();
 }
 
 function selectComingUpEvent(events, today) {
-  const ranked = (events || [])
+  return selectComingUpEvents(events, today, 1)[0] || null;
+}
+
+function selectComingUpEvents(events, today, limit = 3) {
+  return (events || [])
     .filter(event => event.cardType !== 'menu' && eventDateKey(event))
-    .map(event => ({ event, score: comingUpScore(event, today) }))
-    .filter(item => item.score > 0)
-    .sort((a, b) => b.score - a.score || eventSortTime(a.event) - eventSortTime(b.event) || String(a.event.title).localeCompare(String(b.event.title)));
-  return ranked[0]?.event || null;
+    .filter(event => {
+      const distance = daysFrom(today, eventDateKey(event));
+      return distance >= 1 && distance <= 14;
+    })
+    .map(event => ({ event, importance: comingUpImportance(event), distance: daysFrom(today, eventDateKey(event)) }))
+    .filter(item => item.importance > 5)
+    .sort((a, b) => b.importance - a.importance || a.distance - b.distance || eventSortTime(a.event) - eventSortTime(b.event))
+    .slice(0, limit)
+    .map(item => item.event);
+}
+
+function normalizeComingUpTitle(event) {
+  const title = cleanDisplayText(event?.title);
+  const ownerMatch = title.match(/^([RrWw])\s+(.+)$/);
+  if (!ownerMatch) return title;
+  const owner = ownerMatch[1].toLowerCase() === 'r' ? 'Robyn' : 'Wade';
+  return `${owner} · ${ownerMatch[2]}`;
 }
 
 function renderRightRail(data) {
@@ -429,9 +536,7 @@ function renderRightRail(data) {
   const days = (weather.days || []).slice(0, 7);
   const weatherAvailable = Number.isFinite(Number(current.temperature)) && days.length > 0;
   const countdown = data.countdown || null;
-  const nextEvent = selectComingUpEvent(data.upcomingEvents, data.today);
-  const nextEventDate = nextEvent ? dateAtNoon(eventDateKey(nextEvent)) : null;
-  const nextEventPerson = nextEvent ? peopleForEvent(nextEvent) : 'family';
+  const nextEvents = selectComingUpEvents(data.upcomingEvents, data.today, 3);
 
   return `<aside class="right-rail ${countdown ? 'has-countdown' : 'no-countdown'}">
     <section class="rail-card clock-card">
@@ -454,10 +559,16 @@ function renderRightRail(data) {
         <i>${day.precipitation ? `${esc(day.precipitation)}%` : ''}</i>
       </div>`).join('') : '<div class="forecast-fallback"><span>Forecast will return automatically on the next successful refresh.</span></div>'}
     </section>
-    ${nextEvent ? `<section class="rail-card next-up-card person-${nextEventPerson}">
+    ${nextEvents.length ? `<section class="rail-card next-up-card">
       <div class="next-up-label">Coming Up</div>
-      <div class="next-up-date"><b>${esc(formatDate(nextEventDate, { day: 'numeric' }))}</b><span>${esc(formatDate(nextEventDate, { weekday: 'short', month: 'short' }))}</span></div>
-      <div class="next-up-copy"><strong>${esc(nextEvent.title)}</strong><small>${esc(eventDetailLine(nextEvent))}</small></div>
+      <div class="next-up-list">${nextEvents.map(event => {
+        const date = dateAtNoon(eventDateKey(event));
+        const person = peopleForEvent(event);
+        return `<div class="next-up-item person-${person}">
+          <div class="next-up-date"><b>${esc(formatDate(date, { day: 'numeric' }))}</b><span>${esc(formatDate(date, { weekday: 'short', month: 'short' }))}</span></div>
+          <div class="next-up-copy"><strong>${esc(normalizeComingUpTitle(event))}</strong><small>${esc(eventDetailLine(event))}</small></div>
+        </div>`;
+      }).join('')}</div>
     </section>` : `<section class="rail-card next-up-card next-up-empty">
       <div class="next-up-label">Coming Up</div>
       <div class="next-up-empty-copy"><strong>Nothing needs special attention</strong><small>The full two-week calendar is still at left.</small></div>
@@ -484,8 +595,9 @@ function renderTicker(data) {
     { logo: V2_LOGOS.tennessee, active: false, line1: 'Offseason', line2: 'Season opens August' },
     { logo: V2_LOGOS.tribe, active: false, line1: 'Offseason', line2: 'Season opens August' },
   ];
-  return `<footer class="sports-ticker">${slots.map(slot => `<div class="ticker-slot ${slot.active ? 'active' : ''}">
-    ${logo(slot.logo, 'ticker-logo')}<div><b>${esc(slot.line1)}</b><span>${esc(slot.line2)}</span></div>
+  const localTickerLogos = [V2_LOGOS.nationals, V2_LOGOS.commanders, V2_LOGOS.tennessee, V2_LOGOS.tribe];
+  return `<footer class="sports-ticker">${slots.map((slot, index) => `<div class="ticker-slot ${slot.active ? 'active' : ''}">
+    ${logo(localTickerLogos[index % localTickerLogos.length], 'ticker-logo')}<div><b>${esc(slot.line1)}</b><span>${esc(slot.line2)}</span></div>
   </div>`).join('')}<i class="ticker-doodle" aria-hidden="true"></i><small class="updated">Updated ${esc(new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }))} ET</small></footer>`;
 }
 
@@ -604,6 +716,11 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 /* Runtime fallbacks: semantic event marks, explicit weather state, and stable Coming Up geometry. */
 .semantic-icon{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(212,154,24,.10);color:${COLORS.gold};padding:3px}.semantic-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:1.8;fill:none}.semantic-icon.category-appointment{color:${COLORS.red}}.semantic-icon.category-school{color:${COLORS.blue}}.semantic-icon.category-household{color:${COLORS.green}}.semantic-icon.category-arts{color:${COLORS.purple}}.semantic-icon.category-sports{color:${COLORS.blue}}.semantic-icon.category-family{color:${COLORS.red}}.activity-visual{position:relative}.activity-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:${COLORS.paper}}
 .current-weather.weather-unavailable{gap:12px;text-align:center}.current-weather.weather-unavailable>strong{max-width:220px;font-size:24px;line-height:1.05}.current-weather.weather-unavailable>span{font-size:16px;color:#5d675f}.forecast-card.weather-unavailable{grid-template-rows:42px 1fr}.forecast-fallback{grid-column:1/3;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#5d675f;font-size:20px;line-height:1.25}.next-up-empty{display:flex;flex-direction:column}.next-up-empty:before{background:${COLORS.green}}.next-up-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 10px}.next-up-empty-copy strong{font-size:20px}.next-up-empty-copy small{font-size:14px;color:#58635c;margin-top:6px}
+/* Real-data resilience: bounded calendar rows, adaptive one-card athletics, and ranked rail items. */
+.upcoming-list{overflow:visible}.upcoming-more{height:54px;display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(20,40,31,.15);font-size:21px;font-weight:600;color:${COLORS.green}}
+.dashboard.athletics-one .upcoming-panel{height:72%}.dashboard.athletics-one .athletics-panel{height:26%}
+.card-count-1 .athletics-grid{display:block}.card-count-1 .athletic-card{height:100%;padding-right:0;border-right:0;display:grid;grid-template-columns:150px minmax(0,1fr);grid-template-rows:44px auto 1fr;column-gap:22px}.card-count-1 .athletic-ribbon{grid-column:1/3}.card-count-1 .record{grid-column:1;grid-row:2/4;font-size:58px;margin-top:16px}.card-count-1 .athletic-card>small{grid-column:1;grid-row:3;margin-top:80px;font-size:18px}.card-count-1 .next-box{grid-column:2;grid-row:2/4;margin:12px 0 0;padding:12px 16px;justify-content:center}.card-count-1 .next-box b{font-size:16px}.card-count-1 .next-box span{font-size:25px;line-height:1}.card-count-1 .next-box strong{font-family:"Roboto Slab",Georgia,serif;font-size:27px;line-height:1.15;margin-top:7px}.card-count-1 .next-box small{font-size:18px;margin-top:5px}.card-count-1 .result-line,.card-count-1 .standing-line{display:none}
+.next-up-card{display:flex;flex-direction:column}.next-up-card:before{display:none}.next-up-label{flex:0 0 38px;width:100%}.next-up-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.next-up-item{position:relative;display:grid;grid-template-columns:58px minmax(0,1fr);gap:8px;padding:6px 2px 6px 9px;border-bottom:1px solid rgba(20,40,31,.14);min-height:0}.next-up-item:last-child{border-bottom:0}.next-up-item:before{content:"";position:absolute;left:-3px;top:7px;bottom:7px;width:5px;background:${COLORS.green}}.next-up-item.person-myles:before{background:${COLORS.red}}.next-up-item.person-ophelia:before{background:${COLORS.purple}}.next-up-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.next-up-item .next-up-date b{font-size:34px}.next-up-item .next-up-date span{font-size:11px}.next-up-item .next-up-copy strong{font-size:18px;line-height:1}.next-up-item .next-up-copy small{font-size:13px;line-height:1;margin-top:3px}
 `;
 
 function renderDashboardV2(digestData) {
@@ -648,7 +765,8 @@ function renderDashboardV2(digestData) {
     `--doodle-dinner:${doodleDinner ? `url('${doodleDinner}')` : 'none'}`,
     `--doodle-arrows:${doodleArrows ? `url('${doodleArrows}')` : 'none'}`,
   ].join(';');
-  const classes = `dashboard${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'}`;
+  const cardCount = athleticsCardCount(data);
+  const classes = `dashboard${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'} athletics-${cardCount === 1 ? 'one' : 'multi'}`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -682,7 +800,11 @@ export {
   renderRightRail,
   peopleForEvent,
   activityCategory,
+  collapseUpcomingEvents,
   comingUpScore,
   selectComingUpEvent,
+  selectComingUpEvents,
+  cleanDisplayText,
+  conversationalMatchDate,
   V2_LOGOS,
 };

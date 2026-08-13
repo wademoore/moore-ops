@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 96" role="img" aria-label="William and Mary">
+  <rect width="160" height="96" rx="18" fill="#115740"/>
+  <path d="M18 26h18l9 34 10-34h18l10 34 9-34h18L94 75H75L64 43 53 75H34z" fill="#f0b323"/>
+  <path d="M108 28h15l8 12 8-12h15l-15 22 16 24h-15l-9-14-9 14h-15l16-24z" fill="#f0b323"/>
+</svg>

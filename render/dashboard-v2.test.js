@@ -1,6 +1,16 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { activityCategory, renderDashboardV2, peopleForEvent, selectComingUpEvent } from './dashboard-v2.js';
+import {
+  activityCategory,
+  cleanDisplayText,
+  collapseUpcomingEvents,
+  conversationalMatchDate,
+  renderDashboardV2,
+  peopleForEvent,
+  selectComingUpEvent,
+  selectComingUpEvents,
+  V2_LOGOS,
+} from './dashboard-v2.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
 
 describe('experimental dashboard v2 isolation and structure', () => {
@@ -159,5 +169,101 @@ describe('runtime display policies', () => {
     assert.match(fallback, /Nothing needs special attention/);
     assert.match(fallback, /Weather temporarily unavailable/);
     assert.match(fallback, /Forecast will return automatically/);
+  });
+});
+
+describe('real-data resilience policies', () => {
+  const event = (title, dateTime, subtitle = '') => ({
+    title,
+    subtitle,
+    cardType: 'standard',
+    raw: { start: { dateTime } },
+  });
+
+  it('uses the full 14-day window, collapses consecutive repeats, and shows explicit overflow', () => {
+    const today = new Date(2026, 7, 13);
+    const repeated = [17, 18, 19, 20, 21].map(day => event('4-H Day Camp', `2026-08-${day}T07:30:00-04:00`, '7:30 AM'));
+    const collapsed = collapseUpcomingEvents([
+      ...repeated,
+      event('Day fourteen', '2026-08-27T09:00:00-04:00'),
+      event('Day fifteen', '2026-08-28T09:00:00-04:00'),
+    ], today);
+    assert.equal(collapsed.length, 2);
+    assert.equal(collapsed[0].count, 5);
+
+    const overflowEvents = Array.from({ length: 14 }, (_, index) => event(`Useful event ${index + 1}`, `2026-08-${String(index + 14).padStart(2, '0')}T09:00:00-04:00`));
+    const html = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      today,
+      days: [{ events: [], tasks: [] }],
+      upcomingEvents: [...repeated, ...overflowEvents],
+      athletics: { sharksActive: true, sharksNextGame: { opponent: 'United', date: '2026-09-12', time: '13:15' } },
+    });
+    assert.match(html, /Aug 17–21 · 7:30 AM/);
+    assert.match(html, /class="upcoming-more">\+\d+ more/);
+    assert.match(html, /\.upcoming-list\{overflow:visible\}/);
+  });
+
+  it('adapts the center for one athletics card and formats its match date conversationally', () => {
+    const html = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      athletics: {
+        sharksActive: true,
+        sharksRecord: '0-0-0',
+        sharksNextGame: { opponent: 'United', date: '2026-09-12', time: '13:15', venue: 'Warhill' },
+      },
+    });
+    assert.match(html, /athletics-one/);
+    assert.match(html, /card-count-1/);
+    assert.match(html, /Sat, Sep 12 · 1:15 PM/);
+    assert.match(html, /\.dashboard\.athletics-one \.upcoming-panel\{height:72%\}/);
+    assert.equal(conversationalMatchDate('2026-09-12', '13:15'), 'Sat, Sep 12 · 1:15 PM');
+  });
+
+  it('ranks family milestones before nearer routine appointments and normalizes owner shorthand', () => {
+    const today = new Date(2026, 7, 13);
+    const events = [
+      event('R Dentist', '2026-08-14T09:30:00-04:00'),
+      event('Ophelia · First Day of School', '2026-08-20T08:00:00-04:00'),
+      event('Myles · Sharks Practice', '2026-08-15T18:00:00-04:00'),
+      event('iDance Open House', '2026-08-16T14:00:00-04:00'),
+    ];
+    const ranked = selectComingUpEvents(events, today);
+    assert.equal(ranked[0].title, 'Ophelia · First Day of School');
+    const html = renderDashboardV2({ ...sampleDashboardV2Data, today, upcomingEvents: events });
+    assert.equal((html.match(/class="next-up-item/g) || []).length, 3);
+    assert.match(html, /Robyn · Dentist/);
+  });
+
+  it('cleans duplicated text, empty school rows, emoji marks, and obvious categories', () => {
+    const todayEvent = event('✈️ REC Connect Field Trip', '2026-06-09T09:00:00-04:00', '9:00 AM');
+    const html = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      days: [{ events: [todayEvent], tasks: [] }],
+      schoolStrip: { myles: { center: '—' }, ophelia: { center: '' } },
+      flags: [{ level: 'blue', title: '🔵 757 Swim Fall Assessment', body: 'Monitor' }],
+    });
+    assert.doesNotMatch(html, /School today/);
+    assert.doesNotMatch(html, /9:00 AM · 9:00 AM/);
+    assert.doesNotMatch(html, /✈️|🔵/);
+    assert.equal((html.match(/class="alert-mark"/g) || []).length, 1);
+    assert.equal(cleanDisplayText('🔵 757 Swim'), '757 Swim');
+    assert.equal(activityCategory({ title: 'iDance Open House' }), 'arts');
+    assert.equal(activityCategory({ title: 'Annual physical' }), 'appointment');
+    assert.equal(activityCategory({ title: 'Tesla Detail' }), 'household');
+  });
+
+  it('embeds organization and ticker logos without external image URLs', () => {
+    for (const key of ['sharks', 'swim757', 'idance', 'nationals', 'commanders', 'tennessee', 'tribe']) {
+      assert.match(V2_LOGOS[key], /^data:image\//);
+    }
+    const html = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      upcomingEvents: [event('iDance Open House', '2026-06-10T14:00:00-04:00')],
+      athletics: { sharksActive: true },
+      sportsTicker: [{ logo: 'https://example.com/unreliable.png', active: true, line1: 'Local', line2: 'Embedded' }],
+    });
+    assert.doesNotMatch(html, /https:\/\/example\.com\/unreliable/);
+    assert.match(html, /logo-idance|data:image\/png;base64/);
   });
 });
