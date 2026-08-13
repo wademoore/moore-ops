@@ -6,6 +6,7 @@ import {
   collapseUpcomingEvents,
   conversationalMatchDate,
   renderDashboardV2,
+  renderUpcoming,
   peopleForEvent,
   selectComingUpEvent,
   selectComingUpEvents,
@@ -192,16 +193,31 @@ describe('real-data resilience policies', () => {
     assert.equal(collapsed[0].count, 5);
 
     const overflowEvents = Array.from({ length: 14 }, (_, index) => event(`Useful event ${index + 1}`, `2026-08-${String(index + 14).padStart(2, '0')}T09:00:00-04:00`));
+    const overflowExtras = Array.from({ length: 7 }, (_, index) => event(`Extra event ${index + 1}`, `2026-08-${String(index + 14).padStart(2, '0')}T11:00:00-04:00`));
     const html = renderDashboardV2({
       ...sampleDashboardV2Data,
       today,
       days: [{ events: [], tasks: [] }],
-      upcomingEvents: [...repeated, ...overflowEvents],
+      upcomingEvents: [...repeated, ...overflowEvents, ...overflowExtras],
       athletics: { sharksActive: true, sharksNextGame: { opponent: 'United', date: '2026-09-12', time: '13:15' } },
     });
     assert.match(html, /Aug 17–21 · 7:30 AM/);
     assert.match(html, /class="upcoming-more">\+\d+ more/);
     assert.match(html, /\.upcoming-list\{overflow:visible\}/);
+  });
+
+  it('groups each date tile once and stacks that day’s events without undoing ranges', () => {
+    const today = new Date(2026, 7, 13);
+    const events = [
+      event('Tesla Detail', '2026-08-14T09:00:00-04:00'),
+      event('Spirit Week Finale', '2026-08-14T12:00:00-04:00'),
+      ...[17, 18, 19, 20, 21].map(day => event('4-H Day Camp', `2026-08-${day}T07:30:00-04:00`, '7:30 AM')),
+    ];
+    const html = renderUpcoming({ today, upcomingEvents: events, athletics: { sharksActive: true } });
+    assert.equal((html.match(/<div class="date-tile">/g) || []).length, 2);
+    assert.equal((html.match(/<div class="upcoming-day/g) || []).length, 2);
+    assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 3);
+    assert.match(html, /Aug 17–21 · 7:30 AM/);
   });
 
   it('adapts the center for one athletics card and formats its match date conversationally', () => {
@@ -246,11 +262,23 @@ describe('real-data resilience policies', () => {
     assert.doesNotMatch(html, /School today/);
     assert.doesNotMatch(html, /9:00 AM · 9:00 AM/);
     assert.doesNotMatch(html, /✈️|🔵/);
-    assert.equal((html.match(/class="alert-mark"/g) || []).length, 1);
+    assert.equal((html.match(/class="alert-mark"/g) || []).length, 0);
+    assert.equal((html.match(/class="alert-identity"/g) || []).length, 1);
     assert.equal(cleanDisplayText('🔵 757 Swim'), '757 Swim');
     assert.equal(activityCategory({ title: 'iDance Open House' }), 'arts');
     assert.equal(activityCategory({ title: 'Annual physical' }), 'appointment');
     assert.equal(activityCategory({ title: 'Tesla Detail' }), 'household');
+  });
+
+  it('normalizes owner shorthand in Today, Next Two Weeks, and Coming Up', () => {
+    const shorthand = event('R Dentist', '2026-06-10T09:30:00-04:00');
+    const html = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      days: [{ events: [{ ...shorthand, raw: { start: { dateTime: '2026-06-09T09:30:00-04:00' } } }], tasks: [] }],
+      upcomingEvents: [shorthand],
+    });
+    assert.equal((html.match(/Robyn · Dentist/g) || []).length, 3);
+    assert.doesNotMatch(html, />R Dentist</);
   });
 
   it('embeds organization and ticker logos without external image URLs', () => {
