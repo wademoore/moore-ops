@@ -1,7 +1,10 @@
 {
   "type": "module",
   "scripts": {
-    "test": "node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js"
+    "dev": "node scripts/dashboard-v2-dev-server.mjs",
+    "test": "node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js",
+    "preview:dashboard-v2": "node scripts/render-dashboard-v2-preview.mjs",
+    "preview:dashboard-v2:png": "node scripts/render-dashboard-v2-png.mjs"
   },
   "dependencies": {
     "@googleapis/calendar": "^14.3.0",
@@ -13,6 +16,7 @@
     "pdf-parse": "^2.4.5"
   },
   "devDependencies": {
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "playwright": "1.62.0"
   }
 }

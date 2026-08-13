@@ -6,4 +6,5 @@ reauthorize.js
 logs
 preview.mjs
 preview.html
+preview/
 data-source-pdfs/
