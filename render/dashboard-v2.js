@@ -136,6 +136,38 @@ function activityLogo(event) {
   return '';
 }
 
+function activityCategory(event) {
+  const text = `${event?.title || ''} ${event?.subtitle || ''} ${event?._calName || ''}`.toLowerCase();
+  if (/dentist|doctor|orthodont|pediatric|therapy|medical|appointment|pharmacy/.test(text)) return 'appointment';
+  if (/flight|airport|trip|vacation|hotel|train|travel|road trip/.test(text)) return 'travel';
+  if (/school|grade|teacher|library|pta|color games|field day|parent panel/.test(text)) return 'school';
+  if (/recycl|trash|pickup|plumber|terminix|pest|repair|maintenance|house/.test(text)) return 'household';
+  if (/recital|dance|theater|theatre|concert|performance|music|choir|art/.test(text)) return 'arts';
+  if (/swim|pool|practice|meet|game|match|soccer|football|baseball|athletic|sports/.test(text)) return 'sports';
+  if (/birthday|party|family|celebration/.test(text)) return 'family';
+  return 'generic';
+}
+
+function categorySvg(category) {
+  const common = 'viewBox="0 0 32 32" aria-hidden="true"';
+  if (category === 'appointment') return `<svg ${common}><path d="M16 5v22M5 16h22"/><path d="M10 4h12v24H10z"/></svg>`;
+  if (category === 'travel') return `<svg ${common}><path d="M4 18l24-8-8 18-4-8-8-4z"/><path d="M16 20l4 8"/></svg>`;
+  if (category === 'school') return `<svg ${common}><path d="M4 12l12-7 12 7-12 7z"/><path d="M8 15v8c5 3 11 3 16 0v-8M28 12v9"/></svg>`;
+  if (category === 'household') return `<svg ${common}><path d="M4 15L16 5l12 10M8 13v14h16V13"/><path d="M13 27v-8h6v8"/></svg>`;
+  if (category === 'arts') return `<svg ${common}><path d="M8 24c-4 0-5-5-2-7 2-2 6-1 8 1V7l12-3v15"/><circle cx="9" cy="24" r="4"/><circle cx="22" cy="22" r="4"/></svg>`;
+  if (category === 'sports') return `<svg ${common}><circle cx="16" cy="16" r="12"/><path d="M16 4l5 5-2 6h-6l-2-6zM4 15l7 1 3 6-4 5M28 15l-7 1-3 6 4 5"/></svg>`;
+  if (category === 'family') return `<svg ${common}><path d="M16 27S5 20 5 12c0-7 9-9 11-3 2-6 11-4 11 3 0 8-11 15-11 15z"/></svg>`;
+  return `<svg ${common}><path d="M16 3l3 9 9 4-9 3-3 10-3-10-9-3 9-4z"/></svg>`;
+}
+
+function activityVisual(event, className) {
+  const url = activityLogo(event);
+  const category = activityCategory(event);
+  const fallback = categorySvg(category);
+  if (url) return `<span class="${className} semantic-icon activity-visual category-${category}" aria-label="${esc(category)}">${fallback}<img src="${esc(url)}" alt="" onerror="this.remove()"></span>`;
+  return `<span class="${className} semantic-icon category-${category}" aria-label="${esc(category)}">${fallback}</span>`;
+}
+
 function logo(url, className = 'org-logo') {
   if (!url) return '<span class="activity-mark" aria-hidden="true"></span>';
   return `<img class="${className}" src="${esc(url)}" alt="" onerror="this.style.display='none'">`;
@@ -180,7 +212,7 @@ function renderToday(data) {
         const person = peopleForEvent(event);
         return `<div class="today-event person-${person}">
           <time>${esc(formatEventTime(event))}</time>
-          ${logo(activityLogo(event), 'event-logo')}
+          ${activityVisual(event, 'event-logo')}
           <div class="today-event-copy">
             <strong>${esc(event.title)}</strong>
             ${event.subtitle ? `<span>${esc(event.subtitle)}</span>` : ''}
@@ -245,7 +277,7 @@ function renderUpcoming(data) {
     const people = new Set(events.map(peopleForEvent));
     const person = people.has('both') || (people.has('myles') && people.has('ophelia')) ? 'both' : (people.values().next().value || 'family');
     const eventLines = events.map(event => `<div class="upcoming-event">
-      ${logo(activityLogo(event), 'upcoming-logo')}
+      ${activityVisual(event, 'upcoming-logo')}
       <div><strong>${esc(event.title)}</strong><span>${esc(eventDetailLine(event))}</span></div>
     </div>`).join('');
     return `<div class="upcoming-day person-${person}">
@@ -359,43 +391,77 @@ function weatherIcon(kind) {
   return `<svg ${common}><circle cx="32" cy="32" r="13"/><path d="M32 7v9M32 48v9M7 32h9M48 32h9M14 14l7 7M43 43l7 7M50 14l-7 7M21 43l-7 7"/></svg>`;
 }
 
+function comingUpScore(event, today) {
+  const text = `${event?.title || ''} ${event?.subtitle || ''}`.toLowerCase();
+  const key = eventDateKey(event);
+  if (!key || event?.cardType === 'menu') return Number.NEGATIVE_INFINITY;
+
+  let score = 0;
+  if (/dentist|doctor|orthodont|therapy|appointment|medical/.test(text)) score += 8;
+  if (/flight|airport|trip|vacation|departure|recital|concert|performance|championship/.test(text)) score += 7;
+  if (/birthday|party|field day|color games|parent panel|ceremony/.test(text)) score += 5;
+  if (/meet|game|match|tournament/.test(text)) score += 4;
+  if (/myles/.test(text) && /ophelia/.test(text)) score += 1;
+  if (/practice|lesson|class|recycl|trash|pickup/.test(text)) score -= 4;
+
+  const distance = daysFrom(today, key);
+  if (distance <= 2) score += 3;
+  else if (distance <= 7) score += 1;
+  return score;
+}
+
+function eventSortTime(event) {
+  return new Date(event?.raw?.start?.dateTime || `${eventDateKey(event)}T12:00:00`).getTime();
+}
+
+function selectComingUpEvent(events, today) {
+  const ranked = (events || [])
+    .filter(event => event.cardType !== 'menu' && eventDateKey(event))
+    .map(event => ({ event, score: comingUpScore(event, today) }))
+    .filter(item => item.score > 0)
+    .sort((a, b) => b.score - a.score || eventSortTime(a.event) - eventSortTime(b.event) || String(a.event.title).localeCompare(String(b.event.title)));
+  return ranked[0]?.event || null;
+}
+
 function renderRightRail(data) {
   const weather = data.weather || { current: {}, days: [] };
   const current = weather.current || {};
   const days = (weather.days || []).slice(0, 7);
+  const weatherAvailable = Number.isFinite(Number(current.temperature)) && days.length > 0;
   const countdown = data.countdown || null;
-  const nextEvent = [...(data.upcomingEvents || [])]
-    .filter(event => event.cardType !== 'menu' && eventDateKey(event))
-    .sort((a, b) => eventDateKey(a).localeCompare(eventDateKey(b)))[0] || null;
+  const nextEvent = selectComingUpEvent(data.upcomingEvents, data.today);
   const nextEventDate = nextEvent ? dateAtNoon(eventDateKey(nextEvent)) : null;
   const nextEventPerson = nextEvent ? peopleForEvent(nextEvent) : 'family';
 
-  return `<aside class="right-rail">
+  return `<aside class="right-rail ${countdown ? 'has-countdown' : 'no-countdown'}">
     <section class="rail-card clock-card">
       <time id="live-clock">${esc(new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }))}</time>
       <span id="live-date">${esc(formatDate(data.today, { weekday: 'long', month: 'long', day: 'numeric' }))}</span>
     </section>
-    <section class="rail-card current-weather">
+    <section class="rail-card current-weather ${weatherAvailable ? '' : 'weather-unavailable'}">
       <div class="weather-label">Williamsburg Weather</div>
-      <div class="weather-now">${weatherIcon(current.icon || 'sun')}<strong>${esc(current.temperature ?? '—')}°</strong></div>
-      <span>Feels like ${esc(current.feelsLike ?? '—')}°</span>
-      ${current.summary ? `<small>${esc(current.summary)}</small>` : ''}
+      ${weatherAvailable ? `<div class="weather-now">${weatherIcon(current.icon || 'sun')}<strong>${esc(current.temperature)}°</strong></div>
+      <span>Feels like ${esc(current.feelsLike ?? current.temperature)}°</span>
+      ${current.summary ? `<small>${esc(current.summary)}</small>` : ''}` : '<strong>Weather temporarily unavailable</strong><span>The calendar is still current.</span>'}
     </section>
-    <section class="rail-card forecast-card">
+    <section class="rail-card forecast-card ${weatherAvailable ? '' : 'weather-unavailable'}">
       <div class="forecast-heading">7-Day Forecast</div>
-      ${days.map((day, index) => `<div class="forecast-row ${index === 0 ? 'today' : ''}">
+      ${weatherAvailable ? days.map((day, index) => `<div class="forecast-row ${index === 0 ? 'today' : ''}">
         <span>${esc(index === 0 ? 'Today' : day.label)}</span>
         ${weatherIcon(day.icon || 'sun')}
         <b>${esc(day.high)}°</b>
         <small>${esc(day.low)}°</small>
         <i>${day.precipitation ? `${esc(day.precipitation)}%` : ''}</i>
-      </div>`).join('')}
+      </div>`).join('') : '<div class="forecast-fallback"><span>Forecast will return automatically on the next successful refresh.</span></div>'}
     </section>
     ${nextEvent ? `<section class="rail-card next-up-card person-${nextEventPerson}">
       <div class="next-up-label">Coming Up</div>
       <div class="next-up-date"><b>${esc(formatDate(nextEventDate, { day: 'numeric' }))}</b><span>${esc(formatDate(nextEventDate, { weekday: 'short', month: 'short' }))}</span></div>
       <div class="next-up-copy"><strong>${esc(nextEvent.title)}</strong><small>${esc(eventDetailLine(nextEvent))}</small></div>
-    </section>` : ''}
+    </section>` : `<section class="rail-card next-up-card next-up-empty">
+      <div class="next-up-label">Coming Up</div>
+      <div class="next-up-empty-copy"><strong>Nothing needs special attention</strong><small>The full two-week calendar is still at left.</small></div>
+    </section>`}
     ${countdown ? `<section class="rail-card countdown-card" data-target-date="${esc(countdown.date)}">
       <span>${esc(countdown.label)}</span>
       <strong id="live-countdown">${esc(countdown.days ?? '')}</strong>
@@ -507,6 +573,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .athletic-ribbon:before{z-index:-2}.athletic-ribbon:after{content:"";position:absolute;z-index:-1;left:22px;right:18px;top:7px;bottom:7px;border-radius:3px;background:${COLORS.blue}}.tone-red .athletic-ribbon:after{background:${COLORS.red}}.tone-purple .athletic-ribbon:after{background:${COLORS.purple}}.tone-blue .athletic-ribbon:after{background:${COLORS.blue}}
 .athletic-ribbon:after{display:none}
 .right-rail{grid-template-rows:118px 172px 590px 210px 249px}.next-up-date span{white-space:nowrap;font-size:13px}.next-up-copy strong{font-size:20px}.next-up-copy small{font-size:14px}
+.right-rail.no-countdown{grid-template-rows:118px 172px 590px minmax(0,1fr)}
 /* Composition pass: paint participates in panel borders and subheads interrupt their rules. */
 .today-panel,.upcoming-panel,.athletics-panel{overflow:visible}
 .paper-panel>.section-title{height:58px;margin-top:-25px;margin-left:-10px;margin-bottom:5px;z-index:3}
@@ -534,6 +601,9 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .dinner-block .section-title span{padding:0 0 0 55px;transform:translateY(-1px)}
 .weather-label,.forecast-heading,.next-up-label{display:flex;align-items:center;justify-content:center;padding-top:0;padding-bottom:0}
 .ticker-slot:first-child{padding-left:112px}
+/* Runtime fallbacks: semantic event marks, explicit weather state, and stable Coming Up geometry. */
+.semantic-icon{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(212,154,24,.10);color:${COLORS.gold};padding:3px}.semantic-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:1.8;fill:none}.semantic-icon.category-appointment{color:${COLORS.red}}.semantic-icon.category-school{color:${COLORS.blue}}.semantic-icon.category-household{color:${COLORS.green}}.semantic-icon.category-arts{color:${COLORS.purple}}.semantic-icon.category-sports{color:${COLORS.blue}}.semantic-icon.category-family{color:${COLORS.red}}.activity-visual{position:relative}.activity-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:${COLORS.paper}}
+.current-weather.weather-unavailable{gap:12px;text-align:center}.current-weather.weather-unavailable>strong{max-width:220px;font-size:24px;line-height:1.05}.current-weather.weather-unavailable>span{font-size:16px;color:#5d675f}.forecast-card.weather-unavailable{grid-template-rows:42px 1fr}.forecast-fallback{grid-column:1/3;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#5d675f;font-size:20px;line-height:1.25}.next-up-empty{display:flex;flex-direction:column}.next-up-empty:before{background:${COLORS.green}}.next-up-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 10px}.next-up-empty-copy strong{font-size:20px}.next-up-empty-copy small{font-size:14px;color:#58635c;margin-top:6px}
 `;
 
 function renderDashboardV2(digestData) {
@@ -611,5 +681,8 @@ export {
   renderAthletics,
   renderRightRail,
   peopleForEvent,
+  activityCategory,
+  comingUpScore,
+  selectComingUpEvent,
   V2_LOGOS,
 };

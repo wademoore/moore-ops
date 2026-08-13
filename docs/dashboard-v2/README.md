@@ -26,6 +26,20 @@ The v2 renderer consumes the existing digest model directly and supports additiv
 
 The new `weather.js` adapter is intentionally not wired into `index.js` yet.
 
+## Read-only real-data preview
+
+Run `npm run preview:dashboard-v2:real` from a normal local checkout that already has the existing `credentials.json`, `token.json`, and `.env` files. It writes `preview/dashboard-v2-real.html` after reading the same Calendar, Gmail, Drive, local sports, Nationals, and weather inputs used by Moore Ops.
+
+The adapter lives in `dashboard-v2-data.js`. It deliberately does not import `index.js`, `mailer.js`, the production renderer, or `uploadDashboard()`. Running it cannot send the digest, upload a dashboard, or replace the v1 Drive file. Missing local Google auth fails before any read is attempted; a weather failure is non-fatal and renders an explicit fallback.
+
+## Minimum runtime display policies
+
+- Event artwork resolves in this order: official organization logo, semantic category mark, neutral family spark. The semantic set covers appointments, travel, school, household, arts, sports, and family events; remote-logo failures reveal the semantic mark beneath them.
+- `Coming Up` is deterministic and deliberately not just the next event. Appointments, trips, performances, celebrations, games, and meets receive priority; routine practice, classes, recycling, trash, and pickup are de-emphasized. Score ties resolve by event time and then title. If nothing clears the threshold, the rail says that nothing needs special attention while preserving the full two-week list.
+- If current weather or forecast data is unavailable, the rail keeps its geometry and explains that weather will retry on the next refresh. Calendar data remains visible.
+
+Run `npm run preview:dashboard-v2:states` to generate six self-contained representative HTML states under `preview/states`: approved, missing-icons, weather-offline, routine-only, special-banner, and quiet.
+
 ## Local preview
 
 Run `node scripts/render-dashboard-v2-preview.mjs`. It writes `preview/dashboard-v2.html` using the June density fixture.
@@ -91,4 +105,4 @@ Before any production wiring:
 5. Add weather failure fallback/caching and confirm network behavior on the Pi.
 6. Add a separate v2 upload/deployment target; do not reuse the v1 Drive filename.
 7. Reviewer sign-off and full test suite before any production connection.
-8. Define the minimum viable icon fallback and Coming Up rules; richer doodle rotation and seasonal collections may follow after cutover.
+8. Review the implemented minimum icon fallback and Coming Up rules against a real household-data preview; richer doodle rotation and seasonal collections may follow after cutover.

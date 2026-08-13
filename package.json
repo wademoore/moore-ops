@@ -4,6 +4,8 @@
     "dev": "node scripts/dashboard-v2-dev-server.mjs",
     "test": "node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js",
     "preview:dashboard-v2": "node scripts/render-dashboard-v2-preview.mjs",
+    "preview:dashboard-v2:real": "node scripts/render-dashboard-v2-real-preview.mjs",
+    "preview:dashboard-v2:states": "node scripts/render-dashboard-v2-states.mjs",
     "preview:dashboard-v2:png": "node scripts/render-dashboard-v2-png.mjs"
   },
   "dependencies": {

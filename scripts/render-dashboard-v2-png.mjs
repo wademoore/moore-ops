@@ -78,13 +78,14 @@ async function renderDashboardV2Png({
   outputPath = resolve(root, 'preview/dashboard-v2.png'),
   htmlPath = resolve(root, 'preview/dashboard-v2.html'),
   browserPath,
+  data = sampleDashboardV2Data,
 } = {}) {
   const output = resolve(outputPath);
   const html = resolve(htmlPath);
 
   await mkdir(dirname(output), { recursive: true });
   await mkdir(dirname(html), { recursive: true });
-  await writeFile(html, renderDashboardV2(sampleDashboardV2Data), 'utf8');
+  await writeFile(html, renderDashboardV2(data), 'utf8');
 
   const executablePath = resolveBrowserPath(browserPath);
   const browser = await chromium.launch({

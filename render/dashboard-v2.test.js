@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderDashboardV2, peopleForEvent } from './dashboard-v2.js';
+import { activityCategory, renderDashboardV2, peopleForEvent, selectComingUpEvent } from './dashboard-v2.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
 
 describe('experimental dashboard v2 isolation and structure', () => {
@@ -128,5 +128,36 @@ describe('person identity color classification', () => {
     assert.equal(peopleForEvent({ title: 'Ophelia Dance' }), 'ophelia');
     assert.equal(peopleForEvent({ title: 'Myles + Ophelia Dentist' }), 'both');
     assert.equal(peopleForEvent({ title: 'Recycling Pickup' }), 'family');
+  });
+});
+
+describe('runtime display policies', () => {
+  it('uses semantic event marks instead of diagnostic yellow circles', () => {
+    const semanticHtml = renderDashboardV2(sampleDashboardV2Data);
+    assert.equal(activityCategory({ title: 'Dentist appointment' }), 'appointment');
+    assert.equal(activityCategory({ title: 'Matoaka School field day' }), 'school');
+    assert.equal(activityCategory({ title: 'Airport pickup' }), 'travel');
+    assert.equal(activityCategory({ title: 'Recycling Pickup' }), 'household');
+    assert.equal(activityCategory({ title: 'Dance recital' }), 'arts');
+    assert.equal(activityCategory({ title: 'Unknown errand' }), 'generic');
+    assert.match(semanticHtml, /semantic-icon category-school/);
+    assert.doesNotMatch(semanticHtml, /class="activity-mark"/);
+  });
+
+  it('chooses a meaningful event over an earlier routine event', () => {
+    const routine = sampleDashboardV2Data.upcomingEvents[1];
+    const appointment = sampleDashboardV2Data.upcomingEvents[0];
+    assert.equal(selectComingUpEvent([routine, appointment], sampleDashboardV2Data.today), appointment);
+  });
+
+  it('renders stable empty and weather failure states', () => {
+    const fallback = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      upcomingEvents: sampleDashboardV2Data.upcomingEvents.filter(item => /practice|recycling/i.test(item.title)),
+      weather: { current: {}, days: [] },
+    });
+    assert.match(fallback, /Nothing needs special attention/);
+    assert.match(fallback, /Weather temporarily unavailable/);
+    assert.match(fallback, /Forecast will return automatically/);
   });
 });
