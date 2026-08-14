@@ -34,8 +34,16 @@ async function inspect(data) {
       const rgb = color.match(/[\d.]+/g)?.slice(0, 3).map(Number) || [0, 0, 0];
       return { className: element.className, color, brightness: Math.max(...rgb) };
     });
+    const todayTitle = document.querySelector('.today-panel .section-title span');
+    const todayStar = document.querySelector('.today-panel .doodle-star .section-doodle');
+    const titleRange = document.createRange();
+    titleRange.selectNodeContents(todayTitle);
+    const titleTextRect = titleRange.getBoundingClientRect();
+    const starRect = todayStar.getBoundingClientRect();
+
     return {
       canvas: { width: canvas.width, height: canvas.height },
+      todayHeader: { textRight: titleTextRect.right, starLeft: starRect.left, starRight: starRect.right, panelRight: document.querySelector('.today-panel').getBoundingClientRect().right },
       panels,
       clipped,
       surfaces,
@@ -60,6 +68,8 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     it(`${name} state stays within the canvas without text clipping or external images`, async () => {
       const result = await inspect(data);
       assert.deepEqual(result.canvas, { width: 2560, height: 1440 });
+      assert.ok(result.todayHeader.starLeft >= result.todayHeader.textRight + 8, JSON.stringify(result.todayHeader));
+      assert.ok(result.todayHeader.starRight <= result.todayHeader.panelRight - 8, JSON.stringify(result.todayHeader));
       assert.deepEqual(result.clipped, []);
       assert.deepEqual(result.externalImages, []);
       for (const panel of result.panels) {

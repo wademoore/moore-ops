@@ -7,6 +7,7 @@ import {
   collapseUpcomingEvents,
   conversationalMatchDate,
   renderDashboardV2,
+  renderToday,
   renderUpcoming,
   peopleForEvent,
   selectComingUpEvent,
@@ -454,6 +455,51 @@ describe('television readability and horizon policies', () => {
     });
     assert.match(html, /Train to Richmond/);
   });
+  it('suppresses planning actions from Horizon unless explicitly overridden', () => {
+    const actions = ['Book hotel', 'Buy tickets', 'Decide on flights', 'Schedule pet care', 'Reserve parking', 'Arrange airport ride']
+      .map((title, index) => event(title, '2026-09-' + String(index + 1).padStart(2, '0')));
+    assert.equal(selectHorizonEvents(actions, today, 10).length, 0);
+    assert.equal(selectHorizonEvents([event('Wade: Book train + hotel — CAA Tournament (D.C.)', '2026-12-01')], today, 10).length, 0);
+    const explicit = selectHorizonEvents([event('COUNTDOWN: Book hotel', '2026-09-10')], today, 10);
+    assert.equal(explicit[0].event.title, 'COUNTDOWN: Book hotel');
+    const upcoming = renderUpcoming({ today, upcomingEvents: [event('Book hotel', '2026-08-20')], athletics: {} });
+    assert.match(upcoming, /Book hotel/);
+  });
+
+  it('gives family visits major Horizon priority alongside retained work travel', () => {
+    const selected = selectHorizonEvents([
+      event('Regional Dance Performance', '2026-08-29'),
+      event('Wade: CORE Annual Gathering (work travel)', '2026-09-01'),
+      event('Grandma visit', '2026-12-01'),
+    ], today, 3);
+    assert.deepEqual(selected.map(item => item.event.title), [
+      'Wade: CORE Annual Gathering (work travel)',
+      'Grandma visit',
+      'Regional Dance Performance',
+    ]);
+  });
+
+  it('renders couch-readable primary and secondary Horizon labels', () => {
+    const html = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      today,
+      horizonEvents: [
+        event('Wade: CORE Annual Gathering (work travel)', '2026-09-01'),
+        event('A Christmas Carol — American Shakespeare Center', '2026-12-12'),
+      ],
+    });
+    assert.match(html, /<b>CORE Annual Gathering<\/b><small>Wade away · work travel<\/small>/);
+    assert.match(html, /<b>A Christmas Carol<\/b><small>American Shakespeare Center<\/small>/);
+    assert.doesNotMatch(html, /<b>Wade:/);
+  });
+
+  it('uses contextual Today empty-state wording', () => {
+    const empty = { ...sampleDashboardV2Data, today, days: [{ events: [], tasks: [] }] };
+    assert.match(renderToday({ ...empty, now: new Date(2026, 7, 13, 5, 30) }), /Nothing scheduled today\./);
+    assert.match(renderToday({ ...empty, now: new Date(2026, 7, 13, 18, 0) }), /Nothing else today\./);
+    assert.doesNotMatch(renderToday({ ...empty, now: new Date(2026, 7, 13, 18, 0) }), /Nothing scheduled yet/);
+  });
+
   it('deduplicates, ranks explicit countdowns first, and caps the module at three', () => {
     const selected = selectHorizonEvents([
       event('Myles Birthday', '2026-09-01'),

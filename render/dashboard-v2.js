@@ -327,6 +327,12 @@ function renderToday(data) {
   const tasks = today.tasks || [];
   const wp = data.weeklyPriorities || { active: [], overdue: [], completed: [] };
 
+  const displayNow = data.now ? new Date(data.now) : new Date();
+  const todayKey = formatDate(data.today, { year: 'numeric', month: '2-digit', day: '2-digit' });
+  const nowKey = formatDate(displayNow, { year: 'numeric', month: '2-digit', day: '2-digit' });
+  const dayUnderway = nowKey === todayKey && displayNow.getHours() >= 6;
+  const emptyTodayCopy = dayUnderway ? 'Nothing else today.' : 'Nothing scheduled today.';
+
   const eventRows = events.length
     ? events.map(event => {
         const person = peopleForEvent(event);
@@ -339,7 +345,7 @@ function renderToday(data) {
           </div>
         </div>`;
       }).join('')
-    : '<div class="empty-state">Nothing scheduled yet.</div>';
+    : `<div class="empty-state">${emptyTodayCopy}</div>`;
 
   const taskRows = tasks.slice(0, 4).map(task => `<div class="task-row">
     <span class="owner owner-${esc(task.owner)}">${esc(task.owner)}</span>
@@ -639,6 +645,25 @@ function horizonDisplayTitle(event) {
   return cleanDisplayText(event?.title).replace(/^COUNTDOWN:\s*/i, '').trim();
 }
 
+function horizonPresentation(event, semantic = analyzeEventSemantics(event)) {
+  const display = horizonDisplayTitle(event);
+  const ownerMatch = display.match(/^(Wade|Robyn|Myles|Ophelia|Family)\s*(?::|·|—|-)\s*/i);
+  const owner = ownerMatch?.[1] || '';
+  let primary = display.replace(/^(?:Wade|Robyn|Myles|Ophelia|Family)\s*(?::|·|—|-)\s*/i, '').trim();
+  let secondary = '';
+
+  if (semantic.travel && /\bwork travel\b/i.test(display)) {
+    primary = primary.replace(/\s*\(work travel\)\s*/i, '').trim();
+    secondary = `${owner || 'Wade'} away · work travel`;
+  } else if ((semantic.reasonCodes.includes('SPECIAL_PERFORMANCE') || /\ba christmas carol\b/i.test(primary)) && /\s+—\s+/.test(primary)) {
+    const [name, ...venue] = primary.split(/\s+—\s+/);
+    primary = name.trim();
+    secondary = venue.join(' — ').trim();
+  }
+
+  return { primary, secondary };
+}
+
 function horizonEligibility(event, today) {
   const key = eventDateKey(event);
   if (!key) return null;
@@ -653,7 +678,8 @@ function horizonEligibility(event, today) {
   const schoolMilestone = semantic.reasonCodes.includes('MILESTONE_FIRST_LAST') && semantic.classification === 'school';
   const majorEvent = /tournament|championship|recital|concert|performance|ceremony/.test(text);
   const recurring = Boolean(event?.raw?.recurringEventId || event?.raw?.recurrence?.length);
-  if (!explicit && semantic.itineraryLeg) return null;
+  const planningAction = /^(?:(?:wade|robyn|myles|ophelia|family)\s*(?::|·|—|-)\s*)?(?:book|buy|decide|schedule|reserve|register|purchase|order|plan|confirm|arrange)\b/i.test(horizonDisplayTitle(event));
+  if (!explicit && (semantic.itineraryLeg || planningAction)) return null;
   if (!explicit && (semantic.routine || semantic.appointment || recurring)) return null;
   if (!explicit && !birthday && !semantic.travel && !semantic.familyVisit && !schoolMilestone && !semantic.holiday && !majorEvent) return null;
 
@@ -666,7 +692,8 @@ function horizonEligibility(event, today) {
   if (schoolMilestone) selectionReasonCodes.push('HORIZON_SCHOOL_MILESTONE');
   if (semantic.holiday) selectionReasonCodes.push('HORIZON_HOLIDAY');
   if (majorEvent) selectionReasonCodes.push('HORIZON_MAJOR_EVENT');
-  return { event, days: distance, semantics: semantic, explicit, selectionReasonCodes };
+  const horizonScore = semantic.familyVisit ? Math.max(110, semantic.baseScore) : semantic.baseScore;
+  return { event, days: distance, semantics: semantic, explicit, horizonScore, selectionReasonCodes };
 }
 
 function selectHorizonEvents(events, today, limit = 3) {
@@ -680,7 +707,7 @@ function selectHorizonEvents(events, today, limit = 3) {
   }
   return [...deduped.values()]
     .sort((a, b) => Number(b.explicit) - Number(a.explicit)
-      || b.semantics.baseScore - a.semantics.baseScore
+      || b.horizonScore - a.horizonScore
       || a.days - b.days
       || horizonDisplayTitle(a.event).localeCompare(horizonDisplayTitle(b.event)))
     .slice(0, Math.min(3, limit));
@@ -697,9 +724,10 @@ function renderHorizon(data) {
     <div class="horizon-list">${items.map(item => {
       const date = dateAtNoon(eventDateKey(item.event));
       const person = peopleForEvent(item.event);
+      const presentation = horizonPresentation(item.event, item.semantics);
       return `<article class="horizon-item person-${person}" data-selection-reasons="${esc(item.selectionReasonCodes.join(','))}">
         <div class="horizon-count"><strong>${esc(item.days)}</strong><span>DAYS</span></div>
-        <div class="horizon-copy"><b>${esc(horizonDisplayTitle(item.event))}</b><time>${esc(formatDate(date, { weekday: 'short', month: 'short', day: 'numeric' }))}</time></div>
+        <div class="horizon-copy"><b>${esc(presentation.primary)}</b>${presentation.secondary ? `<small>${esc(presentation.secondary)}</small>` : ''}<time>${esc(formatDate(date, { weekday: 'short', month: 'short', day: 'numeric' }))}</time></div>
       </article>`;
     }).join('')}</div>
   </section>`;
@@ -864,7 +892,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .weather-label{min-height:38px;padding-top:10px}.forecast-heading{height:42px;padding-top:11px}.forecast-card{grid-template-rows:42px 72px repeat(3,minmax(0,1fr))}.next-up-label{height:38px;padding-top:10px}
 /* Hand-drawn marginalia: intentionally limited to major section brushes and the ticker. */
 .section-doodle,.athletics-arrows,.ticker-doodle{position:absolute;z-index:5;display:block;background-position:center;background-repeat:no-repeat;background-size:contain;pointer-events:none}
-.doodle-star .section-doodle{width:53px;height:53px;left:470px;top:0;background-image:var(--doodle-star);transform:rotate(-8deg)}
+.doodle-star .section-doodle{width:53px;height:53px;left:auto;right:24px;top:0;background-image:var(--doodle-star);transform:rotate(-8deg)}
 .doodle-calendar .section-doodle{width:45px;height:49px;left:2px;top:4px;background-image:var(--doodle-calendar);transform:rotate(-4deg)}
 .doodle-calendar span{padding-left:76px!important}
 .doodle-soccer .section-doodle{width:55px;height:55px;left:471px;top:1px;background-image:var(--doodle-soccer);transform:rotate(8deg)}
@@ -898,7 +926,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .athletic-ribbon{height:46px;padding:3px 12px 3px 48px;gap:10px;font-size:21px;letter-spacing:.025em;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}.athletic-ribbon span{line-height:1.2;padding:2px 0}.athletic-logo{width:31px;height:31px;padding:3px}.athletics-grid{height:calc(100% - 52px)}
 .sports-ticker{color:#f1e6d0}.ticker-slot b{font-size:20px;font-weight:700}.ticker-slot span{font-size:15px;color:#eee0c4}.updated{font-size:11px;color:#eadab8}
 .right-rail{grid-template-rows:118px 172px 590px minmax(0,1fr)}
-.horizon-card{display:flex;flex-direction:column;min-height:0}.horizon-label{flex:0 0 46px;display:flex;align-items:center;justify-content:center;color:#fff;background-image:var(--section-green);background-size:100% 100%;font-size:21px;font-style:italic;font-weight:700;letter-spacing:.045em;text-transform:uppercase}.horizon-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.horizon-count-1 .horizon-list{grid-template-rows:1fr}.horizon-count-2 .horizon-list{grid-template-rows:repeat(2,minmax(0,1fr))}.horizon-item{position:relative;display:grid;grid-template-columns:82px minmax(0,1fr);gap:9px;align-items:center;padding:7px 6px 7px 11px;border-bottom:1px solid var(--rule);min-height:0}.horizon-item:last-child{border-bottom:0}.horizon-item:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:6px;background:${COLORS.green}}.horizon-item.person-myles:before{background:${COLORS.red}}.horizon-item.person-ophelia:before{background:${COLORS.purple}}.horizon-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.horizon-count{display:flex;flex-direction:column;align-items:center}.horizon-count strong{font-family:"Roboto Slab",Georgia,serif;font-size:43px;line-height:.9;color:${COLORS.greenDark}}.horizon-count span{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--secondary)}.horizon-copy{display:flex;flex-direction:column;min-width:0}.horizon-copy b{font-size:20px;line-height:1.02}.horizon-copy time{font-size:15px;margin-top:5px;color:var(--secondary);font-weight:600}.horizon-count-1 .horizon-item{grid-template-columns:1fr;text-align:center}.horizon-count-1 .horizon-count strong{font-size:72px}.horizon-count-1 .horizon-copy b{font-size:27px}.horizon-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px}.horizon-empty-copy strong{font-size:21px}.horizon-empty-copy small{font-size:15px;color:var(--secondary);margin-top:6px}.horizon-doodle{width:72px;height:72px;background:var(--doodle-star) center/contain no-repeat;margin-bottom:7px}
+.horizon-card{display:flex;flex-direction:column;min-height:0}.horizon-label{flex:0 0 46px;display:flex;align-items:center;justify-content:center;color:#fff;background-image:var(--section-green);background-size:100% 100%;font-size:21px;font-style:italic;font-weight:700;letter-spacing:.045em;text-transform:uppercase}.horizon-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.horizon-count-1 .horizon-list{grid-template-rows:1fr}.horizon-count-2 .horizon-list{grid-template-rows:repeat(2,minmax(0,1fr))}.horizon-item{position:relative;display:grid;grid-template-columns:82px minmax(0,1fr);gap:9px;align-items:center;padding:7px 6px 7px 11px;border-bottom:1px solid var(--rule);min-height:0}.horizon-item:last-child{border-bottom:0}.horizon-item:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:6px;background:${COLORS.green}}.horizon-item.person-myles:before{background:${COLORS.red}}.horizon-item.person-ophelia:before{background:${COLORS.purple}}.horizon-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.horizon-count{display:flex;flex-direction:column;align-items:center}.horizon-count strong{font-family:"Roboto Slab",Georgia,serif;font-size:43px;line-height:.9;color:${COLORS.greenDark}}.horizon-count span{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--secondary)}.horizon-copy{display:flex;flex-direction:column;min-width:0}.horizon-copy b{font-size:22px;line-height:1.04}.horizon-copy small{font-size:15px;line-height:1.05;margin-top:4px;color:var(--secondary);font-weight:600}.horizon-copy time{font-size:15px;margin-top:5px;color:var(--secondary);font-weight:600}.horizon-count-1 .horizon-item{grid-template-columns:1fr;text-align:center}.horizon-count-1 .horizon-count strong{font-size:72px}.horizon-count-1 .horizon-copy b{font-size:27px}.horizon-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px}.horizon-empty-copy strong{font-size:21px}.horizon-empty-copy small{font-size:15px;color:var(--secondary);margin-top:6px}.horizon-doodle{width:72px;height:72px;background:var(--doodle-star) center/contain no-repeat;margin-bottom:7px}
 `;
 
 function renderDashboardV2(digestData) {
