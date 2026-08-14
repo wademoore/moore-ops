@@ -22,12 +22,14 @@ Initial HTML contains an embedded snapshot. `window.updateSportsTicker(snapshot)
 
 ## Phase 2 — smallest AWS shape (not deployed)
 
-- One small Node.js Lambda behind a Lambda Function URL, returning only `sports.json`.
+- One small Node.js Lambda behind a Lambda Function URL, returning only a bounded `sports.json` snapshot. The endpoint contains public sports data only—no household information or credentials.
 - One private S3 object for the last-known-good normalized snapshot. Lambda reads it before upstream work and writes only after validation.
-- Conditional upstream freshness: roughly one minute during a live event, five minutes near kickoff/first pitch, 30–60 minutes for ordinary upcoming games, and several hours in the offseason.
-- Function URL throttling and reserved concurrency of one; cache headers prevent needless browser calls. Hard caps should stop upstream retries after one bounded attempt per feed.
-- Create a $1 monthly AWS Budget alert before enabling the endpoint.
+- The snapshot returns a bounded `nextPollSeconds` recommendation: 120 seconds during a live event, 300 seconds within six hours of an event or during a fresh-final window, 1,800 seconds for ordinary upcoming/in-season states, and 7,200 seconds in full offseason. The client independently clamps recommendations to the safe 120–7,200 second range.
+- Lambda Function URLs do not provide configurable request-rate throttling equivalent to API Gateway. Reserved concurrency of one limits simultaneous execution, but it is not a hard monthly spending cap. If strict request throttling becomes necessary, use API Gateway or another throttling layer.
+- Cache headers, one bounded upstream attempt per feed, and event-aware S3 reuse minimize upstream and AWS work.
+- Create a $1 monthly AWS Budget alert before enabling the endpoint. A Budget alert sends a notification; it does not automatically stop charges.
+- Configure CORS for the eventual dashboard delivery origin. Credentialed cross-origin requests are unnecessary because the payload is public sports data only.
 
-At one television polling every five minutes, the browser makes at most about 8,640 requests in a 30-day month. Event-aware caching keeps upstream requests materially lower. Lambda request and compute volume should remain inside the perpetual free tier for a typical account; S3 storage/request cost is effectively pennies, with a practical estimate below $0.10/month and a conservative expectation below $1/month. No commercial sports-data cost or account is required.
+For one television, a full-offseason month is about 360 requests (12/day). An ordinary in-season month is about 1,440 requests before shorter event windows. A representative mixed month with weekly games, several live windows, and fresh finals is approximately 2,000–4,000 requests; an unusually event-heavy month should remain below roughly 7,000. Lambda request and compute volume should normally remain inside the AWS free tier, and the tiny S3 object should cost pennies. Practical AWS cost remains negligible—expected below $0.10/month and conservatively below $1/month—with no commercial sports-data fee or account.
 
 Risks: ESPN can change or withdraw its undocumented JSON at any time; MLB can change its public schema; event status corrections may lag. The cache must never label stale data as live, and an expired cache should degrade to unavailable/offseason instead of inventing data.

@@ -22,6 +22,7 @@ export const RELEVANCE = Object.freeze({
   football: { finalMs: 18 * HOUR, upcomingMs: 7 * DAY },
   openerMs: 21 * DAY, placementLockMs: 30 * 60000, leadThreshold: 18,
   freshMs: 15 * 60000, expiredMs: 24 * HOUR,
+  pollSeconds: { live: 120, event: 300, upcoming: 1800, offseason: 7200, min: 120, max: 7200 },
 });
 const TIERS = { live: 600, delayed: 540, suspended: 530, final: 430, scheduled: 300, postponed: 210, cancelled: 100, offseason: 0, unavailable: -100 };
 export function easternDateKey(value) {
@@ -31,6 +32,14 @@ export function easternDateKey(value) {
 }
 export function easternTime(value) {
   return new Date(value).toLocaleTimeString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit' });
+}
+export function formatSportsEventWhen(value, now = new Date(), { opener = false, includeTime = true } = {}) {
+  const key = easternDateKey(value), today = easternDateKey(now), tomorrow = easternDateKey(+new Date(now) + DAY);
+  const time = easternTime(value);
+  if (key === today) return `Today${includeTime ? ` · ${time}` : ''}`;
+  if (key === tomorrow) return `Tomorrow${includeTime ? ` · ${time}` : ''}`;
+  const date = new Date(value).toLocaleDateString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric' });
+  return `${opener ? 'Opener ' : ''}${date}${includeTime ? ` · ${time}` : ''}`;
 }
 export function normalizeState({ name = '', state = '', completed = false, description = '' } = {}) {
   const text = `${name} ${state} ${description}`.toLowerCase();
@@ -71,17 +80,19 @@ function chooseFeed(feed, now) {
   if (!opener) return null;
   const event = { ...opener, isSeasonOpener: true };
   const relevance = eventRelevance(event, now);
-  return relevance.relevant ? { event, relevance, feed } : null;
+  return { event, relevance: relevance.relevant ? relevance : { relevant: false, kind: 'distant-opener', score: 0 }, feed };
 }
 function organizationSlot(config, feeds, now) {
   const choices = feeds.map(feed => chooseFeed(feed, now)).filter(Boolean).sort((a, b) => b.relevance.score - a.relevance.score || a.feed.id.localeCompare(b.feed.id));
-  const choice = choices[0];
+  let choice = choices[0];
   const failed = feeds.length > 0 && feeds.every(feed => feed.error);
   const fetchedAt = feeds.map(feed => feed.fetchedAt).filter(Boolean).sort().at(-1);
   const age = fetchedAt ? +new Date(now) - +new Date(fetchedAt) : Infinity;
+  if (choice && (age > RELEVANCE.expiredMs || (age > RELEVANCE.freshMs && ['live', 'delayed', 'suspended'].includes(choice.event.state)))) choice = null;
   return { organization: config.organization, label: config.label, affinity: config.affinity, logo: config.logo,
     event: choice?.event || null, presentationState: choice?.relevance.kind || (failed ? 'unavailable' : 'offseason'),
     score: choice?.relevance.score ?? (failed ? -100 : 0),
+    reasonCodes: choice ? ['STATE_' + choice.relevance.kind.toUpperCase().replaceAll('-', '_'), 'AFFINITY_' + config.affinity] : [failed ? 'FEED_UNAVAILABLE' : 'OFFSEASON'],
     dataDelayed: Boolean(choice && age > RELEVANCE.freshMs && age <= RELEVANCE.expiredMs && !['live', 'delayed', 'suspended'].includes(choice.event.state)),
     feedFailures: feeds.filter(feed => feed.error).map(feed => feed.id) };
 }
@@ -100,7 +111,13 @@ export function selectSportsSlots(feeds, { now = new Date(), previous = null } =
   return leader ? [leader, ...slots.filter(slot => slot !== leader)] : slots;
 }
 export function buildSportsSnapshot(feeds, { now = new Date(), previous = null } = {}) {
-  return { version: SPORTS_SNAPSHOT_VERSION, generatedAt: new Date(now).toISOString(), slots: selectSportsSlots(feeds, { now, previous }) };
+  const slots = selectSportsSlots(feeds, { now, previous });
+  const states = slots.map(slot => slot.event?.state || slot.presentationState);
+  let nextPollSeconds = RELEVANCE.pollSeconds.offseason;
+  if (states.includes('live')) nextPollSeconds = RELEVANCE.pollSeconds.live;
+  else if (slots.some(slot => ['final','delayed','suspended'].includes(slot.presentationState) || (slot.event && +new Date(slot.event.startTime) - +new Date(now) <= 6 * HOUR))) nextPollSeconds = RELEVANCE.pollSeconds.event;
+  else if (slots.some(slot => slot.score > 0)) nextPollSeconds = RELEVANCE.pollSeconds.upcoming;
+  return { version: SPORTS_SNAPSHOT_VERSION, generatedAt: new Date(now).toISOString(), nextPollSeconds, slots };
 }
 export function validateSportsSnapshot(snapshot) {
   return Boolean(snapshot && snapshot.version === SPORTS_SNAPSHOT_VERSION && Array.isArray(snapshot.slots) && snapshot.slots.length <= 4 && snapshot.slots.every(slot => slot && typeof slot.organization === 'string' && typeof slot.label === 'string' && typeof slot.logo === 'string' && !/^https?:/i.test(slot.logo)));
