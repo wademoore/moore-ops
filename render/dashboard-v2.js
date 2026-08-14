@@ -64,6 +64,7 @@ const V2_LOGOS = {
   commanders: optionalAssetDataUrl('logo-commanders.png'),
   tennessee: optionalAssetDataUrl('logo-tennessee.png'),
   tribe: optionalAssetDataUrl('logo-tribe.svg'),
+  wm: optionalAssetDataUrl('logo-tribe.svg'),
 };
 
 function esc(value) {
@@ -765,23 +766,19 @@ function renderRightRail(data) {
 }
 
 function renderTicker(data) {
-  const nats = data.nationalsData || {};
-  const natsResult = nats.lastGame
-    ? `${nats.lastGame.result} ${nats.lastGame.score} ${nats.lastGame.atHome ? 'vs.' : '@'} ${nats.lastGame.opponent}`
-    : 'Season in progress';
-  const natsNext = nats.nextGame
-    ? `Next: ${nats.nextGame.atHome ? 'vs.' : '@'} ${nats.nextGame.opponent} · ${nats.nextGame.day} ${nats.nextGame.time}`
-    : 'Next game TBD';
-  const slots = data.sportsTicker || [
-    { logo: V2_LOGOS.nationals, active: true, line1: natsResult, line2: natsNext },
-    { logo: V2_LOGOS.commanders, active: false, line1: 'Offseason', line2: 'Season opens September' },
-    { logo: V2_LOGOS.tennessee, active: false, line1: 'Offseason', line2: 'Season opens August' },
-    { logo: V2_LOGOS.tribe, active: false, line1: 'Offseason', line2: 'Season opens August' },
-  ];
-  const localTickerLogos = [V2_LOGOS.nationals, V2_LOGOS.commanders, V2_LOGOS.tennessee, V2_LOGOS.tribe];
-  return `<footer class="sports-ticker">${slots.map((slot, index) => `<div class="ticker-slot ${slot.active ? 'active' : ''}">
-    ${logo(localTickerLogos[index % localTickerLogos.length], 'ticker-logo')}<div><b>${esc(slot.line1)}</b><span>${esc(slot.line2)}</span></div>
-  </div>`).join('')}<i class="ticker-doodle" aria-hidden="true"></i><small class="updated">Updated ${esc(new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }))} ET</small></footer>`;
+  const slots = data.sportsSnapshot?.slots || data.sportsTicker || [];
+  const format = slot => {
+    if (!slot.event) return [slot.presentationState === 'unavailable' ? 'Data unavailable' : 'Offseason', slot.presentationState === 'unavailable' ? 'Last credible update retained' : 'No game in the current window'];
+    const e = slot.event, team = e.rank ? `#${e.rank} ${slot.label}` : slot.label, place = e.homeAway === 'home' ? 'vs' : '@', opponent = e.opponentAbbreviation || e.opponent;
+    const when = new Date(e.startTime).toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'short', hour: 'numeric', minute: '2-digit' });
+    if (e.state === 'live') return [`${team} ${e.teamScore} · ${opponent} ${e.opponentScore}`, `${e.statusText || 'Live'}${e.clock ? ` · ${e.clock}` : ''}`];
+    if (e.state === 'final') return [`${team} ${e.result} ${e.teamScore}–${e.opponentScore}`, `Final · ${place} ${opponent}${e.record ? ` · ${e.record}` : ''}`];
+    const status = ['delayed','postponed','suspended','cancelled'].includes(e.state) ? (e.statusText || e.state) + ' · ' : slot.presentationState === 'opener' ? 'Season opens ' : '';
+    return [`${team} ${place} ${opponent}`, `${status}${when}${slot.dataDelayed ? ' · Data delayed' : ''}`];
+  };
+  const rendered = slots.slice(0, 4).map(slot => { const [line1,line2] = slot.line1 ? [slot.line1,slot.line2] : format(slot); return `<div class="ticker-slot ${slot.event?.state === 'live' || slot.active ? 'active' : ''}" data-sports-org="${esc(slot.organization || '')}">${logo(V2_LOGOS[slot.logo || slot.organization] || V2_LOGOS.wm, 'ticker-logo')}<div><b>${esc(line1)}</b><span>${esc(line2)}</span></div></div>`; }).join('');
+  const updated = data.sportsSnapshot?.generatedAt || new Date().toISOString();
+  return `<footer class="sports-ticker" data-sports-version="1">${rendered}<i class="ticker-doodle" aria-hidden="true"></i><small class="updated">Updated ${esc(new Date(updated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }))} ET</small></footer>`;
 }
 
 function browserScript() {
@@ -793,6 +790,22 @@ function browserScript() {
     const date = document.getElementById('live-date');
     const countdown = document.querySelector('.countdown-card');
     const paletteSetting = dashboard?.dataset.palette || 'auto';
+    const logoMap = ${JSON.stringify(V2_LOGOS)};
+    const validSports = s => s && s.version === 1 && Array.isArray(s.slots) && s.slots.length <= 4 && s.slots.every(x => x && typeof x.organization === 'string' && typeof x.logo === 'string' && !/^https?:/i.test(x.logo));
+    const sportLines = slot => {
+      const e=slot.event;if(!e)return[slot.presentationState==='unavailable'?'Data unavailable':'Offseason',slot.presentationState==='unavailable'?'Last credible update retained':'No game in the current window'];
+      const p=e.homeAway==='home'?'vs':'@',o=e.opponentAbbreviation||e.opponent,t=e.rank?'#'+e.rank+' '+slot.label:slot.label,w=new Date(e.startTime).toLocaleString('en-US',{timeZone:zone,weekday:'short',hour:'numeric',minute:'2-digit'});
+      if(e.state==='live')return[t+' '+e.teamScore+' · '+o+' '+e.opponentScore,(e.statusText||'Live')+(e.clock?' · '+e.clock:'')];
+      if(e.state==='final')return[t+' '+e.result+' '+e.teamScore+'–'+e.opponentScore,'Final · '+p+' '+o+(e.record?' · '+e.record:'')];
+      return[t+' '+p+' '+o,(slot.presentationState==='opener'?'Season opens ':'')+w+(slot.dataDelayed?' · Data delayed':'')];
+    };
+    window.updateSportsTicker = snapshot => {
+      if(!validSports(snapshot))return false;const ticker=document.querySelector('.sports-ticker'),nodes=[...(ticker?.querySelectorAll('.ticker-slot')||[])];if(!ticker||nodes.length!==snapshot.slots.length)return false;
+      snapshot.slots.forEach((slot,i)=>{const lines=sportLines(slot),node=nodes[i];node.dataset.sportsOrg=slot.organization;node.classList.toggle('active',slot.event?.state==='live');node.querySelector('img').src=logoMap[slot.logo]||logoMap.wm;node.querySelector('b').textContent=lines[0];node.querySelector('span').textContent=lines[1];});
+      const stamp=ticker.querySelector('.updated');if(stamp)stamp.textContent='Updated '+new Date(snapshot.generatedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:zone})+' ET';return true;
+    };
+    const sportsUrl=dashboard?.dataset.sportsUrl;
+    if(sportsUrl)setInterval(async()=>{try{const response=await fetch(sportsUrl,{cache:'no-store'});if(response.ok)window.updateSportsTicker(await response.json());}catch{}},300000);
     const applyPalette = now => {
       if (!dashboard || paletteSetting !== 'auto') return;
       const hour = Number(new Intl.DateTimeFormat('en-US', { hour: '2-digit', hourCycle: 'h23', timeZone: zone }).format(now));

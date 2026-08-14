@@ -27,6 +27,7 @@ async function fetchDashboardV2Data({
   const readEmails = fetchers.emails || (async () => (await import('./gmail.js')).getActivityEmails());
   const readDocs = fetchers.docs || (async () => (await import('./drive.js')).getFamilyDocs());
   const readNationals = fetchers.nationals || (async () => (await import('./digest/nationalsParser.js')).fetchNationalsData());
+  const readSports = fetchers.sports || (async () => (await import('./sports/index.js')).fetchSportsSnapshot({ logger }));
   const readWeather = fetchers.weather || fetchDashboardWeather;
   const buildData = build || (async input => (await import('./digest/builder.js')).buildDigest(input));
 
@@ -35,13 +36,14 @@ async function fetchDashboardV2Data({
     return WEATHER_FALLBACK;
   });
 
-  const [rawEvents, rawEvents14d, rawEvents180d, emails, docs, nationalsData, weather] = await Promise.all([
+  const [rawEvents, rawEvents14d, rawEvents180d, emails, docs, nationalsData, sportsSnapshot, weather] = await Promise.all([
     readCalendar72h(),
     readCalendar14d(),
     readCalendar180d(),
     readEmails(),
     readDocs(),
     readNationals(),
+    readSports().catch(error => { logger.warn(`[dashboard-v2-data] Sports unavailable — ${error.message}`); return null; }),
     weatherPromise,
   ]);
 
@@ -60,6 +62,7 @@ async function fetchDashboardV2Data({
       _calName: event._calName || event.calendarName || '',
     })),
     nationalsData,
+    sportsSnapshot,
     weather,
   };
 }
