@@ -179,6 +179,9 @@ function analyzeEventSemantics(event) {
   const pickupDropoff = !recurringHousehold && /drop[ -]?off|pick[ -]?up|pickup/.test(text);
   const appointment = /dentist|dental|doctor|orthodont|pediatric|therapy|medical|appointment|\bappt\b|pharmacy|physical\b|pcp\b/.test(text);
   const travel = /flight|airport|family trip|vacation|hotel|train|\btravel\b|road trip|departure/.test(text);
+  const familyVisit = /\bvisit(?:s|ing)?\b/.test(String(event?.title || '').toLowerCase());
+  const itineraryTitle = cleanDisplayText(event?.title).replace(/^COUNTDOWN:\s*/i, '').trim();
+  const itineraryLeg = /^(?:train to|flight to|drive to|depart\b|return\b)/i.test(itineraryTitle);
   const holiday = /\bholiday\b|christmas|thanksgiving|easter|hanukkah|new year(?:'s)?|memorial day|labor day|independence day|fourth of july/.test(text);
   const sportsContext = /swim|pool|sharks|waves|cowboys|nfl|w&m|duke|practice|meet|game|match|soccer|football|baseball|athletic|sports|tailgate/.test(text);
   const sportsPlanning = sportsContext && /schedule|kickoff|tailgate|\bplan(?:ning)?\b|\bdecide\b|tickets?/.test(text);
@@ -205,6 +208,8 @@ function analyzeEventSemantics(event) {
   if (recurringHousehold) reason('ROUTINE_HOUSEHOLD');
   if (vehicleDetail) reason('HOUSEHOLD_VEHICLE');
   if (travel) reason('TRAVEL_FAMILY');
+  if (familyVisit) reason('FAMILY_VISIT');
+  if (itineraryLeg) reason('TRAVEL_ITINERARY_LEG');
   if (holiday) reason('SPECIAL_HOLIDAY');
 
   const mentionsChild = /myles|ophelia|child|kid|school|grade|camp|idance|sharks/.test(text);
@@ -249,6 +254,8 @@ function analyzeEventSemantics(event) {
     milestone: firstLastDay || birthday || holiday || performance,
     preparationSensitive,
     travel,
+    familyVisit,
+    itineraryLeg,
     appointment,
     sportsParticipation,
     sportsPlanning,
@@ -646,13 +653,16 @@ function horizonEligibility(event, today) {
   const schoolMilestone = semantic.reasonCodes.includes('MILESTONE_FIRST_LAST') && semantic.classification === 'school';
   const majorEvent = /tournament|championship|recital|concert|performance|ceremony/.test(text);
   const recurring = Boolean(event?.raw?.recurringEventId || event?.raw?.recurrence?.length);
+  if (!explicit && semantic.itineraryLeg) return null;
   if (!explicit && (semantic.routine || semantic.appointment || recurring)) return null;
-  if (!explicit && !birthday && !semantic.travel && !schoolMilestone && !semantic.holiday && !majorEvent) return null;
+  if (!explicit && !birthday && !semantic.travel && !semantic.familyVisit && !schoolMilestone && !semantic.holiday && !majorEvent) return null;
 
   const selectionReasonCodes = ['HORIZON_WINDOW'];
   if (explicit) selectionReasonCodes.push('HORIZON_EXPLICIT_COUNTDOWN');
   if (birthday) selectionReasonCodes.push('HORIZON_BIRTHDAY');
   if (semantic.travel) selectionReasonCodes.push('HORIZON_TRAVEL');
+  if (semantic.familyVisit) selectionReasonCodes.push('HORIZON_FAMILY_VISIT');
+  if (semantic.itineraryLeg) selectionReasonCodes.push('HORIZON_ITINERARY_OVERRIDE');
   if (schoolMilestone) selectionReasonCodes.push('HORIZON_SCHOOL_MILESTONE');
   if (semantic.holiday) selectionReasonCodes.push('HORIZON_HOLIDAY');
   if (majorEvent) selectionReasonCodes.push('HORIZON_MAJOR_EVENT');

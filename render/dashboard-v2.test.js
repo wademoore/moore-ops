@@ -422,6 +422,38 @@ describe('television readability and horizon policies', () => {
     assert.equal(selectHorizonEvents(excluded, today, 10).length, 0);
   });
 
+  it('includes family visits and work travel while suppressing unmarked itinerary legs', () => {
+    const familyVisit = event('Grandma visit', '2026-09-01');
+    const workTravel = event('Wade: CORE Annual Gathering (work travel)', '2026-09-02');
+    const itineraryLegs = [
+      event('Train to Richmond', '2026-09-03'),
+      event('Flight to Orlando', '2026-09-04'),
+      event('Drive to Norfolk', '2026-09-05'),
+      event('Depart for Charlotte', '2026-09-06'),
+      event('Return home', '2026-09-07'),
+    ];
+    const explicitItinerary = event('COUNTDOWN: Flight to Orlando', '2026-09-08');
+    const selected = selectHorizonEvents([familyVisit, workTravel, ...itineraryLegs, explicitItinerary], today, 10);
+    const selectedByTitle = new Map(selected.map(item => [item.event.title, item]));
+
+    assert.ok(selectedByTitle.get('Grandma visit')?.selectionReasonCodes.includes('HORIZON_FAMILY_VISIT'));
+    assert.ok(selectedByTitle.get('Wade: CORE Annual Gathering (work travel)')?.selectionReasonCodes.includes('HORIZON_TRAVEL'));
+    for (const leg of itineraryLegs) assert.equal(selectedByTitle.has(leg.title), false, leg.title);
+    assert.ok(selectedByTitle.get('COUNTDOWN: Flight to Orlando')?.selectionReasonCodes.includes('HORIZON_ITINERARY_OVERRIDE'));
+
+    for (const title of ['Grandma visit', 'Grandma visits', 'Grandma visiting']) {
+      assert.ok(analyzeEventSemantics(event(title, '2026-09-01')).reasonCodes.includes('FAMILY_VISIT'), title);
+    }
+  });
+
+  it('keeps itinerary legs in Next Two Weeks when they are inside its normal window', () => {
+    const html = renderUpcoming({
+      today,
+      upcomingEvents: [event('Train to Richmond', '2026-08-20')],
+      athletics: {},
+    });
+    assert.match(html, /Train to Richmond/);
+  });
   it('deduplicates, ranks explicit countdowns first, and caps the module at three', () => {
     const selected = selectHorizonEvents([
       event('Myles Birthday', '2026-09-01'),
