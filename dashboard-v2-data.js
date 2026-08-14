@@ -6,6 +6,7 @@
  * changes the production v1 render path.
  */
 import { fetchDashboardWeather } from './weather.js';
+import { resolveEvent } from './digest/aliases.js';
 
 const WEATHER_FALLBACK = Object.freeze({
   unavailable: true,
@@ -22,6 +23,7 @@ async function fetchDashboardV2Data({
 } = {}) {
   const readCalendar72h = fetchers.calendar72h || (async () => (await import('./calendar.js')).getCalendarEvents());
   const readCalendar14d = fetchers.calendar14d || (async () => (await import('./calendar.js')).pull14Days());
+  const readCalendar180d = fetchers.calendar180d || (async () => (await import('./calendar.js')).pull180Days());
   const readEmails = fetchers.emails || (async () => (await import('./gmail.js')).getActivityEmails());
   const readDocs = fetchers.docs || (async () => (await import('./drive.js')).getFamilyDocs());
   const readNationals = fetchers.nationals || (async () => (await import('./digest/nationalsParser.js')).fetchNationalsData());
@@ -33,9 +35,10 @@ async function fetchDashboardV2Data({
     return WEATHER_FALLBACK;
   });
 
-  const [rawEvents, rawEvents14d, emails, docs, nationalsData, weather] = await Promise.all([
+  const [rawEvents, rawEvents14d, rawEvents180d, emails, docs, nationalsData, weather] = await Promise.all([
     readCalendar72h(),
     readCalendar14d(),
+    readCalendar180d(),
     readEmails(),
     readDocs(),
     readNationals(),
@@ -52,6 +55,10 @@ async function fetchDashboardV2Data({
 
   return {
     ...digestData,
+    horizonEvents: (rawEvents180d || []).map(event => resolveEvent({
+      ...event,
+      _calName: event._calName || event.calendarName || '',
+    })),
     nationalsData,
     weather,
   };

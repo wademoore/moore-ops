@@ -12,6 +12,7 @@ describe('dashboard v2 read-only data adapter', () => {
       fetchers: {
         calendar72h: fixture('calendar72h'),
         calendar14d: fixture('calendar14d'),
+        calendar180d: async () => [{ summary: 'COUNTDOWN: Vacation', calendarName: 'Family', start: { date: '2026-10-01' } }],
         emails: fixture('emails'),
         docs: fixture('docs'),
         nationals: async () => ({ team: 'Nationals' }),
@@ -31,6 +32,7 @@ describe('dashboard v2 read-only data adapter', () => {
     assert.equal(buildInput.banner, null);
     assert.equal(result.weather.current.temperature, 80);
     assert.equal(result.nationalsData.team, 'Nationals');
+    assert.equal(result.horizonEvents[0].title, 'COUNTDOWN: Vacation');
   });
 
   it('keeps the digest usable when weather fails', async () => {
@@ -40,6 +42,7 @@ describe('dashboard v2 read-only data adapter', () => {
       fetchers: {
         calendar72h: empty,
         calendar14d: empty,
+        calendar180d: empty,
         emails: empty,
         docs: async () => ({}),
         nationals: async () => null,

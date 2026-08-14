@@ -52,6 +52,11 @@ const sampleDashboardV2Data = {
     event('4-H Parent Panel', '2026-06-14T18:30:00-04:00', '6:30 PM'),
     event("Wellington Waves Swim Meet — vs. Ford's Colony (HOME)", '2026-06-15T18:00:00-04:00', '6:00 PM · Wellington Pool'),
   ],
+  horizonEvents: [
+    event('Independence Day Holiday', '2026-07-04', '', { _calName: 'Family' }),
+    event('COUNTDOWN: Moore Family Orlando Vacation', '2026-08-02', '', { _calName: 'Family' }),
+    event('Ophelia First Day of School', '2026-09-08', '', { _calName: 'Ophelia' }),
+  ],
   athletics: {
     flagFootballActive: false,
     wavesActive: true,

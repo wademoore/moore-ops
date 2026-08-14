@@ -25,6 +25,16 @@ const COLORS = {
   paper: '#e9dfcc',
 };
 
+const PALETTE = Object.freeze({
+  day: Object.freeze({ canvas: '#d8c9ad', panel: '#e3d6bd', panelAlt: '#ded0b4', secondary: '#45564d', rule: 'rgba(20,40,31,.28)' }),
+  evening: Object.freeze({ canvas: '#c9b99d', panel: '#d5c6aa', panelAlt: '#cfbea0', secondary: '#394b42', rule: 'rgba(20,40,31,.34)' }),
+});
+
+function paletteModeForDate(date = new Date()) {
+  const hour = Number(new Intl.DateTimeFormat('en-US', { hour: '2-digit', hourCycle: 'h23', timeZone: 'America/New_York' }).format(date));
+  return hour >= 19 || hour < 6 ? 'evening' : 'day';
+}
+
 const ASSET_DIR = new URL('./assets-v2/', import.meta.url);
 
 function optionalAssetDataUrl(filename) {
@@ -169,6 +179,7 @@ function analyzeEventSemantics(event) {
   const pickupDropoff = !recurringHousehold && /drop[ -]?off|pick[ -]?up|pickup/.test(text);
   const appointment = /dentist|dental|doctor|orthodont|pediatric|therapy|medical|appointment|\bappt\b|pharmacy|physical\b|pcp\b/.test(text);
   const travel = /flight|airport|family trip|vacation|hotel|train|\btravel\b|road trip|departure/.test(text);
+  const holiday = /\bholiday\b|christmas|thanksgiving|easter|hanukkah|new year(?:'s)?|memorial day|labor day|independence day|fourth of july/.test(text);
   const sportsContext = /swim|pool|sharks|waves|cowboys|nfl|w&m|duke|practice|meet|game|match|soccer|football|baseball|athletic|sports|tailgate/.test(text);
   const sportsPlanning = sportsContext && /schedule|kickoff|tailgate|\bplan(?:ning)?\b|\bdecide\b|tickets?/.test(text);
   const routinePractice = /practice|routine lesson|regular class/.test(text);
@@ -194,6 +205,7 @@ function analyzeEventSemantics(event) {
   if (recurringHousehold) reason('ROUTINE_HOUSEHOLD');
   if (vehicleDetail) reason('HOUSEHOLD_VEHICLE');
   if (travel) reason('TRAVEL_FAMILY');
+  if (holiday) reason('SPECIAL_HOLIDAY');
 
   const mentionsChild = /myles|ophelia|child|kid|school|grade|camp|idance|sharks/.test(text);
   const mentionsAdult = /robyn|wade/.test(text);
@@ -206,11 +218,11 @@ function analyzeEventSemantics(event) {
   else if (/school|grade|teacher|library|pta|color games|field day|parent panel|open house/.test(text) && !/\bidance\b/.test(text)) classification = 'school';
   else if (/\bidance\b|institute for dance|recital|dance|theater|theatre|concert|performance|music|choir|art/.test(text)) classification = 'arts';
   else if (sportsContext) classification = 'sports';
-  else if (birthday || camp || firstLastDay || /party|family|celebration/.test(text)) classification = 'family';
+  else if (birthday || camp || firstLastDay || holiday || /party|family|celebration/.test(text)) classification = 'family';
 
   let importanceTier = 'default';
   let baseScore = mentionsChild ? 45 : 20;
-  if (firstLastDay || travel) {
+  if (firstLastDay || travel || holiday) {
     importanceTier = 'highest';
     baseScore = 110;
   } else if (birthday || openHouse || performance || preparationSensitive) {
@@ -234,12 +246,13 @@ function analyzeEventSemantics(event) {
     importanceTier,
     baseScore,
     routine: routinePractice || recurringHousehold || /routine|regular class|routine lesson/.test(text),
-    milestone: firstLastDay || birthday,
+    milestone: firstLastDay || birthday || holiday || performance,
     preparationSensitive,
     travel,
     appointment,
     sportsParticipation,
     sportsPlanning,
+    holiday,
     reasonCodes,
   };
 }
@@ -328,7 +341,7 @@ function renderToday(data) {
   </div>`).join('');
 
   const priorityRows = [...(wp.overdue || []), ...(wp.active || [])]
-    .slice(0, 7)
+    .slice(0, 5)
     .map(item => `<div class="priority-row ${item.daysOverdue ? 'is-overdue' : ''}">
       <span class="owner owner-${String(item.assignee || '').toLowerCase()}">${esc(item.assignee || '')}</span>
       <span>${esc(item.title)}</span>
@@ -467,7 +480,7 @@ function renderStandingRows(rows, columns = ['team', 'w', 'l']) {
 
 function renderWavesCard(a) {
   return `<article class="athletic-card tone-blue">
-    <div class="athletic-ribbon">${logo(V2_LOGOS.waves, 'athletic-logo')}<span>Waves · Division ${esc(a.wavesDivision ?? '')}</span></div>
+    <div class="athletic-ribbon">${logo(V2_LOGOS.waves, 'athletic-logo')}<span>Wellington Waves</span></div>
     <div class="record">${esc(a.wavesRecord || '0-0')}</div>
     <small>${esc(a.wavesSeasonYear || 2026)} season</small>
     ${a.wavesNextMeet ? `<div class="next-box"><b>Next meet</b><span>vs. ${esc(a.wavesNextMeet.opponent)} · ${esc(a.wavesNextMeet.date)}</span></div>` : ''}
@@ -615,15 +628,81 @@ function normalizeComingUpTitle(event) {
   return cleanDisplayText(event?.title);
 }
 
+function horizonDisplayTitle(event) {
+  return cleanDisplayText(event?.title).replace(/^COUNTDOWN:\s*/i, '').trim();
+}
+
+function horizonEligibility(event, today) {
+  const key = eventDateKey(event);
+  if (!key) return null;
+  const distance = daysFrom(today, key);
+  if (distance <= 14 || distance > 180) return null;
+
+  const title = cleanDisplayText(event?.title);
+  const explicit = /^COUNTDOWN:\s*/i.test(title);
+  const semantic = analyzeEventSemantics(event);
+  const text = `${title} ${event?.subtitle || ''}`.toLowerCase();
+  const birthday = semantic.reasonCodes.includes('SPECIAL_BIRTHDAY');
+  const schoolMilestone = semantic.reasonCodes.includes('MILESTONE_FIRST_LAST') && semantic.classification === 'school';
+  const majorEvent = /tournament|championship|recital|concert|performance|ceremony/.test(text);
+  const recurring = Boolean(event?.raw?.recurringEventId || event?.raw?.recurrence?.length);
+  if (!explicit && (semantic.routine || semantic.appointment || recurring)) return null;
+  if (!explicit && !birthday && !semantic.travel && !schoolMilestone && !semantic.holiday && !majorEvent) return null;
+
+  const selectionReasonCodes = ['HORIZON_WINDOW'];
+  if (explicit) selectionReasonCodes.push('HORIZON_EXPLICIT_COUNTDOWN');
+  if (birthday) selectionReasonCodes.push('HORIZON_BIRTHDAY');
+  if (semantic.travel) selectionReasonCodes.push('HORIZON_TRAVEL');
+  if (schoolMilestone) selectionReasonCodes.push('HORIZON_SCHOOL_MILESTONE');
+  if (semantic.holiday) selectionReasonCodes.push('HORIZON_HOLIDAY');
+  if (majorEvent) selectionReasonCodes.push('HORIZON_MAJOR_EVENT');
+  return { event, days: distance, semantics: semantic, explicit, selectionReasonCodes };
+}
+
+function selectHorizonEvents(events, today, limit = 3) {
+  const deduped = new Map();
+  for (const event of events || []) {
+    const candidate = horizonEligibility(event, today);
+    if (!candidate) continue;
+    const canonical = horizonDisplayTitle(event).toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const previous = deduped.get(canonical);
+    if (!previous || candidate.days < previous.days) deduped.set(canonical, candidate);
+  }
+  return [...deduped.values()]
+    .sort((a, b) => Number(b.explicit) - Number(a.explicit)
+      || b.semantics.baseScore - a.semantics.baseScore
+      || a.days - b.days
+      || horizonDisplayTitle(a.event).localeCompare(horizonDisplayTitle(b.event)))
+    .slice(0, Math.min(3, limit));
+}
+
+function renderHorizon(data) {
+  const items = selectHorizonEvents(data.horizonEvents || [], data.today, 3);
+  if (!items.length) return `<section class="rail-card horizon-card horizon-empty">
+    <div class="horizon-label">On the Horizon</div>
+    <div class="horizon-empty-copy"><i class="horizon-doodle" aria-hidden="true"></i><strong>Nothing major on the horizon</strong><small>The next two weeks are covered at left.</small></div>
+  </section>`;
+  return `<section class="rail-card horizon-card horizon-count-${items.length}">
+    <div class="horizon-label">On the Horizon</div>
+    <div class="horizon-list">${items.map(item => {
+      const date = dateAtNoon(eventDateKey(item.event));
+      const person = peopleForEvent(item.event);
+      return `<article class="horizon-item person-${person}" data-selection-reasons="${esc(item.selectionReasonCodes.join(','))}">
+        <div class="horizon-count"><strong>${esc(item.days)}</strong><span>DAYS</span></div>
+        <div class="horizon-copy"><b>${esc(horizonDisplayTitle(item.event))}</b><time>${esc(formatDate(date, { weekday: 'short', month: 'short', day: 'numeric' }))}</time></div>
+      </article>`;
+    }).join('')}</div>
+  </section>`;
+}
+
 function renderRightRail(data) {
   const weather = data.weather || { current: {}, days: [] };
   const current = weather.current || {};
   const days = (weather.days || []).slice(0, 7);
   const weatherAvailable = Number.isFinite(Number(current.temperature)) && days.length > 0;
-  const countdown = data.countdown || null;
-  const nextEvents = selectComingUpEvents(data.upcomingEvents, data.today, 3);
+  const horizonCount = selectHorizonEvents(data.horizonEvents || [], data.today, 3).length;
 
-  return `<aside class="right-rail ${countdown ? 'has-countdown' : 'no-countdown'}">
+  return `<aside class="right-rail horizon-count-${horizonCount}">
     <section class="rail-card clock-card">
       <time id="live-clock">${esc(new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }))}</time>
       <span id="live-date">${esc(formatDate(data.today, { weekday: 'long', month: 'long', day: 'numeric' }))}</span>
@@ -637,33 +716,14 @@ function renderRightRail(data) {
     <section class="rail-card forecast-card ${weatherAvailable ? '' : 'weather-unavailable'}">
       <div class="forecast-heading">7-Day Forecast</div>
       ${weatherAvailable ? days.map((day, index) => `<div class="forecast-row ${index === 0 ? 'today' : ''}">
-        <span>${esc(index === 0 ? 'Today' : day.label)}</span>
-        ${weatherIcon(day.icon || 'sun')}
-        <b>${esc(day.high)}°</b>
-        <small>${esc(day.low)}°</small>
-        <i>${day.precipitation ? `${esc(day.precipitation)}%` : ''}</i>
+        <span>${esc(index === 0 ? 'Today' : day.label)}</span>${weatherIcon(day.icon || 'sun')}
+        <b>${esc(day.high)}°</b><small>${esc(day.low)}°</small><i>${day.precipitation ? `${esc(day.precipitation)}%` : ''}</i>
       </div>`).join('') : '<div class="forecast-fallback"><span>Forecast will return automatically on the next successful refresh.</span></div>'}
     </section>
-    ${nextEvents.length ? `<section class="rail-card next-up-card">
-      <div class="next-up-label">Coming Up</div>
-      <div class="next-up-list">${nextEvents.map(event => {
-        const date = dateAtNoon(eventDateKey(event));
-        const person = peopleForEvent(event);
-        return `<div class="next-up-item person-${person}">
-          <div class="next-up-date"><b>${esc(formatDate(date, { day: 'numeric' }))}</b><span>${esc(formatDate(date, { weekday: 'short', month: 'short' }))}</span></div>
-          <div class="next-up-copy"><strong>${esc(normalizeComingUpTitle(event))}</strong><small>${esc(eventDetailLine(event))}</small></div>
-        </div>`;
-      }).join('')}</div>
-    </section>` : `<section class="rail-card next-up-card next-up-empty">
-      <div class="next-up-label">Coming Up</div>
-      <div class="next-up-empty-copy"><strong>Nothing needs special attention</strong><small>The full two-week calendar is still at left.</small></div>
-    </section>`}
-    ${countdown ? `<section class="rail-card countdown-card" data-target-date="${esc(countdown.date)}">
-      <span>${esc(countdown.label)}</span>
-      <strong id="live-countdown">${esc(countdown.days ?? '')}</strong>
-      <small>DAY${Number(countdown.days) === 1 ? '' : 'S'}</small>
-    </section>` : ''}
+    ${renderHorizon(data)}
   </aside>`;
+
+
 }
 
 function renderTicker(data) {
@@ -694,8 +754,16 @@ function browserScript() {
     const clock = document.getElementById('live-clock');
     const date = document.getElementById('live-date');
     const countdown = document.querySelector('.countdown-card');
+    const paletteSetting = dashboard?.dataset.palette || 'auto';
+    const applyPalette = now => {
+      if (!dashboard || paletteSetting !== 'auto') return;
+      const hour = Number(new Intl.DateTimeFormat('en-US', { hour: '2-digit', hourCycle: 'h23', timeZone: zone }).format(now));
+      dashboard.classList.toggle('palette-evening', hour >= 19 || hour < 6);
+      dashboard.classList.toggle('palette-day', !(hour >= 19 || hour < 6));
+    };
     const tick = () => {
       const now = new Date();
+      applyPalette(now);
       if (clock) clock.textContent = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: zone });
       if (date) date.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: zone });
       if (countdown?.dataset.targetDate) {
@@ -799,7 +867,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .dinner-block .section-title span{padding:0 0 0 55px;transform:translateY(-1px)}
 .weather-label,.forecast-heading,.next-up-label{display:flex;align-items:center;justify-content:center;padding-top:0;padding-bottom:0}
 .ticker-slot:first-child{padding-left:112px}
-/* Runtime fallbacks: semantic event marks, explicit weather state, and stable Coming Up geometry. */
+/* Runtime fallbacks: semantic event marks, explicit weather state, and stable horizon geometry. */
 .semantic-icon{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(212,154,24,.10);color:${COLORS.gold};padding:3px}.semantic-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:1.8;fill:none}.semantic-icon.category-appointment{color:${COLORS.red}}.semantic-icon.category-school{color:${COLORS.blue}}.semantic-icon.category-household{color:${COLORS.green}}.semantic-icon.category-arts{color:${COLORS.purple}}.semantic-icon.category-sports{color:${COLORS.blue}}.semantic-icon.category-family{color:${COLORS.red}}.activity-visual{position:relative}.activity-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:${COLORS.paper}}
 .current-weather.weather-unavailable{gap:12px;text-align:center}.current-weather.weather-unavailable>strong{max-width:220px;font-size:24px;line-height:1.05}.current-weather.weather-unavailable>span{font-size:16px;color:#5d675f}.forecast-card.weather-unavailable{grid-template-rows:42px 1fr}.forecast-fallback{grid-column:1/3;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#5d675f;font-size:20px;line-height:1.25}.next-up-empty{display:flex;flex-direction:column}.next-up-empty:before{background:${COLORS.green}}.next-up-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 10px}.next-up-empty-copy strong{font-size:20px}.next-up-empty-copy small{font-size:14px;color:#58635c;margin-top:6px}
 /* Real-data resilience: bounded calendar rows, adaptive one-card athletics, and ranked rail items. */
@@ -807,6 +875,20 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .dashboard.athletics-one .upcoming-panel{height:72%}.dashboard.athletics-one .athletics-panel{height:26%}
 .card-count-1 .athletics-grid{display:block}.card-count-1 .athletic-card{height:100%;padding-right:0;border-right:0;display:grid;grid-template-columns:150px minmax(0,1fr);grid-template-rows:44px auto 1fr;column-gap:22px}.card-count-1 .athletic-ribbon{grid-column:1/3}.card-count-1 .record{grid-column:1;grid-row:2/4;font-size:58px;margin-top:16px}.card-count-1 .athletic-card>small{grid-column:1;grid-row:3;margin-top:80px;font-size:18px}.card-count-1 .next-box{grid-column:2;grid-row:2/4;margin:12px 0 0;padding:12px 16px;justify-content:center}.card-count-1 .next-box b{font-size:16px}.card-count-1 .next-box span{font-size:25px;line-height:1}.card-count-1 .next-box strong{font-family:"Roboto Slab",Georgia,serif;font-size:27px;line-height:1.15;margin-top:7px}.card-count-1 .next-box small{font-size:18px;margin-top:5px}.card-count-1 .result-line,.card-count-1 .standing-line{display:none}
 .next-up-card{display:flex;flex-direction:column}.next-up-card:before{display:none}.next-up-label{flex:0 0 38px;width:100%}.next-up-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.next-up-item{position:relative;display:grid;grid-template-columns:58px minmax(0,1fr);gap:8px;padding:6px 2px 6px 9px;border-bottom:1px solid rgba(20,40,31,.14);min-height:0}.next-up-item:last-child{border-bottom:0}.next-up-item:before{content:"";position:absolute;left:-3px;top:7px;bottom:7px;width:5px;background:${COLORS.green}}.next-up-item.person-myles:before{background:${COLORS.red}}.next-up-item.person-ophelia:before{background:${COLORS.purple}}.next-up-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.next-up-item .next-up-date b{font-size:34px}.next-up-item .next-up-date span{font-size:11px}.next-up-item .next-up-copy strong{font-size:18px;line-height:1}.next-up-item .next-up-copy small{font-size:13px;line-height:1;margin-top:3px}
+/* TV readability tokens. Day is intentionally oatmeal; evening is a restrained warm reduction, not dark mode. */
+.dashboard{--canvas:${PALETTE.day.canvas};--surface-panel:${PALETTE.day.panel};--surface-alt:${PALETTE.day.panelAlt};--secondary:${PALETTE.day.secondary};--rule:${PALETTE.day.rule};background-color:var(--canvas);background-image:var(--paper-image),radial-gradient(circle at 10% 12%,rgba(122,95,47,.08),transparent 24%),linear-gradient(105deg,rgba(255,255,255,.07),transparent 38%)}
+.dashboard.palette-evening{--canvas:${PALETTE.evening.canvas};--surface-panel:${PALETTE.evening.panel};--surface-alt:${PALETTE.evening.panelAlt};--secondary:${PALETTE.evening.secondary};--rule:${PALETTE.evening.rule}}
+.paper-panel,.rail-card,.alert-card{background:var(--surface-panel);border-color:rgba(130,92,32,.48);box-shadow:0 4px 12px rgba(45,29,11,.08),inset 0 0 18px rgba(90,65,28,.035)}
+.alert-card,.alert-card.calm{background:var(--surface-alt)}
+.current-weather{background:linear-gradient(160deg,rgba(212,154,24,.12),var(--surface-panel) 44%,rgba(15,74,54,.09))}.forecast-card{background:linear-gradient(180deg,var(--surface-panel),var(--surface-alt))}.forecast-row,.forecast-row:nth-child(even){background:rgba(205,190,158,.5);box-shadow:none}
+.today-event-copy span,.upcoming-event span,.task-row small,.athletic-card>small,.athletic-footer,.next-up-copy small,.forecast-fallback,.current-weather.weather-unavailable>span{color:var(--secondary)}
+.today-event,.upcoming-day,.priority-row,.task-row,.school-line,.subhead:after,.athletic-card,.swim-row,.horizon-item{border-color:var(--rule)}
+.paper-panel>.section-title{height:70px;margin-top:-31px;margin-bottom:8px}.paper-panel>.section-title:before{height:70px}.paper-panel>.section-title span{font-size:30px;padding-left:70px;letter-spacing:.045em}.doodle-calendar span{padding-left:84px!important}.dinner-block .section-title{height:54px}.dinner-block .section-title:before{height:54px}.dinner-block .section-title span{font-size:25px;line-height:1.2;padding-left:61px}
+.priority-row{font-size:24px;line-height:1.2;padding:6px 0;grid-template-columns:72px 1fr;gap:10px}.priority-row .owner{font-size:16px;line-height:1.05;padding:4px 8px;border-radius:14px}
+.athletic-ribbon{height:46px;padding:3px 12px 3px 48px;gap:10px;font-size:21px;letter-spacing:.025em;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}.athletic-ribbon span{line-height:1.2;padding:2px 0}.athletic-logo{width:31px;height:31px;padding:3px}.athletics-grid{height:calc(100% - 52px)}
+.sports-ticker{color:#f1e6d0}.ticker-slot b{font-size:20px;font-weight:700}.ticker-slot span{font-size:15px;color:#eee0c4}.updated{font-size:11px;color:#eadab8}
+.right-rail{grid-template-rows:118px 172px 590px minmax(0,1fr)}
+.horizon-card{display:flex;flex-direction:column;min-height:0}.horizon-label{flex:0 0 46px;display:flex;align-items:center;justify-content:center;color:#fff;background-image:var(--section-green);background-size:100% 100%;font-size:21px;font-style:italic;font-weight:700;letter-spacing:.045em;text-transform:uppercase}.horizon-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.horizon-count-1 .horizon-list{grid-template-rows:1fr}.horizon-count-2 .horizon-list{grid-template-rows:repeat(2,minmax(0,1fr))}.horizon-item{position:relative;display:grid;grid-template-columns:82px minmax(0,1fr);gap:9px;align-items:center;padding:7px 6px 7px 11px;border-bottom:1px solid var(--rule);min-height:0}.horizon-item:last-child{border-bottom:0}.horizon-item:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:6px;background:${COLORS.green}}.horizon-item.person-myles:before{background:${COLORS.red}}.horizon-item.person-ophelia:before{background:${COLORS.purple}}.horizon-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.horizon-count{display:flex;flex-direction:column;align-items:center}.horizon-count strong{font-family:"Roboto Slab",Georgia,serif;font-size:43px;line-height:.9;color:${COLORS.greenDark}}.horizon-count span{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--secondary)}.horizon-copy{display:flex;flex-direction:column;min-width:0}.horizon-copy b{font-size:20px;line-height:1.02}.horizon-copy time{font-size:15px;margin-top:5px;color:var(--secondary);font-weight:600}.horizon-count-1 .horizon-item{grid-template-columns:1fr;text-align:center}.horizon-count-1 .horizon-count strong{font-size:72px}.horizon-count-1 .horizon-copy b{font-size:27px}.horizon-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px}.horizon-empty-copy strong{font-size:21px}.horizon-empty-copy small{font-size:15px;color:var(--secondary);margin-top:6px}.horizon-doodle{width:72px;height:72px;background:var(--doodle-star) center/contain no-repeat;margin-bottom:7px}
 `;
 
 function renderDashboardV2(digestData) {
@@ -852,7 +934,9 @@ function renderDashboardV2(digestData) {
     `--doodle-arrows:${doodleArrows ? `url('${doodleArrows}')` : 'none'}`,
   ].join(';');
   const cardCount = athleticsCardCount(data);
-  const classes = `dashboard${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'} athletics-${cardCount === 1 ? 'one' : 'multi'}`;
+  const paletteSetting = ['day', 'evening'].includes(data.paletteMode) ? data.paletteMode : 'auto';
+  const initialPalette = paletteSetting === 'auto' ? paletteModeForDate(data.now ? new Date(data.now) : new Date()) : paletteSetting;
+  const classes = `dashboard${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'} athletics-${cardCount === 1 ? 'one' : 'multi'} palette-${initialPalette}`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -864,7 +948,7 @@ ${fontCss}
 <style>${CSS}</style>
 </head>
 <body>
-<main class="${classes}" style="${styleVars}">
+<main class="${classes}" data-palette="${paletteSetting}" style="${styleVars}">
   ${renderMasthead(data)}
   ${renderToday(data)}
   ${renderUpcoming(data)}
@@ -893,5 +977,10 @@ export {
   selectComingUpEvents,
   cleanDisplayText,
   conversationalMatchDate,
+  paletteModeForDate,
+  horizonEligibility,
+  horizonDisplayTitle,
+  selectHorizonEvents,
+  PALETTE,
   V2_LOGOS,
 };

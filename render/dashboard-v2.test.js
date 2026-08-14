@@ -11,6 +11,10 @@ import {
   peopleForEvent,
   selectComingUpEvent,
   selectComingUpEvents,
+  selectHorizonEvents,
+  horizonDisplayTitle,
+  paletteModeForDate,
+  PALETTE,
   V2_LOGOS,
 } from './dashboard-v2.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
@@ -64,7 +68,7 @@ describe('experimental dashboard v2 isolation and structure', () => {
 
   it('updates clock and countdown in the browser', () => {
     assert.match(html, /setInterval\(tick, 15000\)/);
-    assert.match(html, /data-target-date="2026-06-10"/);
+    assert.match(html, /applyPalette/);
   });
 
   it('does not include private source details or credentials', () => {
@@ -124,8 +128,8 @@ describe('experimental dashboard v2 isolation and structure', () => {
   it('uses painterly athletics labels and a compact next-event rail card', () => {
     assert.match(html, /\.athletic-ribbon:before\{content:""/);
     assert.match(html, /mask-image:var\(--section-green\)/);
-    assert.match(html, /Coming Up/);
-    assert.match(html, /Myles and Ophelia dentist/);
+    assert.match(html, /On the Horizon/);
+    assert.match(html, /Moore Family Orlando Vacation/);
   });
 
   it('keeps strong person-color bars on upcoming dates', () => {
@@ -190,9 +194,10 @@ describe('runtime display policies', () => {
     const fallback = renderDashboardV2({
       ...sampleDashboardV2Data,
       upcomingEvents: sampleDashboardV2Data.upcomingEvents.filter(item => /practice|recycling/i.test(item.title)),
+      horizonEvents: [],
       weather: { current: {}, days: [] },
     });
-    assert.match(fallback, /Nothing needs special attention/);
+    assert.match(fallback, /Nothing major on the horizon/);
     assert.match(fallback, /Weather temporarily unavailable/);
     assert.match(fallback, /Forecast will return automatically/);
   });
@@ -299,8 +304,8 @@ describe('real-data resilience policies', () => {
     const ranked = selectComingUpEvents(events, today);
     assert.equal(ranked[0].title, 'Ophelia · First Day of School');
     const html = renderDashboardV2({ ...sampleDashboardV2Data, today, upcomingEvents: events });
-    assert.equal((html.match(/class="next-up-item/g) || []).length, 3);
-    assert.match(html, /Robyn · Dentist/);
+    assert.equal((html.match(/class="next-up-item/g) || []).length, 0);
+    assert.match(html, /On the Horizon/);
   });
 
   it('cleans duplicated text, empty school rows, emoji marks, and obvious categories', () => {
@@ -322,14 +327,14 @@ describe('real-data resilience policies', () => {
     assert.equal(activityCategory({ title: 'Tesla Detail' }), 'household');
   });
 
-  it('normalizes owner shorthand in Today, Next Two Weeks, and Coming Up', () => {
+  it('normalizes owner shorthand in Today and Next Two Weeks', () => {
     const shorthand = event('R Dentist', '2026-06-10T09:30:00-04:00');
     const html = renderDashboardV2({
       ...sampleDashboardV2Data,
       days: [{ events: [{ ...shorthand, raw: { start: { dateTime: '2026-06-09T09:30:00-04:00' } } }], tasks: [] }],
       upcomingEvents: [shorthand],
     });
-    assert.equal((html.match(/Robyn · Dentist/g) || []).length, 3);
+    assert.equal((html.match(/Robyn · Dentist/g) || []).length, 2);
     assert.doesNotMatch(html, />R Dentist</);
   });
 
@@ -345,5 +350,102 @@ describe('real-data resilience policies', () => {
     });
     assert.doesNotMatch(html, /https:\/\/example\.com\/unreliable/);
     assert.match(html, /logo-idance|data:image\/png;base64/);
+  });
+});
+
+describe('television readability and horizon policies', () => {
+  const event = (title, date, extra = {}) => ({
+    title,
+    subtitle: '',
+    cardType: 'standard',
+    raw: { start: { date } },
+    ...extra,
+  });
+  const today = new Date(2026, 7, 13);
+
+  it('activates documented daytime and evening palettes using Williamsburg time', () => {
+    assert.equal(paletteModeForDate(new Date('2026-08-13T12:00:00-04:00')), 'day');
+    assert.equal(paletteModeForDate(new Date('2026-08-13T20:00:00-04:00')), 'evening');
+    assert.notEqual(PALETTE.day.canvas, PALETTE.evening.canvas);
+    const evening = renderDashboardV2({ ...sampleDashboardV2Data, paletteMode: 'evening' });
+    assert.match(evening, /palette-evening/);
+    assert.match(evening, /data-palette="evening"/);
+  });
+
+  it('uses tokenized oatmeal surfaces without a bright alert exception', () => {
+    assert.match(renderDashboardV2(sampleDashboardV2Data), /\.paper-panel,\.rail-card,\.alert-card\{background:var\(--surface-panel\)/);
+    assert.match(renderDashboardV2(sampleDashboardV2Data), /\.alert-card,\.alert-card\.calm\{background:var\(--surface-alt\)/);
+  });
+
+  it('retains exactly five visible priorities at the larger television size', () => {
+    const html = renderDashboardV2(sampleDashboardV2Data);
+    assert.equal((html.match(/class="priority-row/g) || []).length, 5);
+    assert.match(html, /\.priority-row\{font-size:24px;line-height:1\.2/);
+    assert.match(html, /\.priority-row \.owner\{font-size:16px/);
+  });
+
+  it('enforces the greater-than-14 and at-most-180 day horizon window', () => {
+    const selected = selectHorizonEvents([
+      event('Birthday at lower edge', '2026-08-27'),
+      event('Birthday included', '2026-08-28'),
+      event('Birthday upper edge', '2027-02-09'),
+      event('Birthday too far', '2027-02-10'),
+    ], today, 10);
+    assert.deepEqual(selected.map(item => item.event.title), ['Birthday included', 'Birthday upper edge']);
+  });
+
+  it('includes every supported high-signal milestone with explicit reason codes', () => {
+    const candidates = [
+      event('Myles Birthday', '2026-09-01'),
+      event('Moore Family Vacation', '2026-09-02'),
+      event('First Day of School', '2026-09-03'),
+      event('Thanksgiving Holiday', '2026-11-26'),
+      event('Regional Soccer Tournament', '2026-09-05'),
+      event('COUNTDOWN: Family Surprise', '2026-09-06'),
+    ];
+    const reasons = candidates.flatMap(candidate => selectHorizonEvents([candidate], today)[0]?.selectionReasonCodes || []);
+    for (const code of ['HORIZON_BIRTHDAY', 'HORIZON_TRAVEL', 'HORIZON_SCHOOL_MILESTONE', 'HORIZON_HOLIDAY', 'HORIZON_MAJOR_EVENT', 'HORIZON_EXPLICIT_COUNTDOWN']) {
+      assert.ok(reasons.includes(code), code);
+    }
+    assert.equal(horizonDisplayTitle(candidates[5]), 'Family Surprise');
+  });
+
+  it('excludes routine, practice, appointments, household work, and unmarked recurring events', () => {
+    const excluded = [
+      event('Sharks Practice', '2026-09-01'),
+      event('Routine Game', '2026-09-02'),
+      event('Dentist Appointment', '2026-09-03'),
+      event('Recycling Pickup', '2026-09-04'),
+      event('Pacifica Detail', '2026-09-05'),
+      event('Myles Birthday', '2026-09-06', { raw: { start: { date: '2026-09-06' }, recurringEventId: 'repeat' } }),
+    ];
+    assert.equal(selectHorizonEvents(excluded, today, 10).length, 0);
+  });
+
+  it('deduplicates, ranks explicit countdowns first, and caps the module at three', () => {
+    const selected = selectHorizonEvents([
+      event('Myles Birthday', '2026-09-01'),
+      event('Myles Birthday', '2026-09-02'),
+      event('First Day of School', '2026-09-03'),
+      event('COUNTDOWN: Regional Tournament', '2026-10-01'),
+      event('Thanksgiving Holiday', '2026-11-26'),
+    ], today);
+    assert.equal(selected.length, 3);
+    assert.equal(selected[0].event.title, 'COUNTDOWN: Regional Tournament');
+    const deduped = selectHorizonEvents([
+      event('Myles Birthday', '2026-09-01'),
+      event('Myles Birthday', '2026-09-02'),
+    ], today);
+    assert.equal(deduped.length, 1);
+  });
+
+  it('renders empty, one-item, and three-item adaptive states without Coming Up duplication', () => {
+    const empty = renderDashboardV2({ ...sampleDashboardV2Data, horizonEvents: [] });
+    const one = renderDashboardV2({ ...sampleDashboardV2Data, horizonEvents: [event('Myles Birthday', '2026-09-01')] });
+    const three = renderDashboardV2(sampleDashboardV2Data);
+    assert.match(empty, /horizon-empty/);
+    assert.match(one, /horizon-count-1/);
+    assert.match(three, /horizon-count-3/);
+    assert.doesNotMatch(three, />Coming Up</);
   });
 });
