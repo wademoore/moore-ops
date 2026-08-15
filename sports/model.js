@@ -142,7 +142,7 @@ export function buildSportsSnapshot(feeds, { now = new Date(), previous = null }
   const states = slots.map(slot => slot.event?.state || slot.presentationState);
   let nextPollSeconds = RELEVANCE.pollSeconds.offseason;
   if (states.includes('live')) nextPollSeconds = RELEVANCE.pollSeconds.live;
-  else if (slots.some(slot => ['final','delayed','suspended'].includes(slot.presentationState) || (slot.event && +new Date(slot.event.startTime) - +new Date(now) <= 6 * HOUR))) nextPollSeconds = RELEVANCE.pollSeconds.event;
+  else if (slots.some(slot => slot.lastResult || ['final','delayed','suspended'].includes(slot.presentationState) || (slot.event && +new Date(slot.event.startTime) - +new Date(now) <= 6 * HOUR))) nextPollSeconds = RELEVANCE.pollSeconds.event;
   else if (slots.some(slot => slot.score > 0)) nextPollSeconds = RELEVANCE.pollSeconds.upcoming;
   return { version: SPORTS_SNAPSHOT_VERSION, generatedAt: new Date(now).toISOString(), nextPollSeconds, slots };
 }

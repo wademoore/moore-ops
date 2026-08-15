@@ -1,0 +1,41 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "Non-deployed, request-driven public sports refresh endpoint",
+  "Parameters": {
+    "AllowedOrigins": { "Type": "String", "Description": "Comma-separated exact dashboard origins" },
+    "CacheKey": { "Type": "String", "Default": "sports/v1/snapshot.json" }
+  },
+  "Resources": {
+    "SportsCache": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "PublicAccessBlockConfiguration": { "BlockPublicAcls": true, "IgnorePublicAcls": true, "BlockPublicPolicy": true, "RestrictPublicBuckets": true },
+        "BucketEncryption": { "ServerSideEncryptionConfiguration": [{ "ServerSideEncryptionByDefault": { "SSEAlgorithm": "AES256" } }] },
+        "VersioningConfiguration": { "Status": "Enabled" },
+        "LifecycleConfiguration": { "Rules": [{ "Id": "BoundSportsCacheNoncurrentVersions", "Status": "Enabled", "Filter": { "Prefix": { "Ref": "CacheKey" } }, "NoncurrentVersionExpiration": { "NoncurrentDays": 30, "NewerNoncurrentVersions": 10 } }] }
+      }
+    },
+    "SportsFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Metadata": { "BuildMethod": "esbuild", "BuildProperties": { "EntryPoints": ["sports/lambda.js"], "Minify": true, "Sourcemap": false, "Target": "es2022" } },
+      "Properties": {
+        "CodeUri": "../../",
+        "Handler": "sports/lambda.handler",
+        "Runtime": "nodejs22.x",
+        "Architectures": ["arm64"],
+        "MemorySize": 256,
+        "Timeout": 20,
+        "ReservedConcurrentExecutions": 1,
+        "Environment": { "Variables": { "SPORTS_CACHE_BUCKET": { "Ref": "SportsCache" }, "SPORTS_CACHE_KEY": { "Ref": "CacheKey" }, "SPORTS_ALLOWED_ORIGINS": { "Ref": "AllowedOrigins" } } },
+        "Policies": [{ "Version": "2012-10-17", "Statement": [{ "Effect": "Allow", "Action": ["s3:GetObject", "s3:PutObject"], "Resource": { "Fn::Sub": "${SportsCache.Arn}/${CacheKey}" } }] }],
+        "FunctionUrlConfig": { "AuthType": "NONE", "InvokeMode": "BUFFERED" }
+      }
+    },
+    "SportsLogGroup": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": { "LogGroupName": { "Fn::Sub": "/aws/lambda/${SportsFunction}" }, "RetentionInDays": 14 }
+    }
+  },
+  "Outputs": { "FunctionUrl": { "Value": { "Fn::GetAtt": ["SportsFunctionUrl", "FunctionUrl"] } } }
+}

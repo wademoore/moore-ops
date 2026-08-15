@@ -7,9 +7,12 @@
     "preview:dashboard-v2:real": "node scripts/render-dashboard-v2-real-preview.mjs",
     "preview:dashboard-v2:states": "node scripts/render-dashboard-v2-states.mjs",
     "preview:dashboard-v2:png": "node scripts/render-dashboard-v2-png.mjs",
-    "preview:dashboard-v2:tv-readability": "node scripts/render-dashboard-v2-tv-readability.mjs"
+    "preview:dashboard-v2:tv-readability": "node scripts/render-dashboard-v2-tv-readability.mjs",
+    "validate:sports-infra": "node scripts/validate-sports-live-refresh-template.mjs",
+    "validate:sports-package": "node scripts/validate-sports-deployment-package.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1111.0",
     "@googleapis/calendar": "^14.3.0",
     "@googleapis/drive": "^20.2.0",
     "@googleapis/gmail": "^16.1.2",
