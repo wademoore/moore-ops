@@ -20,6 +20,12 @@ Each feed is fetched independently with an eight-second timeout, HTTP-status che
 
 Initial HTML contains an embedded snapshot. `window.updateSportsTicker(snapshot)` can replace its four existing slots in place. Polling is disabled unless a sports URL is explicitly configured; the proposed interval is five minutes. The snapshot contains no household data or credentials.
 
+## Result, record and standing summaries
+
+Each organizational slot carries a provider-neutral `lastResult`, `records` and `standing` summary independently of its selected current or next event. Final-result retention is 48 hours for MLB, four days for basketball and seven days for football; these windows do not affect slot-promotion scores, and a newer live event replaces the retained final. A validated previous summary survives a partial provider failure without preserving stale live state. ESPN overall/conference records come from the Core record endpoint by season type; MLB record and explicit `divisionRank` come from the standings response. ESPN conference/division position is emitted only when the free standings payload provides an explicit rank field—array order is never converted into a fabricated position. When no current-window event exists, the ticker renders the retained final plus record and available standing instead of an empty offseason message. Both server and browser validators reject malformed persisted result summaries.
+
+College metadata uses the configured conference short name, omits a position until conference play begins, and groups an active conference record in parentheses after the overall record. Displayed scores, records and tied positions use en dashes while provider identifiers and machine-readable values remain unchanged.
+
 ## Phase 2 — smallest AWS shape (not deployed)
 
 - One small Node.js Lambda behind a Lambda Function URL, returning only a bounded `sports.json` snapshot. The endpoint contains public sports data only—no household information or credentials.

@@ -766,20 +766,54 @@ function renderRightRail(data) {
 
 }
 
+function sportsDisplayDashes(value) {
+  return value == null ? value : String(value).replace(/(\d)-(\d)/g, '$1–$2').replace(/\bT-(?=\d)/g, 'T–');
+}
+
+function recordGamesPlayed(value) {
+  if (!value) return 0;
+  const parts = String(value).split('-').map(Number);
+  return parts.every(Number.isFinite) ? parts.reduce((total, part) => total + part, 0) : 0;
+}
+
+function sportsMetadataCopy(slot) {
+  const records = slot.records || {}, event = slot.event;
+  const isCollege = event?.league === 'college-football' || event?.league === 'mens-college-basketball' || Boolean(slot.conference);
+  if (event?.seasonType === 'Preseason') return records.preseason ? `Preseason ${sportsDisplayDashes(records.preseason)}` : '';
+  if (event?.league === 'nfl') return records.regularSeason ? `Regular ${sportsDisplayDashes(records.regularSeason)}` : '';
+  if (isCollege && slot.conference) {
+    const overall = records.overall || slot.record;
+    const conferenceRecord = records.conference;
+    const overallGames = recordGamesPlayed(overall);
+    const conferenceGames = recordGamesPlayed(conferenceRecord);
+    if (overallGames === 0) return slot.conference;
+    if (conferenceGames === 0) return `${sportsDisplayDashes(overall)} · ${slot.conference}`;
+    const position = slot.standing ? sportsDisplayDashes(slot.standing) : slot.conference;
+    return `${sportsDisplayDashes(overall)} (${sportsDisplayDashes(conferenceRecord)}) · ${position}`;
+  }
+  return [sportsDisplayDashes(records.overall || slot.record), sportsDisplayDashes(slot.standing)].filter(Boolean).join(' · ');
+}
+
 function renderTicker(data) {
   const slots = data.sportsSnapshot?.slots || data.sportsTicker || [];
+  const treatment = data.sportsMetadataTreatment === 'dedicated' ? 'dedicated' : 'inline';
   const format = slot => {
-    if (!slot.event) return [slot.presentationState === 'unavailable' ? 'Data unavailable' : 'Offseason', slot.presentationState === 'unavailable' ? 'Last credible update retained' : 'No game in the current window'];
-    const e = slot.event, team = e.rank ? `#${e.rank} ${slot.label}` : slot.label, place = e.homeAway === 'home' ? 'vs' : '@', opponent = e.opponentAbbreviation || e.opponent;
+    const e = slot.event;
+    const summary = sportsMetadataCopy(slot);
+    const attach = line => treatment === 'inline' && summary ? `${line} · ${summary}` : line;
+    if (!e && slot.lastResult) { const r = slot.lastResult, place = r.homeAway === 'home' ? 'vs' : '@', opponent = r.opponentAbbreviation || r.opponent; return [`${slot.label} ${r.result} ${r.teamScore}–${r.opponentScore}`, attach(`Last · ${place} ${opponent}`), summary]; }
+    if (!e) return [slot.presentationState === 'unavailable' ? 'Data unavailable' : slot.label, attach(slot.presentationState === 'unavailable' ? 'Last credible update retained' : 'Offseason · No game in the current window'), summary];
+    const team = e.rank ? `#${e.rank} ${slot.label}` : slot.label, place = e.homeAway === 'home' ? 'vs' : '@', opponent = e.opponentAbbreviation || e.opponent;
     const when = formatSportsEventWhen(e.startTime, data.now || new Date(), { opener: ['opener','distant-opener'].includes(slot.presentationState) });
-    if (e.state === 'live') return [`${team} ${e.teamScore} · ${opponent} ${e.opponentScore}`, `${e.statusText || 'Live'}${e.clock ? ` · ${e.clock}` : ''}`];
-    if (e.state === 'final') return [`${team} ${e.result} ${e.teamScore}–${e.opponentScore}`, `Final · ${place} ${opponent}${e.record ? ` · ${e.record}` : ''}`];
+    if (e.state === 'live') return [`${team} ${e.teamScore} · ${opponent} ${e.opponentScore}`, attach(`${e.statusText || 'Live'}${e.clock ? ` · ${e.clock}` : ''}`), summary];
+    if (e.state === 'final') return [`${team} ${e.result} ${e.teamScore}–${e.opponentScore}`, attach(`Final · ${place} ${opponent}`), summary];
     const status = ['delayed','postponed','suspended','cancelled'].includes(e.state) ? (e.statusText || e.state) + ' · ' : '';
-    return [`${team} ${place} ${opponent}`, `${status}${when}${slot.dataDelayed ? ' · Data delayed' : ''}`];
+    const last = slot.lastResult ? ` · Last ${slot.lastResult.result} ${slot.lastResult.teamScore}–${slot.lastResult.opponentScore}` : '';
+    return [`${team} ${place} ${opponent}`, attach(`${status}${when}${last}${slot.dataDelayed ? ' · Data delayed' : ''}`), summary];
   };
-  const rendered = slots.slice(0, 4).map(slot => { const [line1,line2] = slot.line1 ? [slot.line1,slot.line2] : format(slot); return `<div class="ticker-slot ${slot.event?.state === 'live' || slot.active ? 'active' : ''}" data-sports-org="${esc(slot.organization || '')}">${logo(V2_LOGOS[slot.logo || slot.organization] || V2_LOGOS.wm, 'ticker-logo')}<div><b>${esc(line1)}</b><span>${esc(line2)}</span></div></div>`; }).join('');
+  const rendered = slots.slice(0, 4).map(slot => { const [line1,line2,meta=''] = slot.line1 ? [slot.line1,slot.line2,slot.meta] : format(slot); return `<div class="ticker-slot ${slot.event?.state === 'live' || slot.active ? 'active' : ''}" data-sports-org="${esc(slot.organization || '')}">${logo(V2_LOGOS[slot.logo || slot.organization] || V2_LOGOS.wm, 'ticker-logo')}<div><b>${esc(line1)}</b><span>${esc(line2)}</span><small class="ticker-meta">${esc(meta)}</small></div></div>`; }).join('');
   const updated = data.sportsSnapshot?.generatedAt || new Date().toISOString();
-  return `<footer class="sports-ticker" data-sports-version="1">${rendered}<i class="ticker-doodle" aria-hidden="true"></i><small class="updated">Updated ${esc(new Date(updated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }))} ET</small></footer>`;
+  return `<footer class="sports-ticker metadata-${treatment}" data-sports-version="1" data-metadata-treatment="${treatment}">${rendered}<i class="ticker-doodle" aria-hidden="true"></i><small class="updated">Updated ${esc(new Date(updated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }))} ET</small></footer>`;
 }
 
 function browserScript() {
@@ -792,20 +826,20 @@ function browserScript() {
     const countdown = document.querySelector('.countdown-card');
     const paletteSetting = dashboard?.dataset.palette || 'auto';
     const logoMap = ${JSON.stringify(V2_LOGOS)};
-    const validSports = s => s && s.version === 1 && Array.isArray(s.slots) && s.slots.length <= 4 && s.slots.every(x => x && typeof x.organization === 'string' && typeof x.logo === 'string' && !/^https?:/i.test(x.logo));
+    const validSports = s => {const str=x=>x==null||typeof x==='string',records=x=>x==null||(x&&['overall','conference','regularSeason','preseason'].every(k=>str(x[k]))),result=x=>x==null||(x.state==='final'&&['W','L','T'].includes(x.result)&&Number.isFinite(x.teamScore)&&Number.isFinite(x.opponentScore));return s&&s.version===1&&Array.isArray(s.slots)&&s.slots.length<=4&&s.slots.every(x=>x&&typeof x.organization==='string'&&typeof x.logo==='string'&&!/^https?:/i.test(x.logo)&&str(x.record)&&records(x.records)&&str(x.conference)&&str(x.standing)&&result(x.lastResult));};
     const sportLines = slot => {
-      const e=slot.event;if(!e)return[slot.presentationState==='unavailable'?'Data unavailable':'Offseason',slot.presentationState==='unavailable'?'Last credible update retained':'No game in the current window'];
+      const ticker=document.querySelector('.sports-ticker'),treatment=ticker?.dataset.metadataTreatment||'inline',records=slot.records||{},e=slot.event,dashes=value=>value==null?value:String(value).replace(/(\\d)-(\\d)/g,'$1–$2').replace(/\\bT-(?=\\d)/g,'T–'),played=value=>{if(!value)return 0;const parts=String(value).split('-').map(Number);return parts.every(Number.isFinite)?parts.reduce((sum,n)=>sum+n,0):0},college=e?.league==='college-football'||e?.league==='mens-college-basketball'||Boolean(slot.conference),overall=records.overall||slot.record,conferenceRecord=records.conference,summary=e?.seasonType==='Preseason'?(records.preseason?'Preseason '+dashes(records.preseason):''):e?.league==='nfl'?(records.regularSeason?'Regular '+dashes(records.regularSeason):''):college&&slot.conference?(played(overall)===0?slot.conference:played(conferenceRecord)===0?dashes(overall)+' · '+slot.conference:dashes(overall)+' ('+dashes(conferenceRecord)+') · '+(slot.standing?dashes(slot.standing):slot.conference)):[dashes(overall),dashes(slot.standing)].filter(Boolean).join(' · '),attach=line=>treatment==='inline'&&summary?line+' · '+summary:line;if(!e&&slot.lastResult){const r=slot.lastResult,p=r.homeAway==='home'?'vs':'@',o=r.opponentAbbreviation||r.opponent;return[slot.label+' '+r.result+' '+r.teamScore+'–'+r.opponentScore,attach('Last · '+p+' '+o),summary]}if(!e)return[slot.presentationState==='unavailable'?'Data unavailable':slot.label,attach(slot.presentationState==='unavailable'?'Last credible update retained':'Offseason · No game in the current window'),summary];
       const p=e.homeAway==='home'?'vs':'@',o=e.opponentAbbreviation||e.opponent,t=e.rank?'#'+e.rank+' '+slot.label:slot.label;
       const key=d=>new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(d));
       const n=new Date(),tomorrow=new Date(+n+86400000),date=new Date(e.startTime).toLocaleDateString('en-US',{timeZone:zone,month:'short',day:'numeric'}),time=new Date(e.startTime).toLocaleTimeString('en-US',{timeZone:zone,hour:'numeric',minute:'2-digit'});
       const w=(key(e.startTime)===key(n)?'Today':key(e.startTime)===key(tomorrow)?'Tomorrow':(['opener','distant-opener'].includes(slot.presentationState)?'Opener ':'')+date)+' · '+time;
-      if(e.state==='live')return[t+' '+e.teamScore+' · '+o+' '+e.opponentScore,(e.statusText||'Live')+(e.clock?' · '+e.clock:'')];
-      if(e.state==='final')return[t+' '+e.result+' '+e.teamScore+'–'+e.opponentScore,'Final · '+p+' '+o+(e.record?' · '+e.record:'')];
-      return[t+' '+p+' '+o,w+(slot.dataDelayed?' · Data delayed':'')];
+      if(e.state==='live')return[t+' '+e.teamScore+' · '+o+' '+e.opponentScore,attach((e.statusText||'Live')+(e.clock?' · '+e.clock:'')),summary];
+      if(e.state==='final')return[t+' '+e.result+' '+e.teamScore+'–'+e.opponentScore,attach('Final · '+p+' '+o),summary];
+      const status=['delayed','postponed','suspended','cancelled'].includes(e.state)?(e.statusText||e.state)+' · ':'',last=slot.lastResult?' · Last '+slot.lastResult.result+' '+slot.lastResult.teamScore+'–'+slot.lastResult.opponentScore:'';return[t+' '+p+' '+o,attach(status+w+last+(slot.dataDelayed?' · Data delayed':'')),summary];
     };
     window.updateSportsTicker = snapshot => {
       if(!validSports(snapshot))return false;const ticker=document.querySelector('.sports-ticker'),nodes=[...(ticker?.querySelectorAll('.ticker-slot')||[])];if(!ticker||nodes.length!==snapshot.slots.length)return false;
-      snapshot.slots.forEach((slot,i)=>{const lines=sportLines(slot),node=nodes[i];node.dataset.sportsOrg=slot.organization;node.classList.toggle('active',slot.event?.state==='live');node.querySelector('img').src=logoMap[slot.logo]||logoMap.wm;node.querySelector('b').textContent=lines[0];node.querySelector('span').textContent=lines[1];});
+      snapshot.slots.forEach((slot,i)=>{const lines=sportLines(slot),node=nodes[i];node.dataset.sportsOrg=slot.organization;node.classList.toggle('active',slot.event?.state==='live');node.querySelector('img').src=logoMap[slot.logo]||logoMap.wm;node.querySelector('b').textContent=lines[0];node.querySelector('span').textContent=lines[1];node.querySelector('.ticker-meta').textContent=lines[2]||'';});
       const stamp=ticker.querySelector('.updated');if(stamp)stamp.textContent='Updated '+new Date(snapshot.generatedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:zone})+' ET';return true;
     };
     const sportsUrl=dashboard?.dataset.sportsUrl;
@@ -861,7 +895,7 @@ const CSS = `
 .alert-card{flex:1;border:1.5px solid rgba(190,141,43,.42);background:rgba(250,245,233,.85);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;min-width:0}.alert-card div{display:flex;flex-direction:column;min-width:0}.alert-card b{font-size:14px}.alert-card span{font-size:11px;margin-top:3px}.alert-mark{width:13px;height:13px;border-radius:50%;background:${COLORS.gold};flex:0 0 auto}.level-red .alert-mark{background:${COLORS.red}}.level-blue .alert-mark{background:${COLORS.blue}}.level-amber .alert-mark{background:${COLORS.gold}}.calm .alert-mark{background:#628d50}
 .alert-identity{width:29px;height:29px;object-fit:contain;flex:0 0 auto}
 .rail-card{padding:12px}.clock-card{text-align:center;display:flex;flex-direction:column;justify-content:center}.clock-card time{font-family:Georgia,serif;font-size:45px;color:${COLORS.greenDark};line-height:1}.clock-card span{font-family:"Segoe Print","Trebuchet MS",sans-serif;font-size:13px;font-weight:800;margin-top:7px}.current-weather{display:flex;flex-direction:column;align-items:center;justify-content:center}.weather-now{display:flex;align-items:center;justify-content:center;gap:8px}.weather-now svg{width:47px;height:47px}.weather-now strong{font-family:Georgia,serif;font-size:46px;color:${COLORS.greenDark}}.current-weather>span{font-size:12px;font-style:italic}.current-weather>small{font-size:10px;margin-top:5px;color:#6a6c66}.forecast-card{display:flex;flex-direction:column;padding:4px 12px}.forecast-row{display:grid;grid-template-columns:1fr 31px 33px 28px;grid-template-rows:1fr auto;gap:0 4px;align-items:center;flex:1;border-bottom:1px solid rgba(20,40,31,.17);font-size:12px}.forecast-row>span{font-weight:800}.forecast-row svg{width:27px;height:27px;grid-row:1/3;grid-column:2}.forecast-row b{font-family:Georgia,serif;font-size:17px;text-align:right}.forecast-row small{font-size:11px;text-align:right}.forecast-row i{font-size:8px;grid-column:3/5;text-align:right;color:#53675e}.forecast-row.today>span{color:${COLORS.green}}svg{fill:none;stroke:${COLORS.greenDark};stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.countdown-card{text-align:center;display:flex;flex-direction:column;justify-content:center;position:relative}.countdown-card:before,.countdown-card:after{content:"";position:absolute;width:30px;height:2px;background:${COLORS.gold};top:57%;transform:rotate(18deg)}.countdown-card:before{left:14px}.countdown-card:after{right:14px;transform:rotate(-18deg)}.countdown-card span{font-family:"Segoe Print","Trebuchet MS",sans-serif;text-transform:uppercase;font-weight:900;color:${COLORS.green};font-size:17px}.countdown-card strong{font-family:Georgia,serif;font-size:70px;line-height:1;color:${COLORS.greenDark}}.countdown-card small{font-size:14px;font-weight:900;letter-spacing:.08em}
-.sports-ticker{background:${COLORS.greenDark};color:#fff;display:flex;align-items:center;border-radius:9px;padding:7px 12px;position:relative;overflow:hidden}.ticker-slot{flex:1;display:flex;align-items:center;gap:9px;opacity:.62;border-right:1px solid rgba(255,255,255,.2);padding:0 14px;min-width:0}.ticker-slot:first-child{padding-left:0}.ticker-slot.active{opacity:1}.ticker-slot>div{display:flex;flex-direction:column;min-width:0}.ticker-slot b{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ticker-slot span{font-size:8px;color:#e6c978;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.ticker-logo{width:27px;height:27px;object-fit:contain;flex:0 0 auto}.updated{position:absolute;right:8px;bottom:2px;font-size:6px;color:#d6b55c}
+.sports-ticker{background:${COLORS.greenDark};color:#fff;display:flex;align-items:center;border-radius:9px;padding:7px 12px;position:relative;overflow:hidden}.ticker-slot{flex:1;display:flex;align-items:center;gap:9px;opacity:.62;border-right:1px solid rgba(255,255,255,.2);padding:0 14px;min-width:0}.ticker-slot:first-child{padding-left:0}.ticker-slot.active{opacity:1}.ticker-slot>div{display:flex;flex-direction:column;min-width:0}.ticker-slot b{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ticker-slot span{font-size:8px;color:#e6c978;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.ticker-meta{display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.metadata-dedicated .ticker-meta{display:block;font-size:7px;line-height:1;color:rgba(241,230,208,.68);margin-top:2px}.ticker-logo{width:27px;height:27px;object-fit:contain;flex:0 0 auto}.updated{position:absolute;right:8px;bottom:2px;font-size:6px;color:#d6b55c}
 .priorities{display:flex;flex-direction:column;flex:1;min-height:0}.priority-row{flex:1;min-height:0}.today-bottom{margin-top:0}
 /* Couch-distance sizing for the fixed 2560×1440 canvas. */
 .masthead-super{font-size:17px}.masthead h1{font-size:55px}.masthead-sub{font-size:19px}.masthead-logo{width:68px;height:68px}.section-title{height:38px;margin-bottom:10px}.section-title:before{width:min(380px,85%);height:38px}.section-title span{font-size:20px;padding-left:12px}.subhead{font-size:15px;margin:9px 0 4px}.today-event{grid-template-columns:86px 38px 1fr;gap:10px;padding:10px 0 11px}.today-event time{font-size:18px}.event-logo,.upcoming-logo{width:34px;height:34px}.today-event-copy strong{font-size:23px}.today-event-copy span{font-size:16px}.task-row,.priority-row{grid-template-columns:73px 1fr auto;gap:9px;font-size:17px;padding:6px 0}.priority-row{grid-template-columns:73px 1fr}.owner{font-size:11px}.school-line{font-size:16px;padding:8px 0}.school-line strong{font-size:13px}.dinner-block strong{font-size:32px}.dinner-block span,.dinner-block small{font-size:16px}.upcoming-list{height:calc(100% - 48px)}.upcoming-day{grid-template-columns:72px 1fr 82px;gap:12px;padding:7px 0 7px 10px;min-height:68px}.date-tile span{font-size:13px}.date-tile b{font-size:35px}.upcoming-event{grid-template-columns:34px 1fr;gap:9px}.upcoming-event strong{font-size:19px}.upcoming-event span{font-size:13px}.count-chip{font-size:13px;padding:4px 12px}.athletics-grid{height:calc(100% - 48px);gap:14px}.athletic-ribbon{height:36px;font-size:15px}.athletic-logo{width:27px;height:27px}.record{font-size:44px}.athletic-card>small,.season-tag,.next-box{font-size:15px}.next-box b{font-size:12px}table{font-size:15px}th{font-size:12px}.swim-row{font-size:15px;padding:8px 0}.swim-row span small{font-size:10px}.swim-row strong{font-size:22px}.swim-row em,.swim-row>b{font-size:11px}.athletic-footer{font-size:12px}.alert-card b{font-size:19px}.alert-card span{font-size:15px}.clock-card time{font-size:54px}.clock-card span{font-size:15px}.weather-now svg{width:54px;height:54px}.weather-now strong{font-size:54px}.current-weather>span{font-size:16px}.current-weather>small{font-size:13px}.forecast-row{grid-template-columns:1fr 36px 39px 32px;font-size:16px}.forecast-row svg{width:33px;height:33px}.forecast-row b{font-size:22px}.forecast-row small{font-size:15px}.forecast-row i{font-size:11px}.countdown-card span{font-size:20px}.countdown-card strong{font-size:78px}.countdown-card small{font-size:17px}.ticker-slot b{font-size:14px}.ticker-slot span{font-size:11px}.ticker-logo{width:34px;height:34px}.updated{font-size:8px}
@@ -941,7 +975,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .paper-panel>.section-title{height:70px;margin-top:-31px;margin-bottom:8px}.paper-panel>.section-title:before{height:70px}.paper-panel>.section-title span{font-size:30px;padding-left:70px;letter-spacing:.045em}.doodle-calendar span{padding-left:84px!important}.dinner-block .section-title{height:54px}.dinner-block .section-title:before{height:54px}.dinner-block .section-title span{font-size:25px;line-height:1.2;padding-left:61px}
 .priority-row{font-size:24px;line-height:1.2;padding:6px 0;grid-template-columns:72px 1fr;gap:10px}.priority-row .owner{font-size:16px;line-height:1.05;padding:4px 8px;border-radius:14px}
 .athletic-ribbon{height:46px;padding:3px 12px 3px 48px;gap:10px;font-size:21px;letter-spacing:.025em;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}.athletic-ribbon span{line-height:1.2;padding:2px 0}.athletic-logo{width:31px;height:31px;padding:3px}.athletics-grid{height:calc(100% - 52px)}
-.sports-ticker{color:#f1e6d0}.ticker-slot b{font-size:20px;font-weight:700}.ticker-slot span{font-size:15px;color:#eee0c4}.updated{font-size:11px;color:#eadab8}
+.sports-ticker{color:#f1e6d0}.ticker-slot b{font-size:20px;font-weight:700}.ticker-slot span{font-size:15px;color:#eee0c4}.metadata-dedicated .ticker-meta{font-size:12px;line-height:1;color:rgba(241,230,208,.72)}.updated{font-size:11px;color:#eadab8}
 .right-rail{grid-template-rows:118px 172px 590px minmax(0,1fr)}
 .horizon-card{display:flex;flex-direction:column;min-height:0}.horizon-label{flex:0 0 46px;display:flex;align-items:center;justify-content:center;color:#fff;background-image:var(--section-green);background-size:100% 100%;font-size:21px;font-style:italic;font-weight:700;letter-spacing:.045em;text-transform:uppercase}.horizon-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.horizon-count-1 .horizon-list{grid-template-rows:1fr}.horizon-count-2 .horizon-list{grid-template-rows:repeat(2,minmax(0,1fr))}.horizon-item{position:relative;display:grid;grid-template-columns:82px minmax(0,1fr);gap:9px;align-items:center;padding:7px 6px 7px 11px;border-bottom:1px solid var(--rule);min-height:0}.horizon-item:last-child{border-bottom:0}.horizon-item:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:6px;background:${COLORS.green}}.horizon-item.person-myles:before{background:${COLORS.red}}.horizon-item.person-ophelia:before{background:${COLORS.purple}}.horizon-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.horizon-count{display:flex;flex-direction:column;align-items:center}.horizon-count strong{font-family:"Roboto Slab",Georgia,serif;font-size:43px;line-height:.9;color:${COLORS.greenDark}}.horizon-count span{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--secondary)}.horizon-copy{display:flex;flex-direction:column;min-width:0}.horizon-copy b{font-size:22px;line-height:1.04}.horizon-copy small{font-size:15px;line-height:1.05;margin-top:4px;color:var(--secondary);font-weight:600}.horizon-copy time{font-size:15px;margin-top:5px;color:var(--secondary);font-weight:600}.horizon-count-1 .horizon-item{grid-template-columns:1fr;text-align:center}.horizon-count-1 .horizon-count strong{font-size:72px}.horizon-count-1 .horizon-copy b{font-size:27px}.horizon-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px}.horizon-empty-copy strong{font-size:21px}.horizon-empty-copy small{font-size:15px;color:var(--secondary);margin-top:6px}.horizon-doodle{width:72px;height:72px;background:var(--doodle-star) center/contain no-repeat;margin-bottom:7px}
 `;
@@ -1036,6 +1070,8 @@ export {
   horizonEligibility,
   horizonDisplayTitle,
   selectHorizonEvents,
+  sportsDisplayDashes,
+  sportsMetadataCopy,
   PALETTE,
   V2_LOGOS,
 };
