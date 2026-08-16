@@ -1,9 +1,19 @@
 {
   "type": "module",
   "scripts": {
-    "test": "node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js"
+    "dev": "node scripts/dashboard-v2-dev-server.mjs",
+    "test": "node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js",
+    "preview:dashboard-v2": "node scripts/render-dashboard-v2-preview.mjs",
+    "preview:dashboard-v2:real": "node scripts/render-dashboard-v2-real-preview.mjs",
+    "preview:dashboard-v2:states": "node scripts/render-dashboard-v2-states.mjs",
+    "preview:dashboard-v2:png": "node scripts/render-dashboard-v2-png.mjs",
+    "preview:dashboard-v2:tv-readability": "node scripts/render-dashboard-v2-tv-readability.mjs",
+    "preview:dashboard-v2:sports-live": "node scripts/prepare-sports-live-couch-preview.mjs",
+    "validate:sports-infra": "node scripts/validate-sports-live-refresh-template.mjs",
+    "validate:sports-package": "node scripts/validate-sports-deployment-package.mjs"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.1111.0",
     "@googleapis/calendar": "^14.3.0",
     "@googleapis/drive": "^20.2.0",
     "@googleapis/gmail": "^16.1.2",
@@ -13,6 +23,8 @@
     "pdf-parse": "^2.4.5"
   },
   "devDependencies": {
-    "dotenv": "^17.4.2"
+    "dotenv": "^17.4.2",
+    "esbuild": "0.28.2",
+    "playwright": "1.62.0"
   }
 }

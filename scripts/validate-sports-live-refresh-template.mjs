@@ -1,0 +1,18 @@
+import { readFile } from 'node:fs/promises';
+const path = new URL('../infrastructure/sports-live-refresh/template.json', import.meta.url);
+const template = JSON.parse(await readFile(path, 'utf8'));
+const resources = template.Resources || {}, fn = resources.SportsFunction?.Properties, bucket = resources.SportsCache?.Properties;
+const failures = [];
+if (template.Transform !== 'AWS::Serverless-2016-10-31') failures.push('SAM transform missing');
+if ('ReservedConcurrentExecutions' in (fn || {})) failures.push('reserved concurrency must remain unset for the account concurrency-10 quota');
+if (fn?.FunctionUrlConfig?.AuthType !== 'NONE') failures.push('public Function URL missing');
+if (fn?.Environment?.Variables?.SPORTS_ALLOWED_ORIGINS?.Ref !== 'AllowedOrigins') failures.push('CORS origins must be parameterized');
+if (!bucket?.PublicAccessBlockConfiguration || Object.values(bucket.PublicAccessBlockConfiguration).some(value => value !== true)) failures.push('S3 public access must be blocked');
+const lifecycle = bucket?.LifecycleConfiguration?.Rules?.find(rule => rule.Id === 'BoundSportsCacheNoncurrentVersions');
+if (lifecycle?.Status !== 'Enabled' || lifecycle?.Prefix?.Ref !== 'CacheKey') failures.push('cache lifecycle must use the CacheKey prefix filter');
+if (lifecycle?.NoncurrentVersionExpiration?.NewerNoncurrentVersions !== 10 || lifecycle?.NoncurrentVersionExpiration?.NoncurrentDays !== 30) failures.push('cache lifecycle must retain 10 newer noncurrent versions and expire eligible versions after 30 days');
+if (lifecycle?.Expiration || lifecycle?.NoncurrentVersionTransitions) failures.push('cache lifecycle must not expire or transition the current object');
+const policy = fn?.Policies?.[0]?.Statement?.[0];
+if (JSON.stringify(policy?.Action) !== JSON.stringify(['s3:GetObject','s3:PutObject'])) failures.push('IAM action scope is not minimal');
+if (!JSON.stringify(policy?.Resource).includes('${SportsCache.Arn}/${CacheKey}')) failures.push('IAM resource is not one object key');
+if (failures.length) { console.error(failures.join('\n')); process.exitCode = 1; } else console.log('sports live-refresh template: valid (local structural validation only; no AWS access)');

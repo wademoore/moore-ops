@@ -45,6 +45,8 @@ Direct-to-main after Reviewer sign-off remains this project's default for all Co
 
 ## Sports data architecture (as of June 2026)
 
+Dashboard v2 sports live refresh Phase 3B is deployed in `us-east-2` as stack `moore-ops-sports-live-refresh`; production Pi/DAKboard cutover is intentionally not complete. Deployment evidence, exact CORS origins, validation, costs and rollback are recorded in `docs/dashboard-v2/sports-live-refresh-phase-3b.md`. The account concurrency quota is 10, so the endpoint must not configure positive reserved concurrency unless that quota is raised first.
+
 ### Local JSON files (`data/` folder — committed to repo)
 
 > **Guard rail — before writing to any `data/*.json` file:** confirm the filename appears in the "Current, authoritative files" list below, not in "Archived." Files ending in `-v2` or the newest suffix are current; plain/legacy names (without a version suffix) are archived at `data/archive/` and must not be written to. When in doubt, check here first.
@@ -305,6 +307,8 @@ Coder mode must keep tests at 430+. If the number changes, the Documenter should
 
 ## Current state (changelog)
 
+- **Dashboard v2 Phase 3C production cutover completed (Aug 15, 2026):** The Pi now serves the generated dashboard privately on `127.0.0.1:4173` through an enabled systemd service, and LXDE-pi launches Chromium at that local URL. The AWS sports endpoint allows only the exact local origin; the temporary couch origin was removed. Startup, 2560×1440 layout, live polling, cache/ETag behavior, and a preserved DAKboard rollback were boot-tested. See `docs/dashboard-v2/phase-3c-production-cutover.md`.
+
 - **Dashboard event-bucketing timezone bug fixed (Jul 1, 2026):** Next Two Weeks panel was placing timed events at/after 8 PM ET into the next day's bucket, due to UTC-based date slicing (`raw.slice(0,10)` on a UTC dateTime string). Fixed via `eventDateKeyET()`; `parseEventDate` also corrected for consistent Today-card bucketing. 414 passing after this fix.
 - **Dashboard 'today' anchor timezone bug fixed (Jul 1, 2026):** At ≥8 PM ET (≥7 PM EST in winter), the dashboard's TODAY heading and all day-bucketing rendered tomorrow's date, because the anchor was built from `new Date()` in Lambda's UTC runtime rather than the ET calendar date. Confirmed live via screenshot (8 PM ET Jul 1 render showed TODAY = Jul 2) and fixed via `startOfTodayET()`. 419 passing after this fix. Confirmed correct via live dashboard refresh at 8 PM ET on Jul 1, 2026.
 - **Sports data moved to local JSON files (Jun 2026):** `pb-records.json`, `swim-results.json`, `waves-season.json`, `flag-football.json`, `sports-config.json` all committed to repo and read directly by `builder.js` — no Drive fetch. Associated Lambda env vars retired.
@@ -368,6 +372,8 @@ Coder mode must keep tests at 430+. If the number changes, the Documenter should
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut.
 
 ## Known open items
+
+- **Dashboard v2 is isolated and experimental (Aug 2026):** `render/dashboard-v2.js` is a parallel standalone renderer consuming the existing digest model. It is not imported by `index.js`, not uploaded by `drive.js`, and not reachable from the Lambda path. Supporting code: `weather.js`, `render/dashboard-v2.sample-data.js`, `scripts/render-dashboard-v2-preview.mjs`, and `docs/dashboard-v2/README.md`. The Aug 12 screenshot refinement changed the calendar/athletics height split to 58/40, tightened the masthead, removed repeated event-time text, and lets weekly-priority rows distribute spare Today-panel height for better TV readability. Do not connect it to production or reuse the v1 Drive filename without Wade's explicit cutover approval and the gates in the v2 README.
 
 - **A fresh clone or CI runner without a prior `npm install` will show 2 failing tests** — `digest/builder.contract.test.js` and `digest/builder.test.js`, both `ERR_MODULE_NOT_FOUND: google-auth-library` (a declared `package.json` dependency that simply isn't installed yet). Confirmed present on `main` at `fb71388` — not a regression from any recent branch, just what an uninitialized `node_modules` looks like. Run `npm install` first. Flagging so a future session encountering this cold on a fresh checkout doesn't mistake it for a real break.
 - **`TZ=UTC` not yet pinned in test runner** — `dateUtils.test.js` currently validates against the ET dev machine's local timezone, not Lambda's UTC runtime. Recommended follow-up: add `TZ=UTC` to the npm test script so the suite deterministically validates production behavior.

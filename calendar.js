@@ -97,5 +97,10 @@ export async function pull14Days() {
   return pullCalendarEvents(14 * 24);
 }
 
+// Preview-only long horizon. Production v1 does not import this function.
+export async function pull180Days() {
+  return pullCalendarEvents(180 * 24);
+}
+
 // ── Auth flow ─────────────────────────────────────────────────────────────
 
