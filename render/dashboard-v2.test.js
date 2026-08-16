@@ -72,6 +72,15 @@ describe('experimental dashboard v2 isolation and structure', () => {
     assert.match(html, /applyPalette/);
   });
 
+  it('serializes the configured sports feed URL onto the polling boundary', () => {
+    const configured = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      sportsFeedUrl: 'https://sports.example/feed?a=1&b=2',
+    });
+    assert.match(configured, /data-sports-url="https:\/\/sports\.example\/feed\?a=1&amp;b=2"/);
+    assert.match(configured, /addEventListener\('unload'.*poll\(\);/);
+  });
+
   it('does not include private source details or credentials', () => {
     assert.doesNotMatch(html, /DRIVE_/);
     assert.doesNotMatch(html, /AWS_/);

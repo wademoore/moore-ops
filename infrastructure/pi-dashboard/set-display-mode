@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+target=/home/pi/.config/lxsession/LXDE-pi/autostart
+root=/home/pi/moore-dashboard
+
+case "${1:-status}" in
+  dashboard)
+    install -o pi -g pi -m 0644 "$root/config/lxde-autostart.dashboard" "$target"
+    ;;
+  dakboard)
+    install -o pi -g pi -m 0600 "$root/rollback/lxde-pi-autostart.dakboard" "$target"
+    ;;
+  status)
+    ;;
+  *)
+    echo "usage: $0 [status|dashboard|dakboard]" >&2
+    exit 2
+    ;;
+esac
+
+sha256sum "$target" "$root/config/lxde-autostart.dashboard" "$root/rollback/lxde-pi-autostart.dakboard"

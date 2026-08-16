@@ -843,7 +843,7 @@ function browserScript() {
       const stamp=ticker.querySelector('.updated');if(stamp)stamp.textContent='Updated '+new Date(snapshot.generatedAt).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:zone})+' ET';return true;
     };
     const sportsUrl=dashboard?.dataset.sportsUrl;
-    if(sportsUrl){let timer,etag='',failures=0,stopped=false,lastPoll=1800;const clamp=value=>Math.max(120,Math.min(7200,Number(value)||1800)),schedule=seconds=>{if(!stopped)timer=setTimeout(poll,clamp(seconds)*1000)},poll=async()=>{let next=lastPoll;try{const response=await fetch(sportsUrl,{cache:'no-store',headers:etag?{'If-None-Match':etag}:{}});if(response.status===304){failures=0;lastPoll=clamp(response.headers.get('x-sports-poll-seconds')||lastPoll);schedule(lastPoll);return}if(!response.ok)throw new Error('sports refresh failed');const snapshot=await response.json();if(!window.updateSportsTicker(snapshot))throw new Error('invalid sports snapshot');etag=response.headers.get('etag')||etag;failures=0;lastPoll=clamp(snapshot.nextPollSeconds);next=lastPoll}catch{failures++;next=Math.min(7200,1800*2**Math.min(failures,3))}schedule(next)};addEventListener('unload',()=>{stopped=true;clearTimeout(timer)},{once:true});schedule(lastPoll);}
+    if(sportsUrl){let timer,etag='',failures=0,stopped=false,lastPoll=1800;const clamp=value=>Math.max(120,Math.min(7200,Number(value)||1800)),schedule=seconds=>{if(!stopped)timer=setTimeout(poll,clamp(seconds)*1000)},poll=async()=>{let next=lastPoll;try{const response=await fetch(sportsUrl,{cache:'no-store',headers:etag?{'If-None-Match':etag}:{}});if(response.status===304){failures=0;lastPoll=clamp(response.headers.get('x-sports-poll-seconds')||lastPoll);schedule(lastPoll);return}if(!response.ok)throw new Error('sports refresh failed');const snapshot=await response.json();if(!window.updateSportsTicker(snapshot))throw new Error('invalid sports snapshot');etag=response.headers.get('etag')||etag;failures=0;lastPoll=clamp(snapshot.nextPollSeconds);next=lastPoll}catch{failures++;next=Math.min(7200,1800*2**Math.min(failures,3))}schedule(next)};addEventListener('unload',()=>{stopped=true;clearTimeout(timer)},{once:true});poll();}
     const applyPalette = now => {
       if (!dashboard || paletteSetting !== 'auto') return;
       const hour = Number(new Intl.DateTimeFormat('en-US', { hour: '2-digit', hourCycle: 'h23', timeZone: zone }).format(now));
@@ -1037,7 +1037,7 @@ ${fontCss}
 <style>${CSS}</style>
 </head>
 <body>
-<main class="${classes}" data-palette="${paletteSetting}" style="${styleVars}">
+<main class="${classes}" data-palette="${paletteSetting}" data-sports-url="${esc(data.sportsFeedUrl || '')}" style="${styleVars}">
   ${renderMasthead(data)}
   ${renderToday(data)}
   ${renderUpcoming(data)}

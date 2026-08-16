@@ -4,8 +4,9 @@ import { validEndpointResponse } from '../sports/live-refresh.js';
 const endpoint = process.argv[2];
 if (!endpoint) throw new Error('usage: node scripts/validate-deployed-sports-endpoint.mjs <function-url>');
 
-const couchOrigin = 'http://192.168.1.52:4173';
-const productionOrigin = 'https://dakboard.com';
+const allowedOrigins = (process.argv[3] || 'https://dakboard.com,http://192.168.1.52:4173').split(',').filter(Boolean);
+const primaryOrigin = allowedOrigins[0];
+const disallowedOrigins = (process.argv[4] || 'https://example.invalid').split(',').filter(Boolean);
 const forbiddenKey = /(?:raw|credential|secret|password|token|providerurl|aws|bucket|cachekey|requestheaders)/i;
 const forbiddenKeys = [];
 const walk = (value, path = '$') => {
@@ -22,10 +23,10 @@ const request = (origin, init = {}) => fetch(endpoint, {
   headers: { origin, ...(init.headers || {}) },
 });
 
-const first = await request(couchOrigin);
+const first = await request(primaryOrigin);
 const firstBody = await first.text();
 assert.equal(first.status, 200);
-assert.equal(first.headers.get('access-control-allow-origin'), couchOrigin);
+assert.equal(first.headers.get('access-control-allow-origin'), primaryOrigin);
 assert.equal(first.headers.get('vary'), 'Origin');
 assert.match(first.headers.get('content-type') || '', /^application\/json/);
 assert.match(first.headers.get('cache-control') || '', /^public, max-age=\d+, must-revalidate$/);
@@ -40,24 +41,24 @@ assert.deepEqual(new Set(snapshot.slots.map(slot => slot.organization)), new Set
 walk(snapshot);
 assert.deepEqual(forbiddenKeys, []);
 
-const second = await request(couchOrigin);
+const second = await request(primaryOrigin);
 const secondBody = await second.text();
 assert.equal(second.status, 200);
 assert.equal(secondBody, firstBody);
 assert.equal(second.headers.get('etag'), first.headers.get('etag'));
 
-const conditional = await request(couchOrigin, { headers: { 'if-none-match': first.headers.get('etag') } });
+const conditional = await request(primaryOrigin, { headers: { 'if-none-match': first.headers.get('etag') } });
 assert.equal(conditional.status, 304);
 assert.equal(await conditional.text(), '');
 assert.equal(conditional.headers.get('etag'), first.headers.get('etag'));
 assert.equal(conditional.headers.get('x-sports-poll-seconds'), first.headers.get('x-sports-poll-seconds'));
 
-const head = await request(couchOrigin, { method: 'HEAD' });
+const head = await request(primaryOrigin, { method: 'HEAD' });
 assert.equal(head.status, 200);
 assert.equal(await head.text(), '');
 assert.equal(head.headers.get('etag'), first.headers.get('etag'));
 
-for (const origin of [couchOrigin, productionOrigin]) {
+for (const origin of allowedOrigins) {
   const options = await request(origin, {
     method: 'OPTIONS',
     headers: {
@@ -71,24 +72,27 @@ for (const origin of [couchOrigin, productionOrigin]) {
   assert.equal(options.headers.get('access-control-allow-headers'), 'If-None-Match');
 }
 
-const production = await request(productionOrigin);
-assert.equal(production.status, 200);
-assert.equal(production.headers.get('access-control-allow-origin'), productionOrigin);
+for (const origin of allowedOrigins) {
+  const allowed = await request(origin);
+  assert.equal(allowed.status, 200);
+  assert.equal(allowed.headers.get('access-control-allow-origin'), origin);
+}
 
-const disallowed = await request('https://example.invalid');
-assert.equal(disallowed.status, 403);
-assert.equal(disallowed.headers.get('access-control-allow-origin'), null);
+for (const origin of disallowedOrigins) {
+  const disallowed = await request(origin);
+  assert.equal(disallowed.status, 403);
+  assert.equal(disallowed.headers.get('access-control-allow-origin'), null);
+  const disallowedOptions = await request(origin, { method: 'OPTIONS' });
+  assert.equal(disallowedOptions.status, 403);
+  assert.equal(disallowedOptions.headers.get('access-control-allow-origin'), null);
+}
 
-const disallowedOptions = await request('https://example.invalid', { method: 'OPTIONS' });
-assert.equal(disallowedOptions.status, 403);
-assert.equal(disallowedOptions.headers.get('access-control-allow-origin'), null);
-
-const unsupported = await request(couchOrigin, { method: 'POST' });
+const unsupported = await request(primaryOrigin, { method: 'POST' });
 assert.equal(unsupported.status, 405);
 assert.equal(unsupported.headers.get('allow'), 'GET,HEAD,OPTIONS');
-assert.equal(unsupported.headers.get('access-control-allow-origin'), couchOrigin);
+assert.equal(unsupported.headers.get('access-control-allow-origin'), primaryOrigin);
 
-const query = await fetch(`${endpoint}?force=true&provider=internal`, { headers: { origin: couchOrigin } });
+const query = await fetch(`${endpoint}?force=true&provider=internal`, { headers: { origin: primaryOrigin } });
 assert.equal(query.status, 200);
 assert.equal(await query.text(), firstBody);
 
@@ -116,7 +120,8 @@ console.log(JSON.stringify({
     stableCachedBody: true,
     conditional304: true,
     head: true,
-    allowedOrigins: [productionOrigin, couchOrigin],
+    allowedOrigins,
+    disallowedOrigins,
     disallowedOrigin403: true,
     unsupportedMethod405: true,
     queryCannotForceRefresh: true,

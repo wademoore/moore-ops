@@ -1,6 +1,6 @@
 # Dashboard v2 sports live refresh — Phase 3B deployment
 
-Status: deployed and validated in `us-east-2`; couch preview ready; production Pi/DAKboard unchanged.
+Status: deployed and validated in `us-east-2`; subsequently promoted by the Phase 3C production cutover. See `phase-3c-production-cutover.md` for the current Pi and CORS configuration. The couch-preview origin documented below was temporary and is no longer allowed.
 
 ## Pi and browser verification
 

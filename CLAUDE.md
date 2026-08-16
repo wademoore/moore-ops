@@ -307,6 +307,8 @@ Coder mode must keep tests at 430+. If the number changes, the Documenter should
 
 ## Current state (changelog)
 
+- **Dashboard v2 Phase 3C production cutover completed (Aug 15, 2026):** The Pi now serves the generated dashboard privately on `127.0.0.1:4173` through an enabled systemd service, and LXDE-pi launches Chromium at that local URL. The AWS sports endpoint allows only the exact local origin; the temporary couch origin was removed. Startup, 2560×1440 layout, live polling, cache/ETag behavior, and a preserved DAKboard rollback were boot-tested. See `docs/dashboard-v2/phase-3c-production-cutover.md`.
+
 - **Dashboard event-bucketing timezone bug fixed (Jul 1, 2026):** Next Two Weeks panel was placing timed events at/after 8 PM ET into the next day's bucket, due to UTC-based date slicing (`raw.slice(0,10)` on a UTC dateTime string). Fixed via `eventDateKeyET()`; `parseEventDate` also corrected for consistent Today-card bucketing. 414 passing after this fix.
 - **Dashboard 'today' anchor timezone bug fixed (Jul 1, 2026):** At ≥8 PM ET (≥7 PM EST in winter), the dashboard's TODAY heading and all day-bucketing rendered tomorrow's date, because the anchor was built from `new Date()` in Lambda's UTC runtime rather than the ET calendar date. Confirmed live via screenshot (8 PM ET Jul 1 render showed TODAY = Jul 2) and fixed via `startOfTodayET()`. 419 passing after this fix. Confirmed correct via live dashboard refresh at 8 PM ET on Jul 1, 2026.
 - **Sports data moved to local JSON files (Jun 2026):** `pb-records.json`, `swim-results.json`, `waves-season.json`, `flag-football.json`, `sports-config.json` all committed to repo and read directly by `builder.js` — no Drive fetch. Associated Lambda env vars retired.

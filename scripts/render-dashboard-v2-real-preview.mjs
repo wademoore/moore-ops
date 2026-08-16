@@ -20,5 +20,8 @@ if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
 const output = resolve(root, process.argv[2] || 'preview/dashboard-v2-real.html');
 const digestData = await fetchDashboardV2Data();
 await mkdir(dirname(output), { recursive: true });
-await writeFile(output, renderDashboardV2(digestData), 'utf8');
+await writeFile(output, renderDashboardV2({
+  ...digestData,
+  sportsFeedUrl: process.env.SPORTS_FEED_URL || '',
+}), 'utf8');
 console.log(`${output} (read-only real-data preview; no email or upload)`);
