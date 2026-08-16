@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { createManifest, sha256, validateArtifact } from '../dashboard-artifact/contract.js';
 import { generateAndPublish } from '../dashboard-artifact/generator.js';
 import { renderDashboardV2 } from '../render/dashboard-v2.js';
@@ -55,4 +56,19 @@ test('generated releases opt into same-origin release polling without changing o
   assert.match(generated, /data-release-manifest-url="\/release-manifest.json"/);
   assert.match(generated, /setInterval\(checkRelease,300000\)/);
   assert.doesNotThrow(() => validateArtifact(renderDashboardV2({ ...sampleDashboardV2Data, sportsFeedUrl: SPORTS }), { sportsFeedUrl: SPORTS }));
+});
+
+test('synthetic today calendar anchor renders identically under UTC and Eastern hosts', () => {
+  const fixture = fileURLToPath(new URL('./fixtures/dashboard-v2-calendar-anchor-check.mjs', import.meta.url));
+  const outputs = ['UTC', 'America/New_York'].map(TZ => execFileSync(process.execPath, [fixture], {
+    cwd: process.cwd(),
+    env: { ...process.env, TZ },
+    encoding: 'utf8',
+  }).trim());
+  assert.equal(outputs[0], outputs[1]);
+  assert.deepEqual(JSON.parse(outputs[0]), {
+    sundayHeading: true,
+    saturdayHeading: false,
+    sundayInitialRailDate: true,
+  });
 });
