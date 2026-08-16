@@ -14,3 +14,11 @@ sudo reboot
 ```
 
 Neither rollback target may be deleted. Pi credentials remain owner-only at `/home/pi/.config/moore-dashboard/aws-credentials.json` and retain only `s3:GetObject` and `s3:GetObjectVersion` on the private `dashboard-v2/*` artifact prefix.
+
+## Production activation evidence
+
+Phase 4B was activated on 2026-08-16 after the corrected candidate received explicit 2560×1440 approval. The initial manual activation promoted the eligible `2026-08-16T201003-603Z` release and recorded `/home/pi/moore-dashboard/releases/20260815-phase3c` as its previous target. HTTP, exact-origin configuration, live sports CORS/cache/ETag behavior, layout, and a full reboot recovery passed before the recurring timer was enabled.
+
+The enabled timer's ordinary next production run remained 8:20 PM Eastern. A separate one-time validation schedule exercised the same AWS generator and committed Pi service sooner without modifying either recurring schedule. AWS recorded generation completion at `2026-08-16T23:36:37.012Z`; the generated artifact timestamp was `2026-08-16T23:36:32.662Z`. The transient Pi timer then ran the production service, which logged staging, eligibility, atomic activation, and success and switched `current` to `/home/pi/moore-dashboard/releases/2026-08-16T233632-662Z`. The one-time AWS schedule self-deleted after completion.
+
+Independent post-cycle validation matched the 5,225,743-byte artifact SHA-256 to its version-pinned manifest, reconfirmed the exact loopback origin, and found the eligible marker. Before-and-after captures of the physical Pi display showed the browser remain healthy through the switch and then replace household content, weather, and ticker state after its own five-minute manifest poll. The recurring Pi timer remained enabled and active. Phase 3C and the private DAKboard command/configuration were retained unchanged.
