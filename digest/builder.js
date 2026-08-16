@@ -48,6 +48,7 @@
  */
 
 import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import { resolveEvent } from './aliases.js';
 import { computeFlags } from './flags.js';
 import { getSchoolStrip } from './schoolRotation.js';
@@ -68,8 +69,10 @@ export { generateTasks };
 // the sports params are not injected by a caller (e.g. in tests).
 
 async function readDataFile(filename) {
-  const url = new URL(`../data/${filename}`, import.meta.url);
-  return JSON.parse(await readFile(url, 'utf8'));
+  const path = process.env.DASHBOARD_DATA_DIR
+    ? resolve(process.env.DASHBOARD_DATA_DIR, filename)
+    : new URL(`../data/${filename}`, import.meta.url);
+  return JSON.parse(await readFile(path, 'utf8'));
 }
 
 // ---------------------------------------------------------------------------
