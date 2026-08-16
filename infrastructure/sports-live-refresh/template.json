@@ -26,7 +26,6 @@
         "Architectures": ["arm64"],
         "MemorySize": 256,
         "Timeout": 20,
-        "ReservedConcurrentExecutions": 1,
         "Environment": { "Variables": { "SPORTS_CACHE_BUCKET": { "Ref": "SportsCache" }, "SPORTS_CACHE_KEY": { "Ref": "CacheKey" }, "SPORTS_ALLOWED_ORIGINS": { "Ref": "AllowedOrigins" } } },
         "Policies": [{ "Version": "2012-10-17", "Statement": [{ "Effect": "Allow", "Action": ["s3:GetObject", "s3:PutObject"], "Resource": { "Fn::Sub": "${SportsCache.Arn}/${CacheKey}" } }] }],
         "FunctionUrlConfig": { "AuthType": "NONE", "InvokeMode": "BUFFERED" }

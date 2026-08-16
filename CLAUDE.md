@@ -45,6 +45,8 @@ Direct-to-main after Reviewer sign-off remains this project's default for all Co
 
 ## Sports data architecture (as of June 2026)
 
+Dashboard v2 sports live refresh Phase 3B is deployed in `us-east-2` as stack `moore-ops-sports-live-refresh`; production Pi/DAKboard cutover is intentionally not complete. Deployment evidence, exact CORS origins, validation, costs and rollback are recorded in `docs/dashboard-v2/sports-live-refresh-phase-3b.md`. The account concurrency quota is 10, so the endpoint must not configure positive reserved concurrency unless that quota is raised first.
+
 ### Local JSON files (`data/` folder — committed to repo)
 
 > **Guard rail — before writing to any `data/*.json` file:** confirm the filename appears in the "Current, authoritative files" list below, not in "Archived." Files ending in `-v2` or the newest suffix are current; plain/legacy names (without a version suffix) are archived at `data/archive/` and must not be written to. When in doubt, check here first.

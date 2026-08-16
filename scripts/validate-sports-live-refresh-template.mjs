@@ -4,7 +4,7 @@ const template = JSON.parse(await readFile(path, 'utf8'));
 const resources = template.Resources || {}, fn = resources.SportsFunction?.Properties, bucket = resources.SportsCache?.Properties;
 const failures = [];
 if (template.Transform !== 'AWS::Serverless-2016-10-31') failures.push('SAM transform missing');
-if (fn?.ReservedConcurrentExecutions !== 1) failures.push('reserved concurrency must be one');
+if ('ReservedConcurrentExecutions' in (fn || {})) failures.push('reserved concurrency must remain unset for the account concurrency-10 quota');
 if (fn?.FunctionUrlConfig?.AuthType !== 'NONE') failures.push('public Function URL missing');
 if (fn?.Environment?.Variables?.SPORTS_ALLOWED_ORIGINS?.Ref !== 'AllowedOrigins') failures.push('CORS origins must be parameterized');
 if (!bucket?.PublicAccessBlockConfiguration || Object.values(bucket.PublicAccessBlockConfiguration).some(value => value !== true)) failures.push('S3 public access must be blocked');

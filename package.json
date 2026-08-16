@@ -8,6 +8,7 @@
     "preview:dashboard-v2:states": "node scripts/render-dashboard-v2-states.mjs",
     "preview:dashboard-v2:png": "node scripts/render-dashboard-v2-png.mjs",
     "preview:dashboard-v2:tv-readability": "node scripts/render-dashboard-v2-tv-readability.mjs",
+    "preview:dashboard-v2:sports-live": "node scripts/prepare-sports-live-couch-preview.mjs",
     "validate:sports-infra": "node scripts/validate-sports-live-refresh-template.mjs",
     "validate:sports-package": "node scripts/validate-sports-deployment-package.mjs"
   },
