@@ -239,6 +239,18 @@ describe('evaluateEmmaUnavailability', () => {
     assert.ok(!flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve'));
   });
 
+  it('fires for a block starting exactly 14 days out (boundary: inclusive)', () => {
+    // today = 2026-10-02, block starts 2026-10-16 (exactly 14 days out)
+    const flags = computeFlags(ctx({ today: d('2026-10-02'), emmaUnavailableBlocks: [block()] }));
+    assert.ok(flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve'));
+  });
+
+  it('does not fire for a block starting exactly 15 days out (boundary: exclusive)', () => {
+    // today = 2026-10-01, block starts 2026-10-16 (exactly 15 days out)
+    const flags = computeFlags(ctx({ today: d('2026-10-01'), emmaUnavailableBlocks: [block()] }));
+    assert.ok(!flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve'));
+  });
+
   it('fires for a block already in progress', () => {
     // today = 2026-10-18, inside [10-16, 10-19]
     const flags = computeFlags(ctx({ today: d('2026-10-18'), emmaUnavailableBlocks: [block()] }));
