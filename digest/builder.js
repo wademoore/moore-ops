@@ -56,6 +56,7 @@ import { midnight, daysBetween, toDateKey, parseEventDate, normalizeEvent, start
 import { parseAthleticsDoc } from './athleticsParser.js';
 import { buildGmailHits, buildActivityCommsLines } from './gmailParser.js';
 import { parseWeeklyPriorities } from './weeklyPrioritiesParser.js';
+import { fetchEmmaUnavailabilityBlocks } from './emmaUnavailabilityParser.js';
 import { generateTasks } from './generateTasks.js';
 
 // Re-export so existing callers (e.g. builder.test.js) continue to work.
@@ -303,6 +304,15 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     console.warn('[builder:buildDigest] weeklyPriorities fetch failed — continuing:', err.message);
   }
 
+  // ── 12.6. Emma unavailability blocks ─────────────────────────────────────
+  let emmaUnavailableBlocks = [];
+  try {
+    const euResult = await fetchEmmaUnavailabilityBlocks(today);
+    emmaUnavailableBlocks = euResult.emmaUnavailableBlocks;
+  } catch (err) {
+    console.warn('[builder:buildDigest] emmaUnavailableBlocks fetch failed — continuing:', err.message);
+  }
+
   // ── 13. Bag prep look-ahead warnings ────────────────────────────────────
   const bagPrepWarnings = buildBagPrepLookahead(allResolved, today);
   // Merge with school rotation tomorrow warnings for the school strip
@@ -323,6 +333,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     pbRecords:     pbRecords     || {},
     swimResults:   swimResults   || [],
     champsTargets: config.champsTargets || {},
+    emmaUnavailableBlocks,
   });
 
   // ── 15. Assemble and return ──────────────────────────────────────────────
