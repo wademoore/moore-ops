@@ -34,7 +34,7 @@ function validateArtifact(html, { sportsFeedUrl, minBytes = MIN_ARTIFACT_BYTES, 
   for (const marker of REQUIRED_MARKERS) if (!html.includes(marker)) failures.push(`required panel marker missing: ${marker}`);
   if (!sportsFeedUrl || !html.includes(`data-sports-url="${sportsFeedUrl}"`)) failures.push('exact live sports endpoint is missing');
   for (const pattern of FORBIDDEN_PATTERNS) if (pattern.test(html)) failures.push(`forbidden content matched ${pattern}`);
-  if (!html.startsWith('<!doctype html>')) failures.push('artifact is not the expected HTML document');
+  if (!/^<!doctype html>/i.test(html)) failures.push('artifact is not the expected HTML document');
   if (failures.length) throw new Error(failures.join('; '));
   return { bytes, sha256: sha256(Buffer.from(html, 'utf8')) };
 }

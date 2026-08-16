@@ -54,4 +54,5 @@ test('generated releases opt into same-origin release polling without changing o
   assert.match(generated, /data-household-generated-at="2026-08-16T16:10:00.000Z"/);
   assert.match(generated, /data-release-manifest-url="\/release-manifest.json"/);
   assert.match(generated, /setInterval\(checkRelease,300000\)/);
+  assert.doesNotThrow(() => validateArtifact(renderDashboardV2({ ...sampleDashboardV2Data, sportsFeedUrl: SPORTS }), { sportsFeedUrl: SPORTS }));
 });
