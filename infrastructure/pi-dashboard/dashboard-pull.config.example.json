@@ -1,0 +1,7 @@
+{
+  "bucket": "DEPLOYED_PRIVATE_BUCKET",
+  "region": "us-east-2",
+  "manifestKey": "dashboard-v2/current/manifest.json",
+  "sportsFeedUrl": "DEPLOYED_SPORTS_ENDPOINT",
+  "maxAgeHours": 8
+}

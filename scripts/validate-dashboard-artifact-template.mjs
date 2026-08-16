@@ -1,0 +1,14 @@
+import { readFile } from 'node:fs/promises';
+const template = JSON.parse(await readFile(new URL('../infrastructure/dashboard-artifact-refresh/template.json', import.meta.url), 'utf8'));
+const r = template.Resources || {}, bucket = r.ArtifactBucket?.Properties, fn = r.GeneratorFunction?.Properties, user = r.PiReader?.Properties;
+const failures = [];
+if (template.Transform !== 'AWS::Serverless-2016-10-31') failures.push('SAM transform missing');
+if (!bucket?.VersioningConfiguration || bucket.VersioningConfiguration.Status !== 'Enabled') failures.push('bucket versioning missing');
+if (Object.values(bucket?.PublicAccessBlockConfiguration || {}).some(v => v !== true)) failures.push('public access is not fully blocked');
+if (!r.TlsOnlyBucketPolicy) failures.push('TLS-only bucket policy missing');
+if ('ReservedConcurrentExecutions' in (fn || {})) failures.push('reserved concurrency must remain unset');
+if (fn?.Environment?.Variables?.GOOGLE_AUTH_READ_ONLY !== '1') failures.push('generator Google auth must be read-only');
+const readerStatement = user?.Policies?.[0]?.PolicyDocument?.Statement?.[0];
+if (JSON.stringify(readerStatement?.Action) !== JSON.stringify(['s3:GetObject', 's3:GetObjectVersion'])) failures.push('Pi reader actions are broader than required');
+if (JSON.stringify(readerStatement?.Action || []).match(/ListBucket|PutObject|DeleteObject|s3:\*/)) failures.push('Pi reader contains broad permissions');
+if (failures.length) { console.error(failures.join('\n')); process.exitCode = 1; } else console.log('dashboard artifact refresh template: valid (local structural validation only)');

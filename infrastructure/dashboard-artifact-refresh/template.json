@@ -1,0 +1,61 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Transform": "AWS::Serverless-2016-10-31",
+  "Description": "Private, versioned Dashboard v2 artifact generation and narrow Pi retrieval",
+  "Parameters": {
+    "SportsFeedUrl": { "Type": "String" },
+    "FamilyContextFileId": { "Type": "String", "NoEcho": true },
+    "SourceRevision": { "Type": "String" },
+    "ArtifactBucketName": { "Type": "String", "Default": "moore-ops-dashboard-v2-artifacts-0803" }
+  },
+  "Resources": {
+    "ArtifactBucket": {
+      "Type": "AWS::S3::Bucket",
+      "Properties": {
+        "BucketName": { "Ref": "ArtifactBucketName" },
+        "PublicAccessBlockConfiguration": { "BlockPublicAcls": true, "IgnorePublicAcls": true, "BlockPublicPolicy": true, "RestrictPublicBuckets": true },
+        "BucketEncryption": { "ServerSideEncryptionConfiguration": [{ "ServerSideEncryptionByDefault": { "SSEAlgorithm": "AES256" } }] },
+        "VersioningConfiguration": { "Status": "Enabled" },
+        "LifecycleConfiguration": { "Rules": [{ "Id": "RetainKnownGoodHistory", "Status": "Enabled", "Prefix": "dashboard-v2/", "NoncurrentVersionExpiration": { "NoncurrentDays": 30, "NewerNoncurrentVersions": 10 }, "ExpirationInDays": 45 }] }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "TlsOnlyBucketPolicy": {
+      "Type": "AWS::S3::BucketPolicy",
+      "Properties": {
+        "Bucket": { "Ref": "ArtifactBucket" },
+        "PolicyDocument": { "Version": "2012-10-17", "Statement": [{ "Sid": "DenyInsecureTransport", "Effect": "Deny", "Principal": "*", "Action": "s3:*", "Resource": [{ "Fn::GetAtt": ["ArtifactBucket", "Arn"] }, { "Fn::Sub": "${ArtifactBucket.Arn}/*" }], "Condition": { "Bool": { "aws:SecureTransport": "false" } } }] }
+      }
+    },
+    "GeneratorFunction": {
+      "Type": "AWS::Serverless::Function",
+      "Metadata": { "BuildMethod": "esbuild", "BuildProperties": { "EntryPoints": ["dashboard-artifact/generator.js"], "Minify": true, "Sourcemap": false, "Target": "es2022" } },
+      "Properties": {
+        "CodeUri": "../../",
+        "Handler": "dashboard-artifact/generator.handler",
+        "Runtime": "nodejs22.x",
+        "Architectures": ["arm64"],
+        "MemorySize": 1024,
+        "Timeout": 180,
+        "Environment": { "Variables": { "ARTIFACT_BUCKET": { "Ref": "ArtifactBucket" }, "MANIFEST_KEY": "dashboard-v2/current/manifest.json", "SPORTS_FEED_URL": { "Ref": "SportsFeedUrl" }, "SOURCE_REVISION": { "Ref": "SourceRevision" }, "DRIVE_FAMILY_CONTEXT_FILE_ID": { "Ref": "FamilyContextFileId" }, "GOOGLE_AUTH_READ_ONLY": "1", "DASHBOARD_ASSET_DIR": "/var/task/assets-v2", "DASHBOARD_DATA_DIR": "/var/task/data" } },
+        "Policies": [{ "Version": "2012-10-17", "Statement": [
+          { "Effect": "Allow", "Action": ["secretsmanager:GetSecretValue"], "Resource": [{ "Fn::Sub": "arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:moore-ops/google-credentials-*" }, { "Fn::Sub": "arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:moore-ops/google-oauth-token-*" }] },
+          { "Effect": "Allow", "Action": ["s3:PutObject"], "Resource": { "Fn::Sub": "${ArtifactBucket.Arn}/dashboard-v2/*" } }
+        ] }],
+        "Events": {
+          "DailyFullData": { "Type": "ScheduleV2", "Properties": { "ScheduleExpression": "cron(35 4 * * ? *)", "ScheduleExpressionTimezone": "America/New_York", "FlexibleTimeWindow": { "Mode": "OFF" }, "RetryPolicy": { "MaximumRetryAttempts": 2, "MaximumEventAgeInSeconds": 3600 } } },
+          "DaytimeRefresh": { "Type": "ScheduleV2", "Properties": { "ScheduleExpression": "cron(10 8,12,16,20 * * ? *)", "ScheduleExpressionTimezone": "America/New_York", "FlexibleTimeWindow": { "Mode": "OFF" }, "RetryPolicy": { "MaximumRetryAttempts": 2, "MaximumEventAgeInSeconds": 3600 } } }
+        }
+      }
+    },
+    "GeneratorLogGroup": { "Type": "AWS::Logs::LogGroup", "Properties": { "LogGroupName": { "Fn::Sub": "/aws/lambda/${GeneratorFunction}" }, "RetentionInDays": 30 } },
+    "PiReader": { "Type": "AWS::IAM::User", "Properties": { "UserName": "moore-ops-dashboard-v2-pi-reader-0803", "Policies": [{ "PolicyName": "ReadOnlyDashboardArtifacts", "PolicyDocument": { "Version": "2012-10-17", "Statement": [{ "Effect": "Allow", "Action": ["s3:GetObject", "s3:GetObjectVersion"], "Resource": { "Fn::Sub": "${ArtifactBucket.Arn}/dashboard-v2/*" } }] } }] } }
+  },
+  "Outputs": {
+    "ArtifactBucket": { "Value": { "Ref": "ArtifactBucket" } },
+    "GeneratorFunction": { "Value": { "Ref": "GeneratorFunction" } },
+    "PiReaderUser": { "Value": { "Ref": "PiReader" } },
+    "ManifestKey": { "Value": "dashboard-v2/current/manifest.json" }
+  }
+}

@@ -10,10 +10,13 @@
     "preview:dashboard-v2:tv-readability": "node scripts/render-dashboard-v2-tv-readability.mjs",
     "preview:dashboard-v2:sports-live": "node scripts/prepare-sports-live-couch-preview.mjs",
     "validate:sports-infra": "node scripts/validate-sports-live-refresh-template.mjs",
-    "validate:sports-package": "node scripts/validate-sports-deployment-package.mjs"
+    "validate:sports-package": "node scripts/validate-sports-deployment-package.mjs",
+    "validate:dashboard-artifact-infra": "node scripts/validate-dashboard-artifact-template.mjs",
+    "build:dashboard-artifact": "sam build --template-file infrastructure/dashboard-artifact-refresh/template.json && node scripts/prepare-dashboard-artifact-package.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1111.0",
+    "@aws-sdk/client-secrets-manager": "3.1111.0",
     "@googleapis/calendar": "^14.3.0",
     "@googleapis/drive": "^20.2.0",
     "@googleapis/gmail": "^16.1.2",

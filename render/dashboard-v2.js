@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { formatSportsEventWhen } from '../sports/model.js';
 
 /**
@@ -40,7 +41,9 @@ function paletteModeForDate(date = new Date()) {
   return hour >= 19 || hour < 6 ? 'evening' : 'day';
 }
 
-const ASSET_DIR = new URL('./assets-v2/', import.meta.url);
+const ASSET_DIR = process.env.DASHBOARD_ASSET_DIR
+  ? pathToFileURL(`${resolve(process.env.DASHBOARD_ASSET_DIR)}/`)
+  : new URL('./assets-v2/', import.meta.url);
 
 function optionalAssetDataUrl(filename) {
   try {
@@ -86,6 +89,15 @@ function formatDate(date, options) {
     timeZone: 'America/New_York',
     ...options,
   });
+}
+
+// `digestData.today` is a calendar anchor, not an instant. Preserve its local
+// year/month/day fields before applying display timezone formatting so Lambda's
+// UTC host cannot shift the label back to the prior Eastern day.
+function formatCalendarDate(date, options) {
+  const anchor = new Date(date);
+  const stableNoon = new Date(Date.UTC(anchor.getFullYear(), anchor.getMonth(), anchor.getDate(), 12));
+  return formatDate(stableNoon, options);
 }
 
 function formatEventTime(event) {
@@ -334,7 +346,7 @@ function renderToday(data) {
   const wp = data.weeklyPriorities || { active: [], overdue: [], completed: [] };
 
   const displayNow = data.now ? new Date(data.now) : new Date();
-  const todayKey = formatDate(data.today, { year: 'numeric', month: '2-digit', day: '2-digit' });
+  const todayKey = formatCalendarDate(data.today, { year: 'numeric', month: '2-digit', day: '2-digit' });
   const nowKey = formatDate(displayNow, { year: 'numeric', month: '2-digit', day: '2-digit' });
   const dayUnderway = nowKey === todayKey && easternHour(displayNow) >= 6;
   const emptyTodayCopy = dayUnderway ? 'Nothing else today.' : 'Nothing scheduled today.';
@@ -376,7 +388,7 @@ function renderToday(data) {
   const tomorrow = data.tomorrowMenu;
 
   return `<section class="paper-panel today-panel">
-    ${renderSectionTitle(`Today — ${formatDate(data.today, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`, 'green', 'star')}
+    ${renderSectionTitle(`Today — ${formatCalendarDate(data.today, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`, 'green', 'star')}
     <div class="subhead">Events</div>
     <div class="today-events">${eventRows}</div>
     ${taskRows ? `<div class="subhead">Tasks</div><div class="tasks">${taskRows}</div>` : ''}
@@ -749,7 +761,7 @@ function renderRightRail(data) {
   return `<aside class="right-rail horizon-count-${horizonCount}">
     <section class="rail-card clock-card">
       <time id="live-clock">${esc(new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }))}</time>
-      <span id="live-date">${esc(formatDate(data.today, { weekday: 'long', month: 'long', day: 'numeric' }))}</span>
+      <span id="live-date">${esc(formatCalendarDate(data.today, { weekday: 'long', month: 'long', day: 'numeric' }))}</span>
     </section>
     <section class="rail-card current-weather ${weatherAvailable ? '' : 'weather-unavailable'}">
       <div class="weather-label">Williamsburg Weather</div>
@@ -848,6 +860,8 @@ function browserScript() {
     };
     const sportsUrl=dashboard?.dataset.sportsUrl;
     if(sportsUrl){let timer,etag='',failures=0,stopped=false,lastPoll=1800;const clamp=value=>Math.max(120,Math.min(7200,Number(value)||1800)),schedule=seconds=>{if(!stopped)timer=setTimeout(poll,clamp(seconds)*1000)},poll=async()=>{let next=lastPoll;try{const response=await fetch(sportsUrl,{cache:'no-store',headers:etag?{'If-None-Match':etag}:{}});if(response.status===304){failures=0;lastPoll=clamp(response.headers.get('x-sports-poll-seconds')||lastPoll);schedule(lastPoll);return}if(!response.ok)throw new Error('sports refresh failed');const snapshot=await response.json();if(!window.updateSportsTicker(snapshot))throw new Error('invalid sports snapshot');etag=response.headers.get('etag')||etag;failures=0;lastPoll=clamp(snapshot.nextPollSeconds);next=lastPoll}catch{failures++;next=Math.min(7200,1800*2**Math.min(failures,3))}schedule(next)};addEventListener('unload',()=>{stopped=true;clearTimeout(timer)},{once:true});poll();}
+    const releaseManifestUrl=dashboard?.dataset.releaseManifestUrl,currentGeneration=dashboard?.dataset.householdGeneratedAt;
+    if(releaseManifestUrl&&currentGeneration){const checkRelease=async()=>{try{const response=await fetch(releaseManifestUrl,{cache:'no-store'});if(!response.ok)return;const manifest=await response.json();if(manifest?.schemaVersion===1&&manifest?.artifactVersion==='dashboard-v2'&&manifest.generatedAt&&manifest.generatedAt!==currentGeneration)location.reload()}catch{}};setInterval(checkRelease,300000)}
     const applyPalette = now => {
       if (!dashboard || paletteSetting !== 'auto') return;
       const hour = Number(new Intl.DateTimeFormat('en-US', { hour: '2-digit', hourCycle: 'h23', timeZone: zone }).format(now));
@@ -1041,7 +1055,7 @@ ${fontCss}
 <style>${CSS}</style>
 </head>
 <body>
-<main class="${classes}" data-palette="${paletteSetting}" data-sports-url="${esc(data.sportsFeedUrl || '')}" style="${styleVars}">
+<main class="${classes}" data-palette="${paletteSetting}" data-sports-url="${esc(data.sportsFeedUrl || '')}" data-household-generated-at="${esc(data.householdGeneratedAt || '')}" data-release-manifest-url="${esc(data.releaseManifestUrl || '')}" style="${styleVars}">
   ${renderMasthead(data)}
   ${renderToday(data)}
   ${renderUpcoming(data)}
@@ -1069,6 +1083,7 @@ export {
   selectComingUpEvent,
   selectComingUpEvents,
   cleanDisplayText,
+  formatCalendarDate,
   conversationalMatchDate,
   paletteModeForDate,
   horizonEligibility,
