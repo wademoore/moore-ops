@@ -1,5 +1,7 @@
 # Moore Family Dashboard v2 — Experimental
 
+Phase 4A household-data refresh is deployed through a staging-only boundary. See [phase-4a-household-refresh.md](phase-4a-household-refresh.md) for the private AWS artifact generator, narrow Pi pull identity, candidate evidence, rollback controls, and the approval-gated Phase 4B activation plan.
+
 This is an isolated parallel implementation of the family dashboard. Production v1 remains unchanged.
 
 ## Architecture decision
