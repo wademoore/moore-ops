@@ -407,6 +407,52 @@ const EVALUATORS = [
     return flags.length > 0 ? flags : null;
   },
 
+  // ── Emma unavailability — starts within 14 days, or already in progress ──
+  // Reads ctx.emmaUnavailableBlocks (parsed by digest/emmaUnavailabilityParser.js).
+  // Pure — no I/O. Returns an array so multiple simultaneous in-window blocks
+  // (e.g. a UTA weekend rolling into an annual-tour block) all fire.
+  (ctx) => {
+    const blocks = ctx.emmaUnavailableBlocks;
+    if (!blocks || blocks.length === 0) return null;
+
+    const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const formatShort = (date) => `${MONTH_ABBR[date.getMonth()]} ${date.getDate()}`;
+    const formatRange = (start, end) => {
+      if (start.getFullYear() !== end.getFullYear()) {
+        return `${formatShort(start)}, ${start.getFullYear()}–${formatShort(end)}, ${end.getFullYear()}`;
+      }
+      if (start.getMonth() !== end.getMonth()) {
+        return `${formatShort(start)}–${formatShort(end)}`;
+      }
+      return `${formatShort(start)}–${end.getDate()}`;
+    };
+
+    const today = midnight(ctx.today);
+    const flags = [];
+
+    for (const block of blocks) {
+      const start = ld(block.startDate);
+      const end = ld(block.endDate);
+
+      if (end < today) continue; // already ended
+
+      const inProgress = start <= today && today <= end;
+      const daysUntilStart = daysBetween(today, start);
+      if (!inProgress && (daysUntilStart < 0 || daysUntilStart > 14)) continue;
+
+      flags.push({
+        id: block.id,
+        level: 'amber',
+        title: '🟡 Emma Unavailable',
+        body: `Emma unavailable ${formatRange(start, end)} (${block.type}) — confirm coverage.`,
+        owner: [],
+        persist: false,
+      });
+    }
+
+    return flags.length > 0 ? flags : null;
+  },
+
 ];
 
 // ---------------------------------------------------------------------------

@@ -206,3 +206,79 @@ describe('evaluateChampsQualifiers', () => {
     assert.equal(f.swimmerColor, '#E24B4A');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Section 16 — Emma unavailability evaluator
+// ---------------------------------------------------------------------------
+
+describe('evaluateEmmaUnavailability', () => {
+  function block(overrides = {}) {
+    return {
+      id: 'emma-unavail-2026-10-16-uta-reserve',
+      type: 'UTA (Reserve)',
+      startDate: '2026-10-16',
+      endDate: '2026-10-19',
+      ...overrides,
+    };
+  }
+
+  it('fires for a block starting within the next 14 days', () => {
+    // today = 2026-10-10, block starts 2026-10-16 (6 days out)
+    const flags = computeFlags(ctx({ today: d('2026-10-10'), emmaUnavailableBlocks: [block()] }));
+    const f = flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve');
+    assert.ok(f, 'flag should fire');
+    assert.equal(f.level, 'amber');
+    assert.deepEqual(f.owner, []);
+    assert.equal(f.bannerOnly, undefined);
+    assert.equal(f.body, 'Emma unavailable Oct 16–19 (UTA (Reserve)) — confirm coverage.');
+  });
+
+  it('does not fire for a block starting more than 14 days out', () => {
+    // today = 2026-09-30, block starts 2026-10-16 (16 days out)
+    const flags = computeFlags(ctx({ today: d('2026-09-30'), emmaUnavailableBlocks: [block()] }));
+    assert.ok(!flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve'));
+  });
+
+  it('fires for a block already in progress', () => {
+    // today = 2026-10-18, inside [10-16, 10-19]
+    const flags = computeFlags(ctx({ today: d('2026-10-18'), emmaUnavailableBlocks: [block()] }));
+    assert.ok(flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve'));
+  });
+
+  it('does not fire for a block that already ended', () => {
+    // today = 2026-10-20, block ended 2026-10-19
+    const flags = computeFlags(ctx({ today: d('2026-10-20'), emmaUnavailableBlocks: [block()] }));
+    assert.ok(!flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve'));
+  });
+
+  it('does not fire and does not throw when emmaUnavailableBlocks is absent', () => {
+    const flags = computeFlags(ctx({ today: d('2026-10-10') }));
+    assert.ok(!flags.find(f => f.id && f.id.startsWith('emma-unavail-')));
+  });
+
+  it('does not fire and does not throw when emmaUnavailableBlocks is empty', () => {
+    const flags = computeFlags(ctx({ today: d('2026-10-10'), emmaUnavailableBlocks: [] }));
+    assert.ok(!flags.find(f => f.id && f.id.startsWith('emma-unavail-')));
+  });
+
+  it('fires both flags when two blocks are simultaneously in-window', () => {
+    // An annual-tour block in progress, with a UTA weekend rolling in
+    // shortly after it ends — both in-window on the same day.
+    const tour = block({
+      id: 'emma-unavail-2026-09-11-annual-tour-duty-reserve',
+      type: 'Annual Tour Duty (Reserve)',
+      startDate: '2026-09-11',
+      endDate: '2026-09-25',
+    });
+    const uta = block({
+      id: 'emma-unavail-2026-09-26-uta-reserve',
+      type: 'UTA (Reserve)',
+      startDate: '2026-09-26',
+      endDate: '2026-09-29',
+    });
+    // today = 2026-09-15: tour is in progress; uta starts in 11 days (<=14).
+    const flags = computeFlags(ctx({ today: d('2026-09-15'), emmaUnavailableBlocks: [uta, tour] }));
+    assert.ok(flags.find(f => f.id === 'emma-unavail-2026-09-11-annual-tour-duty-reserve'));
+    assert.ok(flags.find(f => f.id === 'emma-unavail-2026-09-26-uta-reserve'));
+  });
+});
