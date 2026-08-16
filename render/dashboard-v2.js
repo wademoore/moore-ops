@@ -31,8 +31,12 @@ const PALETTE = Object.freeze({
   evening: Object.freeze({ canvas: '#c9b99d', panel: '#d5c6aa', panelAlt: '#cfbea0', secondary: '#394b42', rule: 'rgba(20,40,31,.34)' }),
 });
 
+function easternHour(date) {
+  return Number(new Intl.DateTimeFormat('en-US', { hour: '2-digit', hourCycle: 'h23', timeZone: 'America/New_York' }).format(date));
+}
+
 function paletteModeForDate(date = new Date()) {
-  const hour = Number(new Intl.DateTimeFormat('en-US', { hour: '2-digit', hourCycle: 'h23', timeZone: 'America/New_York' }).format(date));
+  const hour = easternHour(date);
   return hour >= 19 || hour < 6 ? 'evening' : 'day';
 }
 
@@ -332,7 +336,7 @@ function renderToday(data) {
   const displayNow = data.now ? new Date(data.now) : new Date();
   const todayKey = formatDate(data.today, { year: 'numeric', month: '2-digit', day: '2-digit' });
   const nowKey = formatDate(displayNow, { year: 'numeric', month: '2-digit', day: '2-digit' });
-  const dayUnderway = nowKey === todayKey && displayNow.getHours() >= 6;
+  const dayUnderway = nowKey === todayKey && easternHour(displayNow) >= 6;
   const emptyTodayCopy = dayUnderway ? 'Nothing else today.' : 'Nothing scheduled today.';
 
   const eventRows = events.length

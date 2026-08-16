@@ -1,6 +1,5 @@
 function d(value) {
-  const [year, month, day] = value.split('-').map(Number);
-  return new Date(year, month - 1, day);
+  return new Date(`${value}T12:00:00-04:00`);
 }
 
 function event(title, dateTime, subtitle, extra = {}) {

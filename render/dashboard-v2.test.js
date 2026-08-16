@@ -23,6 +23,11 @@ import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
 describe('experimental dashboard v2 isolation and structure', () => {
   const html = renderDashboardV2(sampleDashboardV2Data);
 
+  it('uses an unambiguous Eastern instant for the sample date', () => {
+    assert.equal(sampleDashboardV2Data.today.toISOString(), '2026-06-09T16:00:00.000Z');
+    assert.match(html, /Today — Tuesday, June 9, 2026/);
+  });
+
   it('renders a standalone experimental dashboard', () => {
     assert.match(html, /<!DOCTYPE html>/);
     assert.match(html, /Moore Family Dashboard v2 — Experimental/);
@@ -502,11 +507,18 @@ describe('television readability and horizon policies', () => {
     assert.doesNotMatch(html, /<b>Wade:/);
   });
 
-  it('uses contextual Today empty-state wording', () => {
-    const empty = { ...sampleDashboardV2Data, today, days: [{ events: [], tasks: [] }] };
-    assert.match(renderToday({ ...empty, now: new Date(2026, 7, 13, 5, 30) }), /Nothing scheduled today\./);
-    assert.match(renderToday({ ...empty, now: new Date(2026, 7, 13, 18, 0) }), /Nothing else today\./);
-    assert.doesNotMatch(renderToday({ ...empty, now: new Date(2026, 7, 13, 18, 0) }), /Nothing scheduled yet/);
+  it('uses the Eastern 6 AM threshold for contextual Today empty-state wording', () => {
+    const summerToday = new Date('2026-08-13T12:00:00-04:00');
+    const summerEmpty = { ...sampleDashboardV2Data, today: summerToday, days: [{ events: [], tasks: [] }] };
+    assert.match(renderToday({ ...summerEmpty, now: new Date('2026-08-13T05:59:00-04:00') }), /Nothing scheduled today\./);
+    assert.match(renderToday({ ...summerEmpty, now: new Date('2026-08-13T06:00:00-04:00') }), /Nothing else today\./);
+    assert.match(renderToday({ ...summerEmpty, now: new Date('2026-08-13T18:00:00-04:00') }), /Nothing else today\./);
+
+    const winterToday = new Date('2026-01-13T12:00:00-05:00');
+    const winterEmpty = { ...summerEmpty, today: winterToday };
+    assert.match(renderToday({ ...winterEmpty, now: new Date('2026-01-13T05:59:00-05:00') }), /Nothing scheduled today\./);
+    assert.match(renderToday({ ...winterEmpty, now: new Date('2026-01-13T06:00:00-05:00') }), /Nothing else today\./);
+    assert.doesNotMatch(renderToday({ ...winterEmpty, now: new Date('2026-01-13T18:00:00-05:00') }), /Nothing scheduled yet/);
   });
 
   it('deduplicates, ranks explicit countdowns first, and caps the module at three', () => {
