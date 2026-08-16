@@ -20,3 +20,16 @@ test('Pi staging validation is host-timezone independent across EDT and EST inst
   const outputs = ['UTC', 'America/New_York'].map(TZ => execFileSync('python', ['-c', script], { cwd: process.cwd(), env: { ...process.env, TZ }, encoding: 'utf8' }).trim());
   assert.equal(outputs[0], outputs[1]);
 });
+
+test('Phase 4B service activates only after the staging validator succeeds', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const puller = await readFile('infrastructure/pi-dashboard/pull-dashboard-candidate.py', 'utf8');
+  const service = await readFile('infrastructure/pi-dashboard/moore-dashboard-refresh.service', 'utf8');
+  const timer = await readFile('infrastructure/pi-dashboard/moore-dashboard-refresh.timer', 'utf8');
+  assert.match(puller, /candidate = stage\(/);
+  assert.match(puller, /subprocess\.run\(\[str\(helper\), str\(candidate\)\], check=True\)/);
+  assert.match(service, /--activate-helper \/home\/pi\/moore-dashboard\/bin\/activate-dashboard-release/);
+  assert.match(service, /ProtectSystem=strict/);
+  assert.match(timer, /OnCalendar=\*-\*-\* 20:20:00/);
+  assert.match(timer, /Persistent=true/);
+});

@@ -10,6 +10,7 @@ import pathlib
 import re
 import shutil
 import stat
+import subprocess
 import sys
 import tempfile
 import time
@@ -123,8 +124,16 @@ def main():
     parser.add_argument('--config', required=True)
     parser.add_argument('--credentials', required=True)
     parser.add_argument('--staging-root', required=True)
+    parser.add_argument('--activate-helper')
     args = parser.parse_args()
-    try: stage(args.config, args.credentials, args.staging_root)
+    try:
+        candidate = stage(args.config, args.credentials, args.staging_root)
+        if args.activate_helper:
+            helper = pathlib.Path(args.activate_helper)
+            if not helper.is_absolute() or not helper.is_file():
+                raise ValueError('activation helper must be an existing absolute path')
+            subprocess.run([str(helper), str(candidate)], check=True)
+            log('dashboard_candidate_activated', path=str(candidate))
     except Exception as error:
         log('dashboard_candidate_failed', error=str(error))
         return 1
