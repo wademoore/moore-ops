@@ -1,0 +1,15 @@
+[Unit]
+Description=Pull Moore Dashboard v2 after each scheduled AWS generation
+
+[Timer]
+OnCalendar=*-*-* 04:45:00
+OnCalendar=*-*-* 08:20:00
+OnCalendar=*-*-* 12:20:00
+OnCalendar=*-*-* 16:20:00
+OnCalendar=*-*-* 20:20:00
+Persistent=true
+RandomizedDelaySec=30
+Unit=moore-dashboard-refresh.service
+
+[Install]
+WantedBy=timers.target

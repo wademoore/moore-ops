@@ -9,8 +9,18 @@ test -f "$candidate/release-manifest.json"
 previous="$(readlink -f "$root/current")"
 name="$(basename "$candidate")"
 release="$root/releases/$name"
-test ! -e "$release"
-mv "$candidate" "$release"
+if test -e "$release"; then
+  cmp -s "$candidate/release-manifest.json" "$release/release-manifest.json"
+else
+  mv "$candidate" "$release"
+fi
+if test "$previous" = "$release"; then
+  printf '{"event":"dashboard_release_already_current","release":"%s"}\n' "$release"
+  exit 0
+fi
+record="$root/.previous-known-good-next"
+printf '%s\n' "$previous" > "$record"
 ln -s "$release" "$root/.current-next"
 mv -Tf "$root/.current-next" "$root/current"
-printf '%s\n' "$previous" > "$root/previous-known-good"
+mv -Tf "$record" "$root/previous-known-good"
+printf '{"event":"dashboard_release_activated","release":"%s","previous":"%s"}\n' "$release" "$previous"
