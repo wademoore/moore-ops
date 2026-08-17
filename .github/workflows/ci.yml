@@ -22,3 +22,6 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+      - name: Validate Dashboard v2 generator deployment coverage
+        run: npm run validate:dashboard-artifact-deployment
