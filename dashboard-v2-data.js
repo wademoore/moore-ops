@@ -7,6 +7,7 @@
  */
 import { fetchDashboardWeather } from './weather.js';
 import { resolveEvent } from './digest/aliases.js';
+import { selectNowNext } from './digest/nowNextSelector.js';
 
 const WEATHER_FALLBACK = Object.freeze({
   unavailable: true,
@@ -55,7 +56,7 @@ async function fetchDashboardV2Data({
     banner,
   });
 
-  return {
+  const previewData = {
     ...digestData,
     horizonEvents: (rawEvents180d || []).map(event => resolveEvent({
       ...event,
@@ -65,6 +66,7 @@ async function fetchDashboardV2Data({
     sportsSnapshot,
     weather,
   };
+  return { ...previewData, nowNext: selectNowNext(previewData) };
 }
 
 export { fetchDashboardV2Data, WEATHER_FALLBACK };

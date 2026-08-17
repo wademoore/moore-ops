@@ -33,6 +33,8 @@ describe('dashboard v2 read-only data adapter', () => {
     assert.equal(result.weather.current.temperature, 80);
     assert.equal(result.nationalsData.team, 'Nationals');
     assert.equal(result.horizonEvents[0].title, 'COUNTDOWN: Vacation');
+    assert.equal(result.nowNext.signal, 'All clear');
+    assert.equal(result.nowNext.reasonCodes[0], 'NOW_NEXT_ALL_CLEAR');
   });
 
   it('keeps the digest usable when weather fails', async () => {
@@ -51,5 +53,6 @@ describe('dashboard v2 read-only data adapter', () => {
       build: async () => ({ today: new Date('2026-08-13'), upcomingEvents: [] }),
     });
     assert.deepEqual(result.weather, WEATHER_FALLBACK);
+    assert.ok(result.nowNext.diagnostics);
   });
 });
