@@ -76,9 +76,12 @@ export function parseEmmaUnavailabilityBlocks(events) {
  * (e.g. startOfTodayET()) — this function never constructs `new Date()`
  * itself, to avoid the UTC/ET boundary bugs this repo has hit before.
  */
-export async function fetchEmmaUnavailabilityBlocks(today) {
-  const auth = await getAuthClient();
-
+export async function fetchEmmaUnavailabilityBlocks(today, {
+  getAuth = getAuthClient,
+  fetchEvents = fetchCalendarEvents,
+  log = message => console.log(message),
+  warn = message => console.warn(message),
+} = {}) {
   // Generous fetch window: 60 days back covers even the longest observed
   // block (the 15-day annual tour duty) with margin, so an already-in-progress
   // block is never missed at the source. 15 days forward covers the 14-day
@@ -90,12 +93,18 @@ export async function fetchEmmaUnavailabilityBlocks(today) {
   const windowEnd = new Date(today);
   windowEnd.setDate(windowEnd.getDate() + 15);
 
-  const events = await fetchCalendarEvents(
-    auth,
-    HOUSE_MANAGER_CALENDAR_ID,
-    windowStart.toISOString(),
-    windowEnd.toISOString()
-  );
-
-  return { emmaUnavailableBlocks: parseEmmaUnavailabilityBlocks(events) };
+  try {
+    const auth = await getAuth();
+    const events = await fetchEvents(
+      auth,
+      HOUSE_MANAGER_CALENDAR_ID,
+      windowStart.toISOString(),
+      windowEnd.toISOString()
+    );
+    log(JSON.stringify({ event: 'emma_unavailability_calendar_read_succeeded' }));
+    return { emmaUnavailableBlocks: parseEmmaUnavailabilityBlocks(events) };
+  } catch {
+    warn(JSON.stringify({ event: 'emma_unavailability_calendar_read_failed' }));
+    throw new Error('Emma unavailability calendar read failed');
+  }
 }

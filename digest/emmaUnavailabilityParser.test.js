@@ -14,6 +14,7 @@ import {
   extractUnavailabilityType,
   exclusiveEndToInclusive,
   buildUnavailabilityBlock,
+  fetchEmmaUnavailabilityBlocks,
   parseEmmaUnavailabilityBlocks,
 } from './emmaUnavailabilityParser.js';
 
@@ -129,5 +130,28 @@ describe('parseEmmaUnavailabilityBlocks(events)', () => {
   it('returns an empty array for an empty/absent input', () => {
     assert.deepEqual(parseEmmaUnavailabilityBlocks([]), []);
     assert.deepEqual(parseEmmaUnavailabilityBlocks(undefined), []);
+  });
+});
+
+describe('fetchEmmaUnavailabilityBlocks(today)', () => {
+  it('logs content-free success evidence and returns parsed blocks', async () => {
+    const logs = [];
+    const result = await fetchEmmaUnavailabilityBlocks(new Date('2026-08-16T12:00:00-04:00'), {
+      getAuth: async () => ({ safe: true }), fetchEvents: async () => [],
+      log: message => logs.push(message),
+    });
+    assert.deepEqual(result, { emmaUnavailableBlocks: [] });
+    assert.deepEqual(logs.map(JSON.parse), [{ event: 'emma_unavailability_calendar_read_succeeded' }]);
+    assert.doesNotMatch(logs.join('\n'), /calendar\.google|@|Emma:/i);
+  });
+
+  it('sanitizes calendar failures before logging or rethrowing', async () => {
+    const warnings = [];
+    await assert.rejects(fetchEmmaUnavailabilityBlocks(new Date('2026-08-16T12:00:00-04:00'), {
+      getAuth: async () => ({}), fetchEvents: async () => { throw new Error('sensitive upstream detail'); },
+      warn: message => warnings.push(message),
+    }), /^Error: Emma unavailability calendar read failed$/);
+    assert.deepEqual(warnings.map(JSON.parse), [{ event: 'emma_unavailability_calendar_read_failed' }]);
+    assert.doesNotMatch(warnings.join('\n'), /sensitive|calendar\.google|@/i);
   });
 });

@@ -12,6 +12,8 @@
     "validate:sports-infra": "node scripts/validate-sports-live-refresh-template.mjs",
     "validate:sports-package": "node scripts/validate-sports-deployment-package.mjs",
     "validate:dashboard-artifact-infra": "node scripts/validate-dashboard-artifact-template.mjs",
+    "validate:dashboard-artifact-deployment": "node scripts/validate-dashboard-artifact-deployment.mjs",
+    "validate:dashboard-artifact-package": "node scripts/validate-dashboard-artifact-package.mjs",
     "build:dashboard-artifact": "sam build --template-file infrastructure/dashboard-artifact-refresh/template.json && node scripts/prepare-dashboard-artifact-package.mjs"
   },
   "dependencies": {

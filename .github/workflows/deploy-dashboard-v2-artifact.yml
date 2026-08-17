@@ -1,0 +1,98 @@
+name: Deploy Dashboard v2 artifact generator
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/deploy-dashboard-v2-artifact.yml'
+      - 'dashboard-artifact/**'
+      - 'digest/**'
+      - 'render/**'
+      - 'sports/**'
+      - 'data/**'
+      - '*.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'infrastructure/dashboard-artifact-refresh/**'
+      - 'scripts/prepare-dashboard-artifact-package.mjs'
+      - 'scripts/validate-dashboard-artifact-deployment.mjs'
+      - 'scripts/validate-dashboard-artifact-package.mjs'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-dashboard-v2-artifact
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check safe deploy window
+        run: |
+          HOUR=$(TZ="America/New_York" date +%H)
+          MIN=$(TZ="America/New_York" date +%M)
+          if [ "$HOUR" -eq 3 ] && [ "$MIN" -ge 30 ]; then
+            echo "Deploy blocked — too close to the 4 AM generation"
+            exit 1
+          fi
+          if [ "$HOUR" -eq 4 ] && [ "$MIN" -le 30 ]; then
+            echo "Deploy blocked — generation may be running"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v2
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate deployment dependency coverage
+        run: npm run validate:dashboard-artifact-deployment
+
+      - name: Build and validate generator package
+        run: |
+          npm run build:dashboard-artifact
+          npm run validate:dashboard-artifact-package
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Deploy integrated generator revision
+        env:
+          STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+          PACKAGE_BUCKET: moore-ops-lambda
+        run: |
+          sam deploy \
+            --template-file .aws-sam/build/template.yaml \
+            --stack-name "$STACK_NAME" \
+            --s3-bucket "$PACKAGE_BUCKET" \
+            --capabilities CAPABILITY_IAM \
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides \
+              "SourceRevision=$GITHUB_SHA"
+
+      - name: Verify deployed source revision
+        env:
+          STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+        run: |
+          DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='SourceRevision'].ParameterValue | [0]" --output text)
+          test "$DEPLOYED" = "$GITHUB_SHA"
+          echo "Dashboard v2 artifact generator deployed from $GITHUB_SHA"
