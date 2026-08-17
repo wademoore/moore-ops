@@ -46,6 +46,8 @@ If the authentication files live outside this checkout, set both `MOORE_OPS_CRED
 
 The command is not scheduled and has no production imports or output path. It does not email, upload, deploy, activate Dashboard v2, or modify Dashboard v1. An exclusive local lock prevents overlapping runs. Each output is replaced through a same-directory temporary file and atomic rename; the full `preview/` tree is gitignored so household HTML, diagnostics, history, locks, and interrupted temporary files cannot be committed.
 
+To view the already-rendered shadow dashboard from a Raspberry Pi on the same LAN, run `npm run view:dashboard-v2:now-next`. The manual server prints the exact token-bearing Pi URL at startup. It serves only `preview/dashboard-v2-shadow/latest.html` at that URL, returns 404 for missing or incorrect tokens and every other path, disables caching and indexing, and refreshes the token-bearing page every five minutes. The random token exists only for that process; stop the viewer with Ctrl+C to invalidate it. The viewer never serves diagnostics, history, credentials, or other repository files and does not fetch or regenerate household data.
+
 ## Minimum runtime display policies
 
 - Event artwork resolves in this order: official organization logo, semantic category mark, neutral family spark. The semantic set covers appointments, travel, school, household, arts, sports, and family events; remote-logo failures reveal the semantic mark beneath them.

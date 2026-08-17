@@ -6,6 +6,7 @@
     "preview:dashboard-v2": "node scripts/render-dashboard-v2-preview.mjs",
     "preview:dashboard-v2:real": "node scripts/render-dashboard-v2-real-preview.mjs",
     "shadow:dashboard-v2:now-next": "node scripts/dashboard-v2-now-next-shadow.mjs",
+    "view:dashboard-v2:now-next": "node scripts/dashboard-v2-shadow-viewer.mjs",
     "preview:dashboard-v2:states": "node scripts/render-dashboard-v2-states.mjs",
     "preview:dashboard-v2:png": "node scripts/render-dashboard-v2-png.mjs",
     "preview:dashboard-v2:tv-readability": "node scripts/render-dashboard-v2-tv-readability.mjs",
