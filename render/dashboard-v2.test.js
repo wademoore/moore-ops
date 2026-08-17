@@ -7,6 +7,7 @@ import {
   collapseUpcomingEvents,
   conversationalMatchDate,
   renderDashboardV2,
+  renderNowNext,
   renderToday,
   renderUpcoming,
   peopleForEvent,
@@ -19,6 +20,47 @@ import {
   V2_LOGOS,
 } from './dashboard-v2.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
+
+describe('approved NOW/NEXT rendering contract', () => {
+  for (const state of [
+    { signal: 'Leave in 10 min', subject: 'Myles — Sharks Practice', context: ['Practice 6:00', 'Warhill today'] },
+    { signal: 'Tomorrow morning', subject: 'Both kids — 4-H Camp', supporting: [{ label: 'Tonight', lines: ['Lunches + water bottles'] }] },
+    { tone: 'problem', signal: 'Pickup needs coverage', subject: 'Both kids — Camp · 4:30', qualifier: 'Emma unavailable' },
+    { tone: 'calm', signal: 'All clear', subject: 'Nothing needs your attention tonight' },
+  ]) {
+    it(`renders ${state.signal}`, () => {
+      const html = renderNowNext(state);
+      assert.match(html, /Now \/ Next/);
+      assert.match(html, new RegExp(state.signal));
+    });
+  }
+
+  it('replaces Today events only when nowNext is supplied', () => {
+    const html = renderDashboardV2({ ...sampleDashboardV2Data, nowNext: { tone: 'calm', signal: 'All clear', subject: 'Nothing needs your attention tonight' } });
+    assert.match(html, /today-panel has-now-next/);
+    assert.doesNotMatch(html, />Events</);
+    assert.match(html, /Weekly priorities/);
+    assert.match(html, /Tonight(?:'|&#39;)s Dinner/);
+  });
+
+  it('uses existing display normalization for the approved both-kids camp title', () => {
+    const html = renderNowNext({ signal: 'Tomorrow morning', subject: 'Myles & Ophelia: 4-H Day Camp (Aloha Summer)' });
+    assert.match(html, /Both kids — 4-H Camp/);
+    assert.doesNotMatch(html, /Myles &amp; Ophelia|Aloha Summer/);
+    assert.equal(cleanDisplayText('Myles & Ophelia: 4-H Day Camp (Aloha Summer)'), 'Both kids — 4-H Camp');
+  });
+
+  it('normalizes hero and supporting Sharks copy with a nonbreaking field number', () => {
+    const html = renderNowNext({
+      signal: 'This morning',
+      subject: 'Myles: Sharks Practice - Warhill Grass 8',
+      supporting: [{ label: 'Wednesday', lines: ['Myles: Sharks Practice - Warhill Turf 4', '5:45'] }],
+    });
+    assert.match(html, /Myles — Sharks · Grass\u00a08/);
+    assert.match(html, /Myles — Sharks · Turf\u00a04/);
+    assert.doesNotMatch(html, /Sharks Practice|Warhill/);
+  });
+});
 
 describe('experimental dashboard v2 isolation and structure', () => {
   const html = renderDashboardV2(sampleDashboardV2Data);
@@ -397,6 +439,7 @@ describe('television readability and horizon policies', () => {
     assert.equal((html.match(/class="priority-row/g) || []).length, 5);
     assert.match(html, /\.priority-row\{font-size:24px;line-height:1\.2/);
     assert.match(html, /\.priority-row \.owner\{font-size:16px/);
+    assert.match(html, /\.priority-row\.is-overdue\{margin-left:0;margin-right:0\}/);
   });
 
   it('enforces the greater-than-14 and at-most-180 day horizon window', () => {
