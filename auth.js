@@ -21,6 +21,8 @@ const SECRET_TOKEN        = process.env.GOOGLE_TOKEN_SECRET        || "moore-ops
 const ENV_CREDENTIALS     = process.env.GOOGLE_CREDENTIALS_JSON;
 const ENV_TOKEN           = process.env.GOOGLE_TOKEN_JSON;
 const READ_ONLY_AUTH      = process.env.GOOGLE_AUTH_READ_ONLY === "1";
+const EXTERNAL_CREDENTIALS_PATH = process.env.MOORE_OPS_CREDENTIALS_PATH;
+const EXTERNAL_TOKEN_PATH = process.env.MOORE_OPS_TOKEN_PATH;
 
 // ── Secrets Manager client (lazy — only instantiated in Lambda) ───────────────
 
@@ -60,7 +62,7 @@ async function loadCredentials() {
   if (IS_LAMBDA) {
     return getSecret(SECRET_CREDENTIALS);
   }
-  return JSON.parse(fs.readFileSync("credentials.json"));
+  return JSON.parse(fs.readFileSync(EXTERNAL_CREDENTIALS_PATH || "credentials.json"));
 }
 
 async function loadToken() {
@@ -68,11 +70,11 @@ async function loadToken() {
   if (IS_LAMBDA) {
     return getSecret(SECRET_TOKEN);
   }
-  return JSON.parse(fs.readFileSync("token.json"));
+  return JSON.parse(fs.readFileSync(EXTERNAL_TOKEN_PATH || "token.json"));
 }
 
 async function persistToken(token) {
-  if (READ_ONLY_AUTH) return;
+  if (READ_ONLY_AUTH || EXTERNAL_TOKEN_PATH) return;
   if (IS_LAMBDA) {
     await putSecret(SECRET_TOKEN, token);
     console.log("  Token refreshed → saved to Secrets Manager");

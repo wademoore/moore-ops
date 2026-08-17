@@ -21,6 +21,7 @@ async function fetchDashboardV2Data({
   build,
   logger = console,
   banner = null,
+  now,
 } = {}) {
   const readCalendar72h = fetchers.calendar72h || (async () => (await import('./calendar.js')).getCalendarEvents());
   const readCalendar14d = fetchers.calendar14d || (async () => (await import('./calendar.js')).pull14Days());
@@ -66,7 +67,7 @@ async function fetchDashboardV2Data({
     sportsSnapshot,
     weather,
   };
-  return { ...previewData, nowNext: selectNowNext(previewData) };
+  return { ...previewData, nowNext: selectNowNext(previewData, now ? { now } : undefined) };
 }
 
 export { fetchDashboardV2Data, WEATHER_FALLBACK };

@@ -5,9 +5,11 @@ import { fetchDashboardV2Data, WEATHER_FALLBACK } from '../dashboard-v2-data.js'
 describe('dashboard v2 read-only data adapter', () => {
   it('feeds existing reads into the digest and adds weather and Nationals data', async () => {
     const calls = [];
+    const now = new Date('2026-08-17T09:30:00.000Z');
     const fixture = name => async () => { calls.push(name); return name; };
     let buildInput;
     const result = await fetchDashboardV2Data({
+      now,
       logger: { warn() {} },
       fetchers: {
         calendar72h: fixture('calendar72h'),
@@ -35,6 +37,7 @@ describe('dashboard v2 read-only data adapter', () => {
     assert.equal(result.horizonEvents[0].title, 'COUNTDOWN: Vacation');
     assert.equal(result.nowNext.signal, 'All clear');
     assert.equal(result.nowNext.reasonCodes[0], 'NOW_NEXT_ALL_CLEAR');
+    assert.equal(result.nowNext.diagnostics.evaluatedAt, now.toISOString());
   });
 
   it('keeps the digest usable when weather fails', async () => {

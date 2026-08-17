@@ -38,6 +38,14 @@ The real-data preview also derives the approved `nowNext` display contract throu
 
 Candidate diagnostics use concrete occurrence identity (`Google event id + start`) and consolidate competing reason types for the same occurrence before ranking. Significant events within four hours this morning sit below problem/imminent/preparation states but above tomorrow orientation. Supporting orientation excludes only the selected occurrence, then chooses the earliest relevant remaining occurrence with an explicit day label.
 
+## Read-only NOW/NEXT shadow
+
+Run exactly `npm run shadow:dashboard-v2:now-next` from a local checkout with the existing read-only data credentials. The manual command evaluates the selector at the actual Eastern time and writes `preview/dashboard-v2-shadow/latest.html`, a redacted `latest.json`, and a compact append-only logical history in `selection-history.ndjson`.
+
+If the authentication files live outside this checkout, set both `MOORE_OPS_CREDENTIALS_PATH` and `MOORE_OPS_TOKEN_PATH` to existing files before running the same command. Both variables are required together. The shadow command validates and reads those files in place, enables read-only token handling, never copies them into the worktree, and never prints their paths or contents. With no variables, the original checkout-local `credentials.json` and `token.json` lookup remains unchanged and fails closed when either file is absent.
+
+The command is not scheduled and has no production imports or output path. It does not email, upload, deploy, activate Dashboard v2, or modify Dashboard v1. An exclusive local lock prevents overlapping runs. Each output is replaced through a same-directory temporary file and atomic rename; the full `preview/` tree is gitignored so household HTML, diagnostics, history, locks, and interrupted temporary files cannot be committed.
+
 ## Minimum runtime display policies
 
 - Event artwork resolves in this order: official organization logo, semantic category mark, neutral family spark. The semantic set covers appointments, travel, school, household, arts, sports, and family events; remote-logo failures reveal the semantic mark beneath them.
