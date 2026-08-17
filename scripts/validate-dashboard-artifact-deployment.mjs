@@ -39,6 +39,8 @@ for (const path of [workflowPath, 'package.json', 'package-lock.json', 'infrastr
   if (!covered(path)) failures.push(`deployment control is not self-covered: ${path}`);
 }
 if (!workflow.includes('"SourceRevision=$GITHUB_SHA"')) failures.push('deployment does not pin SourceRevision to the integrated commit');
+if (!/--capabilities\s+CAPABILITY_NAMED_IAM(?:\s|\\)/.test(workflow)) failures.push('deployment must acknowledge CAPABILITY_NAMED_IAM for the existing named IAM resources');
+if (/--capabilities\s+CAPABILITY_IAM(?:\s|\\)/.test(workflow)) failures.push('deployment must not use insufficient CAPABILITY_IAM acknowledgement');
 if (/FamilyContextFileId|DRIVE_FAMILY_CONTEXT_FILE_ID/.test(workflow)) failures.push('deployment workflow must not read or restate the private calendar-related parameter');
 
 const output = bundle.outputFiles.map(file => file.text).join('\n');
