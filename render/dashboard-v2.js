@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { normalizeDashboardText } from '../digest/displayNormalization.js';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { formatSportsEventWhen } from '../sports/model.js';
@@ -112,13 +113,7 @@ function formatEventTime(event) {
 }
 
 function cleanDisplayText(value) {
-  const cleaned = String(value || '')
-    .replace(/^[\p{Extended_Pictographic}\p{Emoji_Presentation}\uFE0F\u200D\s\u2022\u25CF]+/u, '')
-    .trim();
-  const ownerMatch = cleaned.match(/^([RrWw])\s+(.+)$/);
-  if (!ownerMatch) return cleaned;
-  const owner = ownerMatch[1].toLowerCase() === 'r' ? 'Robyn' : 'Wade';
-  return `${owner} · ${ownerMatch[2]}`;
+  return normalizeDashboardText(value);
 }
 
 function eventSubtitleWithoutTime(event) {
@@ -339,6 +334,26 @@ function renderSectionTitle(title, tone = 'green', doodle = '') {
   return `<div class="section-title section-title-${tone} ${doodle ? `has-doodle doodle-${esc(doodle)}` : ''}"><span>${esc(title)}</span>${doodle ? '<i class="section-doodle" aria-hidden="true"></i>' : ''}</div>`;
 }
 
+function renderNowNext(nowNext) {
+  if (!nowNext) return '';
+  const tone = ['calm', 'problem'].includes(nowNext.tone) ? nowNext.tone : 'normal';
+  const context = (nowNext.context || []).filter(Boolean);
+  const supporting = (nowNext.supporting || []).filter(item => item?.label && item?.lines?.length);
+  return `<div class="now-next now-next-${tone}">
+    ${renderSectionTitle('Now / Next', 'green', 'star')}
+    <div class="now-next-hero">
+      <h2>${esc(nowNext.signal || '')}</h2>
+      ${nowNext.subject ? `<h3>${esc(cleanDisplayText(nowNext.subject))}</h3>` : ''}
+      ${nowNext.qualifier ? `<div class="now-next-qualifier">${esc(nowNext.qualifier)}</div>` : ''}
+      ${context.length ? `<div class="now-next-context">${context.map(esc).join('<span aria-hidden="true">·</span>')}</div>` : ''}
+    </div>
+    ${supporting.length ? `<div class="now-next-support">${supporting.map(item => `<div class="now-next-support-block">
+      <div class="now-next-support-label">${esc(item.label)}</div>
+      <div class="now-next-support-copy">${item.lines.map((line, index) => `<div>${esc(index === 0 ? cleanDisplayText(line) : line)}</div>`).join('')}</div>
+    </div>`).join('')}</div>` : ''}
+  </div>`;
+}
+
 function renderToday(data) {
   const today = data.days?.[0] || { events: [], tasks: [] };
   const events = (today.events || []).filter(event => event.cardType !== 'menu');
@@ -387,11 +402,11 @@ function renderToday(data) {
   const dinner = data.menuEvent;
   const tomorrow = data.tomorrowMenu;
 
-  return `<section class="paper-panel today-panel">
-    ${renderSectionTitle(`Today — ${formatCalendarDate(data.today, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`, 'green', 'star')}
+  return `<section class="paper-panel today-panel ${data.nowNext ? 'has-now-next' : ''}">
+    ${data.nowNext ? renderNowNext(data.nowNext) : `${renderSectionTitle(`Today — ${formatCalendarDate(data.today, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`, 'green', 'star')}
     <div class="subhead">Events</div>
     <div class="today-events">${eventRows}</div>
-    ${taskRows ? `<div class="subhead">Tasks</div><div class="tasks">${taskRows}</div>` : ''}
+    ${taskRows ? `<div class="subhead">Tasks</div><div class="tasks">${taskRows}</div>` : ''}`}
     ${priorityRows ? `<div class="subhead">Weekly priorities</div><div class="priorities">${priorityRows}</div>` : ''}
     <div class="today-bottom">
       ${showSchool ? `<div class="school-line">
@@ -992,6 +1007,8 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .today-event,.upcoming-day,.priority-row,.task-row,.school-line,.subhead:after,.athletic-card,.swim-row,.horizon-item{border-color:var(--rule)}
 .paper-panel>.section-title{height:70px;margin-top:-31px;margin-bottom:8px}.paper-panel>.section-title:before{height:70px}.paper-panel>.section-title span{font-size:30px;padding-left:70px;letter-spacing:.045em}.doodle-calendar span{padding-left:84px!important}.dinner-block .section-title{height:54px}.dinner-block .section-title:before{height:54px}.dinner-block .section-title span{font-size:25px;line-height:1.2;padding-left:61px}
 .priority-row{font-size:24px;line-height:1.2;padding:6px 0;grid-template-columns:72px 1fr;gap:10px}.priority-row .owner{font-size:16px;line-height:1.05;padding:4px 8px;border-radius:14px}
+.priority-row.is-overdue{margin-left:0;margin-right:0}
+.today-panel.has-now-next{padding-top:9px}.now-next{flex:0 0 auto;padding-bottom:8px}.now-next .section-title{margin-bottom:3px}.now-next-hero{position:relative;padding:4px 2px 9px}.now-next-hero h2{font-family:"Barlow Semi Condensed",sans-serif;font-size:39px;line-height:.94;letter-spacing:.005em;text-transform:uppercase;color:${COLORS.greenDark};max-width:620px}.now-next-hero h3{font-family:"Roboto Slab",Georgia,serif;font-size:21px;line-height:1.12;color:#172f27;margin-top:7px}.now-next-qualifier{font-size:19px;line-height:1.15;font-weight:700;color:${COLORS.red};margin-top:6px}.now-next-context{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:18px;font-weight:500;line-height:1.15;color:#40584e;margin-top:6px}.now-next-context span{opacity:.45}.now-next-support{border-top:1px solid var(--rule);padding-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.now-next-support-block{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px}.now-next-support-label{font-size:14px;font-weight:900;letter-spacing:.065em;text-transform:uppercase;color:${COLORS.greenDark}}.now-next-support-copy{font-size:17px;font-weight:500;line-height:1.2;color:#273d34}.now-next-support-block:last-child .now-next-support-label,.now-next-support-block:last-child .now-next-support-copy{color:#40584e}.now-next-problem .now-next-hero:before{content:"";position:absolute;left:-7px;top:3px;bottom:7px;width:4px;background:${COLORS.red};border-radius:4px}.now-next-problem .now-next-hero h2{font-size:35px}.now-next-calm .now-next-hero{padding:12px 2px 18px;text-align:left}.now-next-calm .now-next-hero h2{font-size:42px;max-width:none}.now-next-calm .now-next-hero h3{font-family:"Barlow Semi Condensed",sans-serif;font-size:20px;font-weight:500;color:#40584e;margin-top:7px}.has-now-next .subhead{margin-top:4px}.has-now-next .today-bottom{margin-top:auto}
 .athletic-ribbon{height:46px;padding:3px 12px 3px 48px;gap:10px;font-size:21px;letter-spacing:.025em;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}.athletic-ribbon span{line-height:1.2;padding:2px 0}.athletic-logo{width:31px;height:31px;padding:3px}.athletics-grid{height:calc(100% - 52px)}
 .sports-ticker{color:#f1e6d0}.ticker-slot b{font-size:20px;font-weight:700}.ticker-slot span{font-size:15px;color:#eee0c4}.metadata-dedicated .ticker-meta{font-size:12px;line-height:1;color:rgba(241,230,208,.72)}.updated{font-size:11px;color:#eadab8}
 .right-rail{grid-template-rows:118px 172px 590px minmax(0,1fr)}
@@ -1072,6 +1089,7 @@ ${browserScript()}
 export {
   renderDashboardV2,
   renderToday,
+  renderNowNext,
   renderUpcoming,
   renderAthletics,
   renderRightRail,
