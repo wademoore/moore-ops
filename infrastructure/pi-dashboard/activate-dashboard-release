@@ -5,6 +5,7 @@ root=/home/pi/moore-dashboard
 case "$candidate" in "$root"/staging/*) ;; *) echo "candidate must be below $root/staging" >&2; exit 2;; esac
 test -f "$candidate/ELIGIBLE"
 test -f "$candidate/index.html"
+test -f "$candidate/now-next.html"
 test -f "$candidate/release-manifest.json"
 previous="$(readlink -f "$root/current")"
 name="$(basename "$candidate")"

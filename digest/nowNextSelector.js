@@ -2,6 +2,10 @@ import { normalizeDashboardText } from './displayNormalization.js';
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
+const EASTERN_TIME_ZONE = 'America/New_York';
+const easternPartsFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: EASTERN_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23',
+});
 
 const REASON = Object.freeze({
   UNRESOLVED_PROBLEM: 'NOW_NEXT_UNRESOLVED_PROBLEM',
@@ -30,12 +34,23 @@ const PRIORITY = Object.freeze({
 function eventDate(event) {
   const raw = event?.raw?.start?.dateTime || event?.raw?.start?.date;
   if (!raw) return null;
-  const date = new Date(raw.length === 10 ? `${raw}T00:00:00` : raw);
+  const date = new Date(raw.length === 10 ? `${raw}T12:00:00Z` : raw);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
 function dateKey(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const parts = Object.fromEntries(easternPartsFormatter.formatToParts(date).map(part => [part.type, part.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function easternHour(date) {
+  const parts = Object.fromEntries(easternPartsFormatter.formatToParts(date).map(part => [part.type, part.value]));
+  return Number(parts.hour);
+}
+
+function relativeDateKey(now, days) {
+  const [year, month, day] = dateKey(now).split('-').map(Number);
+  return dateKey(new Date(Date.UTC(year, month - 1, day + days, 12)));
 }
 
 function clean(value = '') {
@@ -43,7 +58,7 @@ function clean(value = '') {
 }
 
 function formatTime(date) {
-  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(' AM', '').replace(' PM', '');
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: EASTERN_TIME_ZONE }).replace(' AM', '').replace(' PM', '');
 }
 
 function normalizedTimeToken(value) {
@@ -96,8 +111,7 @@ function problemCandidates(data) {
 
 function eventCandidates(data, now) {
   const todayKey = dateKey(now);
-  const tomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const tomorrowKey = dateKey(tomorrow);
+  const tomorrowKey = relativeDateKey(now, 1);
   const events = (data.days || []).flatMap(day => day.events || []).filter(event => event.cardType !== 'menu');
   const upcoming = data.upcomingEvents || [];
   const unique = [...events, ...upcoming].filter((event, index, all) => {
@@ -132,7 +146,7 @@ function eventCandidates(data, now) {
     }
 
     const significantThisMorning = key === todayKey
-      && when.getHours() < 12
+      && easternHour(when) < 12
       && delta > 90 * MINUTE
       && delta <= 4 * HOUR
       && /\b(camp|school|appointment|doctor|dentist|physical|flight|train|trip|performance|recital|game|meet|drop[ -]?off|pickup)\b/i.test(text);
@@ -143,7 +157,7 @@ function eventCandidates(data, now) {
       }));
     }
 
-    if (key === tomorrowKey && when.getHours() < 12) {
+    if (key === tomorrowKey && easternHour(when) < 12) {
       result.push(candidate(REASON.TOMORROW_MORNING, {
         signal: 'Tomorrow morning', subject: subjectFor(event), context: eventContext(when, event.subtitle),
         sourceType: 'event', ...identity, sortTime: when.getTime(),
@@ -194,10 +208,10 @@ function supportLabel(item, now) {
   if (item.sourceType !== 'event') return item.reasonCode === REASON.PREP_TONIGHT ? 'Tonight' : 'Later';
   const when = new Date(item.sortTime);
   const today = dateKey(now);
-  const tomorrow = dateKey(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1));
+  const tomorrow = relativeDateKey(now, 1);
   if (dateKey(when) === today) return 'Later today';
-  if (dateKey(when) === tomorrow) return when.getHours() < 12 ? 'Tomorrow morning' : 'Tomorrow';
-  return when.toLocaleDateString('en-US', { weekday: 'long' });
+  if (dateKey(when) === tomorrow) return easternHour(when) < 12 ? 'Tomorrow morning' : 'Tomorrow';
+  return when.toLocaleDateString('en-US', { weekday: 'long', timeZone: EASTERN_TIME_ZONE });
 }
 
 function supportFrom(candidates, selected, now) {

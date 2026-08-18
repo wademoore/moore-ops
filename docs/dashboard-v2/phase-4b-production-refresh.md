@@ -15,6 +15,12 @@ sudo reboot
 
 Neither rollback target may be deleted. Pi credentials remain owner-only at `/home/pi/.config/moore-dashboard/aws-credentials.json` and retain only `s3:GetObject` and `s3:GetObjectVersion` on the private `dashboard-v2/*` artifact prefix.
 
+## Sibling NOW/NEXT artifact
+
+The generator fetches household data once per invocation. It renders the established production layout with `nowNext` omitted to the immutable `index.html` object, then renders the NOW/NEXT variant from the same in-memory snapshot to `now-next.html`. Both use the existing loopback origin and sports endpoint. The manifest retains the original version-pinned `artifact` record for backward compatibility and adds a version-pinned `nowNextArtifact` record only after the second object passes the same structural, size, checksum, endpoint, and secret-exclusion checks.
+
+A NOW/NEXT render, validation, or upload failure is isolated after the valid `index.html` upload. The generator publishes a `carry-forward` manifest and logs only the error type. The Pi validates and copies the last valid `current/now-next.html` into the new staging directory, then requires both sibling files before the existing atomic `current` symlink replacement. Thus a preview failure cannot invalidate the production render, publish a partial preview, or introduce a second runtime service. The selector performs its calendar and clock decisions explicitly in `America/New_York`; the Pi timer and system clock use the same zone.
+
 ## Production activation evidence
 
 Phase 4B was activated on 2026-08-16 after the corrected candidate received explicit 2560×1440 approval. The initial manual activation promoted the eligible `2026-08-16T201003-603Z` release and recorded `/home/pi/moore-dashboard/releases/20260815-phase3c` as its previous target. HTTP, exact-origin configuration, live sports CORS/cache/ETag behavior, layout, and a full reboot recovery passed before the recurring timer was enabled.

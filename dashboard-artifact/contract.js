@@ -39,24 +39,31 @@ function validateArtifact(html, { sportsFeedUrl, minBytes = MIN_ARTIFACT_BYTES, 
   return { bytes, sha256: sha256(Buffer.from(html, 'utf8')) };
 }
 
-function createManifest({ generatedAt, artifactKey, artifactVersionId, bytes, checksum, sourceRevision, sportsFeedUrl }) {
+function artifactRecord({ key, versionId, bytes, checksum }) {
   return {
+    key,
+    versionId,
+    size: bytes,
+    sha256: checksum,
+    contentType: 'text/html; charset=utf-8',
+  };
+}
+
+function createManifest({ generatedAt, artifactKey, artifactVersionId, bytes, checksum, nowNextArtifact = null, sourceRevision, sportsFeedUrl }) {
+  const manifest = {
     schemaVersion: SCHEMA_VERSION,
     artifactVersion: ARTIFACT_VERSION,
     generatedAt: new Date(generatedAt).toISOString(),
     sourceRevision,
-    artifact: {
-      key: artifactKey,
-      versionId: artifactVersionId,
-      size: bytes,
-      sha256: checksum,
-      contentType: 'text/html; charset=utf-8',
-    },
+    artifact: artifactRecord({ key: artifactKey, versionId: artifactVersionId, bytes, checksum }),
+    nowNextStatus: nowNextArtifact ? 'generated' : 'carry-forward',
     runtime: {
       browserOrigin: 'http://127.0.0.1:4173',
       sportsFeedUrl,
     },
   };
+  if (nowNextArtifact) manifest.nowNextArtifact = artifactRecord(nowNextArtifact);
+  return manifest;
 }
 
 export {

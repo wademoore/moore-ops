@@ -25,13 +25,14 @@ async function generateAndPublish({
   try {
     const generatedAt = new Date(now).toISOString();
     const data = await fetchData();
-    const html = render({
+    const shared = {
       ...data,
       now: new Date(now),
       sportsFeedUrl,
       householdGeneratedAt: generatedAt,
       releaseManifestUrl: '/release-manifest.json',
-    });
+    };
+    const html = render({ ...shared, nowNext: undefined });
     const { bytes, sha256 } = validateArtifact(html, { sportsFeedUrl });
     const release = generatedAt.replaceAll(':', '').replaceAll('.', '-');
     const artifactKey = `dashboard-v2/releases/${release}/index.html`;
@@ -44,7 +45,26 @@ async function generateAndPublish({
       Metadata: { sha256, generatedat: generatedAt, schemaversion: '1' },
     });
     if (!artifactResult.VersionId) throw new Error('versioned artifact upload did not return VersionId');
-    const manifest = createManifest({ generatedAt, artifactKey, artifactVersionId: artifactResult.VersionId, bytes, checksum: sha256, sourceRevision, sportsFeedUrl });
+    let nowNextArtifact = null;
+    try {
+      const nowNextHtml = render(shared);
+      const validated = validateArtifact(nowNextHtml, { sportsFeedUrl });
+      if (!nowNextHtml.includes('class="now-next ')) throw new Error('NOW/NEXT marker missing');
+      const key = `dashboard-v2/releases/${release}/now-next.html`;
+      const result = await putObject({
+        Bucket: bucket,
+        Key: key,
+        Body: nowNextHtml,
+        ContentType: 'text/html; charset=utf-8',
+        CacheControl: 'no-store',
+        Metadata: { sha256: validated.sha256, generatedat: generatedAt, schemaversion: '1' },
+      });
+      if (!result.VersionId) throw new Error('versioned NOW/NEXT upload did not return VersionId');
+      nowNextArtifact = { key, versionId: result.VersionId, bytes: validated.bytes, checksum: validated.sha256 };
+    } catch (error) {
+      structured('warn', 'dashboard_now_next_generation_failed_carry_forward', { errorType: error?.name || 'Error' });
+    }
+    const manifest = createManifest({ generatedAt, artifactKey, artifactVersionId: artifactResult.VersionId, bytes, checksum: sha256, nowNextArtifact, sourceRevision, sportsFeedUrl });
     const manifestResult = await putObject({
       Bucket: bucket,
       Key: manifestKey,

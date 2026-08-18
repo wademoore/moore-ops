@@ -21,6 +21,7 @@ import urllib.request
 MIN_BYTES = 1_000_000
 MAX_BYTES = 8_000_000
 REQUIRED = ('today-panel', 'upcoming-panel', 'athletics-panel', 'right-rail', 'sports-ticker')
+NOW_NEXT_REQUIRED = REQUIRED + ('class="now-next ', 'data-release-manifest-url="/release-manifest.json"')
 FORBIDDEN = (
     re.compile(r'client_secret', re.I), re.compile(r'refresh_token', re.I),
     re.compile(r'access[_-]?key', re.I), re.compile(r'drive\.google\.com', re.I),
@@ -66,6 +67,19 @@ def signed_get(bucket, region, key, credentials, version_id=None, attempts=3):
 def parse_time(value):
     return dt.datetime.strptime(value.replace('Z', '+0000'), '%Y-%m-%dT%H:%M:%S.%f%z')
 
+def validate_html(html_bytes, sports_url, required=REQUIRED):
+    errors = []
+    size = len(html_bytes)
+    if size < MIN_BYTES or size > MAX_BYTES: errors.append('artifact size is invalid')
+    text = html_bytes.decode('utf-8', errors='strict')
+    for marker in required:
+        if marker not in text: errors.append('required panel marker missing: ' + marker)
+    if 'data-sports-url="{}"'.format(sports_url) not in text: errors.append('exact sports endpoint missing')
+    for pattern in FORBIDDEN:
+        if pattern.search(text): errors.append('forbidden content matched: ' + pattern.pattern)
+    if errors: raise ValueError('; '.join(errors))
+    return dict(size=size, sha256=hashlib.sha256(html_bytes).hexdigest())
+
 def validate(manifest, html_bytes, sports_url, now=None, max_age_hours=8):
     errors = []
     now = now or dt.datetime.now(dt.timezone.utc)
@@ -76,19 +90,13 @@ def validate(manifest, html_bytes, sports_url, now=None, max_age_hours=8):
         if age < -300 or age > max_age_hours * 3600: errors.append('artifact freshness is outside the allowed window')
     except (KeyError, ValueError): errors.append('invalid generatedAt')
     artifact = manifest.get('artifact', {})
-    size = len(html_bytes)
-    if size < MIN_BYTES or size > MAX_BYTES or artifact.get('size') != size: errors.append('artifact size is invalid')
-    checksum = hashlib.sha256(html_bytes).hexdigest()
+    html_evidence = validate_html(html_bytes, sports_url)
+    size, checksum = html_evidence['size'], html_evidence['sha256']
+    if artifact.get('size') != size: errors.append('artifact size is invalid')
     if artifact.get('sha256') != checksum: errors.append('SHA-256 checksum mismatch')
     if not artifact.get('key') or not artifact.get('versionId'): errors.append('version-pinned artifact reference missing')
-    text = html_bytes.decode('utf-8', errors='strict')
-    for marker in REQUIRED:
-        if marker not in text: errors.append('required panel marker missing: ' + marker)
-    if 'data-sports-url="{}"'.format(sports_url) not in text: errors.append('exact sports endpoint missing')
     runtime = manifest.get('runtime', {})
     if runtime.get('browserOrigin') != 'http://127.0.0.1:4173' or runtime.get('sportsFeedUrl') != sports_url: errors.append('runtime configuration mismatch')
-    for pattern in FORBIDDEN:
-        if pattern.search(text): errors.append('forbidden content matched: ' + pattern.pattern)
     if errors: raise ValueError('; '.join(errors))
     return dict(generatedAt=manifest['generatedAt'], size=size, sha256=checksum)
 
@@ -102,14 +110,30 @@ def stage(config_path, credentials_path, root):
     artifact = manifest.get('artifact', {})
     html = signed_get(config['bucket'], config['region'], artifact.get('key', ''), credentials, artifact.get('versionId'))
     evidence = validate(manifest, html, config['sportsFeedUrl'], max_age_hours=config.get('maxAgeHours', 8))
+    now_next_artifact = manifest.get('nowNextArtifact')
+    if now_next_artifact:
+        now_next_html = signed_get(config['bucket'], config['region'], now_next_artifact.get('key', ''), credentials, now_next_artifact.get('versionId'))
+        now_next_evidence = validate_html(now_next_html, config['sportsFeedUrl'], NOW_NEXT_REQUIRED)
+        if now_next_artifact.get('size') != now_next_evidence['size'] or now_next_artifact.get('sha256') != now_next_evidence['sha256'] or not now_next_artifact.get('versionId'):
+            raise ValueError('NOW/NEXT artifact evidence mismatch')
+        now_next_source = 'generated'
+    else:
+        current_now_next = pathlib.Path(root).parent / 'current' / 'now-next.html'
+        if not current_now_next.is_file():
+            raise ValueError('NOW/NEXT generation failed and no prior valid sibling exists')
+        now_next_html = current_now_next.read_bytes()
+        now_next_evidence = validate_html(now_next_html, config['sportsFeedUrl'], NOW_NEXT_REQUIRED)
+        now_next_source = 'carry-forward'
+        log('dashboard_now_next_carried_forward')
     release_name = manifest['generatedAt'].replace(':', '').replace('.', '-')
     staging_root = pathlib.Path(root)
     staging_root.mkdir(parents=True, exist_ok=True)
     temp_dir = pathlib.Path(tempfile.mkdtemp(prefix='.candidate-', dir=str(staging_root)))
     try:
         (temp_dir / 'index.html').write_bytes(html)
+        (temp_dir / 'now-next.html').write_bytes(now_next_html)
         (temp_dir / 'release-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
-        (temp_dir / 'ELIGIBLE').write_text(json.dumps(evidence, sort_keys=True) + '\n')
+        (temp_dir / 'ELIGIBLE').write_text(json.dumps(dict(evidence, nowNext=now_next_evidence, nowNextSource=now_next_source), sort_keys=True) + '\n')
         final = staging_root / release_name
         if final.exists(): shutil.rmtree(str(temp_dir))
         else: os.replace(str(temp_dir), str(final))
