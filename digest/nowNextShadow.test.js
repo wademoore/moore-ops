@@ -3,7 +3,13 @@ import { mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { describe, it } from 'node:test';
-import { resolveAuthFiles, runShadow, selectedDiagnostic } from '../scripts/dashboard-v2-now-next-shadow.mjs';
+import {
+  SHADOW_RELOAD_SECONDS,
+  addShadowAutoReload,
+  resolveAuthFiles,
+  runShadow,
+  selectedDiagnostic,
+} from '../scripts/dashboard-v2-now-next-shadow.mjs';
 
 function fixtureNowNext(evaluatedAt = '2026-08-17T09:30:00.000Z') {
   return {
@@ -24,6 +30,11 @@ function fixtureNowNext(evaluatedAt = '2026-08-17T09:30:00.000Z') {
 }
 
 describe('NOW/NEXT shadow harness', () => {
+  it('adds a shadow-only five-minute document reload', () => {
+    assert.equal(SHADOW_RELOAD_SECONDS, 300);
+    assert.match(addShadowAutoReload('<!doctype html><html><head></head><body></body></html>'), /<meta http-equiv="refresh" content="300">/);
+    assert.throws(() => addShadowAutoReload('<html><body></body></html>'), /missing a document head/);
+  });
   it('fails closed when default authentication files are missing', async () => {
     const root = await mkdtemp(join(tmpdir(), 'now-next-auth-missing-'));
     await assert.rejects(resolveAuthFiles({ root, env: {} }), /needs existing local Google auth files/);
@@ -79,9 +90,9 @@ describe('NOW/NEXT shadow harness', () => {
       seenTimes.push(supplied.toISOString());
       return { nowNext: fixtureNowNext(supplied.toISOString()) };
     };
-    const first = await runShadow({ root, now, fetchData, render: data => `<html>${data.nowNext.signal}</html>` });
-    await runShadow({ root, now: new Date('2026-08-17T09:31:00.000Z'), fetchData, render: () => '<html>second</html>' });
-    assert.equal(await readFile(first.previewPath, 'utf8'), '<html>second</html>');
+    const first = await runShadow({ root, now, fetchData, render: data => `<html><head></head><body>${data.nowNext.signal}</body></html>` });
+    await runShadow({ root, now: new Date('2026-08-17T09:31:00.000Z'), fetchData, render: () => '<html><head></head><body>second</body></html>' });
+    assert.match(await readFile(first.previewPath, 'utf8'), /<meta http-equiv="refresh" content="300">\n<\/head><body>second/);
     assert.doesNotMatch(await readFile(first.diagnosticPath, 'utf8'), /private-series|Private family event/);
     assert.equal((await readFile(first.historyPath, 'utf8')).trim().split('\n').length, 2);
     assert.deepEqual(seenTimes, ['2026-08-17T09:30:00.000Z', '2026-08-17T09:31:00.000Z']);

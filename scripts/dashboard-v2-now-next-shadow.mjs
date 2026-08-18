@@ -6,6 +6,14 @@ import { fetchDashboardV2Data } from '../dashboard-v2-data.js';
 import { renderDashboardV2 } from '../render/dashboard-v2.js';
 
 const DEFAULT_OUTPUT_DIR = 'preview/dashboard-v2-shadow';
+const SHADOW_RELOAD_SECONDS = 300;
+
+function addShadowAutoReload(html) {
+  if (typeof html !== 'string' || !/<\/head>/i.test(html)) {
+    throw new Error('NOW/NEXT shadow render is missing a document head.');
+  }
+  return html.replace(/<\/head>/i, `<meta http-equiv="refresh" content="${SHADOW_RELOAD_SECONDS}">\n</head>`);
+}
 
 async function atomicWrite(path, content) {
   await mkdir(dirname(path), { recursive: true });
@@ -105,10 +113,13 @@ async function runShadow({
     }
     const record = `${JSON.stringify(historyRecord(redacted))}\n`;
 
-    await atomicWrite(previewPath, render({
+    const html = render({
       ...data,
-      sportsFeedUrl: process.env.SPORTS_FEED_URL || '',
-    }));
+      sportsFeedUrl: process.env.NOW_NEXT_SHADOW_DISABLE_LIVE_SPORTS === '1'
+        ? ''
+        : process.env.SPORTS_FEED_URL || '',
+    });
+    await atomicWrite(previewPath, addShadowAutoReload(html));
     await atomicWrite(diagnosticPath, `${JSON.stringify(redacted, null, 2)}\n`);
     await atomicWrite(historyPath, `${history}${record}`);
     return { previewPath, diagnosticPath, historyPath, redacted };
@@ -135,4 +146,4 @@ async function main() {
 
 if (import.meta.url === pathToFileURL(process.argv[1] || '').href) await main();
 
-export { atomicWrite, historyRecord, resolveAuthFiles, runShadow, selectedDiagnostic };
+export { SHADOW_RELOAD_SECONDS, addShadowAutoReload, atomicWrite, historyRecord, resolveAuthFiles, runShadow, selectedDiagnostic };
