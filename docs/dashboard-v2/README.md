@@ -1,8 +1,8 @@
-# Moore Family Dashboard v2 — Experimental
+# Moore Family Dashboard v2
 
-Phase 4A household-data refresh is deployed through a staging-only boundary. See [phase-4a-household-refresh.md](phase-4a-household-refresh.md) for the private AWS artifact generator, narrow Pi pull identity, candidate evidence, rollback controls, and the approval-gated Phase 4B activation plan.
+**Status (updated Aug 19, 2026): in production.** Phase 3C (Aug 15, 2026) cut the Pi over to Dashboard v2 as its live display, and Phase 4B (Aug 16, 2026, commit `8652963`) activated the automated Pi refresh timer against the Phase 4A artifact pipeline. See [phase-3c-production-cutover.md](phase-3c-production-cutover.md) and [phase-4b-production-refresh.md](phase-4b-production-refresh.md) for cutover/activation evidence; [phase-4a-household-refresh.md](phase-4a-household-refresh.md) covers the private AWS artifact generator, narrow Pi pull identity, and rollback controls it built on. The design-backlog sections below (ambient variety, seasonal doodles, richer Coming Up rules, etc.) remain future work — production status covers the delivery pipeline and the approved everyday layout, not every idea in this doc.
 
-This is an isolated parallel implementation of the family dashboard. Production v1 remains unchanged.
+This is a parallel implementation of the family dashboard, delivered through its own pipeline (`dashboard-artifact/generator.js` → S3 → Pi pull) rather than `index.js`. Production v1 remains unchanged and continues to run side by side with it — see Safety boundary below for what's still true of v1 versus what changed for v2.
 
 ## Architecture decision
 
@@ -12,11 +12,13 @@ DAKboard should remain in service during development and evaluation, but it shou
 
 ## Safety boundary
 
+This section originally described v2 as fully disconnected from production. That's no longer true for the renderer itself (see Status above) — v2 now has its own production path. What's still accurate, and still the actual boundary as of Aug 19, 2026:
+
 - `render/dashboard.js` is production v1 and is untouched.
-- `index.js` still imports only production v1.
-- `drive.js` still uploads only `moore_dashboard.html`.
-- `render/dashboard-v2.js` is not reachable from any production execution path.
-- `scripts/render-dashboard-v2-preview.mjs` uses fixture data and writes only a local preview.
+- `index.js` still imports only production v1 — it has no knowledge of v2 at all.
+- `drive.js` still uploads only `moore_dashboard.html` — v2 never touches Drive; it publishes to a dedicated private S3 bucket instead.
+- `render/dashboard-v2.js` **is** reachable from production — via `dashboard-artifact/generator.js`, an independent Lambda handler (not called by `index.js`) that renders it and publishes the result to S3, from which the Pi pulls it. This is the one bullet that changed.
+- `scripts/render-dashboard-v2-preview.mjs` uses fixture data and writes only a local preview — unrelated to and unaffected by the production path above.
 
 ## Data contract
 
@@ -98,7 +100,7 @@ The approved everyday layout should remain the stable structural baseline. Futur
 
 ## Cutover gates
 
-Before any production wiring:
+**These gates were satisfied and the production wiring described below has already happened** (Phase 3C, Aug 15, 2026; Phase 4B, Aug 16, 2026 — see Status at the top of this doc). Left here as the record of what was required before that cutover, not as a pending checklist:
 
 1. Visual approval at the actual 2560×1440 TV resolution.
 2. Busy-state legibility approval from couch distance.
