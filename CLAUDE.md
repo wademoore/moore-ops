@@ -45,6 +45,10 @@ Direct-to-main after Reviewer sign-off remains this project's default for all Co
 
 ## Sports data architecture (as of June 2026)
 
+### First Day of School Level-3 takeover (August 2026)
+
+`render/first-day-level3.js` is a preview-only morning takeover selected by `renderDashboardV2()` when a same-day first-day-of-school milestone is present. It uses the locked production composition as its static backdrop and overlays live clock/date, NOW, NEXT, weather, dinner, and at most three Coming Up items. Athletics, weekly priorities, alerts, horizon, and the sports ticker are absent in this mode. A timed school departure/arrival ends the takeover 30 minutes after the latest handoff event; `firstDayLevel3Until` can provide an explicit pipeline cutoff, and all-day milestones fall back to 9:00 AM ET. `firstDayLevel3: false` disables it, while `true` enables deterministic preview fixtures.
+
 Dashboard v2 Phase 4A adds an isolated private artifact generator in stack `moore-ops-dashboard-v2-artifact-refresh` and a least-privilege Pi staging puller. Production remains on the Phase 3C release until explicit Phase 4B approval; no Pi timer is enabled. Architecture, credential rotation/revocation, validation evidence, and the activation/rollback boundary are recorded in `docs/dashboard-v2/phase-4a-household-refresh.md`.
 
 Dashboard v2 sports live refresh Phase 3B is deployed in `us-east-2` as stack `moore-ops-sports-live-refresh`; production Pi/DAKboard cutover is intentionally not complete. Deployment evidence, exact CORS origins, validation, costs and rollback are recorded in `docs/dashboard-v2/sports-live-refresh-phase-3b.md`. The account concurrency quota is 10, so the endpoint must not configure positive reserved concurrency unless that quota is raised first.
