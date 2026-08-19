@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { formatSportsEventWhen } from '../sports/model.js';
+import { renderFirstDayLevel3, shouldRenderFirstDayLevel3 } from './first-day-level3.js';
 
 /**
  * Experimental Moore Family Dashboard v2 renderer.
@@ -999,6 +1000,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 `;
 
 function renderDashboardV2(digestData) {
+  if (shouldRenderFirstDayLevel3(digestData)) return renderFirstDayLevel3(digestData);
   const data = { ...digestData, today: digestData.today instanceof Date ? digestData.today : new Date(digestData.today) };
   const paper = optionalAssetDataUrl('paper-texture.png');
   const mastheadAsset = optionalAssetDataUrl('masthead-brush.png');
@@ -1093,4 +1095,6 @@ export {
   sportsMetadataCopy,
   PALETTE,
   V2_LOGOS,
+  renderFirstDayLevel3,
+  shouldRenderFirstDayLevel3,
 };
