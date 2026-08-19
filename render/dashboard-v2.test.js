@@ -408,6 +408,20 @@ describe('real-data resilience policies', () => {
     assert.doesNotMatch(html, /https:\/\/example\.com\/unreliable/);
     assert.match(html, /logo-idance|data:image\/png;base64/);
   });
+
+  it('uses the official W&M athletics artwork for the ticker', () => {
+    assert.match(V2_LOGOS.wm, /^data:image\/jpeg;base64/);
+    assert.equal(V2_LOGOS.tribe, V2_LOGOS.wm);
+
+    const html = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      sportsTicker: [{ organization: 'wm', logo: 'wm', active: true, line1: 'W&M', line2: 'Opener' }],
+    });
+
+    assert.match(html, /data-sports-org="wm"/);
+    assert.match(html, /\.ticker-slot\[data-sports-org="wm"\] \.ticker-logo,/);
+    assert.match(html, /\.ticker-logo\{object-fit:cover;border-radius:50%;background:#fff\}/);
+  });
 });
 
 describe('television readability and horizon policies', () => {
