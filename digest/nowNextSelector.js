@@ -6,6 +6,9 @@ const EASTERN_TIME_ZONE = 'America/New_York';
 const easternPartsFormatter = new Intl.DateTimeFormat('en-US', {
   timeZone: EASTERN_TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23',
 });
+const easternOffsetFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: EASTERN_TIME_ZONE, timeZoneName: 'longOffset',
+});
 
 const REASON = Object.freeze({
   UNRESOLVED_PROBLEM: 'NOW_NEXT_UNRESOLVED_PROBLEM',
@@ -77,6 +80,46 @@ function eventContext(when, subtitle) {
   return [time, normalizedTimeToken(detail) === normalizedTimeToken(time) ? '' : detail].filter(Boolean);
 }
 
+function easternDateAtTime(reference, hour, minute) {
+  const zoneName = easternOffsetFormatter.formatToParts(reference).find(part => part.type === 'timeZoneName')?.value || 'GMT-05:00';
+  const offset = zoneName.replace('GMT', '') || 'Z';
+  return new Date(`${dateKey(reference)}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00${offset}`);
+}
+
+function parseClock(value, reference) {
+  const match = String(value).match(/\b(\d{1,2})(?::([0-5]\d))?\s*(a\.?m\.?|p\.?m\.?)(?=\s|[),.;]|$)/i);
+  if (!match) return null;
+  let hour = Number(match[1]);
+  const minute = Number(match[2] || 0);
+  const meridiem = match[3].replaceAll('.', '').toLowerCase();
+  if (hour < 1 || hour > 12) return null;
+  if (meridiem === 'pm' && hour < 12) hour += 12;
+  if (meridiem === 'am' && hour === 12) hour = 0;
+  return easternDateAtTime(reference, hour, minute);
+}
+
+function operationalTiming(event, when, { travelMinutesForEvent, departureBufferMinutes = 10 } = {}) {
+  const description = clean(event?.raw?.description || event?.description || '');
+  const patterns = [
+    { kind: 'leave', label: 'Leave by', re: /\bleave(?: home)? by\s+(\d{1,2}(?::[0-5]\d)?\s*[ap]\.?m\.?)/i },
+    { kind: 'arrival', label: 'Drop off by', re: /\bdrop[ -]?off by\s+(\d{1,2}(?::[0-5]\d)?\s*[ap]\.?m\.?)/i },
+    { kind: 'arrival', label: 'Arrive by', re: /\b(?:must\s+)?arrive by\s+(\d{1,2}(?::[0-5]\d)?\s*[ap]\.?m\.?)/i },
+  ];
+  const matched = patterns.map(pattern => ({ ...pattern, match: description.match(pattern.re) })).find(item => item.match);
+  if (!matched) return null;
+  const deadline = parseClock(matched.match[1], when);
+  if (!deadline) return null;
+
+  let departure = matched.kind === 'leave' ? deadline : null;
+  if (!departure && event?.raw?.location && typeof travelMinutesForEvent === 'function') {
+    const travelMinutes = Number(travelMinutesForEvent(event));
+    if (Number.isFinite(travelMinutes) && travelMinutes >= 0) {
+      departure = new Date(deadline.getTime() - (travelMinutes + departureBufferMinutes) * MINUTE);
+    }
+  }
+  return { deadline, departure, label: matched.label, context: `${matched.label} ${formatTime(deadline)}` };
+}
+
 function subjectFor(event) {
   return normalizeDashboardText(clean(event?.title || 'Scheduled item'));
 }
@@ -109,7 +152,7 @@ function problemCandidates(data) {
     }));
 }
 
-function eventCandidates(data, now) {
+function eventCandidates(data, now, options = {}) {
   const todayKey = dateKey(now);
   const tomorrowKey = relativeDateKey(now, 1);
   const events = (data.days || []).flatMap(day => day.events || []).filter(event => event.cardType !== 'menu');
@@ -125,6 +168,7 @@ function eventCandidates(data, now) {
     const identity = eventIdentity(event, when);
     const key = dateKey(when);
     const delta = when - now;
+    const operation = operationalTiming(event, when, options);
     const text = `${event.title || ''} ${event.subtitle || ''}`;
     const changed = /\b(cancel(?:led|ed)?|reschedul(?:e|ed)|changed?|new (?:time|location)|unavailable|moved)\b/i.test(text);
 
@@ -135,31 +179,41 @@ function eventCandidates(data, now) {
       }));
     }
 
-    if (key === todayKey && delta >= 0 && delta <= 90 * MINUTE) {
+    const departureDelta = operation?.departure ? operation.departure - now : null;
+    const deadlineDelta = operation?.deadline ? operation.deadline - now : null;
+    const operationallyImminent = key === todayKey && operation && (
+      departureDelta != null ? departureDelta >= 0 && departureDelta <= 90 * MINUTE : deadlineDelta >= 0 && deadlineDelta <= 90 * MINUTE
+    );
+    if (operationallyImminent || (key === todayKey && !operation && delta >= 0 && delta <= 90 * MINUTE)) {
       const leave = /\b(practice|game|meet|appointment|camp|school|flight|train|depart|drop[ -]?off|pickup)\b/i.test(text);
-      const minutes = Math.max(0, Math.round(delta / MINUTE));
+      const actionDelta = departureDelta ?? delta;
+      const minutes = Math.max(0, Math.round(actionDelta / MINUTE));
+      const signal = operation && !operation.departure
+        ? operation.context
+        : minutes <= 5 ? 'Now' : `${leave ? 'Leave' : 'Starts'} in ${minutes} min`;
       result.push(candidate(leave ? REASON.IMMINENT_DEPARTURE : REASON.IMMINENT_ACTION, {
-        signal: minutes <= 5 ? 'Now' : `${leave ? 'Leave' : 'Starts'} in ${minutes} min`,
-        subject: subjectFor(event), context: eventContext(when, event.subtitle),
+        signal,
+        subject: subjectFor(event), context: operation ? [operation.context] : eventContext(when, event.subtitle),
         sourceType: 'event', ...identity, sortTime: when.getTime(),
       }));
     }
 
+    const morningDelta = operation?.departure ? operation.departure - now : operation?.deadline ? operation.deadline - now : delta;
     const significantThisMorning = key === todayKey
       && easternHour(when) < 12
-      && delta > 90 * MINUTE
-      && delta <= 4 * HOUR
+      && morningDelta > 90 * MINUTE
+      && morningDelta <= 4 * HOUR
       && /\b(camp|school|appointment|doctor|dentist|physical|flight|train|trip|performance|recital|game|meet|drop[ -]?off|pickup)\b/i.test(text);
     if (significantThisMorning) {
       result.push(candidate(REASON.THIS_MORNING, {
-        signal: 'This morning', subject: subjectFor(event), context: eventContext(when, event.subtitle),
+        signal: 'This morning', subject: subjectFor(event), context: operation ? [operation.context] : eventContext(when, event.subtitle),
         sourceType: 'event', ...identity, sortTime: when.getTime(),
       }));
     }
 
     if (key === tomorrowKey && easternHour(when) < 12) {
       result.push(candidate(REASON.TOMORROW_MORNING, {
-        signal: 'Tomorrow morning', subject: subjectFor(event), context: eventContext(when, event.subtitle),
+        signal: 'Tomorrow morning', subject: subjectFor(event), context: operation ? [operation.context] : eventContext(when, event.subtitle),
         sourceType: 'event', ...identity, sortTime: when.getTime(),
       }));
       if (event.gearReminder) {
@@ -172,7 +226,7 @@ function eventCandidates(data, now) {
 
     if (delta > 90 * MINUTE && delta <= 48 * HOUR && !changed) {
       result.push(candidate(REASON.THEN_LATER, {
-        signal: key === todayKey ? 'Later today' : 'Then', subject: subjectFor(event), context: eventContext(when, event.subtitle),
+        signal: key === todayKey ? 'Later today' : 'Then', subject: subjectFor(event), context: operation ? [operation.context] : eventContext(when, event.subtitle),
         sourceType: 'event', ...identity, sortTime: when.getTime(),
       }));
     }
@@ -228,8 +282,12 @@ function supportFrom(candidates, selected, now) {
   ].filter(Boolean);
 }
 
-function selectNowNext(data, { now = data.now || new Date() } = {}) {
-  const candidates = deduplicateOccurrences([...problemCandidates(data), ...eventCandidates(data, now), ...taskCandidates(data)]).sort(compareCandidates);
+function selectNowNext(data, { now = data.now || new Date(), travelMinutesForEvent, departureBufferMinutes } = {}) {
+  const candidates = deduplicateOccurrences([
+    ...problemCandidates(data),
+    ...eventCandidates(data, now, { travelMinutesForEvent, departureBufferMinutes }),
+    ...taskCandidates(data),
+  ]).sort(compareCandidates);
   const selected = candidates[0] || candidate(REASON.ALL_CLEAR, {
     tone: 'calm', signal: 'All clear', subject: 'Nothing needs your attention tonight', sourceType: 'fallback', sourceId: 'all-clear', occurrenceId: 'all-clear', sortTime: 0,
   });

@@ -82,6 +82,72 @@ describe('deterministic NOW/NEXT selection', () => {
     assert.equal(selected.diagnostics.candidates[0].priority, 400);
   });
 
+  it('uses an explicit drop-off deadline instead of treating the opening time as departure time', () => {
+    const camp = event('Myles & Ophelia: 4-H Day Camp (Aloha Summer)', '2026-08-19T07:30:00-04:00', {
+      raw: {
+        id: 'camp-wed',
+        start: { dateTime: '2026-08-19T07:30:00-04:00' },
+        location: 'Jimmy James Adventure Day Camp',
+        description: "FAMILY RULE: drop off by 8:30 AM (don't wait for the 8:45 close).",
+      },
+    });
+    const selected = selectNowNext(data({ days: [{ events: [camp], tasks: [] }] }), { now: new Date('2026-08-19T07:15:00-04:00') });
+    assert.equal(selected.signal, 'Drop off by 8:30');
+    assert.equal(selected.subject, 'Both kids — 4-H Camp');
+    assert.deepEqual(selected.context, ['Drop off by 8:30']);
+    assert.equal(selected.reasonCodes[0], R.IMMINENT_DEPARTURE);
+
+    const earlier = selectNowNext(data({ days: [{ events: [camp], tasks: [] }] }), { now: new Date('2026-08-19T06:30:00-04:00') });
+    assert.equal(earlier.signal, 'This morning');
+    assert.deepEqual(earlier.context, ['Drop off by 8:30']);
+    assert.equal(earlier.reasonCodes[0], R.THIS_MORNING);
+  });
+
+  it('shows the operational deadline in tomorrow orientation', () => {
+    const camp = event('Both kids — 4-H Camp', '2026-08-20T07:30:00-04:00', {
+      raw: {
+        id: 'camp-thu',
+        start: { dateTime: '2026-08-20T07:30:00-04:00' },
+        location: 'Jimmy James Adventure Day Camp',
+        description: 'Drop-off by 8:30 a.m.; check-in closes at 8:45 AM.',
+      },
+    });
+    const selected = selectNowNext(data({ upcomingEvents: [camp] }), { now: new Date('2026-08-19T09:12:00-04:00') });
+    assert.equal(selected.signal, 'Tomorrow morning');
+    assert.deepEqual(selected.context, ['Drop off by 8:30']);
+  });
+
+  it('calculates a departure countdown only when a travel-time resolver succeeds', () => {
+    const camp = event('Both kids — 4-H Camp', '2026-08-19T07:30:00-04:00', {
+      raw: {
+        id: 'camp-route',
+        start: { dateTime: '2026-08-19T07:30:00-04:00' },
+        location: 'Jimmy James Adventure Day Camp',
+        description: 'Drop off by 8:30 AM.',
+      },
+    });
+    const selected = selectNowNext(data({ days: [{ events: [camp], tasks: [] }] }), {
+      now: new Date('2026-08-19T07:50:00-04:00'),
+      travelMinutesForEvent: current => current.raw.location ? 15 : null,
+      departureBufferMinutes: 10,
+    });
+    assert.equal(selected.signal, 'Leave in 15 min');
+    assert.deepEqual(selected.context, ['Drop off by 8:30']);
+  });
+
+  it('honors an explicit leave-by instruction without routing data', () => {
+    const appointment = event('Dentist appointment', '2026-08-19T08:30:00-04:00', {
+      raw: {
+        id: 'dentist',
+        start: { dateTime: '2026-08-19T08:30:00-04:00' },
+        description: 'Leave home by 8:00 AM.',
+      },
+    });
+    const selected = selectNowNext(data({ days: [{ events: [appointment], tasks: [] }] }), { now: new Date('2026-08-19T07:45:00-04:00') });
+    assert.equal(selected.signal, 'Leave in 15 min');
+    assert.deepEqual(selected.context, ['Leave by 8:00']);
+  });
+
   it('matches all six frozen-audit snapshots with occurrence-level deduplication', () => {
     const recurring = (title, dateTime, id, recurringEventId, subtitle = '') => ({
       title,
