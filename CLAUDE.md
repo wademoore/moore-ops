@@ -38,6 +38,7 @@
 - New task = new session
 - Update CLAUDE.md after any significant change
 - Use /plan before Planner prompts to enforce no-edit mode
+- An explicit no-commit/no-push instruction given in a session's own prompt (e.g. "hold at a pre-push checkpoint") takes precedence over the local git-check stop hook — don't let the hook's "commit and push" nudge override a task that deliberately asked to stop short of that.
 
 ## Branching policy
 
