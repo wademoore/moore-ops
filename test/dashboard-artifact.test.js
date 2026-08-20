@@ -58,6 +58,29 @@ test('generated releases opt into same-origin release polling without changing o
   assert.doesNotThrow(() => validateArtifact(renderDashboardV2({ ...sampleDashboardV2Data, sportsFeedUrl: SPORTS }), { sportsFeedUrl: SPORTS }));
 });
 
+test('first-day artifact contract accepts the takeover and generator publishes a version-pinned Level-2 fallback', async () => {
+  const milestone = { title: '🏫 First Day of School (Myles and Ophelia)', cardType: 'standard', _calName: 'Family', raw: { start: { date: '2026-08-24' }, end: { date: '2026-08-25' } } };
+  const data = { ...sampleDashboardV2Data, today: new Date('2026-08-24T07:00:00-04:00'), now: new Date('2026-08-24T07:00:00-04:00'), days: [{ events: [milestone] }] };
+  const firstDay = renderDashboardV2(data);
+  const validation = validateArtifact(firstDay, { sportsFeedUrl: SPORTS });
+  assert.ok(validation.bytes < 8_000_000);
+  assert.doesNotMatch(firstDay, /athletics-panel|sports-ticker/);
+  const puts = [];
+  const manifest = await generateAndPublish({
+    now: new Date('2026-08-24T15:59:00-04:00'), bucket: 'private', sportsFeedUrl: SPORTS, sourceRevision: 'first-day', firstDayLevel3Enabled: true,
+    fetchData: async () => data,
+    putObject: async input => { puts.push(input); return { VersionId: `version-${puts.length}` }; },
+  });
+  assert.equal(puts.length, 3);
+  assert.match(puts[0].Key, /index\.html$/);
+  assert.match(puts[1].Key, /level2\.html$/);
+  assert.equal(manifest.level2Artifact.versionId, 'version-2');
+  assert.match(String(puts[0].Body),/data-first-day-coda="true"/);
+  assert.match(String(puts[1].Body),/data-first-day-coda-url="index.html"/);
+  assert.match(String(puts[1].Body),/updateFirstDayLevel2Transition/);
+  assert.doesNotThrow(() => validateArtifact(String(puts[1].Body), { sportsFeedUrl: SPORTS }));
+});
+
 test('synthetic today calendar anchor renders identically under UTC and Eastern hosts', () => {
   const fixture = fileURLToPath(new URL('./fixtures/dashboard-v2-calendar-anchor-check.mjs', import.meta.url));
   const outputs = ['UTC', 'America/New_York'].map(TZ => execFileSync(process.execPath, [fixture], {

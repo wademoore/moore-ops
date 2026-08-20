@@ -841,6 +841,9 @@ function browserScript() {
     const clock = document.getElementById('live-clock');
     const date = document.getElementById('live-date');
     const countdown = document.querySelector('.countdown-card');
+    const firstDayCodaUrl = dashboard?.dataset.firstDayCodaUrl || '';
+    const firstDayCodaStart = Date.parse(dashboard?.dataset.firstDayCodaStart || '');
+    const firstDayCodaEnd = Date.parse(dashboard?.dataset.firstDayCodaEnd || '');
     const paletteSetting = dashboard?.dataset.palette || 'auto';
     const logoMap = ${JSON.stringify(V2_LOGOS)};
     const validSports = s => {const str=x=>x==null||typeof x==='string',records=x=>x==null||(x&&['overall','conference','regularSeason','preseason'].every(k=>str(x[k]))),result=x=>x==null||(x.state==='final'&&['W','L','T'].includes(x.result)&&Number.isFinite(x.teamScore)&&Number.isFinite(x.opponentScore)),source=x=>x==null||(x&&typeof x.stale==='boolean'&&typeof x.fromCache==='boolean');return s&&s.schemaVersion===1&&s.version===1&&source(s.source)&&Array.isArray(s.slots)&&s.slots.length===4&&!s.slots.some(x=>s.source?.stale&&x.event?.state==='live')&&s.slots.every(x=>x&&typeof x.organization==='string'&&typeof x.logo==='string'&&!/^https?:/i.test(x.logo)&&str(x.record)&&records(x.records)&&str(x.conference)&&str(x.standing)&&result(x.lastResult));};
@@ -871,6 +874,7 @@ function browserScript() {
     };
     const tick = () => {
       const now = new Date();
+      if (window.updateFirstDayLevel2Transition(now) === 'coda') return;
       applyPalette(now);
       if (clock) clock.textContent = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: zone });
       if (date) date.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: zone });
@@ -883,6 +887,7 @@ function browserScript() {
         if (el) el.textContent = String(days);
       }
     };
+    window.updateFirstDayLevel2Transition = value => {const stamp=new Date(value||Date.now()).getTime();if(firstDayCodaUrl&&Number.isFinite(firstDayCodaStart)&&Number.isFinite(firstDayCodaEnd)&&stamp>=firstDayCodaStart&&stamp<firstDayCodaEnd){if(location.protocol!=='about:')location.replace(firstDayCodaUrl);return 'coda'}return 'level2'};
     const fit = () => {
       if (!dashboard) return;
       const scale = Math.min(window.innerWidth / 2560, window.innerHeight / 1440);
@@ -1057,7 +1062,7 @@ ${fontCss}
 <style>${CSS}</style>
 </head>
 <body>
-<main class="${classes}" data-palette="${paletteSetting}" data-sports-url="${esc(data.sportsFeedUrl || '')}" data-household-generated-at="${esc(data.householdGeneratedAt || '')}" data-release-manifest-url="${esc(data.releaseManifestUrl || '')}" style="${styleVars}">
+<main class="${classes}" data-palette="${paletteSetting}" data-sports-url="${esc(data.sportsFeedUrl || '')}" data-household-generated-at="${esc(data.householdGeneratedAt || '')}" data-release-manifest-url="${esc(data.releaseManifestUrl || '')}" data-first-day-coda-url="${esc(data.firstDayLevel3CodaUrl || '')}" data-first-day-coda-start="${esc(data.firstDayLevel3CodaStart || '')}" data-first-day-coda-end="${esc(data.firstDayLevel3CodaEnd || '')}" style="${styleVars}">
   ${renderMasthead(data)}
   ${renderToday(data)}
   ${renderUpcoming(data)}

@@ -5,6 +5,7 @@ import { build } from 'esbuild';
 const root = resolve('.');
 const workflowPath = '.github/workflows/deploy-dashboard-v2-artifact.yml';
 const workflow = await readFile(resolve(workflowPath), 'utf8');
+const deployRolePolicy = JSON.parse(await readFile(resolve('infrastructure/dashboard-artifact-refresh/github-deploy-role-policy.json'), 'utf8'));
 const inputs = JSON.parse(await readFile(new URL('../dashboard-artifact/package-inputs.json', import.meta.url), 'utf8'));
 const pathsBlock = /\n\s{4}paths:\s*\n((?:\s{6}-[^\n]+\n)+)/.exec(workflow)?.[1] || '';
 const triggers = [...pathsBlock.matchAll(/-\s+['"]?([^'"\r\n]+)['"]?/g)].map(match => match[1].trim());
@@ -34,6 +35,7 @@ for (const dependency of ['@googleapis/calendar', 'google-auth-library']) {
   if (!allBundleInputs.some(path => path.includes(`/node_modules/${dependency}/`) || path.startsWith(`node_modules/${dependency}/`))) failures.push(`required runtime dependency is absent from bundle graph: ${dependency}`);
 }
 for (const directory of inputs.assetDirectories) if (!covered(directory + '/placeholder')) failures.push(`asset directory is not covered by deployment paths: ${directory}`);
+for (const path of inputs.requiredAssetFiles || []) if (!inputs.assetDirectories.some(directory => `render/${path}`.startsWith(`${directory}/`))) failures.push(`required asset is outside packaged directories: ${path}`);
 for (const name of inputs.dataFiles) if (!covered(`data/${name}`)) failures.push(`data file is not covered by deployment paths: data/${name}`);
 for (const path of [workflowPath, 'package.json', 'package-lock.json', 'infrastructure/dashboard-artifact-refresh/template.json', 'scripts/prepare-dashboard-artifact-package.mjs', 'scripts/validate-dashboard-artifact-deployment.mjs', 'scripts/validate-dashboard-artifact-package.mjs']) {
   if (!covered(path)) failures.push(`deployment control is not self-covered: ${path}`);
@@ -42,6 +44,7 @@ if (!workflow.includes('"SourceRevision=$GITHUB_SHA"')) failures.push('deploymen
 if (!/--capabilities\s+CAPABILITY_NAMED_IAM(?:\s|\\)/.test(workflow)) failures.push('deployment must acknowledge CAPABILITY_NAMED_IAM for the existing named IAM resources');
 if (/--capabilities\s+CAPABILITY_IAM(?:\s|\\)/.test(workflow)) failures.push('deployment must not use insufficient CAPABILITY_IAM acknowledgement');
 if (/FamilyContextFileId|DRIVE_FAMILY_CONTEXT_FILE_ID/.test(workflow)) failures.push('deployment workflow must not read or restate the private calendar-related parameter');
+if (!deployRolePolicy.Statement?.some(statement => statement.Effect === 'Allow' && statement.Action === 'cloudformation:DescribeChangeSet')) failures.push('GitHub deployment role policy is missing cloudformation:DescribeChangeSet');
 
 const output = bundle.outputFiles.map(file => file.text).join('\n');
 for (const marker of ['Emma Unavailable', 'emma_unavailability_calendar_read_succeeded']) {
