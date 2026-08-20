@@ -387,6 +387,18 @@ function renderToday(data) {
   const dinner = data.menuEvent;
   const tomorrow = data.tomorrowMenu;
 
+  // Routine Anchors Phase 1: static display only, independent of schoolStrip
+  // above — no holiday/exception reconciliation yet (see routineAnchorsParser.js).
+  const activeAnchor = (data.routineAnchorsToday || [])[0] || null;
+  const formatAnchorTime = value => {
+    if (!/^\d{1,2}:\d{2}$/.test(String(value))) return '';
+    const [hour, minute] = value.split(':').map(Number);
+    return new Date(2000, 0, 1, hour, minute).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+  };
+  const anchorTimeRange = activeAnchor
+    ? `${formatAnchorTime(activeAnchor.arrivalTime)} – ${formatAnchorTime(activeAnchor.endTime)}`
+    : '';
+
   return `<section class="paper-panel today-panel">
     ${renderSectionTitle(`Today — ${formatCalendarDate(data.today, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`, 'green', 'star')}
     <div class="subhead">Events</div>
@@ -397,6 +409,10 @@ function renderToday(data) {
       ${showSchool ? `<div class="school-line">
         <strong>School today</strong>
         <span><b class="myles-text">Myles</b> — ${esc(school.myles?.center || '—')} · <b class="ophelia-text">Ophelia</b> — ${esc(school.ophelia?.center || '—')}</span>
+      </div>` : ''}
+      ${activeAnchor ? `<div class="school-line">
+        <strong>${esc(activeAnchor.label)}</strong>
+        <span>${esc(anchorTimeRange)}</span>
       </div>` : ''}
       <div class="dinner-block">
         ${renderSectionTitle("Tonight's Dinner", 'green', 'dinner')}

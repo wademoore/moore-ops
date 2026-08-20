@@ -245,6 +245,7 @@ const SPORTS_PARAMS = {
   swimResults:      [],
   wavesSeasonData:  FIXTURE_WAVES,
   vpsuRankings:     null,
+  routineAnchorsData: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -336,6 +337,10 @@ assert(dig.activityComms.some(l => /dance|studio/i.test(l)), 'Dance studio line 
 // School strip
 assert(dig.schoolStrip != null,                      'schoolStrip present');
 assert(typeof dig.schoolStrip.myles === 'object',    'schoolStrip.myles is object');
+
+// Routine anchors (Phase 1) — routineAnchorsData: null in SPORTS_PARAMS, so no anchors active
+assert(Array.isArray(dig.routineAnchorsToday),       'routineAnchorsToday is array');
+assert(dig.routineAnchorsToday.length === 0,         'routineAnchorsToday empty when routineAnchorsData is null');
 
 // Tasks
 assert(day0.tasks.length > 0,                        'Tasks generated for today');
@@ -467,6 +472,28 @@ const regularEv = { summary: 'Team Cookout', calendarName: 'Family',  start: { d
 const cResult   = await buildDigest({ rawEvents: [], rawEvents14d: [routineEv, regularEv], emails: [], docs: {}, ...SPORTS_PARAMS });
 assert(!cResult.upcomingEvents.some(e => /PE Day/.test(e.title)),      'Routine calendar event absent from upcomingEvents');
 assert( cResult.upcomingEvents.some(e => /Team Cookout/.test(e.title)), 'Non-routine event present in upcomingEvents');
+
+section('buildDigest — routineAnchorsToday wiring (Phase 1)');
+const todayDow = startOfTodayET().getDay();
+const matchingAnchor = {
+  id: 'school-weekday', appliesTo: ['Myles', 'Ophelia'], label: 'School',
+  weekdays: [todayDow], effectiveStart: isoDate(-1), effectiveEnd: isoDate(1),
+  arrivalTime: '08:15', endTime: '15:45',
+};
+const nonMatchingAnchor = { ...matchingAnchor, id: 'wrong-weekday', weekdays: [(todayDow + 1) % 7] };
+
+const raResult = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor] },
+});
+assert(raResult.routineAnchorsToday.length === 1,               'Matching anchor appears in routineAnchorsToday');
+assert(raResult.routineAnchorsToday[0].id === 'school-weekday',  'Correct anchor id threaded through');
+
+const raNoMatch = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [nonMatchingAnchor] },
+});
+assert(raNoMatch.routineAnchorsToday.length === 0, 'Anchor for a different weekday does not appear today');
 
 section('buildDigest — menu event routing (today)');
 const menuRaw14  = { summary: 'Spaghetti Bolognese', calendarName: 'Menu', start: { date: isoDate(0) } };

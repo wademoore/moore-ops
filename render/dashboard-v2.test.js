@@ -342,6 +342,18 @@ describe('real-data resilience policies', () => {
     assert.equal(activityCategory({ title: 'Tesla Detail' }), 'household');
   });
 
+  it('shows the active routine anchor as a static line, and renders nothing when none is active', () => {
+    const anchor = { id: 'school-weekday', label: 'School', arrivalTime: '08:15', endTime: '15:45' };
+    const withAnchor = renderToday({ ...sampleDashboardV2Data, routineAnchorsToday: [anchor] });
+    assert.match(withAnchor, /<strong>School<\/strong>\s*<span>8:15 AM – 3:45 PM<\/span>/);
+
+    const emptyList = renderToday({ ...sampleDashboardV2Data, routineAnchorsToday: [] });
+    assert.doesNotMatch(emptyList, /8:15 AM – 3:45 PM/);
+
+    const fieldAbsent = renderToday({ ...sampleDashboardV2Data });
+    assert.doesNotMatch(fieldAbsent, /8:15 AM – 3:45 PM/);
+  });
+
   it('normalizes owner shorthand in Today and Next Two Weeks', () => {
     const shorthand = event('R Dentist', '2026-06-10T09:30:00-04:00');
     const html = renderDashboardV2({
