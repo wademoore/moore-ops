@@ -6,6 +6,10 @@
     "SportsFeedUrl": { "Type": "String" },
     "FamilyContextFileId": { "Type": "String", "NoEcho": true },
     "SourceRevision": { "Type": "String" },
+    "FirstDayLevel3Enabled": { "Type": "String", "Default": "0", "AllowedValues": ["0", "1"] },
+    "FirstDayLevel3Departure": { "Type": "String", "Default": "07:30", "AllowedPattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
+    "FirstDayLevel3Handoff": { "Type": "String", "Default": "07:45", "AllowedPattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
+    "FirstDayLevel3Coda": { "Type": "String", "Default": "16:00", "AllowedPattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
     "ArtifactBucketName": { "Type": "String", "Default": "moore-ops-dashboard-v2-artifacts-0803" }
   },
   "Resources": {
@@ -38,7 +42,7 @@
         "Architectures": ["arm64"],
         "MemorySize": 1024,
         "Timeout": 180,
-        "Environment": { "Variables": { "ARTIFACT_BUCKET": { "Ref": "ArtifactBucket" }, "MANIFEST_KEY": "dashboard-v2/current/manifest.json", "SPORTS_FEED_URL": { "Ref": "SportsFeedUrl" }, "SOURCE_REVISION": { "Ref": "SourceRevision" }, "DRIVE_FAMILY_CONTEXT_FILE_ID": { "Ref": "FamilyContextFileId" }, "GOOGLE_AUTH_READ_ONLY": "1", "DASHBOARD_ASSET_DIR": "/var/task/assets-v2", "DASHBOARD_DATA_DIR": "/var/task/data" } },
+        "Environment": { "Variables": { "ARTIFACT_BUCKET": { "Ref": "ArtifactBucket" }, "MANIFEST_KEY": "dashboard-v2/current/manifest.json", "SPORTS_FEED_URL": { "Ref": "SportsFeedUrl" }, "SOURCE_REVISION": { "Ref": "SourceRevision" }, "FIRST_DAY_LEVEL3_ENABLED": { "Ref": "FirstDayLevel3Enabled" }, "FIRST_DAY_LEVEL3_DEPARTURE": { "Ref": "FirstDayLevel3Departure" }, "FIRST_DAY_LEVEL3_HANDOFF": { "Ref": "FirstDayLevel3Handoff" }, "FIRST_DAY_LEVEL3_CODA": { "Ref": "FirstDayLevel3Coda" }, "DRIVE_FAMILY_CONTEXT_FILE_ID": { "Ref": "FamilyContextFileId" }, "GOOGLE_AUTH_READ_ONLY": "1", "DASHBOARD_ASSET_DIR": "/var/task/assets-v2", "DASHBOARD_FIRST_DAY_ASSET_DIR": "/var/task/assets-first-day", "DASHBOARD_DATA_DIR": "/var/task/data" } },
         "Policies": [{ "Version": "2012-10-17", "Statement": [
           { "Effect": "Allow", "Action": ["secretsmanager:GetSecretValue"], "Resource": [{ "Fn::Sub": "arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:moore-ops/google-credentials-*" }, { "Fn::Sub": "arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:moore-ops/google-oauth-token-*" }] },
           { "Effect": "Allow", "Action": ["s3:PutObject"], "Resource": { "Fn::Sub": "${ArtifactBucket.Arn}/dashboard-v2/*" } }

@@ -1,5 +1,9 @@
 {
-  "assetDirectories": ["render/assets-v2"],
+  "assetDirectories": ["render/assets-v2", "render/assets-first-day"],
+  "requiredAssetFiles": [
+    "assets-first-day/composition-reference.png",
+    "assets-first-day/icon-weather-sun.png"
+  ],
   "dataFiles": [
     "sports-config.json", "flag-football.json", "pb-records.json",
     "swim-results.json", "waves-season.json", "sharks-soccer.json",
@@ -8,6 +12,6 @@
   "requiredBundleInputs": [
     "dashboard-artifact/generator.js", "dashboard-v2-data.js", "auth.js", "calendar.js",
     "digest/builder.js", "digest/emmaUnavailabilityParser.js",
-    "digest/flags.js", "render/dashboard-v2.js"
+    "digest/flags.js", "render/dashboard-v2.js", "render/first-day-level3.js"
   ]
 }

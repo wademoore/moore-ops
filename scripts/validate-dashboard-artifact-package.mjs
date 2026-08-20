@@ -19,6 +19,7 @@ for (const directory of inputs.assetDirectories) {
   const destination = directory.replace(/^render\//, '');
   if (!(await exists(destination))) failures.push(`built asset directory is missing: ${destination}`);
 }
+for (const path of inputs.requiredAssetFiles || []) if (!(await exists(path))) failures.push(`required built asset is missing: ${path}`);
 for (const name of inputs.dataFiles) if (!(await exists(`data/${name}`))) failures.push(`built data file is missing: data/${name}`);
 for (const forbidden of ['.env', 'credentials.json', 'token.json']) if (await exists(forbidden)) failures.push(`forbidden package file is present: ${forbidden}`);
 

@@ -20,7 +20,8 @@ import urllib.request
 
 MIN_BYTES = 1_000_000
 MAX_BYTES = 8_000_000
-REQUIRED = ('today-panel', 'upcoming-panel', 'athletics-panel', 'right-rail', 'sports-ticker')
+LEVEL2_REQUIRED = ('today-panel', 'upcoming-panel', 'athletics-panel', 'right-rail', 'sports-ticker')
+FIRST_DAY_REQUIRED = ('first-day-dashboard', 'data-dashboard-mode="first-day-level3"', 'data-first-day-coda="true"', 'data-fd-slot="now"', 'data-fd-slot="next"', 'updateFirstDayLevel3', 'Welcome home, Myles + Ophelia')
 FORBIDDEN = (
     re.compile(r'client_secret', re.I), re.compile(r'refresh_token', re.I),
     re.compile(r'access[_-]?key', re.I), re.compile(r'drive\.google\.com', re.I),
@@ -82,9 +83,12 @@ def validate(manifest, html_bytes, sports_url, now=None, max_age_hours=8):
     if artifact.get('sha256') != checksum: errors.append('SHA-256 checksum mismatch')
     if not artifact.get('key') or not artifact.get('versionId'): errors.append('version-pinned artifact reference missing')
     text = html_bytes.decode('utf-8', errors='strict')
-    for marker in REQUIRED:
+    first_day = 'data-dashboard-mode="first-day-level3"' in text
+    for marker in FIRST_DAY_REQUIRED if first_day else LEVEL2_REQUIRED:
         if marker not in text: errors.append('required panel marker missing: ' + marker)
-    if 'data-sports-url="{}"'.format(sports_url) not in text: errors.append('exact sports endpoint missing')
+    if not first_day and 'data-sports-url="{}"'.format(sports_url) not in text: errors.append('exact sports endpoint missing')
+    if first_day and any(marker in text for marker in ('athletics-panel', 'sports-ticker', 'Weekly priorities')): errors.append('suppressed Level-2 content is present in first-day artifact')
+    if first_day and not manifest.get('level2Artifact'): errors.append('first-day artifact is missing its Level-2 fallback')
     runtime = manifest.get('runtime', {})
     if runtime.get('browserOrigin') != 'http://127.0.0.1:4173' or runtime.get('sportsFeedUrl') != sports_url: errors.append('runtime configuration mismatch')
     for pattern in FORBIDDEN:
@@ -102,12 +106,23 @@ def stage(config_path, credentials_path, root):
     artifact = manifest.get('artifact', {})
     html = signed_get(config['bucket'], config['region'], artifact.get('key', ''), credentials, artifact.get('versionId'))
     evidence = validate(manifest, html, config['sportsFeedUrl'], max_age_hours=config.get('maxAgeHours', 8))
+    level2_html = None
+    if manifest.get('level2Artifact'):
+        level2_artifact = manifest['level2Artifact']
+        level2_html = signed_get(config['bucket'], config['region'], level2_artifact.get('key', ''), credentials, level2_artifact.get('versionId'))
+        level2_manifest = dict(manifest, artifact=level2_artifact)
+        level2_manifest.pop('level2Artifact', None)
+        validate(level2_manifest, level2_html, config['sportsFeedUrl'], max_age_hours=config.get('maxAgeHours', 8))
+        level2_text = level2_html.decode('utf-8', errors='strict')
+        if not all(marker in level2_text for marker in ('data-first-day-coda-url="index.html"', 'data-first-day-coda-start=', 'data-first-day-coda-end=', 'updateFirstDayLevel2Transition')):
+            raise ValueError('Level-2 fallback is missing deterministic first-day coda re-entry')
     release_name = manifest['generatedAt'].replace(':', '').replace('.', '-')
     staging_root = pathlib.Path(root)
     staging_root.mkdir(parents=True, exist_ok=True)
     temp_dir = pathlib.Path(tempfile.mkdtemp(prefix='.candidate-', dir=str(staging_root)))
     try:
         (temp_dir / 'index.html').write_bytes(html)
+        if level2_html is not None: (temp_dir / 'level2.html').write_bytes(level2_html)
         (temp_dir / 'release-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
         (temp_dir / 'ELIGIBLE').write_text(json.dumps(evidence, sort_keys=True) + '\n')
         final = staging_root / release_name

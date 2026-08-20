@@ -1,0 +1,11 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "DescribeDashboardArtifactChangeSets",
+      "Effect": "Allow",
+      "Action": "cloudformation:DescribeChangeSet",
+      "Resource": "arn:aws:cloudformation:us-east-2:*:changeSet/*/*"
+    }
+  ]
+}

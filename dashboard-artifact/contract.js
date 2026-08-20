@@ -4,12 +4,20 @@ const SCHEMA_VERSION = 1;
 const ARTIFACT_VERSION = 'dashboard-v2';
 const MIN_ARTIFACT_BYTES = 1_000_000;
 const MAX_ARTIFACT_BYTES = 8_000_000;
-const REQUIRED_MARKERS = Object.freeze([
+const LEVEL2_REQUIRED_MARKERS = Object.freeze([
   'today-panel',
   'upcoming-panel',
   'athletics-panel',
   'right-rail',
   'sports-ticker',
+]);
+const FIRST_DAY_REQUIRED_MARKERS = Object.freeze([
+  'first-day-dashboard',
+  'data-dashboard-mode="first-day-level3"',
+  'data-fd-slot="now"',
+  'data-fd-slot="next"',
+  'data-first-day-coda="true"',
+  'updateFirstDayLevel3',
 ]);
 const FORBIDDEN_PATTERNS = Object.freeze([
   /client_secret/i,
@@ -30,17 +38,21 @@ function sha256(bytes) {
 function validateArtifact(html, { sportsFeedUrl, minBytes = MIN_ARTIFACT_BYTES, maxBytes = MAX_ARTIFACT_BYTES } = {}) {
   const bytes = Buffer.byteLength(html, 'utf8');
   const failures = [];
+  const firstDay = html.includes('data-dashboard-mode="first-day-level3"');
+  const requiredMarkers = firstDay ? FIRST_DAY_REQUIRED_MARKERS : LEVEL2_REQUIRED_MARKERS;
   if (bytes < minBytes || bytes > maxBytes) failures.push(`artifact size ${bytes} is outside ${minBytes}-${maxBytes}`);
-  for (const marker of REQUIRED_MARKERS) if (!html.includes(marker)) failures.push(`required panel marker missing: ${marker}`);
-  if (!sportsFeedUrl || !html.includes(`data-sports-url="${sportsFeedUrl}"`)) failures.push('exact live sports endpoint is missing');
+  for (const marker of requiredMarkers) if (!html.includes(marker)) failures.push(`required panel marker missing: ${marker}`);
+  if (!firstDay && (!sportsFeedUrl || !html.includes(`data-sports-url="${sportsFeedUrl}"`))) failures.push('exact live sports endpoint is missing');
+  if (firstDay && /athletics-panel|sports-ticker|Weekly priorities/i.test(html)) failures.push('suppressed Level-2 content is present in first-day artifact');
+  if (firstDay && !/Welcome home, Myles \+ Ophelia/.test(html)) failures.push('welcome-home coda content is missing');
   for (const pattern of FORBIDDEN_PATTERNS) if (pattern.test(html)) failures.push(`forbidden content matched ${pattern}`);
   if (!/^<!doctype html>/i.test(html)) failures.push('artifact is not the expected HTML document');
   if (failures.length) throw new Error(failures.join('; '));
   return { bytes, sha256: sha256(Buffer.from(html, 'utf8')) };
 }
 
-function createManifest({ generatedAt, artifactKey, artifactVersionId, bytes, checksum, sourceRevision, sportsFeedUrl }) {
-  return {
+function createManifest({ generatedAt, artifactKey, artifactVersionId, bytes, checksum, sourceRevision, sportsFeedUrl, level2Artifact }) {
+  const manifest = {
     schemaVersion: SCHEMA_VERSION,
     artifactVersion: ARTIFACT_VERSION,
     generatedAt: new Date(generatedAt).toISOString(),
@@ -57,6 +69,8 @@ function createManifest({ generatedAt, artifactKey, artifactVersionId, bytes, ch
       sportsFeedUrl,
     },
   };
+  if (level2Artifact) manifest.level2Artifact = level2Artifact;
+  return manifest;
 }
 
 export {
@@ -64,7 +78,8 @@ export {
   FORBIDDEN_PATTERNS,
   MAX_ARTIFACT_BYTES,
   MIN_ARTIFACT_BYTES,
-  REQUIRED_MARKERS,
+  FIRST_DAY_REQUIRED_MARKERS,
+  LEVEL2_REQUIRED_MARKERS,
   SCHEMA_VERSION,
   createManifest,
   sha256,
