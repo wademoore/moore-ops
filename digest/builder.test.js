@@ -495,6 +495,38 @@ const raNoMatch = await buildDigest({
 });
 assert(raNoMatch.routineAnchorsToday.length === 0, 'Anchor for a different weekday does not appear today');
 
+section('buildDigest — routineAnchorsToday suppressed by 🏫 Family-calendar exception (Phase 2)');
+const noSchoolTodayEvent = {
+  summary: '🏫 No School — Test Holiday', calendarName: 'Family',
+  start: { date: isoDate(0) }, end: { date: isoDate(1) },
+};
+const earlyReleaseTodayEvent = {
+  summary: '🏫 Early Release — Test', calendarName: 'Family',
+  start: { date: isoDate(0) }, end: { date: isoDate(1) },
+};
+const firstDayTodayEvent = {
+  summary: '🏫 First Day of School (Myles and Ophelia)', calendarName: 'Family',
+  start: { date: isoDate(0) }, end: { date: isoDate(1) },
+};
+
+const raSuppressedNoSchool = await buildDigest({
+  rawEvents: [noSchoolTodayEvent], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor] },
+});
+assert(raSuppressedNoSchool.routineAnchorsToday.length === 0, '🏫 No School today suppresses the anchor');
+
+const raSuppressedEarlyRelease = await buildDigest({
+  rawEvents: [earlyReleaseTodayEvent], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor] },
+});
+assert(raSuppressedEarlyRelease.routineAnchorsToday.length === 0, '🏫 Early Release today suppresses the anchor');
+
+const raNotSuppressedFirstDay = await buildDigest({
+  rawEvents: [firstDayTodayEvent], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor] },
+});
+assert(raNotSuppressedFirstDay.routineAnchorsToday.length === 1, '🏫 First Day of School does NOT suppress the anchor');
+
 section('buildDigest — menu event routing (today)');
 const menuRaw14  = { summary: 'Spaghetti Bolognese', calendarName: 'Menu', start: { date: isoDate(0) } };
 const activityRaw = { summary: 'ADP Practice',       calendarName: 'Myles', start: { dateTime: isoDateTime(0, 18) } };
