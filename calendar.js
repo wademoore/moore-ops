@@ -31,18 +31,44 @@ export function dedupeById(events) {
 
 // ── Single-calendar pull — used by weeklyPrioritiesParser and future parsers ─
 
+// Google's events.list default maxResults is 250 and it paginates beyond that.
+// The Weekly Priorities overdue window is floored at a fixed date (see
+// OVERDUE_FLOOR in weeklyPrioritiesParser.js), so its result set grows roughly
+// linearly with calendar age — at the observed ~5 items/week it crosses 250 in
+// about a year. Following nextPageToken keeps that from silently truncating the
+// oldest overdue items, which is the exact failure mode this fix exists to close.
+const EVENTS_PAGE_SIZE = 250;
+const EVENTS_MAX_PAGES = 20;
+
 export async function fetchCalendarEvents(auth, calendarId, timeMin, timeMax) {
   const cal = calendar({ version: 'v3', auth });
+  const items = [];
+  let pageToken;
+  let pages = 0;
   try {
-    const res = await cal.events.list({
-      calendarId,
-      timeMin,
-      timeMax,
-      singleEvents: true,
-      orderBy: 'startTime',
-    });
-    return res.data.items || [];
+    do {
+      const res = await cal.events.list({
+        calendarId,
+        timeMin,
+        timeMax,
+        singleEvents: true,
+        orderBy: 'startTime',
+        maxResults: EVENTS_PAGE_SIZE,
+        pageToken,
+      });
+      items.push(...(res.data.items || []));
+      pageToken = res.data.nextPageToken;
+      pages += 1;
+      if (pageToken && pages >= EVENTS_MAX_PAGES) {
+        console.warn(`[calendar:fetchCalendarEvents] "${calendarId}" still had more pages after ${pages} × ${EVENTS_PAGE_SIZE} events — truncating. Raise EVENTS_MAX_PAGES or narrow the window.`);
+        break;
+      }
+    } while (pageToken);
+    return items;
   } catch (err) {
+    // Unchanged contract: fail closed with an empty array rather than a partial
+    // page set. A partial overdue list would silently drop real items, which is
+    // strictly worse than an empty one that builder.js logs and degrades around.
     console.warn(`[calendar:fetchCalendarEvents] Could not load "${calendarId}" — ${err.message}`);
     return [];
   }
