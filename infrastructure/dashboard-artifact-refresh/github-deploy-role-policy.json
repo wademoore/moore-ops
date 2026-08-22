@@ -2,10 +2,55 @@
   "Version": "2012-10-17",
   "Statement": [
     {
-      "Sid": "DescribeDashboardArtifactChangeSets",
+      "Sid": "UploadDashboardGeneratorPackage",
       "Effect": "Allow",
-      "Action": "cloudformation:DescribeChangeSet",
-      "Resource": "arn:aws:cloudformation:us-east-2:*:changeSet/*/*"
+      "Action": "s3:PutObject",
+      "Resource": "arn:aws:s3:::moore-ops-lambda/*"
+    },
+    {
+      "Sid": "ReadDashboardGeneratorPackage",
+      "Effect": "Allow",
+      "Action": "s3:GetObject",
+      "Resource": "arn:aws:s3:::moore-ops-lambda/*"
+    },
+    {
+      "Sid": "ReadDashboardPackageBucketLocation",
+      "Effect": "Allow",
+      "Action": "s3:GetBucketLocation",
+      "Resource": "arn:aws:s3:::moore-ops-lambda"
+    },
+    {
+      "Sid": "ManageDashboardArtifactRefreshStack",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:CreateChangeSet",
+        "cloudformation:DescribeChangeSet",
+        "cloudformation:ExecuteChangeSet",
+        "cloudformation:DescribeStacks",
+        "cloudformation:DescribeStackEvents",
+        "cloudformation:ListStackResources",
+        "cloudformation:GetTemplate",
+        "cloudformation:GetTemplateSummary",
+        "cloudformation:UpdateStack"
+      ],
+      "Resource": "arn:aws:cloudformation:us-east-2:785157630803:stack/moore-ops-dashboard-v2-artifact-refresh/*"
+    },
+    {
+      "Sid": "ManageDashboardArtifactSamChangeSets",
+      "Effect": "Allow",
+      "Action": [
+        "cloudformation:CreateChangeSet",
+        "cloudformation:DescribeChangeSet",
+        "cloudformation:ExecuteChangeSet",
+        "cloudformation:DeleteChangeSet"
+      ],
+      "Resource": "arn:aws:cloudformation:us-east-2:785157630803:changeSet/samcli-deploy*/*"
+    },
+    {
+      "Sid": "UseServerlessTransformForDashboardArtifact",
+      "Effect": "Allow",
+      "Action": "cloudformation:CreateChangeSet",
+      "Resource": "arn:aws:cloudformation:us-east-2:aws:transform/Serverless-2016-10-31"
     }
   ]
 }

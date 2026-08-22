@@ -44,7 +44,15 @@ if (!workflow.includes('"SourceRevision=$GITHUB_SHA"')) failures.push('deploymen
 if (!/--capabilities\s+CAPABILITY_NAMED_IAM(?:\s|\\)/.test(workflow)) failures.push('deployment must acknowledge CAPABILITY_NAMED_IAM for the existing named IAM resources');
 if (/--capabilities\s+CAPABILITY_IAM(?:\s|\\)/.test(workflow)) failures.push('deployment must not use insufficient CAPABILITY_IAM acknowledgement');
 if (/FamilyContextFileId|DRIVE_FAMILY_CONTEXT_FILE_ID/.test(workflow)) failures.push('deployment workflow must not read or restate the private calendar-related parameter');
-if (!deployRolePolicy.Statement?.some(statement => statement.Effect === 'Allow' && statement.Action === 'cloudformation:DescribeChangeSet')) failures.push('GitHub deployment role policy is missing cloudformation:DescribeChangeSet');
+const actions = statement => Array.isArray(statement.Action) ? statement.Action : [statement.Action];
+const statementAllows = (action, resource) => deployRolePolicy.Statement?.some(statement => statement.Effect === 'Allow' && actions(statement).includes(action) && statement.Resource === resource);
+const stackArn = 'arn:aws:cloudformation:us-east-2:785157630803:stack/moore-ops-dashboard-v2-artifact-refresh/*';
+const changeSetArn = 'arn:aws:cloudformation:us-east-2:785157630803:changeSet/samcli-deploy*/*';
+const transformArn = 'arn:aws:cloudformation:us-east-2:aws:transform/Serverless-2016-10-31';
+for (const action of ['cloudformation:DescribeChangeSet', 'cloudformation:ExecuteChangeSet']) if (!statementAllows(action, stackArn)) failures.push(`GitHub deployment role policy is missing ${action} on the dashboard stack`);
+for (const action of ['cloudformation:CreateChangeSet', 'cloudformation:DescribeChangeSet', 'cloudformation:ExecuteChangeSet', 'cloudformation:DeleteChangeSet']) if (!statementAllows(action, changeSetArn)) failures.push(`GitHub deployment role policy is missing ${action} on SAM deployment change sets`);
+if (!statementAllows('cloudformation:CreateChangeSet', transformArn)) failures.push('GitHub deployment role policy is missing SAM transform access');
+for (const action of ['s3:PutObject', 's3:GetObject']) if (!statementAllows(action, 'arn:aws:s3:::moore-ops-lambda/*')) failures.push(`GitHub deployment role policy is missing ${action} on the package bucket`);
 
 const output = bundle.outputFiles.map(file => file.text).join('\n');
 for (const marker of ['Emma Unavailable', 'emma_unavailability_calendar_read_succeeded']) {
