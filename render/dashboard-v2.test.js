@@ -17,6 +17,7 @@ import {
   paletteModeForDate,
   PALETTE,
   V2_LOGOS,
+  anchorCountdownText,
 } from './dashboard-v2.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
 
@@ -342,16 +343,51 @@ describe('real-data resilience policies', () => {
     assert.equal(activityCategory({ title: 'Tesla Detail' }), 'household');
   });
 
-  it('shows the active routine anchor as a static line, and renders nothing when none is active', () => {
+  it('embeds the active routine anchor as data attributes for client-side countdown rendering, and renders nothing when none is active', () => {
     const anchor = { id: 'school-weekday', label: 'School', arrivalTime: '08:15', endTime: '15:45' };
     const withAnchor = renderToday({ ...sampleDashboardV2Data, routineAnchorsToday: [anchor] });
-    assert.match(withAnchor, /<strong>School<\/strong>\s*<span>8:15 AM – 3:45 PM<\/span>/);
+    assert.match(
+      withAnchor,
+      /<div class="school-line" data-anchor-arrival="08:15" data-anchor-end="15:45" data-anchor-label="School" hidden>\s*<span id="anchor-countdown-text"><\/span>\s*<\/div>/
+    );
+    // No formatted time string (e.g. "8:15 AM") is baked in server-side — the
+    // countdown text is produced entirely by tick() at the client's current time.
+    assert.doesNotMatch(withAnchor, /8:15 AM|3:45 PM/);
 
     const emptyList = renderToday({ ...sampleDashboardV2Data, routineAnchorsToday: [] });
-    assert.doesNotMatch(emptyList, /8:15 AM – 3:45 PM/);
+    assert.doesNotMatch(emptyList, /data-anchor-arrival/);
 
     const fieldAbsent = renderToday({ ...sampleDashboardV2Data });
-    assert.doesNotMatch(fieldAbsent, /8:15 AM – 3:45 PM/);
+    assert.doesNotMatch(fieldAbsent, /data-anchor-arrival/);
+  });
+
+  describe('anchorCountdownText (Routine Anchors Phase 3 — pure state/format logic, embedded verbatim into the browser via .toString())', () => {
+    it('before arrival: counts down to arrivalTime, minutes-only under an hour', () => {
+      assert.equal(anchorCountdownText(7 * 60 + 30, '08:15', '15:45', 'School'), 'School starts in 45 min');
+    });
+
+    it('before arrival: hours-and-minutes format at or above an hour remaining', () => {
+      assert.equal(anchorCountdownText(7 * 60, '08:15', '15:45', 'School'), 'School starts in 1h 15m');
+    });
+
+    it('between arrival and end: counts down to endTime with an em dash label', () => {
+      assert.equal(anchorCountdownText(10 * 60, '08:15', '15:45', 'School'), 'School — ends in 5h 45m');
+    });
+
+    it('exactly at arrivalTime is "in session", not "before arrival" (boundary is inclusive of arrival)', () => {
+      assert.equal(anchorCountdownText(8 * 60 + 15, '08:15', '15:45', 'School'), 'School — ends in 7h 30m');
+    });
+
+    it('exactly at endTime and after endTime both render empty — no "day complete" message', () => {
+      assert.equal(anchorCountdownText(15 * 60 + 45, '08:15', '15:45', 'School'), '');
+      assert.equal(anchorCountdownText(16 * 60, '08:15', '15:45', 'School'), '');
+    });
+
+    it('returns empty for malformed or missing HH:MM inputs rather than throwing', () => {
+      assert.equal(anchorCountdownText(500, '', '15:45', 'School'), '');
+      assert.equal(anchorCountdownText(500, undefined, '15:45', 'School'), '');
+      assert.equal(anchorCountdownText(500, 'not-a-time', '15:45', 'School'), '');
+    });
   });
 
   it('normalizes owner shorthand in Today and Next Two Weeks', () => {

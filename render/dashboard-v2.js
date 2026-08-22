@@ -161,6 +161,34 @@ function countdownLabel(days) {
   return `${days}d`;
 }
 
+// Routine Anchors Phase 3: pure state-selection + formatting for the live
+// arrival/end-time countdown. Deliberately takes plain minute-of-day numbers
+// (not Date objects) so it has no timezone or DOM dependency of its own —
+// the caller (browserScript()'s tick()) is responsible for deriving
+// nowMinutes from the client's America/New_York wall-clock time. This exact
+// function body is embedded verbatim into the browser script via
+// `.toString()` (see browserScript() below) so the unit-tested logic here is
+// the literal code that runs in the kiosk browser — not a hand-duplicated
+// copy that could drift.
+function anchorCountdownText(nowMinutes, arrivalTime, endTime, label) {
+  const toMinutes = value => {
+    const match = /^(\d{1,2}):(\d{2})$/.exec(String(value ?? ''));
+    if (!match) return null;
+    return Number(match[1]) * 60 + Number(match[2]);
+  };
+  const arrivalMinutes = toMinutes(arrivalTime);
+  const endMinutes = toMinutes(endTime);
+  if (arrivalMinutes === null || endMinutes === null) return '';
+  const formatRemaining = minutes => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return hours > 0 ? `${hours}h ${mins}m` : `${mins} min`;
+  };
+  if (nowMinutes < arrivalMinutes) return `${label} starts in ${formatRemaining(arrivalMinutes - nowMinutes)}`;
+  if (nowMinutes < endMinutes) return `${label} — ends in ${formatRemaining(endMinutes - nowMinutes)}`;
+  return '';
+}
+
 function peopleForEvent(event) {
   const haystack = `${event?.title || ''} ${event?.subtitle || ''} ${event?._calName || ''}`.toLowerCase();
   const myles = /myles/.test(haystack);
@@ -387,17 +415,16 @@ function renderToday(data) {
   const dinner = data.menuEvent;
   const tomorrow = data.tomorrowMenu;
 
-  // Routine Anchors Phase 1: static display only, independent of schoolStrip
-  // above — no holiday/exception reconciliation yet (see routineAnchorsParser.js).
+  // Routine Anchors Phase 3: live countdown to arrival/end, computed
+  // entirely client-side (see anchorCountdownText() + tick() in
+  // browserScript()) from the data-anchor-* attributes below. No display
+  // string is formatted here — the generated artifact can sit in the kiosk
+  // browser for hours before the next refresh, so baking in a state
+  // ("before arrival" vs "in session") at server-render time would go stale
+  // long before the next regeneration. Suppression/exception reconciliation
+  // (Phase 2) is unchanged — this phase only changes how the active anchor
+  // is displayed.
   const activeAnchor = (data.routineAnchorsToday || [])[0] || null;
-  const formatAnchorTime = value => {
-    if (!/^\d{1,2}:\d{2}$/.test(String(value))) return '';
-    const [hour, minute] = value.split(':').map(Number);
-    return new Date(2000, 0, 1, hour, minute).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-  };
-  const anchorTimeRange = activeAnchor
-    ? `${formatAnchorTime(activeAnchor.arrivalTime)} – ${formatAnchorTime(activeAnchor.endTime)}`
-    : '';
 
   return `<section class="paper-panel today-panel">
     ${renderSectionTitle(`Today — ${formatCalendarDate(data.today, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`, 'green', 'star')}
@@ -410,9 +437,8 @@ function renderToday(data) {
         <strong>School today</strong>
         <span><b class="myles-text">Myles</b> — ${esc(school.myles?.center || '—')} · <b class="ophelia-text">Ophelia</b> — ${esc(school.ophelia?.center || '—')}</span>
       </div>` : ''}
-      ${activeAnchor ? `<div class="school-line">
-        <strong>${esc(activeAnchor.label)}</strong>
-        <span>${esc(anchorTimeRange)}</span>
+      ${activeAnchor ? `<div class="school-line" data-anchor-arrival="${esc(activeAnchor.arrivalTime)}" data-anchor-end="${esc(activeAnchor.endTime)}" data-anchor-label="${esc(activeAnchor.label)}" hidden>
+        <span id="anchor-countdown-text"></span>
       </div>` : ''}
       <div class="dinner-block">
         ${renderSectionTitle("Tonight's Dinner", 'green', 'dinner')}
@@ -856,6 +882,8 @@ function browserScript() {
     const clock = document.getElementById('live-clock');
     const date = document.getElementById('live-date');
     const countdown = document.querySelector('.countdown-card');
+    const anchorLine = document.querySelector('.school-line[data-anchor-arrival]');
+    const anchorCountdownText = ${anchorCountdownText.toString()};
     const paletteSetting = dashboard?.dataset.palette || 'auto';
     const logoMap = ${JSON.stringify(V2_LOGOS)};
     const validSports = s => {const str=x=>x==null||typeof x==='string',records=x=>x==null||(x&&['overall','conference','regularSeason','preseason'].every(k=>str(x[k]))),result=x=>x==null||(x.state==='final'&&['W','L','T'].includes(x.result)&&Number.isFinite(x.teamScore)&&Number.isFinite(x.opponentScore)),source=x=>x==null||(x&&typeof x.stale==='boolean'&&typeof x.fromCache==='boolean');return s&&s.schemaVersion===1&&s.version===1&&source(s.source)&&Array.isArray(s.slots)&&s.slots.length===4&&!s.slots.some(x=>s.source?.stale&&x.event?.state==='live')&&s.slots.every(x=>x&&typeof x.organization==='string'&&typeof x.logo==='string'&&!/^https?:/i.test(x.logo)&&str(x.record)&&records(x.records)&&str(x.conference)&&str(x.standing)&&result(x.lastResult));};
@@ -896,6 +924,14 @@ function browserScript() {
         const days = Math.max(0, Math.ceil((target - today) / 86400000));
         const el = document.getElementById('live-countdown');
         if (el) el.textContent = String(days);
+      }
+      if (anchorLine) {
+        const nowClockParts = new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: zone }).formatToParts(now);
+        const nowMinutes = Number(nowClockParts.find(part => part.type === 'hour').value) * 60 + Number(nowClockParts.find(part => part.type === 'minute').value);
+        const text = anchorCountdownText(nowMinutes, anchorLine.dataset.anchorArrival, anchorLine.dataset.anchorEnd, anchorLine.dataset.anchorLabel || '');
+        const el = document.getElementById('anchor-countdown-text');
+        if (el) el.textContent = text;
+        anchorLine.hidden = !text;
       }
     };
     const fit = () => {
@@ -1109,4 +1145,5 @@ export {
   sportsMetadataCopy,
   PALETTE,
   V2_LOGOS,
+  anchorCountdownText,
 };
