@@ -23,7 +23,7 @@
  *   days:            DigestDay[]     72-hour window (up to 3 days)
  *   flags:           Flag[]
  *   schoolStrip:     object
- *   routineAnchorsToday: object[]  Active routine anchors for `today`, empty when suppressed by a 🏫 Family-calendar exception (see digest/routineAnchorsParser.js)
+ *   routineAnchorsToday: object[]  Active routine anchors for `today`; each anchor is independently suppressed by the source appropriate to its type — school-type anchors by a 🏫 Family-calendar exception, caregiver-type anchors (a `caregiver` field) by emmaUnavailabilityParser.js blocks (see digest/routineAnchorsParser.js)
  *   upcomingEvents:  ResolvedEvent[] 14-day lookahead for dashboard
  *   athletics:       AthleticsData
  *   menuEvent:       ResolvedEvent|null   today's dinner
@@ -53,7 +53,7 @@ import { resolve } from 'node:path';
 import { resolveEvent } from './aliases.js';
 import { computeFlags } from './flags.js';
 import { getSchoolStrip } from './schoolRotation.js';
-import { getActiveAnchors, isRoutineSuppressedByCalendar } from './routineAnchorsParser.js';
+import { getActiveAnchors, isRoutineSuppressedByCalendar, isCaregiverAnchorSuppressed } from './routineAnchorsParser.js';
 import { midnight, daysBetween, toDateKey, parseEventDate, normalizeEvent, startOfTodayET } from './dateUtils.js';
 import { parseAthleticsDoc } from './athleticsParser.js';
 import { buildGmailHits, buildActivityCommsLines } from './gmailParser.js';
@@ -170,10 +170,10 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object}       [params.wavesSeasonData]  Waves season data (data/waves-season.json)
  * @param {object|null}  [params.vpsuRankings]     VPSU league rankings (data/vpsu-rankings.json); null on file error
  * @param {object|null}  [params.sharksData]       Tidewater Sharks soccer season data (data/sharks-soccer.json)
- * @param {object|null}  [params.routineAnchorsData] Routine anchors (data/routine-anchors.json); null on file error — see digest/routineAnchorsParser.js. Suppressed on 🏫 No School / Early Release days (Phase 2); no early-dismissal time computation.
+ * @param {object|null}  [params.routineAnchorsData] Routine anchors (data/routine-anchors.json); null on file error — see digest/routineAnchorsParser.js. School-type anchors suppressed on 🏫 No School / Early Release days; caregiver-type anchors (a `caregiver` field) suppressed by emmaUnavailabilityParser.js blocks. No early-dismissal time computation.
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -272,13 +272,6 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   // ── 6. School rotation strip ─────────────────────────────────────────────
   const schoolStrip = getSchoolStrip(today);
 
-  // ── 6.5. Routine anchors (Phase 2 — suppressed on 🏫 No School / Early
-  // Release days; see routineAnchorsParser.js for what's still out of scope) ──
-  const routineSuppressedToday = isRoutineSuppressedByCalendar(normalized14d, today);
-  const routineAnchorsToday = routineSuppressedToday
-    ? []
-    : getActiveAnchors(routineAnchorsData?.anchors, today);
-
   // ── 7. Generate tasks for each day ──────────────────────────────────────
   for (const day of dayMap.values()) {
     day.tasks = generateTasks(day.events, day.date, schoolStrip);
@@ -319,13 +312,28 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   }
 
   // ── 12.6. Emma unavailability blocks ─────────────────────────────────────
-  let emmaUnavailableBlocks = [];
-  try {
-    const euResult = await fetchEmmaUnavailabilityBlocks(today);
-    emmaUnavailableBlocks = euResult.emmaUnavailableBlocks;
-  } catch (err) {
-    console.warn('[builder:buildDigest] emmaUnavailableBlocks fetch failed — continuing:', err.message);
+  // Params are left as optional so tests can inject fixture arrays directly,
+  // same convention as routineAnchorsData/pbRecords/etc above — only
+  // undefined (param absent) triggers the live calendar fetch.
+  if (emmaUnavailableBlocks === undefined) {
+    emmaUnavailableBlocks = [];
+    try {
+      const euResult = await fetchEmmaUnavailabilityBlocks(today);
+      emmaUnavailableBlocks = euResult.emmaUnavailableBlocks;
+    } catch (err) {
+      console.warn('[builder:buildDigest] emmaUnavailableBlocks fetch failed — continuing:', err.message);
+    }
   }
+
+  // ── 12.7. Routine anchors (computed here, after 12.6, because caregiver-
+  // type anchors need emmaUnavailableBlocks for suppression; school-type
+  // anchors are suppressed independently via the 🏫 Family-calendar scan —
+  // each anchor is checked against only the suppression source that applies
+  // to it, not a single blanket check across the whole array) ──────────────
+  const routineAnchorsToday = getActiveAnchors(routineAnchorsData?.anchors, today)
+    .filter(anchor => anchor.caregiver
+      ? !isCaregiverAnchorSuppressed(emmaUnavailableBlocks, today)
+      : !isRoutineSuppressedByCalendar(normalized14d, today));
 
   // ── 13. Bag prep look-ahead warnings ────────────────────────────────────
   const bagPrepWarnings = buildBagPrepLookahead(allResolved, today);

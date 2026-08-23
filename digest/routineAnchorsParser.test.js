@@ -15,6 +15,7 @@ import {
   getActiveAnchors,
   schoolExceptionSuppressesAnchor,
   isRoutineSuppressedByCalendar,
+  isCaregiverAnchorSuppressed,
 } from './routineAnchorsParser.js';
 
 const SCHOOL_ANCHOR = {
@@ -26,6 +27,18 @@ const SCHOOL_ANCHOR = {
   arrivalTime: '07:30',
   endTime: '15:49',
   label: 'School',
+};
+
+const EMMA_ANCHOR = {
+  id: 'emma-weekday',
+  appliesTo: ['Myles', 'Ophelia'],
+  caregiver: 'Emma',
+  weekdays: [1, 2, 3, 4, 5],
+  effectiveStart: '2026-08-10',
+  effectiveEnd: null,
+  arrivalTime: '13:00',
+  endTime: '18:00',
+  label: 'Emma',
 };
 
 // ── isAnchorActiveOn ─────────────────────────────────────────────────────────
@@ -82,6 +95,18 @@ describe('isAnchorActiveOn(anchor, date)', () => {
     // a holiday that fell *inside* effectiveStart/effectiveEnd on a matching weekday
     // would still evaluate true. See the Phase 1 report for this documented gap.
     assert.equal(isAnchorActiveOn(SCHOOL_ANCHOR, new Date(2026, 4, 25)), false);
+  });
+
+  it('a null effectiveEnd is open-ended — matches a weekday arbitrarily far in the future', () => {
+    // EMMA_ANCHOR.effectiveEnd is null (no known end date). The existing
+    // `if (anchor.effectiveEnd && ...)` guard already treats a falsy
+    // effectiveEnd as no upper bound — confirmed here with zero parser changes.
+    assert.equal(isAnchorActiveOn(EMMA_ANCHOR, new Date(2030, 0, 7)), true); // Monday, 2030-01-07
+  });
+
+  it('a null effectiveEnd still respects effectiveStart as a lower bound', () => {
+    assert.equal(isAnchorActiveOn(EMMA_ANCHOR, new Date(2026, 7, 3)), false); // Monday, 2026-08-03 — before effectiveStart 2026-08-10
+    assert.equal(isAnchorActiveOn(EMMA_ANCHOR, new Date(2026, 7, 10)), true); // Monday, 2026-08-10 — effectiveStart itself
   });
 });
 
@@ -245,5 +270,50 @@ describe('isRoutineSuppressedByCalendar(events, date)', () => {
   it('returns false for an empty/absent events list', () => {
     assert.equal(isRoutineSuppressedByCalendar([], new Date(2026, 10, 26)), false);
     assert.equal(isRoutineSuppressedByCalendar(undefined, new Date(2026, 10, 26)), false);
+  });
+});
+
+// ── Caregiver anchors: suppression against emmaUnavailabilityParser.js blocks ──
+// Block shape per emmaUnavailabilityParser.js's parseEmmaUnavailabilityBlocks():
+// { id, type, startDate, endDate } — both dates already inclusive (endDate is
+// converted from Google's exclusive end.date by exclusiveEndToInclusive()
+// before this module ever sees it), unlike isRoutineSuppressedByCalendar's
+// raw-event exclusive-end comparison.
+
+const UTA_RESERVE_BLOCK = { id: 'emma-unavail-2026-10-16-uta-reserve', type: 'UTA (Reserve)', startDate: '2026-10-16', endDate: '2026-10-19' };
+const ANNUAL_TOUR_BLOCK = { id: 'emma-unavail-2026-12-01-annual-tour-duty', type: 'Annual Tour Duty', startDate: '2026-12-01', endDate: '2026-12-15' };
+
+describe('isCaregiverAnchorSuppressed(blocks, date)', () => {
+  const blocks = [UTA_RESERVE_BLOCK, ANNUAL_TOUR_BLOCK];
+
+  it('suppresses on a day inside a block (inclusive start)', () => {
+    assert.equal(isCaregiverAnchorSuppressed(blocks, new Date(2026, 9, 16)), true); // Fri 10/16 — startDate itself
+  });
+
+  it('suppresses on the inclusive endDate itself', () => {
+    assert.equal(isCaregiverAnchorSuppressed(blocks, new Date(2026, 9, 19)), true); // Mon 10/19 — endDate itself, inclusive (unlike isRoutineSuppressedByCalendar)
+  });
+
+  it('does NOT suppress the day after the inclusive endDate', () => {
+    assert.equal(isCaregiverAnchorSuppressed(blocks, new Date(2026, 9, 20)), false); // Tue 10/20
+  });
+
+  it('does NOT suppress the day before startDate', () => {
+    assert.equal(isCaregiverAnchorSuppressed(blocks, new Date(2026, 9, 15)), false); // Thu 10/15
+  });
+
+  it('suppresses across a second, non-adjacent block independently of the first', () => {
+    assert.equal(isCaregiverAnchorSuppressed(blocks, new Date(2026, 11, 1)), true);  // Tue 12/1 — Annual Tour start
+    assert.equal(isCaregiverAnchorSuppressed(blocks, new Date(2026, 11, 15)), true); // Tue 12/15 — Annual Tour end
+    assert.equal(isCaregiverAnchorSuppressed(blocks, new Date(2026, 11, 16)), false); // Wed 12/16 — day after
+  });
+
+  it('does not suppress a normal weekday with no block at all', () => {
+    assert.equal(isCaregiverAnchorSuppressed(blocks, new Date(2026, 8, 1)), false); // Tue 9/1
+  });
+
+  it('returns false for an empty/absent blocks list', () => {
+    assert.equal(isCaregiverAnchorSuppressed([], new Date(2026, 9, 17)), false);
+    assert.equal(isCaregiverAnchorSuppressed(undefined, new Date(2026, 9, 17)), false);
   });
 });

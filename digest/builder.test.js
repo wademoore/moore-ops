@@ -527,6 +527,39 @@ const raNotSuppressedFirstDay = await buildDigest({
 });
 assert(raNotSuppressedFirstDay.routineAnchorsToday.length === 1, '🏫 First Day of School does NOT suppress the anchor');
 
+section('buildDigest — school and Emma anchors coexist independently (caregiver suppression)');
+const emmaAnchor = {
+  id: 'emma-weekday', appliesTo: ['Myles', 'Ophelia'], caregiver: 'Emma', label: 'Emma',
+  weekdays: [todayDow], effectiveStart: isoDate(-30), effectiveEnd: null,
+  arrivalTime: '13:00', endTime: '18:00',
+};
+const emmaUnavailableTodayBlock = { id: 'test-block', type: 'UTA (Reserve)', startDate: isoDate(0), endDate: isoDate(0) };
+
+const bothActive = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor, emmaAnchor] },
+  emmaUnavailableBlocks: [],
+});
+assert(bothActive.routineAnchorsToday.length === 2,                                       'Both school and Emma anchors appear when neither is suppressed');
+assert(bothActive.routineAnchorsToday.some(a => a.id === 'school-weekday'),               'School anchor present when both active');
+assert(bothActive.routineAnchorsToday.some(a => a.id === 'emma-weekday'),                 'Emma anchor present when both active');
+
+const emmaSuppressedOnly = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor, emmaAnchor] },
+  emmaUnavailableBlocks: [emmaUnavailableTodayBlock],
+});
+assert(emmaSuppressedOnly.routineAnchorsToday.length === 1,                               'Only one anchor appears when Emma is unavailable today');
+assert(emmaSuppressedOnly.routineAnchorsToday[0].id === 'school-weekday',                 'School anchor unaffected by Emma unavailability suppression');
+
+const schoolSuppressedOnly = await buildDigest({
+  rawEvents: [noSchoolTodayEvent], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor, emmaAnchor] },
+  emmaUnavailableBlocks: [],
+});
+assert(schoolSuppressedOnly.routineAnchorsToday.length === 1,                             'Only one anchor appears when school is suppressed by 🏫 No School today');
+assert(schoolSuppressedOnly.routineAnchorsToday[0].id === 'emma-weekday',                 'Emma anchor unaffected by school-calendar suppression');
+
 section('buildDigest — menu event routing (today)');
 const menuRaw14  = { summary: 'Spaghetti Bolognese', calendarName: 'Menu', start: { date: isoDate(0) } };
 const activityRaw = { summary: 'ADP Practice',       calendarName: 'Myles', start: { dateTime: isoDateTime(0, 18) } };

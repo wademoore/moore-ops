@@ -10,6 +10,18 @@
       "endTime": "15:49",
       "label": "School",
       "note": "Window covers Rec Connect before-school drop-off (7:30 AM) through actual bus arrival home (3:49 PM, corner of Frederick Dr. and Merestep Away) — a confirmed fixed daily time, not an estimate."
+    },
+    {
+      "id": "emma-weekday",
+      "appliesTo": ["Myles", "Ophelia"],
+      "caregiver": "Emma",
+      "weekdays": [1, 2, 3, 4, 5],
+      "effectiveStart": "2026-08-10",
+      "effectiveEnd": null,
+      "arrivalTime": "13:00",
+      "endTime": "18:00",
+      "label": "Emma",
+      "note": "Emma's normal working hours (M-F 1-6 PM), started 2026-08-10. effectiveEnd is null — no known end date as of this writing, not a claim of permanence; update/remove when one exists. Suppressed on days matching an emmaUnavailabilityParser.js block (reserve duty etc.), not by a separate calendar-title mechanism like the school anchor."
     }
   ]
 }

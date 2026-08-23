@@ -21,6 +21,15 @@
  * title) does not. Early-dismissal time computation is explicitly out of
  * scope — the source events don't carry a real release time to compute
  * from, so suppression is all-or-nothing.
+ *
+ * Caregiver anchors (e.g. Emma) use a different suppression source: any
+ * anchor carrying a `caregiver` field is suppressed by
+ * isCaregiverAnchorSuppressed() against emmaUnavailabilityParser.js's
+ * already-parsed { startDate, endDate } blocks, rather than by
+ * isRoutineSuppressedByCalendar()'s 🏫-calendar-title scan. Which check
+ * applies to which anchor is decided by the caller (builder.js) based on
+ * the presence of `anchor.caregiver` — this module only provides the two
+ * independent suppression checks, not the branching itself.
  */
 
 import { toDateKey } from './dateUtils.js';
@@ -96,4 +105,30 @@ export function isRoutineSuppressedByCalendar(events, date, calendarName = SCHOO
     if (!schoolExceptionSuppressesAnchor(event.summary)) return false;
     return key >= event.start.date && key < event.end.date;
   });
+}
+
+/**
+ * True if any block in `blocks` covers `date` — used to suppress a
+ * caregiver-type anchor (one carrying a `caregiver` field) on days the
+ * caregiver is marked unavailable.
+ *
+ * Unlike isRoutineSuppressedByCalendar()'s raw-event scan, `blocks` here
+ * are already-parsed { startDate, endDate } ranges (e.g. from
+ * emmaUnavailabilityParser.js's parseEmmaUnavailabilityBlocks()), and
+ * endDate is already inclusive (converted from Google's exclusive
+ * end.date by that module's exclusiveEndToInclusive()) — so the
+ * comparison here is `<=`, not `<`.
+ *
+ * Generic over which caregiver: this function doesn't know or care whose
+ * blocks it's checking — the caller decides which blocks array to pass
+ * based on which anchor's `caregiver` field is being evaluated.
+ *
+ * @param {object[]} blocks  Array of { startDate, endDate } (both inclusive
+ *   "YYYY-MM-DD"), e.g. builder.js's `emmaUnavailableBlocks`.
+ * @param {Date} date
+ * @returns {boolean}
+ */
+export function isCaregiverAnchorSuppressed(blocks, date) {
+  const key = toDateKey(date);
+  return (blocks || []).some(block => key >= block.startDate && key <= block.endDate);
 }
