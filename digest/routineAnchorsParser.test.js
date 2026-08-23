@@ -23,8 +23,8 @@ const SCHOOL_ANCHOR = {
   weekdays: [1, 2, 3, 4, 5],
   effectiveStart: '2026-08-24',
   effectiveEnd: '2027-06-09',
-  arrivalTime: '08:15',
-  endTime: '15:45',
+  arrivalTime: '07:30',
+  endTime: '15:25',
   label: 'School',
 };
 

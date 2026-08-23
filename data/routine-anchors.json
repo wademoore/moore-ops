@@ -6,9 +6,10 @@
       "weekdays": [1, 2, 3, 4, 5],
       "effectiveStart": "2026-08-24",
       "effectiveEnd": "2027-06-09",
-      "arrivalTime": "08:15",
-      "endTime": "15:45",
-      "label": "School"
+      "arrivalTime": "07:30",
+      "endTime": "15:25",
+      "label": "School",
+      "note": "Window covers Rec Connect before-school drop-off (~7:30 AM) through Stonehouse dismissal (3:25 PM per WJCC). Bus-ride-home duration afterward is variable and deliberately unmodeled — endTime is dismissal, not arrival home."
     }
   ]
 }

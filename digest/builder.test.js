@@ -478,7 +478,7 @@ const todayDow = startOfTodayET().getDay();
 const matchingAnchor = {
   id: 'school-weekday', appliesTo: ['Myles', 'Ophelia'], label: 'School',
   weekdays: [todayDow], effectiveStart: isoDate(-1), effectiveEnd: isoDate(1),
-  arrivalTime: '08:15', endTime: '15:45',
+  arrivalTime: '07:30', endTime: '15:25',
 };
 const nonMatchingAnchor = { ...matchingAnchor, id: 'wrong-weekday', weekdays: [(todayDow + 1) % 7] };
 
