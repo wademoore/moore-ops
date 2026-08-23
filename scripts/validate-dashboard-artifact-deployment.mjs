@@ -37,7 +37,7 @@ for (const dependency of ['@googleapis/calendar', 'google-auth-library']) {
 for (const directory of inputs.assetDirectories) if (!covered(directory + '/placeholder')) failures.push(`asset directory is not covered by deployment paths: ${directory}`);
 for (const path of inputs.requiredAssetFiles || []) if (!inputs.assetDirectories.some(directory => `render/${path}`.startsWith(`${directory}/`))) failures.push(`required asset is outside packaged directories: ${path}`);
 for (const name of inputs.dataFiles) if (!covered(`data/${name}`)) failures.push(`data file is not covered by deployment paths: data/${name}`);
-for (const path of [workflowPath, 'package.json', 'package-lock.json', 'infrastructure/dashboard-artifact-refresh/template.json', 'scripts/prepare-dashboard-artifact-package.mjs', 'scripts/validate-dashboard-artifact-deployment.mjs', 'scripts/validate-dashboard-artifact-package.mjs']) {
+for (const path of [workflowPath, 'package.json', 'package-lock.json', 'infrastructure/dashboard-artifact-refresh/template.json', 'scripts/prepare-dashboard-artifact-package.mjs', 'scripts/validate-dashboard-artifact-deployment.mjs', 'scripts/validate-dashboard-artifact-package.mjs', 'scripts/smoke-dashboard-artifact-package.cjs']) {
   if (!covered(path)) failures.push(`deployment control is not self-covered: ${path}`);
 }
 if (!workflow.includes('"SourceRevision=$GITHUB_SHA"')) failures.push('deployment does not pin SourceRevision to the integrated commit');
