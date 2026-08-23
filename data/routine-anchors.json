@@ -7,9 +7,9 @@
       "effectiveStart": "2026-08-24",
       "effectiveEnd": "2027-06-09",
       "arrivalTime": "07:30",
-      "endTime": "15:25",
+      "endTime": "15:49",
       "label": "School",
-      "note": "Window covers Rec Connect before-school drop-off (~7:30 AM) through Stonehouse dismissal (3:25 PM per WJCC). Bus-ride-home duration afterward is variable and deliberately unmodeled — endTime is dismissal, not arrival home."
+      "note": "Window covers Rec Connect before-school drop-off (7:30 AM) through actual bus arrival home (3:49 PM, corner of Frederick Dr. and Merestep Away) — a confirmed fixed daily time, not an estimate."
     }
   ]
 }

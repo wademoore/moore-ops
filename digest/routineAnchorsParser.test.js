@@ -24,7 +24,7 @@ const SCHOOL_ANCHOR = {
   effectiveStart: '2026-08-24',
   effectiveEnd: '2027-06-09',
   arrivalTime: '07:30',
-  endTime: '15:25',
+  endTime: '15:49',
   label: 'School',
 };
 
