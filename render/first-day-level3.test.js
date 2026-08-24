@@ -33,6 +33,11 @@ describe('first day Level-3 takeover',()=>{
     const unlabeled={...milestone,_calName:undefined};
     assert.equal(shouldRenderFirstDayLevel3({...base,days:[{events:[unlabeled]}]}),true);
   });
+  it('preserves the digest calendar day when today is UTC midnight',()=>{
+    const lambdaToday={...base,today:new Date('2026-08-24T00:00:00.000Z')};
+    assert.equal(shouldRenderFirstDayLevel3(lambdaToday),true);
+    assert.match(renderDashboardV2(lambdaToday),/first-day-dashboard/);
+  });
   it('returns to Level-2 immediately at the configured 7:45 handoff',()=>{
     const data={...base,now:new Date('2026-08-24T07:45:00-04:00')};
     assert.equal(shouldRenderFirstDayLevel3(data),false);

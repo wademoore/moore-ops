@@ -8,6 +8,7 @@ const asset = name => {
 };
 const esc = value => String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');
 const dateKey = value => new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(value));
+const dashboardDayKey = value => new Date(value).toISOString().slice(0,10);
 const eventKey = event => event?.raw?.start?.date || (event?.raw?.start?.dateTime ? dateKey(event.raw.start.dateTime) : null);
 const eventTime = event => event?.displayTime || (event?.raw?.start?.dateTime ? new Date(event.raw.start.dateTime).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/New_York'}) : 'All day');
 const eventStamp = event => new Date(event?.raw?.start?.dateTime || `${eventKey(event)}T12:00:00`).getTime();
@@ -16,7 +17,7 @@ const person = event => { const text=`${event?.title||''} ${event?.subtitle||''}
 const todayEvents = data => (data.days?.[0]?.events || []).filter(event => event.cardType !== 'menu');
 
 function milestones(data) {
-  const key=dateKey(data.today);
+  const key=dashboardDayKey(data.today);
   return [...todayEvents(data),...(data.upcomingEvents||[])].filter(event=>eventKey(event)===key&&clean(event.title)==='First Day of School (Myles and Ophelia)');
 }
 
@@ -30,7 +31,7 @@ function easternInstant(day, time) {
 }
 
 function timeline(data) {
-  const day=dateKey(data.today);
+  const day=dashboardDayKey(data.today);
   const configured=(value,fallback)=>/^\d{2}:\d{2}$/.test(value||'')?value:fallback;
   return {
     preparation:easternInstant(day,'07:00'),
@@ -66,7 +67,7 @@ function schedule(data) {
 }
 
 function selectComing(data) {
-  const today=dateKey(data.today), seen=new Set();
+  const today=dashboardDayKey(data.today), seen=new Set();
   return (data.upcomingEvents||[]).filter(event=>event.cardType!=='menu'&&eventKey(event)>today).sort((a,b)=>eventStamp(a)-eventStamp(b)).filter(event=>{const id=`${eventKey(event)}|${clean(event.title).toLowerCase()}`;if(seen.has(id))return false;seen.add(id);return true}).slice(0,3);
 }
 
