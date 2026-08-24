@@ -14,7 +14,12 @@
       { "time": "1:05-2:30", "activity": "Math (Gifted - Kay Dee Kline)" },
       { "time": "2:30-3:15", "activity": "Science/Social Studies" },
       { "time": "3:15-3:25", "activity": "Pack-up/Dismissal" }
-    ]
+    ],
+    "centersGroup": null,
+    "centersRotation": {
+      "note": "Collins homeroom sequence, confirmed from Open House packet Week 1 table. Not yet confirmed as Myles's permanent numbered group (groups assigned week of 8/31 based on music selection) — cross-check against whichever Group 1-6 pattern matches once assigned.",
+      "sequence": ["Music", "Music", "PE1", "Art", "Computer", "PE2", "Media"]
+    }
   },
   "ophelia": {
     "grade": 2,
