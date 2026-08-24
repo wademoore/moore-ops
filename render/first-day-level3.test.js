@@ -59,6 +59,11 @@ describe('first day Level-3 takeover',()=>{
     assert.equal(coda.next.title,'Tacos');
     assert.doesNotMatch(`${coda.now.title} ${coda.now.subtitle} ${coda.next.title} ${coda.next.subtitle}`,/prepar|depart|arriv|rec connect/i);
   });
+  it('evaluates the live clock immediately when a stale morning artifact reopens for coda',()=>{
+    const html=renderDashboardV2({...base,now:new Date('2026-08-24T07:27:00-04:00')});
+    assert.match(html,/window\.updateFirstDayLevel3=update;update\(new Date\(\)\)/);
+    assert.doesNotMatch(html,/window\.updateFirstDayLevel3=update;update\(\d+\)/);
+  });
   it('kill switch disables both first-day phases',()=>{
     assert.equal(shouldRenderFirstDayLevel3({...base,firstDayLevel3:false,now:new Date('2026-08-24T07:20:00-04:00')}),false);
     assert.equal(shouldRenderFirstDayLevel3({...base,firstDayLevel3:false,now:new Date('2026-08-24T16:00:00-04:00')}),false);
