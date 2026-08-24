@@ -66,6 +66,19 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     three: sampleDashboardV2Data,
     canonicalBusy: {
       ...sampleDashboardV2Data,
+      schoolStrip: {
+        ...sampleDashboardV2Data.schoolStrip,
+        centersWeek: {
+          ...sampleDashboardV2Data.schoolStrip.centersWeek,
+          children: sampleDashboardV2Data.schoolStrip.centersWeek.children.map((child, childIndex) => childIndex ? child : {
+            ...child,
+            days: child.days.map((day, dayIndex) => ({
+              ...day,
+              center: ['Media Center / Library', 'Physical Education 1', 'Guidance Counseling', 'Computer Lab', 'Performing Arts'][dayIndex],
+            })),
+          }),
+        },
+      },
       nowNext: {
         tone: 'problem', signal: 'Pickup needs coverage', subject: 'Both kids — 4-H Camp · 4:30 PM', qualifier: 'Emma unavailable',
         context: ['Resolve before 3:45 PM', 'James City County'],
