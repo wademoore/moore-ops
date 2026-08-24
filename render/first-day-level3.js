@@ -17,7 +17,7 @@ const todayEvents = data => (data.days?.[0]?.events || []).filter(event => event
 
 function milestones(data) {
   const key=dateKey(data.today);
-  return [...todayEvents(data),...(data.upcomingEvents||[])].filter(event=>eventKey(event)===key&&event?._calName==='Family'&&clean(event.title)==='First Day of School (Myles and Ophelia)');
+  return [...todayEvents(data),...(data.upcomingEvents||[])].filter(event=>eventKey(event)===key&&clean(event.title)==='First Day of School (Myles and Ophelia)');
 }
 
 const hasFirstDayMilestone = data => milestones(data).length > 0;

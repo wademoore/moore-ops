@@ -29,6 +29,10 @@ describe('first day Level-3 takeover',()=>{
     assert.match(html,/FIRST DAY|First Day of School/);
     assert.doesNotMatch(html,/athletics-panel|Weekly priorities|sports-ticker/);
   });
+  it('does not depend on the calendar display label',()=>{
+    const unlabeled={...milestone,_calName:undefined};
+    assert.equal(shouldRenderFirstDayLevel3({...base,days:[{events:[unlabeled]}]}),true);
+  });
   it('returns to Level-2 immediately at the configured 7:45 handoff',()=>{
     const data={...base,now:new Date('2026-08-24T07:45:00-04:00')};
     assert.equal(shouldRenderFirstDayLevel3(data),false);
