@@ -1,0 +1,25 @@
+{
+  "schoolYear": "2026-2027",
+  "myles": {
+    "grade": 5,
+    "school": "Stonehouse Elementary",
+    "teacher": "Curtis Collins",
+    "classSchedule": [
+      { "time": "8:50-9:10", "activity": "Breakfast/Morning Meeting" },
+      { "time": "9:15-10:00", "activity": "Centers" },
+      { "time": "10:00-11:55", "activity": "Language Arts (Gifted - Kay Dee Kline)" },
+      { "time": "11:55-12:05", "activity": "Class Meeting" },
+      { "time": "12:10-12:40", "activity": "Lunch" },
+      { "time": "12:40-1:00", "activity": "Recess" },
+      { "time": "1:05-2:30", "activity": "Math (Gifted - Kay Dee Kline)" },
+      { "time": "2:30-3:15", "activity": "Science/Social Studies" },
+      { "time": "3:15-3:25", "activity": "Pack-up/Dismissal" }
+    ]
+  },
+  "ophelia": {
+    "grade": 2,
+    "school": "Stonehouse Elementary",
+    "teacher": null,
+    "classSchedule": []
+  }
+}
