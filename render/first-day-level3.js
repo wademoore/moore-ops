@@ -1,12 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
 
-const ASSET_DIR = process.env.DASHBOARD_FIRST_DAY_ASSET_DIR
-  ? pathToFileURL(`${resolve(process.env.DASHBOARD_FIRST_DAY_ASSET_DIR)}/`)
-  : new URL('./assets-first-day/', import.meta.url);
+const ASSET_DIR = resolve(process.env.DASHBOARD_FIRST_DAY_ASSET_DIR || 'render/assets-first-day');
 const asset = name => {
-  try { return `data:image/png;base64,${readFileSync(fileURLToPath(new URL(name, ASSET_DIR))).toString('base64')}`; }
+  try { return `data:image/png;base64,${readFileSync(resolve(ASSET_DIR, name)).toString('base64')}`; }
   catch { return ''; }
 };
 const esc = value => String(value ?? '').replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;');

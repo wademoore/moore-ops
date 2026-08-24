@@ -12,7 +12,7 @@ const bundlePath = bundleCandidates.find(candidate => fs.existsSync(candidate));
 assert.ok(bundlePath, 'built generator bundle is missing');
 
 process.env.DASHBOARD_ASSET_DIR = path.join(packageRoot, 'assets-v2');
-process.env.DASHBOARD_FIRST_DAY_ASSET_DIR = path.join(packageRoot, 'assets-first-day');
+delete process.env.DASHBOARD_FIRST_DAY_ASSET_DIR;
 
 const packagedModule = new Module(bundlePath);
 packagedModule.filename = bundlePath;
