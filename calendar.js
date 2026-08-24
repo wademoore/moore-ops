@@ -50,11 +50,12 @@ export async function fetchCalendarEvents(auth, calendarId, timeMin, timeMax) {
 
 // ── Core pull function — shared by both exports ────────────────────────────
 
-async function pullCalendarEvents(hoursAhead) {
+async function pullCalendarEvents(hoursAhead, hoursBehind = 0) {
   const auth = await getAuthClient();
   const cal = calendar({ version: "v3", auth });
 
   const now = new Date();
+  const timeMin = new Date(now.getTime() - hoursBehind * 60 * 60 * 1000);
   const timeMax = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
 
   const results = await Promise.all(
@@ -62,7 +63,7 @@ async function pullCalendarEvents(hoursAhead) {
       try {
         const res = await cal.events.list({
           calendarId: id,
-          timeMin: now.toISOString(),
+          timeMin: timeMin.toISOString(),
           timeMax: timeMax.toISOString(),
           singleEvents: true,
           orderBy: "startTime",
@@ -94,7 +95,10 @@ export async function getCalendarEvents() {
 // ── 14-day pull (dashboard Next Two Weeks card) ───────────────────────────
 
 export async function pull14Days() {
-  return pullCalendarEvents(14 * 24);
+  // Include the prior seven days so profile-independent weekly modules (such
+  // as Centers) can render Monday-Friday even when today is later in the week.
+  // Next Two Weeks still applies its own future-only selection in builder.js.
+  return pullCalendarEvents(14 * 24, 7 * 24);
 }
 
 // Preview-only long horizon. Production v1 does not import this function.

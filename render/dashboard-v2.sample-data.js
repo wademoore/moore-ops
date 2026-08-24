@@ -38,6 +38,18 @@ const sampleDashboardV2Data = {
   schoolStrip: {
     myles: { center: 'Music' },
     ophelia: { center: 'PE' },
+    centersWeek: {
+      weekOf: '2026-06-08',
+      currentSchoolDay: true,
+      children: [
+        { child: 'myles', name: 'Myles', available: true, provisional: true, days: [
+          { label: 'MON', center: 'Music' }, { label: 'TUE', center: 'Music', isToday: true }, { label: 'WED', center: 'PE1' }, { label: 'THU', center: 'Art' }, { label: 'FRI', center: 'Computer' },
+        ] },
+        { child: 'ophelia', name: 'Ophelia', available: false, provisional: false, days: [
+          { label: 'MON', center: null }, { label: 'TUE', center: null, isToday: true }, { label: 'WED', center: null }, { label: 'THU', center: null }, { label: 'FRI', center: null },
+        ] },
+      ],
+    },
   },
   menuEvent: { title: 'Sloppy Joes', subtitle: 'Last day of school for Ophelia — celebrate!' },
   tomorrowMenu: { title: 'Sandwiches / Wraps' },
