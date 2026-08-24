@@ -19,7 +19,24 @@
   "ophelia": {
     "grade": 2,
     "school": "Stonehouse Elementary",
-    "teacher": null,
-    "classSchedule": []
+    "teacher": "Tina Pitts",
+    "classSchedule": [
+      { "time": "8:45-9:10", "activity": "Breakfast, Arrival, Morning Routines" },
+      { "time": "9:15-9:45", "activity": "English/Language Arts (UFLI)" },
+      { "time": "9:45-11:05", "activity": "Math (Differentiation block 9:45-10:15)" },
+      { "time": "11:05-11:50", "activity": "Centers" },
+      { "time": "11:55-12:25", "activity": "Lunch" },
+      { "time": "12:25-12:40", "activity": "Restrooms/Class Meeting" },
+      { "time": "12:40-2:10", "activity": "English/Language Arts; Snack (Differentiation block 1:35-2:05)" },
+      { "time": "2:10-2:40", "activity": "Recess" },
+      { "time": "2:40-3:20", "activity": "Science or Social Studies" },
+      { "time": "3:20", "activity": "Prepare for dismissal / Parent pick-up (Green Tag: Gym-K/1+older siblings/Rec Connect; Purple Tag: Cafe-2-5)" },
+      { "time": "3:35", "activity": "Bus Dismissal" }
+    ],
+    "centersGroup": null,
+    "centersRotation": {
+      "note": "Confirmed from Mrs. Pitts' own Open House 'Daily Schedule 2026-2027' sheet. Same 6-day subject cycle as Myles's Collins-homeroom sequence (Music/PE1/Art/Computer/PE2/Media), different day-1 anchor point.",
+      "sequence": ["PE1", "Art", "Computer", "PE2", "Media", "Music"]
+    }
   }
 }
