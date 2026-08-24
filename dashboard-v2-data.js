@@ -1,5 +1,5 @@
 /**
- * Preview-only v2 data adapter.
+ * Canonical v2 read-side data adapter.
  *
  * This intentionally calls only the read side of the existing Moore Ops
  * pipeline. It never imports index.js, sends mail, uploads a dashboard, or
@@ -7,6 +7,7 @@
  */
 import { fetchDashboardWeather } from './weather.js';
 import { resolveEvent } from './digest/aliases.js';
+import { selectNowNext } from './digest/nowNextSelector.js';
 
 const WEATHER_FALLBACK = Object.freeze({
   unavailable: true,
@@ -55,7 +56,7 @@ async function fetchDashboardV2Data({
     banner,
   });
 
-  return {
+  const dashboardData = {
     ...digestData,
     horizonEvents: (rawEvents180d || []).map(event => resolveEvent({
       ...event,
@@ -65,6 +66,7 @@ async function fetchDashboardV2Data({
     sportsSnapshot,
     weather,
   };
+  return { ...dashboardData, nowNext: selectNowNext(dashboardData) };
 }
 
 export { fetchDashboardV2Data, WEATHER_FALLBACK };

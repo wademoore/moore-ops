@@ -53,6 +53,7 @@ import { resolve } from 'node:path';
 import { resolveEvent } from './aliases.js';
 import { computeFlags } from './flags.js';
 import { getSchoolStrip } from './schoolRotation.js';
+import { buildCentersWeek, isRoutineCentersEvent } from './centersProfile.js';
 import { getActiveAnchors, isRoutineSuppressedByCalendar, isCaregiverAnchorSuppressed } from './routineAnchorsParser.js';
 import { midnight, daysBetween, toDateKey, parseEventDate, normalizeEvent, startOfTodayET } from './dateUtils.js';
 import { parseAthleticsDoc } from './athleticsParser.js';
@@ -173,7 +174,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.routineAnchorsData] Routine anchors (data/routine-anchors.json); null on file error — see digest/routineAnchorsParser.js. School-type anchors suppressed on 🏫 No School / Early Release days; caregiver-type anchors (a `caregiver` field) suppressed by emmaUnavailabilityParser.js blocks. No early-dismissal time computation.
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, centersActionCues = [] }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -200,6 +201,10 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     try { routineAnchorsData = await readDataFile('routine-anchors.json'); }
     catch { routineAnchorsData = null; }
   }
+  if (kidsProfile === undefined) {
+    try { kidsProfile = await readDataFile('kids-profile.json'); }
+    catch { kidsProfile = null; }
+  }
 
   if (!config) throw new Error('[buildDigest] config is required — ensure data/sports-config.json is valid');
 
@@ -224,13 +229,11 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   // Filter out school rotation / Centers entries from both the 72-hour
   // window and the 14-day lookahead (they display in the school strip).
   const SCHOOL_ROTATION_CALENDARS = new Set(['WJCC Schools', 'Routine']);
-  const CENTERS_RE = /^Centers\s*—/i;
-
   const windowEvents = allResolved.filter(ev => {
     const d = parseEventDate(ev.raw);
     if (!d || d < todayMid || d >= in72h) return false;
     if (SCHOOL_ROTATION_CALENDARS.has(ev._calName)) return false;
-    if (CENTERS_RE.test(ev.title)) return false;
+    if (isRoutineCentersEvent(ev)) return false;
     return true;
   });
 
@@ -243,7 +246,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     if (ev.cardType === 'menu') return false;
     // Skip school rotation / Centers entries
     if (SCHOOL_ROTATION_CALENDARS.has(ev._calName)) return false;
-    if (CENTERS_RE.test(ev.title)) return false;
+    if (isRoutineCentersEvent(ev)) return false;
     return true;
   });
 
@@ -271,6 +274,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
 
   // ── 6. School rotation strip ─────────────────────────────────────────────
   const schoolStrip = getSchoolStrip(today);
+  schoolStrip.centersWeek = buildCentersWeek(kidsProfile, today, allResolved14d, centersActionCues);
 
   // ── 7. Generate tasks for each day ──────────────────────────────────────
   for (const day of dayMap.values()) {

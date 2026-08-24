@@ -1,0 +1,22 @@
+{
+  "schoolYear": "2026-2027",
+  "myles": {
+    "grade": 5,
+    "school": "Stonehouse Elementary",
+    "teacher": "Curtis Collins",
+    "classSchedule": [],
+    "centersGroup": null,
+    "centersRotation": {
+      "note": "Collins homeroom sequence, confirmed from Open House packet Week 1 table. Not yet confirmed as Myles's permanent numbered group (groups assigned week of 8/31 based on music selection) — cross-check against whichever Group 1-6 pattern matches once assigned.",
+      "sequence": ["Music", "Music", "PE1", "Art", "Computer", "PE2", "Media"]
+    }
+  },
+  "ophelia": {
+    "grade": 2,
+    "school": "Stonehouse Elementary",
+    "teacher": null,
+    "classSchedule": [],
+    "centersGroup": null,
+    "centersRotation": null
+  }
+}

@@ -2,7 +2,7 @@
 
 **Status (updated Aug 19, 2026): in production.** Phase 3C (Aug 15, 2026) cut the Pi over to Dashboard v2 as its live display, and Phase 4B (Aug 16, 2026, commit `8652963`) activated the automated Pi refresh timer against the Phase 4A artifact pipeline. See [phase-3c-production-cutover.md](phase-3c-production-cutover.md) and [phase-4b-production-refresh.md](phase-4b-production-refresh.md) for cutover/activation evidence; [phase-4a-household-refresh.md](phase-4a-household-refresh.md) covers the private AWS artifact generator, narrow Pi pull identity, and rollback controls it built on. The design-backlog sections below (ambient variety, seasonal doodles, richer Coming Up rules, etc.) remain future work — production status covers the delivery pipeline and the approved everyday layout, not every idea in this doc.
 
-This is a parallel implementation of the family dashboard, delivered through its own pipeline (`dashboard-artifact/generator.js` → S3 → Pi pull) rather than `index.js`. Production v1 remains unchanged and continues to run side by side with it — see Safety boundary below for what's still true of v1 versus what changed for v2.
+Dashboard v2 is the canonical TV dashboard, delivered through `dashboard-artifact/generator.js` → S3 → Pi pull. Its everyday composition uses NOW/NEXT in the left panel, followed by Weekly Priorities, the calendar-driven Centers week, and dinner. The artifact pipeline publishes one everyday `index.html`; NOW/NEXT and Centers are not sibling variants.
 
 ## Architecture decision
 
@@ -14,9 +14,9 @@ DAKboard should remain in service during development and evaluation, but it shou
 
 This section originally described v2 as fully disconnected from production. That's no longer true for the renderer itself (see Status above) — v2 now has its own production path. What's still accurate, and still the actual boundary as of Aug 19, 2026:
 
-- `render/dashboard.js` is production v1 and is untouched.
-- `index.js` still imports only production v1 — it has no knowledge of v2 at all.
-- `drive.js` still uploads only `moore_dashboard.html` — v2 never touches Drive; it publishes to a dedicated private S3 bucket instead.
+- `render/dashboard.js` is the legacy v1 renderer retained temporarily for rollback while the canonical v2 composition soaks in production.
+- `index.js` still owns email and the legacy Drive-dashboard path; it does not publish v2.
+- `drive.js` uploads only the legacy `moore_dashboard.html`; v2 publishes to a dedicated private S3 bucket instead.
 - `render/dashboard-v2.js` **is** reachable from production — via `dashboard-artifact/generator.js`, an independent Lambda handler (not called by `index.js`) that renders it and publishes the result to S3, from which the Pi pulls it. This is the one bullet that changed.
 - `scripts/render-dashboard-v2-preview.mjs` uses fixture data and writes only a local preview — unrelated to and unaffected by the production path above.
 
@@ -27,6 +27,8 @@ The v2 renderer consumes the existing digest model directly and supports additiv
 - `weather.current` and `weather.days` for the 7-day rail
 - `countdown` for live browser countdowns
 - `sportsTicker` for optional richer ticker slots
+- `nowNext` for the deterministic operational focus contract
+- `schoolStrip.centersWeek` for calendar-derived Monday-Friday Centers
 
 The new `weather.js` adapter is intentionally not wired into `index.js` yet.
 
@@ -35,6 +37,10 @@ The new `weather.js` adapter is intentionally not wired into `index.js` yet.
 Run `npm run preview:dashboard-v2:real` from a normal local checkout that already has the existing `credentials.json`, `token.json`, and `.env` files. It writes `preview/dashboard-v2-real.html` after reading the same Calendar, Gmail, Drive, local sports, Nationals, and weather inputs used by Moore Ops.
 
 The adapter lives in `dashboard-v2-data.js`. It deliberately does not import `index.js`, `mailer.js`, the production renderer, or `uploadDashboard()`. Running it cannot send the digest, upload a dashboard, or replace the v1 Drive file. Missing local Google auth fails before any read is attempted; a weather failure is non-fatal and renders an explicit fallback.
+
+The same v2 adapter used by production derives the approved `nowNext` display contract through the pure selector in `digest/nowNextSelector.js`. Selection is deterministic and emits reason codes plus diagnostics. Calendar events titled `Myles: [Center] (Centers)` or `Ophelia: [Center] (Centers)` populate the Centers strip and are filtered from NOW/NEXT and Next Two Weeks. Saturday and Sunday display the upcoming school week.
+
+Candidate diagnostics use concrete occurrence identity (`Google event id + start`) and consolidate competing reason types for the same occurrence before ranking. Significant events within four hours this morning sit below problem/imminent/preparation states but above tomorrow orientation. Supporting orientation excludes only the selected occurrence, then chooses the earliest relevant remaining occurrence with an explicit day label.
 
 ## Minimum runtime display policies
 
@@ -56,7 +62,7 @@ Run `npm run preview:dashboard-v2:png`. It regenerates the same fixture-backed H
 
 The PNG is an output of the same deterministic renderer, not an AI-generated recreation. The command verifies both the dashboard canvas and the saved PNG dimensions before it succeeds. If Chromium is installed outside Playwright's default location, pass `-- --browser-path /path/to/chromium` or set `DASHBOARD_BROWSER_PATH`.
 
-This proof of concept remains local-only. It is not scheduled, uploaded, called by `index.js`, or connected to DAKboard or the Raspberry Pi.
+The PNG command remains local-only; the renderer it exercises is the same renderer used by the production artifact generator.
 
 ## Visual iteration notes
 

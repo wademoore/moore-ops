@@ -26,7 +26,7 @@ async function inspect(data) {
       const rect = element.getBoundingClientRect();
       return { className: element.className, left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
     });
-    const clipped = [...document.querySelectorAll('.priority-row,.section-title span,.athletic-ribbon span,.horizon-item,.horizon-copy')]
+    const clipped = [...document.querySelectorAll('.priority-row,.section-title span,.athletic-ribbon span,.horizon-item,.horizon-copy,.now-next-hero,.now-next-support-block,.centers-row,.center-day')]
       .filter(element => element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1)
       .map(element => `${element.tagName}.${element.className}:${element.textContent.trim()}:${element.scrollWidth}x${element.scrollHeight}/${element.clientWidth}x${element.clientHeight}`);
     const surfaces = [...document.querySelectorAll('.paper-panel,.rail-card,.alert-card')].map(element => {
@@ -64,6 +64,30 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     empty: { ...sampleDashboardV2Data, horizonEvents: [] },
     one: { ...sampleDashboardV2Data, horizonEvents: sampleDashboardV2Data.horizonEvents.slice(0, 1) },
     three: sampleDashboardV2Data,
+    canonicalBusy: {
+      ...sampleDashboardV2Data,
+      schoolStrip: {
+        ...sampleDashboardV2Data.schoolStrip,
+        centersWeek: {
+          ...sampleDashboardV2Data.schoolStrip.centersWeek,
+          children: sampleDashboardV2Data.schoolStrip.centersWeek.children.map((child, childIndex) => childIndex ? child : {
+            ...child,
+            days: child.days.map((day, dayIndex) => ({
+              ...day,
+              center: ['Media Center / Library', 'Physical Education 1', 'Guidance Counseling', 'Computer Lab', 'Performing Arts'][dayIndex],
+            })),
+          }),
+        },
+      },
+      nowNext: {
+        tone: 'problem', signal: 'Pickup needs coverage', subject: 'Both kids — 4-H Camp · 4:30 PM', qualifier: 'Emma unavailable',
+        context: ['Resolve before 3:45 PM', 'James City County'],
+        supporting: [
+          { label: 'Tonight', lines: ['Pack lunches + water bottles', 'Library book for Myles'] },
+          { label: 'Next', lines: ['Myles — Sharks · Turf 4', 'Tomorrow · 5:45 PM'] },
+        ],
+      },
+    },
   })) {
     it(`${name} state stays within the canvas without text clipping or external images`, async () => {
       const result = await inspect(data);

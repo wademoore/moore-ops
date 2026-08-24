@@ -20,7 +20,7 @@ import urllib.request
 
 MIN_BYTES = 1_000_000
 MAX_BYTES = 8_000_000
-LEVEL2_REQUIRED = ('today-panel', 'upcoming-panel', 'athletics-panel', 'right-rail', 'sports-ticker')
+LEVEL2_REQUIRED = ('today-panel', 'upcoming-panel', 'athletics-panel', 'right-rail', 'sports-ticker', 'now-next ', 'centers-block')
 FIRST_DAY_REQUIRED = ('first-day-dashboard', 'data-dashboard-mode="first-day-level3"', 'data-first-day-coda="true"', 'data-fd-slot="now"', 'data-fd-slot="next"', 'updateFirstDayLevel3', 'Welcome home, Myles + Ophelia')
 FORBIDDEN = (
     re.compile(r'client_secret', re.I), re.compile(r'refresh_token', re.I),

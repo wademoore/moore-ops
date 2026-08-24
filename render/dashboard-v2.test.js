@@ -7,6 +7,7 @@ import {
   collapseUpcomingEvents,
   conversationalMatchDate,
   renderDashboardV2,
+  renderNowNext,
   renderToday,
   renderUpcoming,
   peopleForEvent,
@@ -20,27 +21,80 @@ import {
 } from './dashboard-v2.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
 
+describe('approved NOW/NEXT rendering contract', () => {
+  for (const state of [
+    { signal: 'Leave in 10 min', subject: 'Myles — Sharks Practice', context: ['Practice 6:00', 'Warhill today'] },
+    { signal: 'Tomorrow morning', subject: 'Both kids — 4-H Camp', supporting: [{ label: 'Tonight', lines: ['Lunches + water bottles'] }] },
+    { tone: 'problem', signal: 'Pickup needs coverage', subject: 'Both kids — Camp · 4:30', qualifier: 'Emma unavailable' },
+    { tone: 'calm', signal: 'All clear', subject: 'Nothing needs your attention tonight' },
+  ]) {
+    it(`renders ${state.signal}`, () => {
+      const html = renderNowNext(state);
+      assert.match(html, /Now \/ Next/);
+      assert.match(html, new RegExp(state.signal));
+    });
+  }
+
+  it('uses NOW/NEXT as the canonical v2 Today presentation', () => {
+    const html = renderDashboardV2({ ...sampleDashboardV2Data, nowNext: { tone: 'calm', signal: 'All clear', subject: 'Nothing needs your attention tonight' } });
+    assert.match(html, /today-panel has-now-next/);
+    assert.doesNotMatch(html, />Events</);
+    assert.match(html, /Weekly priorities/);
+    assert.match(html, /Tonight(?:'|&#39;)s Dinner/);
+  });
+
+  it('uses existing display normalization for the approved both-kids camp title', () => {
+    const html = renderNowNext({ signal: 'Tomorrow morning', subject: 'Myles & Ophelia: 4-H Day Camp (Aloha Summer)' });
+    assert.match(html, /Both kids — 4-H Camp/);
+    assert.doesNotMatch(html, /Myles &amp; Ophelia|Aloha Summer/);
+    assert.equal(cleanDisplayText('Myles & Ophelia: 4-H Day Camp (Aloha Summer)'), 'Both kids — 4-H Camp');
+  });
+
+  it('normalizes hero and supporting Sharks copy with a nonbreaking field number', () => {
+    const html = renderNowNext({
+      signal: 'This morning',
+      subject: 'Myles: Sharks Practice - Warhill Grass 8',
+      supporting: [{ label: 'Wednesday', lines: ['Myles: Sharks Practice - Warhill Turf 4', '5:45'] }],
+    });
+    assert.match(html, /Myles — Sharks · Grass\u00a08/);
+    assert.match(html, /Myles — Sharks · Turf\u00a04/);
+    assert.doesNotMatch(html, /Sharks Practice|Warhill/);
+  });
+});
+
 describe('experimental dashboard v2 isolation and structure', () => {
   const html = renderDashboardV2(sampleDashboardV2Data);
 
   it('uses an unambiguous Eastern instant for the sample date', () => {
     assert.equal(sampleDashboardV2Data.today.toISOString(), '2026-06-09T16:00:00.000Z');
-    assert.match(html, /Today — Tuesday, June 9, 2026/);
+    assert.match(html, /Now \/ Next/);
   });
 
-  it('renders a standalone experimental dashboard', () => {
+  it('renders the standalone canonical dashboard', () => {
     assert.match(html, /<!DOCTYPE html>/);
-    assert.match(html, /Moore Family Dashboard v2 — Experimental/);
+    assert.match(html, /<title>Moore Family Dashboard v2<\/title>/);
     assert.match(html, /class="dashboard/);
   });
 
   it('keeps the busy-screen content areas', () => {
-    assert.match(html, /Today — Tuesday, June 9, 2026/);
+    assert.match(html, /Now \/ Next/);
     assert.match(html, /Next Two Weeks/);
     assert.match(html, /Athletics/);
     assert.match(html, /Tonight&#39;s Dinner/);
     assert.match(html, /sports-ticker/);
     assert.match(html, /forecast-card/);
+    assert.match(html, /<div class="subhead">Centers<\/div>/);
+    assert.match(html, /center-day is-today/);
+    assert.match(html, /Schedule not available yet/);
+  });
+
+  it('elevates only Centers cells with an action cue', () => {
+    const data = structuredClone(sampleDashboardV2Data);
+    data.schoolStrip.centersWeek.children[0].days[1].action = { icon: '📚', label: 'Bring library book' };
+    const centersHtml = renderToday(data);
+    assert.match(centersHtml, /center-day is-today has-action/);
+    assert.match(centersHtml, /Bring library book/);
+    assert.equal((centersHtml.match(/has-action/g) || []).length, 1);
   });
 
   it('uses the normal-day layout without a special-event masthead', () => {
@@ -342,14 +396,14 @@ describe('real-data resilience policies', () => {
     assert.equal(activityCategory({ title: 'Tesla Detail' }), 'household');
   });
 
-  it('normalizes owner shorthand in Today and Next Two Weeks', () => {
+  it('normalizes owner shorthand in the canonical Next Two Weeks view', () => {
     const shorthand = event('R Dentist', '2026-06-10T09:30:00-04:00');
     const html = renderDashboardV2({
       ...sampleDashboardV2Data,
       days: [{ events: [{ ...shorthand, raw: { start: { dateTime: '2026-06-09T09:30:00-04:00' } } }], tasks: [] }],
       upcomingEvents: [shorthand],
     });
-    assert.equal((html.match(/Robyn · Dentist/g) || []).length, 2);
+    assert.equal((html.match(/Robyn · Dentist/g) || []).length, 1);
     assert.doesNotMatch(html, />R Dentist</);
   });
 
@@ -397,6 +451,7 @@ describe('television readability and horizon policies', () => {
     assert.equal((html.match(/class="priority-row/g) || []).length, 5);
     assert.match(html, /\.priority-row\{font-size:24px;line-height:1\.2/);
     assert.match(html, /\.priority-row \.owner\{font-size:16px/);
+    assert.match(html, /\.priority-row\.is-overdue\{margin-left:0;margin-right:0\}/);
   });
 
   it('enforces the greater-than-14 and at-most-180 day horizon window', () => {
@@ -509,7 +564,7 @@ describe('television readability and horizon policies', () => {
 
   it('uses the Eastern 6 AM threshold for contextual Today empty-state wording', () => {
     const summerToday = new Date('2026-08-13T12:00:00-04:00');
-    const summerEmpty = { ...sampleDashboardV2Data, today: summerToday, days: [{ events: [], tasks: [] }] };
+    const summerEmpty = { ...sampleDashboardV2Data, nowNext: undefined, today: summerToday, days: [{ events: [], tasks: [] }] };
     assert.match(renderToday({ ...summerEmpty, now: new Date('2026-08-13T05:59:00-04:00') }), /Nothing scheduled today\./);
     assert.match(renderToday({ ...summerEmpty, now: new Date('2026-08-13T06:00:00-04:00') }), /Nothing else today\./);
     assert.match(renderToday({ ...summerEmpty, now: new Date('2026-08-13T18:00:00-04:00') }), /Nothing else today\./);
