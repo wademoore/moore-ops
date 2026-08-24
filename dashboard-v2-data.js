@@ -1,5 +1,5 @@
 /**
- * Preview-only v2 data adapter.
+ * Canonical v2 read-side data adapter.
  *
  * This intentionally calls only the read side of the existing Moore Ops
  * pipeline. It never imports index.js, sends mail, uploads a dashboard, or
@@ -56,7 +56,7 @@ async function fetchDashboardV2Data({
     banner,
   });
 
-  const previewData = {
+  const dashboardData = {
     ...digestData,
     horizonEvents: (rawEvents180d || []).map(event => resolveEvent({
       ...event,
@@ -66,7 +66,7 @@ async function fetchDashboardV2Data({
     sportsSnapshot,
     weather,
   };
-  return { ...previewData, nowNext: selectNowNext(previewData) };
+  return { ...dashboardData, nowNext: selectNowNext(dashboardData) };
 }
 
 export { fetchDashboardV2Data, WEATHER_FALLBACK };

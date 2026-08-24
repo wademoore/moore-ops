@@ -8,7 +8,7 @@ import { renderDashboardV2 } from '../render/dashboard-v2.js';
 import { sampleDashboardV2Data } from '../render/dashboard-v2.sample-data.js';
 
 const SPORTS = 'https://example.lambda-url.us-east-2.on.aws/';
-const html = '<!doctype html>' + 'x'.repeat(1_000_000) + '<main class="today-panel upcoming-panel athletics-panel right-rail" data-sports-url="' + SPORTS + '"><footer class="sports-ticker"></footer></main>';
+const html = '<!doctype html>' + 'x'.repeat(1_000_000) + '<main class="today-panel upcoming-panel athletics-panel right-rail" data-sports-url="' + SPORTS + '"><section class="now-next now-next-calm"></section><section class="centers-block"></section><footer class="sports-ticker"></footer></main>';
 
 test('artifact contract creates checksum-addressed public manifest metadata', () => {
   const valid = validateArtifact(html, { sportsFeedUrl: SPORTS });
@@ -43,7 +43,7 @@ test('validation failure cannot replace the published manifest', async () => {
 });
 
 test('contract behavior is host-timezone independent', () => {
-  const script = "import {validateArtifact} from './dashboard-artifact/contract.js'; const s='" + SPORTS + "'; const h='<!doctype html>'+('x'.repeat(1000000))+'<main class=\\\"today-panel upcoming-panel athletics-panel right-rail\\\" data-sports-url=\\\"'+s+'\\\"><footer class=\\\"sports-ticker\\\"></footer></main>'; console.log(JSON.stringify(validateArtifact(h,{sportsFeedUrl:s})));";
+  const script = "import {validateArtifact} from './dashboard-artifact/contract.js'; const s='" + SPORTS + "'; const h='<!doctype html>'+('x'.repeat(1000000))+'<main class=\\\"today-panel upcoming-panel athletics-panel right-rail\\\" data-sports-url=\\\"'+s+'\\\"><section class=\\\"now-next now-next-calm\\\"></section><section class=\\\"centers-block\\\"></section><footer class=\\\"sports-ticker\\\"></footer></main>'; console.log(JSON.stringify(validateArtifact(h,{sportsFeedUrl:s})));";
   const outputs = ['UTC', 'America/New_York'].map(TZ => execFileSync(process.execPath, ['--input-type=module', '-e', script], { cwd: process.cwd(), env: { ...process.env, TZ }, encoding: 'utf8' }).trim());
   assert.equal(outputs[0], outputs[1]);
 });

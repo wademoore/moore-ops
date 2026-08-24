@@ -15,6 +15,13 @@ function event(title, dateTime, subtitle, extra = {}) {
 
 const sampleDashboardV2Data = {
   today: d('2026-06-09'),
+  nowNext: {
+    tone: 'normal',
+    signal: 'Leave in 35 min',
+    subject: 'Both kids — Waves Swim Practice',
+    context: ['Practice 5:45 PM', 'JCC Rec Center'],
+    supporting: [{ label: 'Next', lines: ['Both kids — dentist', 'Tomorrow · 8:00 AM'] }],
+  },
   days: [{
     date: d('2026-06-09'),
     events: [

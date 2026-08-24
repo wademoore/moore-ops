@@ -10,6 +10,8 @@ const LEVEL2_REQUIRED_MARKERS = Object.freeze([
   'athletics-panel',
   'right-rail',
   'sports-ticker',
+  'class="now-next ',
+  'centers-block',
 ]);
 const FIRST_DAY_REQUIRED_MARKERS = Object.freeze([
   'first-day-dashboard',

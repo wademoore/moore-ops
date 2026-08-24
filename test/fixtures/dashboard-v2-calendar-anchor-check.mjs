@@ -3,6 +3,7 @@ import { sampleDashboardV2Data } from '../../render/dashboard-v2.sample-data.js'
 
 const html = renderDashboardV2({
   ...sampleDashboardV2Data,
+  nowNext: undefined,
   today: new Date(2026, 7, 16),
   now: new Date('2026-08-16T13:00:00-04:00'),
 });
