@@ -53,10 +53,11 @@ function shouldRenderFirstDayLevel3(data) {
 
 function schedule(data) {
   const times=timeline(data),now=new Date(data.now||Date.now()).getTime();
+  const handoffLabel=times.handoff.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/New_York'});
   const make=(title,start,subtitle,displayTime)=>({title,subtitle,displayTime,cardType:'standard',_calName:'Myles + Ophelia',raw:{start:{dateTime:start.toISOString()}}});
   const preparation=make('School preparation',times.preparation,'Backpacks, water bottles, and first-day essentials');
-  const departure=make('Leave for Stonehouse',times.departure,'Rec Connect drop-off');
-  const arrival=make('Arrive at Rec Connect',times.handoff,'Stonehouse Elementary · by 7:45 AM');
+  const departure=make('Leave for Stonehouse',times.departure,'Carline drop-off');
+  const arrival=make('Arrive at Stonehouse',times.handoff,`Carline · by ${handoffLabel}`);
   const welcome=make('Welcome home, Myles + Ophelia',times.coda,'Emma is here — tell her how your first day went','4:00 PM');
   const dinner=data.menuEvent?.title&&data.menuEvent.title!=='Not set'?{...data.menuEvent,title:clean(data.menuEvent.title),subtitle:data.menuEvent.subtitle||'First-day celebration dinner',displayTime:'Tonight',_calName:'Myles + Ophelia',cardType:'standard',raw:{start:{dateTime:times.coda.toISOString()}}}:null;
   const relevant=[...todayEvents(data),...(data.upcomingEvents||[])].filter(event=>event!==milestones(data)[0]&&eventStamp(event)>now&&!/prepar|depart|arriv|rec connect|stonehouse drop[ -]?off/i.test(`${event.title||''} ${event.subtitle||''}`)).sort((a,b)=>eventStamp(a)-eventStamp(b))[0]||null;

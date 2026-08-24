@@ -31,7 +31,7 @@ test('one browser artifact advances at departure and exits at handoff',async()=>
   await page.setContent(renderDashboardV2({...data,now:new Date('2026-08-24T07:00:00-04:00')}),{waitUntil:'load'});
   const state=async time=>page.evaluate(value=>({phase:window.updateFirstDayLevel3(new Date(value)),now:document.querySelector('[data-fd-slot="now"] strong')?.textContent,next:document.querySelector('[data-fd-slot="next"] strong')?.textContent}),time);
   assert.deepEqual(await state('2026-08-24T07:20:00-04:00'),{phase:'preparation',now:'School preparation',next:'Leave for Stonehouse'});
-  assert.deepEqual(await state('2026-08-24T07:35:00-04:00'),{phase:'departure',now:'Leave for Stonehouse',next:'Arrive at Rec Connect'});
+  assert.deepEqual(await state('2026-08-24T07:35:00-04:00'),{phase:'departure',now:'Leave for Stonehouse',next:'Arrive at Stonehouse'});
   assert.equal((await state('2026-08-24T07:45:00-04:00')).phase,'level2');
   assert.deepEqual(await state('2026-08-24T16:00:00-04:00'),{phase:'coda',now:'Welcome home, Myles + Ophelia',next:'First-day celebration tacos'});
   assert.equal((await state('2026-08-24T19:00:00-04:00')).phase,'level2');

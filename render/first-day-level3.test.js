@@ -19,7 +19,7 @@ describe('first day Level-3 takeover',()=>{
     const at=time=>schedule({...base,now:new Date(`2026-08-24T${time}:00-04:00`)});
     assert.deepEqual([at('07:00').now.title,at('07:00').next.title],['School preparation','Leave for Stonehouse']);
     assert.deepEqual([at('07:20').now.title,at('07:20').next.title],['School preparation','Leave for Stonehouse']);
-    assert.deepEqual([at('07:35').now.title,at('07:35').next.title],['Leave for Stonehouse','Arrive at Rec Connect']);
+    assert.deepEqual([at('07:35').now.title,at('07:35').next.title],['Leave for Stonehouse','Arrive at Stonehouse']);
     assert.doesNotMatch(renderDashboardV2({...base,now:new Date('2026-08-24T07:35:00-04:00')}),/7:15 AM/);
   });
   it('activates for the same-day school milestone before arrival handoff',()=>{
