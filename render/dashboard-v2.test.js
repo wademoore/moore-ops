@@ -35,7 +35,7 @@ describe('approved NOW/NEXT rendering contract', () => {
     });
   }
 
-  it('replaces Today events only when nowNext is supplied', () => {
+  it('uses NOW/NEXT as the canonical v2 Today presentation', () => {
     const html = renderDashboardV2({ ...sampleDashboardV2Data, nowNext: { tone: 'calm', signal: 'All clear', subject: 'Nothing needs your attention tonight' } });
     assert.match(html, /today-panel has-now-next/);
     assert.doesNotMatch(html, />Events</);
@@ -67,17 +67,17 @@ describe('experimental dashboard v2 isolation and structure', () => {
 
   it('uses an unambiguous Eastern instant for the sample date', () => {
     assert.equal(sampleDashboardV2Data.today.toISOString(), '2026-06-09T16:00:00.000Z');
-    assert.match(html, /Today — Tuesday, June 9, 2026/);
+    assert.match(html, /Now \/ Next/);
   });
 
-  it('renders a standalone experimental dashboard', () => {
+  it('renders the standalone canonical dashboard', () => {
     assert.match(html, /<!DOCTYPE html>/);
-    assert.match(html, /Moore Family Dashboard v2 — Experimental/);
+    assert.match(html, /<title>Moore Family Dashboard v2<\/title>/);
     assert.match(html, /class="dashboard/);
   });
 
   it('keeps the busy-screen content areas', () => {
-    assert.match(html, /Today — Tuesday, June 9, 2026/);
+    assert.match(html, /Now \/ Next/);
     assert.match(html, /Next Two Weeks/);
     assert.match(html, /Athletics/);
     assert.match(html, /Tonight&#39;s Dinner/);
@@ -396,14 +396,14 @@ describe('real-data resilience policies', () => {
     assert.equal(activityCategory({ title: 'Tesla Detail' }), 'household');
   });
 
-  it('normalizes owner shorthand in Today and Next Two Weeks', () => {
+  it('normalizes owner shorthand in the canonical Next Two Weeks view', () => {
     const shorthand = event('R Dentist', '2026-06-10T09:30:00-04:00');
     const html = renderDashboardV2({
       ...sampleDashboardV2Data,
       days: [{ events: [{ ...shorthand, raw: { start: { dateTime: '2026-06-09T09:30:00-04:00' } } }], tasks: [] }],
       upcomingEvents: [shorthand],
     });
-    assert.equal((html.match(/Robyn · Dentist/g) || []).length, 2);
+    assert.equal((html.match(/Robyn · Dentist/g) || []).length, 1);
     assert.doesNotMatch(html, />R Dentist</);
   });
 
@@ -564,7 +564,7 @@ describe('television readability and horizon policies', () => {
 
   it('uses the Eastern 6 AM threshold for contextual Today empty-state wording', () => {
     const summerToday = new Date('2026-08-13T12:00:00-04:00');
-    const summerEmpty = { ...sampleDashboardV2Data, today: summerToday, days: [{ events: [], tasks: [] }] };
+    const summerEmpty = { ...sampleDashboardV2Data, nowNext: undefined, today: summerToday, days: [{ events: [], tasks: [] }] };
     assert.match(renderToday({ ...summerEmpty, now: new Date('2026-08-13T05:59:00-04:00') }), /Nothing scheduled today\./);
     assert.match(renderToday({ ...summerEmpty, now: new Date('2026-08-13T06:00:00-04:00') }), /Nothing else today\./);
     assert.match(renderToday({ ...summerEmpty, now: new Date('2026-08-13T18:00:00-04:00') }), /Nothing else today\./);
