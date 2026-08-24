@@ -24,11 +24,11 @@
  * {
  *   title:        string    Human-readable event title
  *   subtitle:     string    Time, location, or gear note shown beneath title
- *   owner:        string[]  ['wade'] | ['robyn'] | ['madison'] | ['wade','robyn'] | etc.
+ *   owner:        string[]  ['wade'] | ['robyn'] | ['emma'] | ['wade','robyn'] | etc.
  *   cardType:     string    'standard' | 'coaching' | 'urgent' | 'info'
  *   gearReminder: string|null  e.g. "GREEN kit + Gatorade bottle + cleats bag"
  *   isFlagGame:   boolean   True for Cowboys game events — triggers coaching card
- *   isSoloEvening:boolean   True when flag should fire "Wade or Madison covers solo"
+ *   isSoloEvening:boolean   True when flag should fire "Wade or Emma covers solo"
  *   raw:          object    Original Google Calendar event (pass-through)
  *   _calName:     string    Source calendar name (pass-through)
  * }
@@ -68,7 +68,7 @@ const ALIAS_TABLE = {
     return {
       title: 'ADP Soccer Practice',
       subtitle: `6:45 – 7:45 PM · Myles · ${kitLabel}`,
-      owner: ['madison'],           // Madison packs bag; Wade drives (not the event owner)
+      owner: ['emma'],              // Emma packs bag; Wade drives (not the event owner)
       cardType: 'standard',
       gearReminder: GEAR.soccer[kit],
       isFlagGame: false,
@@ -113,7 +113,7 @@ const ALIAS_TABLE = {
   'Winter Waves': {
     title: 'Wellington Waves Swim Practice',
     subtitle: 'JCC Rec Center · Myles + Ophelia',
-    owner: ['wade', 'robyn'],      // Weekend — Madison off; both parents
+    owner: ['wade', 'robyn'],      // Weekend — Emma off; both parents
     cardType: 'standard',
     gearReminder: GEAR.swim,
     isFlagGame: false,
@@ -132,10 +132,10 @@ const ALIAS_TABLE = {
   },
 
   // ── Robyn Mahjong night ──────────────────────────────────────────────────
-  // Section 7: "flag that Wade or Madison covers evening solo"
+  // Section 7: "flag that Wade or Emma covers evening solo"
   'Robyn Maj': {
     title: 'Robyn — Mahjong Night',
-    subtitle: 'Wade or Madison covers evening solo',
+    subtitle: 'Wade or Emma covers evening solo',
     owner: ['robyn'],
     cardType: 'info',
     gearReminder: null,
@@ -238,12 +238,12 @@ const PATTERN_MATCHERS = [
     }),
   },
 
-  // ── Madison Off ───────────────────────────────────────────────────────────
+  // ── Emma Off ─────────────────────────────────────────────────────────────
   // Detected on Family calendar — triggers full task reassignment in flags.js
   {
-    re: /madison\s+off/i,
+    re: /emma\s+off/i,
     resolve: () => ({
-      title: 'Madison Off',
+      title: 'Emma Off',
       subtitle: 'All house tasks + pickup reassigned to Wade and Robyn',
       owner: ['wade', 'robyn'],
       cardType: 'urgent',
@@ -286,8 +286,8 @@ const PATTERN_MATCHERS = [
     re: /walmart|grocery\s+delivery/i,
     resolve: () => ({
       title: 'Walmart Grocery Delivery',
-      subtitle: 'Arrives Monday afternoon — Madison puts groceries away',
-      owner: ['madison'],
+      subtitle: 'Arrives Monday afternoon — Emma puts groceries away',
+      owner: ['emma'],
       cardType: 'info',
       gearReminder: null,
       isFlagGame: false,
@@ -304,7 +304,7 @@ const PATTERN_MATCHERS = [
     resolve: (event) => ({
       title: event.summary || 'Dinner',
       subtitle: event.description || '',
-      owner: ['madison'],
+      owner: ['emma'],
       cardType: 'menu',           // renderer skips card, renders dinner strip instead
       gearReminder: null,
       isFlagGame: false,
