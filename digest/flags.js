@@ -108,7 +108,7 @@ const EVALUATORS = [
       id: 'no-menu-sunday',
       level: 'amber',
       title: '🟡 No Weekly Menu Set',
-      body: 'Walmart grocery delivery order cannot be placed without a menu. Set the menu now and place the order — Madison puts groceries away Monday afternoon.',
+      body: 'Walmart grocery delivery order cannot be placed without a menu. Set the menu now and place the order — Emma puts groceries away Monday afternoon.',
       owner: ['wade', 'robyn'],
       persist: false,
     };
@@ -500,7 +500,7 @@ function computeFlags(context) {
  * Filter flags for a specific owner tab.
  *
  * @param {Flag[]} flags
- * @param {'wade'|'robyn'|'madison'} owner
+ * @param {'wade'|'robyn'|'emma'} owner
  * @returns {Flag[]}
  */
 function flagsForOwner(flags, owner) {
