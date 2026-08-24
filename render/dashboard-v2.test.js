@@ -83,6 +83,18 @@ describe('experimental dashboard v2 isolation and structure', () => {
     assert.match(html, /Tonight&#39;s Dinner/);
     assert.match(html, /sports-ticker/);
     assert.match(html, /forecast-card/);
+    assert.match(html, /<div class="subhead">Centers<\/div>/);
+    assert.match(html, /center-day is-today/);
+    assert.match(html, /Schedule not available yet/);
+  });
+
+  it('elevates only Centers cells with an action cue', () => {
+    const data = structuredClone(sampleDashboardV2Data);
+    data.schoolStrip.centersWeek.children[0].days[1].action = { icon: '📚', label: 'Bring library book' };
+    const centersHtml = renderToday(data);
+    assert.match(centersHtml, /center-day is-today has-action/);
+    assert.match(centersHtml, /Bring library book/);
+    assert.equal((centersHtml.match(/has-action/g) || []).length, 1);
   });
 
   it('uses the normal-day layout without a special-event masthead', () => {
