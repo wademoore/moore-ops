@@ -440,6 +440,53 @@ describe('real-data resilience policies', () => {
     assert.doesNotMatch(html, /https:\/\/example\.com\/unreliable/);
     assert.match(html, /logo-idance|data:image\/png;base64/);
   });
+
+  it('uses verified identity marks and never invents a generic sports identity', () => {
+    const html = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      upcomingEvents: [
+        event("Sharks Night — W&M Men's Soccer vs. Longwood", '2026-06-10T18:00:00-04:00'),
+        event('Ophelia Swim Practice', '2026-06-11T18:00:00-04:00'),
+        event('Community Basketball Game', '2026-06-12T18:00:00-04:00'),
+      ],
+      sportsTicker: [{ logo: 'unknown-team', line1: 'Unknown', line2: 'No borrowed identity' }],
+    });
+    assert.ok(html.includes(V2_LOGOS.wm));
+    assert.doesNotMatch(html, /category-sports[^>]*><svg/);
+    const unknownTicker = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      sportsTicker: [{ logo: 'unknown-team', line1: 'Unknown', line2: 'No borrowed identity' }],
+    });
+    assert.doesNotMatch(unknownTicker, /class="ticker-logo"/);
+  });
+
+  it('recognizes normalized Sharks titles and uses clear travel and medical marks', () => {
+    const html = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      upcomingEvents: [
+        event('Wade: CORE Annual Gathering (work travel)', '2026-06-10T08:00:00-04:00'),
+        event('Myles — Ortho', '2026-06-11T14:30:00-04:00'),
+        event('Myles — Sharks · Turf 4', '2026-06-12T18:00:00-04:00'),
+      ],
+    });
+    assert.match(html, /category-travel[^>]*><svg[^>]*><rect x="7" y="9" width="18" height="17"/);
+    assert.match(html, /category-medical[^>]*><svg[^>]*><path d="M16 7v18M7 16h18"/);
+    assert.ok(html.includes(V2_LOGOS.sharks));
+  });
+
+  it('uses a birthday cake only for explicit birthday events', () => {
+    const birthdayHtml = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      upcomingEvents: [event('Aubree Birthday', '2026-06-10T08:00:00-04:00')],
+    });
+    assert.match(birthdayHtml, /category-birthday[^>]*><svg[^>]*><path d="M7 17h18v10H7z/);
+
+    const familyHtml = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      upcomingEvents: [event('Family Picnic', '2026-06-10T08:00:00-04:00')],
+    });
+    assert.match(familyHtml, /class="upcoming-logo semantic-icon category-none"/);
+  });
 });
 
 describe('television readability and horizon policies', () => {

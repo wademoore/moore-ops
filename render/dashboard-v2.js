@@ -74,8 +74,8 @@ const V2_LOGOS = {
   nationals: optionalAssetDataUrl('logo-nationals.png'),
   commanders: optionalAssetDataUrl('logo-commanders.png'),
   tennessee: optionalAssetDataUrl('logo-tennessee.png'),
-  tribe: optionalAssetDataUrl('logo-tribe.svg'),
-  wm: optionalAssetDataUrl('logo-tribe.svg'),
+  tribe: optionalAssetDataUrl('logo-wm-athletics.png'),
+  wm: optionalAssetDataUrl('logo-wm-athletics.png'),
 };
 
 function esc(value) {
@@ -170,9 +170,14 @@ function peopleForEvent(event) {
 
 function activityLogo(event) {
   const text = `${event?.title || ''} ${event?.subtitle || ''}`.toLowerCase();
-  if (/tidewater sharks|sharks soccer/.test(text)) return V2_LOGOS.sharks;
+  const sharksIdentity = /tidewater sharks|sharks soccer/.test(text)
+    || (/\bsharks\b/.test(text) && /\bpractice\b|\bsoccer\b|\bturf\b|\bgame\b|\bmatch\b/.test(text));
+  if (sharksIdentity) return V2_LOGOS.sharks;
   if (/757/.test(text)) return V2_LOGOS.swim757;
   if (/\bidance\b|institute for dance/.test(text)) return V2_LOGOS.idance;
+  const williamAndMary = /\bw\s*&\s*m\b|\bwilliam\s*(?:&|and)\s*mary\b/.test(text);
+  const sportingEvent = /\bsoccer\b|\bfootball\b|\bbasketball\b|\bbaseball\b|\blacrosse\b|\bvolleyball\b|\btennis\b|\bswim(?:ming)?\b|\btrack\b|\bfield hockey\b|\bgolf\b|\bgame\b|\bmatch\b|\bvs\.?\b/.test(text);
+  if (williamAndMary && sportingEvent) return V2_LOGOS.wm;
   return '';
 }
 
@@ -293,21 +298,23 @@ function activityCategory(event) {
 
 function categorySvg(category) {
   const common = 'viewBox="0 0 32 32" aria-hidden="true"';
-  if (category === 'medical') return `<svg ${common}><path d="M16 5v22M5 16h22"/><path d="M10 4h12v24H10z"/></svg>`;
+  if (category === 'birthday') return `<svg ${common}><path d="M7 17h18v10H7zM7 21h18M11 17v-5M16 17v-5M21 17v-5"/><path d="M11 9c-2 2-2 3 0 4 2-1 2-2 0-4zM16 9c-2 2-2 3 0 4 2-1 2-2 0-4zM21 9c-2 2-2 3 0 4 2-1 2-2 0-4z"/></svg>`;
+  if (category === 'medical') return `<svg ${common}><path d="M16 7v18M7 16h18"/></svg>`;
   if (category === 'appointment') return `<svg ${common}><rect x="5" y="7" width="22" height="20" rx="2"/><path d="M10 4v7M22 4v7M5 13h22"/></svg>`;
   if (category === 'work') return `<svg ${common}><rect x="4" y="10" width="24" height="17" rx="2"/><path d="M11 10V6h10v4M4 17h24M13 17v3h6v-3"/></svg>`;
-  if (category === 'travel') return `<svg ${common}><path d="M4 18l24-8-8 18-4-8-8-4z"/><path d="M16 20l4 8"/></svg>`;
+  if (category === 'travel') return `<svg ${common}><rect x="7" y="9" width="18" height="17" rx="2"/><path d="M12 9V6h8v3M7 15h18M11 26v2M21 26v2"/></svg>`;
   if (category === 'school') return `<svg ${common}><path d="M4 12l12-7 12 7-12 7z"/><path d="M8 15v8c5 3 11 3 16 0v-8M28 12v9"/></svg>`;
   if (category === 'household') return `<svg ${common}><path d="M4 15L16 5l12 10M8 13v14h16V13"/><path d="M13 27v-8h6v8"/></svg>`;
-  if (category === 'arts') return `<svg ${common}><path d="M8 24c-4 0-5-5-2-7 2-2 6-1 8 1V7l12-3v15"/><circle cx="9" cy="24" r="4"/><circle cx="22" cy="22" r="4"/></svg>`;
-  if (category === 'sports') return `<svg ${common}><circle cx="16" cy="16" r="12"/><path d="M16 4l5 5-2 6h-6l-2-6zM4 15l7 1 3 6-4 5M28 15l-7 1-3 6 4 5"/></svg>`;
-  if (category === 'family') return `<svg ${common}><path d="M16 27S5 20 5 12c0-7 9-9 11-3 2-6 11-4 11 3 0 8-11 15-11 15z"/></svg>`;
+  // Identity marks handle known sports and arts organizations. Unknown
+  // activities stay blank rather than receiving a misleading generic icon.
   return '';
 }
 
 function activityVisual(event, className) {
   const url = activityLogo(event);
-  const category = activityCategory(event);
+  const category = /\bbirthday\b/i.test(`${event?.title || ''} ${event?.subtitle || ''}`)
+    ? 'birthday'
+    : activityCategory(event);
   const fallback = categorySvg(category);
   if (url) return `<span class="${className} semantic-icon activity-visual category-${category}" aria-label="${esc(category)}">${fallback}<img src="${esc(url)}" alt="" onerror="this.remove()"></span>`;
   if (!fallback) return `<span class="${className} semantic-icon category-none" aria-hidden="true"></span>`;
@@ -868,7 +875,7 @@ function renderTicker(data) {
     const last = slot.lastResult ? ` · Last ${slot.lastResult.result} ${slot.lastResult.teamScore}–${slot.lastResult.opponentScore}` : '';
     return [`${team} ${place} ${opponent}`, attach(`${status}${when}${last}${slot.dataDelayed ? ' · Data delayed' : ''}`), summary];
   };
-  const rendered = slots.slice(0, 4).map(slot => { const [line1,line2,meta=''] = slot.line1 ? [slot.line1,slot.line2,slot.meta] : format(slot); return `<div class="ticker-slot ${slot.event?.state === 'live' || slot.active ? 'active' : ''}" data-sports-org="${esc(slot.organization || '')}">${logo(V2_LOGOS[slot.logo || slot.organization] || V2_LOGOS.wm, 'ticker-logo')}<div><b>${esc(line1)}</b><span>${esc(line2)}</span><small class="ticker-meta">${esc(meta)}</small></div></div>`; }).join('');
+  const rendered = slots.slice(0, 4).map(slot => { const [line1,line2,meta=''] = slot.line1 ? [slot.line1,slot.line2,slot.meta] : format(slot); return `<div class="ticker-slot ${slot.event?.state === 'live' || slot.active ? 'active' : ''}" data-sports-org="${esc(slot.organization || '')}">${logo(V2_LOGOS[slot.logo || slot.organization] || '', 'ticker-logo')}<div><b>${esc(line1)}</b><span>${esc(line2)}</span><small class="ticker-meta">${esc(meta)}</small></div></div>`; }).join('');
   const updated = data.sportsSnapshot?.generatedAt || new Date().toISOString();
   return `<footer class="sports-ticker metadata-${treatment}" data-sports-version="1" data-metadata-treatment="${treatment}">${rendered}<i class="ticker-doodle" aria-hidden="true"></i><small class="updated">Updated ${esc(new Date(updated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }))} ET</small></footer>`;
 }
@@ -1021,7 +1028,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .weather-label,.forecast-heading,.next-up-label{display:flex;align-items:center;justify-content:center;padding-top:0;padding-bottom:0}
 .ticker-slot:first-child{padding-left:112px}
 /* Runtime fallbacks: semantic event marks, explicit weather state, and stable horizon geometry. */
-.semantic-icon{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(212,154,24,.10);color:${COLORS.gold};padding:3px}.semantic-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:1.8;fill:none}.semantic-icon.category-medical{color:${COLORS.red}}.semantic-icon.category-appointment{color:${COLORS.purple}}.semantic-icon.category-work{color:${COLORS.blue}}.semantic-icon.category-school{color:${COLORS.blue}}.semantic-icon.category-household{color:${COLORS.green}}.semantic-icon.category-arts{color:${COLORS.purple}}.semantic-icon.category-sports{color:${COLORS.blue}}.semantic-icon.category-family{color:${COLORS.red}}.semantic-icon.category-none{background:transparent}.activity-visual{position:relative}.activity-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:${COLORS.paper}}
+.semantic-icon{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(212,154,24,.10);color:${COLORS.gold};padding:3px}.semantic-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:1.8;fill:none}.semantic-icon.category-medical,.semantic-icon.category-birthday{color:${COLORS.red}}.semantic-icon.category-appointment{color:${COLORS.purple}}.semantic-icon.category-work{color:${COLORS.blue}}.semantic-icon.category-school{color:${COLORS.blue}}.semantic-icon.category-household{color:${COLORS.green}}.semantic-icon.category-none,.semantic-icon.category-arts,.semantic-icon.category-sports,.semantic-icon.category-family{background:transparent}.activity-visual{position:relative}.activity-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .current-weather.weather-unavailable{gap:12px;text-align:center}.current-weather.weather-unavailable>strong{max-width:220px;font-size:24px;line-height:1.05}.current-weather.weather-unavailable>span{font-size:16px;color:#5d675f}.forecast-card.weather-unavailable{grid-template-rows:42px 1fr}.forecast-fallback{grid-column:1/3;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#5d675f;font-size:20px;line-height:1.25}.next-up-empty{display:flex;flex-direction:column}.next-up-empty:before{background:${COLORS.green}}.next-up-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 10px}.next-up-empty-copy strong{font-size:20px}.next-up-empty-copy small{font-size:14px;color:#58635c;margin-top:6px}
 /* Real-data resilience: bounded calendar rows, adaptive one-card athletics, and ranked rail items. */
 .upcoming-list{overflow:visible}.upcoming-more{height:54px;display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(20,40,31,.15);font-size:21px;font-weight:600;color:${COLORS.green}}
