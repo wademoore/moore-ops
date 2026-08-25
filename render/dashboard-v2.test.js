@@ -197,6 +197,8 @@ describe('experimental dashboard v2 isolation and structure', () => {
   it('uses painterly athletics labels and a compact next-event rail card', () => {
     assert.match(html, /\.athletic-ribbon:before\{content:""/);
     assert.match(html, /mask-image:var\(--section-green\)/);
+    assert.match(html, /\.athletic-logo\{width:38px;height:38px;padding:0;background:transparent;border-radius:0\}/);
+    assert.doesNotMatch(html, /\.athletic-logo\{[^}]*background:#fff/);
     assert.match(html, /On the Horizon/);
     assert.match(html, /Moore Family Orlando Vacation/);
   });
