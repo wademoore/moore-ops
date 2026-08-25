@@ -50,20 +50,29 @@ Installed in `4a8cc52`; the Bash arm and this section added in the follow-up. Tw
 separate mechanisms live in `.claude/settings.json`, and they are not equally strong.
 Read this before assuming either one protects you.
 
-### What `permissions.deny` covers
+### What `permissions.deny` covered — and why it is gone
 
-One rule: `Bash(git push:*)`. The `:*` form matches both `git push` bare and
-`git push <anything>`; the wildcard form `Bash(git push *)` compiles to an anchored
-regex requiring a trailing space and would miss a bare `git push`. Compound commands
-are split per subcommand, so `cd x && git push` is denied too.
+`4a8cc52` shipped one rule: `Bash(git push:*)`. The `:*` form matches both `git push`
+bare and `git push <anything>`; the wildcard form `Bash(git push *)` compiles to an
+anchored regex requiring a trailing space and would miss a bare `git push`. Compound
+commands are split per subcommand, so `cd x && git push` was denied too.
 
-That is the whole of its coverage: **the `Bash` tool, invoking `git push`, in a session
+That was the whole of its coverage: **the `Bash` tool, invoking `git push`, in a session
 that loaded this settings file.**
 
-### What `permissions.deny` does not cover
+**The rule was removed in the follow-up.** It failed in both directions at once. It was
+too narrow to be a gate (see below), and simultaneously too broad to be useful friction:
+scoped to `git push` with no remote or branch qualifier, it blocked *every* push,
+including the push of a feature branch — the sanctioned way to get a change onto `main`
+now that `main` requires a PR. In this very session it blocked a feature-branch push and
+left the GitHub API route wide open, which is precisely backwards: it obstructed the
+reviewed path and permitted the unreviewed one. A rule that makes the safe route harder
+and the risky route no harder is worse than no rule.
 
-It does not cover the *outcome* "commits reach the remote." It covers one tool taking
-one route to that outcome. Everything else that reaches the same place is untouched:
+### What `permissions.deny` did not cover
+
+It did not cover the *outcome* "commits reach the remote." It covered one tool taking
+one route to that outcome. Everything else that reaches the same place was untouched:
 
 - the GitHub MCP tools (`create_or_update_file`, `push_files`, `merge_pull_request`)
 - the GitHub REST API over `curl`
@@ -88,11 +97,14 @@ them, you have friction, not a gate — and friction that reads like a gate is w
 no gate, because it buys false confidence.
 
 For push specifically: **the real enforcement is branch protection on `main`**, which is
-server-side and binds every route including the API. The local deny rule is friction —
-useful friction, because it makes the direct route conspicuous rather than reflexive, but
-it is not the thing standing between a bad commit and `main`. Do not treat a green local
-deny rule as proof that `main` is safe. Verify protection at the server: `main` reports
+server-side and binds every route including the API. The local deny rule was friction, not
+the thing standing between a bad commit and `main`. Never treat a green local deny rule as
+proof that `main` is safe. Verify protection at the server: `main` reports
 `"protected": true` via the branch API; every other branch in this repo reports `false`.
+
+If a local push rule is ever reinstated, scope it to the outcome actually worth
+preventing — a push *to `main`* — not to the verb `git push`. Blocking the verb punishes
+the PR workflow and stops nothing that matters.
 
 **The `Edit|Write` vs. `Bash` gap below is the same lesson in a second place.** The
 archived-files hook originally matched only `Edit|Write` — it was scoped to two tools,
