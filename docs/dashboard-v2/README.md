@@ -4,6 +4,13 @@
 
 Dashboard v2 is the canonical TV dashboard, delivered through `dashboard-artifact/generator.js` → S3 → Pi pull. Its everyday composition uses NOW/NEXT in the left panel, followed by Weekly Priorities, the calendar-driven Centers week, and dinner. The artifact pipeline publishes one everyday `index.html`; NOW/NEXT and Centers are not sibling variants.
 
+## Production release guardrails
+
+- The canonical renderer includes deterministic NOW/NEXT and special-day modes. Special-day work must be integrated with that line before deployment; any generated `level2.html` must render NOW/NEXT.
+- Use `npm run build:dashboard-artifact`, never a bare `sam build`. The supported command copies the allowlisted data files and complete asset directories into the Lambda package.
+- Before deployment, run `npm run validate:dashboard-artifact-package`, `npm run validate:dashboard-artifact-startup`, and `npm run validate:dashboard-release-transitions`.
+- The transition canary covers the morning special page, daytime NOW/NEXT fallback, 4 PM live-time coda, evening canonical index, and fallback-to-index navigation across release replacement.
+
 ## Architecture decision
 
 V2 is designed as a standalone HTML dashboard that reuses the existing `buildDigest()` data model. This allows the browser to own the live clock, countdowns, and eventually weather refreshes while the mature Moore Ops pipeline continues to own family operations, calendar normalization, tasks, priorities, meals, and athletics.

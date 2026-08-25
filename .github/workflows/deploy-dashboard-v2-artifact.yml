@@ -19,6 +19,7 @@ on:
       - 'scripts/validate-dashboard-artifact-deployment.mjs'
       - 'scripts/validate-dashboard-artifact-package.mjs'
       - 'scripts/smoke-dashboard-artifact-package.cjs'
+      - 'scripts/validate-dashboard-release-transitions.mjs'
   workflow_dispatch:
 
 permissions:
@@ -69,6 +70,7 @@ jobs:
           npm run build:dashboard-artifact
           npm run validate:dashboard-artifact-package
           npm run validate:dashboard-artifact-startup
+          npm run validate:dashboard-release-transitions
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4

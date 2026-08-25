@@ -16,6 +16,7 @@
     "validate:dashboard-artifact-deployment": "node scripts/validate-dashboard-artifact-deployment.mjs",
     "validate:dashboard-artifact-package": "node scripts/validate-dashboard-artifact-package.mjs",
     "validate:dashboard-artifact-startup": "node scripts/smoke-dashboard-artifact-package.cjs",
+    "validate:dashboard-release-transitions": "node scripts/validate-dashboard-release-transitions.mjs",
     "build:dashboard-artifact": "sam build --template-file infrastructure/dashboard-artifact-refresh/template.json && node scripts/prepare-dashboard-artifact-package.mjs"
   },
   "dependencies": {
