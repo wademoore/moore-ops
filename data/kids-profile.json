@@ -19,6 +19,20 @@
     "centersRotation": {
       "note": "Collins homeroom sequence, confirmed from Open House packet Week 1 table. Not yet confirmed as Myles's permanent numbered group (groups assigned week of 8/31 based on music selection) — cross-check against whichever Group 1-6 pattern matches once assigned.",
       "sequence": ["Music", "Music", "PE1", "Art", "Computer", "PE2", "Media"]
+    },
+    "band": {
+      "director": "Jamie Lantz",
+      "instrument": "Baritone",
+      "rental": {
+        "status": "submitted",
+        "vendor": "Amory Music (Music & Arts partner)"
+      },
+      "careKit": "not yet purchased",
+      "practiceChart": {
+        "status": "not yet received",
+        "recommendedMinutesPerWeek": 60,
+        "note": "Guardian must sign weekly. Practice routine/timing not yet worked out - will need to fit around Sharks (Mon/Wed evenings) and NFL Flag (Sundays)."
+      }
     }
   },
   "ophelia": {
