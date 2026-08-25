@@ -44,6 +44,133 @@
 
 Direct-to-main after Reviewer sign-off remains this project's default for all Coder/Updater work, including small, well-specified changes. Feature branches are not the default safety mechanism — the Reviewer gate is. Use a feature branch as a deliberate escalation, not routine practice, specifically for changes where the risk is environment-dependent in a way local testing can't fully rule out (e.g. timezone/locale logic, dependency version bumps, anything sensitive to the Lambda runtime specifically) — in those cases, a branch + PR gets a free independent confirmation from CI (which runs under UTC, matching Lambda) before merge, which is a real benefit local subprocess-spawned tests can't fully replicate.
 
+## The gate (`.claude/settings.json` + `scripts/hooks/guard-archived-files.sh`)
+
+Installed in `4a8cc52`; the Bash arm and this section added in the follow-up. Two
+separate mechanisms live in `.claude/settings.json`, and they are not equally strong.
+Read this before assuming either one protects you.
+
+### What `permissions.deny` covers
+
+One rule: `Bash(git push:*)`. The `:*` form matches both `git push` bare and
+`git push <anything>`; the wildcard form `Bash(git push *)` compiles to an anchored
+regex requiring a trailing space and would miss a bare `git push`. Compound commands
+are split per subcommand, so `cd x && git push` is denied too.
+
+That is the whole of its coverage: **the `Bash` tool, invoking `git push`, in a session
+that loaded this settings file.**
+
+### What `permissions.deny` does not cover
+
+It does not cover the *outcome* "commits reach the remote." It covers one tool taking
+one route to that outcome. Everything else that reaches the same place is untouched:
+
+- the GitHub MCP tools (`create_or_update_file`, `push_files`, `merge_pull_request`)
+- the GitHub REST API over `curl`
+- `git` invoked from inside a script the model runs
+- any session that did not load this settings file (a fresh clone, CI, a different cwd)
+- a human at a terminal
+
+**This is not hypothetical — it happened during this gate's own bootstrap.** In the
+session that produced `4a8cc52`, the deny rule blocked `git push`, and that session
+pushed the commit through the GitHub API instead. The gate did not stop the push; it
+chose the route the push took. The commit still carries the evidence: `4a8cc52` is
+authored and committed by `wademoore <68702425+wademoore@users.noreply.github.com>`,
+the GitHub API identity, where ordinary local Claude commits in this repo are
+`Claude <noreply@anthropic.com>`.
+
+### The generalizable lesson
+
+**A deny rule scoped to a tool is not scoped to an outcome. Any other tool that reaches
+the same outcome is an open door.** When you write a rule, name the outcome you want
+prevented, then enumerate every tool that can reach it. If the rule only covers some of
+them, you have friction, not a gate — and friction that reads like a gate is worse than
+no gate, because it buys false confidence.
+
+For push specifically: **the real enforcement is branch protection on `main`**, which is
+server-side and binds every route including the API. The local deny rule is friction —
+useful friction, because it makes the direct route conspicuous rather than reflexive, but
+it is not the thing standing between a bad commit and `main`. Do not treat a green local
+deny rule as proof that `main` is safe. Verify protection at the server: `main` reports
+`"protected": true` via the branch API; every other branch in this repo reports `false`.
+
+**The `Edit|Write` vs. `Bash` gap below is the same lesson in a second place.** The
+archived-files hook originally matched only `Edit|Write` — it was scoped to two tools,
+not to the outcome "an archived file gets modified." A shell redirect reached that
+outcome untouched, and this environment often prefers Bash for edits, so the bypass was
+the likely path rather than an exotic one. Same shape, same fix: enumerate the routes.
+
+### What the archived-files hook covers
+
+`PreToolUse` matcher `Edit|Write|Bash` → `scripts/hooks/guard-archived-files.sh`. Exit 2
+blocks the tool call and returns stderr to the model. The script is committed mode
+`100755`, but is still invoked as `bash "$CLAUDE_PROJECT_DIR/..."` so it does not depend
+on the exec bit or on cwd.
+
+Two arms, and they differ in kind:
+
+- **`Edit|Write` — reliable.** Checks `.tool_input.file_path`, an exact path. A path
+  either is under `data/archive/` or `scripts/archive/` or it is not.
+- **`Bash` — best-effort.** Checks `.tool_input.command`, a shell string, by pattern.
+  Pattern-matching shell is never airtight. The rules are:
+  - (a) redirect (`>` `>>` `>|` `1>` `&>`) whose target contains an `archive/` path
+    segment. Scoped to the redirect target, so reads piped elsewhere still work.
+  - (b) an archived path anywhere in a command running a write-capable utility:
+    `tee cp mv rsync install ln rm rmdir unlink shred truncate touch mkdir chmod chown
+    chgrp patch dd find python python3 node perl ruby`.
+  - (c) in-place stream editors: `sed`/`perl`/`awk` with `-i`/`--in-place`/`inplace`.
+  - (d) mutating git subcommands: `checkout restore rm mv apply clean stash`. Read-only
+    git (`log`, `show`, `diff`) stays allowed — the archive exists to be queried.
+  - (e) `cd` into an archive directory followed by any write indicator, which otherwise
+    defeats (a)–(d) because the archived path never appears in the write itself.
+
+  Redundant path separators are tolerated: `data/archive`, `data//archive`,
+  `data/./archive` all match.
+
+### What the archived-files hook does not cover — named, not implied
+
+These were probed against the actual script and **confirmed to escape**. They are not
+theoretical:
+
+| Escaping form | Why |
+|---|---|
+| `D=data/archive; cat > $D/x.json` | variable indirection — the literal path never appears in the command text |
+| `cat > $(echo data/archive)/x.json` | command substitution — same reason |
+| `cat > "data/arch""ive/x.json"` | string splitting across quotes |
+| `printf x > da't'a/archive/x.json` | intra-word quoting |
+| `bash /tmp/writer.sh` | indirection through a file — the hook never sees the write |
+| any long-running process that writes later | the hook is `PreToolUse` on one command |
+
+The first four are deliberate evasion, and **this gate is not an adversary gate** — it is
+an accident gate, built because the Champs/SA wrong-file incident survived a full
+Reviewer pass. Against a model or human actively trying to get around it, string matching
+loses; the only real protection for archived content is that it is committed to git and a
+bad write is recoverable and reviewable. The last two are unclosable by string matching at
+all: **once execution leaves the command string, a `PreToolUse` text hook has no reach.**
+
+Known over-blocks, accepted deliberately (false blocks are recoverable; false allows are
+the incident):
+
+- `cp data/archive/x.json /tmp/backup.json` — blocked though the archive is the *source*.
+- `echo note > /tmp/my/archive/notes.txt` — any path with an `archive/` segment.
+- `python3 -c "print(open('data/archive/x.json').read())"` — a read through an
+  interpreter in the (b) list.
+- **Any command whose text merely contains an archived path literal**, including a test
+  harness, a `grep` for the pattern, or a doc edit quoting it. Work around it by putting
+  the literals in a file outside the repo and running that file.
+
+Rule (e) needed tightening during development for exactly this class of reason: its `cd`
+argument pattern was initially `[^;|&]*`, which spans whitespace, so a `cd` anywhere in a
+script plus the word "archive" in a later comment matched. Bounded to a single
+whitespace-free token. Treat any new rule here as guilty until table-tested both ways.
+
+### Test matrix
+
+63-case block/allow matrix. Because the live hook blocks any command containing the
+literals, the matrix cannot live in a Bash tool call — keep it as a file outside the repo
+and run `bash <path>`. It asserts both directions: every write form blocked, and every
+read of an archived file plus every write outside `archive/` still allowed.
+
 ## Sports data architecture (as of June 2026)
 
 ### First Day of School Level-3 takeover (August 2026)
