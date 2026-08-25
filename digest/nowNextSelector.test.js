@@ -7,6 +7,12 @@ const event = (title, dateTime, extra = {}) => ({ title, cardType: 'standard', r
 const data = overrides => ({ now: NOW, days: [{ events: [], tasks: [] }, { events: [], tasks: [] }], upcomingEvents: [], flags: [], ...overrides });
 
 describe('deterministic NOW/NEXT selection', () => {
+  it('uses source-calendar ownership for ambiguous event subjects', () => {
+    const appointment = event('Doctor', '2026-08-17T18:30:00-04:00', { _calName: 'Robyn' });
+    const selected = selectNowNext(data({ days: [{ events: [appointment], tasks: [] }] }), { now: new Date('2026-08-17T17:00:00-04:00') });
+    assert.equal(selected.subject, 'Robyn — Doctor');
+  });
+
   it('selects the four approved primary states', () => {
     const imminent = selectNowNext(data({ days: [{ events: [event('Myles — Sharks Practice', '2026-08-17T18:00:00-04:00')], tasks: [] }] }));
     assert.equal(imminent.signal, 'Leave in 10 min');

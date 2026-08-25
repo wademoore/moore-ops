@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { normalizeDashboardText } from '../digest/displayNormalization.js';
+import { eventDisplayTitle } from '../digest/eventPresentation.js';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { formatSportsEventWhen } from '../sports/model.js';
@@ -176,7 +177,10 @@ function activityLogo(event) {
 }
 
 function analyzeEventSemantics(event) {
-  const text = `${event?.title || ''} ${event?.subtitle || ''} ${event?._calName || ''}`.toLowerCase();
+  // Calendar source establishes who an event belongs to, not what kind of
+  // event it is. Including names such as "Family" here produced decorative
+  // guesses (for example a heart on every otherwise unknown Family event).
+  const text = `${event?.title || ''} ${event?.subtitle || ''}`.toLowerCase();
   const reasonCodes = [];
   const reason = code => { if (!reasonCodes.includes(code)) reasonCodes.push(code); };
 
@@ -191,7 +195,10 @@ function analyzeEventSemantics(event) {
   const recurringHousehold = /recycl|trash|curbside|routine household/.test(text);
   const vehicleDetail = /(?:vehicle|car|tesla|pacifica)\s+(?:detail|detailing)|detail(?:ing)?\s+(?:appointment|appt)|drop off .*\b(?:vehicle|car|tesla|pacifica|detail)/.test(text);
   const pickupDropoff = !recurringHousehold && /drop[ -]?off|pick[ -]?up|pickup/.test(text);
-  const appointment = /dentist|dental|doctor|orthodont|pediatric|therapy|medical|appointment|\bappt\b|pharmacy|physical\b|pcp\b/.test(text);
+  const medical = /dentist|dental|doctor|\bortho\b|orthodont|pediatric|therapy|medical|physical\b|pcp\b|pharmacy/.test(text);
+  const personalAppointment = /\bspa\b|salon|haircut|massage|personal care/.test(text);
+  const appointment = medical || personalAppointment || /appointment|\bappt\b/.test(text);
+  const work = /\bon[ -]?call\b|\bwork\b|office|business|conference|shift\b/.test(text);
   const travel = /flight|airport|family trip|vacation|hotel|train|\btravel\b|road trip|departure/.test(text);
   const familyVisit = /\bvisit(?:s|ing)?\b/.test(String(event?.title || '').toLowerCase());
   const itineraryTitle = cleanDisplayText(event?.title).replace(/^COUNTDOWN:\s*/i, '').trim();
@@ -233,7 +240,9 @@ function analyzeEventSemantics(event) {
   let classification = 'generic';
   if (travel) classification = 'travel';
   else if (vehicleDetail || recurringHousehold || pickupDropoff || /plumber|terminix|pest|repair|maintenance|\bhousehold\b/.test(text)) classification = 'household';
-  else if (appointment) classification = 'appointment';
+  else if (medical) classification = 'medical';
+  else if (personalAppointment || appointment) classification = 'appointment';
+  else if (work) classification = 'work';
   else if (/school|grade|teacher|library|pta|color games|field day|parent panel|open house/.test(text) && !/\bidance\b/.test(text)) classification = 'school';
   else if (/\bidance\b|institute for dance|recital|dance|theater|theatre|concert|performance|music|choir|art/.test(text)) classification = 'arts';
   else if (sportsContext) classification = 'sports';
@@ -284,14 +293,16 @@ function activityCategory(event) {
 
 function categorySvg(category) {
   const common = 'viewBox="0 0 32 32" aria-hidden="true"';
-  if (category === 'appointment') return `<svg ${common}><path d="M16 5v22M5 16h22"/><path d="M10 4h12v24H10z"/></svg>`;
+  if (category === 'medical') return `<svg ${common}><path d="M16 5v22M5 16h22"/><path d="M10 4h12v24H10z"/></svg>`;
+  if (category === 'appointment') return `<svg ${common}><rect x="5" y="7" width="22" height="20" rx="2"/><path d="M10 4v7M22 4v7M5 13h22"/></svg>`;
+  if (category === 'work') return `<svg ${common}><rect x="4" y="10" width="24" height="17" rx="2"/><path d="M11 10V6h10v4M4 17h24M13 17v3h6v-3"/></svg>`;
   if (category === 'travel') return `<svg ${common}><path d="M4 18l24-8-8 18-4-8-8-4z"/><path d="M16 20l4 8"/></svg>`;
   if (category === 'school') return `<svg ${common}><path d="M4 12l12-7 12 7-12 7z"/><path d="M8 15v8c5 3 11 3 16 0v-8M28 12v9"/></svg>`;
   if (category === 'household') return `<svg ${common}><path d="M4 15L16 5l12 10M8 13v14h16V13"/><path d="M13 27v-8h6v8"/></svg>`;
   if (category === 'arts') return `<svg ${common}><path d="M8 24c-4 0-5-5-2-7 2-2 6-1 8 1V7l12-3v15"/><circle cx="9" cy="24" r="4"/><circle cx="22" cy="22" r="4"/></svg>`;
   if (category === 'sports') return `<svg ${common}><circle cx="16" cy="16" r="12"/><path d="M16 4l5 5-2 6h-6l-2-6zM4 15l7 1 3 6-4 5M28 15l-7 1-3 6 4 5"/></svg>`;
   if (category === 'family') return `<svg ${common}><path d="M16 27S5 20 5 12c0-7 9-9 11-3 2-6 11-4 11 3 0 8-11 15-11 15z"/></svg>`;
-  return `<svg ${common}><path d="M16 3l3 9 9 4-9 3-3 10-3-10-9-3 9-4z"/></svg>`;
+  return '';
 }
 
 function activityVisual(event, className) {
@@ -299,6 +310,7 @@ function activityVisual(event, className) {
   const category = activityCategory(event);
   const fallback = categorySvg(category);
   if (url) return `<span class="${className} semantic-icon activity-visual category-${category}" aria-label="${esc(category)}">${fallback}<img src="${esc(url)}" alt="" onerror="this.remove()"></span>`;
+  if (!fallback) return `<span class="${className} semantic-icon category-none" aria-hidden="true"></span>`;
   return `<span class="${className} semantic-icon category-${category}" aria-label="${esc(category)}">${fallback}</span>`;
 }
 
@@ -516,7 +528,7 @@ function renderUpcoming(data) {
     const person = people.has('both') || (people.has('myles') && people.has('ophelia')) ? 'both' : (people.values().next().value || 'family');
     const eventLines = day.items.map(item => `<div class="upcoming-event">
       ${activityVisual(item.event, 'upcoming-logo')}
-      <div><strong>${esc(cleanDisplayText(item.event.title))}</strong><span>${esc(rangeDetail(item))}</span></div>
+      <div><strong>${esc(eventDisplayTitle(item.event))}</strong><span>${esc(rangeDetail(item))}</span></div>
     </div>`).join('');
     return `<div class="upcoming-day person-${person}">
       <div class="date-tile"><span>${formatDate(date, { weekday: 'short' }).toUpperCase()}</span><b>${date.getDate()}</b></div>
@@ -1009,7 +1021,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .weather-label,.forecast-heading,.next-up-label{display:flex;align-items:center;justify-content:center;padding-top:0;padding-bottom:0}
 .ticker-slot:first-child{padding-left:112px}
 /* Runtime fallbacks: semantic event marks, explicit weather state, and stable horizon geometry. */
-.semantic-icon{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(212,154,24,.10);color:${COLORS.gold};padding:3px}.semantic-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:1.8;fill:none}.semantic-icon.category-appointment{color:${COLORS.red}}.semantic-icon.category-school{color:${COLORS.blue}}.semantic-icon.category-household{color:${COLORS.green}}.semantic-icon.category-arts{color:${COLORS.purple}}.semantic-icon.category-sports{color:${COLORS.blue}}.semantic-icon.category-family{color:${COLORS.red}}.activity-visual{position:relative}.activity-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:${COLORS.paper}}
+.semantic-icon{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(212,154,24,.10);color:${COLORS.gold};padding:3px}.semantic-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:1.8;fill:none}.semantic-icon.category-medical{color:${COLORS.red}}.semantic-icon.category-appointment{color:${COLORS.purple}}.semantic-icon.category-work{color:${COLORS.blue}}.semantic-icon.category-school{color:${COLORS.blue}}.semantic-icon.category-household{color:${COLORS.green}}.semantic-icon.category-arts{color:${COLORS.purple}}.semantic-icon.category-sports{color:${COLORS.blue}}.semantic-icon.category-family{color:${COLORS.red}}.semantic-icon.category-none{background:transparent}.activity-visual{position:relative}.activity-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:${COLORS.paper}}
 .current-weather.weather-unavailable{gap:12px;text-align:center}.current-weather.weather-unavailable>strong{max-width:220px;font-size:24px;line-height:1.05}.current-weather.weather-unavailable>span{font-size:16px;color:#5d675f}.forecast-card.weather-unavailable{grid-template-rows:42px 1fr}.forecast-fallback{grid-column:1/3;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#5d675f;font-size:20px;line-height:1.25}.next-up-empty{display:flex;flex-direction:column}.next-up-empty:before{background:${COLORS.green}}.next-up-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 10px}.next-up-empty-copy strong{font-size:20px}.next-up-empty-copy small{font-size:14px;color:#58635c;margin-top:6px}
 /* Real-data resilience: bounded calendar rows, adaptive one-card athletics, and ranked rail items. */
 .upcoming-list{overflow:visible}.upcoming-more{height:54px;display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(20,40,31,.15);font-size:21px;font-weight:600;color:${COLORS.green}}

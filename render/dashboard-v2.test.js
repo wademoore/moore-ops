@@ -220,7 +220,7 @@ describe('runtime display policies', () => {
   it('shares deterministic semantics and reason codes across audited real events', () => {
     const cases = [
       ['⚑ DECIDE: W&M at Duke (Sep 26) — Buy tickets?', 'sports', 100, ['PREP_DECISION', 'PREP_TICKET_PURCHASE', 'SPORTS_PLANNING']],
-      ['Physical — PCP Office Visit', 'appointment', 35, ['APPOINTMENT_PHYSICAL']],
+      ['Physical — PCP Office Visit', 'medical', 35, ['APPOINTMENT_PHYSICAL']],
       ["Spirit Week: Summer's Final Wave — last day of camp!", 'family', 110, ['MILESTONE_FIRST_LAST']],
       ['iDance Open House', 'arts', 100, ['SPECIAL_OPEN_HOUSE']],
       ['Stonehouse Open House (Grades 1-5)', 'school', 100, ['SPECIAL_OPEN_HOUSE']],
@@ -243,7 +243,7 @@ describe('runtime display policies', () => {
 
   it('uses semantic event marks instead of diagnostic yellow circles', () => {
     const semanticHtml = renderDashboardV2(sampleDashboardV2Data);
-    assert.equal(activityCategory({ title: 'Dentist appointment' }), 'appointment');
+    assert.equal(activityCategory({ title: 'Dentist appointment' }), 'medical');
     assert.equal(activityCategory({ title: 'Matoaka School field day' }), 'school');
     assert.equal(activityCategory({ title: 'Airport pickup' }), 'travel');
     assert.equal(activityCategory({ title: 'Recycling Pickup' }), 'household');
@@ -392,8 +392,10 @@ describe('real-data resilience policies', () => {
     assert.equal((html.match(/class="alert-identity"/g) || []).length, 1);
     assert.equal(cleanDisplayText('🔵 757 Swim'), '757 Swim');
     assert.equal(activityCategory({ title: 'iDance Open House' }), 'arts');
-    assert.equal(activityCategory({ title: 'Annual physical' }), 'appointment');
+    assert.equal(activityCategory({ title: 'Annual physical' }), 'medical');
     assert.equal(activityCategory({ title: 'Tesla Detail' }), 'household');
+    assert.equal(activityCategory({ title: 'Spa U' }), 'appointment');
+    assert.equal(activityCategory({ title: 'On-Call', _calName: 'Wade On-Call' }), 'work');
   });
 
   it('normalizes owner shorthand in the canonical Next Two Weeks view', () => {
@@ -405,6 +407,24 @@ describe('real-data resilience policies', () => {
     });
     assert.equal((html.match(/Robyn · Dentist/g) || []).length, 1);
     assert.doesNotMatch(html, />R Dentist</);
+  });
+
+  it('labels ambiguous events from person-specific calendars and leaves generic icons blank', () => {
+    const events = [
+      { ...event('On-Call', '2026-06-10T09:30:00-04:00'), _calName: 'Wade On-Call' },
+      { ...event('Spa U', '2026-06-11T09:30:00-04:00'), _calName: 'Robyn' },
+      { ...event('Ortho', '2026-06-12T09:30:00-04:00'), _calName: 'Myles' },
+      { ...event('Unclassified Thing', '2026-06-13T09:30:00-04:00'), _calName: 'Family' },
+    ];
+    const html = renderDashboardV2({ ...sampleDashboardV2Data, upcomingEvents: events });
+    assert.match(html, /Wade — On-Call/);
+    assert.match(html, /Robyn — Spa U/);
+    assert.match(html, /Myles — Ortho/);
+    assert.match(html, /semantic-icon category-work/);
+    assert.match(html, /semantic-icon category-appointment/);
+    assert.match(html, /semantic-icon category-medical/);
+    const genericHtml = renderDashboardV2({ ...sampleDashboardV2Data, upcomingEvents: [events[3]] });
+    assert.match(genericHtml, /semantic-icon category-none/);
   });
 
   it('embeds organization and ticker logos without external image URLs', () => {

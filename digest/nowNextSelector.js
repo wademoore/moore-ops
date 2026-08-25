@@ -1,4 +1,5 @@
 import { normalizeDashboardText } from './displayNormalization.js';
+import { eventDisplayTitle } from './eventPresentation.js';
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -121,7 +122,7 @@ function operationalTiming(event, when, { travelMinutesForEvent, departureBuffer
 }
 
 function subjectFor(event) {
-  return normalizeDashboardText(clean(event?.title || 'Scheduled item'));
+  return eventDisplayTitle({ ...event, title: normalizeDashboardText(clean(event?.title || 'Scheduled item')) });
 }
 
 function eventIdentity(event, when) {
