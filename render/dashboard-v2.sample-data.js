@@ -110,7 +110,7 @@ const sampleDashboardV2Data = {
   flags: [
     { level: 'red', title: 'Backpack Prep — Wade Action Required', body: 'Ophelia has Library — pack book tonight.' },
     { level: 'amber', title: 'Waves Pool Party — Pizza Order Due', body: 'Order + pay before the end of practice Thursday.' },
-    { level: 'blue', title: 'Madison Onboarding — Tasks Open', body: 'Add Madison to Rec Connect pickup + print binder.' },
+    { level: 'blue', title: 'Emma Onboarding — Tasks Open', body: 'Add Emma to Rec Connect pickup + print binder.' },
   ],
   nationalsData: {
     lastGame: { result: 'W', score: '4–3', opponent: 'SF', atHome: false },

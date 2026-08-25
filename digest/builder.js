@@ -43,7 +43,7 @@
  *
  * Task {
  *   time:  string
- *   owner: 'wade'|'robyn'|'madison'|'coaching'
+ *   owner: 'wade'|'robyn'|'emma'|'coaching'
  *   text:  string
  * }
  */
@@ -108,9 +108,9 @@ async function readDataFile(filename) {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// 8. LOOK-AHEAD BAG PREP TASKS (Madison, next 7 days)
+// 8. LOOK-AHEAD BAG PREP TASKS (Emma, next 7 days)
 // ---------------------------------------------------------------------------
-// Surface upcoming activity events so Madison is never caught off guard.
+// Surface upcoming activity events so Emma is never caught off guard.
 // These appear in the digest as amber flags, not as today's task list.
 
 function buildBagPrepLookahead(allResolvedEvents, today) {
@@ -119,7 +119,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
 
   for (const ev of allResolvedEvents) {
     if (!ev.gearReminder) continue;
-    if (!ev.owner.includes('madison')) continue;
+    if (!ev.owner.includes('emma')) continue;
 
     const evDate = parseEventDate(ev.raw);
     if (!evDate) continue;
