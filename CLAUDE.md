@@ -50,24 +50,91 @@ Installed in `4a8cc52`; the Bash arm and this section added in the follow-up. Tw
 separate mechanisms live in `.claude/settings.json`, and they are not equally strong.
 Read this before assuming either one protects you.
 
-### What `permissions.deny` covered — and why it is gone
+### What `permissions.deny` covers — reinstated, scoped to `main`
 
-`4a8cc52` shipped one rule: `Bash(git push:*)`. The `:*` form matches both `git push`
-bare and `git push <anything>`; the wildcard form `Bash(git push *)` compiles to an
-anchored regex requiring a trailing space and would miss a bare `git push`. Compound
-commands are split per subcommand, so `cd x && git push` was denied too.
+**History.** `4a8cc52` shipped one rule, `Bash(git push:*)`, and PR #15 removed it. It
+failed in both directions at once: too narrow to be a gate (see below), and
+simultaneously too broad to be useful friction. Scoped to the verb `git push` with no
+remote or branch qualifier, it blocked *every* push, including the push of a feature
+branch — the sanctioned way to get a change onto `main` now that `main` requires a PR.
+It obstructed the reviewed path and left the API route wide open, which is precisely
+backwards. A rule that makes the safe route harder and the risky route no harder is
+worse than no rule.
 
-That was the whole of its coverage: **the `Bash` tool, invoking `git push`, in a session
-that loaded this settings file.**
+**Reinstated, scoped to the outcome instead of the verb.** Four rules:
 
-**The rule was removed in the follow-up.** It failed in both directions at once. It was
-too narrow to be a gate (see below), and simultaneously too broad to be useful friction:
-scoped to `git push` with no remote or branch qualifier, it blocked *every* push,
-including the push of a feature branch — the sanctioned way to get a change onto `main`
-now that `main` requires a PR. In this very session it blocked a feature-branch push and
-left the GitHub API route wide open, which is precisely backwards: it obstructed the
-reviewed path and permitted the unreviewed one. A rule that makes the safe route harder
-and the risky route no harder is worse than no rule.
+```json
+"deny": [
+  "Bash(git push * main)",
+  "Bash(git push * main *)",
+  "Bash(git push * *:main)",
+  "Bash(git push * *:main *)"
+]
+```
+
+Verified empirically against the installed build, **Claude Code 2.1.246** — not the
+2.1.243 the original note was written against. Method: a throwaway git repo whose
+`origin` is a bare repo in the same temp directory, one headless `claude -p` session per
+case with the rules in `.claude/settings.json`, and two independent signals per case —
+whether the harness recorded a permission denial for the exact command, and whether the
+bare repo's ref actually moved (proof the push really ran, rather than the sub-agent
+merely narrating).
+
+| Command | On branch | `git push * main` alone | All four rules (shipping) |
+|---|---|---|---|
+| `git push` | `main` | allowed | **allowed — hole, see below** |
+| `git push` | feature | allowed | allowed |
+| `git push origin main` | `main` | DENIED | DENIED |
+| `git push -u origin main` | `main` | DENIED | DENIED |
+| `git push --force origin main` | `main` | DENIED | DENIED |
+| `git push --force-with-lease origin main` | `main` | DENIED | DENIED |
+| `git push origin main --force` | `main` | allowed | DENIED |
+| `git push origin HEAD:main` | `main` | allowed | DENIED |
+| `git push origin main:main` | `main` | allowed | DENIED |
+| `git push origin my-feature` | `my-feature` | allowed | allowed |
+| `git push -u origin claude/foo` | `claude/foo` | allowed | allowed |
+
+Every outcome above was produced by a live tool call under the rule set named in its
+column. They were additionally cross-checked against the matcher extracted verbatim from
+the installed binary (function `ru` plus its four regex constants), which agreed with the
+live harness on 11 of 11 live-confirmed cases.
+
+**Why the wildcard form (`*`) and not the prefix form (`:*`).** A `:*` rule is a literal
+prefix match, so `Bash(git push * main:*)` classifies as the prefix `git push * main` and
+looks for a literal asterisk — it matches nothing. Only the wildcard form compiles to a
+regex: `git push * main` becomes `/^git push .* main$/s`, which is what pins the branch
+name while letting the remote and any inserted flags float. Claude Code emits a
+validation warning about a wildcard "before the rest of the command" also matching
+inserted options; that warning is aimed at *allow* rules. For a *deny* rule, matching
+inserted options is exactly the point.
+
+**Correction to the original note, which was wrong on this build.** `4a8cc52`'s commit
+message claimed `Bash(git push *)` "compiles to the anchored regex `/^git push .*$/`,
+which requires a space after `push` and so does NOT match a bare `git push`" — and that
+claim was the stated reason for choosing `:*` over `*`. **It does not hold on 2.1.246.**
+The compiler special-cases a pattern ending in ` *` with exactly one star, rewriting the
+trailing ` .*` to `( .*)?`, so `git push *` compiles to `/^git push( .*)?$/s` and *does*
+match a bare `git push`. Confirmed live: under `Bash(git push *)` a bare `git push` is
+DENIED, identically to `Bash(git push:*)`. Whether 2.1.243 genuinely differed is not
+established here; what is established is that the claim is false for the version now
+installed. Re-verify against the build you are actually running before relying on either
+form — that is the whole reason this section names a version number.
+
+**Residual holes, named rather than implied.** These reach `main` and are *not* blocked:
+
+| Form | Why it escapes |
+|---|---|
+| `git push` with `main` checked out | no branch name in the command text to match |
+| `git push origin +main` | `+main` is not preceded by a space, so ` main` never matches |
+| `git push origin refs/heads/main` | ends in `/main`, not ` main` |
+| every non-Bash route (MCP tools, REST API, a script, a human) | unchanged — see below |
+
+Bare `git push` is deliberately left allowed. Blocking it would require an exact-match
+rule on `git push`, which would also block a bare `git push` on a feature branch — the
+exact over-block that got the original rule removed. This is an **accident gate, not an
+adversary gate**, the same standing this project gives the archived-files hook: it stops
+the ways `main` actually gets pushed by mistake, not anyone who means it. The real
+enforcement remains branch protection on `main`.
 
 ### What `permissions.deny` did not cover
 
@@ -83,10 +150,28 @@ one route to that outcome. Everything else that reaches the same place was untou
 **This is not hypothetical — it happened during this gate's own bootstrap.** In the
 session that produced `4a8cc52`, the deny rule blocked `git push`, and that session
 pushed the commit through the GitHub API instead. The gate did not stop the push; it
-chose the route the push took. The commit still carries the evidence: `4a8cc52` is
-authored and committed by `wademoore <68702425+wademoore@users.noreply.github.com>`,
-the GitHub API identity, where ordinary local Claude commits in this repo are
-`Claude <noreply@anthropic.com>`.
+chose the route the push took.
+
+**The evidence is the committer identity, quoted here so the claim does not depend on a
+reachable commit.** Two identities appear on Claude-authored work in this repo:
+
+| Identity string | What produces it |
+|---|---|
+| `Claude <noreply@anthropic.com>` | an ordinary local `git commit` from a Claude Code session |
+| `wademoore <68702425+wademoore@users.noreply.github.com>` | a write through the GitHub API / web UI |
+
+`4a8cc52` — the commit that *installed* the `git push` deny rule — carries the second
+identity on **both** its author and committer fields. A commit that installs a local
+push gate, written by the very session the gate was blocking, could not have been
+created by a local `git commit` that the gate would have stopped; the API identity is
+what it left behind instead. That contrast is the whole of the proof, and it is
+reproduced above in full — no SHA lookup required.
+
+Corroboration, not evidence: `4a8cc52` was never merged into `main` (PR #15 squash-merged
+its content), so it survives only on branch `claude/subagent-files-git-hooks-m7lccy`. If
+that branch is ever deleted the commit becomes unreachable and the identity strings above
+become the only remaining record. Do not delete that branch casually — but the argument
+no longer collapses if someone does.
 
 ### The generalizable lesson
 
@@ -102,9 +187,13 @@ the thing standing between a bad commit and `main`. Never treat a green local de
 proof that `main` is safe. Verify protection at the server: `main` reports
 `"protected": true` via the branch API; every other branch in this repo reports `false`.
 
-If a local push rule is ever reinstated, scope it to the outcome actually worth
-preventing — a push *to `main`* — not to the verb `git push`. Blocking the verb punishes
-the PR workflow and stops nothing that matters.
+The local push rule **has now been reinstated** on exactly that principle: scoped to the
+outcome worth preventing — a push *to `main`* — not to the verb `git push`. Blocking the
+verb punished the PR workflow and stopped nothing that mattered. See "What
+`permissions.deny` covers" above for the four rules, the empirical match table, and the
+holes that remain. None of that changes this paragraph's point: the local rule is still
+friction, still Bash-only, and still not the thing standing between a bad commit and
+`main`. Server-side branch protection is. Re-verify it there, not here.
 
 **The `Edit|Write` vs. `Bash` gap below is the same lesson in a second place.** The
 archived-files hook originally matched only `Edit|Write` — it was scoped to two tools,
@@ -167,21 +256,80 @@ the incident):
 - `echo note > /tmp/my/archive/notes.txt` — any path with an `archive/` segment.
 - `python3 -c "print(open('data/archive/x.json').read())"` — a read through an
   interpreter in the (b) list.
-- **Any command whose text merely contains an archived path literal**, including a test
-  harness, a `grep` for the pattern, or a doc edit quoting it. Work around it by putting
-  the literals in a file outside the repo and running that file.
+- **Any command that contains an archived path literal *and* also names a listed
+  write-capable utility, in-place editor, or mutating git subcommand** — even when the
+  command is a pure read. This catches a test harness run via `node`/`python3` and a doc
+  edit via `sed -i`. Work around it by putting the literals in a file outside the repo
+  and running that file, which is why `scratchpad/gen-fixtures.mjs` lives outside the
+  repo.
+
+  **This bullet previously overstated the rule**, claiming that *any* command whose text
+  merely contains a literal is blocked, "including a test harness, a `grep` for the
+  pattern, or a doc edit quoting it." Probed against the live script: a bare
+  `grep '<literal>' CLAUDE.md` is **allowed** (`grep` is not in the (b) list), and so is
+  a `cat > CLAUDE.md <<'EOF'` heredoc whose body quotes a literal (`cat` is not either,
+  and the redirect target is not an archived path). The literal alone is not sufficient —
+  a listed utility has to be present too.
 
 Rule (e) needed tightening during development for exactly this class of reason: its `cd`
 argument pattern was initially `[^;|&]*`, which spans whitespace, so a `cd` anywhere in a
 script plus the word "archive" in a later comment matched. Bounded to a single
 whitespace-free token. Treat any new rule here as guilty until table-tested both ways.
 
-### Test matrix
+### Test matrix — committed, runs in the normal suite
 
-63-case block/allow matrix. Because the live hook blocks any command containing the
-literals, the matrix cannot live in a Bash tool call — keep it as a file outside the repo
-and run `bash <path>`. It asserts both directions: every write form blocked, and every
-read of an archived file plus every write outside `archive/` still allowed.
+`test/hooks/guard-archived-files.test.js`, driven by
+`test/fixtures/guard-archived-files-cases.json`. **73 cases, +1 fixture-integrity check =
+74 tests.** It asserts both directions: every write form blocked, and every read of an
+archived file plus every write outside `archive/` still allowed. Each case spawns the
+real hook script with a real PreToolUse payload on stdin and asserts the exit code (2 =
+blocked, 0 = allowed), so it tests the shipped script, not a copy of its logic.
+
+This supersedes the earlier 63-case matrix, which lived only in a session scratchpad and
+did not survive it. Coverage is a superset: all 24 rule-(b) utilities are now enumerated
+individually rather than sampled.
+
+**Why the fixtures are base64-encoded.** The live hook blocks any command that pairs an
+archived path literal with a listed utility (see over-blocks above), which would make a
+plain-text fixture file impossible to `sed -i`, or to process with `node`/`python3`,
+through ordinary tooling. Encoding the inputs — command strings and file paths alike —
+keeps the test maintainable: no file in the repo contains a matching literal. Regenerate
+with `node <scratchpad>/gen-fixtures.mjs test/fixtures/guard-archived-files-cases.json`;
+the generator is deliberately kept **outside** the repo because it does contain the
+literals verbatim.
+
+**Rule (e) has an explicit false-positive regression test** (cases 64–65). Rule (e)'s
+`cd`-argument pattern was originally `[^;|&]*`, which spans whitespace, so a `cd`
+anywhere in a command plus the bare word "archive" later in the same line — a trailing
+comment, say — matched and blocked. It false-positived on a real negative-control command
+during development. It is now bounded to a single whitespace-free token. Both cases were
+confirmed to have teeth: against a copy of the hook with that one character class
+reverted, both flip from allow to block and the test fails.
+
+**Verified state:** 74/74 passing. The suite runs under both the full-glob invocation and
+the literal `npm test` — the file sits in `test/hooks/`, a subdirectory, so it survives
+the globstar bug described under Test baseline. That placement is deliberate: regression
+coverage for a security-adjacent gate should not be one of the files plain `npm test`
+silently skips.
+
+### Editing this section is itself partly blocked — read this before trying
+
+The gate section you are reading quotes archived path literals, so the hook reacts to
+edits of it. Probed against the live script:
+
+| Route | Result |
+|---|---|
+| `Edit` / `Write` tool on `CLAUDE.md` | **allowed** — the path arm checks `file_path` only, never content |
+| Bash `cat > CLAUDE.md <<'EOF'` heredoc quoting a literal | **allowed** — `cat` is not a listed utility |
+| Bash `grep '<literal>' CLAUDE.md` | **allowed** — `grep` is not a listed utility |
+| Bash `sed -i 's|<literal>|...|' CLAUDE.md` | **BLOCKED** by rule (c) |
+| Bash `python3`/`node`/`perl` rewriting `CLAUDE.md` with a literal in the command | **BLOCKED** by rule (b) |
+
+So the section is editable, but not by every route. **Use the `Edit`/`Write` tool** — that
+is the supported path and it is not blocked. If you are in a mode that prefers Bash for
+edits, this is the case where Bash genuinely cannot do the job and falling back to the
+dedicated tool is correct, not a workaround. Do not route around the hook by obfuscating
+the literal.
 
 ## Sports data architecture (as of June 2026)
 
@@ -478,16 +626,70 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-**✓ 899 unit tests passing, 0 failing, 5 pre-existing cancelled (current baseline as of Aug 16, 2026, post-merge).** This is a from-scratch, freshly-measured number (fresh `npm install` + `shopt -s globstar` full-glob run) on `main` after merging `claude/emma-unavailability-flag-v2-kdbzqh`. Chain from the last measured figure: the Reviewer's independent pass measured 896 (876 pre-change baseline +20 Emma Unavailability Flag tests) against `origin/main` at `47948c0`, before this branch was merged. Between that Reviewer pass and this merge, `main` advanced 3 commits (`47948c0`→`8652963`, the Dashboard v2 Phase 4B production-refresh merge), which added +1 test to `test/pi-dashboard-pull.test.js` — confirmed via isolated worktree measurement of `8652963` alone (877 passing) before the Emma merge landed. 877 + 20 (Emma flag, merge commit `1c4db14`) = 897 on merged `main`, then +2 from this session's boundary-coverage follow-up (see below) = 899. None of the deltas here reflect code regressions — each is traced to a specific, identified cause. The 5 `cancelled` entries are pre-existing `cancelledByParent` subtests in unrelated suites (a `node:test` parallel-subtest timing artifact, not a failure), unchanged through this whole chain.
+### Current baseline — two numbers, and you must say which one you measured
+
+The suite can be run two ways and they do not agree, because of the globstar bug
+documented under Key Learnings. Both freshly measured on this branch:
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| **Full glob** (`shopt -s globstar` + expanded pattern) | **1062** | 1052 | 4 | 6 |
+| Literal `npm test` | 631 | 622 | 3 | 6 |
+
+Pre-change figures on `main` at `2b55e1e`, for the delta: full glob **988 / 978 / 4 / 6**,
+literal `npm test` **557 / 548 / 3 / 6**. This branch adds 74 tests (the archived-files
+hook matrix, `test/hooks/guard-archived-files.test.js`) and nothing else — +74 in both
+invocations, failures and cancellations unchanged.
+
+**The gap is the globstar bug, not a regression.** Literal `npm test` reads 631 of 1062
+tests — about **59%** — silently skipping the ~41% that sit directly in `test/` rather
+than in a subdirectory. It reports no extra failures either way, which is what makes it
+dangerous: it looks clean, not broken.
+
+> **Careful with the percentage.** `npm test` *misses* roughly 41% of the suite; it does
+> not *read* 43% of it. The two are easy to transpose — before this branch the split was
+> 557 of 988 read (56%) and 431 missed (44%). Quote the measured pair, never a remembered
+> percentage.
+
+**Any future "tests passing" claim in this repo must state which invocation produced it.**
+A bare number is unfalsifiable, which is the same failure the globstar bug causes, in a
+second place.
+
+**Coder mode must keep the full-glob number at 1062+ (1052 passing).** The previous
+recorded baseline of "899+" was stale by 163 tests and had itself become unfalsifiable —
+no run of this suite had produced 899 for some time, so the check could neither pass nor
+fail meaningfully. If the number changes, update this baseline *and* name the invocation.
+
+**The 4 full-glob failures are pre-existing and environmental**, identical before and
+after this branch: all four are
+`No Chromium executable found. Install Chromium, run 'npx playwright install chromium',
+or set DASHBOARD_BROWSER_PATH.` in the Playwright-backed rendering tests. The 6
+`cancelled` entries are pre-existing `cancelledByParent` subtests (a `node:test`
+parallel-subtest timing artifact, not a failure). Literal `npm test` shows 3 of the 4
+because one of those files is among the ones its glob skips.
+
+On a fresh clone **before `npm install`** you will instead see `ERR_MODULE_NOT_FOUND`
+failures for declared dependencies — run `npm install` first; that is not a regression.
+
+Uses Node's built-in `node:test` runner either way. The full-glob invocation is:
+
+```bash
+shopt -s globstar
+node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js
+```
+
+### Historical chain (superseded)
+
+The figures below are retained for provenance. They were measured with the same full-glob
+method, so they chain directly to the 988 pre-change number above.
+
+**✓ 899 unit tests passing, 0 failing, 5 pre-existing cancelled — the baseline as of Aug 16, 2026, post-merge. Superseded: see Current baseline above.** This is a from-scratch, freshly-measured number (fresh `npm install` + `shopt -s globstar` full-glob run) on `main` after merging `claude/emma-unavailability-flag-v2-kdbzqh`. Chain from the last measured figure: the Reviewer's independent pass measured 896 (876 pre-change baseline +20 Emma Unavailability Flag tests) against `origin/main` at `47948c0`, before this branch was merged. Between that Reviewer pass and this merge, `main` advanced 3 commits (`47948c0`→`8652963`, the Dashboard v2 Phase 4B production-refresh merge), which added +1 test to `test/pi-dashboard-pull.test.js` — confirmed via isolated worktree measurement of `8652963` alone (877 passing) before the Emma merge landed. 877 + 20 (Emma flag, merge commit `1c4db14`) = 897 on merged `main`, then +2 from this session's boundary-coverage follow-up (see below) = 899. None of the deltas here reflect code regressions — each is traced to a specific, identified cause. The 5 `cancelled` entries are pre-existing `cancelledByParent` subtests in unrelated suites (a `node:test` parallel-subtest timing artifact, not a failure), unchanged through this whole chain.
 
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
-Run via: `npm test` — **but see the Key Learnings entry on `npm test`'s glob bug above.** In a shell without `bash`'s `globstar` enabled (the default for the shell `npm test` itself spawns on this system), the literal `npm test` command silently skips every `test/*.test.js` file that isn't under `test/skills/`, undercounting badly with 0 reported failures either way. The 899 figure above was measured with `shopt -s globstar` enabled and the full glob expanded manually — that is the number that reflects actual test coverage. Uses Node's built-in `node:test` runner either way.
-
-Coder mode must keep tests at 899+ (the current `main` baseline measured in this session). If the number changes, the Documenter should update this baseline.
-
 ## Current state (changelog)
 
+- **Push deny rule reinstated (scoped to `main`), hook matrix committed, test baseline reconciled (Aug 26, 2026):** Four follow-ups from PR #15. (1) `permissions.deny` is back in `.claude/settings.json` as four wildcard rules pinning the branch name — `Bash(git push * main)`, `Bash(git push * main *)`, `Bash(git push * *:main)`, `Bash(git push * *:main *)` — verified empirically against **Claude Code 2.1.246** with a throwaway repo, a local bare remote, and two independent signals per case (harness-recorded denial + whether the remote ref actually moved). Full match table in the gate section. Feature-branch pushes are unaffected in every tested form, which was the whole failure of the original `Bash(git push:*)`. Residual holes (bare `git push` on `main`, `+main`, `refs/heads/main`) are named in the doc rather than implied. Also corrected a claim inherited from `4a8cc52`: `Bash(git push *)` **does** match a bare `git push` on 2.1.246 — the compiler rewrites a trailing ` .*` to `( .*)?` — so the stated reason for preferring `:*` does not hold on this build. (2) The 63-case hook matrix now lives in the repo as `test/hooks/guard-archived-files.test.js` + a base64 fixture file, expanded to 73 cases (+1 integrity check = 74 tests); it spawns the real hook script and asserts real exit codes, and includes an explicit rule-(e) false-positive regression test proven to fail against the pre-fix pattern. Placed in `test/hooks/` so it runs under both invocations rather than being skipped by the globstar bug. (3) The bootstrap incident's committer-identity evidence is now quoted inline in CLAUDE.md, so the claim no longer depends on `4a8cc52` staying reachable on an undeleted branch. (4) Test baseline reconciled from a stale **899** to the measured pair: full glob **1062 / 1052 / 4 / 6**, literal `npm test` **631 / 622 / 3 / 6**. Also corrected an over-broad claim that *any* command containing an archived path literal is blocked — a bare `grep` and a `cat` heredoc are not; a listed utility must also be present.
 - **Emma unavailability flag merged to `main` + boundary test coverage closed (Aug 16, 2026):** `claude/emma-unavailability-flag-v2-kdbzqh` (see entry below) merged into `main` via commit `1c4db14` after independent Reviewer sign-off (7/7 checklist items PASS, one non-blocking test-coverage gap noted). `main` had advanced 3 unrelated commits (Dashboard v2 Phase 4B) since the branch was cut and since the Reviewer's pass; no file overlap, clean merge, no conflicts. Same-session follow-up added the two boundary test cases the Reviewer flagged as missing — a block starting *exactly* 14 days out (fires) and *exactly* 15 days out (does not fire) — to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block, per the Reviewer's own hand-verification that the underlying `flags.js`/`emmaUnavailabilityParser.js` logic was already correct at these edges. No production code changed in this follow-up. 899 passing on `main` after both steps — see Test baseline section for the full reconciliation chain.
 - **Emma unavailability flag added (Aug 16, 2026):** New `digest/emmaUnavailabilityParser.js` parses Emma's UTA reserve-duty / annual-tour-duty blocks from the "House Manager" calendar (`690a345d...@group.calendar.google.com`), wired into `digest/builder.js` on the same try/catch-default-to-`[]` pattern as `parseWeeklyPriorities`. A new pure `flags.js` evaluator reads `ctx.emmaUnavailableBlocks` and emits an amber, non-`bannerOnly` flag (`owner: []`) for any block starting within 14 days or already in progress; already-ended blocks are excluded. Live calendar verification (13 real events, all confirmed) found the title's type token includes a `(Reserve)` qualifier not anticipated by the original spec example (e.g. `Emma: UTA (Reserve) — Unavailable`, sometimes with a trailing `[Tentative FY27]` bracket) — the extractor captures the type substring verbatim rather than stripping `(Reserve)`, so flag bodies read e.g. "Emma unavailable Oct 16–19 (UTA (Reserve)) — confirm coverage." Google's all-day `end.date` is exclusive; `exclusiveEndToInclusive()` converts it to the inclusive last day shown in the message. Flag `id` is derived from block start date + type (stable dedup), computed once in the parser and reused verbatim by the evaluator. No dashboard card, no data file, no `FAMILY_CALENDARS` change — all explicitly out of scope for this pass. 896 passing after this change (up from a freshly-measured 876 baseline — see Test baseline section).
 - **Dashboard v2 Phase 3C production cutover completed (Aug 15, 2026):** The Pi now serves the generated dashboard privately on `127.0.0.1:4173` through an enabled systemd service, and LXDE-pi launches Chromium at that local URL. The AWS sports endpoint allows only the exact local origin; the temporary couch origin was removed. Startup, 2560×1440 layout, live polling, cache/ETag behavior, and a preserved DAKboard rollback were boot-tested. See `docs/dashboard-v2/phase-3c-production-cutover.md`.
@@ -548,7 +750,7 @@ Coder mode must keep tests at 899+ (the current `main` baseline measured in this
 
 **A commit message that doesn't describe its own content defeats every drift-detection habit this project relies on.** Confirmed August 2026: `e4aa130`'s message named an unrelated editorial doc change while the same commit carried the `sharksActive`/`renderSharksCard`/sports-config `sharks` scaffolding, the `gmailParser` sharks routing entry, and (per a still-unresolved test-only string) possibly `flags.js` changes — none of it discoverable by searching commit history for anything sharks-related. Worth a standing habit: when a commit touches more than one logical concern, or when scaffolding for a future feature rides along with an unrelated change, the message should name both, not just the primary one.
 
-**`npm test`'s glob pattern silently drops every test file that sits directly in `test/` (not in a subdirectory) — a pre-existing, shell-dependent bug, not a regression.** `package.json`'s test script is `node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js`. Without `bash`'s `globstar` shell option enabled (the default in most non-interactive shells, including the one `npm test` itself spawns via `sh -c` on this system), `test/**/*.test.js` does **not** recurse — it behaves like `test/*/*.test.js`, matching only `test/skills/*.test.js` and silently excluding every file directly under `test/` (`test/data.test.js`, `test/athleticsParser.test.js`, `test/wavesParser.test.js`, `test/dateUtils.test.js`, `test/calendar.test.js`, `test/flagFootballParser.test.js`, `test/gmailParser.test.js`, `test/pdfReloadParser.test.js`, `test/swimParser.test.js`, `test/weeklyPrioritiesParser.test.js`, and now `test/sharksParser.test.js`). `digest/**/*.test.js` and `render/**/*.test.js` are unaffected because those patterns fail to pre-expand in the same broken shell and are instead handed to Node's own `--test` glob resolution, which *does* recurse correctly. Net effect: a literal `npm test` run in an affected shell reports far fewer tests than actually exist (395 passing observed in this environment vs. the documented baseline of 645+) with zero failures either way — it looks clean, not broken, which is what makes it dangerous. **To get an accurate count, run with `shopt -s globstar` enabled first**, or pass the file list explicitly. Not fixed as part of the Sharks card work (out of scope for that task) — flagging here so a future session doesn't mistake a low `npm test` count for a real regression, and doesn't mistake a passing `npm test` for full coverage.
+**`npm test`'s glob pattern silently drops every test file that sits directly in `test/` (not in a subdirectory) — a pre-existing, shell-dependent bug, not a regression.** `package.json`'s test script is `node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js`. Without `bash`'s `globstar` shell option enabled (the default in most non-interactive shells, including the one `npm test` itself spawns via `sh -c` on this system), `test/**/*.test.js` does **not** recurse — it behaves like `test/*/*.test.js`, matching only `test/skills/*.test.js` and silently excluding every file directly under `test/` (`test/data.test.js`, `test/athleticsParser.test.js`, `test/wavesParser.test.js`, `test/dateUtils.test.js`, `test/calendar.test.js`, `test/flagFootballParser.test.js`, `test/gmailParser.test.js`, `test/pdfReloadParser.test.js`, `test/swimParser.test.js`, `test/weeklyPrioritiesParser.test.js`, and now `test/sharksParser.test.js`). `digest/**/*.test.js` and `render/**/*.test.js` are unaffected because those patterns fail to pre-expand in the same broken shell and are instead handed to Node's own `--test` glob resolution, which *does* recurse correctly. Net effect: a literal `npm test` run in an affected shell reports far fewer tests than actually exist (395 passing observed in this environment vs. the documented baseline of 645+) with zero failures either way — it looks clean, not broken, which is what makes it dangerous. **To get an accurate count, run with `shopt -s globstar` enabled first**, or pass the file list explicitly. Not fixed as part of the Sharks card work (out of scope for that task) — flagging here so a future session doesn't mistake a low `npm test` count for a real regression, and doesn't mistake a passing `npm test` for full coverage. **The "395 vs. 645+" figures above are a historical observation from the session that found the bug, not current.** For the measured pair as of Aug 26, 2026 — full glob 1062 / literal `npm test` 631 — and the rule that every "tests passing" claim must name its invocation, see the Test baseline section.
 
 - **Champs/Summer Awards history migration: COMPLETE (August 2026).** Full project history: `docs/data-reload/champs-sa-migration-history.md`. Summary: 2024 Champs, 2025 Champs, and 2026 Summer Awards individual + relay results (3,844 individual + 172 relay rows) parsed and loaded into `league-results-history-v2.json`/`relay-results-history-v2.json`. Includes the wrong-file-write incident and correction that led to the current "current vs. archived" guard rail. Legacy files archived to `data/archive/` as part of this project.
 

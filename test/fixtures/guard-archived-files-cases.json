@@ -1,0 +1,598 @@
+{
+  "_comment": [
+    "Fixtures for the archived-files PreToolUse hook (scripts/hooks/guard-archived-files.sh).",
+    "Each `b64` decodes to either a Bash command string or an Edit/Write file_path.",
+    "They are base64-encoded so this file contains no literal archived path: the live",
+    "hook blocks any command whose text carries one, which would otherwise make this",
+    "fixture file un-greppable, un-sed-able, and un-editable by ordinary tooling.",
+    "Regenerate with scratchpad/gen-fixtures.mjs (kept outside the repo for the same reason)."
+  ],
+  "generated": "expect: block => hook exits 2; allow => hook exits 0",
+  "count": 73,
+  "cases": [
+    {
+      "id": 1,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "block",
+      "note": "absolute archived data path",
+      "b64": "L2hvbWUvdXNlci9tb29yZS1vcHMvZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 2,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "block",
+      "note": "relative archived data path",
+      "b64": "ZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 3,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "block",
+      "note": "absolute archived script path",
+      "b64": "L2hvbWUvdXNlci9tb29yZS1vcHMvc2NyaXB0cy9hcmNoaXZlL3BhcnNlLWNoYW1wcy1oaXN0b3J5Lm1qcw=="
+    },
+    {
+      "id": 4,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "block",
+      "note": "relative archived script path",
+      "b64": "c2NyaXB0cy9hcmNoaXZlL3BhcnNlLWNoYW1wcy1oaXN0b3J5Lm1qcw=="
+    },
+    {
+      "id": 5,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "allow",
+      "note": "current v2 data file",
+      "b64": "L2hvbWUvdXNlci9tb29yZS1vcHMvZGF0YS9sZWFndWUtcmVzdWx0cy12Mi5qc29u"
+    },
+    {
+      "id": 6,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "allow",
+      "note": "CLAUDE.md itself (see 2c)",
+      "b64": "L2hvbWUvdXNlci9tb29yZS1vcHMvQ0xBVURFLm1k"
+    },
+    {
+      "id": 7,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "allow",
+      "note": "live parser script",
+      "b64": "L2hvbWUvdXNlci9tb29yZS1vcHMvc2NyaXB0cy9wZGYtcmVsb2FkLXBhcnNlci5tanM="
+    },
+    {
+      "id": 8,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "allow",
+      "note": "path arm is exact: an unrelated archive/ dir outside the repo is NOT blocked (contrast bash rule a)",
+      "b64": "L3RtcC9hcmNoaXZlL3guanNvbg=="
+    },
+    {
+      "id": 9,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "block",
+      "note": "plain > redirect",
+      "b64": "Y2F0ID4gZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 10,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "block",
+      "note": ">> append",
+      "b64": "ZWNobyB4ID4+IGRhdGEvYXJjaGl2ZS9yZWxheS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 11,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "block",
+      "note": ">| clobber",
+      "b64": "ZWNobyB4ID58IGRhdGEvYXJjaGl2ZS9yZWxheS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 12,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "block",
+      "note": "1> fd redirect",
+      "b64": "ZWNobyB4IDE+IGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29u"
+    },
+    {
+      "id": 13,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "block",
+      "note": "&> both streams",
+      "b64": "ZWNobyB4ICY+IGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29u"
+    },
+    {
+      "id": 14,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "block",
+      "note": "archived scripts/ path",
+      "b64": "ZWNobyB4ID4gc2NyaXB0cy9hcmNoaXZlL3BhcnNlLWNoYW1wcy1oaXN0b3J5Lm1qcw=="
+    },
+    {
+      "id": 15,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "block",
+      "note": "redundant slash tolerated",
+      "b64": "ZWNobyB4ID4gZGF0YS8vYXJjaGl2ZS94Lmpzb24="
+    },
+    {
+      "id": 16,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "block",
+      "note": "dot segment tolerated",
+      "b64": "ZWNobyB4ID4gZGF0YS8uL2FyY2hpdmUveC5qc29u"
+    },
+    {
+      "id": 17,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "block",
+      "note": "target begins with archive/",
+      "b64": "ZWNobyB4ID4gYXJjaGl2ZS9mb28uanNvbg=="
+    },
+    {
+      "id": 18,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "allow",
+      "note": "archive is the SOURCE, redirect target is elsewhere -- reads must keep working",
+      "b64": "Z3JlcCBmb28gZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24gPiAvdG1wL291dC50eHQ="
+    },
+    {
+      "id": 19,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "allow",
+      "note": "read piped elsewhere",
+      "b64": "Y2F0IGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29uIHwgd2MgLWw="
+    },
+    {
+      "id": 20,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: tee",
+      "b64": "dGVlIGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29u"
+    },
+    {
+      "id": 21,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: cp",
+      "b64": "Y3AgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 22,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: mv",
+      "b64": "bXYgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 23,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: rsync",
+      "b64": "cnN5bmMgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 24,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: install",
+      "b64": "aW5zdGFsbCBkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 25,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: ln",
+      "b64": "bG4gZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 26,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: rm",
+      "b64": "cm0gZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 27,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: rmdir",
+      "b64": "cm1kaXIgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 28,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: unlink",
+      "b64": "dW5saW5rIGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29u"
+    },
+    {
+      "id": 29,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: shred",
+      "b64": "c2hyZWQgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 30,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: truncate",
+      "b64": "dHJ1bmNhdGUgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 31,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: touch",
+      "b64": "dG91Y2ggZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 32,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: mkdir",
+      "b64": "bWtkaXIgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 33,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: chmod",
+      "b64": "Y2htb2QgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 34,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: chown",
+      "b64": "Y2hvd24gZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 35,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: chgrp",
+      "b64": "Y2hncnAgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 36,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: patch",
+      "b64": "cGF0Y2ggZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 37,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: dd",
+      "b64": "ZGQgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 38,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: find",
+      "b64": "ZmluZCBkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 39,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: python",
+      "b64": "cHl0aG9uIGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29u"
+    },
+    {
+      "id": 40,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: python3",
+      "b64": "cHl0aG9uMyBkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 41,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: node",
+      "b64": "bm9kZSBkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 42,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: perl",
+      "b64": "cGVybCBkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 43,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "write-capable utility: ruby",
+      "b64": "cnVieSBkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 44,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "allow",
+      "note": "cat is not a listed writer",
+      "b64": "Y2F0IGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29u"
+    },
+    {
+      "id": 45,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "allow",
+      "note": "grep is not a listed writer",
+      "b64": "Z3JlcCBzd2ltbWVyIGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29u"
+    },
+    {
+      "id": 46,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "allow",
+      "note": "head is not a listed writer",
+      "b64": "aGVhZCAtNSBkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 47,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "allow",
+      "note": "wc is not a listed writer",
+      "b64": "d2MgLWwgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 48,
+      "kind": "bash",
+      "rule": "c",
+      "expect": "block",
+      "note": "sed -i",
+      "b64": "c2VkIC1pIHMvYS9iLyBkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 49,
+      "kind": "bash",
+      "rule": "c",
+      "expect": "block",
+      "note": "sed --in-place",
+      "b64": "c2VkIC0taW4tcGxhY2Ugcy9hL2IvIGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29u"
+    },
+    {
+      "id": 50,
+      "kind": "bash",
+      "rule": "c",
+      "expect": "block",
+      "note": "awk -i inplace",
+      "b64": "YXdrIC1pIGlucGxhY2Uge3ByaW50fSBkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 51,
+      "kind": "bash",
+      "rule": "c",
+      "expect": "allow",
+      "note": "sed without -i is a read",
+      "b64": "c2VkIHMvYS9iLyBkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 52,
+      "kind": "bash",
+      "rule": "d",
+      "expect": "block",
+      "note": "git checkout",
+      "b64": "Z2l0IGNoZWNrb3V0IEhFQUQgLS0gZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 53,
+      "kind": "bash",
+      "rule": "d",
+      "expect": "block",
+      "note": "git restore",
+      "b64": "Z2l0IHJlc3RvcmUgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 54,
+      "kind": "bash",
+      "rule": "d",
+      "expect": "block",
+      "note": "git rm",
+      "b64": "Z2l0IHJtIGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29u"
+    },
+    {
+      "id": 55,
+      "kind": "bash",
+      "rule": "d",
+      "expect": "block",
+      "note": "git mv",
+      "b64": "Z2l0IG12IGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29uIGRhdGEveS5qc29u"
+    },
+    {
+      "id": 56,
+      "kind": "bash",
+      "rule": "d",
+      "expect": "block",
+      "note": "git clean",
+      "b64": "Z2l0IGNsZWFuIC1mZCBkYXRhL2FyY2hpdmU="
+    },
+    {
+      "id": 57,
+      "kind": "bash",
+      "rule": "d",
+      "expect": "allow",
+      "note": "git log is read-only",
+      "b64": "Z2l0IGxvZyAtLW9uZWxpbmUgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 58,
+      "kind": "bash",
+      "rule": "d",
+      "expect": "allow",
+      "note": "git show is read-only",
+      "b64": "Z2l0IHNob3cgSEVBRDpkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 59,
+      "kind": "bash",
+      "rule": "d",
+      "expect": "allow",
+      "note": "git diff is read-only",
+      "b64": "Z2l0IGRpZmYgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 60,
+      "kind": "bash",
+      "rule": "e",
+      "expect": "block",
+      "note": "cd then redirect",
+      "b64": "Y2QgZGF0YS9hcmNoaXZlICYmIGNhdCA+IGxlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 61,
+      "kind": "bash",
+      "rule": "e",
+      "expect": "block",
+      "note": "cd then rm",
+      "b64": "Y2QgZGF0YS9hcmNoaXZlOyBybSB4Lmpzb24="
+    },
+    {
+      "id": 62,
+      "kind": "bash",
+      "rule": "e",
+      "expect": "block",
+      "note": "cd then touch",
+      "b64": "Y2Qgc2NyaXB0cy9hcmNoaXZlICYmIHRvdWNoIHgubWpz"
+    },
+    {
+      "id": 63,
+      "kind": "bash",
+      "rule": "e",
+      "expect": "allow",
+      "note": "cd then read only",
+      "b64": "Y2QgZGF0YS9hcmNoaXZlICYmIGNhdCBsZWFndWUtcmVzdWx0cy5qc29u"
+    },
+    {
+      "id": 64,
+      "kind": "bash",
+      "rule": "e",
+      "expect": "allow",
+      "note": "REGRESSION: cd arg bounded to one token -- a later bare word \"archive\" must not match",
+      "b64": "Y2QgL2hvbWUvdXNlci9tb29yZS1vcHMgPiAvdG1wL291dC50eHQgICMgcm90YXRlIHRoZSBhcmNoaXZlIHdlZWtseQ=="
+    },
+    {
+      "id": 65,
+      "kind": "bash",
+      "rule": "e",
+      "expect": "allow",
+      "note": "REGRESSION: same shape, different cd target",
+      "b64": "Y2QgL3Zhci9sb2cgPiAvdG1wL291dC50eHQgICMgdGhlIGFyY2hpdmUgbGl2ZXMgZWxzZXdoZXJl"
+    },
+    {
+      "id": 66,
+      "kind": "bash",
+      "rule": "escape",
+      "expect": "allow",
+      "note": "ESCAPE: variable indirection",
+      "b64": "RD1kYXRhL2FyY2hpdmU7IGNhdCA+ICREL3guanNvbg=="
+    },
+    {
+      "id": 67,
+      "kind": "bash",
+      "rule": "escape",
+      "expect": "allow",
+      "note": "ESCAPE: command substitution",
+      "b64": "Y2F0ID4gJChlY2hvIGRhdGEvYXJjaGl2ZSkveC5qc29u"
+    },
+    {
+      "id": 68,
+      "kind": "bash",
+      "rule": "escape",
+      "expect": "allow",
+      "note": "ESCAPE: string splitting across quotes",
+      "b64": "Y2F0ID4gImRhdGEvYXJjaCIiaXZlL3guanNvbiI="
+    },
+    {
+      "id": 69,
+      "kind": "bash",
+      "rule": "escape",
+      "expect": "allow",
+      "note": "ESCAPE: intra-word quoting",
+      "b64": "cHJpbnRmIHggPiBkYSd0J2EvYXJjaGl2ZS94Lmpzb24="
+    },
+    {
+      "id": 70,
+      "kind": "bash",
+      "rule": "escape",
+      "expect": "allow",
+      "note": "ESCAPE: indirection through a file",
+      "b64": "YmFzaCAvdG1wL3dyaXRlci5zaA=="
+    },
+    {
+      "id": 71,
+      "kind": "bash",
+      "rule": "overblock",
+      "expect": "block",
+      "note": "OVER-BLOCK: archive is the source",
+      "b64": "Y3AgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24gL3RtcC9iYWNrdXAuanNvbg=="
+    },
+    {
+      "id": 72,
+      "kind": "bash",
+      "rule": "overblock",
+      "expect": "block",
+      "note": "OVER-BLOCK: any path with an archive/ segment, even outside the repo",
+      "b64": "ZWNobyBub3RlID4gL3RtcC9teS9hcmNoaXZlL25vdGVzLnR4dA=="
+    },
+    {
+      "id": 73,
+      "kind": "bash",
+      "rule": "overblock",
+      "expect": "block",
+      "note": "OVER-BLOCK: a pure read through a listed interpreter",
+      "b64": "cHl0aG9uMyAtYyAicHJpbnQob3BlbignZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24nKS5yZWFkKCkpIg=="
+    }
+  ]
+}
