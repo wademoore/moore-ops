@@ -44,6 +44,7 @@ function timeline(data) {
 
 function shouldRenderFirstDayLevel3(data) {
   if(data.firstDayLevel3===false)return false;
+  if(data.firstDayLevel3===true&&(!/^\d{4}-\d{2}-\d{2}$/.test(data.firstDayLevel3Date||'')||data.firstDayLevel3Date!==dashboardDayKey(data.today)))return false;
   const hits=milestones(data);
   if(!hits.length&&data.firstDayLevel3!==true)return false;
   if(data.firstDayLevel3ForceArtifact===true)return true;

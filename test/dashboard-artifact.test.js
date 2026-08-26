@@ -68,7 +68,7 @@ test('first-day artifact contract accepts the takeover and generator publishes a
   assert.doesNotMatch(firstDay, /athletics-panel|sports-ticker/);
   const puts = [];
   const manifest = await generateAndPublish({
-    now: new Date('2026-08-24T15:59:00-04:00'), bucket: 'private', sportsFeedUrl: SPORTS, sourceRevision: 'first-day', firstDayLevel3Enabled: true,
+    now: new Date('2026-08-24T15:59:00-04:00'), bucket: 'private', sportsFeedUrl: SPORTS, sourceRevision: 'first-day', firstDayLevel3Enabled: true, firstDayLevel3Date: '2026-08-24',
     fetchData: async () => data,
     putObject: async input => { puts.push(input); return { VersionId: `version-${puts.length}` }; },
   });
@@ -82,6 +82,21 @@ test('first-day artifact contract accepts the takeover and generator publishes a
   assert.match(String(puts[1].Body),/class="now-next now-next-/);
   assert.doesNotMatch(String(puts[1].Body),/>Today — /);
   assert.doesNotThrow(() => validateArtifact(String(puts[1].Body), { sportsFeedUrl: SPORTS }));
+});
+
+test('artifact generator fails closed when First Day is enabled without its explicit one-day date', async () => {
+  const milestone = { title: 'First Day of School (Myles and Ophelia)', cardType: 'standard', raw: { start: { date: '2026-08-26' } } };
+  const data = { ...sampleDashboardV2Data, today: new Date('2026-08-26T00:00:00.000Z'), days: [{ events: [milestone] }] };
+  const puts = [];
+  const manifest = await generateAndPublish({
+    now: new Date('2026-08-26T05:00:00-04:00'), bucket: 'private', sportsFeedUrl: SPORTS, sourceRevision: 'closed', firstDayLevel3Enabled: true,
+    fetchData: async () => data,
+    putObject: async input => { puts.push(input); return { VersionId: `version-${puts.length}` }; },
+  });
+  assert.equal(puts.length, 2);
+  assert.equal(manifest.level2Artifact, undefined);
+  assert.doesNotMatch(String(puts[0].Body), /data-dashboard-mode="first-day-level3"/);
+  assert.match(String(puts[0].Body), /class="now-next now-next-/);
 });
 
 test('synthetic today calendar anchor renders identically under UTC and Eastern hosts', () => {

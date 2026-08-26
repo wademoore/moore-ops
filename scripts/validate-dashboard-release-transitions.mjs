@@ -12,6 +12,7 @@ const base = {
   today: new Date('2026-08-24T00:00:00.000Z'),
   days: [{ events: [milestone] }],
   firstDayLevel3: true,
+  firstDayLevel3Date: '2026-08-24',
   firstDayLevel3Departure: '08:15',
   firstDayLevel3Handoff: '08:30',
   firstDayLevel3Coda: '16:00',

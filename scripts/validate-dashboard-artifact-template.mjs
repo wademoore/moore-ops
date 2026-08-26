@@ -9,6 +9,7 @@ if (!r.TlsOnlyBucketPolicy) failures.push('TLS-only bucket policy missing');
 if ('ReservedConcurrentExecutions' in (fn || {})) failures.push('reserved concurrency must remain unset');
 if (fn?.Environment?.Variables?.GOOGLE_AUTH_READ_ONLY !== '1') failures.push('generator Google auth must be read-only');
 if (template.Parameters?.FirstDayLevel3Enabled?.Default !== '0' || fn?.Environment?.Variables?.FIRST_DAY_LEVEL3_ENABLED?.Ref !== 'FirstDayLevel3Enabled') failures.push('first-day takeover kill switch must exist and default off');
+if (template.Parameters?.FirstDayLevel3Date?.Default !== '' || fn?.Environment?.Variables?.FIRST_DAY_LEVEL3_DATE?.Ref !== 'FirstDayLevel3Date') failures.push('first-day takeover must require an explicit configured date');
 if (template.Parameters?.FirstDayLevel3Departure?.Default !== '07:30' || template.Parameters?.FirstDayLevel3Handoff?.Default !== '07:45') failures.push('first-day operational timing defaults are incorrect');
 if (template.Parameters?.FirstDayLevel3Coda?.Default !== '16:00' || fn?.Environment?.Variables?.FIRST_DAY_LEVEL3_CODA?.Ref !== 'FirstDayLevel3Coda') failures.push('first-day welcome-home coda must default to 4:00 PM');
 const readerStatement = user?.Policies?.[0]?.PolicyDocument?.Statement?.[0];

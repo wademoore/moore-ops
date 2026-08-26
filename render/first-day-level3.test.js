@@ -68,6 +68,11 @@ describe('first day Level-3 takeover',()=>{
     assert.equal(shouldRenderFirstDayLevel3({...base,firstDayLevel3:false,now:new Date('2026-08-24T07:20:00-04:00')}),false);
     assert.equal(shouldRenderFirstDayLevel3({...base,firstDayLevel3:false,now:new Date('2026-08-24T16:00:00-04:00')}),false);
   });
+  it('requires an explicit matching date when production enables the takeover',()=>{
+    assert.equal(shouldRenderFirstDayLevel3({...base,firstDayLevel3:true}),false);
+    assert.equal(shouldRenderFirstDayLevel3({...base,firstDayLevel3:true,firstDayLevel3Date:'2026-08-23'}),false);
+    assert.equal(shouldRenderFirstDayLevel3({...base,firstDayLevel3:true,firstDayLevel3Date:'2026-08-24'}),true);
+  });
   it('limits Coming Up to three and escapes unusually long live values',()=>{
     const upcomingEvents=Array.from({length:5},(_,i)=>event(`Event ${i} <script>` ,`2026-08-${25+i}T17:30:00-04:00`));
     const html=renderDashboardV2({...base,upcomingEvents,menuEvent:{title:'A very long dinner name '.repeat(20)}});
