@@ -306,11 +306,11 @@ during development. It is now bounded to a single whitespace-free token. Both ca
 confirmed to have teeth: against a copy of the hook with that one character class
 reverted, both flip from allow to block and the test fails.
 
-**Verified state:** 74/74 passing. The suite runs under both the full-glob invocation and
-the literal `npm test` — the file sits in `test/hooks/`, a subdirectory, so it survives
-the globstar bug described under Test baseline. That placement is deliberate: regression
-coverage for a security-adjacent gate should not be one of the files plain `npm test`
-silently skips.
+**Verified state:** 74/74 passing. The file sits in `test/hooks/`, a subdirectory, which
+is why it survived the globstar bug — that bug is fixed as of Aug 27, 2026 (see Test
+baseline), so plain `npm test` now picks up every test file regardless of depth and the
+placement no longer buys anything. Keeping it in `test/hooks/` remains fine on
+organizational grounds; it is simply no longer load-bearing.
 
 ### Editing this section is itself partly blocked — read this before trying
 
@@ -626,57 +626,106 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — two numbers, and you must say which one you measured
+### Current baseline — one number, because the globstar bug is fixed
 
-The suite can be run two ways and they do not agree, because of the globstar bug
-documented under Key Learnings. Both freshly measured on this branch:
+**Plain `npm test`: 1062 tests / 1053 pass / 3 fail / 6 cancelled.** Freshly measured on
+this branch after `npm install`, on Node v22.22.2. There is no longer a second number:
+the two-invocation split documented below is gone, because `package.json`'s glob patterns
+are now single-quoted and reach Node's `--test` resolver intact regardless of which shell
+npm spawns. `shopt -s globstar` + the unquoted pattern still produces the identical
+1062 / 1053 / 3 / 6, so the two invocations now agree by construction rather than by luck.
 
-| Invocation | tests | pass | fail | cancelled |
-|---|---|---|---|---|
-| **Full glob** (`shopt -s globstar` + expanded pattern) | **1062** | 1052 | 4 | 6 |
-| Literal `npm test` | 631 | 622 | 3 | 6 |
+**Coder mode must keep plain `npm test` at 1062+ (1053 passing).**
 
-Pre-change figures on `main` at `2b55e1e`, for the delta: full glob **988 / 978 / 4 / 6**,
-literal `npm test` **557 / 548 / 3 / 6**. This branch adds 74 tests (the archived-files
-hook matrix, `test/hooks/guard-archived-files.test.js`) and nothing else — +74 in both
-invocations, failures and cancellations unchanged.
+Pre-change figures on `main` at `d69ac47`, for the delta: plain `npm test`
+**631 / 622 / 3 / 6**, full glob **1062 / 1052 / 4 / 6**. This branch adds no tests. The
++431 under plain `npm test` is the previously-skipped set finally executing (18 files
+directly in `test/`, 431 tests, all passing — verified in isolation with
+`node --experimental-vm-modules --test test/*.test.js`). The full glob's 1052→1053 and
+4→3 is the one genuine test fix on this branch, below.
 
-**The gap is the globstar bug, not a regression.** Literal `npm test` reads 631 of 1062
-tests — about **59%** — silently skipping the ~41% that sit directly in `test/` rather
-than in a subdirectory. It reports no extra failures either way, which is what makes it
-dangerous: it looks clean, not broken.
-
-> **Careful with the percentage.** `npm test` *misses* roughly 41% of the suite; it does
-> not *read* 43% of it. The two are easy to transpose — before this branch the split was
-> 557 of 988 read (56%) and 431 missed (44%). Quote the measured pair, never a remembered
-> percentage.
-
-**Any future "tests passing" claim in this repo must state which invocation produced it.**
-A bare number is unfalsifiable, which is the same failure the globstar bug causes, in a
-second place.
-
-**Coder mode must keep the full-glob number at 1062+ (1052 passing).** The previous
-recorded baseline of "899+" was stale by 163 tests and had itself become unfalsifiable —
-no run of this suite had produced 899 for some time, so the check could neither pass nor
-fail meaningfully. If the number changes, update this baseline *and* name the invocation.
-
-**The 4 full-glob failures are pre-existing and environmental**, identical before and
-after this branch: all four are
+**The 3 remaining failures are environmental, not code.** All three are
 `No Chromium executable found. Install Chromium, run 'npx playwright install chromium',
-or set DASHBOARD_BROWSER_PATH.` in the Playwright-backed rendering tests. The 6
-`cancelled` entries are pre-existing `cancelledByParent` subtests (a `node:test`
-parallel-subtest timing artifact, not a failure). Literal `npm test` shows 3 of the 4
-because one of those files is among the ones its glob skips.
+or set DASHBOARD_BROWSER_PATH.` in Playwright-backed rendering tests. They resolve as
+soon as a browser is installed.
+
+**Correction — the previous entry was wrong on both counts, and it mattered.**
+
+1. It asserted *all four* full-glob failures were the Chromium message. Only three were.
+   The fourth was `test/pi-dashboard-pull.test.js`'s "Pi stages and validates both
+   version-pinned directions for afternoon re-entry", failing with
+   `ValueError: credentials file must be mode 0600 or stricter` — a real defect in the
+   test, not the environment. The test wrote its temp credentials file with
+   `credentials.write_text(...)` and never chmodded it, so under the default umask 0022
+   it landed at 0644 and `stage()` correctly rejected it. Fixed by adding
+   `credentials.chmod(0o600)` immediately after the write, mirroring how the real Pi
+   provisions that file. **Do not "fix" this by setting `umask` in the test script** —
+   that masks the defect and does not survive running the file individually.
+
+   The two errors compounded: because the literal `npm test` glob skipped
+   `test/pi-dashboard-pull.test.js` entirely, this failure had *never* run in CI, and the
+   full-glob number that did surface it was mis-summarized as environmental. **Order
+   matters if you ever redo this:** fixing the glob before the chmod turns CI red, because
+   GitHub runners use umask 0022 and the Pi test would finally execute.
+
+2. It called the 6 `cancelled` entries a "`node:test` parallel-subtest timing artifact."
+   They are not. All 6 are subtests of the single suite in
+   `render/dashboard-v2-layout.test.js`, whose `before` hook throws the Chromium error —
+   `failureType: 'hookFailed'` on the suite, `cancelledByParent` on each child. They are
+   a direct consequence of the missing browser and go to 0 the moment one resolves, not a
+   standing scheduling quirk to be waved through.
+
+**Any future "tests passing" claim in this repo must still name how it was produced.**
+A bare number is unfalsifiable — that was the second, more durable half of the globstar
+lesson, and fixing the glob does not retire it.
 
 On a fresh clone **before `npm install`** you will instead see `ERR_MODULE_NOT_FOUND`
 failures for declared dependencies — run `npm install` first; that is not a regression.
 
-Uses Node's built-in `node:test` runner either way. The full-glob invocation is:
+Uses Node's built-in `node:test` runner. Plain `npm test` is now the canonical
+invocation:
 
 ```bash
-shopt -s globstar
+npm test
+```
+
+### The glob fix (Aug 27, 2026) — what was actually wrong
+
+`package.json`'s test script was:
+
+```
 node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js
 ```
+
+npm runs scripts through `sh -c`, which on this system is `dash`. Dash has no `globstar`,
+so `**` degrades to a single `*`. The failure was **asymmetric**, and that asymmetry is
+why it went unnoticed for so long:
+
+| Pattern | Dash behavior | Net effect |
+|---|---|---|
+| `test/**/*.test.js` | expands as `test/*/*.test.js` → 4 real files in `test/hooks/`, `test/skills/` | shell consumes the pattern; the 18 files directly in `test/` are silently dropped |
+| `digest/**/*.test.js` | no `digest/*/` subdirectory matches → **no match** | dash leaves the word unexpanded, Node's `--test` glob resolves it correctly |
+| `render/**/*.test.js` | `render/assets-v2/` etc. contain no `.test.js` → **no match** | same — Node resolves it correctly |
+
+So a pattern that matched *something* got hijacked by the shell and lost coverage, while
+patterns that matched *nothing* survived to Node and worked. **431 tests across 18 files
+had never run in CI.**
+
+**Fix: single-quote each pattern** so dash passes it through verbatim and Node does all
+the globbing. Verified empirically in this environment rather than assumed — the
+alternatives were tested and this one is both sufficient and the least invasive:
+
+- **Single quotes (shipped).** `/bin/sh -c "node ... 'test/**/*.test.js' ..."` → 1062
+  tests. Works because Node 22's `--test` accepts glob patterns as positional arguments
+  and recurses correctly on `**`. No JSON escaping needed, unlike double quotes.
+- **`script-shell = bash` + `shopt -s globstar`.** Would work, but needs an `.npmrc` *and*
+  a shell-option prelude in the script, and silently reverts to broken if either is lost.
+  Rejected as more machinery for the same outcome.
+- **Doing nothing and telling people to run the full glob by hand.** This is what the
+  previous baseline did, and it is how the Pi test's failure stayed invisible.
+
+The `**` in a quoted pattern is now Node's to interpret, not the shell's, so the script
+behaves identically under dash, bash, and zsh.
 
 ### Historical chain (superseded)
 
@@ -689,6 +738,7 @@ method, so they chain directly to the 988 pre-change number above.
 
 ## Current state (changelog)
 
+- **Pi credentials-mode test defect fixed, `npm test` glob fixed, baseline corrected (Aug 27, 2026):** Three related changes, in a deliberate order. (1) `test/pi-dashboard-pull.test.js`'s "Pi stages and validates both version-pinned directions" test wrote its temp credentials file with `credentials.write_text(...)` and never chmodded it, so under the default umask 0022 it landed at 0644 and `stage()` correctly raised `credentials file must be mode 0600 or stricter`. Fixed with `credentials.chmod(0o600)` immediately after the write, mirroring the real Pi's provisioning — **not** by setting `umask` in the embedded script, which would mask the defect and not survive running the file individually. (2) `package.json`'s test globs are now single-quoted, so `sh -c` (dash, no `globstar`) passes them through verbatim and Node 22's `--test` resolver recurses correctly. The old bug was asymmetric: `test/**` matched something and was hijacked by the shell into `test/*/*`, dropping the 18 files directly in `test/`; `digest/**` and `render/**` matched nothing, so dash left them literal and Node handled them correctly. **431 tests across 18 files had never run in CI.** Approaches were compared empirically in this environment, not assumed — quoting is sufficient and needs no `.npmrc` or shell prelude. Order mattered: fixing the glob first would have turned CI red, since GitHub runners use umask 0022 and the Pi test would finally have executed. (3) Baseline corrected on two false claims: it said all four full-glob failures were `No Chromium executable found` (only three were — the fourth was the umask defect above), and it called the 6 `cancelled` entries a `node:test` parallel-subtest timing artifact (they are all subtests of `render/dashboard-v2-layout.test.js`, whose `before` hook throws the Chromium error; they go to 0 once a browser resolves). New baseline, plain `npm test`: **1062 / 1053 / 3 / 6**, up from 631 / 622 / 3 / 6. Also added `__pycache__/` and `*.pyc` to `.gitignore` — the Pi test regenerates that bytecode on every run.
 - **Push deny rule reinstated (scoped to `main`), hook matrix committed, test baseline reconciled (Aug 26, 2026):** Four follow-ups from PR #15. (1) `permissions.deny` is back in `.claude/settings.json` as four wildcard rules pinning the branch name — `Bash(git push * main)`, `Bash(git push * main *)`, `Bash(git push * *:main)`, `Bash(git push * *:main *)` — verified empirically against **Claude Code 2.1.246** with a throwaway repo, a local bare remote, and two independent signals per case (harness-recorded denial + whether the remote ref actually moved). Full match table in the gate section. Feature-branch pushes are unaffected in every tested form, which was the whole failure of the original `Bash(git push:*)`. Residual holes (bare `git push` on `main`, `+main`, `refs/heads/main`) are named in the doc rather than implied. Also corrected a claim inherited from `4a8cc52`: `Bash(git push *)` **does** match a bare `git push` on 2.1.246 — the compiler rewrites a trailing ` .*` to `( .*)?` — so the stated reason for preferring `:*` does not hold on this build. (2) The 63-case hook matrix now lives in the repo as `test/hooks/guard-archived-files.test.js` + a base64 fixture file, expanded to 73 cases (+1 integrity check = 74 tests); it spawns the real hook script and asserts real exit codes, and includes an explicit rule-(e) false-positive regression test proven to fail against the pre-fix pattern. Placed in `test/hooks/` so it runs under both invocations rather than being skipped by the globstar bug. (3) The bootstrap incident's committer-identity evidence is now quoted inline in CLAUDE.md, so the claim no longer depends on `4a8cc52` staying reachable on an undeleted branch. (4) Test baseline reconciled from a stale **899** to the measured pair: full glob **1062 / 1052 / 4 / 6**, literal `npm test` **631 / 622 / 3 / 6**. Also corrected an over-broad claim that *any* command containing an archived path literal is blocked — a bare `grep` and a `cat` heredoc are not; a listed utility must also be present.
 - **Emma unavailability flag merged to `main` + boundary test coverage closed (Aug 16, 2026):** `claude/emma-unavailability-flag-v2-kdbzqh` (see entry below) merged into `main` via commit `1c4db14` after independent Reviewer sign-off (7/7 checklist items PASS, one non-blocking test-coverage gap noted). `main` had advanced 3 unrelated commits (Dashboard v2 Phase 4B) since the branch was cut and since the Reviewer's pass; no file overlap, clean merge, no conflicts. Same-session follow-up added the two boundary test cases the Reviewer flagged as missing — a block starting *exactly* 14 days out (fires) and *exactly* 15 days out (does not fire) — to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block, per the Reviewer's own hand-verification that the underlying `flags.js`/`emmaUnavailabilityParser.js` logic was already correct at these edges. No production code changed in this follow-up. 899 passing on `main` after both steps — see Test baseline section for the full reconciliation chain.
 - **Emma unavailability flag added (Aug 16, 2026):** New `digest/emmaUnavailabilityParser.js` parses Emma's UTA reserve-duty / annual-tour-duty blocks from the "House Manager" calendar (`690a345d...@group.calendar.google.com`), wired into `digest/builder.js` on the same try/catch-default-to-`[]` pattern as `parseWeeklyPriorities`. A new pure `flags.js` evaluator reads `ctx.emmaUnavailableBlocks` and emits an amber, non-`bannerOnly` flag (`owner: []`) for any block starting within 14 days or already in progress; already-ended blocks are excluded. Live calendar verification (13 real events, all confirmed) found the title's type token includes a `(Reserve)` qualifier not anticipated by the original spec example (e.g. `Emma: UTA (Reserve) — Unavailable`, sometimes with a trailing `[Tentative FY27]` bracket) — the extractor captures the type substring verbatim rather than stripping `(Reserve)`, so flag bodies read e.g. "Emma unavailable Oct 16–19 (UTA (Reserve)) — confirm coverage." Google's all-day `end.date` is exclusive; `exclusiveEndToInclusive()` converts it to the inclusive last day shown in the message. Flag `id` is derived from block start date + type (stable dedup), computed once in the parser and reused verbatim by the evaluator. No dashboard card, no data file, no `FAMILY_CALENDARS` change — all explicitly out of scope for this pass. 896 passing after this change (up from a freshly-measured 876 baseline — see Test baseline section).
@@ -750,7 +800,9 @@ method, so they chain directly to the 988 pre-change number above.
 
 **A commit message that doesn't describe its own content defeats every drift-detection habit this project relies on.** Confirmed August 2026: `e4aa130`'s message named an unrelated editorial doc change while the same commit carried the `sharksActive`/`renderSharksCard`/sports-config `sharks` scaffolding, the `gmailParser` sharks routing entry, and (per a still-unresolved test-only string) possibly `flags.js` changes — none of it discoverable by searching commit history for anything sharks-related. Worth a standing habit: when a commit touches more than one logical concern, or when scaffolding for a future feature rides along with an unrelated change, the message should name both, not just the primary one.
 
-**`npm test`'s glob pattern silently drops every test file that sits directly in `test/` (not in a subdirectory) — a pre-existing, shell-dependent bug, not a regression.** `package.json`'s test script is `node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js`. Without `bash`'s `globstar` shell option enabled (the default in most non-interactive shells, including the one `npm test` itself spawns via `sh -c` on this system), `test/**/*.test.js` does **not** recurse — it behaves like `test/*/*.test.js`, matching only `test/skills/*.test.js` and silently excluding every file directly under `test/` (`test/data.test.js`, `test/athleticsParser.test.js`, `test/wavesParser.test.js`, `test/dateUtils.test.js`, `test/calendar.test.js`, `test/flagFootballParser.test.js`, `test/gmailParser.test.js`, `test/pdfReloadParser.test.js`, `test/swimParser.test.js`, `test/weeklyPrioritiesParser.test.js`, and now `test/sharksParser.test.js`). `digest/**/*.test.js` and `render/**/*.test.js` are unaffected because those patterns fail to pre-expand in the same broken shell and are instead handed to Node's own `--test` glob resolution, which *does* recurse correctly. Net effect: a literal `npm test` run in an affected shell reports far fewer tests than actually exist (395 passing observed in this environment vs. the documented baseline of 645+) with zero failures either way — it looks clean, not broken, which is what makes it dangerous. **To get an accurate count, run with `shopt -s globstar` enabled first**, or pass the file list explicitly. Not fixed as part of the Sharks card work (out of scope for that task) — flagging here so a future session doesn't mistake a low `npm test` count for a real regression, and doesn't mistake a passing `npm test` for full coverage. **The "395 vs. 645+" figures above are a historical observation from the session that found the bug, not current.** For the measured pair as of Aug 26, 2026 — full glob 1062 / literal `npm test` 631 — and the rule that every "tests passing" claim must name its invocation, see the Test baseline section.
+**✓ FIXED Aug 27, 2026 — but read this anyway; the lesson outlived the bug.** The patterns in `package.json` are now single-quoted, so the shell passes them through and Node's `--test` resolver does the globbing. Plain `npm test` runs all 1062 tests. See "The glob fix" under Test baseline for the mechanism, the three options that were empirically compared, and the asymmetry table. **What the fix does not retire:** this bug hid a genuine failing test (`test/pi-dashboard-pull.test.js`'s umask 0644 credentials defect) for as long as it existed, and the recorded baseline then mis-described that failure as environmental. A silent-skip bug and an unfalsifiable summary of the result are the same failure in two places, and only one of them was in the glob. The original description follows, for provenance.
+
+**`npm test`'s glob pattern silently drops every test file that sits directly in `test/` (not in a subdirectory) — a pre-existing, shell-dependent bug, not a regression.** `package.json`'s test script was `node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js`. Without `bash`'s `globstar` shell option enabled (the default in most non-interactive shells, including the one `npm test` itself spawns via `sh -c` on this system), `test/**/*.test.js` does **not** recurse — it behaves like `test/*/*.test.js`, matching only `test/skills/*.test.js` and silently excluding every file directly under `test/` (`test/data.test.js`, `test/athleticsParser.test.js`, `test/wavesParser.test.js`, `test/dateUtils.test.js`, `test/calendar.test.js`, `test/flagFootballParser.test.js`, `test/gmailParser.test.js`, `test/pdfReloadParser.test.js`, `test/swimParser.test.js`, `test/weeklyPrioritiesParser.test.js`, and now `test/sharksParser.test.js`). `digest/**/*.test.js` and `render/**/*.test.js` are unaffected because those patterns fail to pre-expand in the same broken shell and are instead handed to Node's own `--test` glob resolution, which *does* recurse correctly. Net effect: a literal `npm test` run in an affected shell reports far fewer tests than actually exist (395 passing observed in this environment vs. the documented baseline of 645+) with zero failures either way — it looks clean, not broken, which is what makes it dangerous. **To get an accurate count, run with `shopt -s globstar` enabled first**, or pass the file list explicitly. Not fixed as part of the Sharks card work (out of scope for that task) — flagging here so a future session doesn't mistake a low `npm test` count for a real regression, and doesn't mistake a passing `npm test` for full coverage. **The "395 vs. 645+" figures above are a historical observation from the session that found the bug, not current.** For the measured pair as of Aug 26, 2026 — full glob 1062 / literal `npm test` 631 — and the rule that every "tests passing" claim must name its invocation, see the Test baseline section.
 
 - **Champs/Summer Awards history migration: COMPLETE (August 2026).** Full project history: `docs/data-reload/champs-sa-migration-history.md`. Summary: 2024 Champs, 2025 Champs, and 2026 Summer Awards individual + relay results (3,844 individual + 172 relay rows) parsed and loaded into `league-results-history-v2.json`/`relay-results-history-v2.json`. Includes the wrong-file-write incident and correction that led to the current "current vs. archived" guard rail. Legacy files archived to `data/archive/` as part of this project.
 
