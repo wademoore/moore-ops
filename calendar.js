@@ -5,7 +5,7 @@ const EXCLUDED_CALENDAR_IDS = new Set([
   '6ac1de94baada01a89e5bcf845d71c5d02301b5a62d9406c1069430341e3ccc2@group.calendar.google.com',
 ]);
 
-const FAMILY_CALENDARS = {
+export const FAMILY_CALENDARS = {
   "Wade Personal": "wademoore@gmail.com",
   "Wade On-Call": "bpe8s3ggfuiv306dlmpdbv5rvk@group.calendar.google.com",
   "Family": "family07878234371362888643@group.calendar.google.com",
@@ -46,6 +46,31 @@ export async function fetchCalendarEvents(auth, calendarId, timeMin, timeMax) {
     console.warn(`[calendar:fetchCalendarEvents] Could not load "${calendarId}" — ${err.message}`);
     return [];
   }
+}
+
+// ── Strict sibling of fetchCalendarEvents ─────────────────────────────────
+//
+// Identical request, opposite failure policy: errors propagate instead of
+// being logged and swallowed as an empty array. fetchCalendarEvents() above
+// degrades to [] on purpose — the daily digest should still render when one
+// calendar is unreachable. That is exactly wrong for a batch job whose whole
+// output is derived from the read: an auth expiry or a 403 would produce a
+// clean-looking brief reporting zero items, and nobody would know.
+//
+// Callers that would rather fail loudly than report an empty result should
+// use this one. It is deliberately not a flag on fetchCalendarEvents(), so
+// no existing caller can pick up the throwing behavior by accident.
+
+export async function fetchCalendarEventsStrict(auth, calendarId, timeMin, timeMax) {
+  const cal = calendar({ version: 'v3', auth });
+  const res = await cal.events.list({
+    calendarId,
+    timeMin,
+    timeMax,
+    singleEvents: true,
+    orderBy: 'startTime',
+  });
+  return res.data.items || [];
 }
 
 // ── Core pull function — shared by both exports ────────────────────────────
