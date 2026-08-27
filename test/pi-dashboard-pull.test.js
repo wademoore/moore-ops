@@ -77,7 +77,7 @@ generated=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='milli
 manifest={'schemaVersion':1,'artifactVersion':'dashboard-v2','generatedAt':generated,'artifact':art('dashboard-v2/releases/x/index.html','v1',first),'level2Artifact':art('dashboard-v2/releases/x/level2.html','v2',level2),'runtime':{'browserOrigin':'http://127.0.0.1:4173','sportsFeedUrl':sports}}
 with tempfile.TemporaryDirectory() as root:
   root=pathlib.Path(root);config=root/'config.json';credentials=root/'credentials.json';staging=root/'staging'
-  config.write_text(json.dumps({'bucket':'test','region':'us-east-2','manifestKey':'dashboard-v2/current/manifest.json','sportsFeedUrl':sports}));credentials.write_text(json.dumps({'accessKeyId':'x','secretAccessKey':'y'}))
+  config.write_text(json.dumps({'bucket':'test','region':'us-east-2','manifestKey':'dashboard-v2/current/manifest.json','sportsFeedUrl':sports}));credentials.write_text(json.dumps({'accessKeyId':'x','secretAccessKey':'y'}));credentials.chmod(0o600)
   blobs={'dashboard-v2/current/manifest.json':json.dumps(manifest).encode(),manifest['artifact']['key']:first,manifest['level2Artifact']['key']:level2}
   m.signed_get=lambda bucket,region,key,credentials,version_id=None:blobs[key]
   candidate=m.stage(config,credentials,staging)
