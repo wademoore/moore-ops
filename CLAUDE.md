@@ -25,7 +25,11 @@
 
 ### DESIGNER MODE
 - Used for visual or content presentation changes only
-- Read render/dashboard.js to understand available data
+- Read digest/builder.js for available data — its
+  `OUTPUT — digestData` block is the field-level contract
+  every surface renders from
+- Read render/dashboard-v2.js for the current rendered
+  surface (v1 is frozen — see Frozen surfaces)
 - Requires a screenshot of current state to be useful
 - Translate vague visual goals into a precise spec
 - Output: layout description, hierarchy, spacing, 
@@ -39,6 +43,40 @@
 - Update CLAUDE.md after any significant change
 - Use /plan before Planner prompts to enforce no-edit mode
 - An explicit no-commit/no-push instruction given in a session's own prompt (e.g. "hold at a pre-push checkpoint") takes precedence over the local git-check stop hook — don't let the hook's "commit and push" nudge override a task that deliberately asked to stop short of that.
+
+## Frozen surfaces
+
+### v1 dashboard is frozen (2026-08-27)
+
+`render/dashboard.js` (v1) is frozen. Do not iterate, improve, refactor, or
+debug it unless Wade explicitly asks in that session. It stays deployed; it
+does not get worked on.
+
+Before starting any task touching a rendered surface, confirm the change
+reaches v2 (`render/dashboard-v2.js`) or the email digest. If the only
+consumer is v1, stop and say so rather than proceeding — a fix to a surface
+nobody reads produces no signal when it breaks, which is how the school-strip
+bug survived unnoticed from June until it was found by accident in August.
+
+This does not freeze the shared pipeline. `digest/builder.js` and the modules
+it calls serve every surface; changes there are in scope as normal.
+
+**One exception — a failing v1 test.** `render/dashboard.test.js` is 81
+v1-only tests inside the suite, so a v1 failure turns CI red while the freeze
+otherwise forbids touching v1. To unblock CI you may fix the failing test, or
+skip it, and nothing further. That is the only v1 work permitted without Wade
+explicitly asking for it. Report it — in the session and in the PR — rather
+than doing it quietly: a silently skipped test is exactly how a frozen surface
+rots with no signal, which is the failure mode this whole section exists to
+prevent.
+
+**`scripts/renderTest.js` is half-frozen.** It renders both surfaces for
+visual inspection: `renderEmail()` → `scripts/out-email.html`, and v1's
+`renderTodayCard()` → `scripts/out-dashboard.html`. The email half is live and
+in scope; the dashboard half is v1-only and frozen with it. There is no v2
+equivalent and none should be built here — `render/dashboard-v2.js` is
+exercised through `dashboard-artifact/generator.js`. Do not invest in the
+dashboard half.
 
 ## Branching policy
 
@@ -608,7 +646,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 - **`digest/builder.js`** — main digest assembly; fetches calendar events, routes them through parsers, produces `digestData`. `today` anchor changed from `new Date(); setHours(0,0,0,0)` (UTC-anchored, wrong at ≥8 PM ET) to `startOfTodayET()` (Jul 2026).
 - **`digest/dateUtils.js`** — date utilities shared across the pipeline: `midnight()`, `daysBetween()`, `toDateKey()`, `parseEventDate()`, `normalizeEvent()`, `timeToSeconds()`, `secondsToTime()`. Added `startOfTodayET(instant)` (Jul 2026) — derives midnight-of-the-ET-calendar-date as a local-midnight `Date`, used as the dashboard's 'today' anchor. `parseEventDate`'s timed-event branch also returns ET-calendar-date local-midnight, kept consistent with `startOfTodayET` so both operands of `daysBetween` share the same anchoring convention.
-- **`render/dashboard.js`** — HTML dashboard renderer; consumes `digestData` and produces the full dashboard page. Added `eventDateKeyET(start)` (Jul 2026), exported for testing — resolves an event's ET calendar-date bucket key: `start.date` passthrough for all-day events, `toLocaleDateString('en-CA', {timeZone: 'America/New_York'})` for timed events. Replaces the old `raw.slice(0,10)` UTC-slice in `renderWeekCard`, which had misbucketed any event at/after 8 PM ET into the next day.
+- **`render/dashboard.js`** — **FROZEN (2026-08-27) — do not iterate, refactor, or debug; see "Frozen surfaces" near the top of this file.** HTML dashboard renderer; consumes `digestData` and produces the full dashboard page. Added `eventDateKeyET(start)` (Jul 2026), exported for testing — resolves an event's ET calendar-date bucket key: `start.date` passthrough for all-day events, `toLocaleDateString('en-CA', {timeZone: 'America/New_York'})` for timed events. Replaces the old `raw.slice(0,10)` UTC-slice in `renderWeekCard`, which had misbucketed any event at/after 8 PM ET into the next day.
 - **`render/email.js`** — HTML email renderer; parallel to dashboard but for the digest email.
 - **`digest/aliases.js`** — maps raw calendar event titles/calendars to resolved display forms.
 - **`digest/flags.js`** — computes alert flags (gear reminders, bag-prep warnings, etc.) from resolved events. Added (Aug 2026) an Emma-unavailability evaluator reading `ctx.emmaUnavailableBlocks` — no I/O, pure.
