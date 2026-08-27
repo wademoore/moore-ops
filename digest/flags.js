@@ -453,6 +453,29 @@ const EVALUATORS = [
     return flags.length > 0 ? flags : null;
   },
 
+  // ── Calendar source unreadable — the digest is incomplete, not empty ─────
+  // Reads ctx.calendarFetchFailures (collected by calendar.js). Red, because
+  // every other flag describes something the digest knows; this one says the
+  // digest does not know, and an absent event is indistinguishable from a
+  // clear day. Nothing downstream can infer this — a calendar that 404s and
+  // one with nothing scheduled both arrive as an empty list.
+  (ctx) => {
+    const failures = ctx.calendarFetchFailures;
+    if (!failures || failures.length === 0) return null;
+
+    const names = failures.map(f => f.calendarName).join(', ');
+    const plural = failures.length === 1;
+
+    return {
+      id: 'calendar-fetch-failure',
+      level: 'red',
+      title: `🔴 Calendar Unreadable — ${failures.length} Source${plural ? '' : 's'} Failed to Load`,
+      body: `${names}. ${plural ? 'This calendar' : 'These calendars'} could not be read this run, so any events on ${plural ? 'it' : 'them'} are missing here — treat ${plural ? 'that source' : 'those sources'} as unknown today, not clear. Reason: ${failures[0].message}.`,
+      owner: ['wade'],
+      persist: false,
+    };
+  },
+
 ];
 
 // ---------------------------------------------------------------------------
