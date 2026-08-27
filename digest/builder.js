@@ -50,6 +50,7 @@
 
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { readFetchFailures } from '../calendar.js';
 import { resolveEvent } from './aliases.js';
 import { computeFlags } from './flags.js';
 import { getSchoolStrip } from './schoolRotation.js';
@@ -174,7 +175,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.routineAnchorsData] Routine anchors (data/routine-anchors.json); null on file error — see digest/routineAnchorsParser.js. School-type anchors suppressed on 🏫 No School / Early Release days; caregiver-type anchors (a `caregiver` field) suppressed by emmaUnavailabilityParser.js blocks. No early-dismissal time computation.
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, centersActionCues = [] }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, centersActionCues = [], calendarFetchFailures }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -204,6 +205,14 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   if (kidsProfile === undefined) {
     try { kidsProfile = await readDataFile('kids-profile.json'); }
     catch { kidsProfile = null; }
+  }
+
+  // Calendars that could not be read on this run. Normally rides along on the
+  // event arrays from calendar.js (see attachFetchFailures there); left as an
+  // injectable param so tests can supply it directly, same convention as
+  // emmaUnavailableBlocks above — only undefined falls back to the arrays.
+  if (calendarFetchFailures === undefined) {
+    calendarFetchFailures = readFetchFailures(rawEvents, rawEvents14d);
   }
 
   if (!config) throw new Error('[buildDigest] config is required — ensure data/sports-config.json is valid');
@@ -360,6 +369,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     swimResults:   swimResults   || [],
     champsTargets: config.champsTargets || {},
     emmaUnavailableBlocks,
+    calendarFetchFailures,
   });
 
   // ── 15. Assemble and return ──────────────────────────────────────────────
@@ -377,5 +387,6 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     activityComms,
     banner,
     weeklyPriorities,
+    calendarFetchFailures,
   };
 }

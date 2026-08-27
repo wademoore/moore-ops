@@ -294,3 +294,79 @@ describe('evaluateEmmaUnavailability', () => {
     assert.ok(flags.find(f => f.id === 'emma-unavail-2026-09-26-uta-reserve'));
   });
 });
+
+// ---------------------------------------------------------------------------
+// Section 17 — Calendar fetch failure evaluator
+//
+// The regression this guards: a permanently 404ing calendar produced an empty
+// event list, and the digest rendered that as a clear day. Nothing downstream
+// can tell the two apart, so the flag is the only signal.
+// ---------------------------------------------------------------------------
+
+describe('evaluateCalendarFetchFailure', () => {
+  const failure = (name, id, message = 'Not Found') => ({
+    calendarName: name,
+    calendarId: id,
+    message,
+  });
+
+  const find = flags => flags.find(f => f.id === 'calendar-fetch-failure');
+
+  it('does not fire when every calendar loaded', () => {
+    assert.equal(find(computeFlags(ctx({ calendarFetchFailures: [] }))), undefined);
+  });
+
+  it('does not fire when the context omits the field entirely', () => {
+    assert.equal(find(computeFlags(ctx())), undefined);
+  });
+
+  it('fires red when a calendar could not be read', () => {
+    const flags = computeFlags(ctx({
+      calendarFetchFailures: [failure('WJCC Schools', 'wjcc@import')],
+    }));
+    const flag = find(flags);
+    assert.ok(flag, 'expected calendar-fetch-failure to fire');
+    assert.equal(flag.level, 'red');
+    assert.deepEqual(flag.owner, ['wade']);
+    assert.match(flag.title, /1 Source Failed/);
+    assert.match(flag.body, /WJCC Schools/);
+  });
+
+  it('names the underlying error so the cause is visible in the digest', () => {
+    const flags = computeFlags(ctx({
+      calendarFetchFailures: [
+        failure('WJCC Schools', 'wjcc@import', 'The requested event could not be found or has been deleted.'),
+      ],
+    }));
+    assert.match(find(flags).body, /could not be found or has been deleted/);
+  });
+
+  it('says the source is unknown rather than clear', () => {
+    const flags = computeFlags(ctx({
+      calendarFetchFailures: [failure('WJCC Schools', 'wjcc@import')],
+    }));
+    assert.match(find(flags).body, /unknown today, not clear/);
+  });
+
+  it('pluralizes and lists every failing calendar', () => {
+    const flags = computeFlags(ctx({
+      calendarFetchFailures: [
+        failure('Family', 'family@group'),
+        failure('WJCC Schools', 'wjcc@import'),
+      ],
+    }));
+    const flag = find(flags);
+    assert.match(flag.title, /2 Sources Failed/);
+    assert.match(flag.body, /Family, WJCC Schools/);
+    assert.match(flag.body, /These calendars/);
+  });
+
+  it('sorts ahead of amber and blue flags', () => {
+    const flags = computeFlags(ctx({
+      calendarFetchFailures: [failure('WJCC Schools', 'wjcc@import')],
+      schoolStrip: { myles: {}, ophelia: {}, tomorrowWarnings: ['Tomorrow: Myles has Library — pack book tonight'] },
+    }));
+    assert.ok(flags.length > 1, 'expected at least one other flag alongside');
+    assert.equal(flags[0].id, 'calendar-fetch-failure');
+  });
+});
