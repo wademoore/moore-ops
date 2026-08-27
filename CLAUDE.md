@@ -40,6 +40,23 @@
 - Use /plan before Planner prompts to enforce no-edit mode
 - An explicit no-commit/no-push instruction given in a session's own prompt (e.g. "hold at a pre-push checkpoint") takes precedence over the local git-check stop hook — don't let the hook's "commit and push" nudge override a task that deliberately asked to stop short of that.
 
+## Frozen surfaces
+
+### v1 dashboard is frozen (2026-08-27)
+
+`render/dashboard.js` (v1) is frozen. Do not iterate, improve, refactor, or
+debug it unless Wade explicitly asks in that session. It stays deployed; it
+does not get worked on.
+
+Before starting any task touching a rendered surface, confirm the change
+reaches v2 (`render/dashboard-v2.js`) or the email digest. If the only
+consumer is v1, stop and say so rather than proceeding — a fix to a surface
+nobody reads produces no signal when it breaks, which is how the school-strip
+bug survived unnoticed from June until it was found by accident in August.
+
+This does not freeze the shared pipeline. `digest/builder.js` and the modules
+it calls serve every surface; changes there are in scope as normal.
+
 ## Branching policy
 
 Direct-to-main after Reviewer sign-off remains this project's default for all Coder/Updater work, including small, well-specified changes. Feature branches are not the default safety mechanism — the Reviewer gate is. Use a feature branch as a deliberate escalation, not routine practice, specifically for changes where the risk is environment-dependent in a way local testing can't fully rule out (e.g. timezone/locale logic, dependency version bumps, anything sensitive to the Lambda runtime specifically) — in those cases, a branch + PR gets a free independent confirmation from CI (which runs under UTC, matching Lambda) before merge, which is a real benefit local subprocess-spawned tests can't fully replicate.
