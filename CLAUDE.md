@@ -649,6 +649,20 @@ directly in `test/`, 431 tests, all passing — verified in isolation with
 or set DASHBOARD_BROWSER_PATH.` in Playwright-backed rendering tests. They resolve as
 soon as a browser is installed.
 
+**On CI, the number is 1062 / 1062 / 0 / 0.** GitHub's `ubuntu-latest` runner resolves a
+browser, so the 3 Chromium failures and all 6 `cancelled` entries disappear there —
+observed on this branch's own CI run. That is the empirical proof for the second
+correction below: **6 subtests do not stop being "a timing artifact" because a browser
+appeared.** They were browser-dependent all along. Quote the local pair
+(1062 / 1053 / 3 / 6) when working without a browser and the CI pair when reading a
+workflow log; they differ only by the browser, and both run the same 1062.
+
+**The pre-change CI number was 631 — and it was green.** `main` at `d69ac47` reported
+`# tests 631 / # pass 631 / # fail 0` and passed. That is the whole hazard in one line:
+CI was not merely under-reporting, it was *reassuring*, and the one genuinely broken test
+in the repo sat in the 431 it never loaded. A green check mark is only worth the coverage
+behind it.
+
 **Correction — the previous entry was wrong on both counts, and it mattered.**
 
 1. It asserted *all four* full-glob failures were the Chromium message. Only three were.
