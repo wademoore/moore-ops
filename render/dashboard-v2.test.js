@@ -19,7 +19,8 @@ import {
   PALETTE,
   V2_LOGOS,
 } from './dashboard-v2.js';
-import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
+import { readFileSync } from 'node:fs';
+import { familySpotlightSampleData, sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
 
 describe('approved NOW/NEXT rendering contract', () => {
   for (const state of [
@@ -601,5 +602,103 @@ describe('television readability and horizon policies', () => {
     assert.match(one, /horizon-count-1/);
     assert.match(three, /horizon-count-3/);
     assert.doesNotMatch(three, />Coming Up</);
+  });
+});
+
+describe('family spotlight — in-panel treatment', () => {
+  const CONFIG = JSON.parse(readFileSync(new URL('../data/family-spotlight.json', import.meta.url), 'utf8'));
+  const SHARKS = JSON.parse(readFileSync(new URL('../data/sharks-soccer.json', import.meta.url), 'utf8'));
+  const spotlight = now => familySpotlightSampleData({ now, familySpotlightConfig: CONFIG, sharksSoccerData: SHARKS });
+  const ordinaryBaseline = () => renderDashboardV2({ ...spotlight('2026-09-11T17:00:00-04:00'), familySpotlight: false });
+
+  it('replaces the Athletics title band with the approved eyebrow and headline', () => {
+    const html = renderDashboardV2(spotlight('2026-09-11T17:00:00-04:00'));
+    assert.match(html, /spotlight-headline">BIG SPORTS SATURDAY!</);
+    assert.match(html, /spotlight-eyebrow-before">SATURDAY, SEPTEMBER 12</);
+    assert.match(html, /spotlight-eyebrow-on">TODAY</);
+  });
+
+  it('renders two equal children with the approved copy', () => {
+    const html = renderDashboardV2(spotlight('2026-09-11T17:00:00-04:00'));
+    assert.match(html, /class="spotlight children-2"/);
+    assert.match(html, /spotlight-name">OPHELIA<[\s\S]*?757SWIM KICK-OFF[\s\S]*?Team pic 12:30 · Intrasquad 1:00/);
+    assert.match(html, /spotlight-name">MYLES<[\s\S]*?SHARKS SEASON OPENER[\s\S]*?vs VIP United · 1:15 · Blayton/);
+    assert.match(html, /spotlight-child tone-purple/);
+    assert.match(html, /spotlight-child tone-red/);
+  });
+
+  it('does not change athleticsCardCount or the one-card panel classes', () => {
+    const active = renderDashboardV2(spotlight('2026-09-11T17:00:00-04:00'));
+    assert.match(active, /class="dashboard[^"]*athletics-one/);
+    assert.match(active, /athletics-panel card-count-1/);
+    assert.match(ordinaryBaseline(), /class="dashboard[^"]*athletics-one/);
+    assert.match(ordinaryBaseline(), /athletics-panel card-count-1/);
+  });
+
+  it('ships the ordinary Athletics presentation alongside the Spotlight', () => {
+    const html = renderDashboardV2(spotlight('2026-09-11T17:00:00-04:00'));
+    assert.match(html, /class="athletics-grid spotlight-ordinary count-1"/);
+    assert.match(html, /Tidewater Sharks/);
+  });
+
+  it('opens in the ordinary state so an absent script fails closed', () => {
+    assert.match(renderDashboardV2(spotlight('2026-09-11T17:00:00-04:00')), /data-spotlight-state="ordinary"/);
+  });
+
+  it('renders ordinary Athletics unchanged when the switch is off', () => {
+    const off = ordinaryBaseline();
+    assert.doesNotMatch(off, /data-spotlight-id/);
+    assert.match(off, /athletics-grid count-1/);
+  });
+
+  it('renders ordinary Athletics before the inclusion window and after expiry', () => {
+    assert.doesNotMatch(renderDashboardV2(spotlight('2026-09-05T12:00:00-04:00')), /data-spotlight-id/);
+    assert.doesNotMatch(renderDashboardV2(spotlight('2026-09-12T17:00:00-04:00')), /data-spotlight-id/);
+  });
+
+  it('layers the official logo over the semantic sports mark so failure reveals it', () => {
+    const html = renderDashboardV2(spotlight('2026-09-11T17:00:00-04:00'));
+    const layered = html.match(/class="spotlight-mark semantic-icon category-sports activity-visual"/g) || [];
+    assert.equal(layered.length, 2, 'both children layer an embedded logo over the fallback');
+    assert.ok((html.match(/onerror="this\.remove\(\)"/g) || []).length >= 2);
+  });
+
+  it('falls back to the semantic mark, retaining all text, when a logo asset is absent', () => {
+    const config = structuredClone(CONFIG);
+    for (const child of config.spotlights[0].children) child.logo = 'not-a-packaged-asset';
+    const html = renderDashboardV2({
+      ...familySpotlightSampleData({ now: '2026-09-11T17:00:00-04:00', familySpotlightConfig: config, sharksSoccerData: SHARKS }),
+    });
+    const marks = html.match(/class="spotlight-mark semantic-icon category-sports"/g) || [];
+    assert.equal(marks.length, 2, 'fallback-only marks render');
+    assert.doesNotMatch(html, /class="spotlight-mark semantic-icon category-sports activity-visual"/);
+    for (const copy of ['OPHELIA', 'MYLES', '757SWIM KICK-OFF', 'SHARKS SEASON OPENER',
+      'Team pic 12:30 · Intrasquad 1:00', 'vs VIP United · 1:15 · Blayton']) {
+      assert.ok(html.includes(copy), `text lost with logo: ${copy}`);
+    }
+  });
+
+  it('uses only the Dashboard v2 ownership colours', () => {
+    const html = renderDashboardV2(spotlight('2026-09-11T17:00:00-04:00'));
+    assert.match(html, /#b93624/);
+    assert.match(html, /#6c4a85/);
+    assert.doesNotMatch(html, /#7F77DD|#E24B4A/i);
+  });
+
+  it('keeps NOW/NEXT and the sports ticker intact', () => {
+    const html = renderDashboardV2({ ...spotlight('2026-09-11T17:00:00-04:00'), nowNext: { tone: 'problem', signal: 'Pickup needs coverage', subject: 'Both kids', context: ['Resolve before 3:45 PM'], supporting: [{ label: 'Next', lines: ['Sharks · Blayton'] }] } });
+    assert.match(html, /class="now-next now-next-problem"/);
+    assert.match(html, /Pickup needs coverage/);
+    assert.match(html, /class="sports-ticker/);
+    assert.match(html, /data-spotlight-id/);
+  });
+
+  it('ships a bounded controller that performs no network request', () => {
+    const html = renderDashboardV2(spotlight('2026-09-11T17:00:00-04:00'));
+    assert.match(html, /window\.updateFamilySpotlight/);
+    assert.match(html, /addEventListener\('pagehide', \(\) => clearTimeout\(spotlightTimer\)\)/);
+    const controller = html.slice(html.indexOf('const spotlightPanel'), html.indexOf('const fit ='));
+    assert.doesNotMatch(controller, /fetch\(|XMLHttpRequest|location\.replace|setInterval/);
+    assert.match(controller, /clearTimeout\(spotlightTimer\)/);
   });
 });
