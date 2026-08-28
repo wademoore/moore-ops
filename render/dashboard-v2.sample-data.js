@@ -133,4 +133,53 @@ const sampleDashboardV2Data = {
   countdown: { label: "School's Out", date: '2026-06-10', days: 1 },
 };
 
-export { sampleDashboardV2Data };
+/**
+ * Deterministic Family Spotlight fixture for the September 12, 2026 reference
+ * case, in the real one-card Athletics state (only the Sharks season is active
+ * in September, so athleticsCardCount() === 1). Callers supply the shipped
+ * config and Sharks schedule so the fixture exercises real data rather than a
+ * copy of it, and an explicit `now` so every state is reproducible.
+ */
+function familySpotlightSampleData({ now, familySpotlightConfig, sharksSoccerData }) {
+  const instant = new Date(now);
+  const etDate = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).format(instant);
+  const occurrences = [
+    { ...event('757swim Kick-Off Party (Team Pic 12:30, Intrasquad Meet 1:00, Party 3:00)', '2026-09-12T12:30:00-04:00', 'Ophelia · 757 Swim', { _calName: 'Ophelia' }) },
+    { ...event('Sharks vs VIP United (Home)', '2026-09-12T13:15:00-04:00', 'Myles · Blayton Elem School', { _calName: 'Myles' }) },
+  ];
+  // Mirrors builder.js: upcomingEvents excludes today, so on the day itself the
+  // occurrences are reachable only through days[0].
+  const isSpotlightDay = etDate === '2026-09-12';
+
+  return {
+    ...sampleDashboardV2Data,
+    today: d(etDate),
+    now: instant,
+    familySpotlight: true,
+    familySpotlightConfig,
+    sharksSoccerData,
+    days: [{ date: d(etDate), events: isSpotlightDay ? occurrences : [], tasks: [], menuEvent: null }],
+    upcomingEvents: isSpotlightDay ? [] : occurrences,
+    athletics: {
+      ...sampleDashboardV2Data.athletics,
+      flagFootballActive: false,
+      wavesActive: false,
+      swim757Active: false,
+      sharksActive: true,
+      sharksRecord: '2-1-0',
+      sharksDivisionLabel: 'U11 Boys Sky Division',
+      sharksNextGame: {
+        opponent: 'VIP United TASL B2015/2016 Red (VA)',
+        date: '2026-09-12',
+        time: '13:15',
+        homeAway: 'home',
+        venue: 'Blayton Elem School - BLAY 3',
+      },
+      sharksDivisionStanding: { rank: '3rd', of: 11, pts: 6 },
+    },
+  };
+}
+
+export { familySpotlightSampleData, sampleDashboardV2Data };

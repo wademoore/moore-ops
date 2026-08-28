@@ -841,3 +841,30 @@ describe('renderSharksCard', () => {
     assert.ok(!inactiveHtml.includes('Sharks Soccer'));
   });
 });
+
+describe('Dashboard v1 compatibility with additive Family Spotlight digest fields', () => {
+  const spotlightFields = {
+    familySpotlightConfig: {
+      spotlights: [{
+        id: 'big-sports-saturday-2026-09-12',
+        date: '2026-09-12',
+        activateAt: '2026-09-11T16:00',
+        expireAt: '2026-09-12T17:00',
+        headline: 'BIG SPORTS SATURDAY!',
+        children: [],
+      }],
+    },
+    sharksSoccerData: { seasons: [{ divisionSchedule: { matches: [] } }] },
+  };
+
+  it('renders byte-identical v1 output with and without the additive fields', () => {
+    const without = renderDashboard(makeDigestData());
+    const with_ = renderDashboard(makeDigestData(spotlightFields));
+    assert.equal(with_, without);
+  });
+
+  it('never emits Spotlight markup or internal vocabulary in v1', () => {
+    const html = renderDashboard(makeDigestData(spotlightFields));
+    assert.doesNotMatch(html, /data-spotlight-id|spotlight-ordinary|BIG SPORTS SATURDAY/);
+  });
+});

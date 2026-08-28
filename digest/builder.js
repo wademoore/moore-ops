@@ -175,7 +175,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.routineAnchorsData] Routine anchors (data/routine-anchors.json); null on file error — see digest/routineAnchorsParser.js. School-type anchors suppressed on 🏫 No School / Early Release days; caregiver-type anchors (a `caregiver` field) suppressed by emmaUnavailabilityParser.js blocks. No early-dismissal time computation.
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, centersActionCues = [], calendarFetchFailures }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, familySpotlightData, centersActionCues = [], calendarFetchFailures }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -205,6 +205,10 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   if (kidsProfile === undefined) {
     try { kidsProfile = await readDataFile('kids-profile.json'); }
     catch { kidsProfile = null; }
+  }
+  if (familySpotlightData === undefined) {
+    try { familySpotlightData = await readDataFile('family-spotlight.json'); }
+    catch { familySpotlightData = null; }  // non-critical — treat missing file as no spotlights
   }
 
   // Calendars that could not be read on this run. Normally rides along on the
@@ -393,5 +397,12 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     banner,
     weeklyPriorities,
     calendarFetchFailures,
+    // Additive, display-only, Dashboard v2 Family Spotlight inputs. Both are
+    // ignored by the v1 renderers (render/dashboard.js, render/email.js) and
+    // by index.js. sharksSoccerData is the object already loaded above — it is
+    // surfaced, not re-read, so the Spotlight selector can join the full
+    // division schedule on a stable matchNumber.
+    familySpotlightConfig: familySpotlightData || null,
+    sharksSoccerData:      sharksData || null,
   };
 }
