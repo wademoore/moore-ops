@@ -587,6 +587,93 @@ Every anchor also carries a free-text `note` field (same precedent as `swim-anno
 
 **History (Aug 2026, chronological):** Phase 1 (`e82b3b6`) added the data file, parser, and a static Dashboard v2 school-hours line. Phase 2 (`4a11f84`) added school's calendar-title suppression. Phase 3 (`ff5159b`) replaced the static line with a live client-side countdown. Wade then clarified the architectural intent above — Routine Anchors was meant as a NOW/NEXT data layer, not a standalone dashboard feature — and the UI (all of Phase 1's static line and all of Phase 3's countdown) was fully descoped (`ec1ce9a`), confirmed byte-for-byte reverting `render/dashboard-v2.js`/`render/dashboard-v2.test.js` to their pre-Phase-1 state. The data layer was rebuilt with clean history (`cdf57bc`, merged to `main` as `9377de3`) preserving only the final architecture, not the build-then-revert churn. Two data corrections followed real-fact verification: `b0aba05` (school's placeholder `08:15`/`15:45` times were never checked against real facts) and `8c017c6` (extended `endTime` once the school bus's fixed arrival time was confirmed). Emma was added as the second anchor and first generalization test in `235e11a`.
 
+## Family Spotlight (Dashboard v2, Sept 2026)
+
+A bounded special-event treatment that temporarily replaces **only the contents** of the
+Dashboard v2 Athletics panel. It is not a page, host, origin, variant, or pipeline — it is
+an in-panel content swap. First and currently only instance: "Big Sports Saturday",
+September 12, 2026.
+
+**Footprint is preserved by not touching what determines it.** `athleticsCardCount()` is
+deliberately unmodified, so `.athletics-one` / `.athletics-multi` and the 26% / 40% panel
+heights resolve exactly as they would with no Spotlight. On Sept 12 only the Sharks season
+is active, so the real state is one-card: measured **1473.83 × 315.63 px**, identical in
+every Spotlight state (proved numerically in `render/dashboard-v2-layout.test.js`).
+`.upcoming-panel` is untouched; Next Two Weeks loses no space.
+
+**The ordinary title and grid must stay direct children of `.paper-panel`.** Several
+shipped rules use the child combinator — `.paper-panel>.section-title` sets its height,
+offset and 30px type. An early implementation wrapped them in a `.spotlight-ordinary`
+div and silently shrank the ordinary Athletics title from 70px to 48px. The Spotlight is
+therefore a *sibling*, and `data-spotlight-state` on the panel hides one side or the
+other. The `spotlight-ordinary` marker rides as an extra class on `.athletics-grid`.
+Spotlight internals use their own `spotlight-*` class names: the `.card-count-1` block
+rewrites `.athletics-grid`/`.athletic-card`/`.record`/`.next-box` and hides two of them,
+and inheriting that would deform the Spotlight in the one state that actually ships.
+
+**Candidate inclusion and visible phase are separate.** From `activateAt − 48h` the pure
+selector returns the qualified candidate so the generator embeds *both* presentations in
+one artifact; a bounded browser controller then switches between them at exact instants
+with no network request, no reload, and no generator run. At/after `expireAt` the selector
+returns nothing, so a newly generated artifact is simply ordinary. The 48h lead comfortably
+exceeds the largest real pull gap (8h25m overnight), so no boundary falls between pulls.
+
+**All timezone reasoning happens server-side, once.** `easternInstant()` in
+`digest/dateUtils.js` converts Eastern wall-clock config into absolute instants using the
+offset actually in effect on that date; the generator emits epoch milliseconds and the
+browser only compares integers. The browser never parses an Eastern string or computes
+DST. (`render/first-day-level3.js` keeps its own private copy of this helper — deliberately
+not refactored here; see Known open items.)
+
+- **Data** — `data/family-spotlight.json`, loaded by `builder.js` on the standard
+  non-fatal `readDataFile()` pattern and surfaced as `digestData.familySpotlightConfig`.
+  `digestData.sharksSoccerData` surfaces the already-loaded schedule (no extra I/O).
+  Both are additive and read by nothing in Dashboard v1.
+- **Selector** — `digest/familySpotlightSelector.js`. Pure: no I/O, no `new Date()` of its
+  own. Qualifies from the exact calendar occurrences (union of `days[*].events` and
+  `upcomingEvents` — required, because `upcomingEvents` excludes today), never from
+  `swim757Active`, `sharksActive`, or the card count.
+- **Myles resolves from `matchNumber` 641**, joined into the full division schedule —
+  never from `athletics.sharksNextGame`, which advances the moment the match is marked
+  played and would invalidate the child mid-treatment. The selector reads only immutable
+  fields (`matchNumber`, `date`, `time`, teams, `venue`) and never `played` or scores.
+- **Ophelia's detail line is an authored literal**, because "team picture 12:30" and
+  "intrasquad 1:00" exist only as prose inside one 12:30–4:30 PM event. It is anchored to
+  reality by `match.startsAt`: if the event moves, the child fails closed.
+- **Display overrides must be truthful substrings** of the authoritative value
+  (`VIP United` ⊂ `VIP United TASL B2015/2016 Red (VA)`). A shortening may shorten; it may
+  never lie. A stale override invalidates the child rather than naming the wrong team.
+- **Ownership colours are Dashboard v2's** — Myles `#b93624`, Ophelia `#6c4a85`. The
+  `#7F77DD` / `#E24B4A` pair in `digest/flags.js` is the v1 champs-banner lineage and is
+  *not* used here; a test asserts neither appears in Spotlight markup.
+- **Kill switch** — `FAMILY_SPOTLIGHT_ENABLED` env / `FamilySpotlightEnabled` stack
+  parameter, both defaulting to `"0"`. The renderer requires `familySpotlight === true`;
+  anything else is off. Off at any layer disables the feature.
+- **Fail-closed** — disabled, missing/malformed config, no clock, multiple in-window
+  entries, zero valid children, or any throw all render ordinary Athletics. The panel is
+  rendered in the `ordinary` state, so a failed or absent script also fails closed.
+- **Multiple in-window entries fail closed rather than being arbitrated.** With no approved
+  priority system, picking one deterministically would mask a configuration error.
+
+**Operational recovery, in order** (do step 1 first, or the next scheduled artifact
+re-enables a known-bad Spotlight): (1) set `FamilySpotlightEnabled` to `0` — the
+authoritative layer; (2) if the screen must be fixed now, re-point the Pi's `current`
+symlink at `previous-known-good` via `activate-dashboard-release`; (3) invoke the
+generator Lambda directly, then `systemctl start moore-dashboard-refresh.service` to force
+the pull; (4) confirm subsequent scheduled cycles stay ordinary. **Deleting
+`data/family-spotlight.json` is not an operational kill** — it needs a source deployment
+and is slower than every step above.
+
+**Packaging is not optional.** `family-spotlight.json` is read through the same non-fatal
+loader as everything else, so if it were missing from the Lambda package it would resolve
+to `null` and the feature would silently never appear, while local tests passed. It is in
+`dashboard-artifact/package-inputs.json` (`dataFiles`, now **10** entries), and
+`test/artifact/package-data-files.test.js` asserts every file `builder.js` reads is
+packaged. That test carries an explicit allowlist for two **pre-existing** gaps —
+`routine-anchors.json` and `kids-profile.json`, which are read but not packaged and so
+already degrade silently in production. Fixing those is separate work; the allowlist keeps
+them visible rather than hidden.
+
 ## Weekly Household Operations Review
 
 ### Phase 5 — Menu Planning (~5 min)
@@ -683,7 +770,7 @@ are now single-quoted and reach Node's `--test` resolver intact regardless of wh
 npm spawns. `shopt -s globstar` + the unquoted pattern still produces the identical
 1062 / 1053 / 3 / 6, so the two invocations now agree by construction rather than by luck.
 
-**Coder mode must keep plain `npm test` at 1062+ (1053 passing).**
+**Coder mode must keep plain `npm test` at 1249+ (1232 passing without a browser, 1246 with one).**
 
 Pre-change figures on `main` at `d69ac47`, for the delta: plain `npm test`
 **631 / 622 / 3 / 6**, full glob **1062 / 1052 / 4 / 6**. This branch adds no tests. The
@@ -801,6 +888,29 @@ method, so they chain directly to the 988 pre-change number above.
 ## Current state (changelog)
 
 - **Dead `WJCC Schools` calendar entry removed from `FAMILY_CALENDARS` (Aug 28, 2026):** The one-line entry pointing at `o3oasbc616bhijsqn80a58jo7a40lrl2@import.calendar.google.com` — a calendar Google reports as deleted and which does not appear in the account's calendar list — is gone from `calendar.js`. It was the sole thing firing the new `calendar-fetch-failure` red flag on every digest run. Deleted rather than repointed because WJCC calendar data now reaches the digest via the **Family** calendar's `🏫` events (hand-entered 2026-08-17), leaving the entry with no consumer; the two repoint candidates diagnosed Aug 27 are documented under Known open items and remain available if a WJCC feed is ever wired back in. **Dependency sweep run before deleting, all confirmed non-breaking:** `digest/builder.js`'s `SCHOOL_ROTATION_CALENDARS` is a `_calName` display-name filter, so it could then match nothing — `'WJCC Schools'` was dropped from it as well, leaving `new Set(['Routine'])`. Wade has moved WJCC items onto the Family calendar permanently and no feed will be repointed under that display name, so keeping the member as a hedge would have left dead code that reads as live wiring. `'Routine'` still filters Centers entries out of the 72h/14d windows exactly as before; `digest/routineAnchorsParser.js`'s `SCHOOL_EXCEPTION_CALENDAR` is `'Family'` and never referenced WJCC, so 🏫 holiday suppression of the school anchor was never on this path and is unaffected; every `'WJCC Schools'` occurrence in `test/calendar.test.js`, `digest/flags.test.js`, `digest/builder.test.js`, `digest/aliases.test.js` and `digest/routineAnchorsParser.test.js` is a hardcoded fixture string exercising generic plumbing (in `routineAnchorsParser.test.js` it is deliberately the *negative* case — a non-Family calendar that must **not** suppress), none derived from `FAMILY_CALENDARS`; and `scripts/orchestrate/occ-aging.mjs` iterates the map with `Object.entries`/`Object.keys`, so it simply sees one fewer calendar (its stale present-tense comment about the feed, and a hardcoded "the eight that answered", were corrected). Test totals unchanged at **1164 / 1155 passing / 3 failing / 6 cancelled** — the 3 failures are the standing `No Chromium executable found` set in `render/dashboard-v2-layout.test.js` and `render/first-day-level3-layout.test.js`, identical before and after.
+- **Family Spotlight implemented — "Big Sports Saturday", Sept 12 2026 (Aug 27, 2026):** First
+  reusable in-panel special-event treatment for Dashboard v2. Full design and mechanics in
+  the Family Spotlight section above. New: `data/family-spotlight.json`,
+  `digest/familySpotlightSelector.js` (+43 unit tests), `test/artifact/` (2 files, 15 tests).
+  Modified: `digest/dateUtils.js` (shared `easternInstant()`), `digest/builder.js` (two
+  additive fields), `render/dashboard-v2.js` (renderer + bounded browser controller + CSS),
+  `dashboard-artifact/{contract,generator,package-inputs}`,
+  `infrastructure/dashboard-artifact-refresh/template.json` (kill switch, default off).
+  Kill switch defaults **off** at every layer. Dashboard v1 output proved byte-identical
+  with and without the new digest fields. The implementation finding worth remembering:
+  wrapping the ordinary Athletics content broke `.paper-panel>.section-title` child-combinator
+  rules and silently shrank the title 70px→48px — caught by the layout test, fixed by keeping
+  the ordinary presentation a direct child. An independent Reviewer pass then found two guards
+  that looked protective and were not — a contract marker satisfied by the controller's own
+  selector string, and a layout assertion measuring the Spotlight while it was hidden — both
+  repaired; see the Family Spotlight section. Synchronised with `main` through `a039e3c` and re-measured
+  under the fixed test glob: plain `npm test` **1249 / 1232 / 3 / 14** without a browser and
+  **1249 / 1246 / 3 / 0** with one, against `main`'s own 1164 / 1155 / 3 / 6 — **+85 tests,
+  +91 passing, the same 3 Chromium-environmental failures**. The 6 → 0 cancelled is
+  `render/dashboard-v2-layout.test.js` now passing `DASHBOARD_BROWSER_PATH` through to
+  `resolveBrowserPath()`. The Athletics panel renders byte-identical before and after that
+  merge, ordinary and Spotlight alike; the full-page delta is `main`'s Centers live-today
+  work, and the approved panel crops are pixel-identical to the ones signed off.
 - **Calendar fetch failures now surface as a red digest flag (Aug 27, 2026):** `pullCalendarEvents()` in `calendar.js` degrades to `[]` per calendar so one dead source cannot take down the digest — correct, but on its own indistinguishable from "that calendar had no events." It now records `{ calendarName, calendarId, message }` for each failure and attaches the list to the returned array via `attachFetchFailures()` (non-enumerable, so spreads / `Object.keys()` / `JSON.stringify()` of the event list are unchanged and **no existing caller needed edits** — `index.js` and `dashboard-v2-data.js` are untouched). `readFetchFailures()` merges the 72h and 14d lists, dedupes by `calendarId` (a dead calendar fails in both pulls) and sorts by name for stable output. `buildDigest()` picks it up as `calendarFetchFailures` — an injectable param on the same convention as `emmaUnavailableBlocks`, where only `undefined` falls back to reading the arrays — exposes it on `digestData`, and passes it into `computeFlags()`. A new `flags.js` evaluator emits `id: 'calendar-fetch-failure'`, **the first `red`-level flag in the repo** (all three renderers already handled `red`: `render/email.js` palette, `render/dashboard.js` `ar`/`#E24B4A`, `render/dashboard-v2.js` `.level-red`; the `computeFlags` sort already ordered `red` first). Chosen over failing the run — a household digest whose value is the other eight calendars should not go dark because one 404s — and over logging louder, which is the channel that already failed silently for weeks. +21 tests (1141 → 1162; 1132 → 1153 passing; the 3 failures and 6 cancelled are the unchanged Chromium-environmental set).
 
 - **Pi credentials-mode test defect fixed, `npm test` glob fixed, baseline corrected (Aug 27, 2026):** Three related changes, in a deliberate order. (1) `test/pi-dashboard-pull.test.js`'s "Pi stages and validates both version-pinned directions" test wrote its temp credentials file with `credentials.write_text(...)` and never chmodded it, so under the default umask 0022 it landed at 0644 and `stage()` correctly raised `credentials file must be mode 0600 or stricter`. Fixed with `credentials.chmod(0o600)` immediately after the write, mirroring the real Pi's provisioning — **not** by setting `umask` in the embedded script, which would mask the defect and not survive running the file individually. (2) `package.json`'s test globs are now single-quoted, so `sh -c` (dash, no `globstar`) passes them through verbatim and Node 22's `--test` resolver recurses correctly. The old bug was asymmetric: `test/**` matched something and was hijacked by the shell into `test/*/*`, dropping the 18 files directly in `test/`; `digest/**` and `render/**` matched nothing, so dash left them literal and Node handled them correctly. **431 tests across 18 files had never run in CI.** Approaches were compared empirically in this environment, not assumed — quoting is sufficient and needs no `.npmrc` or shell prelude. Order mattered: fixing the glob first would have turned CI red, since GitHub runners use umask 0022 and the Pi test would finally have executed. (3) Baseline corrected on two false claims: it said all four full-glob failures were `No Chromium executable found` (only three were — the fourth was the umask defect above), and it called the 6 `cancelled` entries a `node:test` parallel-subtest timing artifact (they are all subtests of `render/dashboard-v2-layout.test.js`, whose `before` hook throws the Chromium error; they go to 0 once a browser resolves). New baseline, plain `npm test`: **1062 / 1053 / 3 / 6**, up from 631 / 622 / 3 / 6. Also added `__pycache__/` and `*.pyc` to `.gitignore` — the Pi test regenerates that bytecode on every run.

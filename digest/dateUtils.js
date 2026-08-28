@@ -23,6 +23,30 @@ export function startOfTodayET(instant = new Date()) {
   return new Date(y, m - 1, d); // local midnight of ET calendar date (= UTC midnight in Lambda)
 }
 
+/**
+ * Converts an Eastern wall-clock date + time into the absolute instant it
+ * names, using the UTC offset actually in effect in America/New_York on that
+ * date (so it is correct across DST boundaries without any offset arithmetic).
+ *
+ * All timezone reasoning for the Family Spotlight lifecycle happens here, once,
+ * server-side; the browser only ever compares absolute epoch milliseconds.
+ *
+ * @param {string} dateKey "YYYY-MM-DD"
+ * @param {string} hhmm    "HH:MM" (24-hour)
+ * @returns {Date|null}    null when either input is malformed
+ */
+export function easternInstant(dateKey, hhmm) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey || '')) return null;
+  if (!/^\d{2}:\d{2}$/.test(hhmm || '')) return null;
+  const noon = new Date(`${dateKey}T12:00:00Z`);
+  if (Number.isNaN(noon.getTime())) return null;
+  const zone = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', timeZoneName: 'longOffset' })
+    .formatToParts(noon)
+    .find(part => part.type === 'timeZoneName')?.value || 'GMT-05:00';
+  const instant = new Date(`${dateKey}T${hhmm}:00${zone.replace('GMT', '')}`);
+  return Number.isNaN(instant.getTime()) ? null : instant;
+}
+
 export function daysBetween(a, b) {
   const msPerDay = 24 * 60 * 60 * 1000;
   return Math.round((midnight(b) - midnight(a)) / msPerDay);

@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { formatSportsEventWhen } from '../sports/model.js';
 import { renderFirstDayLevel3, shouldRenderFirstDayLevel3 } from './first-day-level3.js';
+import { selectFamilySpotlight } from '../digest/familySpotlightSelector.js';
 
 /**
  * Canonical Moore Family Dashboard v2 renderer.
@@ -312,6 +313,19 @@ function activityVisual(event, className) {
 function logo(url, className = 'org-logo') {
   if (!url) return '<span class="activity-mark" aria-hidden="true"></span>';
   return `<img class="${className}" src="${esc(url)}" alt="" onerror="this.style.display='none'">`;
+}
+
+/**
+ * Spotlight organisation mark. Follows the activityVisual() layering contract
+ * rather than logo(): the semantic sports mark is rendered first and the
+ * official embedded logo is overlaid, so a missing or failed asset *reveals*
+ * the fallback instead of leaving a hole. Event text is never affected.
+ */
+function spotlightMark(url) {
+  const fallback = categorySvg('sports');
+  const base = 'spotlight-mark semantic-icon category-sports';
+  if (!url) return `<span class="${base}" aria-label="sports">${fallback}</span>`;
+  return `<span class="${base} activity-visual" aria-label="sports">${fallback}<img src="${esc(url)}" alt="" onerror="this.remove()"></span>`;
 }
 
 function renderMasthead(data) {
@@ -627,10 +641,51 @@ function renderAthletics(data) {
   ));
   if (a.sharksActive) cards.push(renderSharksCard(a));
 
-  return `<section class="paper-panel athletics-panel card-count-${cards.length}">
-    ${renderSectionTitle('Athletics', 'green', 'soccer')}
+  // The Spotlight presentation and the ordinary presentation both fill the
+  // panel's content box exactly, so the Athletics footprint is identical in
+  // every state. The Spotlight deliberately uses its own class names: the
+  // .card-count-1 CSS block rewrites .athletics-grid/.athletic-card/.record/
+  // .next-box and hides two of them, and inheriting that would deform the
+  // Spotlight in the one-card state that actually ships on September 12.
+  // The ordinary title and grid must stay DIRECT children of .paper-panel:
+  // several shipped rules use the child combinator (.paper-panel>.section-title
+  // sets its height, offset and 30px type), so wrapping them silently changes
+  // the ordinary presentation. The Spotlight is added as a sibling instead, and
+  // the state attribute hides one side or the other.
+  const ordinary = marker => `${renderSectionTitle('Athletics', 'green', 'soccer')}
     <i class="athletics-arrows" aria-hidden="true"></i>
-    <div class="athletics-grid count-${cards.length}">${cards.join('') || '<div class="empty-state">Athletics are between seasons.</div>'}</div>
+    <div class="athletics-grid${marker} count-${cards.length}">${cards.join('') || '<div class="empty-state">Athletics are between seasons.</div>'}</div>`;
+
+  // Family Spotlight replaces only the panel's contents. athleticsCardCount()
+  // is deliberately untouched, so `.athletics-one` / `.athletics-multi` and the
+  // 26% / 40% panel heights resolve exactly as they would with no Spotlight.
+  let spotlight = null;
+  try { spotlight = selectFamilySpotlight(data, { now: data.now }); }
+  catch { spotlight = null; }
+
+  if (!spotlight) {
+    return `<section class="paper-panel athletics-panel card-count-${cards.length}">
+    ${ordinary('')}
+  </section>`;
+  }
+
+  // Both presentations ship in the artifact. The panel opens in the ordinary
+  // state so a failed or absent script still shows ordinary Athletics; the
+  // bounded browser controller switches states at the absolute instants below.
+  return `<section class="paper-panel athletics-panel card-count-${cards.length}" data-spotlight-state="ordinary" data-spotlight-activate-at="${spotlight.activateAt}" data-spotlight-midnight-at="${spotlight.midnightAt}" data-spotlight-expire-at="${spotlight.expireAt}">
+    ${ordinary(' spotlight-ordinary')}
+    <div class="spotlight children-${spotlight.children.length}" data-spotlight-id="${esc(spotlight.id)}">
+      <div class="spotlight-head">
+        <div class="spotlight-eyebrow spotlight-eyebrow-before">${esc(spotlight.eyebrowBefore)}</div>
+        <div class="spotlight-eyebrow spotlight-eyebrow-on">${esc(spotlight.eyebrowOn)}</div>
+        <div class="spotlight-headline">${esc(spotlight.headline)}</div>
+      </div>
+      <div class="spotlight-children">${spotlight.children.map(child => `<div class="spotlight-child tone-${child.tone}">
+        <div class="spotlight-child-head">${spotlightMark(V2_LOGOS[child.logoKey])}<span class="spotlight-name">${esc(child.label)}</span></div>
+        <div class="spotlight-title">${esc(child.title)}</div>
+        <div class="spotlight-detail">${esc(child.detailLine)}</div>
+      </div>`).join('')}</div>
+    </div>
   </section>`;
 }
 
@@ -925,6 +980,39 @@ function browserScript() {
       }
     };
     window.updateFirstDayLevel2Transition = value => {const stamp=new Date(value||Date.now()).getTime();if(firstDayCodaUrl&&Number.isFinite(firstDayCodaStart)&&Number.isFinite(firstDayCodaEnd)&&stamp>=firstDayCodaStart&&stamp<firstDayCodaEnd){if(location.protocol!=='about:')location.replace(firstDayCodaUrl);return 'coda'}return 'level2'};
+    const spotlightPanel = document.querySelector('.athletics-panel[data-spotlight-activate-at]');
+    let spotlightTimer;
+    const spotlightBounds = () => {
+      if (!spotlightPanel) return null;
+      const a = Number(spotlightPanel.dataset.spotlightActivateAt);
+      const m = Number(spotlightPanel.dataset.spotlightMidnightAt);
+      const e = Number(spotlightPanel.dataset.spotlightExpireAt);
+      if (![a, m, e].every(Number.isFinite)) return null;
+      if (!spotlightPanel.querySelector('.spotlight-ordinary')) return null;
+      return [a, m, e];
+    };
+    window.updateFamilySpotlight = value => {
+      const bounds = spotlightBounds();
+      if (!bounds) { if (spotlightPanel) spotlightPanel.dataset.spotlightState = 'ordinary'; return 'off'; }
+      const at = Number(value == null ? Date.now() : value);
+      if (!Number.isFinite(at)) { spotlightPanel.dataset.spotlightState = 'ordinary'; return 'off'; }
+      const state = at < bounds[0] ? 'before' : at < bounds[1] ? 'active-before-midnight' : at < bounds[2] ? 'active-today' : 'expired';
+      spotlightPanel.dataset.spotlightState = state === 'active-before-midnight' ? 'friday' : state === 'active-today' ? 'today' : 'ordinary';
+      return state;
+    };
+    const scheduleSpotlight = () => {
+      clearTimeout(spotlightTimer);
+      const bounds = spotlightBounds();
+      if (!bounds) return;
+      const at = Date.now();
+      window.updateFamilySpotlight(at);
+      const next = bounds.filter(edge => edge > at).sort((x, y) => x - y)[0];
+      if (next == null) return;
+      spotlightTimer = setTimeout(scheduleSpotlight, Math.min(next - at + 50, 21600000));
+    };
+    scheduleSpotlight();
+    addEventListener('pagehide', () => clearTimeout(spotlightTimer));
+    addEventListener('beforeunload', () => clearTimeout(spotlightTimer));
     const fit = () => {
       if (!dashboard) return;
       const scale = Math.min(window.innerWidth / 2560, window.innerHeight / 1440);
@@ -1042,6 +1130,27 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .sports-ticker{color:#f1e6d0}.ticker-slot b{font-size:20px;font-weight:700}.ticker-slot span{font-size:15px;color:#eee0c4}.metadata-dedicated .ticker-meta{font-size:12px;line-height:1;color:rgba(241,230,208,.72)}.updated{font-size:11px;color:#eadab8}
 .right-rail{grid-template-rows:118px 172px 590px minmax(0,1fr)}
 .horizon-card{display:flex;flex-direction:column;min-height:0}.horizon-label{flex:0 0 46px;display:flex;align-items:center;justify-content:center;color:#fff;background-image:var(--section-green);background-size:100% 100%;font-size:21px;font-style:italic;font-weight:700;letter-spacing:.045em;text-transform:uppercase}.horizon-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.horizon-count-1 .horizon-list{grid-template-rows:1fr}.horizon-count-2 .horizon-list{grid-template-rows:repeat(2,minmax(0,1fr))}.horizon-item{position:relative;display:grid;grid-template-columns:82px minmax(0,1fr);gap:9px;align-items:center;padding:7px 6px 7px 11px;border-bottom:1px solid var(--rule);min-height:0}.horizon-item:last-child{border-bottom:0}.horizon-item:before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:6px;background:${COLORS.green}}.horizon-item.person-myles:before{background:${COLORS.red}}.horizon-item.person-ophelia:before{background:${COLORS.purple}}.horizon-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.horizon-count{display:flex;flex-direction:column;align-items:center}.horizon-count strong{font-family:"Roboto Slab",Georgia,serif;font-size:43px;line-height:.9;color:${COLORS.greenDark}}.horizon-count span{font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--secondary)}.horizon-copy{display:flex;flex-direction:column;min-width:0}.horizon-copy b{font-size:22px;line-height:1.04}.horizon-copy small{font-size:15px;line-height:1.05;margin-top:4px;color:var(--secondary);font-weight:600}.horizon-copy time{font-size:15px;margin-top:5px;color:var(--secondary);font-weight:600}.horizon-count-1 .horizon-item{grid-template-columns:1fr;text-align:center}.horizon-count-1 .horizon-count strong{font-size:72px}.horizon-count-1 .horizon-copy b{font-size:27px}.horizon-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:12px}.horizon-empty-copy strong{font-size:21px}.horizon-empty-copy small{font-size:15px;color:var(--secondary);margin-top:6px}.horizon-doodle{width:72px;height:72px;background:var(--doodle-star) center/contain no-repeat;margin-bottom:7px}
+.spotlight{display:none;height:100%;flex-direction:column;min-height:0}
+.athletics-panel[data-spotlight-state="friday"]>.section-title,.athletics-panel[data-spotlight-state="friday"]>.athletics-grid,.athletics-panel[data-spotlight-state="today"]>.section-title,.athletics-panel[data-spotlight-state="today"]>.athletics-grid{display:none}
+.athletics-panel[data-spotlight-state="friday"]>.spotlight,.athletics-panel[data-spotlight-state="today"]>.spotlight{display:flex}
+.spotlight-eyebrow-on{display:none}
+.athletics-panel[data-spotlight-state="today"] .spotlight-eyebrow-before{display:none}
+.athletics-panel[data-spotlight-state="today"] .spotlight-eyebrow-on{display:block}
+.spotlight-head{flex:0 0 auto;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.spotlight-eyebrow{font-family:"Barlow Semi Condensed",sans-serif;font-size:18px;line-height:1;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:${COLORS.gold}}
+.spotlight-headline{font-family:"Barlow Semi Condensed",sans-serif;font-size:40px;line-height:1;font-weight:700;font-style:italic;letter-spacing:.01em;text-transform:uppercase;color:${COLORS.greenDark};margin-top:5px}
+.spotlight-children{flex:1 1 auto;min-height:0;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:14px;padding-top:9px}
+.spotlight-child{position:relative;min-width:0;display:flex;flex-direction:column;justify-content:center;padding-left:15px}
+.spotlight-child:before{content:"";position:absolute;left:0;top:2px;bottom:2px;width:6px;border-radius:3px;background:${COLORS.green}}
+.spotlight-child.tone-red:before{background:${COLORS.red}}
+.spotlight-child.tone-purple:before{background:${COLORS.purple}}
+.spotlight-child-head{display:flex;align-items:center;gap:10px;min-width:0}
+.spotlight-mark{width:38px;height:38px;flex:0 0 auto;padding:4px}
+.spotlight-name{font-family:"Barlow Semi Condensed",sans-serif;font-size:21px;line-height:1;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:${COLORS.green}}
+.tone-red .spotlight-name{color:${COLORS.red}}
+.tone-purple .spotlight-name{color:${COLORS.purple}}
+.spotlight-title{font-family:"Roboto Slab",Georgia,serif;font-size:24px;line-height:1.05;font-weight:600;color:${COLORS.ink};margin-top:8px}
+.spotlight-detail{font-size:19px;line-height:1.15;font-weight:500;color:var(--secondary);margin-top:6px}
 `;
 
 function renderDashboardV2(digestData) {
