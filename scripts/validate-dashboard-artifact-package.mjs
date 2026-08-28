@@ -1,5 +1,6 @@
 import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 const root = resolve('.aws-sam/build/GeneratorFunction');
 const inputs = JSON.parse(await readFile(new URL('../dashboard-artifact/package-inputs.json', import.meta.url), 'utf8'));
@@ -14,6 +15,17 @@ else {
   for (const marker of ['Emma Unavailable', 'emma_unavailability_calendar_read_succeeded']) {
     if (!bundle.includes(marker)) failures.push(`built generator bundle is missing required marker: ${marker}`);
   }
+  const load = spawnSync(process.execPath, ['-e', `require('./${bundlePath.replaceAll('\\', '/')}')`], {
+    cwd: root,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      DASHBOARD_ASSET_DIR: resolve(root, 'assets-v2'),
+      DASHBOARD_FIRST_DAY_ASSET_DIR: resolve(root, 'assets-first-day'),
+      DASHBOARD_DATA_DIR: resolve(root, 'data'),
+    },
+  });
+  if (load.status !== 0) failures.push(`built generator bundle cannot initialize: ${load.stderr.trim() || `exit ${load.status}`}`);
 }
 for (const directory of inputs.assetDirectories) {
   const destination = directory.replace(/^render\//, '');
