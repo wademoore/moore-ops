@@ -52,11 +52,16 @@
 debug it unless Wade explicitly asks in that session. It stays deployed; it
 does not get worked on.
 
-Before starting any task touching a rendered surface, confirm the change
+Before scoping any task touching a rendered surface, confirm the change
 reaches v2 (`render/dashboard-v2.js`) or the email digest. If the only
-consumer is v1, stop and say so rather than proceeding — a fix to a surface
-nobody reads produces no signal when it breaks, which is how the school-strip
-bug survived unnoticed from June until it was found by accident in August.
+consumer is v1, say so and stop rather than writing a spec — a fix to a
+surface nobody reads produces no signal when it breaks, which is how the
+school-strip bug survived unnoticed from June until it was found by accident
+in August.
+
+This applies to the strategy layer as much as to Claude Code: the
+school-rotation prompt was nearly written without asking which surface
+consumed the output.
 
 This does not freeze the shared pipeline. `digest/builder.js` and the modules
 it calls serve every surface; changes there are in scope as normal.
@@ -77,6 +82,11 @@ in scope; the dashboard half is v1-only and frozen with it. There is no v2
 equivalent and none should be built here — `render/dashboard-v2.js` is
 exercised through `dashboard-artifact/generator.js`. Do not invest in the
 dashboard half.
+
+**Freezing is not retiring.** The "Dashboard v2 canonical composition" entry
+in Known open items describes v1 as a rollback path pending a production
+soak. Whether that soak is done, and whether v1 should be deleted rather than
+merely frozen, is an open decision — and not one this section makes.
 
 ## Branching policy
 
