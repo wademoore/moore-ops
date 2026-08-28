@@ -2,36 +2,114 @@
  * schoolRotation.js
  * Moore Family Operations Assistant
  *
- * Calculates the Centers rotation day for Myles (4th grade, 6-day cycle)
- * and Ophelia (1st grade, 7-day cycle) for any given date.
+ * Calculates the Centers rotation day for Myles and Ophelia on any given date,
+ * and derives the day-before backpack reminders the digest surfaces.
+ *
+ * ── 2026-27 SCHOOL YEAR ────────────────────────────────────────────────────
  *
  * KEY RULES:
- *   - Rotation advances ONLY on actual school days (Mon–Fri, no holidays/closures)
- *   - Anchor dates are confirmed in the Family Operations Context Document v20.3
- *   - Myles anchor:   May 1, 2026 = Day 4  (6-day rotation)
- *   - Ophelia anchor: May 1, 2026 = Day 1  (7-day rotation)
+ *   - Rotation advances ONLY on actual school days (Mon–Fri, no holidays)
+ *   - Both kids are on the SAME school-wide 6-day subject cycle this year:
+ *       PE1 → Art → Computer → PE2 → Media → Music
+ *     They sit at different points in it (different day-1 anchors).
+ *   - Ophelia anchor: Aug 24, 2026 (first day of school) = Day 1 (PE1)
+ *   - Myles: NO ANCHOR YET — see "Myles is deliberately unanchored" below.
  *
- * DIGEST REMINDER RULES (from Section 13):
- *   - Library day (Myles Day 5, Ophelia Day 7): warn THE DAY BEFORE → Wade packs book
- *   - Music day (Myles Day 6 only):             warn THE DAY BEFORE → Wade packs recorder
- *   - Ophelia Music (Day 1): awareness only — no item needed
+ * DIGEST REMINDER RULES:
+ *   - Media day  → warn THE DAY BEFORE → Wade packs the library book.
+ *     "Media" is the media centre, i.e. library checkout. It is the 2026-27
+ *     label for what earlier years called "Library"; the reminder is the same.
+ *   - Music day  → no item needed for Ophelia (awareness only).
+ *
+ * ── Myles is deliberately unanchored ───────────────────────────────────────
+ *
+ * Myles's permanent numbered Centers group had not been assigned as of
+ * 2026-08-28 (groups are assigned the week of 8/31, based on music selection —
+ * see data/kids-profile.json, where `myles.centersGroup` is still null). His
+ * first two days of school (Aug 24-25) were whole-grade Music and sat OUTSIDE
+ * the rotation entirely, and his calendar entries stop at Sep 1, so there is
+ * no reliable anchor to derive.
+ *
+ * Rather than guess a group and print a wrong centre on the dashboard every
+ * day, `ANCHORS.myles` is null and getRotation('myles', …) returns
+ * `{ day: null, center: null, isSchoolDay: <real value> }`. Note the
+ * distinction that shape carries: isSchoolDay is still answered truthfully,
+ * so school-day-dependent logic keeps working; only the centre is unknown.
+ * Both renderers already fall back to "—" for a null centre.
+ *
+ * To finish this: set ANCHORS.myles to { date, day, cycleLength: 6 } once the
+ * group is known, and decide whether his Music day still needs a recorder —
+ * he is in 5th-grade Band on baritone this year, so the old 4th-grade recorder
+ * rule may no longer apply. That is the only open question left here.
  */
 
 // ---------------------------------------------------------------------------
-// 1. KNOWN NO-SCHOOL DATES  (extend as needed each school year)
+// 1. SCHOOL YEAR BOUNDS
 // ---------------------------------------------------------------------------
-// Format: 'YYYY-MM-DD'
+//
+// Both derived from the 🏫-prefixed all-day events on the Family calendar,
+// entered 2026-08-17 from the WJCC 2026-27 Academic Calendar (adopted 3/24/26).
+//
+// These are constructed as LOCAL midnight (new Date(y, m, d)), never parsed
+// from a 'YYYY-MM-DD' string — a string parses as UTC and lands on the wrong
+// local calendar day west of Greenwich. Same convention as ANCHORS below.
+//
+// ⚠ These constants switch the entire feature off once they go stale: past
+// SCHOOL_YEAR_END, isSchoolDay() returns false for every date and no rotation
+// or backpack reminder can fire. That is exactly what happened to the 2025-26
+// value through the whole of this school year. schoolRotation.test.js has a
+// regression guard that fails as soon as SCHOOL_YEAR_END is in the past.
+
+const SCHOOL_YEAR_START = new Date(2026, 7, 24);  // Mon Aug 24, 2026 — 🏫 First Day of School
+const SCHOOL_YEAR_END   = new Date(2027, 5, 9);   // Wed Jun  9, 2027 — 🏫 Last Day of School
+
+// ---------------------------------------------------------------------------
+// 2. NO-SCHOOL DATES
+// ---------------------------------------------------------------------------
+//
+// Weekdays only — weekends are excluded by isSchoolDay() before this set is
+// consulted, so listing them would be noise.
+//
+// Derived by expanding each 🏫 closure event's [start.date, end.date) range;
+// Google's all-day end.date is EXCLUSIVE, so a break shown as ending Nov 28
+// has Nov 27 as its last real day.
+//
+// NOT included, deliberately: the three "Early Release" 🏫 events
+// (2027-04-02, 2027-06-08, 2027-06-09). Early release is still a school day —
+// the kids attend and the rotation advances. 2027-04-02 is a holiday for PK
+// only; Myles and Ophelia are both K-5.
+
 const NO_SCHOOL_DATES = new Set([
-  // Memorial Day 2026
-  '2026-05-25',
-  // Add additional holidays/teacher workdays here
-  // e.g. '2026-06-06'  (last day of school TBD — remove once confirmed)
+  '2026-09-04',                                // Student & Teacher Holiday
+  '2026-09-07',                                // Labor Day
+  '2026-09-25',                                // PK-5 Student Holiday / Staff CLP
+  '2026-10-12',                                // Student Holiday / Staff CLP
+  '2026-11-02', '2026-11-03',                  // Family Conferences
+  '2026-11-25', '2026-11-26', '2026-11-27',    // Thanksgiving Break
+  '2026-12-11',                                // PK-5 Student Holiday / Staff CLP
+  '2026-12-21', '2026-12-22', '2026-12-23',    // Winter Break
+  '2026-12-24', '2026-12-25', '2026-12-28',
+  '2026-12-29', '2026-12-30',
+  '2026-12-31',                                // Winter Break — see note below
+  '2027-01-01',                                // New Year's Day
+  '2027-01-18',                                // MLK Day
+  '2027-01-25',                                // Student Holiday / Staff CLP
+  '2027-02-15',                                // Presidents' Day
+  '2027-03-05',                                // Student Holiday / Staff CLP
+  '2027-04-05', '2027-04-06', '2027-04-07',    // Spring Break
+  '2027-04-08', '2027-04-09',
+  '2027-05-31',                                // Memorial Day
 ]);
+
+// 2026-12-31 note: the Winter Break calendar event disagrees with itself —
+// its end.date is 2026-12-31 (exclusive, so the break would end Dec 30) while
+// its own description reads "Dec 21-31". Confirmed with Wade on 2026-08-28
+// that Dec 31 is a no-school day, so it is listed above. This mattered more
+// than one date normally would: a single wrong closure shifts every rotation
+// day after it for the remainder of the year.
 
 /**
  * Returns true if the given Date is a school day for Stonehouse Elementary.
- * School year assumed to run through mid-June 2026.
- * Extend NO_SCHOOL_DATES for any additional closures.
  *
  * @param {Date} date
  * @returns {boolean}
@@ -43,9 +121,11 @@ function isSchoolDay(date) {
   const key = toDateKey(date);
   if (NO_SCHOOL_DATES.has(key)) return false;
 
-  // School year boundary — adjust end date when confirmed
-  const schoolYearEnd = new Date('2026-06-15');
-  if (date > schoolYearEnd) return false;
+  // School year boundary — both ends. The start bound matters as much as the
+  // end: without it every summer weekday would read as a school day.
+  const norm = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  if (norm < SCHOOL_YEAR_START) return false;
+  if (norm > SCHOOL_YEAR_END) return false;
 
   return true;
 }
@@ -61,45 +141,50 @@ function toDateKey(date) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. ANCHOR CONFIGURATION
+// 3. ANCHOR CONFIGURATION
 // ---------------------------------------------------------------------------
+//
+// Ophelia: her calendar entries for Aug 24 – Sep 8 are each captioned
+// "Day N of 6-day rotation", sourced from Mrs. Pitts' Open House "Daily
+// Schedule 2026-2027" sheet, and Wade confirmed the Day 1 = Aug 24 anchor
+// against her Daily Planner on 2026-08-28.
+//
+// Myles: null on purpose — see the header comment.
+
 const ANCHORS = {
-  myles: {
-    date: new Date(2026, 4, 1),  // local midnight May 1 — avoid UTC string parsing
-    day: 4,           // anchor = Day 4
+  myles: null,
+  ophelia: {
+    date: new Date(2026, 7, 24),  // local midnight Aug 24 — avoid UTC string parsing
+    day: 1,                       // anchor = Day 1 (PE1)
     cycleLength: 6,
   },
-  ophelia: {
-    date: new Date(2026, 4, 1),  // local midnight May 1 — avoid UTC string parsing
-    day: 1,           // anchor = Day 1
-    cycleLength: 7,
-  },
 };
 
 // ---------------------------------------------------------------------------
-// 3. ROTATION LABELS
+// 4. ROTATION LABELS
 // ---------------------------------------------------------------------------
-const MYLES_CENTERS = {
-  1: 'PE',
+//
+// One shared 6-day cycle for the whole school this year. Kept as two named
+// exports because callers and tests already import them separately, and
+// because the two could diverge again in a future year.
+
+const CENTERS_6DAY = {
+  1: 'PE1',
   2: 'Art',
   3: 'Computer',
-  4: 'PE',
-  5: 'Library',   // ⚠️ Pack library book day before
-  6: 'Music',     // ⚠️ Pack recorder day before
+  4: 'PE2',
+  5: 'Media',     // ⚠️ Library checkout — pack book the day before
+  6: 'Music',
 };
 
-const OPHELIA_CENTERS = {
-  1: 'Music',              // Awareness only — no item needed
-  2: 'PE',
-  3: 'Art',
-  4: 'Technology Extension',
-  5: 'Computer',
-  6: 'PE',
-  7: 'Library',            // ⚠️ Pack library book day before
-};
+const MYLES_CENTERS   = { ...CENTERS_6DAY };
+const OPHELIA_CENTERS = { ...CENTERS_6DAY };
+
+// The centre label that triggers the pack-a-library-book reminder.
+const LIBRARY_CENTER = 'Media';
 
 // ---------------------------------------------------------------------------
-// 4. CORE CALCULATOR
+// 5. CORE CALCULATOR
 // ---------------------------------------------------------------------------
 
 /**
@@ -141,9 +226,13 @@ function schoolDayDelta(from, to) {
  *
  * @param {'myles'|'ophelia'} student
  * @param {Date} targetDate
- * @returns {number|null}  - day number, or null if not a school day
+ * @returns {number|null}  - day number, or null if not a school day OR if the
+ *                           student has no anchor configured yet
  */
 function getRotationDay(student, targetDate) {
+  const anchor = ANCHORS[student];
+  if (!anchor) return null;
+
   const targetNorm = new Date(
     targetDate.getFullYear(),
     targetDate.getMonth(),
@@ -152,7 +241,7 @@ function getRotationDay(student, targetDate) {
 
   if (!isSchoolDay(targetNorm)) return null;
 
-  const { date: anchorDate, day: anchorDay, cycleLength } = ANCHORS[student];
+  const { date: anchorDate, day: anchorDay, cycleLength } = anchor;
   const delta = schoolDayDelta(anchorDate, targetNorm);
 
   // Shift from anchor, wrap into [0, cycleLength), then convert to 1-based
@@ -161,18 +250,22 @@ function getRotationDay(student, targetDate) {
 }
 
 // ---------------------------------------------------------------------------
-// 5. PUBLIC API
+// 6. PUBLIC API
 // ---------------------------------------------------------------------------
 
 /**
  * Full rotation result for a single student on a given date.
  *
  * @typedef {Object} RotationResult
- * @property {number|null} day          - rotation day number (null if no school)
- * @property {string|null} center       - center label (null if no school)
- * @property {boolean}     isSchoolDay  - whether school is in session
- * @property {boolean}     needsLibraryBook - true if Wade must pack library book TODAY
- * @property {boolean}     needsRecorder    - true if Wade must pack recorder TODAY (Myles only)
+ * @property {number|null} day          - rotation day number (null if no school
+ *                                        OR the student is unanchored)
+ * @property {string|null} center       - center label (null in the same cases)
+ * @property {boolean}     isSchoolDay  - whether school is in session. Answered
+ *                                        truthfully even for an unanchored
+ *                                        student, so a null centre and a closed
+ *                                        school stay distinguishable.
+ * @property {boolean}     needsLibraryBook - true if Wade must pack a library book TODAY
+ * @property {boolean}     needsRecorder    - true if Wade must pack a recorder TODAY
  * @property {string|null} warningText  - human-readable prep warning, or null
  */
 
@@ -191,7 +284,8 @@ function getRotation(student, date) {
     return {
       day: null,
       center: null,
-      isSchoolDay: false,
+      // An unanchored student on an open school day still reports true here.
+      isSchoolDay: isSchoolDay(date),
       needsLibraryBook: false,
       needsRecorder: false,
       warningText: null,
@@ -203,21 +297,14 @@ function getRotation(student, date) {
   let needsRecorder = false;
   let warningText = null;
 
-  if (student === 'myles') {
-    if (center === 'Library') {
-      needsLibraryBook = true;
-      warningText = '⚠ Pack library book this morning (Myles — Library today)';
-    } else if (center === 'Music') {
-      needsRecorder = true;
-      warningText = '⚠ Pack recorder this morning (Myles — Music today)';
-    }
-  } else if (student === 'ophelia') {
-    if (center === 'Library') {
-      needsLibraryBook = true;
-      warningText = '⚠ Pack library book this morning (Ophelia — Library today)';
-    }
-    // Music day: awareness only, no item
+  const label = student === 'myles' ? 'Myles' : 'Ophelia';
+
+  if (center === LIBRARY_CENTER) {
+    needsLibraryBook = true;
+    warningText = `⚠ Pack library book this morning (${label} — Media today)`;
   }
+  // Music day: awareness only for Ophelia, no item. Whether Myles's Music day
+  // needs a recorder is deferred with his anchor — see the header comment.
 
   return {
     day,
@@ -247,14 +334,6 @@ function getTomorrowRotation(student, today) {
 /**
  * Full digest-ready school strip for both kids on a given date.
  *
- * Returns an object consumed by both the email renderer and dashboard renderer:
- * {
- *   myles:   RotationResult,
- *   ophelia: RotationResult,
- *   // Pre-built reminders for tomorrow (the day-before trigger)
- *   tomorrowWarnings: string[]   // human-readable, e.g. "Tomorrow: Myles has Library — pack book"
- * }
- *
  * @param {Date} today
  * @returns {Object}
  */
@@ -269,25 +348,25 @@ function getSchoolStrip(today) {
   const tomorrowWarnings = [];
 
   if (mylesTomorrow.needsLibraryBook) {
-    tomorrowWarnings.push('Tomorrow: Myles has Library — pack book tonight');
+    tomorrowWarnings.push('Tomorrow: Myles has Media — pack library book tonight');
   }
   if (mylesTomorrow.needsRecorder) {
     tomorrowWarnings.push('Tomorrow: Myles has Music — pack recorder tonight');
   }
   if (opheliaTomorrow.needsLibraryBook) {
-    tomorrowWarnings.push('Tomorrow: Ophelia has Library — pack book tonight');
+    tomorrowWarnings.push('Tomorrow: Ophelia has Media — pack library book tonight');
   }
 
   return { myles, ophelia, tomorrowWarnings };
 }
 
 // ---------------------------------------------------------------------------
-// 6. UTILITY: add a no-school date at runtime (e.g. from newsletter parser)
+// 7. UTILITY: add a no-school date at runtime
 // ---------------------------------------------------------------------------
 
 /**
- * Register an additional no-school date (e.g. parsed from Stonehouse newsletter).
- * Call this before getSchoolStrip() when the newsletter reveals a closure.
+ * Register an additional no-school date (e.g. parsed from a newsletter, or a
+ * snow day). Call this before getSchoolStrip().
  *
  * @param {string} dateString - 'YYYY-MM-DD'
  */
@@ -298,4 +377,15 @@ function addNoSchoolDate(dateString) {
 // ---------------------------------------------------------------------------
 // EXPORTS
 // ---------------------------------------------------------------------------
-export { getRotation, getTomorrowRotation, getSchoolStrip, addNoSchoolDate, isSchoolDay, MYLES_CENTERS, OPHELIA_CENTERS };
+export {
+  getRotation,
+  getTomorrowRotation,
+  getSchoolStrip,
+  addNoSchoolDate,
+  isSchoolDay,
+  MYLES_CENTERS,
+  OPHELIA_CENTERS,
+  ANCHORS,
+  SCHOOL_YEAR_START,
+  SCHOOL_YEAR_END,
+};
