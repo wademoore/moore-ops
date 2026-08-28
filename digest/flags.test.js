@@ -231,6 +231,20 @@ describe('evaluateEmmaUnavailability', () => {
     assert.deepEqual(f.owner, []);
     assert.equal(f.bannerOnly, undefined);
     assert.equal(f.body, 'Emma unavailable Oct 16–19 (UTA (Reserve)) — confirm coverage.');
+    assert.equal(f.nowNextEligibleFrom, '2026-10-15');
+  });
+
+  it('keeps the Sep 11 absence as advance planning on Aug 28', () => {
+    const tour = block({
+      id: 'emma-unavail-2026-09-11-annual-tour-duty-reserve',
+      type: 'Annual Tour Duty (Reserve)',
+      startDate: '2026-09-11',
+      endDate: '2026-09-18',
+    });
+    const f = computeFlags(ctx({ today: d('2026-08-28'), emmaUnavailableBlocks: [tour] }))
+      .find(flag => flag.id === tour.id);
+    assert.ok(f, 'planning flag should remain available outside NOW/NEXT');
+    assert.equal(f.nowNextEligibleFrom, '2026-09-10');
   });
 
   it('does not fire for a block starting more than 14 days out', () => {

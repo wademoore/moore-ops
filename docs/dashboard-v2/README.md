@@ -64,6 +64,7 @@ Rollback/removal affects only the shadow: stop and disable `moore-dashboard-shad
 
 - Event artwork resolves in this order: official organization logo, semantic category mark, neutral family spark. The semantic set covers appointments, travel, school, household, arts, sports, and family events; remote-logo failures reveal the semantic mark beneath them.
 - `Coming Up` is deterministic and deliberately not just the next event. Appointments, trips, performances, celebrations, games, and meets receive priority; routine practice, classes, recycling, trash, and pickup are de-emphasized. Score ties resolve by event time and then title. If nothing clears the threshold, the rail says that nothing needs special attention while preserving the full two-week list.
+- NOW/NEXT requires temporal immediacy or a current action/decision; importance alone is insufficient. Time-bounded planning conditions may remain visible in their calendar or planning context while declaring `nowNextEligibleFrom` for the point at which they affect current operations. Emma unavailability becomes eligible the day before it begins and while it is active; earlier coverage work belongs in Weekly Priorities.
 - If current weather or forecast data is unavailable, the rail keeps its geometry and explains that weather will retry on the next refresh. Calendar data remains visible.
 
 Run `npm run preview:dashboard-v2:states` to generate six self-contained representative HTML states under `preview/states`: approved, missing-icons, weather-offline, routine-only, special-banner, and quiet.
