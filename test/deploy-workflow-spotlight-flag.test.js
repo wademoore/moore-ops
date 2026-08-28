@@ -109,21 +109,41 @@ describe('deploy workflow — Family Spotlight kill-switch resolution', () => {
     });
   }
 
-  it('never interpolates the repository variable into a run body', () => {
+  it('reads the repository variable through an env mapping, and only that way', () => {
     const source = readFileSync(WORKFLOW, 'utf8');
-    for (const line of source.split('\n')) {
-      if (!line.includes('vars.FAMILY_SPOTLIGHT_ENABLED')) continue;
+    const referencing = source.split('\n').filter(line => line.includes('vars.FAMILY_SPOTLIGHT_ENABLED'));
+
+    // Without this the loop below inspects nothing and passes vacuously: deleting
+    // the env: mapping entirely would leave the resolve step reading an unset
+    // variable, silently resolving to 0 forever, with every other case here still
+    // green because they set the variable on the spawned process directly.
+    assert.ok(
+      referencing.length >= 1,
+      'the workflow must reference vars.FAMILY_SPOTLIGHT_ENABLED — without the env mapping the kill switch is permanently off',
+    );
+
+    for (const line of referencing) {
       assert.match(
         line,
         /^\s+FAMILY_SPOTLIGHT_ENABLED: \$\{\{ vars\.FAMILY_SPOTLIGHT_ENABLED \}\}$/,
         `vars.FAMILY_SPOTLIGHT_ENABLED must only appear as an env mapping, found: ${line.trim()}`,
       );
     }
+
+    // The mapping has to belong to the step that actually resolves the value.
+    const resolveStep = source.slice(source.indexOf('- name: Resolve Family Spotlight kill switch'));
+    const resolveEnv = resolveStep.slice(0, resolveStep.indexOf('run: |'));
+    assert.match(resolveEnv, /FAMILY_SPOTLIGHT_ENABLED: \$\{\{ vars\.FAMILY_SPOTLIGHT_ENABLED \}\}/);
   });
 
   it('deploys and then verifies the same resolved value', () => {
     const source = readFileSync(WORKFLOW, 'utf8');
-    assert.match(source, /"FamilySpotlightEnabled=\$SPOTLIGHT_ENABLED"/);
+    // Scoped to the deploy step's own run body, so a comment or unrelated
+    // workflow text elsewhere in the file cannot satisfy this.
+    const deploy = stepScript(source, 'Deploy integrated generator revision');
+    assert.match(deploy, /--parameter-overrides/);
+    assert.match(deploy, /"FamilySpotlightEnabled=\$SPOTLIGHT_ENABLED"/);
+    assert.match(deploy, /"SourceRevision=\$GITHUB_SHA"/);
     const verify = stepScript(source, 'Verify deployed Family Spotlight kill switch');
     assert.match(verify, /ParameterKey=='FamilySpotlightEnabled'/);
     assert.match(verify, /\[ "\$DEPLOYED" != "\$SPOTLIGHT_ENABLED" \]/);
@@ -131,6 +151,23 @@ describe('deploy workflow — Family Spotlight kill-switch resolution', () => {
     // The read-back must select one parameter, never dump the parameter list.
     assert.doesNotMatch(verify, /Stacks\[0\]\.Parameters"/);
     assert.doesNotMatch(verify, /FamilyContextFileId|SportsFeedUrl/);
+  });
+
+  it('resolves before it deploys, and deploys before it verifies', () => {
+    const source = readFileSync(WORKFLOW, 'utf8');
+    const at = name => {
+      const index = source.indexOf(`- name: ${name}`);
+      assert.notEqual(index, -1, `workflow has no step named ${name}`);
+      return index;
+    };
+    // $SPOTLIGHT_ENABLED is carried between steps through $GITHUB_ENV, which is
+    // only visible to *later* steps. Resolving after the deploy would leave the
+    // override empty, and verifying before it would read the previous release.
+    const resolve = at('Resolve Family Spotlight kill switch');
+    const deploy = at('Deploy integrated generator revision');
+    const verify = at('Verify deployed Family Spotlight kill switch');
+    assert.ok(resolve < deploy, 'the resolve step must precede the SAM deployment');
+    assert.ok(deploy < verify, 'the read-back must follow the SAM deployment');
   });
 
   it('keeps the template default off so a recreated stack is fail-closed', () => {

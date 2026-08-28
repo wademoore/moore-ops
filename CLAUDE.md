@@ -699,6 +699,26 @@ inherit it, and asserts the result afterwards.
   inheritance *worked*. What it could not do is make the intended value reviewable: it
   lived only inside AWS, no deploy asserted it, and drift had no signal. That is the same
   shape as every other defect in this file's Key Learnings.
+- **The deploy now takes authority over the parameter — read this before touching the
+  console.** Supplying the override means `merge_parameters` writes a `ParameterValue`
+  instead of `UsePreviousValue`, so CloudFormation *overwrites* whatever is deployed. From
+  the first merge onward, every deployment matching the workflow's `paths:` filter asserts
+  the repository variable's value:
+
+  | `FAMILY_SPOTLIGHT_ENABLED` | Every matching deployment |
+  |---|---|
+  | absent or blank | explicitly deploys `0`, **overwriting a manually configured value** |
+  | `0` | explicitly deploys `0` and verifies off |
+  | `1` | explicitly deploys `1` and verifies on, every subsequent deployment |
+  | anything else | fails before SAM runs; nothing is deployed |
+
+  **The AWS console is therefore no longer a durable source of truth for this parameter.**
+  A value set there survives only until the next matching deployment — and the `paths:`
+  filter is broad (`digest/**`, `render/**`, `data/**`, `*.js`, the template, this
+  workflow), so that can be an unrelated merge. `FAMILY_SPOTLIGHT_ENABLED` is the durable
+  operational control; set it there, not in the console. The template's `Default: "0"`
+  remains the fail-closed behaviour for a **new or recreated** stack only — it does not
+  govern updates.
 - **Stack recreation stays fail-closed.** The template default remains `"0"`, and on a
   CREATE changeset SAM strips every `UsePreviousValue`, so a recreated stack comes up off
   regardless of the repository variable — the deploy then sets it and the read-back proves
@@ -814,11 +834,11 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test`, no browser resolvable | 1293 | 1276 | 3 | 14 |
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1293 | **1293** | **0** | **0** |
-| CI (`ubuntu-latest`) | 1293 | 1293 | 0 | 0 |
+| `npm test`, no browser resolvable | 1294 | 1277 | 3 | 14 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1294 | **1294** | **0** | **0** |
+| CI (`ubuntu-latest`) | 1294 | 1294 | 0 | 0 |
 
-Node v22.22.2, after `npm install`. **Coder mode must keep `npm test` at 1293+ with no
+Node v22.22.2, after `npm install`. **Coder mode must keep `npm test` at 1294+ with no
 failures once a browser resolves.**
 
 **This table is the only current baseline.** Dated changelog entries below quote the
@@ -951,7 +971,7 @@ method, so they chain directly to the 988 pre-change number above.
   one, so CI stayed green and the gap was invisible there — and the failures were recorded
   in this file as "Chromium-environmental" for weeks, one section below a correction
   warning about precisely that mistake. With the argument passed, all three pass and the
-  full suite is **1293 / 1293 / 0 / 0** with a browser (was 1266 / 1263 / 3 / 0).
+  full suite is **1294 / 1294 / 0 / 0** with a browser (was 1266 / 1263 / 3 / 0).
   `render/dashboard-v2-png.test.js` now covers `resolveBrowserPath`'s precedence and guards
   the launch call site in *both* suites, anchored on `executablePath:` so it reads the call
   and not the prose above it; proven to have teeth by reverting the fix, which turns it red.
@@ -962,10 +982,13 @@ method, so they chain directly to the 988 pre-change number above.
   (`merge_parameters` marks unsupplied parameters `UsePreviousValue: True`); what was
   missing is that the intended value lived only inside AWS with nothing asserting it.
   Template default stays `"0"`, so a recreated stack is still fail-closed.
-  `test/deploy-workflow-spotlight-flag.test.js` (+24) executes the shipped workflow step
+  `test/deploy-workflow-spotlight-flag.test.js` (+25) executes the shipped workflow step
   itself under `bash -e` across absent, blank, `0`, `1`, padded, invalid and injection
-  inputs. **No repository variable was created and nothing was deployed** — the workflow
-  change is inert until someone sets the variable, and defaults to off until then.
+  inputs. **No repository variable was created and nothing was deployed by this change
+  itself** — but it is not inert. From the moment it reaches `main`, every deployment
+  matching the workflow's `paths:` filter takes authority over the parameter: with the
+  variable still absent it explicitly deploys `FamilySpotlightEnabled=0`, overwriting
+  anything set by hand. See "Managing the kill switch" for the full table.
 
 - **Dead `WJCC Schools` calendar entry removed from `FAMILY_CALENDARS` (Aug 28, 2026):** The one-line entry pointing at `o3oasbc616bhijsqn80a58jo7a40lrl2@import.calendar.google.com` — a calendar Google reports as deleted and which does not appear in the account's calendar list — is gone from `calendar.js`. It was the sole thing firing the new `calendar-fetch-failure` red flag on every digest run. Deleted rather than repointed because WJCC calendar data now reaches the digest via the **Family** calendar's `🏫` events (hand-entered 2026-08-17), leaving the entry with no consumer; the two repoint candidates diagnosed Aug 27 are documented under Known open items and remain available if a WJCC feed is ever wired back in. **Dependency sweep run before deleting, all confirmed non-breaking:** `digest/builder.js`'s `SCHOOL_ROTATION_CALENDARS` is a `_calName` display-name filter, so it could then match nothing — `'WJCC Schools'` was dropped from it as well, leaving `new Set(['Routine'])`. Wade has moved WJCC items onto the Family calendar permanently and no feed will be repointed under that display name, so keeping the member as a hedge would have left dead code that reads as live wiring. `'Routine'` still filters Centers entries out of the 72h/14d windows exactly as before; `digest/routineAnchorsParser.js`'s `SCHOOL_EXCEPTION_CALENDAR` is `'Family'` and never referenced WJCC, so 🏫 holiday suppression of the school anchor was never on this path and is unaffected; every `'WJCC Schools'` occurrence in `test/calendar.test.js`, `digest/flags.test.js`, `digest/builder.test.js`, `digest/aliases.test.js` and `digest/routineAnchorsParser.test.js` is a hardcoded fixture string exercising generic plumbing (in `routineAnchorsParser.test.js` it is deliberately the *negative* case — a non-Family calendar that must **not** suppress), none derived from `FAMILY_CALENDARS`; and `scripts/orchestrate/occ-aging.mjs` iterates the map with `Object.entries`/`Object.keys`, so it simply sees one fewer calendar (its stale present-tense comment about the feed, and a hardcoded "the eight that answered", were corrected). Test totals unchanged at **1164 / 1155 passing / 3 failing / 6 cancelled** — the 3 failures are the standing `No Chromium executable found` set in `render/dashboard-v2-layout.test.js` and `render/first-day-level3-layout.test.js`, identical before and after.
 - **Family Spotlight implemented — "Big Sports Saturday", Sept 12 2026 (Aug 27, 2026):** First
