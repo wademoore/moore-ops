@@ -237,6 +237,11 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
 
   // Filter out school rotation / Centers entries from both the 72-hour
   // window and the 14-day lookahead (they display in the school strip).
+  // 'WJCC Schools' is retained here deliberately, but no longer reachable: the
+  // FAMILY_CALENDARS entry of that name was removed once the calendar it named
+  // was confirmed deleted, so no event can carry that _calName today. It stays
+  // so that repointing a WJCC feed under the same display name resumes
+  // filtering school-rotation entries out of the 72h/14d windows automatically.
   const SCHOOL_ROTATION_CALENDARS = new Set(['WJCC Schools', 'Routine']);
   const windowEvents = allResolved.filter(ev => {
     const d = parseEventDate(ev.raw);
