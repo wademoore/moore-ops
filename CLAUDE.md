@@ -830,20 +830,24 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Aug 28, 2026
+### Current baseline — measured Aug 28, 2026 at `e25109d`
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test`, no browser resolvable | 1294 | 1277 | 3 | 14 |
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1294 | **1294** | **0** | **0** |
-| CI (`ubuntu-latest`) | 1294 | 1294 | 0 | 0 |
+| `npm test`, no browser resolvable | 1296 | 1279 | 3 | 14 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1296 | **1296** | **0** | **0** |
+| CI (`ubuntu-latest`) | 1296 | 1296 | 0 | 0 |
 
-Node v22.22.2, after `npm install`. **Coder mode must keep `npm test` at 1294+ with no
+Node v22.22.2, after `npm install`. **Coder mode must keep `npm test` at 1296+ with no
 failures once a browser resolves.**
 
-**This table is the only current baseline.** Dated changelog entries below quote the
-figures, and the "Chromium-environmental" label, as they stood when written; they are
-provenance for a particular change, not a second answer to "what should I see today."
+**This table is the only current baseline, and it is a measurement, not a constant.**
+It was taken at `e25109d` — this branch merged with `main` at `ad5e084`, which carries
+PR #28's NOW/NEXT temporal gating (+2 tests over the 1294 measured at `40c0240`). Any
+merge that adds tests moves these numbers; re-measure and update this table in the same
+commit rather than adding a second one. Dated changelog entries below quote the figures,
+and the "Chromium-environmental" label, as they stood when written; they are provenance
+for a particular change, not a second answer to "what should I see today."
 
 **There is now exactly one cause of a non-green local run: no browser.** Exactly two files
 launch Chromium. `render/first-day-level3-layout.test.js` holds three flat `test()` calls,
