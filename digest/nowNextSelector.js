@@ -245,11 +245,16 @@ function eventCandidates(data, now, options = {}) {
 function taskCandidates(data) {
   return (data.days?.[0]?.tasks || [])
     .filter(task => /\b(pack|prep|prepare|bring|charge|fill|set out|lunch|water bottle)\b/i.test(task.text || ''))
-    .map((task, index) => candidate(REASON.PREP_TONIGHT, {
-      signal: 'Prep tonight', subject: clean(task.text), context: [clean(task.time)].filter(Boolean),
-      sourceType: 'task', sourceId: `task-${index}`, sortTime: index,
-      occurrenceId: `task:${index}:${clean(task.text)}`,
-    }));
+    .map((task, index) => {
+      const subject = clean(task.text);
+      const isThisMorning = /\b(this morning|today|before (?:school|work))\b/i.test(`${subject} ${task.time || ''}`);
+      const reasonCode = isThisMorning ? REASON.THIS_MORNING : REASON.PREP_TONIGHT;
+      return candidate(reasonCode, {
+        signal: isThisMorning ? 'This morning' : 'Prep tonight', subject, context: [clean(task.time)].filter(Boolean),
+        sourceType: 'task', sourceId: `task-${index}`, sortTime: index,
+        occurrenceId: `task:${index}:${subject}`,
+      });
+    });
 }
 
 function compareCandidates(a, b) {
