@@ -13,10 +13,14 @@ import assert from 'node:assert/strict';
 import { generateTasks } from './generateTasks.js';
 
 // ── Reference dates ───────────────────────────────────────────────────────────
-const SUNDAY   = new Date(2026, 4, 17); // May 17 2026 — dow 0 (Sunday)
-const MONDAY   = new Date(2026, 4, 18); // May 18 2026 — dow 1, school day
-const TUESDAY  = new Date(2026, 4, 19); // May 19 2026 — dow 2, school day
-const SATURDAY = new Date(2026, 4, 23); // May 23 2026 — dow 6 (Saturday)
+// Moved from May 2026 to Sep 2026 when the school year was corrected to
+// 2026-27: generateTasks() gates backpack tasks on isSchoolDay(), and May 2026
+// now falls outside the configured year, so the old dates silently stopped
+// being school days.
+const SUNDAY   = new Date(2026, 8, 13); // Sep 13 2026 — dow 0 (Sunday)
+const MONDAY   = new Date(2026, 8, 14); // Sep 14 2026 — dow 1, school day
+const TUESDAY  = new Date(2026, 8, 15); // Sep 15 2026 — dow 2, school day
+const SATURDAY = new Date(2026, 8, 19); // Sep 19 2026 — dow 6 (Saturday)
 
 // ── School strip fixtures ─────────────────────────────────────────────────────
 const emptyStrip = {
@@ -25,18 +29,18 @@ const emptyStrip = {
 };
 
 const mylesWarningStrip = {
-  myles:   { warningText: '⚠ Pack library book this morning (Myles — Library today)' },
+  myles:   { warningText: '⚠ Pack library book this morning (Myles — Media today)' },
   ophelia: { warningText: null },
 };
 
 const opheliaWarningStrip = {
   myles:   { warningText: null },
-  ophelia: { warningText: '⚠ Pack library book this morning (Ophelia — Library today)' },
+  ophelia: { warningText: '⚠ Pack library book this morning (Ophelia — Media today)' },
 };
 
 const bothWarningStrip = {
   myles:   { warningText: '⚠ Pack recorder this morning (Myles — Music today)' },
-  ophelia: { warningText: '⚠ Pack library book this morning (Ophelia — Library today)' },
+  ophelia: { warningText: '⚠ Pack library book this morning (Ophelia — Media today)' },
 };
 
 // ── Event fixture helper ──────────────────────────────────────────────────────

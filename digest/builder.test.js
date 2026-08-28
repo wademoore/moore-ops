@@ -386,10 +386,14 @@ function makeResolvedEvent(overrides = {}) {
 const emptyStrip = { myles: { warningText: null }, ophelia: { warningText: null } };
 
 // Hardcoded dates that satisfy known isSchoolDay() rules
-const SUNDAY   = new Date(2026, 4, 17); // May 17 2026 — Sunday (dow 0)
-const MONDAY   = new Date(2026, 4, 18); // May 18 2026 — Monday, school day
-const TUESDAY  = new Date(2026, 4, 19); // May 19 2026 — Tuesday, school day
-const SATURDAY = new Date(2026, 4, 23); // May 23 2026 — Saturday, no school
+// Moved from May 2026 to Sep 2026 when the school year was corrected to
+// 2026-27: generateTasks() gates backpack tasks on isSchoolDay(), and May 2026
+// now falls outside the configured year, so the old dates silently stopped
+// being school days.
+const SUNDAY   = new Date(2026, 8, 13); // Sep 13 2026 — Sunday (dow 0)
+const MONDAY   = new Date(2026, 8, 14); // Sep 14 2026 — Monday, school day
+const TUESDAY  = new Date(2026, 8, 15); // Sep 15 2026 — Tuesday, school day
+const SATURDAY = new Date(2026, 8, 19); // Sep 19 2026 — Saturday, no school
 
 section('generateTasks — Sunday trash');
 assert( generateTasks([], SUNDAY,  emptyStrip).some(t => t.text === 'Put trash bins out'), 'Sunday → trash bin task');
@@ -400,8 +404,8 @@ section('generateTasks — school day vs. weekend tasks');
 assert(!generateTasks([], SATURDAY, emptyStrip).some(t => /lunches/.test(t.text)), 'Saturday → no lunch-prep task');
 
 section('generateTasks — backpack warnings');
-const mylesWarn   = '⚠ Pack library book this morning (Myles — Library today)';
-const opheliaWarn = '⚠ Pack library book this morning (Ophelia — Library today)';
+const mylesWarn   = '⚠ Pack library book this morning (Myles — Media today)';
+const opheliaWarn = '⚠ Pack library book this morning (Ophelia — Media today)';
 assert( generateTasks([], MONDAY, { myles: { warningText: mylesWarn },   ophelia: { warningText: null } }).some(t => t.text === mylesWarn),   'Myles warningText → backpack task');
 assert( generateTasks([], MONDAY, { myles: { warningText: null },        ophelia: { warningText: opheliaWarn } }).some(t => t.text === opheliaWarn), 'Ophelia warningText → backpack task');
 assert(!generateTasks([], MONDAY, emptyStrip).some(t => t.time === 'Before work'),                                                           'No warnings → no Before-work tasks');
