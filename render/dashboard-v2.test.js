@@ -6,6 +6,7 @@ import {
   cleanDisplayText,
   collapseUpcomingEvents,
   conversationalMatchDate,
+  easternDateKey,
   renderDashboardV2,
   renderNowNext,
   renderToday,
@@ -59,6 +60,25 @@ describe('approved NOW/NEXT rendering contract', () => {
     assert.match(html, /Myles — Sharks · Grass\u00a08/);
     assert.match(html, /Myles — Sharks · Turf\u00a04/);
     assert.doesNotMatch(html, /Sharks Practice|Warhill/);
+  });
+});
+
+describe('Centers live Eastern-date highlight', () => {
+  it('resolves Thursday Aug 27 at 8:07 PM ET and rolls over at Eastern midnight', () => {
+    assert.equal(easternDateKey('2026-08-28T00:07:00.000Z'), '2026-08-27');
+    assert.equal(easternDateKey('2026-08-28T03:59:59.999Z'), '2026-08-27');
+    assert.equal(easternDateKey('2026-08-28T04:00:00.000Z'), '2026-08-28');
+  });
+
+  it('gives the browser dated Centers cells and recomputes the highlight on every live tick', () => {
+    const data = structuredClone(sampleDashboardV2Data);
+    data.schoolStrip.centersWeek.children.forEach(child => child.days.forEach((day, index) => {
+      day.date = `2026-06-${String(8 + index).padStart(2, '0')}`;
+    }));
+    const html = renderDashboardV2(data);
+    assert.match(html, /class="center-day [^"]*" data-center-date="2026-06-09"/);
+    assert.match(html, /querySelectorAll\('\.center-day\[data-center-date\]'\)/);
+    assert.match(html, /classList\.toggle\('is-today', cell\.dataset\.centerDate === todayKey\)/);
   });
 });
 
