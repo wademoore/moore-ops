@@ -618,6 +618,14 @@ with no network request, no reload, and no generator run. At/after `expireAt` th
 returns nothing, so a newly generated artifact is simply ordinary. The 48h lead comfortably
 exceeds the largest real pull gap (8h25m overnight), so no boundary falls between pulls.
 
+**Concretely, for Big Sports Saturday.** `activateAt` is Fri Sept 11 2026 4:00 PM ET, so
+the inclusion window opens **Wed Sept 9 2026 at 4:00 PM ET**, and the first scheduled
+generation that can carry the candidate is **Wed Sept 9 at 4:10 PM ET** (the generator
+runs 4:35 AM, then 8:10 / 12:10 / 16:10 / 20:10 ET). Enabling the switch earlier than that
+is correct and produces ordinary Athletics until that generation — expected, not a fault.
+The visible 4:00 PM Friday and midnight transitions are then browser-side and exact; the
+generation and pull cadence governs only whether the artifact *contains* the candidate.
+
 **All timezone reasoning happens server-side, once.** `easternInstant()` in
 `digest/dateUtils.js` converts Eastern wall-clock config into absolute instants using the
 offset actually in effect on that date; the generator emits epoch milliseconds and the
@@ -648,7 +656,9 @@ not refactored here; see Known open items.)
   *not* used here; a test asserts neither appears in Spotlight markup.
 - **Kill switch** — `FAMILY_SPOTLIGHT_ENABLED` env / `FamilySpotlightEnabled` stack
   parameter, both defaulting to `"0"`. The renderer requires `familySpotlight === true`;
-  anything else is off. Off at any layer disables the feature.
+  anything else is off. Off at any layer disables the feature. **The intended value lives
+  in exactly one place: the GitHub repository variable `FAMILY_SPOTLIGHT_ENABLED`** — see
+  "Managing the kill switch" below.
 - **Fail-closed** — disabled, missing/malformed config, no clock, multiple in-window
   entries, zero valid children, or any throw all render ordinary Athletics. The panel is
   rendered in the `ordinary` state, so a failed or absent script also fails closed.
@@ -656,13 +666,72 @@ not refactored here; see Known open items.)
   priority system, picking one deterministically would mask a configuration error.
 
 **Operational recovery, in order** (do step 1 first, or the next scheduled artifact
-re-enables a known-bad Spotlight): (1) set `FamilySpotlightEnabled` to `0` — the
-authoritative layer; (2) if the screen must be fixed now, re-point the Pi's `current`
+re-enables a known-bad Spotlight): (1) set the repository variable
+`FAMILY_SPOTLIGHT_ENABLED` to `0` and re-run the deploy workflow — the authoritative
+layer, but *not* the fast one: it is a stack update behind CI, and the workflow's own
+safe-window guard hard-fails between 3:30 and 4:30 AM ET; (2) if the screen must be fixed
+now, re-point the Pi's `current`
 symlink at `previous-known-good` via `activate-dashboard-release`; (3) invoke the
 generator Lambda directly, then `systemctl start moore-dashboard-refresh.service` to force
 the pull; (4) confirm subsequent scheduled cycles stay ordinary. **Deleting
 `data/family-spotlight.json` is not an operational kill** — it needs a source deployment
 and is slower than every step above.
+
+**Managing the kill switch (Aug 28, 2026).** `.github/workflows/deploy-dashboard-v2-artifact.yml`
+now supplies `FamilySpotlightEnabled` explicitly on every deploy instead of letting SAM
+inherit it, and asserts the result afterwards.
+
+- **Source of truth** — the GitHub repository variable `FAMILY_SPOTLIGHT_ENABLED`. It is
+  read through a step-level `env:` mapping, never interpolated into a `run:` body: a
+  repository variable is editable text, and `${{ }}` inside a script is substituted before
+  bash sees it. A `Resolve Family Spotlight kill switch` step trims surrounding whitespace,
+  then accepts **only** `0` or `1`.
+- **Absent or blank is `0`.** An unset or whitespace-only variable resolves to `0` and the
+  deploy proceeds with the Spotlight off. Any other value — `2`, `true`, `01`, `on`,
+  anything with a shell metacharacter — **fails the workflow before SAM is invoked**, so a
+  typo can never deploy an unintended state, in either direction.
+- **Read-back assertion.** After deploying, `Verify deployed Family Spotlight kill switch`
+  re-reads the parameter from the deployed stack and fails on a missing (`None`) or
+  mismatched value, modelled on the existing `Verify deployed source revision` step. Its
+  JMESPath selects that one parameter, so no other stack parameter is read or printed.
+- **Why explicit at all.** SAM preserves unsupplied parameters — `merge_parameters` marks
+  them `UsePreviousValue: True` and `create_changeset` keeps that on an UPDATE — so
+  inheritance *worked*. What it could not do is make the intended value reviewable: it
+  lived only inside AWS, no deploy asserted it, and drift had no signal. That is the same
+  shape as every other defect in this file's Key Learnings.
+- **The deploy now takes authority over the parameter — read this before touching the
+  console.** Supplying the override means `merge_parameters` writes a `ParameterValue`
+  instead of `UsePreviousValue`, so CloudFormation *overwrites* whatever is deployed. From
+  the first merge onward, every deployment matching the workflow's `paths:` filter asserts
+  the repository variable's value:
+
+  | `FAMILY_SPOTLIGHT_ENABLED` | Every matching deployment |
+  |---|---|
+  | absent or blank | explicitly deploys `0`, **overwriting a manually configured value** |
+  | `0` | explicitly deploys `0` and verifies off |
+  | `1` | explicitly deploys `1` and verifies on, every subsequent deployment |
+  | anything else | fails before SAM runs; nothing is deployed |
+
+  **The AWS console is therefore no longer a durable source of truth for this parameter.**
+  A value set there survives only until the next matching deployment — and the `paths:`
+  filter is broad (`digest/**`, `render/**`, `data/**`, `*.js`, the template, this
+  workflow), so that can be an unrelated merge. `FAMILY_SPOTLIGHT_ENABLED` is the durable
+  operational control; set it there, not in the console. The template's `Default: "0"`
+  remains the fail-closed behaviour for a **new or recreated** stack only — it does not
+  govern updates.
+- **Stack recreation stays fail-closed.** The template default remains `"0"`, and on a
+  CREATE changeset SAM strips every `UsePreviousValue`, so a recreated stack comes up off
+  regardless of the repository variable — the deploy then sets it and the read-back proves
+  it.
+- **Not covered.** This is a deploy-time control. It does not make the kill *fast*: see
+  Operational recovery above, where re-pointing the Pi's `current` symlink remains the
+  quickest way to get a bad Spotlight off the wall.
+
+Behaviour is covered by `test/deploy-workflow-spotlight-flag.test.js`, which lifts the
+`run:` body out of the shipped workflow and executes it under `bash -e` for absent, blank,
+`0`, `1`, whitespace-padded, invalid and shell-injection inputs — the same
+run-the-real-thing standard as `test/hooks/guard-archived-files.test.js`, so the test
+cannot keep passing after the workflow drifts.
 
 **Packaging is not optional.** `family-spotlight.json` is read through the same non-fatal
 loader as everything else, so if it were missing from the Lambda package it would resolve
@@ -761,42 +830,50 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — one number, because the globstar bug is fixed
+### Current baseline — measured Aug 28, 2026 at `e25109d`
 
-**Plain `npm test`: 1266 tests / 1249 pass / 3 fail / 14 cancelled.** Freshly measured on
-this branch after `npm install`, on Node v22.22.2. There is no longer a second number:
-the two-invocation split documented below is gone, because `package.json`'s glob patterns
-are now single-quoted and reach Node's `--test` resolver intact regardless of which shell
-npm spawns. `shopt -s globstar` + the unquoted pattern still produces the identical
-1062 / 1053 / 3 / 6, so the two invocations now agree by construction rather than by luck.
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test`, no browser resolvable | 1296 | 1279 | 3 | 14 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1296 | **1296** | **0** | **0** |
+| CI (`ubuntu-latest`) | 1296 | 1296 | 0 | 0 |
 
-**Coder mode must keep plain `npm test` at 1266+ (1249 passing without a browser, 1266 with one).**
+Node v22.22.2, after `npm install`. **Coder mode must keep `npm test` at 1296+ with no
+failures once a browser resolves.**
 
-Pre-change figures on `main` at `d69ac47`, for the delta: plain `npm test`
-**631 / 622 / 3 / 6**, full glob **1062 / 1052 / 4 / 6**. This branch adds no tests. The
-+431 under plain `npm test` is the previously-skipped set finally executing (18 files
-directly in `test/`, 431 tests, all passing — verified in isolation with
-`node --experimental-vm-modules --test test/*.test.js`). The full glob's 1052→1053 and
-4→3 is the one genuine test fix on this branch, below.
+**This table is the only current baseline, and it is a measurement, not a constant.**
+It was taken at `e25109d` — this branch merged with `main` at `ad5e084`, which carries
+PR #28's NOW/NEXT temporal gating (+2 tests over the 1294 measured at `40c0240`). Any
+merge that adds tests moves these numbers; re-measure and update this table in the same
+commit rather than adding a second one. Dated changelog entries below quote the figures,
+and the "Chromium-environmental" label, as they stood when written; they are provenance
+for a particular change, not a second answer to "what should I see today."
 
-**The 3 remaining failures are environmental, not code.** All three are
-`No Chromium executable found. Install Chromium, run 'npx playwright install chromium',
-or set DASHBOARD_BROWSER_PATH.` in Playwright-backed rendering tests. They resolve as
-soon as a browser is installed.
+**There is now exactly one cause of a non-green local run: no browser.** Exactly two files
+launch Chromium. `render/first-day-level3-layout.test.js` holds three flat `test()` calls,
+so a thrown `before` hook surfaces them directly — those are the 3 failures.
+`render/dashboard-v2-layout.test.js` holds two `describe` blocks (`dashboard v2 2560x1440
+layout verification`, 6 children, and `family spotlight 2560x1440 footprint and
+readability`, 8), so its hook failure cancels 14 children instead. Supply a browser — `npx
+playwright install chromium`, or point `DASHBOARD_BROWSER_PATH` at an existing build — and
+both numbers go to zero together. That is why the middle row, not the first, is the one to
+compare against.
 
-**On CI, the number is 1062 / 1062 / 0 / 0.** GitHub's `ubuntu-latest` runner resolves a
-browser, so the 3 Chromium failures and all 6 `cancelled` entries disappear there —
-observed on this branch's own CI run. That is the empirical proof for the second
-correction below: **6 subtests do not stop being "a timing artifact" because a browser
-appeared.** They were browser-dependent all along. Quote the local pair
-(1062 / 1053 / 3 / 6) when working without a browser and the CI pair when reading a
-workflow log; they differ only by the browser, and both run the same 1062.
+**`DASHBOARD_BROWSER_PATH` now actually works everywhere it is documented.** Until Aug 28
+`render/first-day-level3-layout.test.js` called `resolveBrowserPath()` with no argument,
+and `resolveBrowserPath` only honours an explicit one — so the escape hatch named in its
+own error message was inert for that file, and its three tests could run only where
+Playwright's bundled build happened to be installed. CI always had one, so CI was green
+and the gap was invisible there; a sandbox with a *different* Chromium build could not run
+them at all. Both suites now pass the variable through, and
+`render/dashboard-v2-png.test.js` guards the call site in both files so the two cannot
+drift apart again.
 
-**The pre-change CI number was 631 — and it was green.** `main` at `d69ac47` reported
-`# tests 631 / # pass 631 / # fail 0` and passed. That is the whole hazard in one line:
-CI was not merely under-reporting, it was *reassuring*, and the one genuinely broken test
-in the repo sat in the 431 it never loaded. A green check mark is only worth the coverage
-behind it.
+**The corollary is the part worth keeping.** Those three failures sat in this file for
+weeks described as "Chromium-environmental", one section below a correction warning about
+exactly that mistake — a real defect recorded as an environment quirk. A standing set of
+"expected" failures is how the next real one gets waved through. The local run is now
+green with a browser; keep it that way rather than re-normalising a red baseline.
 
 **Correction — the previous entry was wrong on both counts, and it mattered.**
 
@@ -888,6 +965,35 @@ method, so they chain directly to the 988 pre-change number above.
 ## Current state (changelog)
 
 - **School rotation rebuilt for the 2026-27 year (Aug 28, 2026):** `digest/schoolRotation.js` had been hard-stopped at `schoolYearEnd = new Date('2026-06-15')`, so `isSchoolDay()` returned `false` for every date since school resumed Aug 24 and **no backpack reminder fired all year**. Rather than ask Wade for values that already existed, all three constants were derived from live sources first: `SCHOOL_YEAR_START`/`SCHOOL_YEAR_END` (2026-08-24 / 2027-06-09) from the Family calendar's `🏫 First Day` / `🏫 Last Day` events; `NO_SCHOOL_DATES` (30 weekday closures) by expanding each `🏫` closure's `[start.date, end.date)` range — Google's all-day end is exclusive, so a break "ending Nov 28" really ends Nov 27; and the rotation itself from the kids' own Centers events plus `data/kids-profile.json`. **Three findings that changed the shape of the fix.** (1) Ophelia is on a **6-day** cycle, not the 7 the code had — she is grade 2 now — and both kids share one school-wide cycle: `PE1 → Art → Computer → PE2 → Media → Music`. Her anchor (2026-08-24 = Day 1) is transcribed from her own calendar entries, each captioned "Day N of 6-day rotation"; the tests assert against those ten real entries rather than against hand-computed values, so they are ground truth, not a restatement of the implementation. All 10 match, including the entry that explicitly skips the 9/4 and 9/7 closures. (2) `Media` is the 2026-27 label for what was `Library`; confirmed with Wade that it is still library-checkout day, so the reminder is preserved under the new name. (3) **Myles is deliberately left unanchored** — `ANCHORS.myles === null` — because his permanent Centers group was genuinely unassigned as of this date; `getRotation` returns a null day/centre while still answering `isSchoolDay` truthfully, so "centre unknown" never collapses into "school closed". **Three `🏫` Early Release events (2027-04-02, 06-08, 06-09) are excluded from the closure list on purpose** — early release is still a school day and the rotation advances. One source conflict was resolved by asking: the Winter Break event's `end.date` implies Dec 30 while its own description says "Dec 21-31"; Wade confirmed Dec 31 is closed. That single date mattered disproportionately — one wrong closure shifts every rotation day after it for the rest of the year. **The regression guard Wade asked for** lives in `digest/schoolRotation.test.js` and asserts against the *run date*, not a fixture date, so it goes red on its own the moment `SCHOOL_YEAR_END` lapses; proven to have teeth by rolling the constant back to the original `2026-06-15`, which turns 31 of 55 cases red with an actionable message. Two unrelated test files (`digest/builder.test.js`, `digest/generateTasks.test.js`) pinned their date fixtures to May 2026 and went red once that stopped being a school day — moved to Sep 2026, which is the same staleness in a second place and worth noting as a pattern. This change adds **+17 tests** (`digest/schoolRotation.test.js` 38 → 55). Measured on the branch before merging `main`: 1164 → 1181. After merging the family-spotlight work from #24, the combined local baseline is **1266 / 1249 passing / 3 failing / 14 cancelled** — the failures are the unchanged Chromium-environmental set, and the cancelled count rose 6 → 14 because #24 added browser-dependent layout subtests, not because of anything here. On CI, which provisions a browser, all 1266 pass.
+- **Special-event operational hardening: browser-path escape hatch and an explicit,
+  verified kill switch (Aug 28, 2026):** Two independent fixes, no production rendering
+  touched. (1) `render/first-day-level3-layout.test.js` called `resolveBrowserPath()` with
+  no argument while `render/dashboard-v2-layout.test.js` passed
+  `process.env.DASHBOARD_BROWSER_PATH`; since `resolveBrowserPath` honours only an explicit
+  argument, the documented escape hatch was inert for the First Day suite and its three
+  tests ran only where Playwright's bundled build happened to be installed. CI always had
+  one, so CI stayed green and the gap was invisible there — and the failures were recorded
+  in this file as "Chromium-environmental" for weeks, one section below a correction
+  warning about precisely that mistake. With the argument passed, all three pass and the
+  full suite is **1294 / 1294 / 0 / 0** with a browser (was 1266 / 1263 / 3 / 0).
+  `render/dashboard-v2-png.test.js` now covers `resolveBrowserPath`'s precedence and guards
+  the launch call site in *both* suites, anchored on `executablePath:` so it reads the call
+  and not the prose above it; proven to have teeth by reverting the fix, which turns it red.
+  (2) The deploy workflow now supplies `FamilySpotlightEnabled` explicitly from the
+  repository variable `FAMILY_SPOTLIGHT_ENABLED`, validates it as exactly `0` or `1` before
+  invoking SAM, and re-reads it from the deployed stack afterwards — see "Managing the kill
+  switch" in the Family Spotlight section. SAM's inheritance was never broken
+  (`merge_parameters` marks unsupplied parameters `UsePreviousValue: True`); what was
+  missing is that the intended value lived only inside AWS with nothing asserting it.
+  Template default stays `"0"`, so a recreated stack is still fail-closed.
+  `test/deploy-workflow-spotlight-flag.test.js` (+25) executes the shipped workflow step
+  itself under `bash -e` across absent, blank, `0`, `1`, padded, invalid and injection
+  inputs. **No repository variable was created and nothing was deployed by this change
+  itself** — but it is not inert. From the moment it reaches `main`, every deployment
+  matching the workflow's `paths:` filter takes authority over the parameter: with the
+  variable still absent it explicitly deploys `FamilySpotlightEnabled=0`, overwriting
+  anything set by hand. See "Managing the kill switch" for the full table.
+
 - **Dead `WJCC Schools` calendar entry removed from `FAMILY_CALENDARS` (Aug 28, 2026):** The one-line entry pointing at `o3oasbc616bhijsqn80a58jo7a40lrl2@import.calendar.google.com` — a calendar Google reports as deleted and which does not appear in the account's calendar list — is gone from `calendar.js`. It was the sole thing firing the new `calendar-fetch-failure` red flag on every digest run. Deleted rather than repointed because WJCC calendar data now reaches the digest via the **Family** calendar's `🏫` events (hand-entered 2026-08-17), leaving the entry with no consumer; the two repoint candidates diagnosed Aug 27 are documented under Known open items and remain available if a WJCC feed is ever wired back in. **Dependency sweep run before deleting, all confirmed non-breaking:** `digest/builder.js`'s `SCHOOL_ROTATION_CALENDARS` is a `_calName` display-name filter, so it could then match nothing — `'WJCC Schools'` was dropped from it as well, leaving `new Set(['Routine'])`. Wade has moved WJCC items onto the Family calendar permanently and no feed will be repointed under that display name, so keeping the member as a hedge would have left dead code that reads as live wiring. `'Routine'` still filters Centers entries out of the 72h/14d windows exactly as before; `digest/routineAnchorsParser.js`'s `SCHOOL_EXCEPTION_CALENDAR` is `'Family'` and never referenced WJCC, so 🏫 holiday suppression of the school anchor was never on this path and is unaffected; every `'WJCC Schools'` occurrence in `test/calendar.test.js`, `digest/flags.test.js`, `digest/builder.test.js`, `digest/aliases.test.js` and `digest/routineAnchorsParser.test.js` is a hardcoded fixture string exercising generic plumbing (in `routineAnchorsParser.test.js` it is deliberately the *negative* case — a non-Family calendar that must **not** suppress), none derived from `FAMILY_CALENDARS`; and `scripts/orchestrate/occ-aging.mjs` iterates the map with `Object.entries`/`Object.keys`, so it simply sees one fewer calendar (its stale present-tense comment about the feed, and a hardcoded "the eight that answered", were corrected). Test totals unchanged at **1164 / 1155 passing / 3 failing / 6 cancelled** — the 3 failures are the standing `No Chromium executable found` set in `render/dashboard-v2-layout.test.js` and `render/first-day-level3-layout.test.js`, identical before and after.
 - **Family Spotlight implemented — "Big Sports Saturday", Sept 12 2026 (Aug 27, 2026):** First
   reusable in-panel special-event treatment for Dashboard v2. Full design and mechanics in
@@ -905,9 +1011,11 @@ method, so they chain directly to the 988 pre-change number above.
   that looked protective and were not — a contract marker satisfied by the controller's own
   selector string, and a layout assertion measuring the Spotlight while it was hidden — both
   repaired; see the Family Spotlight section. Synchronised with `main` through `a039e3c` and re-measured
-  under the fixed test glob: plain `npm test` **1249 / 1232 / 3 / 14** without a browser and
-  **1249 / 1246 / 3 / 0** with one, against `main`'s own 1164 / 1155 / 3 / 6 — **+85 tests,
-  +91 passing, the same 3 Chromium-environmental failures**. The 6 → 0 cancelled is
+  under the fixed test glob: **+85 tests** over `main`'s own count at the time. (The
+  per-invocation figures recorded here originally have been dropped rather than
+  re-stated — see Test baseline for the one current set, and note that the three failures
+  this entry called "Chromium-environmental" were a real test defect, fixed Aug 28.)
+  The cancelled-count drop is
   `render/dashboard-v2-layout.test.js` now passing `DASHBOARD_BROWSER_PATH` through to
   `resolveBrowserPath()`. The Athletics panel renders byte-identical before and after that
   merge, ordinary and Spotlight alike; the full-page delta is `main`'s Centers live-today

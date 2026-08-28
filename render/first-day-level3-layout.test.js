@@ -8,7 +8,12 @@ const event=(title,start,subtitle,_calName)=>({title,subtitle,cardType:'standard
 const milestone={title:'🏫 First Day of School (Myles and Ophelia)',cardType:'standard',_calName:'Family',raw:{start:{date:'2026-08-24'},end:{date:'2026-08-25'}}};
 const data={today:new Date('2026-08-24T12:00:00-04:00'),now:new Date('2026-08-24T07:35:00-04:00'),days:[{events:[milestone]}],upcomingEvents:[event('Back-to-School Picnic','2026-08-25T17:30:00-04:00','Stonehouse playground','Family'),event('Ophelia Dance Class','2026-08-26T16:45:00-04:00','iDance','Ophelia'),event('Myles Sharks Practice','2026-08-27T18:00:00-04:00','Warhill Sports Complex','Myles')],weather:{current:{temperature:78,feelsLike:80,summary:'Sunny'}},menuEvent:{title:'First-day celebration tacos'}};
 let browser;
-before(async()=>{browser=await chromium.launch({headless:true,executablePath:resolveBrowserPath(),args:['--no-sandbox']});});
+// resolveBrowserPath() only honours an explicit argument — its own error
+// message documents DASHBOARD_BROWSER_PATH, so pass it through, matching
+// render/dashboard-v2-layout.test.js. Without this the suite's before hook
+// throws wherever Playwright's bundled build is not the one installed, and
+// all three tests report as environmental failures instead of running.
+before(async()=>{browser=await chromium.launch({headless:true,executablePath:resolveBrowserPath(process.env.DASHBOARD_BROWSER_PATH),args:['--no-sandbox']});});
 after(async()=>{await browser?.close();});
 
 test('three Coming Up entries fit inside the locked card at 1920x1080',async()=>{

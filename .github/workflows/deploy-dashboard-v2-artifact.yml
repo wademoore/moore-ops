@@ -45,6 +45,30 @@ jobs:
             exit 1
           fi
 
+      - name: Resolve Family Spotlight kill switch
+        env:
+          # Read through env, never interpolated into the script body: a
+          # repository variable is attacker-controllable text and `${{ }}` inside
+          # a run block is substituted before bash ever sees it.
+          FAMILY_SPOTLIGHT_ENABLED: ${{ vars.FAMILY_SPOTLIGHT_ENABLED }}
+        run: |
+          RAW="${FAMILY_SPOTLIGHT_ENABLED:-}"
+          # Trim whitespace so a present-but-blank variable counts as absent.
+          VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+          if [ -z "$VALUE" ]; then
+            VALUE=0
+            echo "FAMILY_SPOTLIGHT_ENABLED is absent or blank - failing closed to 0"
+          fi
+          case "$VALUE" in
+            0|1) ;;
+            *)
+              echo "::error::FAMILY_SPOTLIGHT_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+              exit 1
+              ;;
+          esac
+          echo "SPOTLIGHT_ENABLED=$VALUE" >> "$GITHUB_ENV"
+          echo "Family Spotlight kill switch will be deployed as $VALUE"
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -87,7 +111,8 @@ jobs:
             --no-confirm-changeset \
             --no-fail-on-empty-changeset \
             --parameter-overrides \
-              "SourceRevision=$GITHUB_SHA"
+              "SourceRevision=$GITHUB_SHA" \
+              "FamilySpotlightEnabled=$SPOTLIGHT_ENABLED"
 
       - name: Verify deployed source revision
         env:
@@ -96,3 +121,19 @@ jobs:
           DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='SourceRevision'].ParameterValue | [0]" --output text)
           test "$DEPLOYED" = "$GITHUB_SHA"
           echo "Dashboard v2 artifact generator deployed from $GITHUB_SHA"
+
+      - name: Verify deployed Family Spotlight kill switch
+        env:
+          STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+        run: |
+          # Selects exactly one parameter: no other stack parameter is read or printed.
+          DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='FamilySpotlightEnabled'].ParameterValue | [0]" --output text)
+          if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+            echo "::error::FamilySpotlightEnabled is absent from the deployed stack"
+            exit 1
+          fi
+          if [ "$DEPLOYED" != "$SPOTLIGHT_ENABLED" ]; then
+            echo "::error::FamilySpotlightEnabled mismatch - intended $SPOTLIGHT_ENABLED, deployed $DEPLOYED"
+            exit 1
+          fi
+          echo "Family Spotlight kill switch verified as $DEPLOYED"
