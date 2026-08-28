@@ -4,6 +4,7 @@ import { NOW_NEXT_REASON_CODES as R, selectNowNext } from './nowNextSelector.js'
 
 const NOW = new Date('2026-08-17T17:50:00-04:00');
 const event = (title, dateTime, extra = {}) => ({ title, cardType: 'standard', raw: { start: { dateTime } }, ...extra });
+const allDayEvent = (title, date, extra = {}) => ({ title, cardType: 'standard', raw: { start: { date } }, ...extra });
 const data = overrides => ({ now: NOW, days: [{ events: [], tasks: [] }, { events: [], tasks: [] }], upcomingEvents: [], flags: [], ...overrides });
 
 describe('deterministic NOW/NEXT selection', () => {
@@ -62,6 +63,16 @@ describe('deterministic NOW/NEXT selection', () => {
       upcomingEvents: [event('Old practice', '2026-08-17T15:00:00-04:00')],
     }));
     assert.equal(selected.reasonCodes[0], R.ALL_CLEAR);
+  });
+
+  it('does not invent a minute countdown or time-of-day state for all-day events', () => {
+    const selected = selectNowNext(data({
+      now: new Date('2026-08-28T06:39:00-04:00'),
+      days: [{ events: [allDayEvent('On-Call', '2026-08-28')], tasks: [] }],
+    }));
+    assert.equal(selected.reasonCodes[0], R.ALL_CLEAR);
+    assert.equal(selected.signal, 'All clear');
+    assert.equal(selected.diagnostics.candidateCount, 0);
   });
 
   it('keeps future conditions out of NOW/NEXT until their declared eligibility date', () => {
