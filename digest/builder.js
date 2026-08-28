@@ -237,7 +237,12 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
 
   // Filter out school rotation / Centers entries from both the 72-hour
   // window and the 14-day lookahead (they display in the school strip).
-  const SCHOOL_ROTATION_CALENDARS = new Set(['WJCC Schools', 'Routine']);
+  // 'WJCC Schools' was dropped from this set when its FAMILY_CALENDARS entry
+  // was removed: that calendar is deleted, WJCC items now live on the Family
+  // calendar permanently, and no feed will be repointed under that display
+  // name. A filter member matching nothing reads as live wiring, so it is gone
+  // rather than kept as a hedge.
+  const SCHOOL_ROTATION_CALENDARS = new Set(['Routine']);
   const windowEvents = allResolved.filter(ev => {
     const d = parseEventDate(ev.raw);
     if (!d || d < todayMid || d >= in72h) return false;
