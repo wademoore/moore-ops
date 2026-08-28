@@ -75,6 +75,20 @@ describe('deterministic NOW/NEXT selection', () => {
     assert.equal(selected.diagnostics.candidateCount, 0);
   });
 
+  it('labels a same-day Media packing reminder as this morning, not prep tonight', () => {
+    const selected = selectNowNext(data({
+      now: new Date('2026-08-28T07:15:00-04:00'),
+      days: [{ events: [], tasks: [{
+        text: 'Pack library book this morning (Ophelia — Media today)',
+        time: 'Before work',
+      }] }],
+    }));
+    assert.equal(selected.signal, 'This morning');
+    assert.equal(selected.subject, 'Pack library book this morning (Ophelia — Media today)');
+    assert.equal(selected.reasonCodes[0], R.THIS_MORNING);
+    assert.ok(!selected.reasonCodes.includes(R.PREP_TONIGHT));
+  });
+
   it('keeps future conditions out of NOW/NEXT until their declared eligibility date', () => {
     const futureCondition = {
       id: 'future-household-condition',
