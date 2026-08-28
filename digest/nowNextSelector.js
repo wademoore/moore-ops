@@ -137,9 +137,15 @@ function candidate(reasonCode, fields = {}) {
   return { reasonCode, priority: PRIORITY[reasonCode], ...fields };
 }
 
-function problemCandidates(data) {
+function problemCandidates(data, now) {
   return (data.flags || [])
     .filter(flag => !flag.bannerOnly && (flag.level === 'red' || flag.level === 'amber'))
+    .filter(flag => {
+      if (!flag.nowNextEligibleFrom) return true;
+      const eligibleFrom = new Date(`${flag.nowNextEligibleFrom}T12:00:00Z`);
+      if (Number.isNaN(eligibleFrom.getTime())) return true;
+      return dateKey(now) >= dateKey(eligibleFrom);
+    })
     .map((flag, index) => candidate(REASON.UNRESOLVED_PROBLEM, {
       signal: clean(flag.title).replace(/\s+[—-].*$/, '') || 'Needs attention',
       subject: clean(flag.body || flag.title),
@@ -284,7 +290,7 @@ function supportFrom(candidates, selected, now) {
 
 function selectNowNext(data, { now = data.now || new Date(), travelMinutesForEvent, departureBufferMinutes } = {}) {
   const candidates = deduplicateOccurrences([
-    ...problemCandidates(data),
+    ...problemCandidates(data, now),
     ...eventCandidates(data, now, { travelMinutesForEvent, departureBufferMinutes }),
     ...taskCandidates(data),
   ]).sort(compareCandidates);
