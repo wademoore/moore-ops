@@ -821,6 +821,10 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 Node v22.22.2, after `npm install`. **Coder mode must keep `npm test` at 1293+ with no
 failures once a browser resolves.**
 
+**This table is the only current baseline.** Dated changelog entries below quote the
+figures, and the "Chromium-environmental" label, as they stood when written; they are
+provenance for a particular change, not a second answer to "what should I see today."
+
 **There is now exactly one cause of a non-green local run: no browser.** Exactly two files
 launch Chromium. `render/first-day-level3-layout.test.js` holds three flat `test()` calls,
 so a thrown `before` hook surfaces them directly — those are the 3 failures.
