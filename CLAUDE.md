@@ -25,7 +25,11 @@
 
 ### DESIGNER MODE
 - Used for visual or content presentation changes only
-- Read render/dashboard.js to understand available data
+- Read digest/builder.js for available data — its
+  `OUTPUT — digestData` block is the field-level contract
+  every surface renders from
+- Read render/dashboard-v2.js for the current rendered
+  surface (v1 is frozen — see Frozen surfaces)
 - Requires a screenshot of current state to be useful
 - Translate vague visual goals into a precise spec
 - Output: layout description, hierarchy, spacing, 
@@ -39,6 +43,50 @@
 - Update CLAUDE.md after any significant change
 - Use /plan before Planner prompts to enforce no-edit mode
 - An explicit no-commit/no-push instruction given in a session's own prompt (e.g. "hold at a pre-push checkpoint") takes precedence over the local git-check stop hook — don't let the hook's "commit and push" nudge override a task that deliberately asked to stop short of that.
+
+## Frozen surfaces
+
+### v1 dashboard is frozen (2026-08-27)
+
+`render/dashboard.js` (v1) is frozen. Do not iterate, improve, refactor, or
+debug it unless Wade explicitly asks in that session. It stays deployed; it
+does not get worked on.
+
+Before scoping any task touching a rendered surface, confirm the change
+reaches v2 (`render/dashboard-v2.js`) or the email digest. If the only
+consumer is v1, say so and stop rather than writing a spec — a fix to a
+surface nobody reads produces no signal when it breaks, which is how the
+school-strip bug survived unnoticed from June until it was found by accident
+in August.
+
+This applies to the strategy layer as much as to Claude Code: the
+school-rotation prompt was nearly written without asking which surface
+consumed the output.
+
+This does not freeze the shared pipeline. `digest/builder.js` and the modules
+it calls serve every surface; changes there are in scope as normal.
+
+**One exception — a failing v1 test.** `render/dashboard.test.js` is 81
+v1-only tests inside the suite, so a v1 failure turns CI red while the freeze
+otherwise forbids touching v1. To unblock CI you may fix the failing test, or
+skip it, and nothing further. That is the only v1 work permitted without Wade
+explicitly asking for it. Report it — in the session and in the PR — rather
+than doing it quietly: a silently skipped test is exactly how a frozen surface
+rots with no signal, which is the failure mode this whole section exists to
+prevent.
+
+**`scripts/renderTest.js` is half-frozen.** It renders both surfaces for
+visual inspection: `renderEmail()` → `scripts/out-email.html`, and v1's
+`renderTodayCard()` → `scripts/out-dashboard.html`. The email half is live and
+in scope; the dashboard half is v1-only and frozen with it. There is no v2
+equivalent and none should be built here — `render/dashboard-v2.js` is
+exercised through `dashboard-artifact/generator.js`. Do not invest in the
+dashboard half.
+
+**Freezing is not retiring.** The "Dashboard v2 canonical composition" entry
+in Known open items describes v1 as a rollback path pending a production
+soak. Whether that soak is done, and whether v1 should be deleted rather than
+merely frozen, is an open decision — and not one this section makes.
 
 ## Branching policy
 
@@ -306,11 +354,11 @@ during development. It is now bounded to a single whitespace-free token. Both ca
 confirmed to have teeth: against a copy of the hook with that one character class
 reverted, both flip from allow to block and the test fails.
 
-**Verified state:** 74/74 passing. The suite runs under both the full-glob invocation and
-the literal `npm test` — the file sits in `test/hooks/`, a subdirectory, so it survives
-the globstar bug described under Test baseline. That placement is deliberate: regression
-coverage for a security-adjacent gate should not be one of the files plain `npm test`
-silently skips.
+**Verified state:** 74/74 passing. The file sits in `test/hooks/`, a subdirectory, which
+is why it survived the globstar bug — that bug is fixed as of Aug 27, 2026 (see Test
+baseline), so plain `npm test` now picks up every test file regardless of depth and the
+placement no longer buys anything. Keeping it in `test/hooks/` remains fine on
+organizational grounds; it is simply no longer load-bearing.
 
 ### Editing this section is itself partly blocked — read this before trying
 
@@ -695,7 +743,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 - **`digest/builder.js`** — main digest assembly; fetches calendar events, routes them through parsers, produces `digestData`. `today` anchor changed from `new Date(); setHours(0,0,0,0)` (UTC-anchored, wrong at ≥8 PM ET) to `startOfTodayET()` (Jul 2026).
 - **`digest/dateUtils.js`** — date utilities shared across the pipeline: `midnight()`, `daysBetween()`, `toDateKey()`, `parseEventDate()`, `normalizeEvent()`, `timeToSeconds()`, `secondsToTime()`. Added `startOfTodayET(instant)` (Jul 2026) — derives midnight-of-the-ET-calendar-date as a local-midnight `Date`, used as the dashboard's 'today' anchor. `parseEventDate`'s timed-event branch also returns ET-calendar-date local-midnight, kept consistent with `startOfTodayET` so both operands of `daysBetween` share the same anchoring convention.
-- **`render/dashboard.js`** — HTML dashboard renderer; consumes `digestData` and produces the full dashboard page. Added `eventDateKeyET(start)` (Jul 2026), exported for testing — resolves an event's ET calendar-date bucket key: `start.date` passthrough for all-day events, `toLocaleDateString('en-CA', {timeZone: 'America/New_York'})` for timed events. Replaces the old `raw.slice(0,10)` UTC-slice in `renderWeekCard`, which had misbucketed any event at/after 8 PM ET into the next day.
+- **`render/dashboard.js`** — **FROZEN (2026-08-27) — do not iterate, refactor, or debug; see "Frozen surfaces" near the top of this file.** HTML dashboard renderer; consumes `digestData` and produces the full dashboard page. Added `eventDateKeyET(start)` (Jul 2026), exported for testing — resolves an event's ET calendar-date bucket key: `start.date` passthrough for all-day events, `toLocaleDateString('en-CA', {timeZone: 'America/New_York'})` for timed events. Replaces the old `raw.slice(0,10)` UTC-slice in `renderWeekCard`, which had misbucketed any event at/after 8 PM ET into the next day.
 - **`render/email.js`** — HTML email renderer; parallel to dashboard but for the digest email.
 - **`digest/aliases.js`** — maps raw calendar event titles/calendars to resolved display forms.
 - **`digest/flags.js`** — computes alert flags (gear reminders, bag-prep warnings, etc.) from resolved events. Added (Aug 2026) an Emma-unavailability evaluator reading `ctx.emmaUnavailableBlocks` — no I/O, pure.
@@ -713,78 +761,120 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — two numbers, and you must say which one you measured
+### Current baseline — one number, because the globstar bug is fixed
 
-The suite can be run two ways and they do not agree, because of the globstar bug
-documented under Key Learnings. Both freshly measured on this branch:
+**Plain `npm test`: 1062 tests / 1053 pass / 3 fail / 6 cancelled.** Freshly measured on
+this branch after `npm install`, on Node v22.22.2. There is no longer a second number:
+the two-invocation split documented below is gone, because `package.json`'s glob patterns
+are now single-quoted and reach Node's `--test` resolver intact regardless of which shell
+npm spawns. `shopt -s globstar` + the unquoted pattern still produces the identical
+1062 / 1053 / 3 / 6, so the two invocations now agree by construction rather than by luck.
 
-| Invocation | tests | pass | fail | cancelled |
-|---|---|---|---|---|
-| **Full glob** (`shopt -s globstar` + expanded pattern) | **1147** | 1143 | 4 | 0 |
-| Literal `npm test` | 716 | 713 | 3 | 0 |
+**Coder mode must keep plain `npm test` at 1249+ (1232 passing without a browser, 1246 with one).**
 
-**`DASHBOARD_BROWSER_PATH` is not normally required.** On a machine where `npm ci`
-installed Playwright's own browser build, `resolveBrowserPath()` finds it and the
-Playwright-backed suites just run — that is the expected CI case. The override exists for
-environments that ship a *mismatched* prebuilt Chromium: this dev container sets
-`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers` containing build **1194**, while Playwright
-1.62.0 looks for **1234**, so nothing resolves and those suites cannot launch a browser.
-There, point the variable at the real binary. When a browser cannot be found the affected
-subtests are *cancelled* rather than failed; **a cancelled Playwright subtest is not a
-regression**, it is the absence of a browser. Always state which invocation you ran, and
-whether a browser was available.
+Pre-change figures on `main` at `d69ac47`, for the delta: plain `npm test`
+**631 / 622 / 3 / 6**, full glob **1062 / 1052 / 4 / 6**. This branch adds no tests. The
++431 under plain `npm test` is the previously-skipped set finally executing (18 files
+directly in `test/`, 431 tests, all passing — verified in isolation with
+`node --experimental-vm-modules --test test/*.test.js`). The full glob's 1052→1053 and
+4→3 is the one genuine test fix on this branch, below.
 
-Immediately prior figures, for the delta: full glob **1062 / 1052 / 4 / 6**, literal
-`npm test` **631 / 622 / 3 / 6** (both re-measured from a clean tree at `d69ac47` during
-the Family Spotlight change, and matching the previously recorded numbers exactly). The
-Family Spotlight work adds **+80 tests**; the six previously-cancelled layout subtests now
-run because `render/dashboard-v2-layout.test.js` passes `DASHBOARD_BROWSER_PATH` through
-to `resolveBrowserPath()` — the escape hatch that function's own error message advertises
-but which it only honoured as an explicit argument.
-
-Pre-change figures on `main` at `2b55e1e`, for the delta: full glob **988 / 978 / 4 / 6**,
-literal `npm test` **557 / 548 / 3 / 6**. This branch adds 74 tests (the archived-files
-hook matrix, `test/hooks/guard-archived-files.test.js`) and nothing else — +74 in both
-invocations, failures and cancellations unchanged.
-
-**The gap is the globstar bug, not a regression.** Literal `npm test` reads 631 of 1062
-tests — about **59%** — silently skipping the ~41% that sit directly in `test/` rather
-than in a subdirectory. It reports no extra failures either way, which is what makes it
-dangerous: it looks clean, not broken.
-
-> **Careful with the percentage.** `npm test` *misses* roughly 41% of the suite; it does
-> not *read* 43% of it. The two are easy to transpose — before this branch the split was
-> 557 of 988 read (56%) and 431 missed (44%). Quote the measured pair, never a remembered
-> percentage.
-
-**Any future "tests passing" claim in this repo must state which invocation produced it.**
-A bare number is unfalsifiable, which is the same failure the globstar bug causes, in a
-second place.
-
-**Coder mode must keep the full-glob number at 1147+ (1143 passing, with a browser available).** The previous
-recorded baseline of "899+" was stale by 163 tests and had itself become unfalsifiable —
-no run of this suite had produced 899 for some time, so the check could neither pass nor
-fail meaningfully. If the number changes, update this baseline *and* name the invocation.
-
-**The 4 full-glob failures are pre-existing and out of scope**, identical before and after
-the Family Spotlight change. Three are
+**The 3 remaining failures are environmental, not code.** All three are
 `No Chromium executable found. Install Chromium, run 'npx playwright install chromium',
-or set DASHBOARD_BROWSER_PATH.` in `render/first-day-level3*.test.js`, which call
-`resolveBrowserPath()` with no argument and so cannot see the env var. The fourth is
-`test/pi-dashboard-pull.test.js` → `ValueError: credentials file must be mode 0600 or
-stricter` — the chmod defect described under Known open items, which fires under any
-`umask 0022` environment including a GitHub runner. Literal `npm test` shows 3 of the 4
-because `test/pi-dashboard-pull.test.js` sits directly in `test/` and its glob skips it.
+or set DASHBOARD_BROWSER_PATH.` in Playwright-backed rendering tests. They resolve as
+soon as a browser is installed.
+
+**On CI, the number is 1062 / 1062 / 0 / 0.** GitHub's `ubuntu-latest` runner resolves a
+browser, so the 3 Chromium failures and all 6 `cancelled` entries disappear there —
+observed on this branch's own CI run. That is the empirical proof for the second
+correction below: **6 subtests do not stop being "a timing artifact" because a browser
+appeared.** They were browser-dependent all along. Quote the local pair
+(1062 / 1053 / 3 / 6) when working without a browser and the CI pair when reading a
+workflow log; they differ only by the browser, and both run the same 1062.
+
+**The pre-change CI number was 631 — and it was green.** `main` at `d69ac47` reported
+`# tests 631 / # pass 631 / # fail 0` and passed. That is the whole hazard in one line:
+CI was not merely under-reporting, it was *reassuring*, and the one genuinely broken test
+in the repo sat in the 431 it never loaded. A green check mark is only worth the coverage
+behind it.
+
+**Correction — the previous entry was wrong on both counts, and it mattered.**
+
+1. It asserted *all four* full-glob failures were the Chromium message. Only three were.
+   The fourth was `test/pi-dashboard-pull.test.js`'s "Pi stages and validates both
+   version-pinned directions for afternoon re-entry", failing with
+   `ValueError: credentials file must be mode 0600 or stricter` — a real defect in the
+   test, not the environment. The test wrote its temp credentials file with
+   `credentials.write_text(...)` and never chmodded it, so under the default umask 0022
+   it landed at 0644 and `stage()` correctly rejected it. Fixed by adding
+   `credentials.chmod(0o600)` immediately after the write, mirroring how the real Pi
+   provisions that file. **Do not "fix" this by setting `umask` in the test script** —
+   that masks the defect and does not survive running the file individually.
+
+   The two errors compounded: because the literal `npm test` glob skipped
+   `test/pi-dashboard-pull.test.js` entirely, this failure had *never* run in CI, and the
+   full-glob number that did surface it was mis-summarized as environmental. **Order
+   matters if you ever redo this:** fixing the glob before the chmod turns CI red, because
+   GitHub runners use umask 0022 and the Pi test would finally execute.
+
+2. It called the 6 `cancelled` entries a "`node:test` parallel-subtest timing artifact."
+   They are not. All 6 are subtests of the single suite in
+   `render/dashboard-v2-layout.test.js`, whose `before` hook throws the Chromium error —
+   `failureType: 'hookFailed'` on the suite, `cancelledByParent` on each child. They are
+   a direct consequence of the missing browser and go to 0 the moment one resolves, not a
+   standing scheduling quirk to be waved through.
+
+**Any future "tests passing" claim in this repo must still name how it was produced.**
+A bare number is unfalsifiable — that was the second, more durable half of the globstar
+lesson, and fixing the glob does not retire it.
 
 On a fresh clone **before `npm install`** you will instead see `ERR_MODULE_NOT_FOUND`
 failures for declared dependencies — run `npm install` first; that is not a regression.
 
-Uses Node's built-in `node:test` runner either way. The full-glob invocation is:
+Uses Node's built-in `node:test` runner. Plain `npm test` is now the canonical
+invocation:
 
 ```bash
-shopt -s globstar
+npm test
+```
+
+### The glob fix (Aug 27, 2026) — what was actually wrong
+
+`package.json`'s test script was:
+
+```
 node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js
 ```
+
+npm runs scripts through `sh -c`, which on this system is `dash`. Dash has no `globstar`,
+so `**` degrades to a single `*`. The failure was **asymmetric**, and that asymmetry is
+why it went unnoticed for so long:
+
+| Pattern | Dash behavior | Net effect |
+|---|---|---|
+| `test/**/*.test.js` | expands as `test/*/*.test.js` → 4 real files in `test/hooks/`, `test/skills/` | shell consumes the pattern; the 18 files directly in `test/` are silently dropped |
+| `digest/**/*.test.js` | no `digest/*/` subdirectory matches → **no match** | dash leaves the word unexpanded, Node's `--test` glob resolves it correctly |
+| `render/**/*.test.js` | `render/assets-v2/` etc. contain no `.test.js` → **no match** | same — Node resolves it correctly |
+
+So a pattern that matched *something* got hijacked by the shell and lost coverage, while
+patterns that matched *nothing* survived to Node and worked. **431 tests across 18 files
+had never run in CI.**
+
+**Fix: single-quote each pattern** so dash passes it through verbatim and Node does all
+the globbing. Verified empirically in this environment rather than assumed — the
+alternatives were tested and this one is both sufficient and the least invasive:
+
+- **Single quotes (shipped).** `/bin/sh -c "node ... 'test/**/*.test.js' ..."` → 1062
+  tests. Works because Node 22's `--test` accepts glob patterns as positional arguments
+  and recurses correctly on `**`. No JSON escaping needed, unlike double quotes.
+- **`script-shell = bash` + `shopt -s globstar`.** Would work, but needs an `.npmrc` *and*
+  a shell-option prelude in the script, and silently reverts to broken if either is lost.
+  Rejected as more machinery for the same outcome.
+- **Doing nothing and telling people to run the full glob by hand.** This is what the
+  previous baseline did, and it is how the Pi test's failure stayed invisible.
+
+The `**` in a quoted pattern is now Node's to interpret, not the shell's, so the script
+behaves identically under dash, bash, and zsh.
 
 ### Historical chain (superseded)
 
@@ -812,8 +902,17 @@ method, so they chain directly to the 988 pre-change number above.
   the ordinary presentation a direct child. An independent Reviewer pass then found two guards
   that looked protective and were not — a contract marker satisfied by the controller's own
   selector string, and a layout assertion measuring the Spotlight while it was hidden — both
-  repaired; see the Family Spotlight section. Full glob **1147 / 1143 / 4 / 0**; the 4 failures
-  are the pre-existing Chromium and chmod defects, unchanged.
+  repaired; see the Family Spotlight section. Merged with `main` at `4b5db49` and re-measured
+  under the fixed test glob: plain `npm test` **1249 / 1232 / 3 / 14** without a browser and
+  **1249 / 1246 / 3 / 0** with one, against `main`'s own 1164 / 1155 / 3 / 6 — **+85 tests,
+  +91 passing, the same 3 Chromium-environmental failures**. The 6 → 0 cancelled is
+  `render/dashboard-v2-layout.test.js` now passing `DASHBOARD_BROWSER_PATH` through to
+  `resolveBrowserPath()`. The Athletics panel renders byte-identical before and after that
+  merge, ordinary and Spotlight alike; the full-page delta is `main`'s Centers live-today
+  work, and the approved panel crops are pixel-identical to the ones signed off.
+- **Calendar fetch failures now surface as a red digest flag (Aug 27, 2026):** `pullCalendarEvents()` in `calendar.js` degrades to `[]` per calendar so one dead source cannot take down the digest — correct, but on its own indistinguishable from "that calendar had no events." It now records `{ calendarName, calendarId, message }` for each failure and attaches the list to the returned array via `attachFetchFailures()` (non-enumerable, so spreads / `Object.keys()` / `JSON.stringify()` of the event list are unchanged and **no existing caller needed edits** — `index.js` and `dashboard-v2-data.js` are untouched). `readFetchFailures()` merges the 72h and 14d lists, dedupes by `calendarId` (a dead calendar fails in both pulls) and sorts by name for stable output. `buildDigest()` picks it up as `calendarFetchFailures` — an injectable param on the same convention as `emmaUnavailableBlocks`, where only `undefined` falls back to reading the arrays — exposes it on `digestData`, and passes it into `computeFlags()`. A new `flags.js` evaluator emits `id: 'calendar-fetch-failure'`, **the first `red`-level flag in the repo** (all three renderers already handled `red`: `render/email.js` palette, `render/dashboard.js` `ar`/`#E24B4A`, `render/dashboard-v2.js` `.level-red`; the `computeFlags` sort already ordered `red` first). Chosen over failing the run — a household digest whose value is the other eight calendars should not go dark because one 404s — and over logging louder, which is the channel that already failed silently for weeks. +21 tests (1141 → 1162; 1132 → 1153 passing; the 3 failures and 6 cancelled are the unchanged Chromium-environmental set).
+
+- **Pi credentials-mode test defect fixed, `npm test` glob fixed, baseline corrected (Aug 27, 2026):** Three related changes, in a deliberate order. (1) `test/pi-dashboard-pull.test.js`'s "Pi stages and validates both version-pinned directions" test wrote its temp credentials file with `credentials.write_text(...)` and never chmodded it, so under the default umask 0022 it landed at 0644 and `stage()` correctly raised `credentials file must be mode 0600 or stricter`. Fixed with `credentials.chmod(0o600)` immediately after the write, mirroring the real Pi's provisioning — **not** by setting `umask` in the embedded script, which would mask the defect and not survive running the file individually. (2) `package.json`'s test globs are now single-quoted, so `sh -c` (dash, no `globstar`) passes them through verbatim and Node 22's `--test` resolver recurses correctly. The old bug was asymmetric: `test/**` matched something and was hijacked by the shell into `test/*/*`, dropping the 18 files directly in `test/`; `digest/**` and `render/**` matched nothing, so dash left them literal and Node handled them correctly. **431 tests across 18 files had never run in CI.** Approaches were compared empirically in this environment, not assumed — quoting is sufficient and needs no `.npmrc` or shell prelude. Order mattered: fixing the glob first would have turned CI red, since GitHub runners use umask 0022 and the Pi test would finally have executed. (3) Baseline corrected on two false claims: it said all four full-glob failures were `No Chromium executable found` (only three were — the fourth was the umask defect above), and it called the 6 `cancelled` entries a `node:test` parallel-subtest timing artifact (they are all subtests of `render/dashboard-v2-layout.test.js`, whose `before` hook throws the Chromium error; they go to 0 once a browser resolves). New baseline, plain `npm test`: **1062 / 1053 / 3 / 6**, up from 631 / 622 / 3 / 6. Also added `__pycache__/` and `*.pyc` to `.gitignore` — the Pi test regenerates that bytecode on every run.
 - **Push deny rule reinstated (scoped to `main`), hook matrix committed, test baseline reconciled (Aug 26, 2026):** Four follow-ups from PR #15. (1) `permissions.deny` is back in `.claude/settings.json` as four wildcard rules pinning the branch name — `Bash(git push * main)`, `Bash(git push * main *)`, `Bash(git push * *:main)`, `Bash(git push * *:main *)` — verified empirically against **Claude Code 2.1.246** with a throwaway repo, a local bare remote, and two independent signals per case (harness-recorded denial + whether the remote ref actually moved). Full match table in the gate section. Feature-branch pushes are unaffected in every tested form, which was the whole failure of the original `Bash(git push:*)`. Residual holes (bare `git push` on `main`, `+main`, `refs/heads/main`) are named in the doc rather than implied. Also corrected a claim inherited from `4a8cc52`: `Bash(git push *)` **does** match a bare `git push` on 2.1.246 — the compiler rewrites a trailing ` .*` to `( .*)?` — so the stated reason for preferring `:*` does not hold on this build. (2) The 63-case hook matrix now lives in the repo as `test/hooks/guard-archived-files.test.js` + a base64 fixture file, expanded to 73 cases (+1 integrity check = 74 tests); it spawns the real hook script and asserts real exit codes, and includes an explicit rule-(e) false-positive regression test proven to fail against the pre-fix pattern. Placed in `test/hooks/` so it runs under both invocations rather than being skipped by the globstar bug. (3) The bootstrap incident's committer-identity evidence is now quoted inline in CLAUDE.md, so the claim no longer depends on `4a8cc52` staying reachable on an undeleted branch. (4) Test baseline reconciled from a stale **899** to the measured pair: full glob **1062 / 1052 / 4 / 6**, literal `npm test` **631 / 622 / 3 / 6**. Also corrected an over-broad claim that *any* command containing an archived path literal is blocked — a bare `grep` and a `cat` heredoc are not; a listed utility must also be present.
 - **Emma unavailability flag merged to `main` + boundary test coverage closed (Aug 16, 2026):** `claude/emma-unavailability-flag-v2-kdbzqh` (see entry below) merged into `main` via commit `1c4db14` after independent Reviewer sign-off (7/7 checklist items PASS, one non-blocking test-coverage gap noted). `main` had advanced 3 unrelated commits (Dashboard v2 Phase 4B) since the branch was cut and since the Reviewer's pass; no file overlap, clean merge, no conflicts. Same-session follow-up added the two boundary test cases the Reviewer flagged as missing — a block starting *exactly* 14 days out (fires) and *exactly* 15 days out (does not fire) — to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block, per the Reviewer's own hand-verification that the underlying `flags.js`/`emmaUnavailabilityParser.js` logic was already correct at these edges. No production code changed in this follow-up. 899 passing on `main` after both steps — see Test baseline section for the full reconciliation chain.
 - **Emma unavailability flag added (Aug 16, 2026):** New `digest/emmaUnavailabilityParser.js` parses Emma's UTA reserve-duty / annual-tour-duty blocks from the "House Manager" calendar (`690a345d...@group.calendar.google.com`), wired into `digest/builder.js` on the same try/catch-default-to-`[]` pattern as `parseWeeklyPriorities`. A new pure `flags.js` evaluator reads `ctx.emmaUnavailableBlocks` and emits an amber, non-`bannerOnly` flag (`owner: []`) for any block starting within 14 days or already in progress; already-ended blocks are excluded. Live calendar verification (13 real events, all confirmed) found the title's type token includes a `(Reserve)` qualifier not anticipated by the original spec example (e.g. `Emma: UTA (Reserve) — Unavailable`, sometimes with a trailing `[Tentative FY27]` bracket) — the extractor captures the type substring verbatim rather than stripping `(Reserve)`, so flag bodies read e.g. "Emma unavailable Oct 16–19 (UTA (Reserve)) — confirm coverage." Google's all-day `end.date` is exclusive; `exclusiveEndToInclusive()` converts it to the inclusive last day shown in the message. Flag `id` is derived from block start date + type (stable dedup), computed once in the parser and reused verbatim by the evaluator. No dashboard card, no data file, no `FAMILY_CALENDARS` change — all explicitly out of scope for this pass. 896 passing after this change (up from a freshly-measured 876 baseline — see Test baseline section).
@@ -875,7 +974,9 @@ method, so they chain directly to the 988 pre-change number above.
 
 **A commit message that doesn't describe its own content defeats every drift-detection habit this project relies on.** Confirmed August 2026: `e4aa130`'s message named an unrelated editorial doc change while the same commit carried the `sharksActive`/`renderSharksCard`/sports-config `sharks` scaffolding, the `gmailParser` sharks routing entry, and (per a still-unresolved test-only string) possibly `flags.js` changes — none of it discoverable by searching commit history for anything sharks-related. Worth a standing habit: when a commit touches more than one logical concern, or when scaffolding for a future feature rides along with an unrelated change, the message should name both, not just the primary one.
 
-**`npm test`'s glob pattern silently drops every test file that sits directly in `test/` (not in a subdirectory) — a pre-existing, shell-dependent bug, not a regression.** `package.json`'s test script is `node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js`. Without `bash`'s `globstar` shell option enabled (the default in most non-interactive shells, including the one `npm test` itself spawns via `sh -c` on this system), `test/**/*.test.js` does **not** recurse — it behaves like `test/*/*.test.js`, matching only `test/skills/*.test.js` and silently excluding every file directly under `test/` (`test/data.test.js`, `test/athleticsParser.test.js`, `test/wavesParser.test.js`, `test/dateUtils.test.js`, `test/calendar.test.js`, `test/flagFootballParser.test.js`, `test/gmailParser.test.js`, `test/pdfReloadParser.test.js`, `test/swimParser.test.js`, `test/weeklyPrioritiesParser.test.js`, and now `test/sharksParser.test.js`). `digest/**/*.test.js` and `render/**/*.test.js` are unaffected because those patterns fail to pre-expand in the same broken shell and are instead handed to Node's own `--test` glob resolution, which *does* recurse correctly. Net effect: a literal `npm test` run in an affected shell reports far fewer tests than actually exist (395 passing observed in this environment vs. the documented baseline of 645+) with zero failures either way — it looks clean, not broken, which is what makes it dangerous. **To get an accurate count, run with `shopt -s globstar` enabled first**, or pass the file list explicitly. Not fixed as part of the Sharks card work (out of scope for that task) — flagging here so a future session doesn't mistake a low `npm test` count for a real regression, and doesn't mistake a passing `npm test` for full coverage. **The "395 vs. 645+" figures above are a historical observation from the session that found the bug, not current.** For the measured pair as of Aug 26, 2026 — full glob 1062 / literal `npm test` 631 — and the rule that every "tests passing" claim must name its invocation, see the Test baseline section.
+**✓ FIXED Aug 27, 2026 — but read this anyway; the lesson outlived the bug.** The patterns in `package.json` are now single-quoted, so the shell passes them through and Node's `--test` resolver does the globbing. Plain `npm test` runs all 1062 tests. See "The glob fix" under Test baseline for the mechanism, the three options that were empirically compared, and the asymmetry table. **What the fix does not retire:** this bug hid a genuine failing test (`test/pi-dashboard-pull.test.js`'s umask 0644 credentials defect) for as long as it existed, and the recorded baseline then mis-described that failure as environmental. A silent-skip bug and an unfalsifiable summary of the result are the same failure in two places, and only one of them was in the glob. The original description follows, for provenance.
+
+**`npm test`'s glob pattern silently drops every test file that sits directly in `test/` (not in a subdirectory) — a pre-existing, shell-dependent bug, not a regression.** `package.json`'s test script was `node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js`. Without `bash`'s `globstar` shell option enabled (the default in most non-interactive shells, including the one `npm test` itself spawns via `sh -c` on this system), `test/**/*.test.js` does **not** recurse — it behaves like `test/*/*.test.js`, matching only `test/skills/*.test.js` and silently excluding every file directly under `test/` (`test/data.test.js`, `test/athleticsParser.test.js`, `test/wavesParser.test.js`, `test/dateUtils.test.js`, `test/calendar.test.js`, `test/flagFootballParser.test.js`, `test/gmailParser.test.js`, `test/pdfReloadParser.test.js`, `test/swimParser.test.js`, `test/weeklyPrioritiesParser.test.js`, and now `test/sharksParser.test.js`). `digest/**/*.test.js` and `render/**/*.test.js` are unaffected because those patterns fail to pre-expand in the same broken shell and are instead handed to Node's own `--test` glob resolution, which *does* recurse correctly. Net effect: a literal `npm test` run in an affected shell reports far fewer tests than actually exist (395 passing observed in this environment vs. the documented baseline of 645+) with zero failures either way — it looks clean, not broken, which is what makes it dangerous. **To get an accurate count, run with `shopt -s globstar` enabled first**, or pass the file list explicitly. Not fixed as part of the Sharks card work (out of scope for that task) — flagging here so a future session doesn't mistake a low `npm test` count for a real regression, and doesn't mistake a passing `npm test` for full coverage. **The "395 vs. 645+" figures above are a historical observation from the session that found the bug, not current.** For the measured pair as of Aug 26, 2026 — full glob 1062 / literal `npm test` 631 — and the rule that every "tests passing" claim must name its invocation, see the Test baseline section.
 
 - **Champs/Summer Awards history migration: COMPLETE (August 2026).** Full project history: `docs/data-reload/champs-sa-migration-history.md`. Summary: 2024 Champs, 2025 Champs, and 2026 Summer Awards individual + relay results (3,844 individual + 172 relay rows) parsed and loaded into `league-results-history-v2.json`/`relay-results-history-v2.json`. Includes the wrong-file-write incident and correction that led to the current "current vs. archived" guard rail. Legacy files archived to `data/archive/` as part of this project.
 
@@ -883,7 +984,12 @@ method, so they chain directly to the 988 pre-change number above.
 
 ## Known open items
 
+- **`FAMILY_CALENDARS["WJCC Schools"]` points at a deleted calendar — diagnosed Aug 27, 2026, deliberately NOT repointed.** `o3oasbc616bhijsqn80a58jo7a40lrl2@import.calendar.google.com` returns `The requested event could not be found or has been deleted.` and does not appear in the account's calendar list at all. It was added 2026-08-02 in commit `2742410` — whose message reads "Editorial Meeting: downgrade unconfirmed relay near-record claim from MEDIUM to LOW", a second instance of the mislabeled-commit pattern already recorded in Key Learnings under `e4aa130`. Two candidates exist and **neither is obviously right**, which is why this was left for Wade rather than guessed at: `vhtjqgkt9s4oor47sujca22rfg@group.calendar.google.com` is a manually-created calendar literally named "WJCC Schools" (owner, created 2025-09-26, last updated 2026-05-12) holding hand-entered **2025-26** holidays only — nothing past Juneteenth 2026-06-19; and `n4kudi3ij2k314cup1finndhv8b9rqpc@import.calendar.google.com` is a live ICS subscription to `https://wjccschools.org/?wjcc_calendar_subscribe=1` that is **completely empty** across Jan 2026 – Jul 2027 and whose summary is still the raw URL (Google never resolved a display name from the feed). The ICS feed itself could not be verified from the session that diagnosed this — `wjccschools.org` is blocked by the sandbox network policy — so whether the feed is broken or merely not yet synced is **unestablished**, not ruled out. Until one is chosen the new `calendar-fetch-failure` flag fires every run, which is the intended behavior: the breakage is now visible daily instead of silent.
+- **Production impact of the dead WJCC calendar was near-zero, for a reason that is itself a finding.** `digest/builder.js`'s `SCHOOL_ROTATION_CALENDARS` filters `WJCC Schools` events out of both the 72-hour window and the 14-day lookahead, `getSchoolStrip()` never reads calendar events at all (pure date arithmetic), and `addNoSchoolDate()` — the only hook that could have fed closures in from a calendar — **is called by nothing outside its own test**. The 🏫 school-closure suppression in `routineAnchorsParser.js` reads `SCHOOL_EXCEPTION_CALENDAR = 'Family'`, not WJCC. The real 2026-27 academic calendar was hand-entered onto the **Family** calendar on 2026-08-17 (12 `🏫` events, each described "Source: WJCC 2026-27 Academic Calendar (adopted 3/24/26)"), so closure data does flow. The WJCC entry in `FAMILY_CALENDARS` is effectively vestigial — do not assume repointing it restores anything until a consumer is wired to it.
+- **`digest/schoolRotation.js` is hard-stopped at `schoolYearEnd = new Date('2026-06-15')` — the school strip has been dead for the entire 2026-27 school year.** Found Aug 27, 2026 while diagnosing the WJCC calendar; **not fixed, out of scope for that change.** `isSchoolDay()` returns `false` for every date after 2026-06-15, so `getRotationDay()` returns `null` and `getSchoolStrip()` returns both kids as `{ day: null, center: null, isSchoolDay: false, warningText: null }` with `tomorrowWarnings: []`. Verified by direct execution: `isSchoolDay` is `true` for 2026-06-15 and `false` for 2026-06-16, 2026-08-24 (first day of school), 2026-08-27, 2026-09-08, 2026-12-01 and 2027-03-01. Consequence: **no Library/Music backpack reminders have fired since school resumed Aug 24**, and the `backpack-reminder` flag cannot fire. This is a bigger live failure than the calendar it was found next to. Fixing it needs three things that are Wade's data, not a code change: the 2026-27 `schoolYearEnd`, refreshed rotation `ANCHORS` (both currently anchored to May 1, 2026), and the year's `NO_SCHOOL_DATES` — the last of which the 12 `🏫` Family-calendar events could plausibly supply if `addNoSchoolDate()` were finally wired up.
+
 - **Dashboard v2 is in production — this bullet was stale (corrected Aug 19, 2026).** It previously said v2 was "isolated and experimental... not reachable from the Lambda path." That was true when written but has been false since the Aug 15–16 cutover: `render/dashboard-v2.js` is rendered by `dashboard-artifact/generator.js`, its own Lambda handler (separate from `index.js`, which still imports only production v1 — that boundary is unchanged), and published as versioned HTML + a manifest to S3 on an EventBridge schedule. The Pi pulls, validates, and atomically activates each release via `moore-dashboard-refresh.timer`, and Chromium kiosk-displays it at `http://127.0.0.1:4173`, self-reloading on a new release via its own 5-minute manifest poll. Phase 3C (Aug 15, 2026) completed the production cutover; Phase 4B (Aug 16, 2026, commit `8652963`) activated the automated Pi refresh timer. See `docs/dashboard-v2/phase-3c-production-cutover.md` and `docs/dashboard-v2/phase-4b-production-refresh.md` for deployment evidence — not restated here. Supporting code: `weather.js`, `dashboard-v2-data.js`, `render/dashboard-v2.sample-data.js`, `dashboard-artifact/generator.js`, `infrastructure/pi-dashboard/`. The Aug 12 screenshot refinement changed the calendar/athletics height split to 58/40, tightened the masthead, removed repeated event-time text, and lets weekly-priority rows distribute spare Today-panel height for better TV readability. ✓ Resolved — v1 and v2 now both run in production, on separate delivery paths (v1: `index.js` → email + Drive upload; v2: `dashboard-artifact/generator.js` → S3 → Pi).
+- **Dashboard artifact package initialization is now validated (Aug 28, 2026):** The bundled Lambda erased `import.meta.url`, causing `render/first-day-level3.js` to throw `ERR_INVALID_URL` at cold start even though the template already supplied `DASHBOARD_FIRST_DAY_ASSET_DIR`. The loader now honors that environment path, matching the everyday renderer, and `validate-dashboard-artifact-package.mjs` loads the built bundle with all three packaged-directory environment variables so this class of deploy-time startup failure blocks CI before SAM deploy.
 - **NOW/NEXT occurrence identity (Aug 17, 2026):** event candidates are keyed by concrete occurrence (`raw.id + start`), while `raw.recurringEventId` remains source metadata only. Competing candidate types for one occurrence are consolidated before ranking; supporting orientation excludes only the chosen occurrence so later instances of a recurring event remain eligible. Keep these identities separate in future selector changes.
 - **Dashboard Centers are calendar-driven (Aug 2026):** Dashboard v2 renders a compact Monday-Friday kid-facing Centers strip below Weekly Priorities from dated calendar events named `Myles: [Center] (Centers)` / `Ophelia: [Center] (Centers)`. `data/kids-profile.json` supplies reference metadata only (including Myles's provisional group state); its rotation sequence must never be advanced to infer dated Centers. The strip shows the current school week Monday-Friday, then rolls to the upcoming school week on Saturday for weekend preparation. The 14-day pull includes seven days of history so the full current week remains available after Monday. Routine Centers entries are excluded from Today/NOW-NEXT and Next Two Weeks. `schoolStrip.centersWeek` supports optional date-scoped `action` cues for bring/do reminders without changing ordinary center cells.
 - **Dashboard v2 canonical composition (Aug 2026):** NOW/NEXT and the calendar-driven Centers strip are one everyday Dashboard v2, published as the normal `index.html` by `dashboard-artifact/generator.js`. The artifact contract requires both `now-next` and `centers-block` markers, preventing the old events-oriented fallback from being published accidentally. Shadow viewers, sibling `now-next.html` artifacts, and dual-publish machinery are not part of the canonical branch. The legacy v1 Drive dashboard remains only as a rollback path until the consolidated v2 has completed a production soak.

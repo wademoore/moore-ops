@@ -7,6 +7,7 @@
  */
 
 import { buildDigest, generateTasks } from './builder.js';
+import { attachFetchFailures } from '../calendar.js';
 import { isSchoolDay } from './schoolRotation.js';
 import { startOfTodayET } from './dateUtils.js';
 import { FIXTURE_CONFIG } from '../test/fixtures/sports-config.fixture.js';
@@ -612,6 +613,73 @@ describe('builder.test.js date-helper regression — disagreement-window timesta
     } finally {
       mock.timers.reset();
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Calendar fetch failures — end-to-end plumbing
+//
+// calendar.js attaches the failure list to the event array it returns;
+// buildDigest has to carry that through to digestData and into computeFlags,
+// or a dead calendar goes back to looking like a quiet day.
+// ---------------------------------------------------------------------------
+
+describe('buildDigest — calendar fetch failures', () => {
+  const FAILURE = {
+    calendarName: 'WJCC Schools',
+    calendarId: 'o3oasbc616bhijsqn80a58jo7a40lrl2@import.calendar.google.com',
+    message: 'The requested event could not be found or has been deleted.',
+  };
+
+  const withFailures = (events, failures) => attachFetchFailures(events, failures);
+
+  it('defaults to an empty list when the event arrays carry nothing', async () => {
+    const result = await buildDigest({ rawEvents: [], emails: [], docs: {}, banner: null, ...SPORTS_PARAMS });
+    nodeAssert.deepEqual(result.calendarFetchFailures, []);
+    nodeAssert.equal(result.flags.find(f => f.id === 'calendar-fetch-failure'), undefined);
+  });
+
+  it('reads failures off the 72h event array and exposes them on digestData', async () => {
+    const result = await buildDigest({
+      rawEvents: withFailures([], [FAILURE]),
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+    });
+    nodeAssert.equal(result.calendarFetchFailures.length, 1);
+    nodeAssert.equal(result.calendarFetchFailures[0].calendarName, 'WJCC Schools');
+  });
+
+  it('raises the red flag so an unreadable calendar is not read as a clear day', async () => {
+    const result = await buildDigest({
+      rawEvents: withFailures([], [FAILURE]),
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+    });
+    const flag = result.flags.find(f => f.id === 'calendar-fetch-failure');
+    nodeAssert.ok(flag, 'expected the calendar-fetch-failure flag');
+    nodeAssert.equal(flag.level, 'red');
+    nodeAssert.match(flag.body, /WJCC Schools/);
+  });
+
+  it('merges and dedupes failures across the 72h and 14d pulls', async () => {
+    const other = { calendarName: 'Menu', calendarId: 'menu@group', message: 'Not Found' };
+    const result = await buildDigest({
+      rawEvents:    withFailures([], [FAILURE]),
+      rawEvents14d: withFailures([], [FAILURE, other]),
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+    });
+    nodeAssert.deepEqual(
+      result.calendarFetchFailures.map(f => f.calendarName),
+      ['Menu', 'WJCC Schools'],
+    );
+  });
+
+  it('respects an explicitly injected list over whatever the arrays carry', async () => {
+    const result = await buildDigest({
+      rawEvents: withFailures([], [FAILURE]),
+      calendarFetchFailures: [],
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+    });
+    nodeAssert.deepEqual(result.calendarFetchFailures, []);
+    nodeAssert.equal(result.flags.find(f => f.id === 'calendar-fetch-failure'), undefined);
   });
 });
 

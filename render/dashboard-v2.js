@@ -94,6 +94,15 @@ function formatDate(date, options) {
   });
 }
 
+function easternDateKey(date) {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date(date));
+}
+
 // `digestData.today` is a calendar anchor, not an instant. Preserve its local
 // year/month/day fields before applying display timezone formatting so Lambda's
 // UTC host cannot shift the label back to the prior Eastern day.
@@ -137,9 +146,7 @@ function eventDateKey(event) {
   const start = event?.raw?.start;
   if (!start) return null;
   if (start.date) return start.date;
-  return new Date(start.dateTime).toLocaleDateString('en-CA', {
-    timeZone: 'America/New_York',
-  });
+  return easternDateKey(start.dateTime);
 }
 
 function dateAtNoon(dateKey) {
@@ -375,7 +382,7 @@ function renderCenters(centersWeek) {
   const rows = children.map(child => {
     const days = child.available ? child.days.map(day => {
       const action = day.action;
-      return `<div class="center-day ${day.isToday ? 'is-today' : ''} ${action ? 'has-action' : ''}">
+      return `<div class="center-day ${day.isToday ? 'is-today' : ''} ${action ? 'has-action' : ''}"${day.date ? ` data-center-date="${esc(day.date)}"` : ''}>
         <small>${esc(day.label)}</small>
         <span>${esc(day.center || '—')}</span>
         ${action ? `<b>${esc(action.icon || '●')} ${esc(action.label || 'Remember')}</b>` : ''}
@@ -928,14 +935,14 @@ function browserScript() {
     const firstDayCodaStart = Date.parse(dashboard?.dataset.firstDayCodaStart || '');
     const firstDayCodaEnd = Date.parse(dashboard?.dataset.firstDayCodaEnd || '');
     const paletteSetting = dashboard?.dataset.palette || 'auto';
+    const easternDateKey = value => new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(value));
     const logoMap = ${JSON.stringify(V2_LOGOS)};
     const validSports = s => {const str=x=>x==null||typeof x==='string',records=x=>x==null||(x&&['overall','conference','regularSeason','preseason'].every(k=>str(x[k]))),result=x=>x==null||(x.state==='final'&&['W','L','T'].includes(x.result)&&Number.isFinite(x.teamScore)&&Number.isFinite(x.opponentScore)),source=x=>x==null||(x&&typeof x.stale==='boolean'&&typeof x.fromCache==='boolean');return s&&s.schemaVersion===1&&s.version===1&&source(s.source)&&Array.isArray(s.slots)&&s.slots.length===4&&!s.slots.some(x=>s.source?.stale&&x.event?.state==='live')&&s.slots.every(x=>x&&typeof x.organization==='string'&&typeof x.logo==='string'&&!/^https?:/i.test(x.logo)&&str(x.record)&&records(x.records)&&str(x.conference)&&str(x.standing)&&result(x.lastResult));};
     const sportLines = slot => {
       const ticker=document.querySelector('.sports-ticker'),treatment=ticker?.dataset.metadataTreatment||'inline',records=slot.records||{},e=slot.event,dashes=value=>value==null?value:String(value).replace(/(\\d)-(\\d)/g,'$1–$2').replace(/\\bT-(?=\\d)/g,'T–'),played=value=>{if(!value)return 0;const parts=String(value).split('-').map(Number);return parts.every(Number.isFinite)?parts.reduce((sum,n)=>sum+n,0):0},college=e?.league==='college-football'||e?.league==='mens-college-basketball'||Boolean(slot.conference),overall=records.overall||slot.record,conferenceRecord=records.conference,summary=e?.seasonType==='Preseason'?(records.preseason?'Preseason '+dashes(records.preseason):''):e?.league==='nfl'?(records.regularSeason?'Regular '+dashes(records.regularSeason):''):college&&slot.conference?(played(overall)===0?slot.conference:played(conferenceRecord)===0?dashes(overall)+' · '+slot.conference:dashes(overall)+' ('+dashes(conferenceRecord)+') · '+(slot.standing?dashes(slot.standing):slot.conference)):[dashes(overall),dashes(slot.standing)].filter(Boolean).join(' · '),attach=line=>treatment==='inline'&&summary?line+' · '+summary:line;if(!e&&slot.lastResult){const r=slot.lastResult,p=r.homeAway==='home'?'vs':'@',o=r.opponentAbbreviation||r.opponent;return[slot.label+' '+r.result+' '+r.teamScore+'–'+r.opponentScore,attach('Last · '+p+' '+o),summary]}if(!e)return[slot.presentationState==='unavailable'?'Data unavailable':slot.label,attach(slot.presentationState==='unavailable'?'Last credible update retained':'Offseason · No game in the current window'),summary];
       const p=e.homeAway==='home'?'vs':'@',o=e.opponentAbbreviation||e.opponent,t=e.rank?'#'+e.rank+' '+slot.label:slot.label;
-      const key=d=>new Intl.DateTimeFormat('en-CA',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(d));
       const n=new Date(),tomorrow=new Date(+n+86400000),date=new Date(e.startTime).toLocaleDateString('en-US',{timeZone:zone,month:'short',day:'numeric'}),time=new Date(e.startTime).toLocaleTimeString('en-US',{timeZone:zone,hour:'numeric',minute:'2-digit'});
-      const w=(key(e.startTime)===key(n)?'Today':key(e.startTime)===key(tomorrow)?'Tomorrow':(['opener','distant-opener'].includes(slot.presentationState)?'Opener ':'')+date)+' · '+time;
+      const w=(easternDateKey(e.startTime)===easternDateKey(n)?'Today':easternDateKey(e.startTime)===easternDateKey(tomorrow)?'Tomorrow':(['opener','distant-opener'].includes(slot.presentationState)?'Opener ':'')+date)+' · '+time;
       if(e.state==='live')return[t+' '+e.teamScore+' · '+o+' '+e.opponentScore,attach((e.statusText||'Live')+(e.clock?' · '+e.clock:'')),summary];
       if(e.state==='final')return[t+' '+e.result+' '+e.teamScore+'–'+e.opponentScore,attach('Final · '+p+' '+o),summary];
       const status=['delayed','postponed','suspended','cancelled'].includes(e.state)?(e.statusText||e.state)+' · ':'',last=slot.lastResult?' · Last '+slot.lastResult.result+' '+slot.lastResult.teamScore+'–'+slot.lastResult.opponentScore:'';return[t+' '+p+' '+o,attach(status+w+last+(slot.dataDelayed?' · Data delayed':'')),summary];
@@ -959,6 +966,8 @@ function browserScript() {
       const now = new Date();
       if (window.updateFirstDayLevel2Transition(now) === 'coda') return;
       applyPalette(now);
+      const todayKey = easternDateKey(now);
+      document.querySelectorAll('.center-day[data-center-date]').forEach(cell => cell.classList.toggle('is-today', cell.dataset.centerDate === todayKey));
       if (clock) clock.textContent = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: zone });
       if (date) date.textContent = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: zone });
       if (countdown?.dataset.targetDate) {
@@ -1233,6 +1242,7 @@ export {
   cleanDisplayText,
   formatCalendarDate,
   conversationalMatchDate,
+  easternDateKey,
   paletteModeForDate,
   horizonEligibility,
   horizonDisplayTitle,
