@@ -54,6 +54,13 @@ function ld(str) {
   return new Date(y, m - 1, d);
 }
 
+function localDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
 /**
  * Returns a Date set to midnight local time for the given Date.
  */
@@ -445,6 +452,10 @@ const EVALUATORS = [
         level: 'amber',
         title: '🟡 Emma Unavailable',
         body: `Emma unavailable ${formatRange(start, end)} (${block.type}) — confirm coverage.`,
+        // This is useful advance-planning context, but not a NOW/NEXT problem
+        // until the day before it begins. A genuinely current coverage action
+        // belongs in Weekly Priorities instead of promoting the future condition.
+        nowNextEligibleFrom: localDateKey(new Date(start.getFullYear(), start.getMonth(), start.getDate() - 1)),
         owner: [],
         persist: false,
       });

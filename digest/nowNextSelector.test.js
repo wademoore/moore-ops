@@ -64,6 +64,34 @@ describe('deterministic NOW/NEXT selection', () => {
     assert.equal(selected.reasonCodes[0], R.ALL_CLEAR);
   });
 
+  it('keeps future conditions out of NOW/NEXT until their declared eligibility date', () => {
+    const futureCondition = {
+      id: 'future-household-condition',
+      level: 'amber',
+      title: '🟡 Household availability changes',
+      body: 'A future household condition needs planning.',
+      nowNextEligibleFrom: '2026-09-10',
+    };
+
+    const distant = selectNowNext(data({
+      now: new Date('2026-08-28T09:00:00-04:00'),
+      flags: [futureCondition],
+    }));
+    assert.equal(distant.reasonCodes[0], R.ALL_CLEAR);
+
+    const dayBefore = selectNowNext(data({
+      now: new Date('2026-09-10T09:00:00-04:00'),
+      flags: [futureCondition],
+    }));
+    assert.equal(dayBefore.reasonCodes[0], R.UNRESOLVED_PROBLEM);
+
+    const inProgress = selectNowNext(data({
+      now: new Date('2026-09-11T09:00:00-04:00'),
+      flags: [futureCondition],
+    }));
+    assert.equal(inProgress.reasonCodes[0], R.UNRESOLVED_PROBLEM);
+  });
+
   it('emits inspectable diagnostics without leaking whole source records', () => {
     const selected = selectNowNext(data({ flags: [{ id: 'pickup', level: 'amber', title: 'Pickup needs coverage', body: 'Confirm coverage' }] }));
     assert.equal(selected.diagnostics.selectedSource.id, 'pickup');
