@@ -748,9 +748,10 @@ export async function main(argv = process.argv.slice(2)) {
   // ── Family calendars, next 14 days ──
   //
   // Per-calendar failures are COLLECTED, not fatal on the spot. One
-  // permanently broken calendar in the map (the WJCC Schools feed is an
-  // imported ICS and does go missing) would otherwise kill every run forever,
-  // and the conflict scan is still worth having from the eight that answered.
+  // permanently broken calendar in the map (the WJCC Schools feed was an
+  // imported ICS that went missing, and has since been removed from
+  // FAMILY_CALENDARS) would otherwise kill every run forever, and the conflict
+  // scan is still worth having from the calendars that did answer.
   //
   // This is not a retreat to silent degradation: the failures are printed to
   // stderr, named in the brief itself, and the process still exits non-zero at
