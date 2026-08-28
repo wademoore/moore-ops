@@ -171,10 +171,11 @@ function eventCandidates(data, now, options = {}) {
 
   for (const event of unique) {
     const when = eventDate(event);
+    const isTimed = Boolean(event?.raw?.start?.dateTime);
     const identity = eventIdentity(event, when);
     const key = dateKey(when);
     const delta = when - now;
-    const operation = operationalTiming(event, when, options);
+    const operation = isTimed ? operationalTiming(event, when, options) : null;
     const text = `${event.title || ''} ${event.subtitle || ''}`;
     const changed = /\b(cancel(?:led|ed)?|reschedul(?:e|ed)|changed?|new (?:time|location)|unavailable|moved)\b/i.test(text);
 
@@ -187,10 +188,10 @@ function eventCandidates(data, now, options = {}) {
 
     const departureDelta = operation?.departure ? operation.departure - now : null;
     const deadlineDelta = operation?.deadline ? operation.deadline - now : null;
-    const operationallyImminent = key === todayKey && operation && (
+    const operationallyImminent = isTimed && key === todayKey && operation && (
       departureDelta != null ? departureDelta >= 0 && departureDelta <= 90 * MINUTE : deadlineDelta >= 0 && deadlineDelta <= 90 * MINUTE
     );
-    if (operationallyImminent || (key === todayKey && !operation && delta >= 0 && delta <= 90 * MINUTE)) {
+    if (operationallyImminent || (isTimed && key === todayKey && !operation && delta >= 0 && delta <= 90 * MINUTE)) {
       const leave = /\b(practice|game|meet|appointment|camp|school|flight|train|depart|drop[ -]?off|pickup)\b/i.test(text);
       const actionDelta = departureDelta ?? delta;
       const minutes = Math.max(0, Math.round(actionDelta / MINUTE));
@@ -205,7 +206,8 @@ function eventCandidates(data, now, options = {}) {
     }
 
     const morningDelta = operation?.departure ? operation.departure - now : operation?.deadline ? operation.deadline - now : delta;
-    const significantThisMorning = key === todayKey
+    const significantThisMorning = isTimed
+      && key === todayKey
       && easternHour(when) < 12
       && morningDelta > 90 * MINUTE
       && morningDelta <= 4 * HOUR
@@ -217,7 +219,7 @@ function eventCandidates(data, now, options = {}) {
       }));
     }
 
-    if (key === tomorrowKey && easternHour(when) < 12) {
+    if (isTimed && key === tomorrowKey && easternHour(when) < 12) {
       result.push(candidate(REASON.TOMORROW_MORNING, {
         signal: 'Tomorrow morning', subject: subjectFor(event), context: operation ? [operation.context] : eventContext(when, event.subtitle),
         sourceType: 'event', ...identity, sortTime: when.getTime(),
@@ -230,7 +232,7 @@ function eventCandidates(data, now, options = {}) {
       }
     }
 
-    if (delta > 90 * MINUTE && delta <= 48 * HOUR && !changed) {
+    if (isTimed && delta > 90 * MINUTE && delta <= 48 * HOUR && !changed) {
       result.push(candidate(REASON.THEN_LATER, {
         signal: key === todayKey ? 'Later today' : 'Then', subject: subjectFor(event), context: operation ? [operation.context] : eventContext(when, event.subtitle),
         sourceType: 'event', ...identity, sortTime: when.getTime(),
