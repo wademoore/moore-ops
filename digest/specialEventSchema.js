@@ -202,14 +202,6 @@ const REASON = Object.freeze({
 // ── Forbidden qualification inputs ───────────────────────────────────────
 
 /**
- * Patterns that must never appear anywhere inside a `qualification` section.
- *
- * These are the four input classes the architecture forbids outright: season
- * flags, card counts, rendered display text, and moving projections. Matching
- * is done against the serialized qualification subtree, so a forbidden name
- * cannot hide inside a nested compound node.
- */
-/**
  * Patterns matched against qualification **field names**, never against values.
  *
  * The four forbidden input classes are all *state-derived keys*: season flags,
