@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildSportsSnapshot, eventRelevance, normalizeState, selectSportsSlots, validateSportsSnapshot } from '../sports/model.js';
+import { buildSportsSnapshot, eventRelevance, normalizeState, selectSportsSlots, TEAM_CONFIG, validateSportsSnapshot } from '../sports/model.js';
 import { normalizeEspnEvent, normalizeEspnStanding } from '../sports/providers/espn.js';
 import { normalizeMlbGame } from '../sports/providers/mlb.js';
 const NOW = new Date('2026-08-14T16:00:00Z');
@@ -24,6 +24,14 @@ test('opener requires a sourced date inside 21 days',()=>{
 test('five feeds become four organizational slots and W&M sports compete',()=>{
   const slots=selectSportsSlots([feed('wf','wm','football',[event('wm','football','scheduled',120)]),feed('wb','wm','basketball',[event('wm','basketball','live',0)]),feed('tf','tennessee','football',[]),feed('cf','commanders','football',[]),feed('nb','nationals','baseball',[])] ,{now:NOW});
   assert.equal(slots.length,4);assert.equal(slots[0].organization,'wm');assert.equal(slots[0].event.sport,'basketball');
+});
+test('W&M conference metadata is sport-specific for 2026',()=>{
+  const football=TEAM_CONFIG.wm.feeds.find(feed=>feed.id==='wm-football');
+  const basketball=TEAM_CONFIG.wm.feeds.find(feed=>feed.id==='wm-basketball');
+  assert.equal(football.conference,'Patriot');
+  assert.equal(football.standingsGroup,'81');
+  assert.equal(basketball.conference,'CAA');
+  assert.equal(basketball.standingsGroup,'10');
 });
 test('live Nationals temporarily lead while remaining organizations keep affinity order',()=>{
   const slots=selectSportsSlots([feed('wf','wm','football',[event('wm','football','scheduled',48)]),feed('wb','wm','basketball',[]),feed('tf','tennessee','football',[]),feed('cf','commanders','football',[]),feed('nb','nationals','baseball',[event('nationals','baseball','live',0)])],{now:NOW});
@@ -182,8 +190,10 @@ test('college overall and conference records remain distinct',()=>{const raw=esp
 test('college conference position comes only from a standings rank field',()=>{const raw={children:[{name:'CAA',standings:{entries:[{team:{id:'2729'},stats:[{name:'rank',value:2}]}]}}]};assert.equal(normalizeEspnStanding(raw,'2729'),'2nd CAA')});
 test('tied conference position is retained only when the source marks the rank tied',()=>{const raw={children:[{name:'CAA',standings:{entries:[{team:{id:'2729'},stats:[{name:'rank',value:2,isTied:true}]}]}}]};assert.equal(normalizeEspnStanding(raw,'2729'),'T-2nd CAA')});
 test('W&M football and basketball metadata switch with the selected feed',()=>{
-  const football=feed('wf','wm','football',[event('wm','football','scheduled',48,{records:{overall:'1-0',conference:'0-0'}})],false,{records:{overall:'1-0',conference:'0-0'},standing:'3rd CAA'}),basketball=feed('wb','wm','basketball',[event('wm','basketball','live',0,{records:{overall:'10-2',conference:'2-0'}})],false,{records:{overall:'10-2',conference:'2-0'},standing:'1st CAA'});
-  const slot=selectSportsSlots([football,basketball],{now:NOW}).find(s=>s.organization==='wm');assert.equal(slot.event.sport,'basketball');assert.equal(slot.records.overall,'10-2');assert.equal(slot.standing,'1st CAA');
+  const football=feed('wf','wm','football',[event('wm','football','scheduled',48,{records:{overall:'1-0',conference:'0-0'}})],false,{records:{overall:'1-0',conference:'0-0'},conference:'Patriot',standing:'3rd Patriot'}),basketball=feed('wb','wm','basketball',[event('wm','basketball','live',0,{records:{overall:'10-2',conference:'2-0'}})],false,{records:{overall:'10-2',conference:'2-0'},conference:'CAA',standing:'1st CAA'});
+  let slot=selectSportsSlots([football,basketball],{now:NOW}).find(s=>s.organization==='wm');assert.equal(slot.event.sport,'basketball');assert.equal(slot.records.overall,'10-2');assert.equal(slot.conference,'CAA');assert.equal(slot.standing,'1st CAA');
+  basketball.events=[];
+  slot=selectSportsSlots([football,basketball],{now:NOW}).find(s=>s.organization==='wm');assert.equal(slot.event.sport,'football');assert.equal(slot.conference,'Patriot');assert.equal(slot.standing,'3rd Patriot');
 });
 test('stale standings are dropped independently of fresh event and record data',()=>{
   const staleAt=new Date(+NOW-25*3600000).toISOString(),slot=selectSportsSlots([feed('wf','wm','football',[event('wm','football','scheduled',24)],false,{record:'1-0',records:{overall:'1-0'},standing:'2nd CAA',standingsFetchedAt:staleAt})],{now:NOW}).find(s=>s.organization==='wm');assert.ok(slot.event);assert.equal(slot.record,'1-0');assert.equal(slot.standing,null);

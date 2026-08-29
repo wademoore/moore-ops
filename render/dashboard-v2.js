@@ -74,8 +74,8 @@ const V2_LOGOS = {
   nationals: optionalAssetDataUrl('logo-nationals.png'),
   commanders: optionalAssetDataUrl('logo-commanders.png'),
   tennessee: optionalAssetDataUrl('logo-tennessee.png'),
-  tribe: optionalAssetDataUrl('logo-tribe.svg'),
-  wm: optionalAssetDataUrl('logo-tribe.svg'),
+  tribe: optionalAssetDataUrl('logo-wm.webp'),
+  wm: optionalAssetDataUrl('logo-wm.webp'),
 };
 
 function esc(value) {
