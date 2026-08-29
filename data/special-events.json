@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 2,
+  "note": "Dashboard v2 special-event registry. Every treatment is additionally gated by the FAMILY_SPOTLIGHT_ENABLED kill switch, which is off by default at every layer. Migrated from data/family-spotlight.json, which is retained byte-unchanged in the repository as the independent compatibility oracle for that migration and is no longer read at runtime.",
+  "treatments": [
+    {
+      "id": "big-sports-saturday-2026-09-12",
+      "date": "2026-09-12",
+      "level": "spotlight",
+      "surface": "feature-slot",
+      "audience": "children",
+      "status": "ready",
+      "enabled": true,
+      "priority": 200,
+      "exclusiveGroup": null,
+      "qualification": {
+        "note": "`any`, not `all`: each child is independently meaningful, so the treatment still qualifies when one participating occurrence holds and the other does not — the surviving child renders alone and the failed one drops. That is the shipped behaviour this entry must preserve. A compound whose point is the combination itself (two children on one date) belongs under `all` or `exactly` instead.",
+        "any": [
+          {
+            "type": "calendarOccurrence",
+            "id": "ophelia-kickoff",
+            "calendar": "Ophelia",
+            "titleMatch": { "mode": "prefix", "value": "757swim Kick-Off Party" },
+            "expectedDate": "2026-09-12",
+            "expectedTime": "12:30",
+            "kind": "timed"
+          },
+          {
+            "type": "calendarOccurrence",
+            "id": "myles-opener",
+            "calendar": "Myles",
+            "titleMatch": { "mode": "prefix", "value": "Sharks vs VIP United" },
+            "expectedDate": "2026-09-12",
+            "expectedTime": "13:15",
+            "kind": "timed"
+          },
+          {
+            "type": "sportsFixture",
+            "id": "myles-fixture",
+            "source": "sharks",
+            "matchNumber": 641,
+            "expectedDate": "2026-09-12",
+            "expectedTime": "13:15",
+            "boundTo": "myles-opener"
+          }
+        ]
+      },
+      "lifecycle": {
+        "activateAt": "2026-09-11T16:00",
+        "expireAt": "2026-09-12T17:00",
+        "inclusionLeadMs": 172800000
+      },
+      "presentation": {
+        "renderer": "spotlight-children-v1",
+        "headline": "BIG SPORTS SATURDAY!",
+        "children": [
+          {
+            "owner": "Ophelia",
+            "label": "OPHELIA",
+            "title": "757SWIM KICK-OFF",
+            "logo": "swim757",
+            "ref": "ophelia-kickoff",
+            "detail": {
+              "line": "Team pic 12:30 · Intrasquad 1:00",
+              "note": "Authored literal. The 12:30 team picture and 1:00 intrasquad meet exist only as prose inside one 12:30-4:30 PM calendar event, so there is nothing structured to derive. The literal is anchored to the data by the ophelia-kickoff node's expectedTime: if the event moves, the child fails closed rather than showing a stale time."
+            }
+          },
+          {
+            "owner": "Myles",
+            "label": "MYLES",
+            "title": "SHARKS SEASON OPENER",
+            "logo": "sharks",
+            "ref": "myles-opener",
+            "detail": {
+              "source": "sharksFixture",
+              "fixtureRef": "myles-fixture",
+              "opponentLabel": "VIP United",
+              "venueLabel": "Blayton",
+              "note": "Joined to data/sharks-soccer.json on the stable matchNumber, never on athletics.sharksNextGame — that pointer advances as soon as the match is marked played and would invalidate this child mid-treatment. opponentLabel and venueLabel are display shortenings and are honoured only while they remain truthful substrings of the authoritative row values."
+            }
+          }
+        ]
+      },
+      "assets": { "logos": ["swim757", "sharks"] },
+      "fallback": { "onFailure": "ordinary" },
+      "provenance": {
+        "source": "data/family-spotlight.json (pre-migration), Ophelia and Myles calendars, data/sharks-soccer.json match 641",
+        "migratedOn": "2026-08-29"
+      },
+      "note": "First reusable Family Spotlight, and the legacy compatibility fixture for the generalized framework. Both children qualify from their exact calendar occurrences, never from season flags — the 2026-27 swim757 window in sports-config.json is stale and swim757Active is false on this date, which is deliberately irrelevant here. expireAt is 5:00 PM ET: the Ophelia event runs 12:30-4:30 PM (team picture, intrasquad meet, then the Kick-Off Party), and the full event participates, so expiry is 30 minutes after the latest participating end. inclusionLeadMs is pinned at 48h rather than inheriting the 72h spotlight default, so this entry's inclusion boundary is unchanged by the migration."
+    }
+  ]
+}
