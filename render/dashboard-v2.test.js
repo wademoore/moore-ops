@@ -21,7 +21,7 @@ import {
   V2_LOGOS,
 } from './dashboard-v2.js';
 import { readFileSync } from 'node:fs';
-import { familySpotlightSampleData, sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
+import { familySpotlightSampleData, sampleDashboardV2Data, specialEventsSampleData } from './dashboard-v2.sample-data.js';
 
 describe('approved NOW/NEXT rendering contract', () => {
   for (const state of [
@@ -626,9 +626,13 @@ describe('television readability and horizon policies', () => {
 });
 
 describe('family spotlight — in-panel treatment', () => {
+  // Driven by the generalized registry. Every assertion below is the one that
+  // shipped against the legacy Family Spotlight config; only the source of the
+  // treatment changed, which is the point.
+  const REGISTRY = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
   const CONFIG = JSON.parse(readFileSync(new URL('../data/family-spotlight.json', import.meta.url), 'utf8'));
   const SHARKS = JSON.parse(readFileSync(new URL('../data/sharks-soccer.json', import.meta.url), 'utf8'));
-  const spotlight = now => familySpotlightSampleData({ now, familySpotlightConfig: CONFIG, sharksSoccerData: SHARKS });
+  const spotlight = now => specialEventsSampleData({ now, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS });
   const ordinaryBaseline = () => renderDashboardV2({ ...spotlight('2026-09-11T17:00:00-04:00'), familySpotlight: false });
 
   it('replaces the Athletics title band with the approved eyebrow and headline', () => {
@@ -683,12 +687,18 @@ describe('family spotlight — in-panel treatment', () => {
     assert.ok((html.match(/onerror="this\.remove\(\)"/g) || []).length >= 2);
   });
 
-  it('falls back to the semantic mark, retaining all text, when a logo asset is absent', () => {
-    const config = structuredClone(CONFIG);
-    for (const child of config.spotlights[0].children) child.logo = 'not-a-packaged-asset';
-    const html = renderDashboardV2({
-      ...familySpotlightSampleData({ now: '2026-09-11T17:00:00-04:00', familySpotlightConfig: config, sharksSoccerData: SHARKS }),
-    });
+  it('falls back to the semantic mark, retaining all text, when a logo resolves to nothing', () => {
+    // spotlightMark() layers the official logo over the semantic mark, so a
+    // logo that resolves to nothing must reveal the fallback and lose no text.
+    // Under the registry an *unknown* key can no longer reach the renderer at
+    // all — it fails the entry closed at load, which is asserted separately in
+    // digest/specialEventSelector.test.js. A child that declares no logo is
+    // the remaining route to the same renderer branch.
+    const config = structuredClone(REGISTRY);
+    for (const child of config.treatments[0].presentation.children) child.logo = '';
+    const html = renderDashboardV2(
+      specialEventsSampleData({ now: '2026-09-11T17:00:00-04:00', specialEventsConfig: config, sharksSoccerData: SHARKS }),
+    );
     const marks = html.match(/class="spotlight-mark semantic-icon category-sports"/g) || [];
     assert.equal(marks.length, 2, 'fallback-only marks render');
     assert.doesNotMatch(html, /class="spotlight-mark semantic-icon category-sports activity-visual"/);
@@ -720,5 +730,94 @@ describe('family spotlight — in-panel treatment', () => {
     const controller = html.slice(html.indexOf('const spotlightPanel'), html.indexOf('const fit ='));
     assert.doesNotMatch(controller, /fetch\(|XMLHttpRequest|location\.replace|setInterval/);
     assert.match(controller, /clearTimeout\(spotlightTimer\)/);
+  });
+});
+
+describe('special-event migration — byte equality with the legacy Family Spotlight', () => {
+  const REGISTRY = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
+  const SHARKS = JSON.parse(readFileSync(new URL('../data/sharks-soccer.json', import.meta.url), 'utf8'));
+  const SPORTS = 'https://example.lambda-url.us-east-2.on.aws/';
+
+  /**
+   * Athletics panels rendered by the *pre-migration* tree, through the legacy
+   * Family Spotlight selector, with embedded asset data URLs elided.
+   *
+   * Generated once from the commit before the wiring and committed verbatim.
+   * Nothing regenerates it, so it cannot drift into agreement with the code it
+   * checks — the same reason data/family-spotlight.json is kept frozen.
+   */
+  const LEGACY_PANELS = JSON.parse(readFileSync(new URL('../test/fixtures/legacy-athletics-panels.json', import.meta.url), 'utf8'));
+
+  const STATES = {
+    staged: '2026-09-10T12:00:00-04:00',
+    'friday-active': '2026-09-11T17:00:00-04:00',
+    'saturday-today': '2026-09-12T10:00:00-04:00',
+    'saturday-live': '2026-09-12T13:00:00-04:00',
+    expired: '2026-09-12T17:00:00-04:00',
+  };
+
+  const render = (now, overrides = {}) => renderDashboardV2({
+    ...specialEventsSampleData({ now, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS }),
+    now: new Date(now),
+    sportsFeedUrl: SPORTS,
+    ...overrides,
+  });
+
+  const panelOf = html => {
+    const start = html.indexOf('<section class="paper-panel athletics-panel');
+    const alerts = html.indexOf('<section class="alerts-panel');
+    const close = html.lastIndexOf('</section>', alerts) + '</section>'.length;
+    return html.slice(start, close).replace(/src="data:[^"]*"/g, 'src="<asset>"');
+  };
+
+  for (const [name, now] of Object.entries(STATES)) {
+    it(`reproduces the legacy Athletics panel byte-for-byte in the ${name} state`, () => {
+      assert.equal(panelOf(render(now)), LEGACY_PANELS[name]);
+    });
+
+    it(`reproduces the legacy ordinary Athletics panel in the ${name} state with the switch off`, () => {
+      assert.equal(panelOf(render(now, { familySpotlight: false })), LEGACY_PANELS[`${name}-off`]);
+    });
+  }
+
+  it('is not a vacuous comparison — the Spotlight states really differ from ordinary', () => {
+    assert.notEqual(LEGACY_PANELS.staged, LEGACY_PANELS['staged-off'], 'a staged Spotlight ships in the artifact');
+    assert.notEqual(LEGACY_PANELS['friday-active'], LEGACY_PANELS['friday-active-off']);
+    assert.ok(LEGACY_PANELS['friday-active'].includes('data-spotlight-id'));
+    assert.ok(!LEGACY_PANELS['friday-active-off'].includes('data-spotlight-id'));
+    assert.equal(LEGACY_PANELS.expired, LEGACY_PANELS['expired-off'], 'an expired entry renders ordinary');
+  });
+
+  it('carries the legacy lifecycle instants unchanged into the rendered attributes', () => {
+    const panel = panelOf(render(STATES['friday-active']));
+    assert.ok(panel.includes(`data-spotlight-activate-at="${Date.parse('2026-09-11T20:00:00Z')}"`));
+    assert.ok(panel.includes(`data-spotlight-midnight-at="${Date.parse('2026-09-12T04:00:00Z')}"`));
+    assert.ok(panel.includes(`data-spotlight-expire-at="${Date.parse('2026-09-12T21:00:00Z')}"`));
+  });
+
+  it('renders a byte-identical ordinary Dashboard v2 whether or not a registry is present', () => {
+    const pinned = new Date('2026-09-10T12:00:00-04:00');
+    const without = renderDashboardV2({ ...sampleDashboardV2Data, now: pinned, sportsFeedUrl: SPORTS });
+    const with_ = renderDashboardV2({ ...sampleDashboardV2Data, now: pinned, sportsFeedUrl: SPORTS, specialEventsConfig: REGISTRY });
+    assert.equal(with_, without, 'a registry present but disabled must change nothing');
+  });
+
+  it('leaves athleticsCardCount and the panel classes untouched across the whole flag matrix', () => {
+    for (const flags of [
+      { flagFootballActive: false, wavesActive: false, swim757Active: false, sharksActive: true },
+      { flagFootballActive: true, wavesActive: false, swim757Active: false, sharksActive: true },
+      { flagFootballActive: false, wavesActive: true, swim757Active: false, sharksActive: false },
+      { flagFootballActive: false, wavesActive: false, swim757Active: true, sharksActive: false },
+      { flagFootballActive: false, wavesActive: false, swim757Active: false, sharksActive: false },
+    ]) {
+      const base = specialEventsSampleData({ now: STATES['friday-active'], specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS });
+      const data = { ...base, now: new Date(STATES['friday-active']), sportsFeedUrl: SPORTS, athletics: { ...base.athletics, ...flags } };
+      const on = renderDashboardV2(data);
+      const off = renderDashboardV2({ ...data, familySpotlight: false });
+      const count = html => html.match(/athletics-panel card-count-(\d+)/)[1];
+      const shape = html => html.match(/class="dashboard[^"]*(athletics-one|athletics-multi)/)[1];
+      assert.equal(count(on), count(off), `card count moved for ${JSON.stringify(flags)}`);
+      assert.equal(shape(on), shape(off), `panel shape moved for ${JSON.stringify(flags)}`);
+    }
   });
 });

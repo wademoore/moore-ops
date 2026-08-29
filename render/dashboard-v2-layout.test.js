@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import { renderDashboardV2 } from './dashboard-v2.js';
 import { readFileSync } from 'node:fs';
-import { familySpotlightSampleData, sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
+import { sampleDashboardV2Data, specialEventsSampleData } from './dashboard-v2.sample-data.js';
 import { resolveBrowserPath } from '../scripts/render-dashboard-v2-png.mjs';
 
 let browser;
@@ -114,9 +114,9 @@ describe('dashboard v2 2560x1440 layout verification', () => {
 });
 
 describe('family spotlight 2560x1440 footprint and readability', () => {
-  const CONFIG = JSON.parse(readFileSync(new URL('../data/family-spotlight.json', import.meta.url), 'utf8'));
+  const REGISTRY = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
   const SHARKS = JSON.parse(readFileSync(new URL('../data/sharks-soccer.json', import.meta.url), 'utf8'));
-  const spotlight = now => familySpotlightSampleData({ now, familySpotlightConfig: CONFIG, sharksSoccerData: SHARKS });
+  const spotlight = now => specialEventsSampleData({ now, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS });
 
   const FRIDAY = '2026-09-11T17:00:00-04:00';
   const SATURDAY = '2026-09-12T09:00:00-04:00';

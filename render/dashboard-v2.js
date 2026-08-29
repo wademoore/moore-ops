@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { formatSportsEventWhen } from '../sports/model.js';
 import { renderFirstDayLevel3, shouldRenderFirstDayLevel3 } from './first-day-level3.js';
-import { selectFamilySpotlight } from '../digest/familySpotlightSelector.js';
+import { selectFeatureSlotSpotlight } from '../digest/specialEventSelector.js';
 
 /**
  * Canonical Moore Family Dashboard v2 renderer.
@@ -656,11 +656,13 @@ function renderAthletics(data) {
     <i class="athletics-arrows" aria-hidden="true"></i>
     <div class="athletics-grid${marker} count-${cards.length}">${cards.join('') || '<div class="empty-state">Athletics are between seasons.</div>'}</div>`;
 
-  // Family Spotlight replaces only the panel's contents. athleticsCardCount()
-  // is deliberately untouched, so `.athletics-one` / `.athletics-multi` and the
-  // 26% / 40% panel heights resolve exactly as they would with no Spotlight.
+  // A feature-slot Spotlight replaces only the panel's contents.
+  // athleticsCardCount() is deliberately untouched, so `.athletics-one` /
+  // `.athletics-multi` and the 26% / 40% panel heights resolve exactly as they
+  // would with no Spotlight. The Athletics panel *is* the feature slot; its
+  // ordinary occupant is Athletics and its geometry never varies.
   let spotlight = null;
-  try { spotlight = selectFamilySpotlight(data, { now: data.now }); }
+  try { spotlight = selectFeatureSlotSpotlight(data, { now: data.now }); }
   catch { spotlight = null; }
 
   if (!spotlight) {

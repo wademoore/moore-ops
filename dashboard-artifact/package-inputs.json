@@ -8,11 +8,15 @@
     "sports-config.json", "flag-football.json", "pb-records.json",
     "swim-results.json", "waves-season.json", "sharks-soccer.json",
     "vpsu-rankings.json", "league-results-v2.json", "swim-annotations.json",
-    "family-spotlight.json"
+    "special-events.json"
   ],
   "requiredBundleInputs": [
     "dashboard-artifact/generator.js", "dashboard-v2-data.js", "auth.js", "calendar.js",
     "digest/builder.js", "digest/emmaUnavailabilityParser.js",
-    "digest/flags.js", "render/dashboard-v2.js", "render/first-day-level3.js"
+    "digest/flags.js", "render/dashboard-v2.js", "render/first-day-level3.js",
+    "digest/specialEventSchema.js", "digest/specialEventOccurrences.js",
+    "digest/specialEventQualify.js", "digest/specialEventLifecycle.js",
+    "digest/specialEventArbiter.js", "digest/specialEventSelector.js",
+    "digest/legacySpotlightCompat.js"
   ]
 }

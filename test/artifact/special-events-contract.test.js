@@ -1,31 +1,21 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { SPOTLIGHT_TIME_ATTRIBUTES, validateArtifact } from '../../dashboard-artifact/contract.js';
+import { TREATMENT_TIME_ATTRIBUTES, validateArtifact } from '../../dashboard-artifact/contract.js';
 import { generateAndPublish } from '../../dashboard-artifact/generator.js';
 import { renderDashboardV2 } from '../../render/dashboard-v2.js';
-import { familySpotlightSampleData, sampleDashboardV2Data } from '../../render/dashboard-v2.sample-data.js';
-import { selectFamilySpotlight } from '../../digest/familySpotlightSelector.js';
-import { toLegacyFamilySpotlightConfig } from '../../digest/legacySpotlightCompat.js';
+import { sampleDashboardV2Data, specialEventsSampleData } from '../../render/dashboard-v2.sample-data.js';
 
 const SPORTS = 'https://example.lambda-url.us-east-2.on.aws/';
 const readJson = name => JSON.parse(readFileSync(new URL(`../../data/${name}`, import.meta.url), 'utf8'));
-const CONFIG = readJson('family-spotlight.json');
 const REGISTRY = readJson('special-events.json');
 const SHARKS = readJson('sharks-soccer.json');
-
-/** Drops free-text `note` fields, which the registry projection omits. */
-const stripNotes = value => (Array.isArray(value) ? value.map(stripNotes)
-  : value && typeof value === 'object'
-    ? Object.fromEntries(Object.entries(value).filter(([k]) => k !== 'note').map(([k, v]) => [k, stripNotes(v)]))
-    : value);
 
 const FRIDAY_ACTIVE = '2026-09-11T17:00:00-04:00';
 
 function spotlightData(now) {
   return {
-    ...familySpotlightSampleData({ now, familySpotlightConfig: CONFIG, sharksSoccerData: SHARKS }),
-    specialEventsConfig: REGISTRY,
+    ...specialEventsSampleData({ now, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS }),
     sportsFeedUrl: SPORTS,
   };
 }
@@ -42,7 +32,7 @@ test('spotlight artifact carries both presentations and valid absolute instants'
   const html = renderDashboardV2(spotlightData(FRIDAY_ACTIVE));
   assert.ok(html.includes('data-spotlight-id="big-sports-saturday-2026-09-12"'));
   assert.ok(html.includes('spotlight-ordinary'), 'ordinary Athletics fallback must ship in the same artifact');
-  for (const attribute of SPOTLIGHT_TIME_ATTRIBUTES) {
+  for (const attribute of TREATMENT_TIME_ATTRIBUTES) {
     const match = new RegExp(`${attribute}="(\\d+)"`).exec(html);
     assert.ok(match, `missing ${attribute}`);
     assert.ok(Number.isFinite(Number(match[1])));
@@ -136,7 +126,7 @@ test('the kill switch defaults off in the generator', async () => {
   try {
     await generateAndPublish({
       now: new Date(FRIDAY_ACTIVE), bucket: 'private', sportsFeedUrl: SPORTS, sourceRevision: 'spotlight-off',
-      fetchData: async () => ({ ...familySpotlightSampleData({ now: FRIDAY_ACTIVE, familySpotlightConfig: CONFIG, sharksSoccerData: SHARKS }), specialEventsConfig: REGISTRY }),
+      fetchData: async () => specialEventsSampleData({ now: FRIDAY_ACTIVE, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS }),
       putObject: async input => { puts.push(input); return { VersionId: `version-${puts.length}` }; },
     });
   } finally {
@@ -151,7 +141,7 @@ test('the generator publishes the spotlight when explicitly enabled', async () =
   const manifest = await generateAndPublish({
     now: new Date(FRIDAY_ACTIVE), bucket: 'private', sportsFeedUrl: SPORTS, sourceRevision: 'spotlight-on',
     familySpotlightEnabled: true,
-    fetchData: async () => ({ ...familySpotlightSampleData({ now: FRIDAY_ACTIVE, familySpotlightConfig: CONFIG, sharksSoccerData: SHARKS }), specialEventsConfig: REGISTRY }),
+    fetchData: async () => specialEventsSampleData({ now: FRIDAY_ACTIVE, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS }),
     putObject: async input => { puts.push(input); return { VersionId: `version-${puts.length}` }; },
   });
   assert.equal(puts.length, 2);
@@ -159,46 +149,53 @@ test('the generator publishes the spotlight when explicitly enabled', async () =
   assert.equal(manifest.runtime.browserOrigin, 'http://127.0.0.1:4173');
 });
 
-// ── Oracle binding ───────────────────────────────────────────────────────
-//
-// This file is one of four independent compatibility oracles held until P5:
-// the frozen data/family-spotlight.json, digest/familySpotlightSelector.js,
-// its own test suite, and this artifact-contract suite. The assertions above
-// run against an artifact the *registry* produced, so these three bind that
-// artifact back to the frozen pair. If the registry ever drifts from the
-// pre-migration configuration, or the legacy selector stops agreeing with it,
-// this file goes red rather than quietly validating a different treatment.
+// ── Generalized-framework assertions ─────────────────────────────────────
 
-test('the registry still projects exactly onto the frozen legacy configuration', () => {
-  assert.deepEqual(stripNotes(toLegacyFamilySpotlightConfig(REGISTRY)), stripNotes(CONFIG));
+test('the contract rejects an artifact carrying two spotlights', () => {
+  const html = renderDashboardV2(spotlightData(FRIDAY_ACTIVE));
+  const doubled = html.replace(
+    '<div class="spotlight children-2"',
+    '<div class="spotlight children-2" data-spotlight-id="intruder"><div class="spotlight children-2"',
+  );
+  assert.notEqual(doubled, html, 'the spotlight block must be present to duplicate');
+  assert.throws(() => validateArtifact(doubled, { sportsFeedUrl: SPORTS }), /more than one spotlight/);
 });
 
-test('the legacy selector and the frozen config still describe the rendered artifact', () => {
-  const legacy = selectFamilySpotlight(
-    familySpotlightSampleData({ now: FRIDAY_ACTIVE, familySpotlightConfig: CONFIG, sharksSoccerData: SHARKS }),
-    { now: new Date(FRIDAY_ACTIVE) },
-  );
-  assert.ok(legacy, 'the legacy selector must still resolve the frozen configuration');
-
+test('the contract rejects an artifact carrying two dashboard modes', () => {
   const html = renderDashboardV2(spotlightData(FRIDAY_ACTIVE));
-  assert.ok(html.includes(`data-spotlight-id="${legacy.id}"`));
-  assert.ok(html.includes(`data-spotlight-activate-at="${legacy.activateAt}"`));
-  assert.ok(html.includes(`data-spotlight-midnight-at="${legacy.midnightAt}"`));
-  assert.ok(html.includes(`data-spotlight-expire-at="${legacy.expireAt}"`));
-  assert.ok(html.includes(`spotlight-headline">${legacy.headline}<`));
-  for (const child of legacy.children) {
-    assert.ok(html.includes(`spotlight-name">${child.label}<`), `missing ${child.label}`);
-    assert.ok(html.includes(`spotlight-title">${child.title}<`), `missing ${child.title}`);
-    assert.ok(html.includes(child.detailLine), `missing ${child.detailLine}`);
-    assert.ok(html.includes(`spotlight-child tone-${child.tone}`), `missing tone ${child.tone}`);
+  const doubled = html.replace('<main class="dashboard', '<main data-dashboard-mode="a" data-dashboard-mode="b" class="dashboard');
+  assert.throws(() => validateArtifact(doubled, { sportsFeedUrl: SPORTS }), /more than one dashboard mode/);
+});
+
+test('the ordinary artifact is unaffected by the new count assertions', () => {
+  const html = renderDashboardV2({ ...sampleDashboardV2Data, sportsFeedUrl: SPORTS });
+  assert.doesNotThrow(() => validateArtifact(html, { sportsFeedUrl: SPORTS }));
+  assert.equal((html.match(/data-spotlight-id="/g) || []).length, 0);
+  assert.equal((html.match(/data-dashboard-mode="/g) || []).length, 0);
+});
+
+test('the treatment time attributes are the shipped spotlight attributes, unrenamed', () => {
+  assert.deepEqual([...TREATMENT_TIME_ATTRIBUTES], [
+    'data-spotlight-activate-at', 'data-spotlight-midnight-at', 'data-spotlight-expire-at',
+  ]);
+});
+
+test('a draft or disabled registry entry publishes an ordinary artifact', () => {
+  for (const [field, value] of [['status', 'draft'], ['status', 'retired'], ['enabled', false]]) {
+    const config = JSON.parse(JSON.stringify(REGISTRY));
+    config.treatments[0][field] = value;
+    const data = { ...spotlightData(FRIDAY_ACTIVE), specialEventsConfig: config };
+    const html = renderDashboardV2(data);
+    assert.ok(!html.includes('data-spotlight-id'), `${field}=${value} must not publish a spotlight`);
+    assert.doesNotThrow(() => validateArtifact(html, { sportsFeedUrl: SPORTS }));
   }
 });
 
-test('the frozen configuration is unreachable from the runtime path', () => {
-  // Supplying only the legacy key must produce ordinary Athletics: the
-  // renderer resolves from specialEventsConfig and nothing else.
-  const legacyOnly = { ...spotlightData(FRIDAY_ACTIVE), specialEventsConfig: undefined };
-  const html = renderDashboardV2(legacyOnly);
-  assert.ok(!html.includes('data-spotlight-id'), 'familySpotlightConfig must not be a live registry source');
-  assert.doesNotThrow(() => validateArtifact(html, { sportsFeedUrl: SPORTS }));
+test('a malformed registry publishes an ordinary artifact rather than failing the build', () => {
+  for (const config of [null, {}, { schemaVersion: 1, treatments: [] }, { schemaVersion: 2, treatments: [{ id: 'junk' }] }]) {
+    const data = { ...spotlightData(FRIDAY_ACTIVE), specialEventsConfig: config };
+    const html = renderDashboardV2(data);
+    assert.ok(!html.includes('data-spotlight-id'));
+    assert.doesNotThrow(() => validateArtifact(html, { sportsFeedUrl: SPORTS }));
+  }
 });

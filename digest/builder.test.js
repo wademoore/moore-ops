@@ -300,6 +300,41 @@ assert(Array.isArray(dig.upcomingEvents),             'upcomingEvents is array')
 assert(typeof dig.athletics === 'object',            'athletics is object');
 assert(Array.isArray(dig.activityComms),             'activityComms is array');
 assert(dig.nationalsData === null,                   'nationalsData null (set by index.js)');
+
+// Additive Dashboard v2 special-event inputs. SPORTS_PARAMS injects neither,
+// so these prove buildDigest still loads them from disk — the failure mode the
+// packaging test exists to prevent, observed from the builder's own side.
+assert(dig.specialEventsConfig && dig.specialEventsConfig.schemaVersion === 2,
+                                                     'specialEventsConfig loaded from data/special-events.json');
+assert(Array.isArray(dig.specialEventsConfig.treatments),
+                                                     'specialEventsConfig carries a treatments array');
+assert(dig.sharksSoccerData && Array.isArray(dig.sharksSoccerData.seasons),
+                                                     'sharksSoccerData surfaced for fixture joins');
+assert('familySpotlightConfig' in dig,                'familySpotlightConfig retained for the migration window');
+assert(dig.familySpotlightConfig && Array.isArray(dig.familySpotlightConfig.spotlights),
+                                                     'familySpotlightConfig carries a spotlights array');
+assert(dig.familySpotlightConfig.spotlights.length === dig.specialEventsConfig.treatments.length,
+                                                     'the compatibility key projects the same registry, not a second source');
+assert(dig.familySpotlightConfig.spotlights[0].id === dig.specialEventsConfig.treatments[0].id,
+                                                     'the compatibility key is derived from special-events.json');
+
+const digInjectedRegistry = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, banner: null,
+  ...SPORTS_PARAMS,
+  specialEventsData: { schemaVersion: 2, treatments: [] },
+});
+assert(digInjectedRegistry.specialEventsConfig.treatments.length === 0,
+                                                     'an injected registry is respected over the disk read');
+assert(digInjectedRegistry.familySpotlightConfig.spotlights.length === 0,
+                                                     'the compatibility key follows the injected registry, never the frozen oracle');
+
+const digNullRegistry = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, banner: null,
+  ...SPORTS_PARAMS,
+  specialEventsData: null,
+});
+assert(digNullRegistry.specialEventsConfig === null,  'an explicit null registry is respected as-is');
+assert(digNullRegistry.familySpotlightConfig === null, 'the compatibility key is null when there is no registry');
 assert(dig.banner === null,                          'banner null when not provided');
 
 // Day 0 (today)

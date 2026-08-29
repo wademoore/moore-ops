@@ -1,3 +1,6 @@
+// TEMPORARY migration shim — delete with the compatibility key in P5.
+import { toLegacyFamilySpotlightConfig } from '../digest/legacySpotlightCompat.js';
+
 function d(value) {
   return new Date(`${value}T12:00:00-04:00`);
 }
@@ -182,4 +185,25 @@ function familySpotlightSampleData({ now, familySpotlightConfig, sharksSoccerDat
   };
 }
 
-export { familySpotlightSampleData, sampleDashboardV2Data };
+/**
+ * The same fixture, carrying the generalized registry instead of the legacy
+ * Family Spotlight config.
+ *
+ * Everything except the config key is shared with familySpotlightSampleData,
+ * so a difference between the two rendered outputs can only come from the
+ * selector under test — not from the fixture.
+ */
+function specialEventsSampleData({ now, specialEventsConfig, sharksSoccerData }) {
+  const base = familySpotlightSampleData({ now, familySpotlightConfig: null, sharksSoccerData });
+  // Mirrors builder.js during the migration window: both keys are present and
+  // both are derived from the one registry. The renderer resolves from
+  // specialEventsConfig only — that is asserted in
+  // digest/legacySpotlightCompat.test.js and in the legacy contract suite.
+  return {
+    ...base,
+    specialEventsConfig,
+    familySpotlightConfig: toLegacyFamilySpotlightConfig(specialEventsConfig),
+  };
+}
+
+export { familySpotlightSampleData, sampleDashboardV2Data, specialEventsSampleData };

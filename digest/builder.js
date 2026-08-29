@@ -60,6 +60,8 @@ import { midnight, daysBetween, toDateKey, parseEventDate, normalizeEvent, start
 import { parseAthleticsDoc } from './athleticsParser.js';
 import { buildGmailHits, buildActivityCommsLines } from './gmailParser.js';
 import { parseWeeklyPriorities } from './weeklyPrioritiesParser.js';
+// TEMPORARY migration shim — delete with the familySpotlightConfig line in P5.
+import { toLegacyFamilySpotlightConfig } from './legacySpotlightCompat.js';
 import { fetchEmmaUnavailabilityBlocks } from './emmaUnavailabilityParser.js';
 import { generateTasks } from './generateTasks.js';
 
@@ -175,7 +177,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.routineAnchorsData] Routine anchors (data/routine-anchors.json); null on file error — see digest/routineAnchorsParser.js. School-type anchors suppressed on 🏫 No School / Early Release days; caregiver-type anchors (a `caregiver` field) suppressed by emmaUnavailabilityParser.js blocks. No early-dismissal time computation.
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, familySpotlightData, centersActionCues = [], calendarFetchFailures }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, specialEventsData, centersActionCues = [], calendarFetchFailures }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -206,9 +208,9 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     try { kidsProfile = await readDataFile('kids-profile.json'); }
     catch { kidsProfile = null; }
   }
-  if (familySpotlightData === undefined) {
-    try { familySpotlightData = await readDataFile('family-spotlight.json'); }
-    catch { familySpotlightData = null; }  // non-critical — treat missing file as no spotlights
+  if (specialEventsData === undefined) {
+    try { specialEventsData = await readDataFile('special-events.json'); }
+    catch { specialEventsData = null; }  // non-critical — treat missing file as no treatments
   }
 
   // Calendars that could not be read on this run. Normally rides along on the
@@ -397,12 +399,20 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     banner,
     weeklyPriorities,
     calendarFetchFailures,
-    // Additive, display-only, Dashboard v2 Family Spotlight inputs. Both are
+    // Additive, display-only, Dashboard v2 special-event inputs. All three are
     // ignored by the v1 renderers (render/dashboard.js, render/email.js) and
     // by index.js. sharksSoccerData is the object already loaded above — it is
-    // surfaced, not re-read, so the Spotlight selector can join the full
-    // division schedule on a stable matchNumber.
-    familySpotlightConfig: familySpotlightData || null,
+    // surfaced, not re-read, so a treatment can join the full division
+    // schedule on a stable matchNumber.
+    //
+    // specialEventsConfig is the ONE live registry source: it is what the
+    // runtime selector reads, and the only thing it reads.
+    // familySpotlightConfig is a temporary migration key kept for the
+    // migration window and *derived from the same registry* — never loaded
+    // from data/family-spotlight.json, which is now a frozen test oracle.
+    // Both this line and digest/legacySpotlightCompat.js are deleted in P5.
+    specialEventsConfig:   specialEventsData || null,
+    familySpotlightConfig: toLegacyFamilySpotlightConfig(specialEventsData || null),
     sharksSoccerData:      sharksData || null,
   };
 }

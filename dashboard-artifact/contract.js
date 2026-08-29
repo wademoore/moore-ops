@@ -26,6 +26,12 @@ const SPOTLIGHT_TIME_ATTRIBUTES = Object.freeze([
   'data-spotlight-midnight-at',
   'data-spotlight-expire-at',
 ]);
+/**
+ * Generalized alias. A feature-slot Spotlight still emits the attribute names
+ * above — deliberately, because renaming them would change every published
+ * artifact and the browser controller that reads them.
+ */
+const TREATMENT_TIME_ATTRIBUTES = SPOTLIGHT_TIME_ATTRIBUTES;
 const FORBIDDEN_PATTERNS = Object.freeze([
   /client_secret/i,
   /refresh_token/i,
@@ -52,10 +58,20 @@ function validateArtifact(html, { sportsFeedUrl, minBytes = MIN_ARTIFACT_BYTES, 
   if (!firstDay && (!sportsFeedUrl || !html.includes(`data-sports-url="${sportsFeedUrl}"`))) failures.push('exact live sports endpoint is missing');
   if (firstDay && /athletics-panel|sports-ticker|Weekly priorities/i.test(html)) failures.push('suppressed Level-2 content is present in first-day artifact');
   if (firstDay && !/Welcome home, Myles \+ Ophelia/.test(html)) failures.push('welcome-home coda content is missing');
-  // Family Spotlight is conditional — it must never be added to
+  // At most one treatment may take over the page. The arbiter enforces this
+  // upstream; asserting it here means a regression fails the build instead of
+  // reaching a television. Unconditional, because zero occurrences pass too.
+  if ((html.match(/data-dashboard-mode="/g) || []).length > 1) {
+    failures.push('more than one dashboard mode is present');
+  }
+  // A feature-slot Spotlight is conditional — it must never be added to
   // LEVEL2_REQUIRED_MARKERS, or every ordinary day would fail validation.
   // These assertions fire only when a Spotlight is actually present.
   if (html.includes('data-spotlight-id')) {
+    // At most one treatment may occupy the feature slot.
+    if ((html.match(/data-spotlight-id="/g) || []).length > 1) {
+      failures.push('more than one spotlight is present');
+    }
     if (firstDay) failures.push('family spotlight must not coexist with the first-day treatment');
     // The fallback marker must be the element's own class attribute, not the
     // bare token: the browser controller embeds `querySelector('.spotlight-
@@ -106,6 +122,7 @@ export {
   LEVEL2_REQUIRED_MARKERS,
   SCHEMA_VERSION,
   SPOTLIGHT_TIME_ATTRIBUTES,
+  TREATMENT_TIME_ATTRIBUTES,
   createManifest,
   sha256,
   validateArtifact,
