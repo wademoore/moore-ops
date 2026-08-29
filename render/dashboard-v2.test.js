@@ -99,7 +99,7 @@ describe('experimental dashboard v2 isolation and structure', () => {
 
   it('keeps the busy-screen content areas', () => {
     assert.match(html, /Now \/ Next/);
-    assert.match(html, /Next Two Weeks/);
+    assert.match(html, /Next 10 Events/);
     assert.match(html, /Athletics/);
     assert.match(html, /Tonight&#39;s Dinner/);
     assert.match(html, /sports-ticker/);
@@ -301,7 +301,7 @@ describe('real-data resilience policies', () => {
     raw: { start: { dateTime } },
   });
 
-  it('uses the full 14-day window, collapses consecutive repeats, and renders every eligible event', () => {
+  it('uses the full 14-day window, collapses consecutive repeats, and takes the first 10', () => {
     const today = new Date(2026, 7, 13);
     const repeated = [17, 18, 19, 20, 21].map(day => event('4-H Day Camp', `2026-08-${day}T07:30:00-04:00`, '7:30 AM'));
     const collapsed = collapseUpcomingEvents([
@@ -314,19 +314,16 @@ describe('real-data resilience policies', () => {
 
     const scheduledEvents = Array.from({ length: 14 }, (_, index) => event(`Useful event ${index + 1}`, `2026-08-${String(index + 14).padStart(2, '0')}T09:00:00-04:00`));
     const sameDayEvents = Array.from({ length: 7 }, (_, index) => event(`Extra event ${index + 1}`, `2026-08-${String(index + 14).padStart(2, '0')}T11:00:00-04:00`));
-    const html = renderDashboardV2({
-      ...sampleDashboardV2Data,
+    const html = renderUpcoming({
       today,
-      days: [{ events: [], tasks: [] }],
       upcomingEvents: [...repeated, ...scheduledEvents, ...sameDayEvents],
       athletics: { sharksActive: true, sharksNextGame: { opponent: 'United', date: '2026-09-12', time: '13:15' } },
     });
     assert.match(html, /Aug 17–21 · 7:30 AM/);
-    for (let index = 1; index <= 14; index += 1) assert.match(html, new RegExp(`Useful event ${index}`));
-    for (let index = 1; index <= 7; index += 1) assert.match(html, new RegExp(`Extra event ${index}`));
-    assert.doesNotMatch(html, /class="upcoming-more"/);
-    assert.match(html, /upcoming-panel upcoming-dense/);
-    assert.match(html, /\.upcoming-list\{overflow:visible\}/);
+    assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 10);
+    assert.match(html, /later in the two-week window/);
+    assert.doesNotMatch(html, /Useful event 14/);
+    assert.match(html, /\+12 later in the two-week window/);
   });
 
   it('groups each date tile once and stacks that day’s events without undoing ranges', () => {
@@ -343,7 +340,7 @@ describe('real-data resilience policies', () => {
     assert.match(html, /Aug 17–21 · 7:30 AM/);
   });
 
-  it('does not suppress routine practices when a preparation-sensitive event is also present', () => {
+  it('takes the next 10 chronologically instead of priority-ranking the schedule', () => {
     const today = new Date(2026, 7, 13);
     const practices = Array.from({ length: 14 }, (_, index) => event(
       `Myles: Sharks Practice ${index + 1}`,
@@ -351,9 +348,10 @@ describe('real-data resilience policies', () => {
     ));
     const ticketDecision = event('⚑ DECIDE: W&M at Duke (Sep 26) — Buy tickets?', '2026-08-27T09:00:00-04:00');
     const html = renderUpcoming({ today, upcomingEvents: [...practices, ticketDecision], athletics: { sharksActive: true } });
-    assert.match(html, /DECIDE: W&amp;M at Duke/);
-    for (let index = 1; index <= 14; index += 1) assert.match(html, new RegExp(`Sharks Practice ${index}<`));
-    assert.doesNotMatch(html, /class="upcoming-more"/);
+    for (let index = 1; index <= 10; index += 1) assert.match(html, new RegExp(`Sharks Practice ${index}<`));
+    assert.doesNotMatch(html, /Sharks Practice 11</);
+    assert.doesNotMatch(html, /DECIDE: W&amp;M at Duke/);
+    assert.match(html, /\+5 later in the two-week window/);
   });
 
   it('keeps near-term swim practices even when later practices share dates with higher-priority events', () => {
