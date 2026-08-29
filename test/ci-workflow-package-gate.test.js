@@ -56,13 +56,24 @@ function parseSteps(source) {
   return steps;
 }
 
+/** YAML belonging to one named job, stopping before the next sibling job. */
+function jobSource(source, name) {
+  const start = source.search(new RegExp(`^  ${name}:\\s*$`, 'm'));
+  assert.notEqual(start, -1, `workflow has no job named ${name}`);
+  const remainder = source.slice(start);
+  const next = remainder.slice(remainder.indexOf('\n') + 1).search(/^  [\w-]+:\s*$/m);
+  return next === -1
+    ? remainder
+    : remainder.slice(0, remainder.indexOf('\n') + 1 + next);
+}
+
 /** Executable lines of a step's run body, with shell comments removed. */
 const commands = step => step.run
   .map(line => line.replace(/(^|\s)#.*$/, '').trim())
   .filter(Boolean);
 
-const ciSource = () => readFileSync(CI, 'utf8');
-const ciSteps = () => parseSteps(ciSource());
+const ciSource = () => readFileSync(CI, 'utf8').replace(/\r\n/g, '\n');
+const ciSteps = () => parseSteps(jobSource(ciSource(), 'test'));
 const byName = (steps, name) => {
   const step = steps.find(candidate => candidate.name === name);
   assert.ok(step, `CI workflow has no step named ${name}`);
@@ -131,7 +142,7 @@ describe('CI workflow — the Dashboard v2 package gate runs on pull requests', 
     assert.ok(build < validate, 'the package must be built before it is validated');
     // One `run: |` body under `bash -e`, so a failed build aborts before the
     // validator runs and cannot be masked by a validator that passes anyway.
-    assert.match(readFileSync(CI, 'utf8'), /- name: Build and validate generator package\n\s+run: \|/);
+    assert.match(ciSource(), /- name: Build and validate generator package\n\s+run: \|/);
   });
 
   it('preserves the full test suite and the deployment-coverage check', () => {
@@ -194,7 +205,7 @@ describe('CI workflow — the gate cannot be satisfied by comments or prose', ()
   const GATE = '- name: Build and validate generator package';
 
   /** Reparses CI with one mutation applied to its text. */
-  const mutated = transform => parseSteps(transform(ciSource()));
+  const mutated = transform => parseSteps(jobSource(transform(ciSource()), 'test'));
   const gateCommands = steps => {
     const step = steps.find(candidate => candidate.name === 'Build and validate generator package');
     return step ? commands(step) : [];
@@ -243,5 +254,24 @@ describe('CI workflow — the gate cannot be satisfied by comments or prose', ()
       '        run: echo skipped\n',
     ));
     assert.deepEqual(gateCommands(steps), ['echo skipped']);
+  });
+
+  it('a gate in a different, never-running job does not count', () => {
+    const steps = mutated(source => source.replace(
+      /      - name: Build and validate generator package\n        run: \|\n          npm run build:dashboard-artifact\n          npm run validate:dashboard-artifact-package\n/,
+      '',
+    ) + `
+  decoy:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v2
+      - name: Build and validate generator package
+        run: |
+          npm run build:dashboard-artifact
+          npm run validate:dashboard-artifact-package
+`);
+    assert.deepEqual(gateCommands(steps), [], 'steps outside the test job must not satisfy its gate');
   });
 });
