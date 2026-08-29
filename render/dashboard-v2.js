@@ -501,36 +501,17 @@ function rangeDetail(item) {
   return `${startLabel}–${endLabel} · ${formatEventTime(item.event)}`;
 }
 
-function upcomingUtility(item, today) {
-  const base = analyzeEventSemantics(item.event).baseScore;
-  const proximity = Math.max(0, 15 - daysFrom(today, item.startKey)) / 100;
-  return base + proximity;
-}
-
 function renderUpcoming(data) {
   const allItems = collapseUpcomingEvents(data.upcomingEvents, data.today);
-  const oneCard = athleticsCardCount(data) === 1;
-  const eventCapacity = oneCard ? 14 : 10;
   const grouped = new Map();
   for (const item of allItems) {
     if (!grouped.has(item.startKey)) grouped.set(item.startKey, []);
     grouped.get(item.startKey).push(item);
   }
-  const allDays = [...grouped.entries()].map(([key, items]) => ({ key, items }));
-  const selectedDays = [];
-  let usedEvents = 0;
-  for (const day of [...allDays].sort((a, b) => {
-    const aUtility = Math.max(...a.items.map(item => upcomingUtility(item, data.today)));
-    const bUtility = Math.max(...b.items.map(item => upcomingUtility(item, data.today)));
-    return bUtility - aUtility || a.key.localeCompare(b.key);
-  })) {
-    if (usedEvents + day.items.length > eventCapacity) continue;
-    selectedDays.push(day);
-    usedEvents += day.items.length;
-  }
-  selectedDays.sort((a, b) => a.key.localeCompare(b.key));
-  const hiddenCount = allItems.length - usedEvents;
-  const rows = selectedDays.map(day => {
+  const allDays = [...grouped.entries()]
+    .map(([key, items]) => ({ key, items }))
+    .sort((a, b) => a.key.localeCompare(b.key));
+  const rows = allDays.map(day => {
     const date = dateAtNoon(day.key);
     const days = daysFrom(data.today, day.key);
     const people = new Set(day.items.map(item => peopleForEvent(item.event)));
@@ -545,11 +526,10 @@ function renderUpcoming(data) {
       <div class="count-chip">${esc(countdownLabel(days))}</div>
     </div>`;
   }).join('');
-  const more = hiddenCount > 0 ? `<div class="upcoming-more">+${hiddenCount} more</div>` : '';
-
-  return `<section class="paper-panel upcoming-panel">
+  const densityClass = allItems.length > 14 || allDays.length > 9 ? ' upcoming-dense' : '';
+  return `<section class="paper-panel upcoming-panel${densityClass}">
     ${renderSectionTitle('Next Two Weeks', 'green', 'calendar')}
-    <div class="upcoming-list">${rows || '<div class="empty-state">No upcoming events.</div>'}${more}</div>
+    <div class="upcoming-list">${rows || '<div class="empty-state">No upcoming events.</div>'}</div>
   </section>`;
 }
 
@@ -1108,8 +1088,13 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 /* Runtime fallbacks: semantic event marks, explicit weather state, and stable horizon geometry. */
 .semantic-icon{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(212,154,24,.10);color:${COLORS.gold};padding:3px}.semantic-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:1.8;fill:none}.semantic-icon.category-appointment{color:${COLORS.red}}.semantic-icon.category-school{color:${COLORS.blue}}.semantic-icon.category-household{color:${COLORS.green}}.semantic-icon.category-arts{color:${COLORS.purple}}.semantic-icon.category-sports{color:${COLORS.blue}}.semantic-icon.category-family{color:${COLORS.red}}.activity-visual{position:relative}.activity-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:${COLORS.paper}}
 .current-weather.weather-unavailable{gap:12px;text-align:center}.current-weather.weather-unavailable>strong{max-width:220px;font-size:24px;line-height:1.05}.current-weather.weather-unavailable>span{font-size:16px;color:#5d675f}.forecast-card.weather-unavailable{grid-template-rows:42px 1fr}.forecast-fallback{grid-column:1/3;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#5d675f;font-size:20px;line-height:1.25}.next-up-empty{display:flex;flex-direction:column}.next-up-empty:before{background:${COLORS.green}}.next-up-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 10px}.next-up-empty-copy strong{font-size:20px}.next-up-empty-copy small{font-size:14px;color:#58635c;margin-top:6px}
-/* Real-data resilience: bounded calendar rows, adaptive one-card athletics, and ranked rail items. */
-.upcoming-list{overflow:visible}.upcoming-more{height:54px;display:flex;align-items:center;justify-content:center;border-top:1px solid rgba(20,40,31,.15);font-size:21px;font-weight:600;color:${COLORS.green}}
+/* Real-data resilience: complete calendar rows, adaptive one-card athletics, and ranked rail items. */
+.upcoming-list{overflow:visible}
+.upcoming-panel.upcoming-dense .upcoming-day{grid-template-columns:62px minmax(0,1fr) 70px;gap:8px;min-height:44px;padding:2px 0 2px 10px}
+.upcoming-panel.upcoming-dense .date-tile span{font-size:11px}.upcoming-panel.upcoming-dense .date-tile b{font-size:30px}
+.upcoming-panel.upcoming-dense .upcoming-events{gap:1px}.upcoming-panel.upcoming-dense .upcoming-event{grid-template-columns:27px minmax(0,1fr);gap:6px}
+.upcoming-panel.upcoming-dense .upcoming-logo{width:27px;height:27px}.upcoming-panel.upcoming-dense .upcoming-event strong{font-size:17px;line-height:1}.upcoming-panel.upcoming-dense .upcoming-event span{font-size:11px;line-height:1}
+.upcoming-panel.upcoming-dense .count-chip{font-size:11px;padding:3px 9px}
 .dashboard.athletics-one .upcoming-panel{height:72%}.dashboard.athletics-one .athletics-panel{height:26%}
 .card-count-1 .athletics-grid{display:block}.card-count-1 .athletic-card{height:100%;padding-right:0;border-right:0;display:grid;grid-template-columns:150px minmax(0,1fr);grid-template-rows:44px auto 1fr;column-gap:22px}.card-count-1 .athletic-ribbon{grid-column:1/3}.card-count-1 .record{grid-column:1;grid-row:2/4;font-size:58px;margin-top:16px}.card-count-1 .athletic-card>small{grid-column:1;grid-row:3;margin-top:80px;font-size:18px}.card-count-1 .next-box{grid-column:2;grid-row:2/4;margin:12px 0 0;padding:12px 16px;justify-content:center}.card-count-1 .next-box b{font-size:16px}.card-count-1 .next-box span{font-size:25px;line-height:1}.card-count-1 .next-box strong{font-family:"Roboto Slab",Georgia,serif;font-size:27px;line-height:1.15;margin-top:7px}.card-count-1 .next-box small{font-size:18px;margin-top:5px}.card-count-1 .result-line,.card-count-1 .standing-line{display:none}
 .next-up-card{display:flex;flex-direction:column}.next-up-card:before{display:none}.next-up-label{flex:0 0 38px;width:100%}.next-up-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.next-up-item{position:relative;display:grid;grid-template-columns:58px minmax(0,1fr);gap:8px;padding:6px 2px 6px 9px;border-bottom:1px solid rgba(20,40,31,.14);min-height:0}.next-up-item:last-child{border-bottom:0}.next-up-item:before{content:"";position:absolute;left:-3px;top:7px;bottom:7px;width:5px;background:${COLORS.green}}.next-up-item.person-myles:before{background:${COLORS.red}}.next-up-item.person-ophelia:before{background:${COLORS.purple}}.next-up-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.next-up-item .next-up-date b{font-size:34px}.next-up-item .next-up-date span{font-size:11px}.next-up-item .next-up-copy strong{font-size:18px;line-height:1}.next-up-item .next-up-copy small{font-size:13px;line-height:1;margin-top:3px}
