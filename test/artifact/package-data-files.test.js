@@ -29,9 +29,43 @@ test('every data file builder.js reads is shipped in the Lambda package', () => 
   assert.deepEqual(missing, [], `unpackaged data files would silently resolve to null at runtime: ${missing.join(', ')}`);
 });
 
-test('family-spotlight.json is an explicit package input', () => {
-  assert.ok(PACKAGE_INPUTS.dataFiles.includes('family-spotlight.json'));
-  assert.ok(builderDataFiles().includes('family-spotlight.json'));
+test('special-events.json is an explicit package input', () => {
+  assert.ok(PACKAGE_INPUTS.dataFiles.includes('special-events.json'));
+  assert.ok(builderDataFiles().includes('special-events.json'));
+});
+
+/**
+ * The pre-migration Family Spotlight config is retained in the repository as
+ * the compatibility oracle for the registry migration, and is read only by
+ * tests. Packaging it would ship a second parseable source of truth that
+ * nothing observes until it is wrong.
+ */
+test('family-spotlight.json is retained as a test oracle, not a runtime input', () => {
+  assert.ok(!builderDataFiles().includes('family-spotlight.json'), 'builder.js must not read the oracle');
+  assert.ok(!PACKAGE_INPUTS.dataFiles.includes('family-spotlight.json'), 'the oracle must not be packaged');
+});
+
+test('every special-event module is an explicit bundle input', () => {
+  for (const path of [
+    'digest/specialEventSchema.js', 'digest/specialEventOccurrences.js',
+    'digest/specialEventQualify.js', 'digest/specialEventLifecycle.js',
+    'digest/specialEventArbiter.js', 'digest/specialEventSelector.js',
+    // TEMPORARY migration shim — drop this entry with the module in P5.
+    'digest/legacySpotlightCompat.js',
+  ]) {
+    assert.ok(PACKAGE_INPUTS.requiredBundleInputs.includes(path), `${path} is not a declared bundle input`);
+  }
+});
+
+/**
+ * The migration shim reaches the Lambda bundle through digest/builder.js, so
+ * it must be declared. When P5 deletes it, this assertion is what makes the
+ * stale declaration visible instead of leaving a dangling path behind.
+ */
+test('the temporary compatibility shim is declared while it is still imported', () => {
+  const imported = BUILDER.includes("from './legacySpotlightCompat.js'");
+  const declared = PACKAGE_INPUTS.requiredBundleInputs.includes('digest/legacySpotlightCompat.js');
+  assert.equal(imported, declared, 'the shim must be declared exactly while builder.js imports it');
 });
 
 test('the packaged data-file count matches the documented invariant', () => {

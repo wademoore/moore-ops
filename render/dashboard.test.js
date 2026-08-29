@@ -10,6 +10,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   renderDashboard,
@@ -842,7 +843,11 @@ describe('renderSharksCard', () => {
   });
 });
 
-describe('Dashboard v1 compatibility with additive Family Spotlight digest fields', () => {
+describe('Dashboard v1 compatibility with additive special-event digest fields', () => {
+  // v1 is frozen. These fields are additive to digestData and must reach it as
+  // inert data: the legacy Family Spotlight key, the generalized registry key
+  // that replaced it, and the shared Sharks schedule. All three are asserted
+  // together so a future field rename cannot quietly drop the coverage.
   const spotlightFields = {
     familySpotlightConfig: {
       spotlights: [{
@@ -854,6 +859,8 @@ describe('Dashboard v1 compatibility with additive Family Spotlight digest field
         children: [],
       }],
     },
+    specialEventsConfig: JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8')),
+    familySpotlight: true,
     sharksSoccerData: { seasons: [{ divisionSchedule: { matches: [] } }] },
   };
 
