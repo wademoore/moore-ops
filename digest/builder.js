@@ -116,6 +116,20 @@ async function readDataFile(filename) {
 // Surface upcoming activity events so Emma is never caught off guard.
 // These appear in the digest as amber flags, not as today's task list.
 
+/**
+ * TEMPORARY migration shim wrapper — delete with the familySpotlightConfig
+ * line in P5.
+ *
+ * The shim already contains its own failures, but the digest must not depend
+ * on that: this is the outer guard that keeps a compatibility-only key from
+ * ever being able to fail buildDigest. Every other non-critical input in this
+ * file is wrapped the same way.
+ */
+function safeLegacySpotlightConfig(specialEventsData) {
+  try { return toLegacyFamilySpotlightConfig(specialEventsData); }
+  catch { return null; }
+}
+
 function buildBagPrepLookahead(allResolvedEvents, today) {
   const warnings = [];
   const todayMid = midnight(today);
@@ -410,9 +424,13 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     // familySpotlightConfig is a temporary migration key kept for the
     // migration window and *derived from the same registry* — never loaded
     // from data/family-spotlight.json, which is now a frozen test oracle.
+    // The projection is contained twice (here and inside the shim) so a
+    // failure degrades that one key to null rather than failing buildDigest;
+    // specialEventsConfig is unaffected either way, and null never means
+    // "fall back to the legacy path".
     // Both this line and digest/legacySpotlightCompat.js are deleted in P5.
     specialEventsConfig:   specialEventsData || null,
-    familySpotlightConfig: toLegacyFamilySpotlightConfig(specialEventsData || null),
+    familySpotlightConfig: safeLegacySpotlightConfig(specialEventsData || null),
     sharksSoccerData:      sharksData || null,
   };
 }

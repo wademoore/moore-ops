@@ -178,3 +178,46 @@ describe('legacySpotlightCompat — omits what the legacy shape cannot hold', ()
     assert.deepEqual(projected, []);
   });
 });
+
+describe('legacySpotlightCompat — a projection failure cannot fail the digest', () => {
+  /**
+   * Forces a throw from inside the projection by handing it a registry that
+   * parses but explodes when walked: a getter that throws on property access.
+   * JSON can never produce this, which is the point — the guard must not
+   * depend on the input path being well behaved.
+   */
+  const explosive = () => {
+    const treatment = JSON.parse(JSON.stringify(REGISTRY.treatments[0]));
+    Object.defineProperty(treatment, 'qualification', {
+      enumerable: true,
+      get() { throw new Error('projection blew up'); },
+    });
+    return { schemaVersion: 2, treatments: [treatment] };
+  };
+
+  it('degrades to null rather than throwing', () => {
+    let result;
+    assert.doesNotThrow(() => { result = toLegacyFamilySpotlightConfig(explosive()); });
+    assert.equal(result, null);
+  });
+
+  it('leaves the live registry usable when the projection fails', () => {
+    const bad = explosive();
+    assert.equal(toLegacyFamilySpotlightConfig(bad), null);
+    // The same data object still resolves through the real registry path.
+    const resolved = selectFeatureSlotSpotlight(
+      { ...base(), specialEventsConfig: REGISTRY },
+      at(ACTIVATE),
+    );
+    assert.ok(resolved, 'specialEventsConfig remains the live source and is unaffected');
+    assert.equal(resolved.id, 'big-sports-saturday-2026-09-12');
+  });
+
+  it('null is not a fallback — it never revives the legacy path', () => {
+    // With the compatibility key null and no registry, nothing resolves.
+    assert.equal(
+      selectFeatureSlotSpotlight({ ...base(), familySpotlightConfig: null, specialEventsConfig: null }, at(ACTIVATE)),
+      null,
+    );
+  });
+});

@@ -17,8 +17,12 @@
  *      returns an empty set before anything else is evaluated. (The switch
  *      keeps its existing name this phase; renaming it is deferred.)
  *
- *   2. First Day Level-3 stays hard-wired and owns the page while it renders.
- *      It is observed here so no registry treatment can conflict with it.
+ *   2. First Day Level-3 stays hard-wired. In production it is protected by
+ *      renderDashboardV2()'s early return, plus an artifact-contract rule that
+ *      forbids the two treatments coexisting — not by this module. The
+ *      `firstDayTakeoverActive` option below is an arbiter capability held
+ *      ready for a future registry-driven page orchestrator; no runtime caller
+ *      passes it today.
  *
  *   3. Accent rendering is deliberately unbuilt. An accent may be resolved and
  *      reported in diagnostics; it is never returned as something renderable.
@@ -218,7 +222,8 @@ function toLegacySpotlightViewModel(winner) {
  *                      days, upcomingEvents, familySpotlight)
  * @param {object} [options]
  * @param {Date|number} [options.now]              authoritative clock
- * @param {boolean} [options.firstDayTakeoverActive] First Day Level-3 holds the page
+ * @param {boolean} [options.firstDayTakeoverActive] reserved for a future
+ *        page orchestrator; never supplied by a runtime caller today
  * @param {Record<string,string>} [options.availableAssets] optional key → URL map
  * @returns {{spotlight: object|null, takeover: object|null, accents: object[],
  *            diagnostics: object}}

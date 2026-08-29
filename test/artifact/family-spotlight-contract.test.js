@@ -6,6 +6,7 @@ import { generateAndPublish } from '../../dashboard-artifact/generator.js';
 import { renderDashboardV2 } from '../../render/dashboard-v2.js';
 import { familySpotlightSampleData, sampleDashboardV2Data } from '../../render/dashboard-v2.sample-data.js';
 import { selectFamilySpotlight } from '../../digest/familySpotlightSelector.js';
+import { selectFeatureSlotSpotlight } from '../../digest/specialEventSelector.js';
 import { toLegacyFamilySpotlightConfig } from '../../digest/legacySpotlightCompat.js';
 
 const SPORTS = 'https://example.lambda-url.us-east-2.on.aws/';
@@ -168,16 +169,22 @@ test('the generator publishes the spotlight when explicitly enabled', async () =
 // artifact back to the frozen pair. If the registry ever drifts from the
 // pre-migration configuration, or the legacy selector stops agreeing with it,
 // this file goes red rather than quietly validating a different treatment.
+// Coverage is field-by-field: id, lifecycle instants, headline, eyebrows,
+// child labels/titles/detail lines/tones and logo marks are asserted against
+// the rendered HTML; `date` and `phase` are not rendered and are asserted at
+// the view model instead.
 
 test('the registry still projects exactly onto the frozen legacy configuration', () => {
   assert.deepEqual(stripNotes(toLegacyFamilySpotlightConfig(REGISTRY)), stripNotes(CONFIG));
 });
 
+const legacyViewModel = () => selectFamilySpotlight(
+  familySpotlightSampleData({ now: FRIDAY_ACTIVE, familySpotlightConfig: CONFIG, sharksSoccerData: SHARKS }),
+  { now: new Date(FRIDAY_ACTIVE) },
+);
+
 test('the legacy selector and the frozen config still describe the rendered artifact', () => {
-  const legacy = selectFamilySpotlight(
-    familySpotlightSampleData({ now: FRIDAY_ACTIVE, familySpotlightConfig: CONFIG, sharksSoccerData: SHARKS }),
-    { now: new Date(FRIDAY_ACTIVE) },
-  );
+  const legacy = legacyViewModel();
   assert.ok(legacy, 'the legacy selector must still resolve the frozen configuration');
 
   const html = renderDashboardV2(spotlightData(FRIDAY_ACTIVE));
@@ -186,12 +193,51 @@ test('the legacy selector and the frozen config still describe the rendered arti
   assert.ok(html.includes(`data-spotlight-midnight-at="${legacy.midnightAt}"`));
   assert.ok(html.includes(`data-spotlight-expire-at="${legacy.expireAt}"`));
   assert.ok(html.includes(`spotlight-headline">${legacy.headline}<`));
+  // Both eyebrows ship in every Spotlight artifact; CSS decides which is shown.
+  assert.ok(html.includes(`spotlight-eyebrow-before">${legacy.eyebrowBefore}<`), 'eyebrowBefore not rendered');
+  assert.ok(html.includes(`spotlight-eyebrow-on">${legacy.eyebrowOn}<`), 'eyebrowOn not rendered');
   for (const child of legacy.children) {
     assert.ok(html.includes(`spotlight-name">${child.label}<`), `missing ${child.label}`);
     assert.ok(html.includes(`spotlight-title">${child.title}<`), `missing ${child.title}`);
     assert.ok(html.includes(child.detailLine), `missing ${child.detailLine}`);
     assert.ok(html.includes(`spotlight-child tone-${child.tone}`), `missing tone ${child.tone}`);
   }
+});
+
+/**
+ * `logoKey` reaches the artifact as an embedded data URI, not as the key, so it
+ * is asserted by its rendered consequence: a child with a resolvable logo gets
+ * the layered mark (semantic icon + overlaid image), a child without one gets
+ * the fallback mark alone. See render/dashboard-v2.js spotlightMark().
+ */
+test('every legacy child logo still produces its layered mark in the artifact', () => {
+  const legacy = legacyViewModel();
+  const html = renderDashboardV2(spotlightData(FRIDAY_ACTIVE));
+  const withLogo = legacy.children.filter(child => child.logoKey).length;
+  assert.equal(withLogo, legacy.children.length, 'the frozen config declares a logo for every child');
+  assert.equal(
+    (html.match(/class="spotlight-mark semantic-icon category-sports activity-visual"/g) || []).length,
+    withLogo,
+  );
+});
+
+/**
+ * `date` and `phase` are not rendered into the artifact — `date` only derives
+ * eyebrowBefore, and the panel always ships in the ordinary state — so they
+ * cannot be asserted against HTML. They are bound here instead, at the view
+ * model, which also covers every other field in one comparison and is what
+ * makes this file catch a change to the frozen selector rather than only to
+ * the frozen configuration.
+ */
+test('the whole legacy view model still equals the registry path view model', () => {
+  const legacy = legacyViewModel();
+  const next = selectFeatureSlotSpotlight(spotlightData(FRIDAY_ACTIVE), { now: new Date(FRIDAY_ACTIVE) });
+  assert.deepEqual(next, legacy);
+  // Named explicitly so a future reader can see which fields this covers that
+  // the HTML assertions above cannot.
+  assert.equal(next.date, legacy.date);
+  assert.equal(next.phase, legacy.phase);
+  assert.deepEqual(next.children.map(c => c.logoKey), legacy.children.map(c => c.logoKey));
 });
 
 test('the frozen configuration is unreachable from the runtime path', () => {

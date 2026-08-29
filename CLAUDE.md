@@ -768,7 +768,7 @@ diagnostics, but neither has a renderer, and neither can reach a television.
 | Spotlight on the `feature-slot` | **Renderer exists** (the shipped in-panel treatment). One entry: Big Sports Saturday. |
 | Accent | **Framework only.** Resolves, arbitrates, reports `activatable: false`. No renderer, no visual design, no entry. |
 | Takeover from the registry | **Framework only.** Resolves, reports `activatable: false`. Never rendered from here. |
-| First Day Level-3 Takeover | **Unchanged and hard-wired.** `renderDashboardV2()` still early-returns to it; the arbiter only *observes* it so no registry treatment can conflict. Not migrated, not redesigned. |
+| First Day Level-3 Takeover | **Unchanged and hard-wired.** `renderDashboardV2()` still early-returns to it, so no registry treatment can reach the page while it renders. Not migrated, not redesigned. |
 
 The categorized 2026-27 future-event register (Sept 19-20 Accents, Oct 17 Spotlight, the
 birthdays, Christmas morning, Last Day of School, and the rest) is **planning information
@@ -852,10 +852,14 @@ duplicate references can never satisfy a count.
   closed. This is the only node type with no calendar anchor, which is exactly why the
   provenance requirement is not optional.
 - **Forbidden inputs are rejected at load, before evaluation:** season-active flags
-  (`/\w*Active\b/`), card counts, rendered display text (`displayTime`, `subtitle`,
+  (`/^\w*Active$/`), card counts, rendered display text (`displayTime`, `subtitle`,
   standings), and moving projections (`sharksNextGame`, `nextGame`, `sharksLastResult`).
-  Matching runs against the serialized qualification subtree, so a forbidden name cannot
-  hide inside a nested compound.
+  **The scan walks qualification *field names*, recursively, at any nesting depth — never
+  values.** That distinction matters: `{ sharksActive: true }` is the forbidden input, and
+  a `titleMatch.value` of "Active Wear Day" is a real school event. An earlier version
+  matched against `JSON.stringify(qualification)` and rejected both. Both walkers are
+  bounded at `MAX_QUALIFICATION_DEPTH` (64) and fail closed past it, so a malformed
+  structure is a diagnostic rather than a `RangeError` escaping into the caller.
 
 ### Lifecycle
 
@@ -896,9 +900,15 @@ attachment → surface exclusivity → accent capacity.
 - An Accent must attach to a resolved fact (`refIds` non-empty) before it competes.
 - An accent tier that would have to be *split* at the capacity boundary is admitted **not at
   all**, because choosing among equals would be an array-order decision.
-- First Day Level-3 is observed: while it holds the page, every registry candidate is
-  dropped with `suppressed-by-first-day`. That is how "maximum one Takeover" holds without
-  this work taking ownership of the First Day renderer.
+- **First Day Level-3 is protected by two production mechanisms, and neither is the
+  arbiter.** `renderDashboardV2()` early-returns to the First Day renderer before
+  `renderAthletics()` runs, so a registry treatment cannot reach the page; and
+  `validateArtifact()` independently rejects any artifact carrying both a
+  `data-spotlight-id` and the first-day mode. The arbiter's `firstDayTakeoverActive`
+  option — which drops every candidate with `suppressed-by-first-day` — is an explicit
+  capability held ready for a future registry-driven page orchestrator. **No runtime
+  caller passes it today**; it is exercised only by tests. Do not cite it as the thing
+  keeping the two treatments apart.
 
 **Big Sports Saturday no longer depends on the old `MULTIPLE_IN_WINDOW` behaviour.** Two
 simultaneous entries are now resolved by priority; only a genuine tie fails closed, as
@@ -950,6 +960,12 @@ compatibility key that lied would be worse than one that is empty. It round-trip
 onto the frozen file modulo free-text notes, and feeding it to the legacy selector
 reproduces the generalized selector's view model at every lifecycle boundary.
 
+**The projection is contained twice**, in the shim and again at the `builder.js` call
+site. A compatibility-only key must never be able to fail `buildDigest`: on any failure it
+degrades to `null` and `specialEventsConfig` is untouched. `null` there means "no
+compatibility view", never "fall back to the legacy path" — nothing reads the key at
+runtime, so there is no fallback to have.
+
 ### Deferred to P5 — do not do these early
 
 P5 is a **separate PR, after at least one real production cycle has run on the registry
@@ -970,8 +986,8 @@ path**. Deleting the oracles before then removes the only thing that can prove a
 ### What was proved, and what CI still has to prove
 
 `scripts/verify-special-event-migration.mjs` reproduces the cross-tree proof on demand
-(create a worktree at the pre-migration commit and run it). Result at P3: **23/23
-identical** — ten whole-document Dashboard v2 comparisons across five lifecycle states with
+(create a worktree at the pre-migration commit and run it). It makes **22**
+comparisons, and the result at P3 was **22/22 identical** — ten whole-document Dashboard v2 comparisons across five lifecycle states with
 the switch on and off, ordinary Dashboard v2, the Dashboard v1 today card, and Athletics
 panel **pixels and geometry** across all four controller states plus ordinary Athletics.
 
@@ -1074,13 +1090,13 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Aug 29, 2026 at `40b942a`
+### Current baseline — measured Aug 29, 2026 at the post-review cleanup
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test`, no browser resolvable | 1652 | 1635 | 3 | 14 |
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1652 | **1652** | **0** | **0** |
-| CI (`ubuntu-latest`) | 1652 | 1652 | 0 | 0 |
+| `npm test`, no browser resolvable | 1675 | 1658 | 3 | 14 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1675 | **1675** | **0** | **0** |
+| CI (`ubuntu-latest`) | 1675 | 1675 | 0 | 0 |
 
 **The exact invocations, so a future claim can be checked rather than believed:**
 
@@ -1094,14 +1110,15 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 
 Any Chromium build works; that path is the one preinstalled in the development sandbox
 (`npx playwright install chromium` is the alternative). Node v22.22.2, after `npm install`.
-**Coder mode must keep `npm test` at 1652+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 1675+ with no failures once a browser resolves.**
 
 **This table is the only current baseline, and it is a measurement, not a constant.**
-It was taken at `40b942a` (P3 of the generalized special-event foundation), on a branch
-whose merge base with `main` is `ae7d581`, which measured **1298** with a browser. The
-foundation added **+354**: P1 +224 (five pure modules), P2 +68 (registry, orchestrator and
-the legacy equivalence proof), P3 +62 (wiring, the compatibility shim, the second contract
-suite and the byte/pixel regressions). Any merge that adds tests moves these numbers;
+It was taken on a branch whose merge base with `main` is `ae7d581`, which measured **1298**
+with a browser. The foundation added **+377**: P1 +224 (five pure modules), P2 +68
+(registry, orchestrator and the legacy equivalence proof), P3 +62 (wiring, the
+compatibility shim, the second contract suite and the byte/pixel regressions), P4 +0
+(documentation), and the post-review cleanup +23 (forbidden-key scan, bounded walks, shim
+containment, and the strengthened legacy-contract binding). Any merge that adds tests moves these numbers;
 re-measure and update this table in the same commit rather than adding a second one. Dated
 changelog entries below quote the figures, and the "Chromium-environmental" label, as they
 stood when written; they are provenance for a particular change, not a second answer to
@@ -1222,6 +1239,33 @@ method, so they chain directly to the 988 pre-change number above.
 
 ## Current state (changelog)
 
+- **Post-review cleanup on the special-event foundation (Aug 29, 2026):** An independent
+  Reviewer pass over `ae7d581..e90fb9d` returned five MINOR findings, all addressed here in
+  one commit. **(1)** The forbidden-qualifier scan matched `JSON.stringify(qualification)`,
+  so it rejected legitimate *values* as well as forbidden *field names* — a `titleMatch` of
+  "Active Wear Day" was refused as if it were a season flag. It now walks field names
+  recursively at any depth and never inspects values. **(2)** Both qualification walkers are
+  bounded at `MAX_QUALIFICATION_DEPTH` (128 walker levels) and fail closed past it, so a
+  malformed or cyclic structure is a diagnostic rather than a `RangeError`; a compound level
+  costs the key walker two levels, which the tests pin. **(3)** The compatibility projection
+  is now contained in the shim *and* at the `builder.js` call site: a projection failure
+  degrades `familySpotlightConfig` to `null` and cannot fail `buildDigest`, with
+  `specialEventsConfig` untouched. **(4)** The legacy artifact-contract test's binding
+  assertion covered only part of the legacy view model — mutating `eyebrowOn` in the frozen
+  selector left that file green. It now asserts both eyebrows and the logo marks against the
+  rendered HTML and the whole view model (covering `date` and `phase`, which are not
+  rendered); all three probes now turn it red. **(5)** `firstDayTakeoverActive` was described
+  as the mechanism protecting First Day Level-3; **it is not, and no runtime caller passes
+  it.** Production is protected by `renderDashboardV2()`'s early return plus the
+  artifact-contract rule forbidding coexistence. The flag is an arbiter capability held for a
+  future registry-driven page orchestrator, and is now documented as such in both the code
+  and this file — an inert parameter that reads as a gate is the exact pattern the gate
+  section of this file warns about. Also corrected: the cross-tree proof makes **22**
+  comparisons, not the 23 previously claimed here. Renderer, registry, `data/`,
+  `dashboard-artifact/`, `infrastructure/`, `.github/` and `scripts/` are untouched; the two
+  other special-event modules changed by comment only (0 non-comment lines). Cross-tree
+  proof re-run: **22/22 identical**. Tests **1652 → 1675** (+23).
+
 - **Generalized special-event foundation built; Big Sports Saturday migrated (Aug 29, 2026):**
   Framework capability for Accent / Spotlight / Takeover treatments on Dashboard v2 — full
   design in **Generalized special-event foundation** above. Four reviewable commits, each a
@@ -1235,7 +1279,7 @@ method, so they chain directly to the 988 pre-change number above.
   support only — they resolve, arbitrate and report `activatable: false`, and have no
   renderer. First Day Level-3 is unchanged and hard-wired; the arbiter only observes it.
   **Big Sports Saturday is the only live-registry entry and is behaviourally identical**:
-  a cross-tree proof against the pre-migration worktree came back **23/23 identical** —
+  a cross-tree proof against the pre-migration worktree came back **22/22 identical** —
   ten whole-document Dashboard v2 comparisons across five lifecycle states with the switch
   on and off, ordinary Dashboard v2, the Dashboard v1 today card, and Athletics panel
   pixels *and* geometry across all four controller states plus ordinary Athletics

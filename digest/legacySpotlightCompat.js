@@ -118,12 +118,25 @@ function legacyEntry(entry) {
  */
 function toLegacyFamilySpotlightConfig(specialEventsConfig) {
   if (!specialEventsConfig) return null;
-  const { entries } = validateRegistry(specialEventsConfig);
-  const spotlights = entries
-    .filter(entry => entry.enabled && entry.status === 'ready')
-    .map(legacyEntry)
-    .filter(Boolean);
-  return { spotlights };
+  // Contained on purpose. This is a temporary key that no runtime code reads;
+  // a projection failure must never be able to fail the whole digest, so it
+  // degrades to null and leaves specialEventsConfig — the sole live registry —
+  // untouched. It is deliberately not a fallback: null here means "no
+  // compatibility view", never "fall back to the legacy path".
+  try {
+    const { entries } = validateRegistry(specialEventsConfig);
+    const spotlights = entries
+      .filter(entry => entry.enabled && entry.status === 'ready')
+      .map(legacyEntry)
+      .filter(Boolean);
+    return { spotlights };
+  } catch (error) {
+    console.warn(JSON.stringify({
+      event: 'legacy_spotlight_compat_projection_failed',
+      message: error?.message ?? String(error),
+    }));
+    return null;
+  }
 }
 
 export { toLegacyFamilySpotlightConfig };

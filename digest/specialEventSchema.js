@@ -209,20 +209,47 @@ const REASON = Object.freeze({
  * is done against the serialized qualification subtree, so a forbidden name
  * cannot hide inside a nested compound node.
  */
-const FORBIDDEN_QUALIFIER_PATTERNS = Object.freeze([
-  /\b\w*Active\b/,                       // any season-active flag
-  /\bathleticsCardCount\b/,
-  /\bcardCount\b/,
-  /\bsharksNextGame\b/,
-  /\bsharksLastResult\b/,
-  /\bnextGame\b/,
-  /\bdisplayTime\b/,
-  /\bsubtitle\b/,
-  /\bdivisionStanding\b/,
-  /\bplayed\b/,
-  /\bhomeScore\b/,
-  /\bawayScore\b/,
+/**
+ * Patterns matched against qualification **field names**, never against values.
+ *
+ * The four forbidden input classes are all *state-derived keys*: season flags,
+ * card counts, rendered display text, and moving projections. Matching keys
+ * rather than serialized JSON is the difference between rejecting
+ * `{ sharksActive: true }` — which is the point — and rejecting a legitimate
+ * `titleMatch.value` of "Active Wear Day", which is a real school event and
+ * has nothing to do with a season flag.
+ */
+const FORBIDDEN_QUALIFIER_KEY_PATTERNS = Object.freeze([
+  /^\w*Active$/,                         // any season-active flag
+  /^athleticsCardCount$/,
+  /^cardCount$/,
+  /^sharksNextGame$/,
+  /^sharksLastResult$/,
+  /^nextGame$/,
+  /^displayTime$/,
+  /^subtitle$/,
+  /^divisionStanding$/,
+  /^played$/,
+  /^homeScore$/,
+  /^awayScore$/,
 ]);
+
+/**
+ * Hard recursion bound for every qualification walk.
+ *
+ * A registry arrives through JSON.parse, which cannot express a cycle and
+ * throws on structures deep enough to exhaust the stack — but the walkers must
+ * not depend on that for their own termination. Exceeding the bound is treated
+ * as a malformed qualification and fails closed.
+ *
+ * The unit is *walker recursion levels*, not compound nesting levels, and the
+ * two walkers spend it differently: collectNodes() steps once per compound
+ * (`all`/`any`/`of`), while findForbiddenKey() also steps through the array
+ * that holds the children, so one compound level costs it two. 128 leaves room
+ * for ~64 nested compounds either way — orders of magnitude beyond any real
+ * qualification, which is one or two levels deep.
+ */
+const MAX_QUALIFICATION_DEPTH = 128;
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -234,13 +261,49 @@ const isDateKey = value => DATE_KEY.test(String(value ?? ''));
 const isClock = value => CLOCK.test(String(value ?? ''));
 const isStamp = value => STAMP.test(String(value ?? ''));
 
-function collectNodes(node, out = []) {
+/**
+ * Flattens a qualification tree to its leaf nodes.
+ *
+ * Bounded: past MAX_QUALIFICATION_DEPTH the walk stops and reports
+ * `tooDeep`, so a malformed structure produces a rejection rather than a
+ * RangeError that would escape into the caller.
+ */
+function collectNodes(node, out = [], depth = 0, state = { tooDeep: false }) {
+  if (depth > MAX_QUALIFICATION_DEPTH) { state.tooDeep = true; return out; }
   if (!node || typeof node !== 'object') return out;
-  if (Array.isArray(node.all)) { node.all.forEach(child => collectNodes(child, out)); return out; }
-  if (Array.isArray(node.any)) { node.any.forEach(child => collectNodes(child, out)); return out; }
-  if (Array.isArray(node.of)) { node.of.forEach(child => collectNodes(child, out)); return out; }
+  for (const key of ['all', 'any', 'of']) {
+    if (Array.isArray(node[key])) {
+      node[key].forEach(child => collectNodes(child, out, depth + 1, state));
+      return out;
+    }
+  }
   out.push(node);
   return out;
+}
+
+/**
+ * Walks every field name in a qualification subtree and reports the first
+ * forbidden key found. Values are never inspected.
+ *
+ * Bounded on the same budget as collectNodes; exceeding it is reported as
+ * `tooDeep` and fails the entry closed.
+ */
+function findForbiddenKey(value, depth = 0, state = { tooDeep: false }) {
+  if (depth > MAX_QUALIFICATION_DEPTH) { state.tooDeep = true; return null; }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const hit = findForbiddenKey(item, depth + 1, state);
+      if (hit) return hit;
+    }
+    return null;
+  }
+  if (!value || typeof value !== 'object') return null;
+  for (const [key, child] of Object.entries(value)) {
+    if (FORBIDDEN_QUALIFIER_KEY_PATTERNS.some(pattern => pattern.test(key))) return key;
+    const hit = findForbiddenKey(child, depth + 1, state);
+    if (hit) return hit;
+  }
+  return null;
 }
 
 function isCompound(node) {
@@ -286,18 +349,23 @@ function validateEntry(raw, { availableAssets } = {}) {
 
   // Qualification ---------------------------------------------------------
   const qualification = raw.qualification;
-  const nodes = collectNodes(qualification);
+  const walkState = { tooDeep: false };
+  const nodes = collectNodes(qualification, [], 0, walkState);
   const emptyQualification = !qualification
     || typeof qualification !== 'object'
     || Object.keys(qualification).length === 0
     || !nodes.length;
-  if (emptyQualification) {
+  if (walkState.tooDeep) {
+    // A qualification deeper than the bound is malformed, not merely unusual.
+    fail(REASON.SCHEMA_INVALID);
+  } else if (emptyQualification) {
     fail(REASON.MISSING_QUALIFICATION);
   } else {
-    const serialized = JSON.stringify(qualification);
-    for (const pattern of FORBIDDEN_QUALIFIER_PATTERNS) {
-      if (pattern.test(serialized)) fail(REASON.FORBIDDEN_QUALIFIER);
-    }
+    // Field names only — never values. A titleMatch of "Active Wear Day" is a
+    // real school event; `{ sharksActive: true }` is a forbidden input.
+    const keyState = { tooDeep: false };
+    if (findForbiddenKey(qualification, 0, keyState)) fail(REASON.FORBIDDEN_QUALIFIER);
+    if (keyState.tooDeep) fail(REASON.SCHEMA_INVALID);
     const seenNodeIds = new Set();
     for (const node of nodes) {
       if (!QUALIFIER_NODE_TYPES.includes(node?.type)) { fail(REASON.UNKNOWN_NODE_TYPE); continue; }
@@ -444,7 +512,8 @@ function validateRegistry(config, options = {}) {
 export {
   ALL_DAY_EXPIRE_TIME,
   AUDIENCES,
-  FORBIDDEN_QUALIFIER_PATTERNS,
+  FORBIDDEN_QUALIFIER_KEY_PATTERNS,
+  MAX_QUALIFICATION_DEPTH,
   KNOWN_LOGO_KEYS,
   KNOWN_RENDERERS,
   LEVELS,
@@ -458,6 +527,7 @@ export {
   SURFACES,
   SURFACE_HOST_PANEL,
   TIMED_EXPIRE_GRACE_MS,
+  findForbiddenKey,
   isClock,
   isDateKey,
   isStamp,

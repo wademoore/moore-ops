@@ -335,6 +335,31 @@ const digNullRegistry = await buildDigest({
 });
 assert(digNullRegistry.specialEventsConfig === null,  'an explicit null registry is respected as-is');
 assert(digNullRegistry.familySpotlightConfig === null, 'the compatibility key is null when there is no registry');
+
+// A projection failure must degrade the compatibility key alone. The registry
+// that parses but explodes when walked cannot come from JSON — that is the
+// point: the guard must not depend on the input path being well behaved.
+const explosiveRegistry = { schemaVersion: 2, treatments: [] };
+Object.defineProperty(explosiveRegistry, 'treatments', {
+  enumerable: true,
+  get() { throw new Error('projection blew up'); },
+});
+let digExplosive = null;
+try {
+  digExplosive = await buildDigest({
+    rawEvents: [], emails: [], docs: {}, banner: null,
+    ...SPORTS_PARAMS,
+    specialEventsData: explosiveRegistry,
+  });
+} catch (error) {
+  digExplosive = { __threw: error.message };
+}
+assert(!digExplosive.__threw,                        'a projection failure must not fail buildDigest');
+assert(digExplosive.familySpotlightConfig === null,  'a failed projection degrades the compatibility key to null');
+assert(digExplosive.specialEventsConfig === explosiveRegistry,
+                                                     'specialEventsConfig survives a projection failure untouched');
+assert(Array.isArray(digExplosive.days) && digExplosive.days.length === 3,
+                                                     'the rest of the digest is generated normally');
 assert(dig.banner === null,                          'banner null when not provided');
 
 // Day 0 (today)

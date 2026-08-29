@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 
 import {
   KNOWN_LOGO_KEYS,
+  MAX_QUALIFICATION_DEPTH,
+  findForbiddenKey,
   LEVELS,
   LEVEL_DEFAULTS,
   PRIORITY_BANDS,
@@ -209,6 +211,126 @@ describe('specialEventSchema — forbidden qualification inputs', () => {
       qualification: { all: [{ any: [{ type: 'calendarOccurrence', id: 'n', wavesActive: true }] }] },
     }));
     assert.ok(errors.includes(REASON.FORBIDDEN_QUALIFIER));
+  });
+
+  it('rejects a forbidden key nested inside a plain sub-object', () => {
+    const errors = errorsFor(entry({
+      qualification: {
+        type: 'calendarOccurrence', id: 'n', calendar: 'Family', kind: 'timed',
+        expectedDate: '2026-09-12', expectedTime: '09:00',
+        titleMatch: { mode: 'prefix', value: 'x', nextGame: {} },
+      },
+    }));
+    assert.ok(errors.includes(REASON.FORBIDDEN_QUALIFIER));
+  });
+
+  it('rejects a forbidden key nested inside an array element', () => {
+    const errors = errorsFor(entry({
+      qualification: {
+        type: 'calendarOccurrence', id: 'n', calendar: 'Family', kind: 'timed',
+        expectedDate: '2026-09-12', expectedTime: '09:00',
+        extras: [{ ok: 1 }, { homeScore: 2 }],
+      },
+    }));
+    assert.ok(errors.includes(REASON.FORBIDDEN_QUALIFIER));
+  });
+
+  it('finds a forbidden key at each supported nesting level', () => {
+    // One compound level costs the key walker two recursion levels (object,
+    // then the array holding its children), so the reachable compound depth is
+    // MAX_QUALIFICATION_DEPTH / 2. Anything real is one or two levels.
+    for (const depth of [0, 1, 5, 20, 40, 60]) {
+      let node = { awayScore: 1 };
+      for (let i = 0; i < depth; i += 1) node = { all: [node] };
+      assert.equal(findForbiddenKey(node), 'awayScore', `missed at compound depth ${depth}`);
+    }
+  });
+});
+
+/**
+ * The scan matches field NAMES, never values. `{ sharksActive: true }` is the
+ * forbidden input; a titleMatch of "Active Wear Day" is a real school event.
+ * An earlier version scanned JSON.stringify(qualification) and rejected both.
+ */
+describe('specialEventSchema — forbidden-key scan never rejects legitimate values', () => {
+  const withTitle = value => entry({
+    qualification: {
+      type: 'calendarOccurrence', id: 'n', calendar: 'Family', kind: 'timed',
+      titleMatch: { mode: 'prefix', value },
+      expectedDate: '2026-09-12', expectedTime: '09:00',
+    },
+  });
+
+  for (const value of [
+    'Active Wear Day',
+    'Scouts Active Night',
+    'Field Day: Most Active Class',
+    'Interactive Museum Trip',
+    'Play-Off Game',
+    'Subtitle Reading Night',
+    'Next Game Watch Party',
+    'Card Count Math Night',
+    'Display Time Capsule',
+  ]) {
+    it(`accepts a titleMatch value of "${value}"`, () => {
+      assert.deepEqual(errorsFor(withTitle(value)), []);
+    });
+  }
+
+  it('accepts a forbidden word appearing in any other value position', () => {
+    assert.deepEqual(errorsFor(entry({
+      qualification: {
+        type: 'approvedDate', id: 'm', date: '2026-09-12',
+        provenance: { approvedBy: 'Active Parents Committee', approvedOn: '2026-08-29', source: 'homeScore ledger' },
+      },
+    })), []);
+  });
+
+  it('still rejects the same word used as a field name', () => {
+    assert.ok(errorsFor(entry({
+      qualification: {
+        type: 'calendarOccurrence', id: 'n', calendar: 'Family', kind: 'timed',
+        titleMatch: { mode: 'prefix', value: 'Active Wear Day' },
+        expectedDate: '2026-09-12', expectedTime: '09:00',
+        sharksActive: true,
+      },
+    })).includes(REASON.FORBIDDEN_QUALIFIER));
+  });
+});
+
+describe('specialEventSchema — qualification walks are bounded and fail closed', () => {
+  const nest = depth => {
+    let node = {
+      type: 'approvedDate', id: 'm', date: '2026-09-12',
+      provenance: { approvedBy: 'Wade', approvedOn: '2026-08-29', source: 's' },
+    };
+    for (let i = 0; i < depth; i += 1) node = { all: [node] };
+    return node;
+  };
+
+  it('accepts a qualification within the depth bound', () => {
+    assert.deepEqual(errorsFor(entry({ qualification: nest(10) })), []);
+  });
+
+  it('rejects a qualification past the depth bound instead of throwing', () => {
+    const overBound = MAX_QUALIFICATION_DEPTH + 10;   // beyond both walkers
+    let errors;
+    assert.doesNotThrow(() => { errors = errorsFor(entry({ qualification: nest(overBound) })); });
+    assert.ok(errors.includes(REASON.SCHEMA_INVALID));
+  });
+
+  it('never throws on a cyclic qualification', () => {
+    const cyclic = {};
+    cyclic.all = [cyclic];
+    let result;
+    assert.doesNotThrow(() => { result = validateRegistry(registry([entry({ qualification: cyclic })])); });
+    assert.deepEqual(result.entries, [], 'a cyclic qualification must not validate');
+  });
+
+  it('findForbiddenKey terminates on a cyclic structure', () => {
+    const cyclic = { safe: 1 };
+    cyclic.self = cyclic;
+    assert.doesNotThrow(() => findForbiddenKey(cyclic));
   });
 
   it('rejects an entry with no qualification at all', () => {

@@ -10,9 +10,14 @@
  * shuffling the candidate list cannot change the outcome.
  *
  * Rules, in the order they are applied:
- *   1. First Day Level-3 is observed. While it holds the page, no registry
- *      treatment resolves — that is how "maximum one Takeover" is honoured
- *      without this phase taking ownership of the First Day renderer.
+ *   1. `firstDayTakeoverActive` — an explicit capability for a future
+ *      registry-driven page orchestrator, NOT the mechanism that protects
+ *      First Day Level-3 today. No runtime caller passes it: in production
+ *      renderDashboardV2() early-returns to the First Day renderer before
+ *      renderAthletics() runs, and the artifact contract independently
+ *      rejects any artifact carrying both treatments. The branch exists so
+ *      that when a page orchestrator does resolve takeovers from the
+ *      registry, "maximum one Takeover" is already expressed here.
  *   2. Exclusive groups: one winner per group, or none.
  *   3. Takeover: at most one, globally. A winning Takeover suppresses lower
  *      levels unless it declares otherwise.
@@ -115,7 +120,10 @@ function arbitrate(candidates, { firstDayTakeoverActive = false } = {}) {
 
   const empty = { takeover: null, spotlight: null, accents: [], dropped, reasons };
 
-  // 1 ── First Day Level-3 is hard-wired and owns the page while it renders.
+  // 1 ── Reserved for a future registry-driven page orchestrator. Not wired
+  //      in production: nothing passes this flag today, because the First Day
+  //      early return in renderDashboardV2() and the artifact contract already
+  //      make coexistence impossible. See this module's header.
   if (firstDayTakeoverActive) {
     dropAll(candidates, REASON.SUPPRESSED_BY_FIRST_DAY);
     return empty;
