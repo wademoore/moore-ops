@@ -56,13 +56,45 @@ function parseSteps(source) {
   return steps;
 }
 
+/**
+ * The YAML belonging to one named job, ending before the next sibling job.
+ *
+ * Steps are only meaningful inside the job that runs them, so every assertion
+ * about *this* gate has to be scoped to the job that carries it. Without this,
+ * a complete gate step relocated into another job — including a job carrying
+ * `if: false`, which never runs at all — would satisfy the whole suite while
+ * the real job had no gate. The last negative control in this file proves that
+ * case; it fails against the unscoped reader.
+ */
+function jobSource(source, name) {
+  const start = source.search(new RegExp(`^  ${name}:\\s*$`, 'm'));
+  assert.notEqual(start, -1, `workflow has no job named ${name}`);
+  const body = source.slice(start);
+  const afterHeader = body.indexOf('\n') + 1;
+  // A sibling job is the next key at exactly two-space indent; everything the
+  // job owns is indented deeper than that.
+  const next = body.slice(afterHeader).search(/^ {2}[A-Za-z_][\w-]*:\s*$/m);
+  return next === -1 ? body : body.slice(0, afterHeader + next);
+}
+
 /** Executable lines of a step's run body, with shell comments removed. */
 const commands = step => step.run
   .map(line => line.replace(/(^|\s)#.*$/, '').trim())
   .filter(Boolean);
 
-const ciSource = () => readFileSync(CI, 'utf8');
-const ciSteps = () => parseSteps(ciSource());
+const ciSource = () => readFileSync(CI, 'utf8').replace(/\r\n/g, '\n');
+const deploySource = () => readFileSync(DEPLOY, 'utf8').replace(/\r\n/g, '\n');
+
+/** Steps of the CI job that actually runs the gate. */
+const ciSteps = () => parseSteps(jobSource(ciSource(), 'test'));
+/** Steps of the deployment job that gates a real deployment. */
+const deploySteps = () => parseSteps(jobSource(deploySource(), 'deploy'));
+/**
+ * Every step in the CI workflow, across all jobs. "CI never deploys" is a
+ * property of the whole workflow, not of one job: scoping that assertion to
+ * `test` would let a second job authenticate to AWS unnoticed.
+ */
+const ciAllSteps = () => parseSteps(ciSource());
 const byName = (steps, name) => {
   const step = steps.find(candidate => candidate.name === name);
   assert.ok(step, `CI workflow has no step named ${name}`);
@@ -131,7 +163,7 @@ describe('CI workflow — the Dashboard v2 package gate runs on pull requests', 
     assert.ok(build < validate, 'the package must be built before it is validated');
     // One `run: |` body under `bash -e`, so a failed build aborts before the
     // validator runs and cannot be masked by a validator that passes anyway.
-    assert.match(readFileSync(CI, 'utf8'), /- name: Build and validate generator package\n\s+run: \|/);
+    assert.match(jobSource(ciSource(), 'test'), /- name: Build and validate generator package\n\s+run: \|/);
   });
 
   it('preserves the full test suite and the deployment-coverage check', () => {
@@ -147,7 +179,8 @@ describe('CI workflow — the Dashboard v2 package gate runs on pull requests', 
   });
 
   it('configures no AWS credentials and performs no deployment', () => {
-    const steps = ciSteps();
+    // Deliberately every job, not just `test` — see ciAllSteps.
+    const steps = ciAllSteps();
     for (const step of steps) {
       assert.doesNotMatch(
         step.uses || '',
@@ -173,13 +206,13 @@ describe('CI workflow — the Dashboard v2 package gate runs on pull requests', 
     // Drift in either direction is the failure this catches: a CI gate that
     // stops matching the deploy step is no longer proving what deploy will do.
     const ci = commands(byName(ciSteps(), 'Build and validate generator package'));
-    const deploy = commands(byName(parseSteps(readFileSync(DEPLOY, 'utf8')), 'Build and validate generator package'));
+    const deploy = commands(byName(deploySteps(), 'Build and validate generator package'));
     assert.deepEqual(ci, deploy);
   });
 
   it('leaves the deployment workflow still gating itself', () => {
     // CI running the gate must not become a reason to drop it from deploy.
-    const steps = parseSteps(readFileSync(DEPLOY, 'utf8'));
+    const steps = deploySteps();
     const gate = commands(byName(steps, 'Build and validate generator package'));
     assert.ok(gate.includes('npm run build:dashboard-artifact'));
     assert.ok(gate.includes('npm run validate:dashboard-artifact-package'));
@@ -194,7 +227,7 @@ describe('CI workflow — the gate cannot be satisfied by comments or prose', ()
   const GATE = '- name: Build and validate generator package';
 
   /** Reparses CI with one mutation applied to its text. */
-  const mutated = transform => parseSteps(transform(ciSource()));
+  const mutated = transform => parseSteps(jobSource(transform(ciSource()), 'test'));
   const gateCommands = steps => {
     const step = steps.find(candidate => candidate.name === 'Build and validate generator package');
     return step ? commands(step) : [];
@@ -236,6 +269,34 @@ describe('CI workflow — the gate cannot be satisfied by comments or prose', ()
     ));
     assert.deepEqual(gateCommands(steps), [], 'the gate is identified by its own step, not by text anywhere in the file');
   });
+
+  const REAL_GATE = /      - name: Build and validate generator package\n        run: \|\n          npm run build:dashboard-artifact\n          npm run validate:dashboard-artifact-package\n/;
+  const DECOY_JOB = extra => `
+  decoy:
+${extra}    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v2
+
+      - name: Build and validate generator package
+        run: |
+          npm run build:dashboard-artifact
+          npm run validate:dashboard-artifact-package
+`;
+
+  // The case the job-scoped reader exists for. A complete, correctly-named
+  // gate — build and validator, in one run body, with Setup SAM ahead of it —
+  // sitting in a *different* job satisfies nothing here, because the job that
+  // runs on every pull request no longer has one.
+  for (const [label, guard] of [['another job', ''], ['a job that never runs', '    if: false\n']]) {
+    it(`a complete gate in ${label} does not count`, () => {
+      const steps = mutated(source => {
+        assert.match(source, REAL_GATE, 'the real gate must be present to remove');
+        return source.replace(REAL_GATE, '').trimEnd() + '\n' + DECOY_JOB(guard);
+      });
+      assert.deepEqual(gateCommands(steps), [], 'a gate outside the test job must not satisfy it');
+    });
+  }
 
   it('the step name alone, with no run body, does not count', () => {
     const steps = mutated(source => source.replace(
