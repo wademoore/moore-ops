@@ -389,6 +389,8 @@ Dashboard v2 Phase 4A added a private artifact generator in stack `moore-ops-das
 
 Dashboard v2 sports live refresh Phase 3B was deployed in `us-east-2` as stack `moore-ops-sports-live-refresh` (deployment evidence, exact CORS origins, validation, costs and rollback recorded in `docs/dashboard-v2/sports-live-refresh-phase-3b.md`); at that point production Pi/DAKboard cutover was intentionally not yet complete. **That cutover has since happened** — Phase 3C (Aug 15, 2026) put the Pi on Dashboard v2 in production; see `docs/dashboard-v2/phase-3c-production-cutover.md`. The account concurrency quota is 10, so the endpoint must not configure positive reserved concurrency unless that quota is raised first.
 
+W&M football is a Patriot League associate member beginning with the 2026 season; its ticker feed uses conference short name `Patriot`. W&M men's basketball remains in the CAA. ESPN standings group `81` is the FCS umbrella payload (not a CAA-only group) and contains W&M under the Patriot League child group, so keep that group on the football feed. The ticker's local `wm`/`tribe` identity keys resolve to the official stroked interlocked W&M simple primary athletics mark in `render/assets-v2/logo-wm.webp`.
+
 ### Local JSON files (`data/` folder — committed to repo)
 
 > **Guard rail — before writing to any `data/*.json` file:** confirm the filename appears in the "Current, authoritative files" list below, not in "Archived." Files ending in `-v2` or the newest suffix are current; plain/legacy names (without a version suffix) are archived at `data/archive/` and must not be written to. When in doubt, check here first.
