@@ -112,7 +112,7 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     });
   }
 
-  it('keeps a complete 20-event two-week schedule above Athletics', async () => {
+  it('keeps the chronological next 10 above Athletics and discloses later events', async () => {
     const event = (title, dateTime) => ({
       title,
       subtitle: '',
@@ -151,14 +151,19 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     const result = await page.evaluate(() => {
       const rows = [...document.querySelectorAll('.upcoming-event')];
       const lastDay = document.querySelector('.upcoming-day:last-child')?.getBoundingClientRect();
+      const later = document.querySelector('.upcoming-later')?.getBoundingClientRect();
       const athletics = document.querySelector('.athletics-panel')?.getBoundingClientRect();
       return {
         eventCount: rows.length,
+        laterText: document.querySelector('.upcoming-later')?.textContent,
         lastDayBottom: lastDay?.bottom,
+        laterTop: later?.top,
         athleticsTop: athletics?.top,
       };
     });
-    assert.equal(result.eventCount, 20);
+    assert.equal(result.eventCount, 10);
+    assert.equal(result.laterText, '+10 later in the two-week window');
+    assert.ok(result.lastDayBottom <= result.laterTop, JSON.stringify(result));
     assert.ok(result.lastDayBottom <= result.athleticsTop, JSON.stringify(result));
   });
 });

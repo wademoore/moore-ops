@@ -503,8 +503,10 @@ function rangeDetail(item) {
 
 function renderUpcoming(data) {
   const allItems = collapseUpcomingEvents(data.upcomingEvents, data.today);
+  const visibleItems = allItems.slice(0, 10);
+  const laterCount = allItems.length - visibleItems.length;
   const grouped = new Map();
-  for (const item of allItems) {
+  for (const item of visibleItems) {
     if (!grouped.has(item.startKey)) grouped.set(item.startKey, []);
     grouped.get(item.startKey).push(item);
   }
@@ -526,10 +528,11 @@ function renderUpcoming(data) {
       <div class="count-chip">${esc(countdownLabel(days))}</div>
     </div>`;
   }).join('');
-  const densityClass = allItems.length > 14 || allDays.length > 9 ? ' upcoming-dense' : '';
+  const densityClass = allDays.length > 9 ? ' upcoming-dense' : '';
   return `<section class="paper-panel upcoming-panel${densityClass}">
-    ${renderSectionTitle('Next Two Weeks', 'green', 'calendar')}
+    ${renderSectionTitle('Next 10 Events', 'green', 'calendar')}
     <div class="upcoming-list">${rows || '<div class="empty-state">No upcoming events.</div>'}</div>
+    ${laterCount ? `<div class="upcoming-later">+${laterCount} later in the two-week window</div>` : ''}
   </section>`;
 }
 
@@ -838,12 +841,13 @@ function renderRightRail(data) {
       <div class="weather-label">Williamsburg Weather</div>
       ${weatherAvailable ? `<div class="weather-now">${weatherIcon(current.icon || 'sun')}<strong>${esc(current.temperature)}°</strong></div>
       <span>Feels like ${esc(current.feelsLike ?? current.temperature)}°</span>
-      ${current.summary ? `<small>${esc(current.summary)}</small>` : ''}` : '<strong>Weather temporarily unavailable</strong><span>The calendar is still current.</span>'}
+      ${current.summary ? `<small>${esc(current.summary)}</small>` : ''}
+      ${current.observedLabel ? `<em class="weather-source">${esc(current.observedLabel)}</em>` : ''}` : '<strong>Weather temporarily unavailable</strong><span>The calendar is still current.</span>'}
     </section>
     <section class="rail-card forecast-card ${weatherAvailable ? '' : 'weather-unavailable'}">
-      <div class="forecast-heading">7-Day Forecast</div>
-      ${weatherAvailable ? days.map((day, index) => `<div class="forecast-row ${index === 0 ? 'today' : ''}">
-        <span>${esc(index === 0 ? 'Today' : day.label)}</span>${weatherIcon(day.icon || 'sun')}
+      <div class="forecast-heading">${days.length || 7}-Day Forecast</div>
+      ${weatherAvailable ? days.map(day => `<div class="forecast-row ${day.label === 'Today' ? 'today' : ''}">
+        <span>${esc(day.label)}</span>${weatherIcon(day.icon || 'sun')}
         <b>${esc(day.high)}°</b><small>${esc(day.low)}°</small><i>${day.precipitation ? `${esc(day.precipitation)}%` : ''}</i>
       </div>`).join('') : '<div class="forecast-fallback"><span>Forecast will return automatically on the next successful refresh.</span></div>'}
     </section>
@@ -1088,8 +1092,8 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 /* Runtime fallbacks: semantic event marks, explicit weather state, and stable horizon geometry. */
 .semantic-icon{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(212,154,24,.10);color:${COLORS.gold};padding:3px}.semantic-icon svg{width:100%;height:100%;stroke:currentColor;stroke-width:1.8;fill:none}.semantic-icon.category-appointment{color:${COLORS.red}}.semantic-icon.category-school{color:${COLORS.blue}}.semantic-icon.category-household{color:${COLORS.green}}.semantic-icon.category-arts{color:${COLORS.purple}}.semantic-icon.category-sports{color:${COLORS.blue}}.semantic-icon.category-family{color:${COLORS.red}}.activity-visual{position:relative}.activity-visual img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:${COLORS.paper}}
 .current-weather.weather-unavailable{gap:12px;text-align:center}.current-weather.weather-unavailable>strong{max-width:220px;font-size:24px;line-height:1.05}.current-weather.weather-unavailable>span{font-size:16px;color:#5d675f}.forecast-card.weather-unavailable{grid-template-rows:42px 1fr}.forecast-fallback{grid-column:1/3;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;color:#5d675f;font-size:20px;line-height:1.25}.next-up-empty{display:flex;flex-direction:column}.next-up-empty:before{background:${COLORS.green}}.next-up-empty-copy{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 10px}.next-up-empty-copy strong{font-size:20px}.next-up-empty-copy small{font-size:14px;color:#58635c;margin-top:6px}
-/* Real-data resilience: complete calendar rows, adaptive one-card athletics, and ranked rail items. */
-.upcoming-list{overflow:visible}
+/* Real-data resilience: chronological calendar rows, adaptive one-card athletics, and ranked rail items. */
+.upcoming-list{overflow:visible}.upcoming-later{position:absolute;right:18px;bottom:8px;padding:3px 9px;border-radius:10px;background:${COLORS.paper};color:${COLORS.greenDark};font-size:11px;font-weight:800;box-shadow:0 1px 4px rgba(20,40,31,.16)}.weather-source{display:block;margin-top:3px;color:#657168;font-size:10px;font-style:normal;line-height:1}
 .upcoming-panel.upcoming-dense .upcoming-day{grid-template-columns:62px minmax(0,1fr) 70px;gap:8px;min-height:44px;padding:2px 0 2px 10px}
 .upcoming-panel.upcoming-dense .date-tile span{font-size:11px}.upcoming-panel.upcoming-dense .date-tile b{font-size:30px}
 .upcoming-panel.upcoming-dense .upcoming-events{gap:1px}.upcoming-panel.upcoming-dense .upcoming-event{grid-template-columns:27px minmax(0,1fr);gap:6px}
