@@ -111,6 +111,61 @@ describe('dashboard v2 2560x1440 layout verification', () => {
       assert.ok(result.surfaces.every(surface => surface.brightness <= 227), JSON.stringify(result.surfaces));
     });
   }
+
+  it('keeps the chronological next 10 above Athletics and discloses later events', async () => {
+    const event = (title, dateTime) => ({
+      title,
+      subtitle: '',
+      cardType: 'standard',
+      raw: { start: { dateTime } },
+    });
+    const upcomingEvents = [
+      event('Prep Fifth Grade Me Bag', '2026-08-30T17:00:00-04:00'),
+      event('CORE Annual Gathering', '2026-08-31T09:00:00-04:00'),
+      event('Myles Sharks Practice', '2026-08-31T18:00:00-04:00'),
+      event('Swim Team Board Meeting', '2026-08-31T19:00:00-04:00'),
+      event('Check Disney discounts', '2026-09-01T09:00:00-04:00'),
+      event('Ophelia 757swim practice', '2026-09-01T17:00:00-04:00'),
+      event('Myles Take Care of Me List', '2026-09-02T09:00:00-04:00'),
+      event('Myles Sharks Practice', '2026-09-02T17:45:00-04:00'),
+      event('Ophelia 757swim practice', '2026-09-03T17:00:00-04:00'),
+      event('No School', '2026-09-04T09:00:00-04:00'),
+      event('Ophelia 757swim practice', '2026-09-05T12:15:00-04:00'),
+      event('W&M Football Tailgate', '2026-09-05T15:00:00-04:00'),
+      event('W&M Football Game', '2026-09-05T18:00:00-04:00'),
+      event('Recycling Pickup', '2026-09-06T09:00:00-04:00'),
+      event('Labor Day', '2026-09-07T09:00:00-04:00'),
+      event('Myles Sharks Practice', '2026-09-07T18:00:00-04:00'),
+      event('Orthodontist', '2026-09-08T16:00:00-04:00'),
+      event('Ophelia 757swim practice', '2026-09-08T17:00:00-04:00'),
+      event('Myles Sharks Practice', '2026-09-09T17:45:00-04:00'),
+      event('Ophelia 757swim practice', '2026-09-10T17:00:00-04:00'),
+    ];
+    await page.setContent(renderDashboardV2({
+      ...sampleDashboardV2Data,
+      today: new Date(2026, 7, 29),
+      upcomingEvents,
+      athletics: { swim757Active: true, opheliaPBRows: [] },
+    }), { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+    const result = await page.evaluate(() => {
+      const rows = [...document.querySelectorAll('.upcoming-event')];
+      const lastDay = document.querySelector('.upcoming-day:last-child')?.getBoundingClientRect();
+      const later = document.querySelector('.upcoming-later')?.getBoundingClientRect();
+      const athletics = document.querySelector('.athletics-panel')?.getBoundingClientRect();
+      return {
+        eventCount: rows.length,
+        laterText: document.querySelector('.upcoming-later')?.textContent,
+        lastDayBottom: lastDay?.bottom,
+        laterTop: later?.top,
+        athleticsTop: athletics?.top,
+      };
+    });
+    assert.equal(result.eventCount, 10);
+    assert.equal(result.laterText, '+10 later in the two-week window');
+    assert.ok(result.lastDayBottom <= result.laterTop, JSON.stringify(result));
+    assert.ok(result.lastDayBottom <= result.athleticsTop, JSON.stringify(result));
+  });
 });
 
 describe('family spotlight 2560x1440 footprint and readability', () => {

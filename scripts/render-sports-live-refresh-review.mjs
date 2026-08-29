@@ -15,7 +15,7 @@ const slot=(organization,label,eventValue,extra={})=>({organization,label,logo:o
 const after=publicResponse({version:1,generatedAt:now.toISOString(),nextPollSeconds:300,slots:[
   slot('nationals','Nationals',event('nationals','baseball','mlb','PHI'),{lastResult:{id:'last',organization:'nationals',sport:'baseball',league:'mlb',state:'final',startTime:'2026-08-14T23:05:00.000Z',completedAt:'2026-08-14T23:05:00.000Z',opponent:'NYM',opponentAbbreviation:'NYM',homeAway:'away',teamScore:5,opponentScore:2,result:'W'},record:'60-64',records:{overall:'60-64',conference:null,regularSeason:'60-64',preseason:null},standing:'4th NL East'}),
   slot('commanders','Commanders',event('commanders','football','nfl','CIN',{seasonType:'Preseason'}),{record:'1-0',records:{overall:'1-0',conference:null,regularSeason:'0-0',preseason:'1-0'}}),
-  slot('wm','W&M',event('wm','football','college-football','RICH'),{record:'1-0',records:{overall:'1-0',conference:'0-0',regularSeason:null,preseason:null},conference:'CAA',standing:'2nd CAA'}),
+  slot('wm','W&M',event('wm','football','college-football','RICH'),{record:'1-0',records:{overall:'1-0',conference:'0-0',regularSeason:null,preseason:null},conference:'Patriot',standing:'2nd Patriot'}),
   slot('tennessee','Tennessee',event('tennessee','football','college-football','SYR',{rank:12}),{record:'2-0',records:{overall:'2-0',conference:'1-0',regularSeason:null,preseason:null},conference:'SEC',standing:'T-2nd SEC'})
 ]});
 await mkdir(output,{recursive:true});const htmlPath=resolve(output,'client-refresh.html');await writeFile(htmlPath,renderDashboardV2({...sampleDashboardV2Data,now,today:now,sportsSnapshot:before,sportsFeedUrl:'https://sports.invalid'}),'utf8');

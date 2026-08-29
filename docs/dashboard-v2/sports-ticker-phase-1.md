@@ -6,7 +6,7 @@ The Nationals use the official, no-key MLB Stats API. W&M football, W&M men's ba
 
 Validated identifiers and endpoints:
 
-- W&M football: `football/college-football`, team `2729`, explicit season types 2 and 3.
+- W&M football: `football/college-football`, team `2729`, explicit season types 2 and 3. Beginning in 2026 it is a Patriot League associate member; ESPN's FCS umbrella standings group `81` contains its row under the Patriot League child group (`27`, short name `Patriot`).
 - W&M men's basketball: `basketball/mens-college-basketball`, team `2729`, explicit season types 2 and 3. The season parameter is the ending year.
 - Tennessee football: `football/college-football`, team `2633`, explicit season types 2 and 3.
 - Commanders: `football/nfl`, slug `wsh` (numeric provider ID `28`), explicit season types 1, 2 and 3.
@@ -17,6 +17,8 @@ ESPN schedule template: `https://site.api.espn.com/apis/site/v2/sports/{sport}/{
 ## Boundary and failure behavior
 
 Each feed is fetched independently with an eight-second timeout, HTTP-status checking, schema guards and deterministic event sorting. The renderer receives only the versioned provider-neutral snapshot. It uses local embedded identity assets and never accepts a remote logo URL. One failed feed cannot suppress another organization. Invalid client refreshes preserve the displayed snapshot.
+
+W&M's local `wm` and legacy `tribe` identity keys both resolve to `render/assets-v2/logo-wm.webp`, the official stroked interlocked W&M simple primary athletics mark. The stroked version is the athletics brand's recommended option when the background cannot be controlled, which fits the ticker's embedded, theme-independent asset policy.
 
 Initial HTML contains an embedded snapshot. `window.updateSportsTicker(snapshot)` can replace its four existing slots in place. Polling is disabled unless a sports URL is explicitly configured; the proposed interval is five minutes. The snapshot contains no household data or credentials.
 

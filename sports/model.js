@@ -3,7 +3,7 @@ const DAY = 24 * HOUR;
 export const SPORTS_SNAPSHOT_VERSION = 1;
 export const TEAM_CONFIG = Object.freeze({
   wm: { organization: 'wm', label: 'W&M', affinity: 1, logo: 'wm', feeds: [
-    { id: 'wm-football', provider: 'espn', sport: 'football', league: 'college-football', teamId: '2729', standingsGroup: '81', conference: 'CAA' },
+    { id: 'wm-football', provider: 'espn', sport: 'football', league: 'college-football', teamId: '2729', standingsGroup: '81', conference: 'Patriot' },
     { id: 'wm-basketball', provider: 'espn', sport: 'basketball', league: 'mens-college-basketball', teamId: '2729', standingsGroup: '10', conference: 'CAA' },
   ] },
   tennessee: { organization: 'tennessee', label: 'Tennessee', affinity: 2, logo: 'tennessee', feeds: [
