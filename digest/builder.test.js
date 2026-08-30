@@ -313,10 +313,23 @@ assert(dig.sharksSoccerData && Array.isArray(dig.sharksSoccerData.seasons),
 assert('familySpotlightConfig' in dig,                'familySpotlightConfig retained for the migration window');
 assert(dig.familySpotlightConfig && Array.isArray(dig.familySpotlightConfig.spotlights),
                                                      'familySpotlightConfig carries a spotlights array');
-assert(dig.familySpotlightConfig.spotlights.length === dig.specialEventsConfig.treatments.length,
+// The projection covers only what a legacy Family Spotlight could express —
+// enabled, ready, feature-slot, spotlight-children-v1 — and omits rather than
+// approximates anything else. Comparing against that subset rather than
+// against the whole registry is what keeps this a "one source" assertion now
+// that the registry also carries event-row accents, which have no legacy form.
+const legacyExpressible = dig.specialEventsConfig.treatments.filter(entry =>
+  entry.enabled === true && entry.status === 'ready'
+  && entry.level === 'spotlight' && entry.surface === 'feature-slot'
+  && entry.presentation?.renderer === 'spotlight-children-v1');
+assert(legacyExpressible.length > 0,                 'the registry still carries a legacy-expressible spotlight');
+assert(dig.familySpotlightConfig.spotlights.length === legacyExpressible.length,
                                                      'the compatibility key projects the same registry, not a second source');
-assert(dig.familySpotlightConfig.spotlights[0].id === dig.specialEventsConfig.treatments[0].id,
+assert(dig.familySpotlightConfig.spotlights.every((spotlight, index) => spotlight.id === legacyExpressible[index].id),
                                                      'the compatibility key is derived from special-events.json');
+assert(!dig.familySpotlightConfig.spotlights.some(spotlight =>
+  dig.specialEventsConfig.treatments.some(entry => entry.id === spotlight.id && entry.level === 'accent')),
+                                                     'the compatibility key never approximates an accent as a spotlight');
 
 const digInjectedRegistry = await buildDigest({
   rawEvents: [], emails: [], docs: {}, banner: null,

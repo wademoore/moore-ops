@@ -32,6 +32,16 @@ const SPOTLIGHT_TIME_ATTRIBUTES = Object.freeze([
  * artifact and the browser controller that reads them.
  */
 const TREATMENT_TIME_ATTRIBUTES = SPOTLIGHT_TIME_ATTRIBUTES;
+const ACCENT_TIME_ATTRIBUTES = Object.freeze([
+  'data-accent-activate-at',
+  'data-accent-expire-at',
+]);
+/**
+ * Accent capacity, per host panel, from the framework's level defaults. The
+ * arbiter enforces it upstream; asserting it here means a regression fails the
+ * build instead of reaching a television.
+ */
+const MAX_EVENT_ROW_ACCENTS = 2;
 const FORBIDDEN_PATTERNS = Object.freeze([
   /client_secret/i,
   /refresh_token/i,
@@ -85,6 +95,37 @@ function validateArtifact(html, { sportsFeedUrl, minBytes = MIN_ARTIFACT_BYTES, 
       if (!match || !Number.isFinite(Number(match[1]))) failures.push(`spotlight artifact is missing a valid ${attribute}`);
     }
   }
+  // Event-row accents are conditional in exactly the way a feature-slot
+  // Spotlight is: they must never join LEVEL2_REQUIRED_MARKERS, or every
+  // ordinary day would fail validation. These assertions fire only when an
+  // accent is actually present.
+  if (html.includes('data-accent-id')) {
+    const accentCount = (html.match(/data-accent-id="/g) || []).length;
+    if (accentCount > MAX_EVENT_ROW_ACCENTS) {
+      failures.push(`more than ${MAX_EVENT_ROW_ACCENTS} event-row accents are present`);
+    }
+    // An accent decorates an Upcoming row, and the First Day takeover renders
+    // no Upcoming panel at all. Coexistence would mean two treatments claiming
+    // the page, which is the same failure the mode check above guards.
+    if (firstDay) failures.push('event-row accent must not coexist with the first-day treatment');
+    if (!html.includes('upcoming-panel')) failures.push('accent artifact is missing required marker: upcoming-panel');
+    // Every accented row ships in the ordinary state and is switched by the
+    // bounded controller, so a failed or absent script leaves ordinary rows
+    // rather than permanently lit ones. Counted rather than merely present:
+    // one row shipping already-active would light up regardless of the clock.
+    // The stylesheet's own `[data-accent-state="active"]` selector cannot
+    // satisfy this, because it never contains the string `"ordinary"`.
+    const ordinaryStates = (html.match(/data-accent-state="ordinary"/g) || []).length;
+    if (ordinaryStates !== accentCount) {
+      failures.push(`accent artifact ships ${ordinaryStates} ordinary fallback states for ${accentCount} accents`);
+    }
+    for (const attribute of ACCENT_TIME_ATTRIBUTES) {
+      const values = [...html.matchAll(new RegExp(`${attribute}="([^"]*)"`, 'g'))].map(match => match[1]);
+      if (values.length !== accentCount || values.some(value => !/^\d+$/.test(value))) {
+        failures.push(`accent artifact is missing a valid ${attribute}`);
+      }
+    }
+  }
   for (const pattern of FORBIDDEN_PATTERNS) if (pattern.test(html)) failures.push(`forbidden content matched ${pattern}`);
   if (!/^<!doctype html>/i.test(html)) failures.push('artifact is not the expected HTML document');
   if (failures.length) throw new Error(failures.join('; '));
@@ -114,7 +155,9 @@ function createManifest({ generatedAt, artifactKey, artifactVersionId, bytes, ch
 }
 
 export {
+  ACCENT_TIME_ATTRIBUTES,
   ARTIFACT_VERSION,
+  MAX_EVENT_ROW_ACCENTS,
   FORBIDDEN_PATTERNS,
   MAX_ARTIFACT_BYTES,
   MIN_ARTIFACT_BYTES,

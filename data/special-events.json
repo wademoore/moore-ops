@@ -19,7 +19,10 @@
             "type": "calendarOccurrence",
             "id": "ophelia-kickoff",
             "calendar": "Ophelia",
-            "titleMatch": { "mode": "prefix", "value": "757swim Kick-Off Party" },
+            "titleMatch": {
+              "mode": "prefix",
+              "value": "757swim Kick-Off Party"
+            },
             "expectedDate": "2026-09-12",
             "expectedTime": "12:30",
             "kind": "timed"
@@ -28,7 +31,10 @@
             "type": "calendarOccurrence",
             "id": "myles-opener",
             "calendar": "Myles",
-            "titleMatch": { "mode": "prefix", "value": "Sharks vs VIP United" },
+            "titleMatch": {
+              "mode": "prefix",
+              "value": "Sharks vs VIP United"
+            },
             "expectedDate": "2026-09-12",
             "expectedTime": "13:15",
             "kind": "timed"
@@ -80,13 +86,110 @@
           }
         ]
       },
-      "assets": { "logos": ["swim757", "sharks"] },
-      "fallback": { "onFailure": "ordinary" },
+      "assets": {
+        "logos": [
+          "swim757",
+          "sharks"
+        ]
+      },
+      "fallback": {
+        "onFailure": "ordinary"
+      },
       "provenance": {
         "source": "data/family-spotlight.json (pre-migration), Ophelia and Myles calendars, data/sharks-soccer.json match 641",
         "migratedOn": "2026-08-29"
       },
       "note": "First reusable Family Spotlight, and the legacy compatibility fixture for the generalized framework. Both children qualify from their exact calendar occurrences, never from season flags — the 2026-27 swim757 window in sports-config.json is stale and swim757Active is false on this date, which is deliberately irrelevant here. expireAt is 5:00 PM ET: the Ophelia event runs 12:30-4:30 PM (team picture, intrasquad meet, then the Kick-Off Party), and the full event participates, so expiry is 30 minutes after the latest participating end. inclusionLeadMs is pinned at 48h rather than inheriting the 72h spotlight default, so this entry's inclusion boundary is unchanged by the migration."
+    },
+    {
+      "id": "ophelia-757swim-catch-em-all-1-2026-09-19",
+      "date": "2026-09-19",
+      "level": "accent",
+      "surface": "event-row",
+      "audience": "ophelia",
+      "status": "ready",
+      "enabled": true,
+      "priority": 150,
+      "exclusiveGroup": null,
+      "qualification": {
+        "note": "One calendarRange node, not two calendarOccurrence nodes. The meet is a single all-day Google event (start.date 2026-09-19, exclusive end.date 2026-09-21), so it produces exactly one occurrence and exactly one Upcoming row. Qualifying it as a range keeps that one-to-one: the accent decorates the row that already exists and cannot introduce a second, fabricated Sunday row. expectedEndDateInclusive is the inclusive final day Google's exclusive end resolves to.",
+        "type": "calendarRange",
+        "id": "catch-em-all-1",
+        "calendar": "Ophelia",
+        "titleMatch": {
+          "mode": "prefix",
+          "value": "757swim: Catch 'Em All Series #1"
+        },
+        "expectedStartDate": "2026-09-19",
+        "expectedEndDateInclusive": "2026-09-20"
+      },
+      "lifecycle": {
+        "note": "Deliberately empty: this entry takes the accent lifecycle defaults in full — 48h inclusion lead, visible from 4:00 PM ET on the previous day (2026-09-18T16:00), and the all-day/multi-day default expiry of 8:00 PM ET on the inclusive final day (2026-09-20T20:00). Nothing is pinned, so the framework defaults are what ship."
+      },
+      "presentation": {
+        "renderer": "accent-event-row-v1",
+        "ref": "catch-em-all-1",
+        "owner": "Ophelia",
+        "doodle": "swim-goggles",
+        "label": null,
+        "note": "No label. The approved contract declines a redundant MEET WEEKEND chip because the row's own title already reads as a meet at TV distance. The accent is the purple ownership wash plus the goggles doodle, and the row's existing text, semantic mark, ordering and height are untouched."
+      },
+      "assets": {
+        "logos": []
+      },
+      "fallback": {
+        "onFailure": "ordinary"
+      },
+      "provenance": {
+        "source": "Ophelia calendar, all-day event 2026-09-19 - 2026-09-21 (exclusive), read live 2026-08-30",
+        "approvedOn": "2026-08-30"
+      },
+      "note": "First reusable Dashboard v2 Accent. Calendar presence is what establishes that Ophelia is attending, as previously approved — there is no approvedDate node, because a real calendar anchor exists and a title/date-only approval would be weaker than the thing it stands in for."
+    },
+    {
+      "id": "myles-flag-football-week1-2026-09-20",
+      "date": "2026-09-20",
+      "level": "accent",
+      "surface": "event-row",
+      "audience": "myles",
+      "status": "ready",
+      "enabled": true,
+      "priority": 151,
+      "exclusiveGroup": null,
+      "qualification": {
+        "note": "A single-day all-day occurrence (start.date 2026-09-20, exclusive end.date 2026-09-21). Matched as a calendarOccurrence of kind all-day, so a timed replacement of this event would fail closed rather than silently accenting a different row.",
+        "type": "calendarOccurrence",
+        "id": "flag-football-week-1",
+        "calendar": "Myles",
+        "titleMatch": {
+          "mode": "prefix",
+          "value": "Flag Football: Week 1"
+        },
+        "expectedDate": "2026-09-20",
+        "kind": "all-day"
+      },
+      "lifecycle": {
+        "note": "Accent defaults in full — 48h inclusion lead, visible from 2026-09-19T16:00 ET, expiring 2026-09-20T20:00 ET as the all-day default. Nothing pinned."
+      },
+      "presentation": {
+        "renderer": "accent-event-row-v1",
+        "ref": "flag-football-week-1",
+        "owner": "Myles",
+        "doodle": "football-laces",
+        "label": "FIRST GAME",
+        "note": "The compact FIRST GAME label is what makes this occurrence significant - it is the first fall game. The doodle is a football-and-laces mark: in flag football the \"flag\" is the belt flag, not a field pennant, so a pennant would have named the wrong object entirely. It is decoration only. No flag-football team logo is declared, and none exists: `assets.logos` is empty and the row keeps the semantic sports mark the ordinary renderer already gave it. Inventing a mark here would put an unauthoritative logo on the wall."
+      },
+      "assets": {
+        "logos": []
+      },
+      "fallback": {
+        "onFailure": "ordinary"
+      },
+      "provenance": {
+        "source": "Myles calendar, all-day event 2026-09-20 - 2026-09-21 (exclusive), read live 2026-08-30",
+        "approvedOn": "2026-08-30"
+      },
+      "note": "Second Dashboard v2 Accent, and the coexistence case: this and the 757swim accent are both event-row accents in the Upcoming panel, they attach to different occurrences, and both are admitted under the two-per-host-panel accent cap. Neither is promoted to a Spotlight - the priorities sit in the accent band (100-199) and the arbiter never moves a treatment between levels."
     }
   ]
 }

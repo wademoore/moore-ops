@@ -2,7 +2,12 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  ACCENT_RENDERERS,
+  KNOWN_DOODLE_KEYS,
   KNOWN_LOGO_KEYS,
+  KNOWN_RENDERERS,
+  MAX_ACCENT_LABEL_LENGTH,
+  OWNER_TONE,
   MAX_QUALIFICATION_DEPTH,
   findForbiddenKey,
   LEVELS,
@@ -514,5 +519,79 @@ describe('specialEventSchema — registry-level validation', () => {
       lifecycle: { activateAt: '2026-12-25T00:00', expireAt: '2026-12-25T12:00' },
     })])).entries;
     assert.equal(validated.suppressesLowerLevels, false);
+  });
+});
+
+describe('specialEventSchema — accent-event-row-v1 presentation', () => {
+  const errorsFor = raw => validateEntry(raw).errors;
+
+  /** A valid accent that declares the one accent renderer that exists. */
+  const accent = (presentation = {}) => entry({
+    level: 'accent',
+    priority: 150,
+    surface: 'event-row',
+    presentation: {
+      renderer: 'accent-event-row-v1',
+      ref: 'anchor',
+      owner: 'Ophelia',
+      doodle: 'swim-goggles',
+      ...presentation,
+    },
+  });
+
+  it('accepts a complete accent presentation', () => {
+    assert.deepEqual(errorsFor(accent()), []);
+    assert.deepEqual(errorsFor(accent({ owner: 'Myles', doodle: 'football-laces', label: 'FIRST GAME' })), []);
+  });
+
+  it('keeps the accent and spotlight renderer sets disjoint', () => {
+    // A treatment must never be admitted with a renderer that cannot fill its
+    // surface: an accent decorates a row, spotlight-children-v1 replaces a
+    // panel's whole contents. Crossing the two would fail on a television.
+    assert.deepEqual(ACCENT_RENDERERS.filter(name => KNOWN_RENDERERS.includes(name)), []);
+    assert.ok(errorsFor(entry({ presentation: { renderer: 'accent-event-row-v1' } })).includes(REASON.MISSING_RENDERER));
+    assert.ok(errorsFor(accent({ renderer: 'spotlight-children-v1' })).includes(REASON.MISSING_RENDERER));
+  });
+
+  it('still permits an accent with no renderer at all', () => {
+    assert.deepEqual(errorsFor(entry({ level: 'accent', priority: 150, surface: 'event-row', presentation: {} })), []);
+  });
+
+  it('rejects an accent that cannot name the occurrence it decorates', () => {
+    for (const ref of [undefined, null, '', '   ', 42]) {
+      assert.ok(errorsFor(accent({ ref })).includes(REASON.ACCENT_PRESENTATION_INVALID), `ref=${String(ref)}`);
+    }
+  });
+
+  it('rejects an owner outside the established ownership tones', () => {
+    for (const owner of [undefined, null, 'Wade', 'myles', 'Family']) {
+      assert.ok(errorsFor(accent({ owner })).includes(REASON.ACCENT_PRESENTATION_INVALID), `owner=${String(owner)}`);
+    }
+    for (const owner of Object.keys(OWNER_TONE)) assert.deepEqual(errorsFor(accent({ owner })), []);
+  });
+
+  it('rejects a doodle key with no artwork behind it', () => {
+    for (const doodle of [undefined, null, '', 'confetti', 'star', 'swim_goggles']) {
+      assert.ok(errorsFor(accent({ doodle })).includes(REASON.UNKNOWN_ASSET_KEY), `doodle=${String(doodle)}`);
+    }
+    for (const doodle of KNOWN_DOODLE_KEYS) assert.deepEqual(errorsFor(accent({ doodle })), []);
+  });
+
+  it('bounds the compact label so it cannot force a row taller', () => {
+    assert.deepEqual(errorsFor(accent({ label: 'X'.repeat(MAX_ACCENT_LABEL_LENGTH) })), []);
+    assert.ok(errorsFor(accent({ label: 'X'.repeat(MAX_ACCENT_LABEL_LENGTH + 1) })).includes(REASON.ACCENT_PRESENTATION_INVALID));
+    assert.ok(errorsFor(accent({ label: '   ' })).includes(REASON.ACCENT_PRESENTATION_INVALID));
+    assert.ok(errorsFor(accent({ label: 7 })).includes(REASON.ACCENT_PRESENTATION_INVALID));
+    // An absent label is the ordinary case — the 757swim accent carries none.
+    assert.deepEqual(errorsFor(accent({ label: null })), []);
+  });
+
+  it('does not let an accent renderer reach a protected region', () => {
+    // Defence in depth over the structural guarantee: no protected region is
+    // nameable as a surface, so an accent cannot be configured onto one.
+    for (const region of PROTECTED_REGIONS) {
+      assert.ok(errorsFor(accent({})) .length === 0);
+      assert.ok(errorsFor(entry({ level: 'accent', priority: 150, surface: region, presentation: {} })).includes(REASON.UNKNOWN_SURFACE), region);
+    }
   });
 });

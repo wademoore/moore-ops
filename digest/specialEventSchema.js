@@ -116,6 +116,46 @@ const KNOWN_LOGO_KEYS = Object.freeze([
 /** Presentation renderers that actually exist. Anything else fails closed. */
 const KNOWN_RENDERERS = Object.freeze(['spotlight-children-v1']);
 
+/**
+ * Accent renderers, kept in their own list rather than merged into
+ * KNOWN_RENDERERS.
+ *
+ * The two sets are disjoint on purpose: an accent decorates a row that the
+ * ordinary renderer already drew, while `spotlight-children-v1` replaces a
+ * panel's whole contents. Letting a spotlight name an accent renderer — or the
+ * reverse — would put a treatment on a surface its renderer cannot fill, and
+ * the failure would appear on a television rather than at load.
+ */
+const ACCENT_RENDERERS = Object.freeze(['accent-event-row-v1']);
+
+/**
+ * Decorative activity doodles available to `accent-event-row-v1`.
+ *
+ * A doodle is decoration only. It never replaces the row's semantic icon or an
+ * official sports logo — the renderer draws it behind the row, outside the
+ * text's reading area, and the row's own mark is untouched. Validated here so
+ * a typo is a diagnostic instead of a blank patch on the wall.
+ */
+const KNOWN_DOODLE_KEYS = Object.freeze(['swim-goggles', 'football-laces']);
+
+/**
+ * Dashboard v2 ownership tones. These are the established v2 ownership colours
+ * (Myles #b93624, Ophelia #6c4a85) named by tone, and they are shared by every
+ * treatment that carries an owner — the Spotlight's children and an accent's
+ * wash alike. The v1 champs-banner pair is a separate lineage and is not used
+ * by any treatment.
+ */
+const OWNER_TONE = Object.freeze({ Myles: 'red', Ophelia: 'purple' });
+
+/**
+ * Longest permitted compact accent label ("FIRST GAME" is 10).
+ *
+ * The label is drawn inside the row's existing height, so an over-long value
+ * would either overlap the title or force the row taller. Bounding it here
+ * keeps that a load-time rejection rather than a layout defect.
+ */
+const MAX_ACCENT_LABEL_LENGTH = 14;
+
 const QUALIFIER_NODE_TYPES = Object.freeze([
   'calendarOccurrence', 'calendarRange', 'sportsFixture', 'approvedDate',
 ]);
@@ -192,6 +232,7 @@ const REASON = Object.freeze({
   SPOTLIGHT_TIE: 'spotlight-tie',
   ACCENT_TIE: 'accent-tie',
   ACCENT_NOT_RENDERABLE: 'accent-not-renderable',
+  ACCENT_PRESENTATION_INVALID: 'accent-presentation-invalid',
 
   // retained for the legacy selector's exported code table. The generalized
   // arbiter never emits it — a simultaneous pair is now resolved by priority,
@@ -400,10 +441,29 @@ function validateEntry(raw, { availableAssets } = {}) {
   if (!presentation) {
     fail(REASON.SCHEMA_INVALID);
   } else if (raw.level === 'accent') {
-    // Accent rendering is deliberately unbuilt in this phase. An accent may be
-    // resolved and diagnosed; it may never claim a renderer it does not have.
-    if (presentation.renderer != null && !KNOWN_RENDERERS.includes(presentation.renderer)) {
+    // An accent with no renderer stays resolvable-but-not-activatable, which
+    // is what the framework shipped with. One that claims a renderer must
+    // claim an accent renderer, and must then carry everything that renderer
+    // needs — an unresolvable field would otherwise surface as a half-drawn
+    // row instead of a load-time rejection.
+    if (presentation.renderer != null && !ACCENT_RENDERERS.includes(presentation.renderer)) {
       fail(REASON.MISSING_RENDERER);
+    } else if (presentation.renderer === 'accent-event-row-v1') {
+      // `ref` names the qualification node whose occurrence this accent
+      // decorates. The renderer joins on that occurrence's identity, so an
+      // accent can only ever decorate a row the ordinary renderer already
+      // drew — it can never introduce one.
+      if (typeof presentation.ref !== 'string' || !presentation.ref.trim()) {
+        fail(REASON.ACCENT_PRESENTATION_INVALID);
+      }
+      if (!Object.hasOwn(OWNER_TONE, presentation.owner)) {
+        fail(REASON.ACCENT_PRESENTATION_INVALID);
+      }
+      if (!KNOWN_DOODLE_KEYS.includes(presentation.doodle)) fail(REASON.UNKNOWN_ASSET_KEY);
+      if (presentation.label != null) {
+        const label = typeof presentation.label === 'string' ? presentation.label.trim() : '';
+        if (!label || label.length > MAX_ACCENT_LABEL_LENGTH) fail(REASON.ACCENT_PRESENTATION_INVALID);
+      }
     }
   } else if (!KNOWN_RENDERERS.includes(presentation.renderer)) {
     fail(REASON.MISSING_RENDERER);
@@ -502,12 +562,16 @@ function validateRegistry(config, options = {}) {
 }
 
 export {
+  ACCENT_RENDERERS,
   ALL_DAY_EXPIRE_TIME,
   AUDIENCES,
   FORBIDDEN_QUALIFIER_KEY_PATTERNS,
   MAX_QUALIFICATION_DEPTH,
+  KNOWN_DOODLE_KEYS,
   KNOWN_LOGO_KEYS,
   KNOWN_RENDERERS,
+  MAX_ACCENT_LABEL_LENGTH,
+  OWNER_TONE,
   LEVELS,
   LEVEL_DEFAULTS,
   PRIORITY_BANDS,

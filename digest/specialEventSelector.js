@@ -24,24 +24,25 @@
  *      ready for a future registry-driven page orchestrator; no runtime caller
  *      passes it today.
  *
- *   3. Accent rendering is deliberately unbuilt. An accent may be resolved and
- *      reported in diagnostics; it is never returned as something renderable.
+ *   3. An accent is activatable only when it names an accent renderer that
+ *      exists. `accent-event-row-v1` is the one that does; every other accent
+ *      keeps the framework's original behaviour — resolved and reported in
+ *      diagnostics, never returned as something renderable.
  *
  * `selectFeatureSlotSpotlight()` is the legacy-shaped adapter: it returns the
  * exact object shape render/dashboard-v2.js already consumes, so the migration
  * off familySpotlightSelector.js changes no rendered byte.
+ * `selectEventRowAccents()` is the analogous adapter for the Upcoming panel.
  */
 
 import { isSharksTeam } from './sharksParser.js';
-import { REASON, validateRegistry } from './specialEventSchema.js';
+import { OWNER_TONE, REASON, validateRegistry } from './specialEventSchema.js';
 import { buildOccurrenceIndex, norm } from './specialEventOccurrences.js';
 import { qualifyEntry } from './specialEventQualify.js';
 import { STATES, computeLifecycle, isIncluded, stateAt, toLegacyPhase } from './specialEventLifecycle.js';
 import { arbitrate } from './specialEventArbiter.js';
 
 const ET = 'America/New_York';
-
-const TONE_BY_OWNER = Object.freeze({ Myles: 'red', Ophelia: 'purple' });
 
 /** Derived eyebrow — "SATURDAY, SEPTEMBER 12". Never configured. */
 function datedEyebrow(dateKey) {
@@ -126,7 +127,7 @@ const childReason = code => CHILD_REASON[code] ?? 'child-not-found';
 /** Builds one `spotlight-children-v1` child from a resolved qualification. */
 function resolveSpotlightChild(child, refs, rejected = {}) {
   const owner = child?.owner;
-  const tone = TONE_BY_OWNER[owner];
+  const tone = OWNER_TONE[owner];
   if (!tone || !child?.label || !child?.title) {
     return { child: null, reason: REASON.INVALID_CHILDREN };
   }
@@ -216,6 +217,65 @@ function toLegacySpotlightViewModel(winner) {
 }
 
 /**
+ * Builds the view model for an `accent-event-row-v1` treatment.
+ *
+ * An accent decorates a row the ordinary renderer already drew. The only join
+ * it exposes is `occurrenceRef` — the concrete identity of the occurrence its
+ * `presentation.ref` node resolved to — so the renderer can match an existing
+ * row and can never fabricate one. When that node did not resolve, or resolved
+ * to something with no occurrence identity, the accent fails closed and the
+ * row renders ordinary.
+ *
+ * `activateAt` / `expireAt` are absolute epoch milliseconds, already resolved
+ * from Eastern wall-clock configuration by computeLifecycle(). The browser
+ * compares integers and nothing else.
+ */
+function toEventRowAccentViewModel(candidate) {
+  const { entry, qualification, lifecycle, state } = candidate;
+  const presentation = entry.presentation || {};
+  const tone = OWNER_TONE[presentation.owner];
+  if (!tone) return { accent: null, reason: REASON.ACCENT_PRESENTATION_INVALID };
+
+  const ref = qualification.refs?.[presentation.ref];
+  if (!ref) {
+    return {
+      accent: null,
+      reason: Object.hasOwn(qualification.rejected || {}, presentation.ref)
+        ? qualification.rejected[presentation.ref]
+        : REASON.UNRESOLVED_REF,
+    };
+  }
+  // refIdentity() is what the arbiter and the renderer both key on. A fixture
+  // or approved date has no row in the Upcoming panel to decorate, so only a
+  // calendar occurrence can anchor this renderer.
+  if (!ref.occurrenceId) return { accent: null, reason: REASON.UNRESOLVED_REF };
+
+  return {
+    accent: {
+      id: entry.id,
+      level: 'accent',
+      surface: entry.surface,
+      hostPanel: entry.hostPanel,
+      audience: entry.audience,
+      owner: presentation.owner,
+      tone,
+      doodle: presentation.doodle,
+      label: typeof presentation.label === 'string' && presentation.label.trim()
+        ? presentation.label.trim()
+        : null,
+      occurrenceRef: ref.occurrenceId,
+      state,
+      lifecycle,
+      activateAt: lifecycle.visibleStartAt,
+      expireAt: lifecycle.expireAt,
+      refIds: qualification.refIds,
+      activatable: true,
+    },
+    reason: null,
+  };
+}
+
+/**
  * Resolves every special-event treatment for one generation.
  *
  * @param {object} data digest data (specialEventsConfig, sharksSoccerData,
@@ -285,20 +345,33 @@ function resolveSpecialEvents(data, { now, firstDayTakeoverActive = false, avail
   const arbitrated = arbitrate(candidates, { firstDayTakeoverActive });
   reasons.push(...arbitrated.reasons);
 
-  // Accent rendering is out of scope for this phase. Accents are reported for
-  // diagnostics and are explicitly not activatable.
-  const accents = arbitrated.accents.map(candidate => ({
-    id: candidate.entry.id,
-    level: 'accent',
-    surface: candidate.entry.surface,
-    hostPanel: candidate.entry.hostPanel,
-    audience: candidate.entry.audience,
-    state: candidate.state,
-    lifecycle: candidate.lifecycle,
-    refIds: candidate.qualification.refIds,
-    activatable: false,
-  }));
-  if (accents.length) reasons.push(REASON.ACCENT_NOT_RENDERABLE);
+  // `accent-event-row-v1` is the one accent renderer that exists. Every other
+  // accent — one with no renderer, or on a surface with no accent renderer —
+  // keeps the framework's original behaviour: resolved and reported, never
+  // activatable, so it cannot reach a television without a renderer built for
+  // it. A renderable accent that fails to build its view model degrades to the
+  // same non-activatable shape rather than dropping out of diagnostics.
+  const accents = arbitrated.accents.map(candidate => {
+    const renderable = candidate.entry.presentation?.renderer === 'accent-event-row-v1'
+      && candidate.entry.surface === 'event-row';
+    if (renderable) {
+      const built = toEventRowAccentViewModel(candidate);
+      if (built.accent) return built.accent;
+      reasons.push(built.reason);
+    }
+    return {
+      id: candidate.entry.id,
+      level: 'accent',
+      surface: candidate.entry.surface,
+      hostPanel: candidate.entry.hostPanel,
+      audience: candidate.entry.audience,
+      state: candidate.state,
+      lifecycle: candidate.lifecycle,
+      refIds: candidate.qualification.refIds,
+      activatable: false,
+    };
+  });
+  if (accents.some(accent => !accent.activatable)) reasons.push(REASON.ACCENT_NOT_RENDERABLE);
 
   let spotlight = null;
   if (arbitrated.spotlight) {
@@ -339,6 +412,17 @@ function selectFeatureSlotSpotlight(data, options) {
   return resolved.spotlight;
 }
 
+/**
+ * Every activatable `event-row` accent, in the shape render/dashboard-v2.js
+ * consumes. Returns an empty array on every fail-closed path, which is what
+ * makes an absent, malformed, unmatched, ambiguous or expired accent render as
+ * an ordinary row.
+ */
+function selectEventRowAccents(data, options) {
+  const resolved = resolveSpecialEvents(data, options);
+  return resolved.accents.filter(accent => accent.activatable && accent.surface === 'event-row');
+}
+
 /** Reason codes behind the current outcome, treatment or not. */
 function diagnoseSpecialEvents(data, options) {
   return resolveSpecialEvents(data, options).diagnostics;
@@ -350,7 +434,9 @@ export {
   datedEyebrow,
   diagnoseSpecialEvents,
   resolveSpecialEvents,
+  selectEventRowAccents,
   selectFeatureSlotSpotlight,
+  toEventRowAccentViewModel,
   shortClock,
   toLegacySpotlightViewModel,
 };
