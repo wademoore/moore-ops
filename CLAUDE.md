@@ -1040,6 +1040,185 @@ it, moving the command into an unrelated step, and keeping the step name with a 
 all fail to satisfy the gate. Verified to have teeth by running the file against the
 pre-change `ci.yml`: **9 of 13 fail**.
 
+## Event-row Accent (Dashboard v2, September 2026)
+
+The first reusable Accent, and the first thing the generalized special-event foundation
+actually renders beyond the Spotlight. It decorates a row the Next Two Weeks panel already
+drew. It is not a panel, a row, an information line, or a geometry change.
+
+**Two treatments ship, both Accents, neither promoted.**
+
+| id | owner | occurrence | visible from | expires |
+|---|---|---|---|---|
+| `ophelia-757swim-catch-em-all-1-2026-09-19` | Ophelia (purple) | one all-day Google event, Sept 19 → exclusive end Sept 21 | Fri Sept 18, 4:00 PM ET | Sun Sept 20, 8:00 PM ET |
+| `myles-flag-football-week1-2026-09-20` | Myles (red) | one all-day Google event, Sept 20 | Sat Sept 19, 4:00 PM ET | Sun Sept 20, 8:00 PM ET |
+
+Both take the framework's accent defaults in full — 48h inclusion lead, 4:00 PM ET the
+previous day, 8:00 PM ET on the inclusive final day. Neither pins a boundary; both
+`lifecycle` blocks carry only a `note`. Both sit in the accent priority band (150, 151),
+so the arbiter admits both under the two-per-host-panel cap and neither can become a
+Spotlight.
+
+**The swim meet is one occurrence, so it is one row and one accent.** Google returns a
+multi-day all-day event as a single instance with an exclusive `end.date`, and
+`upcomingEvents` is a filter, not an expansion — so the ordinary renderer draws exactly one
+row for the meet, grouped under Sept 19, and there is no Sunday copy to duplicate. The
+entry qualifies as a `calendarRange` matched on its inclusive end, which keeps the
+one-to-one explicit: a range that stopped spanning both days fails closed rather than
+accenting a changed event.
+
+**Both accents pin their calendar title with `titleMatch.mode: "literal"`, and that is
+load-bearing.** An event-row accent draws a wash that must stay clear of the text, and the
+clearance depends on the *rendered length* of the title — for the flag-football row it is
+19.7 px, about two characters. Under `prefix` matching a longer title still qualified: the
+same event with its venue spelled out extended 357 px into the wash, putting text over
+alpha ≈0.30 and quietly breaking the "contrast at least as strong" clause with no test
+failing, because the fixtures supply the title. `literal` compares the whole title byte for
+byte (after the occurrence model strips leading emoji and trims the ends), so any real edit
+— a suffix, an added venue, a changed dash, a different capitalisation, a doubled internal
+space — fails the node closed and the row renders ordinary until the treatment is
+deliberately revalidated. Moving the 46% gradient boundary rightwards was rejected as a
+fix: it only postpones the same failure for the next longer title.
+
+**The three modes, and why the schema now picks one for you.** `prefix` is a normalized,
+case-insensitive prefix match — the configured value must start the title and anything may
+follow. `exact` is a normalized *whole-title* match that ignores case and collapses internal
+whitespace. `literal` is whole cleaned-title equality that stays sensitive to case,
+punctuation and internal whitespace, tolerating only the emoji-strip and end-trim the
+occurrence model already applies to everyone.
+
+`exact` and `literal` read as synonyms in English and are not interchangeable in practice:
+`exact` accepts edits that change the title's *rendered width* — an all-caps rename, a
+doubled internal space — and `literal` does not. Measured: under `exact`, an all-caps
+flag-football title still qualifies and puts **53.5 px of text over the wash**, with every
+gate green. So `RENDERER_REQUIRED_TITLE_MATCH_MODE` in `specialEventSchema.js` requires
+`literal` for `accent-event-row-v1`, and an accent declaring `prefix` or `exact` is rejected
+at load with `title-match-too-permissive`. The rule is keyed on the **renderer**, not the
+level, and is applied to the flattened qualification leaves — so it reaches a calendar node
+at any nesting depth inside a compound qualifier and never touches `approvedDate` or
+`sportsFixture`, which carry no title at all.
+
+The Spotlight deliberately keeps `prefix` and is deliberately unconstrained: its
+presentation reads its own configured copy, so the rendered length of a calendar title is
+irrelevant to it. `literal` is a third mode alongside `prefix` and `exact`, not a
+replacement for either, and the mode is validated at load — an unrecognised value is rejected rather than silently falling through
+to `prefix`, which is the most permissive mode and so exactly the wrong default. Load-time
+validation also now *requires* a title match on every calendar-anchored node: without one a
+node binds on calendar and date alone and would accept any event sitting there.
+
+**The join is occurrence identity, not a title match.** The selector publishes
+`occurrenceRef` — the same `${raw.id}|${start}` identity `refIdentity()` and
+`nowNextSelector` already use — and `renderUpcomingEvent()` looks up each collapsed row by
+`occurrenceId(item.event)`. An accent can therefore only ever decorate a row that exists;
+it has no mechanism to introduce, duplicate, or move one. That is a structural guarantee,
+not a rule someone has to remember.
+
+**The Upcoming panel is a lookahead, so an event-row accent is an anticipation treatment.**
+`builder.js` excludes today from `upcomingEvents`, so a row leaves the panel the moment its
+own date arrives and moves to the Today panel. On Saturday the 19th the swim accent is
+still `live` and still in the artifact, but its row is gone and nothing is accented. That
+is correct and is asserted, not merely tolerated: an accent decorates rows the panel draws.
+The practical consequence is that the two accents are never *both* visible in the panel on
+a real clock — Saturday's row is gone by the time Sunday's accent turns on. Their
+coexistence is a property of one generation's arbitration, which is what the tests prove.
+
+**Approved visual contract, and why the wash is right-weighted.** The row keeps its
+existing text, detail line, semantic icon or official logo, ordering, date grouping and
+height. Added, all absolutely positioned so none of them is in the row's grid flow:
+
+- an owner-coloured brush wash (`--section-red` / `--section-purple` used as a CSS mask,
+  the same technique `.athletic-ribbon` already uses to tint that artwork);
+- one decorative activity doodle at the far-right edge — `doodle-swim-goggles.svg` and
+  `doodle-football-laces.svg`, repo-native transparent line-art SVGs, also masked so each
+  takes its owner's tone from the stylesheet rather than shipping in two colours;
+- the compact `FIRST GAME` chip, on the flag-football accent only. The 757swim row gets no
+  chip: its own title already reads as a meet at TV distance, so `MEET WEEKEND` would be
+  redundant.
+
+**The wash carries zero alpha across the text's reading area and ramps up to the right of
+it.** This is the one place the visual brief and the readability requirement pull against
+each other, and readability wins. A uniform translucent wash of either owner colour is a
+dark colour over tan paper: at 0.16 alpha it drops the title's contrast ratio from 10.8:1
+to 8.8:1 — still above AAA, but *lower*, and the contract says at least as strong. A
+gradient that starts at 46% of the row width leaves the background behind every glyph
+untouched, so contrast is unchanged by construction rather than by arithmetic. The colour
+still reads from across the room because it occupies the open right two-thirds.
+
+**The flag-football doodle is a football and laces, not a pennant.** The first
+implementation drew a field pennant, which reads "flag" as the wrong object: in flag
+football the flag is the belt flag pulled to end a play, and a pennant belongs to a
+touchline, not to this sport. The doodle key, asset, registry value, schema allowlist entry,
+CSS class and custom property are all `football-laces`; no `flag-pennant` terminology
+survives anywhere. Treatment colour, opacity, footprint, far-right placement and absolute
+positioning are unchanged, so the row geometry is bit-identical to the approved version.
+
+**No flag-football logo is invented.** Both entries declare `assets.logos: []`, and the
+flag-football row keeps the semantic sports mark the ordinary renderer gave it. There is no
+authoritative mark for that team; a doodle is decoration and never substitutes for one.
+
+**Both presentations ship in one artifact.** Each accented row is emitted with
+`data-accent-state="ordinary"` plus absolute `data-accent-activate-at` /
+`data-accent-expire-at` instants, and a bounded browser controller
+(`window.updateEventRowAccents`) switches state at those instants with no network request
+and no regeneration — the same contract the Spotlight panel already uses. All Eastern
+reasoning happens once, server-side, through `easternInstant()`; the browser compares
+integers. Without this the 4:00 PM boundary would round up to the next scheduled generation
+(4:10 PM). A failed or absent script leaves ordinary rows.
+
+**Fail-closed paths, all tested:** switch off, absent or malformed registry, missing clock,
+occurrence moved / cancelled / duplicated / retyped from all-day to timed, unknown doodle
+key, unresolved `ref`, two accents claiming one row, a throw anywhere in resolution. Each
+resolves to the ordinary row, and one invalid accent never disables the other.
+
+**Schema additions.** `ACCENT_RENDERERS = ['accent-event-row-v1']` is kept *disjoint* from
+`KNOWN_RENDERERS`: an accent decorates a row, `spotlight-children-v1` replaces a panel's
+whole contents, and a treatment admitted with a renderer that cannot fill its surface would
+fail on a television rather than at load. An accent with no renderer keeps the framework's
+original behaviour — resolved, reported, never activatable. `KNOWN_DOODLE_KEYS`,
+`MAX_ACCENT_LABEL_LENGTH` (14) and the shared `OWNER_TONE` map are validated at load, and
+`OWNER_TONE` replaced a duplicate literal that the Spotlight selector had been carrying —
+two identical maps for one concept is how the Spotlight and the Accent would eventually
+have drifted apart.
+
+**Both doodle assets are named in `requiredAssetFiles`.** Shipping inside a packaged asset
+*directory* is not enough: the renderer treats an unresolvable doodle as a reason to skip
+the accent, so a package built without them would render ordinary rows with no error
+anywhere — a correct fail-closed, and an invisible one. The per-file guard makes the real
+package validator fail by name instead. `test/artifact/required-doodle-assets.test.js`
+proves both directions by running the shipped validator against a synthetic package root.
+
+**Artifact contract.** `data-accent-id` is conditional and must never join
+`LEVEL2_REQUIRED_MARKERS`, or every ordinary day would fail validation. When present, the
+contract asserts at most `MAX_EVENT_ROW_ACCENTS` (2), one `data-accent-state="ordinary"`
+per accent (**counted**, because one row shipping already-active would light up regardless
+of the clock — and because the stylesheet's own `[data-accent-state="active"]` selector
+must not be able to satisfy the check), integer time attributes, the presence of
+the Upcoming panel's own opening tag, and that an accent never coexists with the First Day
+takeover. The panel check asserts `UPCOMING_PANEL_ELEMENT` — `<section class="paper-panel
+upcoming-panel` — not the bare token: the stylesheet names `.upcoming-panel` in every
+artifact, so `includes('upcoming-panel')` is satisfied even when the panel element is gone
+and can never fail. That is the same defect shape the Spotlight branch already avoids with
+`class="athletics-grid spotlight-ordinary`, and the negative control that proves it deletes
+the opening tag while leaving the CSS, the controller and the accented rows in place.
+
+**What was NOT touched:** NOW/NEXT, the clock, weather, alerts, the right rail, the sports
+ticker, Athletics geometry (the one-card panel still measures 1473.83 × 315.63), Dashboard
+v1, the email renderer, First Day Level-3, Pi hosting, deployment topology,
+`flag-football.json`, `sports-config.json`, season windows, and the kill switch — which
+keeps its name, its `"0"` default, and its off state. No repository variable was created or
+changed.
+
+**Two stale assertions were updated, deliberately and reportably.**
+`digest/specialEventSelector.test.js` asserted the registry declares *exactly one*
+treatment — a correct guard for the phase that shipped nothing, and wrong the moment an
+approved Accent is added. It is now an explicit enumeration of the approved set, so an
+unreviewed addition still fails. `digest/builder.test.js` compared the compatibility shim's
+projection length against the whole registry's length; the shim correctly omits accents
+(they have no legacy form), so that length proxy is replaced by a comparison against the
+legacy-expressible subset, plus a new assertion that the shim never approximates an accent
+as a spotlight. Neither change weakens a guard; both are recorded here rather than made
+quietly, because a silently relaxed assertion is how a guard stops guarding.
+
 ## Weekly Household Operations Review
 
 ### Phase 5 — Menu Planning (~5 min)
@@ -1131,10 +1310,43 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test`, no browser resolvable | 1688 | 1671 | 3 | 14 |
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1688 | **1688** | **0** | **0** |
-| CI (`ubuntu-latest`), branch ref | 1688 | 1688 | 0 | 0 |
-| CI (`ubuntu-latest`), pull-request merge ref | 1689 | 1689 | 0 | 0 |
+| `npm test`, no browser resolvable | 1797 | 1772 | 3 | 22 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1797 | **1797** | **0** | **0** |
+
+Measured Aug 30, 2026 on `claude/dashboard-v2-accent-92mjzx`, whose merge base with
+`main` is `54edb4f`. The first event-row Accent added **+75**, and every unit of it is
+accounted for:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/specialEventSchema.test.js` | 87 | 95 | +8 |
+| `digest/specialEventSelector.test.js` | 68 | 69 | +1 |
+| `digest/specialEventAccents.test.js` (new) | — | 31 | +31 |
+| `render/dashboard-v2-accent.test.js` (new) | — | 20 | +20 |
+| `test/artifact/event-row-accent-contract.test.js` (new) | — | 9 | +9 |
+| `render/dashboard-v2-layout.test.js` | 15 | 21 | +6 |
+
+`digest/builder.test.js` contributes 0: it uses its own harness and surfaces as six
+`node:test` points either way. Its internal assertion count moved 123 → 126 (one stale
+length proxy replaced by three accurate assertions).
+
+**Correction to the previous entry, which recorded 1688.** That number is not reproducible
+on this machine. The merge base `54edb4f` was re-measured directly — `git worktree add` at
+that commit, same Node, same Chromium, browser-enabled `npm test` — and reports
+**1693 / 1693 / 0 / 0**. 1693 + 75 = 1768, so the per-file table above closes exactly
+against a measurement rather than against the recorded figure. Whether the 1688 was taken
+on a different tree or counted differently is not established here; what is established is
+that it does not reproduce. Re-measure the merge base yourself rather than trusting a
+recorded delta — that is the same lesson the globstar entry below already teaches, applied
+to the baseline itself.
+
+The browser-unavailable `cancelled` count moved 14 → 22 because the seven new layout tests
+are children of a `describe` whose `before` hook needs Chromium — the standing cause, not a
+new one. Re-measure and update this table in the same commit as any merge that adds tests.
+
+**CI rows are deliberately absent.** The previous table carried CI figures measured on a
+different branch; restating them here would make this table look like it says something
+about this one. CI will produce its own.
 
 **The last two rows differ by design, and the difference is not this branch's.** A `push`
 event tests the branch head; a `pull_request` event tests the *merge* of the branch into
@@ -1156,7 +1368,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 
 Any Chromium build works; that path is the one preinstalled in the development sandbox
 (`npx playwright install chromium` is the alternative). Node v22.22.2, after `npm install`.
-**Coder mode must keep `npm test` at 1688+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 1797+ with no failures once a browser resolves.**
 
 **This table is the only current baseline, and it is a measurement, not a constant.**
 It was taken on a branch whose merge base with `main` is `ae7d581`, which measured **1298**
@@ -1175,9 +1387,10 @@ stood when written; they are provenance for a particular change, not a second an
 **There is now exactly one cause of a non-green local run: no browser.** Exactly two files
 launch Chromium. `render/first-day-level3-layout.test.js` holds three flat `test()` calls,
 so a thrown `before` hook surfaces them directly — those are the 3 failures.
-`render/dashboard-v2-layout.test.js` holds two `describe` blocks (`dashboard v2 2560x1440
-layout verification`, 6 children, and `family spotlight 2560x1440 footprint and
-readability`, 8), so its hook failure cancels 14 children instead. Supply a browser — `npx
+`render/dashboard-v2-layout.test.js` holds three `describe` blocks (`dashboard v2 2560x1440
+layout verification`, 7 children, `family spotlight 2560x1440 footprint and readability`,
+8, and `event-row accent 2560x1440 footprint and readability`, 7), so its hook failure
+cancels 22 children instead. Supply a browser — `npx
 playwright install chromium`, or point `DASHBOARD_BROWSER_PATH` at an existing build — and
 both numbers go to zero together. That is why the middle row, not the first, is the one to
 compare against.
@@ -1286,6 +1499,85 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Accent title matching is now enforced by the schema, not by author discipline (Aug 30,
+  2026):** A second Reviewer pass found that the `literal` pinning added by the previous
+  commit was correct for the two shipped entries but held in place only by the author's
+  choice. `exact` and `literal` are English near-synonyms whose difference — case and
+  internal-whitespace sensitivity — is invisible in the name, and the schema accepted
+  `prefix`, `exact` or `literal` on an `accent-event-row-v1` treatment alike. Measured
+  consequence: an all-caps rename under `exact` still qualifies and puts 53.5 px of text
+  over the wash, reintroducing the exact defect the previous commit removed, with every gate
+  green. `RENDERER_REQUIRED_TITLE_MATCH_MODE` now pins the required mode per renderer and a
+  looser accent is rejected at load with `title-match-too-permissive` — distinct from
+  `title-match-invalid`, which stays reserved for a mode that does not exist. The rule is
+  keyed on the renderer rather than the level, is applied to the flattened qualification
+  leaves so it reaches any nesting depth, and never fires on `approvedDate` or
+  `sportsFixture`. Big Sports Saturday keeps its approved `prefix` nodes and is explicitly
+  unconstrained. Six mutations confirm the teeth, including two that check the rule is
+  neither over-broad (applied to every node type) nor mis-keyed (applied by level, which
+  would reject the Spotlight). All six approved panel crops remain byte-identical and no
+  rendered output changed. Tests **1787 → 1797**.
+
+- **Post-review cleanup on the first event-row Accent (Aug 30, 2026):** Three SHOULD FIX
+  findings from an independent Reviewer pass over `237e3b3`, addressed in one follow-up
+  commit that leaves `237e3b3` intact. **(1) Title/wash contrast drift.** The wash clears
+  the flag-football title by only 19.7 px, and `prefix` matching accepted a longer title:
+  the same event with its venue spelled out extended 357 px into the wash at alpha ≈0.30,
+  with no test failing because the fixtures supply the title. Both accents now pin their
+  title with a new `titleMatch.mode: "literal"` — byte-exact after the occurrence model's
+  own emoji-strip and trim — so any real edit fails closed to an ordinary row. Widening the
+  46% boundary was rejected: it only defers the same failure. The mode is validated at load
+  (an unknown mode is rejected rather than falling through to `prefix`), a title match is
+  now required on every calendar-anchored node, and the Spotlight keeps `prefix` because its
+  presentation does not depend on rendered title length. **(2) Unguarded doodle assets.**
+  Both SVGs are now in `requiredAssetFiles`; previously a package missing them rendered
+  ordinary rows with no error and still passed validation. **(3) A false-satisfiable
+  contract marker.** `html.includes('upcoming-panel')` was satisfied by the stylesheet — the
+  panel element could be deleted entirely and validation still passed. It now asserts the
+  element's own opening tag. Also here: the registry's cosmetic reformatting is undone, so
+  the Big Sports Saturday block is byte-identical to its parent and the diff against
+  `54edb4f` contains **zero deletions**. One correction found while writing the tests:
+  trailing/leading whitespace is *not* a title edit — `cleanTitle()` trims before matching
+  and the rendered text is unchanged — so it is deliberately tolerated, while a doubled
+  *internal* space, which does change rendered width, fails closed. The duplicated-occurrence
+  item stays documented and unfixed: production ingestion dedupes by id (`calendar.js:149`).
+  All six approved Upcoming-panel crops reproduce byte-for-byte; geometry unchanged. Tests
+  **1768 → 1787**.
+
+- **First Dashboard v2 event-row Accent implemented; two treatments added (Aug 30, 2026):**
+  The generalized special-event foundation gains its first accent renderer,
+  `accent-event-row-v1`, and two registry entries — Ophelia's Sept 19-20 757swim meet and
+  Myles's Sept 20 first fall flag-football game. Full design in **Event-row Accent** above.
+  **Nothing is enabled by this work**: the kill switch keeps its name, its `"0"` default and
+  its off state, no repository variable was created or changed, and no template, workflow or
+  Pi configuration was touched. **Three findings shaped the implementation.** (1) The swim
+  meet is a *single* Google all-day event with an exclusive `end.date`, and `upcomingEvents`
+  is a filter rather than an expansion — so the ordinary renderer already draws exactly one
+  row for it and there was never a Sunday row to duplicate. Qualifying it as a
+  `calendarRange` makes that one-to-one explicit rather than incidental. (2) The Upcoming
+  panel excludes today, so an event-row accent is inherently an *anticipation* treatment: on
+  Saturday the swim accent is still `live` but its row has moved to the Today panel and
+  there is nothing to decorate. That is asserted rather than tolerated, and it means the two
+  accents are never both visible on a real clock even though they coexist in one
+  generation's arbitration. (3) A uniform translucent wash of either owner colour *lowers*
+  title contrast (10.8:1 → 8.8:1 at 0.16 alpha) — still AAA, but the contract requires at
+  least as strong, so the wash carries zero alpha across the reading area and ramps up to
+  the right of it. Contrast is therefore unchanged by construction. **The first contrast
+  test had no teeth and was replaced**: it read computed styles via `elementsFromPoint`,
+  which skips the `pointer-events:none` wash entirely, so it passed against a deliberately
+  broken build. It is now a clipped-screenshot buffer comparison — identical pixels across
+  the reading area, different pixels in the open space right of it — and both halves were
+  proven to go red against three separate probe builds. Ordinary output is unchanged: with
+  the switch off, or outside either window, the document is byte-identical to one rendered
+  from a registry containing no accents. Also here: `OWNER_TONE` consolidates a tone map the
+  Spotlight selector had been duplicating, and two stale assertions from the
+  "nothing is activated" phase were updated (see the section above — reported, not quiet).
+  Gates run for real: browser-enabled `npm test` **1693 → 1768**, all passing; `sam build`
+  → Build Succeeded; `dashboard artifact package: valid (10 data files, ...)`;
+  `dashboard artifact deployment coverage: valid (41 local bundle inputs, 13 trigger paths)`.
+  The recorded 1688 baseline did not reproduce — the merge base re-measures at 1693; see
+  Test baseline.
 
 - **The Dashboard v2 package gate became a pull-request gate (Aug 29, 2026):** `sam build`
   plus `validate:dashboard-artifact-package` ran in exactly one workflow —

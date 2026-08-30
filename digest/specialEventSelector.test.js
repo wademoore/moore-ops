@@ -426,21 +426,37 @@ describe('specialEventSelector — fail-closed boundaries', () => {
 });
 
 describe('specialEventSelector — shipped registry integrity', () => {
-  it('declares exactly one treatment, and it is the migrated reference case', () => {
+  it('declares exactly one spotlight, and it is the migrated reference case', () => {
     assert.equal(REGISTRY.schemaVersion, 2);
-    assert.equal(REGISTRY.treatments.length, 1);
-    const [only] = REGISTRY.treatments;
+    const spotlights = REGISTRY.treatments.filter(entry => entry.level === 'spotlight');
+    assert.equal(spotlights.length, 1);
+    const [only] = spotlights;
     assert.equal(only.id, 'big-sports-saturday-2026-09-12');
     assert.equal(only.date, '2026-09-12');
-    assert.equal(only.level, 'spotlight');
     assert.equal(only.surface, 'feature-slot');
     assert.equal(only.status, 'ready');
     assert.equal(only.enabled, true);
   });
 
-  it('adds no other active treatment in this phase', () => {
-    const active = REGISTRY.treatments.filter(entry => entry.enabled === true && entry.status === 'ready');
-    assert.equal(active.length, 1);
+  it('declares exactly the approved treatment set and nothing else', () => {
+    // The registry is small and every entry is individually approved, so it is
+    // enumerated here: an unreviewed addition fails this test rather than
+    // reaching a television. Update this list deliberately, with the entry.
+    assert.deepEqual(
+      REGISTRY.treatments
+        .filter(entry => entry.enabled === true && entry.status === 'ready')
+        .map(entry => [entry.id, entry.level, entry.surface])
+        .sort((a, b) => a[0].localeCompare(b[0])),
+      [
+        ['big-sports-saturday-2026-09-12', 'spotlight', 'feature-slot'],
+        ['myles-flag-football-week1-2026-09-20', 'accent', 'event-row'],
+        ['ophelia-757swim-catch-em-all-1-2026-09-19', 'accent', 'event-row'],
+      ],
+    );
+  });
+
+  it('declares no takeover, so the page is never claimed from the registry', () => {
+    assert.deepEqual(REGISTRY.treatments.filter(entry => entry.level === 'takeover'), []);
   });
 
   it('preserves the legacy identity, lifecycle, and copy exactly', () => {

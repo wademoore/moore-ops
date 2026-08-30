@@ -206,4 +206,116 @@ function specialEventsSampleData({ now, specialEventsConfig, sharksSoccerData })
   };
 }
 
-export { familySpotlightSampleData, sampleDashboardV2Data, specialEventsSampleData };
+/**
+ * The two real September 19-20, 2026 all-day occurrences, in the exact shape
+ * the Google Calendar API returns them: one two-day event for the swim meet
+ * (exclusive end 2026-09-21, so the inclusive final day is the 20th) and one
+ * single-day event for flag football.
+ *
+ * These are transcribed from the live Ophelia and Myles calendars, ids
+ * included, so a test that matches them is matching the same identity
+ * production will. The swim meet is deliberately ONE event: Google returns a
+ * multi-day all-day event as a single instance, so the ordinary renderer draws
+ * exactly one row for it and an accent has exactly one row to decorate.
+ */
+const ACCENT_OCCURRENCES = Object.freeze({
+  swim: Object.freeze({
+    title: "757swim: Catch 'Em All Series #1 - 200 Back",
+    subtitle: '',
+    cardType: 'standard',
+    owner: [],
+    _calName: 'Ophelia',
+    raw: {
+      id: 'j53e770dnnsnt7np371p15qfso',
+      status: 'confirmed',
+      start: { date: '2026-09-19' },
+      end: { date: '2026-09-21' },
+    },
+  }),
+  flagFootball: Object.freeze({
+    title: 'Flag Football: Week 1 — Practice + Game (Yorktown)',
+    subtitle: '',
+    cardType: 'standard',
+    owner: [],
+    _calName: 'Myles',
+    raw: {
+      id: 'togv7r767h546spap4tt9ava3c',
+      status: 'confirmed',
+      start: { date: '2026-09-20' },
+      end: { date: '2026-09-21' },
+    },
+  }),
+});
+
+/**
+ * Ordinary neighbours around the two accented occurrences, drawn from the same
+ * live calendar week. They exist so every assertion about row order, height and
+ * neighbour position is made against real adjacent rows rather than against an
+ * accented row sitting alone in an empty panel.
+ */
+const ACCENT_NEIGHBOURS = Object.freeze([
+  event('Ophelia: 757swim Developmental Navy practice (JCC REC)', '2026-09-17T17:00:00-04:00', '', { _calName: 'Ophelia', raw: { id: 'practice-thu', status: 'confirmed', start: { dateTime: '2026-09-17T17:00:00-04:00' }, end: { dateTime: '2026-09-17T18:00:00-04:00' } } }),
+  event('Ophelia: Hip Hop Fundamentals I (iDance)', '2026-09-19T12:30:00-04:00', '', { _calName: 'Ophelia', raw: { id: 'idance-sat', status: 'confirmed', start: { dateTime: '2026-09-19T12:30:00-04:00' }, end: { dateTime: '2026-09-19T13:30:00-04:00' } } }),
+  event('Sharks @ Beach FC Anderson Waves (Away)', '2026-09-19T14:00:00-04:00', '', { _calName: 'Myles', raw: { id: 'sharks-644', status: 'confirmed', start: { dateTime: '2026-09-19T14:00:00-04:00' }, end: { dateTime: '2026-09-19T15:00:00-04:00' } } }),
+  event('Ophelia: Jazz Fundamentals I (iDance)', '2026-09-21T17:30:00-04:00', '', { _calName: 'Ophelia', raw: { id: 'jazz-mon', status: 'confirmed', start: { dateTime: '2026-09-21T17:30:00-04:00' }, end: { dateTime: '2026-09-21T18:30:00-04:00' } } }),
+  event('Myles: Sharks Practice - Warhill Turf 4', '2026-09-21T18:00:00-04:00', '', { _calName: 'Myles', raw: { id: 'sharks-practice', status: 'confirmed', start: { dateTime: '2026-09-21T18:00:00-04:00' }, end: { dateTime: '2026-09-21T19:30:00-04:00' } } }),
+  event('Ophelia: 757swim Developmental Navy practice (JCC REC)', '2026-09-22T17:00:00-04:00', '', { _calName: 'Ophelia', raw: { id: 'practice-tue', status: 'confirmed', start: { dateTime: '2026-09-22T17:00:00-04:00' }, end: { dateTime: '2026-09-22T18:00:00-04:00' } } }),
+]);
+
+const etDateKey = instant => new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+}).format(instant);
+
+const occurrenceDateKey = item => item.raw.start.date || etDateKey(new Date(item.raw.start.dateTime));
+
+/**
+ * Deterministic event-row Accent fixture for the September 19-20, 2026
+ * reference case.
+ *
+ * Callers supply the shipped registry and an explicit `now`, so the fixture
+ * exercises real configuration rather than a copy of it and every lifecycle
+ * state is reproducible. The day/upcoming split mirrors builder.js exactly:
+ * `upcomingEvents` carries only occurrences strictly after today, so an
+ * occurrence on the day itself is reachable only through `days[0]` — which is
+ * why an accent on the Upcoming surface is an anticipation treatment and
+ * simply has no row to decorate once its date arrives.
+ */
+function eventRowAccentSampleData({
+  now,
+  specialEventsConfig,
+  sharksSoccerData,
+  familySpotlight = true,
+  occurrences = [ACCENT_OCCURRENCES.swim, ACCENT_OCCURRENCES.flagFootball, ...ACCENT_NEIGHBOURS],
+} = {}) {
+  const instant = new Date(now);
+  const todayKey = etDateKey(instant);
+  return {
+    ...sampleDashboardV2Data,
+    today: d(todayKey),
+    now: instant,
+    familySpotlight,
+    specialEventsConfig,
+    sharksSoccerData,
+    days: [{ date: d(todayKey), events: occurrences.filter(item => occurrenceDateKey(item) === todayKey), tasks: [], menuEvent: null }],
+    upcomingEvents: occurrences.filter(item => occurrenceDateKey(item) > todayKey),
+    athletics: {
+      ...sampleDashboardV2Data.athletics,
+      flagFootballActive: false,
+      wavesActive: false,
+      swim757Active: false,
+      sharksActive: true,
+      sharksRecord: '2-1-0',
+      sharksDivisionLabel: 'U11 Boys Sky Division',
+      sharksDivisionStanding: { rank: '3rd', of: 11, pts: 6 },
+    },
+  };
+}
+
+export {
+  ACCENT_NEIGHBOURS,
+  ACCENT_OCCURRENCES,
+  eventRowAccentSampleData,
+  familySpotlightSampleData,
+  sampleDashboardV2Data,
+  specialEventsSampleData,
+};

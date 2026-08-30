@@ -1,8 +1,14 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
+  ACCENT_RENDERERS,
+  KNOWN_DOODLE_KEYS,
   KNOWN_LOGO_KEYS,
+  KNOWN_RENDERERS,
+  MAX_ACCENT_LABEL_LENGTH,
+  OWNER_TONE,
   MAX_QUALIFICATION_DEPTH,
   findForbiddenKey,
   LEVELS,
@@ -14,6 +20,8 @@ import {
   STATUSES,
   SURFACES,
   SURFACE_HOST_PANEL,
+  RENDERER_REQUIRED_TITLE_MATCH_MODE,
+  TITLE_MATCH_MODES,
   validateEntry,
   validateRegistry,
 } from './specialEventSchema.js';
@@ -514,5 +522,291 @@ describe('specialEventSchema — registry-level validation', () => {
       lifecycle: { activateAt: '2026-12-25T00:00', expireAt: '2026-12-25T12:00' },
     })])).entries;
     assert.equal(validated.suppressesLowerLevels, false);
+  });
+});
+
+describe('specialEventSchema — accent-event-row-v1 presentation', () => {
+  const errorsFor = raw => validateEntry(raw).errors;
+
+  /**
+   * A valid accent that declares the one accent renderer that exists. Its
+   * qualifier uses `literal`, which that renderer requires — see the
+   * title-match-mode suite below for the rule and why it exists.
+   */
+  const accent = (presentation = {}, qualification = {}) => entry({
+    level: 'accent',
+    priority: 150,
+    surface: 'event-row',
+    qualification: {
+      type: 'calendarOccurrence',
+      id: 'anchor',
+      calendar: 'Ophelia',
+      titleMatch: { mode: 'literal', value: 'Something' },
+      expectedDate: '2026-09-12',
+      expectedTime: '12:30',
+      kind: 'timed',
+      ...qualification,
+    },
+    presentation: {
+      renderer: 'accent-event-row-v1',
+      ref: 'anchor',
+      owner: 'Ophelia',
+      doodle: 'swim-goggles',
+      ...presentation,
+    },
+  });
+
+  it('accepts a complete accent presentation', () => {
+    assert.deepEqual(errorsFor(accent()), []);
+    assert.deepEqual(errorsFor(accent({ owner: 'Myles', doodle: 'football-laces', label: 'FIRST GAME' })), []);
+  });
+
+  it('keeps the accent and spotlight renderer sets disjoint', () => {
+    // A treatment must never be admitted with a renderer that cannot fill its
+    // surface: an accent decorates a row, spotlight-children-v1 replaces a
+    // panel's whole contents. Crossing the two would fail on a television.
+    assert.deepEqual(ACCENT_RENDERERS.filter(name => KNOWN_RENDERERS.includes(name)), []);
+    assert.ok(errorsFor(entry({ presentation: { renderer: 'accent-event-row-v1' } })).includes(REASON.MISSING_RENDERER));
+    assert.ok(errorsFor(accent({ renderer: 'spotlight-children-v1' })).includes(REASON.MISSING_RENDERER));
+  });
+
+  it('still permits an accent with no renderer at all', () => {
+    assert.deepEqual(errorsFor(entry({ level: 'accent', priority: 150, surface: 'event-row', presentation: {} })), []);
+  });
+
+  it('rejects an accent that cannot name the occurrence it decorates', () => {
+    for (const ref of [undefined, null, '', '   ', 42]) {
+      assert.ok(errorsFor(accent({ ref })).includes(REASON.ACCENT_PRESENTATION_INVALID), `ref=${String(ref)}`);
+    }
+  });
+
+  it('rejects an owner outside the established ownership tones', () => {
+    for (const owner of [undefined, null, 'Wade', 'myles', 'Family']) {
+      assert.ok(errorsFor(accent({ owner })).includes(REASON.ACCENT_PRESENTATION_INVALID), `owner=${String(owner)}`);
+    }
+    for (const owner of Object.keys(OWNER_TONE)) assert.deepEqual(errorsFor(accent({ owner })), []);
+  });
+
+  it('rejects a doodle key with no artwork behind it', () => {
+    for (const doodle of [undefined, null, '', 'confetti', 'star', 'swim_goggles']) {
+      assert.ok(errorsFor(accent({ doodle })).includes(REASON.UNKNOWN_ASSET_KEY), `doodle=${String(doodle)}`);
+    }
+    for (const doodle of KNOWN_DOODLE_KEYS) assert.deepEqual(errorsFor(accent({ doodle })), []);
+  });
+
+  it('bounds the compact label so it cannot force a row taller', () => {
+    assert.deepEqual(errorsFor(accent({ label: 'X'.repeat(MAX_ACCENT_LABEL_LENGTH) })), []);
+    assert.ok(errorsFor(accent({ label: 'X'.repeat(MAX_ACCENT_LABEL_LENGTH + 1) })).includes(REASON.ACCENT_PRESENTATION_INVALID));
+    assert.ok(errorsFor(accent({ label: '   ' })).includes(REASON.ACCENT_PRESENTATION_INVALID));
+    assert.ok(errorsFor(accent({ label: 7 })).includes(REASON.ACCENT_PRESENTATION_INVALID));
+    // An absent label is the ordinary case — the 757swim accent carries none.
+    assert.deepEqual(errorsFor(accent({ label: null })), []);
+  });
+
+  it('does not let an accent renderer reach a protected region', () => {
+    // Defence in depth over the structural guarantee: no protected region is
+    // nameable as a surface, so an accent cannot be configured onto one.
+    for (const region of PROTECTED_REGIONS) {
+      assert.ok(errorsFor(accent({})) .length === 0);
+      assert.ok(errorsFor(entry({ level: 'accent', priority: 150, surface: region, presentation: {} })).includes(REASON.UNKNOWN_SURFACE), region);
+    }
+  });
+});
+
+describe('specialEventSchema — title matching', () => {
+  const errorsFor = raw => validateEntry(raw).errors;
+  const withTitleMatch = titleMatch => entry({
+    qualification: {
+      type: 'calendarOccurrence', id: 'anchor', calendar: 'Ophelia',
+      titleMatch, expectedDate: '2026-09-12', expectedTime: '12:30', kind: 'timed',
+    },
+    presentation: { renderer: 'spotlight-children-v1', headline: 'X', children: [] },
+  });
+
+  it('accepts every mode the matcher implements', () => {
+    for (const mode of TITLE_MATCH_MODES) {
+      assert.deepEqual(errorsFor(withTitleMatch({ mode, value: 'Something' })), [], mode);
+    }
+  });
+
+  it('rejects an unknown mode rather than silently falling through to prefix', () => {
+    // `prefix` is the most permissive mode, so a typo defaulting to it is
+    // exactly the wrong failure direction.
+    for (const mode of ['startsWith', 'exact ', 'LITERAL', '', null, undefined, 1]) {
+      assert.ok(errorsFor(withTitleMatch({ mode, value: 'Something' })).includes(REASON.TITLE_MATCH_INVALID), String(mode));
+    }
+  });
+
+  it('requires a title match on every calendar-anchored node', () => {
+    // Without one, the node binds to calendar + date alone and would accept
+    // any event that happens to sit there.
+    for (const titleMatch of [undefined, null, {}, { mode: 'literal' }, { mode: 'literal', value: '   ' }, { mode: 'literal', value: 7 }]) {
+      assert.ok(errorsFor(withTitleMatch(titleMatch)).includes(REASON.TITLE_MATCH_INVALID), JSON.stringify(titleMatch));
+    }
+  });
+
+  it('leaves non-calendar node types unaffected', () => {
+    const approved = entry({
+      qualification: {
+        type: 'approvedDate', id: 'anchor', date: '2026-09-12',
+        provenance: { approvedBy: 'Wade', approvedOn: '2026-08-30', source: 'session' },
+      },
+      presentation: { renderer: 'spotlight-children-v1', headline: 'X', children: [] },
+    });
+    assert.ok(!errorsFor(approved).includes(REASON.TITLE_MATCH_INVALID));
+  });
+
+  it('the shipped registry pins both accent titles literally', () => {
+    const registry = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
+    for (const treatment of registry.treatments.filter(t => t.level === 'accent')) {
+      assert.equal(treatment.qualification.titleMatch.mode, 'literal', treatment.id);
+    }
+    // The Spotlight deliberately keeps prefix matching: its presentation does
+    // not depend on the rendered length of the calendar title.
+    const spotlight = registry.treatments.find(t => t.level === 'spotlight');
+    for (const node of spotlight.qualification.any.filter(n => n.titleMatch)) {
+      assert.equal(node.titleMatch.mode, 'prefix', node.id);
+    }
+  });
+});
+
+describe('specialEventSchema — renderers that require a strict title match', () => {
+  const errorsFor = raw => validateEntry(raw).errors;
+
+  /** An otherwise-valid accent whose calendar qualifier uses `mode`. */
+  const accentWithMode = mode => ({
+    id: 'a', date: '2026-09-20', level: 'accent', surface: 'event-row', audience: 'myles',
+    status: 'ready', enabled: true, priority: 150,
+    qualification: {
+      type: 'calendarOccurrence', id: 'anchor', calendar: 'Myles',
+      titleMatch: { mode, value: 'Flag Football: Week 1 — Practice + Game (Yorktown)' },
+      expectedDate: '2026-09-20', kind: 'all-day',
+    },
+    lifecycle: {},
+    presentation: { renderer: 'accent-event-row-v1', ref: 'anchor', owner: 'Myles', doodle: 'football-laces' },
+  });
+
+  it('declares the rule as a per-renderer requirement, not a per-level one', () => {
+    assert.deepEqual(RENDERER_REQUIRED_TITLE_MATCH_MODE, { 'accent-event-row-v1': 'literal' });
+  });
+
+  it('accepts a literal-matched accent', () => {
+    assert.deepEqual(errorsFor(accentWithMode('literal')), []);
+  });
+
+  for (const mode of ['exact', 'prefix']) {
+    it(`rejects an otherwise valid accent using \`${mode}\``, () => {
+      // `exact` and `prefix` both tolerate a title edit that widens the
+      // rendered text, which is what the accent's wash clearance depends on.
+      const errors = errorsFor(accentWithMode(mode));
+      assert.ok(errors.includes(REASON.TITLE_MATCH_TOO_PERMISSIVE),
+        `expected ${REASON.TITLE_MATCH_TOO_PERMISSIVE}, got ${JSON.stringify(errors)}`);
+      // The rejection must name the real problem, not a generic one.
+      assert.ok(!errors.includes(REASON.TITLE_MATCH_INVALID), 'the mode is valid; it is merely too permissive');
+      assert.ok(!errors.includes(REASON.MISSING_RENDERER));
+    });
+  }
+
+  it('rejects an unknown mode as invalid rather than as too permissive', () => {
+    const errors = errorsFor(accentWithMode('startsWith'));
+    assert.ok(errors.includes(REASON.TITLE_MATCH_INVALID));
+    assert.ok(!errors.includes(REASON.TITLE_MATCH_TOO_PERMISSIVE));
+  });
+
+  it('enforces the rule inside nested compound qualifiers', () => {
+    // collectNodes() flattens the tree, so the rule must reach a calendar node
+    // at any depth. Two levels of nesting, with the offending node deepest.
+    const nested = mode => ({
+      ...accentWithMode('literal'),
+      qualification: {
+        all: [
+          { type: 'approvedDate', id: 'ok', date: '2026-09-20',
+            provenance: { approvedBy: 'Wade', approvedOn: '2026-08-30', source: 'session' } },
+          { any: [
+            { type: 'sportsFixture', id: 'fx', source: 'sharks', matchNumber: 641, expectedDate: '2026-09-20' },
+            { all: [{
+              type: 'calendarOccurrence', id: 'anchor', calendar: 'Myles',
+              titleMatch: { mode, value: 'Flag Football: Week 1' },
+              expectedDate: '2026-09-20', kind: 'all-day',
+            }] },
+          ] },
+        ],
+      },
+    });
+    assert.deepEqual(errorsFor(nested('literal')), [], 'a nested literal node is fine');
+    for (const mode of ['exact', 'prefix']) {
+      assert.ok(errorsFor(nested(mode)).includes(REASON.TITLE_MATCH_TOO_PERMISSIVE), `nested ${mode}`);
+    }
+  });
+
+  it('leaves approvedDate and sportsFixture nodes untouched', () => {
+    // Neither carries a title match, so the rule must never fire on them —
+    // including inside an accent, where the required mode is set.
+    const nonCalendar = {
+      ...accentWithMode('literal'),
+      qualification: {
+        any: [
+          { type: 'approvedDate', id: 'ok', date: '2026-09-20',
+            provenance: { approvedBy: 'Wade', approvedOn: '2026-08-30', source: 'session' } },
+          { type: 'sportsFixture', id: 'fx', source: 'sharks', matchNumber: 641, expectedDate: '2026-09-20' },
+        ],
+      },
+      presentation: { renderer: 'accent-event-row-v1', ref: 'ok', owner: 'Myles', doodle: 'football-laces' },
+    };
+    const errors = errorsFor(nonCalendar);
+    assert.ok(!errors.includes(REASON.TITLE_MATCH_TOO_PERMISSIVE), JSON.stringify(errors));
+    assert.ok(!errors.includes(REASON.TITLE_MATCH_INVALID), JSON.stringify(errors));
+  });
+
+  it('does not constrain treatments that declare no strict-title renderer', () => {
+    // The Spotlight's presentation reads its own configured copy, so the
+    // rendered calendar title's width is irrelevant to it.
+    const spotlight = mode => entry({
+      qualification: {
+        type: 'calendarOccurrence', id: 'anchor', calendar: 'Ophelia',
+        titleMatch: { mode, value: '757swim Kick-Off Party' },
+        expectedDate: '2026-09-12', expectedTime: '12:30', kind: 'timed',
+      },
+      presentation: { renderer: 'spotlight-children-v1', headline: 'X', children: [] },
+    });
+    for (const mode of TITLE_MATCH_MODES) assert.deepEqual(errorsFor(spotlight(mode)), [], mode);
+  });
+
+  it('the shipped registry satisfies the rule end to end', () => {
+    const registry = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
+    const result = validateRegistry(registry);
+    assert.equal(result.rejected.length, 0, JSON.stringify(result.rejected));
+    assert.deepEqual(result.reasons, []);
+    assert.equal(result.entries.length, registry.treatments.length);
+
+    // Big Sports Saturday still validates on its approved prefix nodes.
+    const spotlight = registry.treatments.find(t => t.level === 'spotlight');
+    const prefixNodes = spotlight.qualification.any.filter(node => node.titleMatch);
+    assert.equal(prefixNodes.length, 2);
+    for (const node of prefixNodes) assert.equal(node.titleMatch.mode, 'prefix', node.id);
+
+    // Both accents are pinned literally.
+    for (const accent of registry.treatments.filter(t => t.level === 'accent')) {
+      assert.equal(accent.qualification.titleMatch.mode, 'literal', accent.id);
+    }
+  });
+
+  it('would reject the shipped accents if either were relaxed', () => {
+    // Teeth: the rule is what stops the registry drifting back to a permissive
+    // match, so prove the shipped entries actually depend on it.
+    const registry = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
+    for (const mode of ['exact', 'prefix']) {
+      const relaxed = {
+        ...registry,
+        treatments: registry.treatments.map(t => (t.level !== 'accent' ? t : {
+          ...t,
+          qualification: { ...t.qualification, titleMatch: { ...t.qualification.titleMatch, mode } },
+        })),
+      };
+      const result = validateRegistry(relaxed);
+      assert.equal(result.entries.length, 1, `only the spotlight should survive with accents on ${mode}`);
+      assert.ok(result.reasons.includes(REASON.TITLE_MATCH_TOO_PERMISSIVE), mode);
+      assert.equal(result.rejected.length, 2, mode);
+    }
   });
 });

@@ -116,9 +116,99 @@ const KNOWN_LOGO_KEYS = Object.freeze([
 /** Presentation renderers that actually exist. Anything else fails closed. */
 const KNOWN_RENDERERS = Object.freeze(['spotlight-children-v1']);
 
+/**
+ * Accent renderers, kept in their own list rather than merged into
+ * KNOWN_RENDERERS.
+ *
+ * The two sets are disjoint on purpose: an accent decorates a row that the
+ * ordinary renderer already drew, while `spotlight-children-v1` replaces a
+ * panel's whole contents. Letting a spotlight name an accent renderer — or the
+ * reverse — would put a treatment on a surface its renderer cannot fill, and
+ * the failure would appear on a television rather than at load.
+ */
+const ACCENT_RENDERERS = Object.freeze(['accent-event-row-v1']);
+
+/**
+ * Decorative activity doodles available to `accent-event-row-v1`.
+ *
+ * A doodle is decoration only. It never replaces the row's semantic icon or an
+ * official sports logo — the renderer draws it behind the row, outside the
+ * text's reading area, and the row's own mark is untouched. Validated here so
+ * a typo is a diagnostic instead of a blank patch on the wall.
+ */
+const KNOWN_DOODLE_KEYS = Object.freeze(['swim-goggles', 'football-laces']);
+
+/**
+ * Dashboard v2 ownership tones. These are the established v2 ownership colours
+ * (Myles #b93624, Ophelia #6c4a85) named by tone, and they are shared by every
+ * treatment that carries an owner — the Spotlight's children and an accent's
+ * wash alike. The v1 champs-banner pair is a separate lineage and is not used
+ * by any treatment.
+ */
+const OWNER_TONE = Object.freeze({ Myles: 'red', Ophelia: 'purple' });
+
+/**
+ * Longest permitted compact accent label ("FIRST GAME" is 10).
+ *
+ * The label is drawn inside the row's existing height, so an over-long value
+ * would either overlap the title or force the row taller. Bounding it here
+ * keeps that a load-time rejection rather than a layout defect.
+ */
+const MAX_ACCENT_LABEL_LENGTH = 14;
+
 const QUALIFIER_NODE_TYPES = Object.freeze([
   'calendarOccurrence', 'calendarRange', 'sportsFixture', 'approvedDate',
 ]);
+
+/** Node types that resolve against a named calendar and therefore need a title. */
+const TITLE_MATCHED_NODE_TYPES = Object.freeze(['calendarOccurrence', 'calendarRange']);
+
+/**
+ * Title-match modes, most permissive first. The full matching semantics live
+ * in titleMatches() (specialEventQualify.js); the author-facing summary is:
+ *
+ *   prefix   normalized, case-insensitive PREFIX match. The configured value
+ *            must start the title; anything may follow.
+ *   exact    normalized WHOLE-title match. Ignores case and collapses internal
+ *            whitespace, so `FLAG  FOOTBALL: WEEK 1` matches
+ *            `Flag Football: Week 1`.
+ *   literal  whole CLEANED-title equality, sensitive to case, punctuation and
+ *            internal whitespace. Only the emoji-strip and end-trim that the
+ *            occurrence model already performs are tolerated.
+ *
+ * `exact` and `literal` are near-synonyms in English and are not
+ * interchangeable in practice: `exact` accepts edits that change the title's
+ * *rendered width* (capitalisation, doubled spaces), and `literal` does not.
+ * See RENDERER_REQUIRED_TITLE_MATCH_MODE below for why that distinction is
+ * load-bearing rather than stylistic.
+ *
+ * Validated so an unknown mode is a load-time diagnostic rather than a silent
+ * fall-through to `prefix` — the most permissive mode, and so exactly the
+ * wrong thing to default to on a typo.
+ */
+const TITLE_MATCH_MODES = Object.freeze(['prefix', 'exact', 'literal']);
+
+/**
+ * Renderers that may only be driven by a title match strict enough to pin the
+ * title's rendered width, and the mode each one requires.
+ *
+ * `accent-event-row-v1` draws an owner-coloured wash that must stay clear of
+ * the row's text. The clearance is a fraction of the row width — for the
+ * shipped flag-football accent it is 19.7px, about two characters — so the
+ * guarantee holds only while the rendered title stays the width that was
+ * approved. Any mode that tolerates a width-increasing edit silently breaks
+ * it: an all-caps rename under `exact` still qualifies and puts roughly 53px
+ * of text over the wash, with every gate green. `literal` fails that closed
+ * and the row renders ordinary until the treatment is revalidated.
+ *
+ * This is a per-renderer rule, not a per-level one: the general framework
+ * keeps all three modes, and a treatment whose presentation does not depend on
+ * rendered title length (the Spotlight, which reads its own configured copy)
+ * is deliberately unaffected and keeps `prefix`.
+ */
+const RENDERER_REQUIRED_TITLE_MATCH_MODE = Object.freeze({
+  'accent-event-row-v1': 'literal',
+});
 
 const SCHEMA_VERSION = 2;
 
@@ -145,6 +235,8 @@ const REASON = Object.freeze({
   MISSING_DATE: 'missing-date',
   FORBIDDEN_QUALIFIER: 'forbidden-qualifier',
   MISSING_QUALIFICATION: 'missing-qualification',
+  TITLE_MATCH_INVALID: 'title-match-invalid',
+  TITLE_MATCH_TOO_PERMISSIVE: 'title-match-too-permissive',
   UNKNOWN_NODE_TYPE: 'unknown-node-type',
   DUPLICATE_NODE_ID: 'duplicate-node-id',
   MISSING_RENDERER: 'missing-renderer',
@@ -192,6 +284,7 @@ const REASON = Object.freeze({
   SPOTLIGHT_TIE: 'spotlight-tie',
   ACCENT_TIE: 'accent-tie',
   ACCENT_NOT_RENDERABLE: 'accent-not-renderable',
+  ACCENT_PRESENTATION_INVALID: 'accent-presentation-invalid',
 
   // retained for the legacy selector's exported code table. The generalized
   // arbiter never emits it — a simultaneous pair is now resolved by priority,
@@ -358,6 +451,10 @@ function validateEntry(raw, { availableAssets } = {}) {
     const keyState = { tooDeep: false };
     if (findForbiddenKey(qualification, 0, keyState)) fail(REASON.FORBIDDEN_QUALIFIER);
     if (keyState.tooDeep) fail(REASON.SCHEMA_INVALID);
+    // Resolved once from the entry's own renderer, so the per-node check below
+    // stays a lookup rather than a level test.
+    const requiredTitleMode = RENDERER_REQUIRED_TITLE_MATCH_MODE[raw.presentation?.renderer] ?? null;
+
     const seenNodeIds = new Set();
     for (const node of nodes) {
       if (!QUALIFIER_NODE_TYPES.includes(node?.type)) { fail(REASON.UNKNOWN_NODE_TYPE); continue; }
@@ -365,6 +462,25 @@ function validateEntry(raw, { availableAssets } = {}) {
       if (!nodeId) { fail(REASON.SCHEMA_INVALID); continue; }
       if (seenNodeIds.has(nodeId)) fail(REASON.DUPLICATE_NODE_ID);
       seenNodeIds.add(nodeId);
+
+      if (TITLE_MATCHED_NODE_TYPES.includes(node.type)) {
+        // A calendar node with no title match resolves against calendar and
+        // date alone, which would let it bind to *any* event that happens to
+        // sit there. Require one, and require its mode to be a mode that
+        // exists — an unrecognised mode silently degrades to `prefix`.
+        const titleMatch = node.titleMatch;
+        const usable = titleMatch && typeof titleMatch === 'object'
+          && TITLE_MATCH_MODES.includes(titleMatch.mode)
+          && typeof titleMatch.value === 'string' && titleMatch.value.trim();
+        if (!usable) fail(REASON.TITLE_MATCH_INVALID);
+        // Some renderers cannot tolerate a title match loose enough to accept
+        // a width-increasing edit. `nodes` is the flattened leaf list, so this
+        // reaches calendar nodes at any nesting depth inside a compound
+        // qualifier, and touches no other node type.
+        else if (requiredTitleMode && titleMatch.mode !== requiredTitleMode) {
+          fail(REASON.TITLE_MATCH_TOO_PERMISSIVE);
+        }
+      }
 
       if (node.type === 'approvedDate') {
         if (!isDateKey(node.date)) fail(REASON.APPROVED_DATE_INVALID);
@@ -400,10 +516,29 @@ function validateEntry(raw, { availableAssets } = {}) {
   if (!presentation) {
     fail(REASON.SCHEMA_INVALID);
   } else if (raw.level === 'accent') {
-    // Accent rendering is deliberately unbuilt in this phase. An accent may be
-    // resolved and diagnosed; it may never claim a renderer it does not have.
-    if (presentation.renderer != null && !KNOWN_RENDERERS.includes(presentation.renderer)) {
+    // An accent with no renderer stays resolvable-but-not-activatable, which
+    // is what the framework shipped with. One that claims a renderer must
+    // claim an accent renderer, and must then carry everything that renderer
+    // needs — an unresolvable field would otherwise surface as a half-drawn
+    // row instead of a load-time rejection.
+    if (presentation.renderer != null && !ACCENT_RENDERERS.includes(presentation.renderer)) {
       fail(REASON.MISSING_RENDERER);
+    } else if (presentation.renderer === 'accent-event-row-v1') {
+      // `ref` names the qualification node whose occurrence this accent
+      // decorates. The renderer joins on that occurrence's identity, so an
+      // accent can only ever decorate a row the ordinary renderer already
+      // drew — it can never introduce one.
+      if (typeof presentation.ref !== 'string' || !presentation.ref.trim()) {
+        fail(REASON.ACCENT_PRESENTATION_INVALID);
+      }
+      if (!Object.hasOwn(OWNER_TONE, presentation.owner)) {
+        fail(REASON.ACCENT_PRESENTATION_INVALID);
+      }
+      if (!KNOWN_DOODLE_KEYS.includes(presentation.doodle)) fail(REASON.UNKNOWN_ASSET_KEY);
+      if (presentation.label != null) {
+        const label = typeof presentation.label === 'string' ? presentation.label.trim() : '';
+        if (!label || label.length > MAX_ACCENT_LABEL_LENGTH) fail(REASON.ACCENT_PRESENTATION_INVALID);
+      }
     }
   } else if (!KNOWN_RENDERERS.includes(presentation.renderer)) {
     fail(REASON.MISSING_RENDERER);
@@ -502,22 +637,29 @@ function validateRegistry(config, options = {}) {
 }
 
 export {
+  ACCENT_RENDERERS,
   ALL_DAY_EXPIRE_TIME,
   AUDIENCES,
   FORBIDDEN_QUALIFIER_KEY_PATTERNS,
   MAX_QUALIFICATION_DEPTH,
+  KNOWN_DOODLE_KEYS,
   KNOWN_LOGO_KEYS,
   KNOWN_RENDERERS,
+  MAX_ACCENT_LABEL_LENGTH,
+  OWNER_TONE,
   LEVELS,
   LEVEL_DEFAULTS,
   PRIORITY_BANDS,
   PROTECTED_REGIONS,
   QUALIFIER_NODE_TYPES,
+  RENDERER_REQUIRED_TITLE_MATCH_MODE,
   REASON,
   SCHEMA_VERSION,
   STATUSES,
   SURFACES,
   SURFACE_HOST_PANEL,
+  TITLE_MATCHED_NODE_TYPES,
+  TITLE_MATCH_MODES,
   TIMED_EXPIRE_GRACE_MS,
   findForbiddenKey,
   isClock,
