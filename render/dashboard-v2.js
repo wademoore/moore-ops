@@ -580,17 +580,24 @@ function renderUpcomingEvent(item, accents) {
 function renderUpcoming(data) {
   const accents = eventRowAccents(data);
   const allItems = collapseUpcomingEvents(data.upcomingEvents, data.today);
-  const visibleItems = allItems.slice(0, 10);
-  const laterCount = allItems.length - visibleItems.length;
+  const eventTarget = athleticsCardCount(data) === 1 ? 14 : 10;
   const grouped = new Map();
-  for (const item of visibleItems) {
+  for (const item of allItems) {
     if (!grouped.has(item.startKey)) grouped.set(item.startKey, []);
     grouped.get(item.startKey).push(item);
   }
   const allDays = [...grouped.entries()]
     .map(([key, items]) => ({ key, items }))
     .sort((a, b) => a.key.localeCompare(b.key));
-  const rows = allDays.map(day => {
+  const visibleDays = [];
+  let visibleCount = 0;
+  for (const day of allDays) {
+    if (visibleCount >= eventTarget) break;
+    visibleDays.push(day);
+    visibleCount += day.items.length;
+  }
+  const laterCount = allItems.length - visibleCount;
+  const rows = visibleDays.map(day => {
     const date = dateAtNoon(day.key);
     const days = daysFrom(data.today, day.key);
     const people = new Set(day.items.map(item => peopleForEvent(item.event)));
@@ -602,9 +609,9 @@ function renderUpcoming(data) {
       <div class="count-chip">${esc(countdownLabel(days))}</div>
     </div>`;
   }).join('');
-  const densityClass = allDays.length > 9 ? ' upcoming-dense' : '';
+  const densityClass = visibleDays.length > 9 ? ' upcoming-dense' : '';
   return `<section class="paper-panel upcoming-panel${densityClass}">
-    ${renderSectionTitle('Next 10 Events', 'green', 'calendar')}
+    ${renderSectionTitle('Coming Up', 'green', 'calendar')}
     <div class="upcoming-list">${rows || '<div class="empty-state">No upcoming events.</div>'}</div>
     ${laterCount ? `<div class="upcoming-later">+${laterCount} later in the two-week window</div>` : ''}
   </section>`;

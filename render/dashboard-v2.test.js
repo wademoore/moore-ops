@@ -99,7 +99,7 @@ describe('experimental dashboard v2 isolation and structure', () => {
 
   it('keeps the busy-screen content areas', () => {
     assert.match(html, /Now \/ Next/);
-    assert.match(html, /Next 10 Events/);
+    assert.match(html, /Coming Up/);
     assert.match(html, /Athletics/);
     assert.match(html, /Tonight&#39;s Dinner/);
     assert.match(html, /sports-ticker/);
@@ -301,7 +301,7 @@ describe('real-data resilience policies', () => {
     raw: { start: { dateTime } },
   });
 
-  it('uses the full 14-day window, collapses consecutive repeats, and takes the first 10', () => {
+  it('fills the taller one-card layout chronologically without splitting the final day', () => {
     const today = new Date(2026, 7, 13);
     const repeated = [17, 18, 19, 20, 21].map(day => event('4-H Day Camp', `2026-08-${day}T07:30:00-04:00`, '7:30 AM'));
     const collapsed = collapseUpcomingEvents([
@@ -320,10 +320,10 @@ describe('real-data resilience policies', () => {
       athletics: { sharksActive: true, sharksNextGame: { opponent: 'United', date: '2026-09-12', time: '13:15' } },
     });
     assert.match(html, /Aug 17–21 · 7:30 AM/);
-    assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 10);
+    assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 15);
     assert.match(html, /later in the two-week window/);
     assert.doesNotMatch(html, /Useful event 14/);
-    assert.match(html, /\+12 later in the two-week window/);
+    assert.match(html, /\+7 later in the two-week window/);
   });
 
   it('groups each date tile once and stacks that day’s events without undoing ranges', () => {
@@ -340,7 +340,7 @@ describe('real-data resilience policies', () => {
     assert.match(html, /Aug 17–21 · 7:30 AM/);
   });
 
-  it('takes the next 10 chronologically instead of priority-ranking the schedule', () => {
+  it('keeps chronological order and includes every event on the final visible day', () => {
     const today = new Date(2026, 7, 13);
     const practices = Array.from({ length: 14 }, (_, index) => event(
       `Myles: Sharks Practice ${index + 1}`,
@@ -348,10 +348,24 @@ describe('real-data resilience policies', () => {
     ));
     const ticketDecision = event('⚑ DECIDE: W&M at Duke (Sep 26) — Buy tickets?', '2026-08-27T09:00:00-04:00');
     const html = renderUpcoming({ today, upcomingEvents: [...practices, ticketDecision], athletics: { sharksActive: true } });
-    for (let index = 1; index <= 10; index += 1) assert.match(html, new RegExp(`Sharks Practice ${index}<`));
-    assert.doesNotMatch(html, /Sharks Practice 11</);
-    assert.doesNotMatch(html, /DECIDE: W&amp;M at Duke/);
-    assert.match(html, /\+5 later in the two-week window/);
+    for (let index = 1; index <= 14; index += 1) assert.match(html, new RegExp(`Sharks Practice ${index}<`));
+    assert.match(html, /DECIDE: W&amp;M at Duke/);
+    assert.doesNotMatch(html, /later in the two-week window/);
+  });
+
+  it('keeps the shorter multi-card Athletics layout at 10 events', () => {
+    const today = new Date(2026, 7, 13);
+    const events = Array.from({ length: 14 }, (_, index) => event(
+      `Event ${index + 1}`,
+      `2026-08-${String(index + 14).padStart(2, '0')}T09:00:00-04:00`,
+    ));
+    const html = renderUpcoming({
+      today,
+      upcomingEvents: events,
+      athletics: { sharksActive: true, swim757Active: true },
+    });
+    assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 10);
+    assert.match(html, /\+4 later in the two-week window/);
   });
 
   it('keeps near-term swim practices even when later practices share dates with higher-priority events', () => {
@@ -633,14 +647,14 @@ describe('television readability and horizon policies', () => {
     assert.equal(deduped.length, 1);
   });
 
-  it('renders empty, one-item, and three-item adaptive states without Coming Up duplication', () => {
+  it('renders empty, one-item, and three-item adaptive horizon states without a second Coming Up label', () => {
     const empty = renderDashboardV2({ ...sampleDashboardV2Data, horizonEvents: [] });
     const one = renderDashboardV2({ ...sampleDashboardV2Data, horizonEvents: [event('Myles Birthday', '2026-09-01')] });
     const three = renderDashboardV2(sampleDashboardV2Data);
     assert.match(empty, /horizon-empty/);
     assert.match(one, /horizon-count-1/);
     assert.match(three, /horizon-count-3/);
-    assert.doesNotMatch(three, />Coming Up</);
+    assert.equal((three.match(/>Coming Up</g) || []).length, 1);
   });
 });
 
