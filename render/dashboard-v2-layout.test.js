@@ -112,7 +112,7 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     });
   }
 
-  it('keeps the chronological next 10 above Athletics and discloses later events', async () => {
+  it('fills the taller Coming Up panel above Athletics and discloses later events', async () => {
     const event = (title, dateTime) => ({
       title,
       subtitle: '',
@@ -161,8 +161,8 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         athleticsTop: athletics?.top,
       };
     });
-    assert.equal(result.eventCount, 10);
-    assert.equal(result.laterText, '+10 later in the two-week window');
+    assert.equal(result.eventCount, 14);
+    assert.equal(result.laterText, '+6 later in the two-week window');
     assert.ok(result.lastDayBottom <= result.laterTop, JSON.stringify(result));
     assert.ok(result.lastDayBottom <= result.athleticsTop, JSON.stringify(result));
   });
