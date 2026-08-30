@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
 import { renderDashboardV2 } from './dashboard-v2.js';
 import { readFileSync } from 'node:fs';
-import { eventRowAccentSampleData, sampleDashboardV2Data, specialEventsSampleData } from './dashboard-v2.sample-data.js';
+import { ACCENT_OCCURRENCES, eventRowAccentSampleData, sampleDashboardV2Data, specialEventsSampleData } from './dashboard-v2.sample-data.js';
 import { resolveBrowserPath } from '../scripts/render-dashboard-v2-png.mjs';
 
 let browser;
@@ -495,11 +495,18 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
       const rect = element.getBoundingClientRect();
       const range = document.createRange();
       range.selectNodeContents(element.querySelector('strong'));
+      const detail = document.createRange();
+      detail.selectNodeContents(element.querySelector('span'));
       return {
         accentId: element.dataset.accentId,
         left: Math.floor(rect.left), top: Math.floor(rect.top),
         right: Math.ceil(rect.right), bottom: Math.ceil(rect.bottom),
+        // The reading area is whichever of the two text runs extends further
+        // right, so the guard covers the complete title AND detail bounds
+        // rather than assuming the title is always the longer one.
+        textRight: Math.ceil(Math.max(range.getBoundingClientRect().right, detail.getBoundingClientRect().right)),
         titleRight: Math.ceil(range.getBoundingClientRect().right),
+        detailRight: Math.ceil(detail.getBoundingClientRect().right),
       };
     }));
     assert.equal(geometry.length, 2);
@@ -514,8 +521,9 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
     const BOTH_ACTIVE = Date.parse('2026-09-20T04:00:00Z');
     for (const row of geometry) {
       const height = row.bottom - row.top;
-      const reading = { x: row.left, y: row.top, width: row.titleRight - row.left, height };
-      const openSpace = { x: row.titleRight + 20, y: row.top, width: row.right - row.titleRight - 20, height };
+      assert.ok(row.textRight >= row.titleRight && row.textRight >= row.detailRight);
+      const reading = { x: row.left, y: row.top, width: row.textRight - row.left, height };
+      const openSpace = { x: row.textRight + 20, y: row.top, width: row.right - row.textRight - 20, height };
 
       assert.deepEqual(
         await shoot(BOTH_ACTIVE, reading),
@@ -528,6 +536,43 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
         `${row.accentId}: the accent is invisible in the open space right of the text`,
       );
     }
+  });
+
+  it('pins both accent titles literally, so the reading area cannot grow under the wash', async () => {
+    // The pixel guard above proves the wash clears TODAY's text. It cannot
+    // prove that for a title that arrives later from the calendar, because the
+    // fixture supplies the title. `literal` matching is what closes that gap:
+    // a longer title stops qualifying, so the row it would have overflowed
+    // renders ordinary instead. Asserted here, next to the geometry it
+    // protects, rather than only in the selector suite.
+    const registry = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
+    for (const treatment of registry.treatments.filter(entry => entry.level === 'accent')) {
+      assert.equal(treatment.qualification.titleMatch.mode, 'literal', treatment.id);
+    }
+
+    const longer = {
+      ...ACCENT_OCCURRENCES.flagFootball,
+      title: 'Flag Football: Week 1 — Practice + Game (Yorktown, McReynolds Athletic Complex, Field 3)',
+    };
+    await page.setContent(renderDashboardV2(data({ occurrences: [ACCENT_OCCURRENCES.swim, longer] })), { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+    const result = await page.evaluate(at => {
+      window.updateEventRowAccents(at);
+      const rows = [...document.querySelectorAll('.upcoming-event')];
+      const long = rows.find(row => row.querySelector('strong').textContent.includes('McReynolds'));
+      return {
+        longRowPresent: Boolean(long),
+        longRowAccented: Boolean(long?.dataset.accentId),
+        longRowHeight: long ? +long.getBoundingClientRect().height.toFixed(2) : null,
+        accentedIds: rows.map(row => row.dataset.accentId).filter(Boolean),
+      };
+    }, Date.parse('2026-09-20T04:00:00Z'));
+
+    assert.ok(result.longRowPresent, 'the ordinary row must still be drawn');
+    assert.equal(result.longRowAccented, false, 'a title longer than the approved one must not be accented');
+    assert.equal(result.longRowHeight, 42, 'the ordinary row keeps its height');
+    assert.deepEqual(result.accentedIds, ['ophelia-757swim-catch-em-all-1-2026-09-19'],
+      'the unrelated accent is unaffected');
   });
 
   it('places every decoration clear of the text and inside the row band', async () => {

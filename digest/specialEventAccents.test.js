@@ -98,6 +98,68 @@ describe('event-row accents — qualification from the real calendar occurrences
     assert.equal(swim.refIds.length, 1, 'a span must never resolve to one occurrence per day it covers');
   });
 
+  it('qualifies only on the exact shipped titles', () => {
+    // Both accents match `literal`, so the qualifying title is the whole
+    // title, byte for byte. This is what stops a longer title from being
+    // accepted and drawing text over the wash — see the wash-clearance test in
+    // render/dashboard-v2-layout.test.js.
+    assert.deepEqual(accentsAt(FLAG_VISIBLE).map(a => a.id).sort(), [FLAG_ID, SWIM_ID].sort());
+    for (const id of [SWIM_ID, FLAG_ID]) {
+      const { titleMatch } = REGISTRY.treatments.find(t => t.id === id).qualification;
+      assert.equal(titleMatch.mode, 'literal', `${id} must pin its title`);
+    }
+    assert.equal(
+      REGISTRY.treatments.find(t => t.id === SWIM_ID).qualification.titleMatch.value,
+      "757swim: Catch 'Em All Series #1 - 200 Back",
+    );
+    assert.equal(
+      REGISTRY.treatments.find(t => t.id === FLAG_ID).qualification.titleMatch.value,
+      'Flag Football: Week 1 — Practice + Game (Yorktown)',
+    );
+  });
+
+  it('fails closed on any edit to either title', () => {
+    // Each variant is a plausible real edit to the calendar entry. None may
+    // qualify: the treatment is revalidated deliberately, never silently.
+    const variants = title => [
+      ['a suffix', `${title} (rescheduled)`],
+      ['a venue expansion', title.endsWith(')')
+        ? title.replace(/\)$/, ', McReynolds Athletic Complex, Field 3)')
+        : `${title} — McReynolds Athletic Complex, Field 3`],
+      ['a prefix', `Updated: ${title}`],
+      ['a removed prefix', title.slice(title.indexOf(' ') + 1)],
+      ['different capitalisation', title.toUpperCase()],
+      ['lowercased', title.toLowerCase()],
+      ['punctuation changed', title.replace('—', '-').replace(/'/g, '\u2019')],
+      ['a doubled internal space', title.replace(' ', '  ')],
+    ];
+    for (const [base, id, other] of [[SWIM, SWIM_ID, FLAG], [FLAG, FLAG_ID, SWIM]]) {
+      for (const [label, title] of variants(base.title)) {
+        const edited = { ...base, title };
+        const ids = accentsAt(FLAG_VISIBLE, { events: [other, edited] }).map(a => a.id);
+        assert.ok(!ids.includes(id), `${id} still qualified after ${label}: ${JSON.stringify(title)}`);
+        // The other accent is unaffected — one stale title never disables both.
+        assert.ok(ids.includes(other === SWIM ? SWIM_ID : FLAG_ID), `${label} disabled the unrelated accent`);
+      }
+    }
+  });
+
+  it('tolerates only the normalisation the occurrence model already performs', () => {
+    // cleanTitle() strips leading emoji decoration and trims the ends before
+    // matching. Neither changes a single rendered glyph or the text's measured
+    // width, so neither is a title *edit* and neither should fail the node.
+    // A doubled space *inside* the title does change the rendered width, and
+    // the previous test proves that one fails closed.
+    for (const [label, title] of [
+      ['leading emoji', `🏈 ${FLAG.title}`],
+      ['trailing whitespace', `${FLAG.title}   `],
+      ['leading whitespace', `  ${FLAG.title}`],
+    ]) {
+      const ids = accentsAt(FLAG_VISIBLE, { events: [SWIM, { ...FLAG, title }] }).map(a => a.id);
+      assert.ok(ids.includes(FLAG_ID), `${label} should still qualify`);
+    }
+  });
+
   it('fails closed when the occurrence moves, is cancelled, or is duplicated', () => {
     const moved = { ...SWIM, raw: { ...SWIM.raw, start: { date: '2026-09-26' }, end: { date: '2026-09-28' } } };
     assert.equal(accentsAt(SWIM_VISIBLE, { events: [moved, FLAG] }).some(a => a.id === SWIM_ID), false);

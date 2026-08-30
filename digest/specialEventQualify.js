@@ -23,8 +23,30 @@ import { isSharksTeam } from './sharksParser.js';
 import { REASON, isClock, isDateKey } from './specialEventSchema.js';
 import { norm } from './specialEventOccurrences.js';
 
-/** Title match. `prefix` mirrors the legacy `titleStartsWith` behaviour. */
+/**
+ * Title match. Three modes, deliberately ordered from most permissive to least:
+ *
+ *   prefix   the configured value is a prefix of the title, compared after
+ *            case-folding and whitespace collapsing. Mirrors the legacy
+ *            `titleStartsWith` behaviour and is what the Spotlight uses.
+ *   exact    the whole title equals the configured value, compared the same
+ *            forgiving way.
+ *   literal  the whole title equals the configured value **byte for byte**,
+ *            after the occurrence model has stripped leading emoji.
+ *
+ * `literal` exists because a treatment whose presentation depends on the
+ * *rendered length* of the title cannot tolerate the title changing underneath
+ * it. An event-row accent draws a wash that must stay clear of the text, so a
+ * longer title — which a prefix match happily accepts — would put text over
+ * the wash. Under `literal`, any edit at all (a suffix, an added venue, a
+ * changed dash, a different capitalisation, even a doubled space) fails the
+ * node closed, and the row renders ordinary until the treatment is
+ * deliberately revalidated against the new title.
+ */
 function titleMatches(occurrenceTitle, titleMatch) {
+  if (titleMatch?.mode === 'literal') {
+    return String(occurrenceTitle ?? '') === String(titleMatch?.value ?? '');
+  }
   const wanted = norm(titleMatch?.value);
   const actual = norm(occurrenceTitle);
   if (titleMatch?.mode === 'exact') return actual === wanted;

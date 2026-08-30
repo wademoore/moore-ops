@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
-import { ACCENT_TIME_ATTRIBUTES, MAX_EVENT_ROW_ACCENTS, validateArtifact } from '../../dashboard-artifact/contract.js';
+import { ACCENT_TIME_ATTRIBUTES, MAX_EVENT_ROW_ACCENTS, UPCOMING_PANEL_ELEMENT, validateArtifact } from '../../dashboard-artifact/contract.js';
 import { renderDashboardV2 } from '../../render/dashboard-v2.js';
 import { eventRowAccentSampleData, sampleDashboardV2Data } from '../../render/dashboard-v2.sample-data.js';
 
@@ -98,4 +98,33 @@ test('an accent and the first-day takeover can never validate together', () => {
   const html = renderDashboardV2(accentData(BOTH_ROWS))
     .replace('<main class="dashboard', '<main data-dashboard-mode="first-day-level3" class="dashboard');
   assert.throws(() => validateArtifact(html, { sportsFeedUrl: SPORTS }), /first-day/);
+});
+
+test('the Upcoming-panel marker cannot be satisfied by CSS or controller text alone', () => {
+  const html = renderDashboardV2(accentData(BOTH_ROWS));
+  // Drop the panel's own opening tag while leaving its contents — including
+  // the accented rows — in place. That is the artifact the marker exists to
+  // reject: accents present, host element gone. Deleting the whole panel would
+  // take the accents with it and skip the branch entirely, which is why the
+  // negative control has to be this shape.
+  const start = html.indexOf(UPCOMING_PANEL_ELEMENT);
+  assert.ok(start > 0, 'could not locate the Upcoming panel element');
+  const tagEnd = html.indexOf('>', start) + 1;
+  const withoutPanel = html.slice(0, start) + html.slice(tagEnd);
+
+  // Everything a bare-token check would have matched is still here.
+  assert.ok(withoutPanel.includes('upcoming-panel'), 'the CSS still names the class');
+  assert.ok(withoutPanel.includes('updateEventRowAccents'), 'the controller is still present');
+  assert.ok(withoutPanel.includes('data-accent-id'), 'the accented rows are still present');
+  assert.ok(!withoutPanel.includes(UPCOMING_PANEL_ELEMENT), 'the element itself is gone');
+
+  assert.throws(() => validateArtifact(withoutPanel, { sportsFeedUrl: SPORTS }),
+    /missing required marker: <section class="paper-panel upcoming-panel/);
+});
+
+test('the marker string is the element the renderer actually emits', () => {
+  // Binds the constant to the renderer: if the panel's opening tag is ever
+  // rewritten, this fails rather than the marker quietly never matching.
+  const html = renderDashboardV2(accentData(BOTH_ROWS));
+  assert.equal((html.match(new RegExp(UPCOMING_PANEL_ELEMENT.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length, 1);
 });

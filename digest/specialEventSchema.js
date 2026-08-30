@@ -160,6 +160,19 @@ const QUALIFIER_NODE_TYPES = Object.freeze([
   'calendarOccurrence', 'calendarRange', 'sportsFixture', 'approvedDate',
 ]);
 
+/** Node types that resolve against a named calendar and therefore need a title. */
+const TITLE_MATCHED_NODE_TYPES = Object.freeze(['calendarOccurrence', 'calendarRange']);
+
+/**
+ * Title-match modes, most permissive first. See titleMatches() in
+ * specialEventQualify.js for the semantics of each.
+ *
+ * Validated here so an unknown mode is a load-time diagnostic rather than a
+ * silent fall-through to `prefix` — which is the most permissive mode, and so
+ * exactly the wrong thing to default to on a typo.
+ */
+const TITLE_MATCH_MODES = Object.freeze(['prefix', 'exact', 'literal']);
+
 const SCHEMA_VERSION = 2;
 
 // ── Reason codes ─────────────────────────────────────────────────────────
@@ -185,6 +198,7 @@ const REASON = Object.freeze({
   MISSING_DATE: 'missing-date',
   FORBIDDEN_QUALIFIER: 'forbidden-qualifier',
   MISSING_QUALIFICATION: 'missing-qualification',
+  TITLE_MATCH_INVALID: 'title-match-invalid',
   UNKNOWN_NODE_TYPE: 'unknown-node-type',
   DUPLICATE_NODE_ID: 'duplicate-node-id',
   MISSING_RENDERER: 'missing-renderer',
@@ -407,6 +421,18 @@ function validateEntry(raw, { availableAssets } = {}) {
       if (seenNodeIds.has(nodeId)) fail(REASON.DUPLICATE_NODE_ID);
       seenNodeIds.add(nodeId);
 
+      if (TITLE_MATCHED_NODE_TYPES.includes(node.type)) {
+        // A calendar node with no title match resolves against calendar and
+        // date alone, which would let it bind to *any* event that happens to
+        // sit there. Require one, and require its mode to be a mode that
+        // exists — an unrecognised mode silently degrades to `prefix`.
+        const titleMatch = node.titleMatch;
+        const usable = titleMatch && typeof titleMatch === 'object'
+          && TITLE_MATCH_MODES.includes(titleMatch.mode)
+          && typeof titleMatch.value === 'string' && titleMatch.value.trim();
+        if (!usable) fail(REASON.TITLE_MATCH_INVALID);
+      }
+
       if (node.type === 'approvedDate') {
         if (!isDateKey(node.date)) fail(REASON.APPROVED_DATE_INVALID);
         const provenance = node.provenance;
@@ -582,6 +608,8 @@ export {
   STATUSES,
   SURFACES,
   SURFACE_HOST_PANEL,
+  TITLE_MATCHED_NODE_TYPES,
+  TITLE_MATCH_MODES,
   TIMED_EXPIRE_GRACE_MS,
   findForbiddenKey,
   isClock,

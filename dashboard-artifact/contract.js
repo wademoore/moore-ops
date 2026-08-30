@@ -42,6 +42,13 @@ const ACCENT_TIME_ATTRIBUTES = Object.freeze([
  * build instead of reaching a television.
  */
 const MAX_EVENT_ROW_ACCENTS = 2;
+/**
+ * Opening tag of the Upcoming panel, as render/dashboard-v2.js emits it. An
+ * accent decorates a row inside this element, so its presence is what the
+ * accent branch has to assert — and asserting the element rather than the bare
+ * class token is what keeps that check falsifiable.
+ */
+const UPCOMING_PANEL_ELEMENT = '<section class="paper-panel upcoming-panel';
 const FORBIDDEN_PATTERNS = Object.freeze([
   /client_secret/i,
   /refresh_token/i,
@@ -108,7 +115,14 @@ function validateArtifact(html, { sportsFeedUrl, minBytes = MIN_ARTIFACT_BYTES, 
     // no Upcoming panel at all. Coexistence would mean two treatments claiming
     // the page, which is the same failure the mode check above guards.
     if (firstDay) failures.push('event-row accent must not coexist with the first-day treatment');
-    if (!html.includes('upcoming-panel')) failures.push('accent artifact is missing required marker: upcoming-panel');
+    // The element's own opening tag, not the bare token: the stylesheet names
+    // `.upcoming-panel` in every artifact, so `includes('upcoming-panel')` is
+    // satisfied even when the panel itself is gone and can never fail. This is
+    // the same discipline the Spotlight branch above applies with
+    // `class="athletics-grid spotlight-ordinary`.
+    if (!html.includes(UPCOMING_PANEL_ELEMENT)) {
+      failures.push(`accent artifact is missing required marker: ${UPCOMING_PANEL_ELEMENT}`);
+    }
     // Every accented row ships in the ordinary state and is switched by the
     // bounded controller, so a failed or absent script leaves ordinary rows
     // rather than permanently lit ones. Counted rather than merely present:
@@ -158,6 +172,7 @@ export {
   ACCENT_TIME_ATTRIBUTES,
   ARTIFACT_VERSION,
   MAX_EVENT_ROW_ACCENTS,
+  UPCOMING_PANEL_ELEMENT,
   FORBIDDEN_PATTERNS,
   MAX_ARTIFACT_BYTES,
   MIN_ARTIFACT_BYTES,

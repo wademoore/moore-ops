@@ -262,6 +262,23 @@ describe('event-row accent — containment and fail-closed', () => {
     assert.ok(html.includes(`data-accent-id="${SWIM_ID}"`), 'one invalid accent must not disable the other');
   });
 
+  it('falls back to an ordinary row when the title grows past the approved one', () => {
+    // The exact probe from the review: the same event, still on the same
+    // calendar and date, with the venue spelled out. Under `prefix` matching
+    // this still qualified and drew text over the wash; under `literal` it
+    // fails closed and the row renders ordinary until someone revalidates the
+    // treatment against the new title.
+    const longer = {
+      ...ACCENT_OCCURRENCES.flagFootball,
+      title: 'Flag Football: Week 1 — Practice + Game (Yorktown, McReynolds Athletic Complex, Field 3)',
+    };
+    const html = renderUpcoming(dataAt(SWIM_VISIBLE, { occurrences: [ACCENT_OCCURRENCES.swim, longer] }));
+    assert.ok(html.includes('McReynolds Athletic Complex'), 'the ordinary row must still be drawn');
+    assert.ok(!html.includes(`data-accent-id="${FLAG_ID}"`), 'the longer title must not be accented');
+    assert.ok(!html.includes('FIRST GAME'));
+    assert.ok(html.includes(`data-accent-id="${SWIM_ID}"`), 'the unrelated accent is unaffected');
+  });
+
   it('falls back to an ordinary row when the occurrence is simply absent', () => {
     const html = renderUpcoming(dataAt(SWIM_VISIBLE, { occurrences: [ACCENT_OCCURRENCES.swim] }));
     assert.ok(!html.includes(`data-accent-id="${FLAG_ID}"`));

@@ -2,7 +2,9 @@
   "assetDirectories": ["render/assets-v2", "render/assets-first-day"],
   "requiredAssetFiles": [
     "assets-first-day/composition-reference.png",
-    "assets-first-day/icon-weather-sun.png"
+    "assets-first-day/icon-weather-sun.png",
+    "assets-v2/doodle-swim-goggles.svg",
+    "assets-v2/doodle-football-laces.svg"
   ],
   "dataFiles": [
     "sports-config.json", "flag-football.json", "pb-records.json",

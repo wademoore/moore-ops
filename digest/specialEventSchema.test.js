@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   ACCENT_RENDERERS,
@@ -19,6 +20,7 @@ import {
   STATUSES,
   SURFACES,
   SURFACE_HOST_PANEL,
+  TITLE_MATCH_MODES,
   validateEntry,
   validateRegistry,
 } from './specialEventSchema.js';
@@ -592,6 +594,63 @@ describe('specialEventSchema — accent-event-row-v1 presentation', () => {
     for (const region of PROTECTED_REGIONS) {
       assert.ok(errorsFor(accent({})) .length === 0);
       assert.ok(errorsFor(entry({ level: 'accent', priority: 150, surface: region, presentation: {} })).includes(REASON.UNKNOWN_SURFACE), region);
+    }
+  });
+});
+
+describe('specialEventSchema — title matching', () => {
+  const errorsFor = raw => validateEntry(raw).errors;
+  const withTitleMatch = titleMatch => entry({
+    qualification: {
+      type: 'calendarOccurrence', id: 'anchor', calendar: 'Ophelia',
+      titleMatch, expectedDate: '2026-09-12', expectedTime: '12:30', kind: 'timed',
+    },
+    presentation: { renderer: 'spotlight-children-v1', headline: 'X', children: [] },
+  });
+
+  it('accepts every mode the matcher implements', () => {
+    for (const mode of TITLE_MATCH_MODES) {
+      assert.deepEqual(errorsFor(withTitleMatch({ mode, value: 'Something' })), [], mode);
+    }
+  });
+
+  it('rejects an unknown mode rather than silently falling through to prefix', () => {
+    // `prefix` is the most permissive mode, so a typo defaulting to it is
+    // exactly the wrong failure direction.
+    for (const mode of ['startsWith', 'exact ', 'LITERAL', '', null, undefined, 1]) {
+      assert.ok(errorsFor(withTitleMatch({ mode, value: 'Something' })).includes(REASON.TITLE_MATCH_INVALID), String(mode));
+    }
+  });
+
+  it('requires a title match on every calendar-anchored node', () => {
+    // Without one, the node binds to calendar + date alone and would accept
+    // any event that happens to sit there.
+    for (const titleMatch of [undefined, null, {}, { mode: 'literal' }, { mode: 'literal', value: '   ' }, { mode: 'literal', value: 7 }]) {
+      assert.ok(errorsFor(withTitleMatch(titleMatch)).includes(REASON.TITLE_MATCH_INVALID), JSON.stringify(titleMatch));
+    }
+  });
+
+  it('leaves non-calendar node types unaffected', () => {
+    const approved = entry({
+      qualification: {
+        type: 'approvedDate', id: 'anchor', date: '2026-09-12',
+        provenance: { approvedBy: 'Wade', approvedOn: '2026-08-30', source: 'session' },
+      },
+      presentation: { renderer: 'spotlight-children-v1', headline: 'X', children: [] },
+    });
+    assert.ok(!errorsFor(approved).includes(REASON.TITLE_MATCH_INVALID));
+  });
+
+  it('the shipped registry pins both accent titles literally', () => {
+    const registry = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
+    for (const treatment of registry.treatments.filter(t => t.level === 'accent')) {
+      assert.equal(treatment.qualification.titleMatch.mode, 'literal', treatment.id);
+    }
+    // The Spotlight deliberately keeps prefix matching: its presentation does
+    // not depend on the rendered length of the calendar title.
+    const spotlight = registry.treatments.find(t => t.level === 'spotlight');
+    for (const node of spotlight.qualification.any.filter(n => n.titleMatch)) {
+      assert.equal(node.titleMatch.mode, 'prefix', node.id);
     }
   });
 });
