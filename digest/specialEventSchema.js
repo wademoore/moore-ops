@@ -164,14 +164,51 @@ const QUALIFIER_NODE_TYPES = Object.freeze([
 const TITLE_MATCHED_NODE_TYPES = Object.freeze(['calendarOccurrence', 'calendarRange']);
 
 /**
- * Title-match modes, most permissive first. See titleMatches() in
- * specialEventQualify.js for the semantics of each.
+ * Title-match modes, most permissive first. The full matching semantics live
+ * in titleMatches() (specialEventQualify.js); the author-facing summary is:
  *
- * Validated here so an unknown mode is a load-time diagnostic rather than a
- * silent fall-through to `prefix` — which is the most permissive mode, and so
- * exactly the wrong thing to default to on a typo.
+ *   prefix   normalized, case-insensitive PREFIX match. The configured value
+ *            must start the title; anything may follow.
+ *   exact    normalized WHOLE-title match. Ignores case and collapses internal
+ *            whitespace, so `FLAG  FOOTBALL: WEEK 1` matches
+ *            `Flag Football: Week 1`.
+ *   literal  whole CLEANED-title equality, sensitive to case, punctuation and
+ *            internal whitespace. Only the emoji-strip and end-trim that the
+ *            occurrence model already performs are tolerated.
+ *
+ * `exact` and `literal` are near-synonyms in English and are not
+ * interchangeable in practice: `exact` accepts edits that change the title's
+ * *rendered width* (capitalisation, doubled spaces), and `literal` does not.
+ * See RENDERER_REQUIRED_TITLE_MATCH_MODE below for why that distinction is
+ * load-bearing rather than stylistic.
+ *
+ * Validated so an unknown mode is a load-time diagnostic rather than a silent
+ * fall-through to `prefix` — the most permissive mode, and so exactly the
+ * wrong thing to default to on a typo.
  */
 const TITLE_MATCH_MODES = Object.freeze(['prefix', 'exact', 'literal']);
+
+/**
+ * Renderers that may only be driven by a title match strict enough to pin the
+ * title's rendered width, and the mode each one requires.
+ *
+ * `accent-event-row-v1` draws an owner-coloured wash that must stay clear of
+ * the row's text. The clearance is a fraction of the row width — for the
+ * shipped flag-football accent it is 19.7px, about two characters — so the
+ * guarantee holds only while the rendered title stays the width that was
+ * approved. Any mode that tolerates a width-increasing edit silently breaks
+ * it: an all-caps rename under `exact` still qualifies and puts roughly 53px
+ * of text over the wash, with every gate green. `literal` fails that closed
+ * and the row renders ordinary until the treatment is revalidated.
+ *
+ * This is a per-renderer rule, not a per-level one: the general framework
+ * keeps all three modes, and a treatment whose presentation does not depend on
+ * rendered title length (the Spotlight, which reads its own configured copy)
+ * is deliberately unaffected and keeps `prefix`.
+ */
+const RENDERER_REQUIRED_TITLE_MATCH_MODE = Object.freeze({
+  'accent-event-row-v1': 'literal',
+});
 
 const SCHEMA_VERSION = 2;
 
@@ -199,6 +236,7 @@ const REASON = Object.freeze({
   FORBIDDEN_QUALIFIER: 'forbidden-qualifier',
   MISSING_QUALIFICATION: 'missing-qualification',
   TITLE_MATCH_INVALID: 'title-match-invalid',
+  TITLE_MATCH_TOO_PERMISSIVE: 'title-match-too-permissive',
   UNKNOWN_NODE_TYPE: 'unknown-node-type',
   DUPLICATE_NODE_ID: 'duplicate-node-id',
   MISSING_RENDERER: 'missing-renderer',
@@ -413,6 +451,10 @@ function validateEntry(raw, { availableAssets } = {}) {
     const keyState = { tooDeep: false };
     if (findForbiddenKey(qualification, 0, keyState)) fail(REASON.FORBIDDEN_QUALIFIER);
     if (keyState.tooDeep) fail(REASON.SCHEMA_INVALID);
+    // Resolved once from the entry's own renderer, so the per-node check below
+    // stays a lookup rather than a level test.
+    const requiredTitleMode = RENDERER_REQUIRED_TITLE_MATCH_MODE[raw.presentation?.renderer] ?? null;
+
     const seenNodeIds = new Set();
     for (const node of nodes) {
       if (!QUALIFIER_NODE_TYPES.includes(node?.type)) { fail(REASON.UNKNOWN_NODE_TYPE); continue; }
@@ -431,6 +473,13 @@ function validateEntry(raw, { availableAssets } = {}) {
           && TITLE_MATCH_MODES.includes(titleMatch.mode)
           && typeof titleMatch.value === 'string' && titleMatch.value.trim();
         if (!usable) fail(REASON.TITLE_MATCH_INVALID);
+        // Some renderers cannot tolerate a title match loose enough to accept
+        // a width-increasing edit. `nodes` is the flattened leaf list, so this
+        // reaches calendar nodes at any nesting depth inside a compound
+        // qualifier, and touches no other node type.
+        else if (requiredTitleMode && titleMatch.mode !== requiredTitleMode) {
+          fail(REASON.TITLE_MATCH_TOO_PERMISSIVE);
+        }
       }
 
       if (node.type === 'approvedDate') {
@@ -603,6 +652,7 @@ export {
   PRIORITY_BANDS,
   PROTECTED_REGIONS,
   QUALIFIER_NODE_TYPES,
+  RENDERER_REQUIRED_TITLE_MATCH_MODE,
   REASON,
   SCHEMA_VERSION,
   STATUSES,

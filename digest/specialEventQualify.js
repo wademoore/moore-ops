@@ -24,24 +24,36 @@ import { REASON, isClock, isDateKey } from './specialEventSchema.js';
 import { norm } from './specialEventOccurrences.js';
 
 /**
- * Title match. Three modes, deliberately ordered from most permissive to least:
+ * Title match. Three modes, ordered from most permissive to least:
  *
- *   prefix   the configured value is a prefix of the title, compared after
- *            case-folding and whitespace collapsing. Mirrors the legacy
+ *   prefix   Normalized, case-insensitive PREFIX match. The configured value
+ *            must start the title and anything may follow. Mirrors the legacy
  *            `titleStartsWith` behaviour and is what the Spotlight uses.
- *   exact    the whole title equals the configured value, compared the same
- *            forgiving way.
- *   literal  the whole title equals the configured value **byte for byte**,
- *            after the occurrence model has stripped leading emoji.
+ *   exact    Normalized WHOLE-title match: the whole title must equal the
+ *            configured value, but the comparison ignores case and collapses
+ *            internal whitespace.
+ *   literal  Whole CLEANED-title equality, and it stays sensitive to case,
+ *            punctuation and internal whitespace. The only differences it
+ *            tolerates are the ones the occurrence model has already applied
+ *            for everyone — a stripped leading emoji and trimmed ends.
  *
- * `literal` exists because a treatment whose presentation depends on the
- * *rendered length* of the title cannot tolerate the title changing underneath
- * it. An event-row accent draws a wash that must stay clear of the text, so a
- * longer title — which a prefix match happily accepts — would put text over
- * the wash. Under `literal`, any edit at all (a suffix, an added venue, a
- * changed dash, a different capitalisation, even a doubled space) fails the
- * node closed, and the row renders ordinary until the treatment is
- * deliberately revalidated against the new title.
+ * **`exact` and `literal` are not interchangeable, and the names do not say
+ * so.** Both mean "the whole title", but `exact` accepts edits that change the
+ * title's *rendered width* — capitalisation and internal whitespace — while
+ * `literal` rejects them.
+ *
+ * That distinction is load-bearing for `accent-event-row-v1`, which is why the
+ * schema requires `literal` for it (see RENDERER_REQUIRED_TITLE_MATCH_MODE in
+ * specialEventSchema.js). An event-row accent draws a wash that must stay
+ * clear of the row's text, and the clearance is only about two characters
+ * wide, so the guarantee holds only while the rendered title stays the width
+ * that was approved. A longer title under `prefix`, or an all-caps rename
+ * under `exact`, still qualifies and puts text over the wash. Under `literal`
+ * every such edit fails the node closed and the row renders ordinary until the
+ * treatment is deliberately revalidated against the new title.
+ *
+ * Treatments whose presentation does not depend on rendered title length are
+ * unaffected and keep whichever mode suits them.
  */
 function titleMatches(occurrenceTitle, titleMatch) {
   if (titleMatch?.mode === 'literal') {

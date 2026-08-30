@@ -1080,10 +1080,28 @@ space — fails the node closed and the row renders ordinary until the treatment
 deliberately revalidated. Moving the 46% gradient boundary rightwards was rejected as a
 fix: it only postpones the same failure for the next longer title.
 
-The Spotlight deliberately keeps `prefix`: its presentation does not depend on the rendered
-length of a calendar title, so pinning it would add brittleness for nothing. `literal` is a
-third mode alongside `prefix` and `exact`, not a replacement for either, and the mode is
-validated at load — an unrecognised value is rejected rather than silently falling through
+**The three modes, and why the schema now picks one for you.** `prefix` is a normalized,
+case-insensitive prefix match — the configured value must start the title and anything may
+follow. `exact` is a normalized *whole-title* match that ignores case and collapses internal
+whitespace. `literal` is whole cleaned-title equality that stays sensitive to case,
+punctuation and internal whitespace, tolerating only the emoji-strip and end-trim the
+occurrence model already applies to everyone.
+
+`exact` and `literal` read as synonyms in English and are not interchangeable in practice:
+`exact` accepts edits that change the title's *rendered width* — an all-caps rename, a
+doubled internal space — and `literal` does not. Measured: under `exact`, an all-caps
+flag-football title still qualifies and puts **53.5 px of text over the wash**, with every
+gate green. So `RENDERER_REQUIRED_TITLE_MATCH_MODE` in `specialEventSchema.js` requires
+`literal` for `accent-event-row-v1`, and an accent declaring `prefix` or `exact` is rejected
+at load with `title-match-too-permissive`. The rule is keyed on the **renderer**, not the
+level, and is applied to the flattened qualification leaves — so it reaches a calendar node
+at any nesting depth inside a compound qualifier and never touches `approvedDate` or
+`sportsFixture`, which carry no title at all.
+
+The Spotlight deliberately keeps `prefix` and is deliberately unconstrained: its
+presentation reads its own configured copy, so the rendered length of a calendar title is
+irrelevant to it. `literal` is a third mode alongside `prefix` and `exact`, not a
+replacement for either, and the mode is validated at load — an unrecognised value is rejected rather than silently falling through
 to `prefix`, which is the most permissive mode and so exactly the wrong default. Load-time
 validation also now *requires* a title match on every calendar-anchored node: without one a
 node binds on calendar and date alone and would accept any event sitting there.
@@ -1292,8 +1310,8 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test`, no browser resolvable | 1787 | 1762 | 3 | 22 |
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1787 | **1787** | **0** | **0** |
+| `npm test`, no browser resolvable | 1797 | 1772 | 3 | 22 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1797 | **1797** | **0** | **0** |
 
 Measured Aug 30, 2026 on `claude/dashboard-v2-accent-92mjzx`, whose merge base with
 `main` is `54edb4f`. The first event-row Accent added **+75**, and every unit of it is
@@ -1350,7 +1368,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 
 Any Chromium build works; that path is the one preinstalled in the development sandbox
 (`npx playwright install chromium` is the alternative). Node v22.22.2, after `npm install`.
-**Coder mode must keep `npm test` at 1787+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 1797+ with no failures once a browser resolves.**
 
 **This table is the only current baseline, and it is a measurement, not a constant.**
 It was taken on a branch whose merge base with `main` is `ae7d581`, which measured **1298**
@@ -1481,6 +1499,25 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Accent title matching is now enforced by the schema, not by author discipline (Aug 30,
+  2026):** A second Reviewer pass found that the `literal` pinning added by the previous
+  commit was correct for the two shipped entries but held in place only by the author's
+  choice. `exact` and `literal` are English near-synonyms whose difference — case and
+  internal-whitespace sensitivity — is invisible in the name, and the schema accepted
+  `prefix`, `exact` or `literal` on an `accent-event-row-v1` treatment alike. Measured
+  consequence: an all-caps rename under `exact` still qualifies and puts 53.5 px of text
+  over the wash, reintroducing the exact defect the previous commit removed, with every gate
+  green. `RENDERER_REQUIRED_TITLE_MATCH_MODE` now pins the required mode per renderer and a
+  looser accent is rejected at load with `title-match-too-permissive` — distinct from
+  `title-match-invalid`, which stays reserved for a mode that does not exist. The rule is
+  keyed on the renderer rather than the level, is applied to the flattened qualification
+  leaves so it reaches any nesting depth, and never fires on `approvedDate` or
+  `sportsFixture`. Big Sports Saturday keeps its approved `prefix` nodes and is explicitly
+  unconstrained. Six mutations confirm the teeth, including two that check the rule is
+  neither over-broad (applied to every node type) nor mis-keyed (applied by level, which
+  would reject the Spotlight). All six approved panel crops remain byte-identical and no
+  rendered output changed. Tests **1787 → 1797**.
 
 - **Post-review cleanup on the first event-row Accent (Aug 30, 2026):** Three SHOULD FIX
   findings from an independent Reviewer pass over `237e3b3`, addressed in one follow-up
