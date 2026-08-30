@@ -4,6 +4,12 @@ on:
   push:
   pull_request:
 
+# CI validates; it never deploys. Read-only for the same reason the package
+# gate below runs without credentials: this workflow must be unable to reach
+# AWS or publish anything, not merely decline to.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -17,6 +23,12 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      # Installs the SAM CLI only. The template builds with BuildMethod
+      # esbuild, so `sam build` runs locally and needs no AWS credentials,
+      # no Docker, and no network access to AWS.
+      - name: Setup SAM
+        uses: aws-actions/setup-sam@v2
+
       - name: Install dependencies
         run: npm ci
 
@@ -25,3 +37,13 @@ jobs:
 
       - name: Validate Dashboard v2 generator deployment coverage
         run: npm run validate:dashboard-artifact-deployment
+
+      # The real package gate, identical to the deployment workflow's own
+      # step. It used to run only after merge, as the deploy job's first
+      # action, so a package defect could not fail a pull request. Running it
+      # here makes it a pre-merge gate; the deploy workflow keeps its copy
+      # unchanged, so nothing is weakened there.
+      - name: Build and validate generator package
+        run: |
+          npm run build:dashboard-artifact
+          npm run validate:dashboard-artifact-package

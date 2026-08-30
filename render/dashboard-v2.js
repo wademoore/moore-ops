@@ -4,7 +4,8 @@ import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { formatSportsEventWhen } from '../sports/model.js';
 import { renderFirstDayLevel3, shouldRenderFirstDayLevel3 } from './first-day-level3.js';
-import { selectFamilySpotlight } from '../digest/familySpotlightSelector.js';
+import { selectEventRowAccents, selectFeatureSlotSpotlight } from '../digest/specialEventSelector.js';
+import { occurrenceId } from '../digest/specialEventOccurrences.js';
 
 /**
  * Canonical Moore Family Dashboard v2 renderer.
@@ -64,6 +65,19 @@ function optionalAssetDataUrl(filename) {
     return '';
   }
 }
+
+/**
+ * Decorative accent doodles, keyed exactly as data/special-events.json names
+ * them. These are repo-native transparent line-art SVGs used as CSS masks, so
+ * each one takes its owner's tone from the stylesheet rather than shipping in
+ * two colours. A doodle is decoration only: it never replaces the row's
+ * semantic icon or an official sports logo, both of which the ordinary
+ * renderer has already drawn by the time an accent is applied.
+ */
+const V2_DOODLES = {
+  'swim-goggles': optionalAssetDataUrl('doodle-swim-goggles.svg'),
+  'football-laces': optionalAssetDataUrl('doodle-football-laces.svg'),
+};
 
 const V2_LOGOS = {
   cowboys: '',
@@ -501,7 +515,70 @@ function rangeDetail(item) {
   return `${startLabel}–${endLabel} · ${formatEventTime(item.event)}`;
 }
 
+/**
+ * Resolves the activatable `event-row` accents for this generation, keyed by
+ * the concrete occurrence each one decorates.
+ *
+ * The key is the occurrence identity the selector already resolved, so an
+ * accent can only ever attach to a row the ordinary renderer drew from that
+ * same occurrence. It cannot introduce a row, duplicate one, or move one — a
+ * multi-day meet is one occurrence and therefore one accented row, never one
+ * per day it spans.
+ *
+ * Fails closed at every step: a throw, an unknown doodle, or two accents
+ * claiming the same row all resolve to no accent for the affected row, which
+ * renders ordinary.
+ */
+function eventRowAccents(data) {
+  let resolved = [];
+  try { resolved = selectEventRowAccents(data, { now: data.now }) || []; }
+  catch { return new Map(); }
+
+  const byOccurrence = new Map();
+  for (const accent of resolved) {
+    if (!accent?.occurrenceRef || !V2_DOODLES[accent.doodle]) continue;
+    // Upstream arbitration already keeps one treatment per occupied row. If two
+    // ever reached here, stacking two washes would be worse than either: drop
+    // both and leave the row ordinary.
+    if (byOccurrence.has(accent.occurrenceRef)) { byOccurrence.set(accent.occurrenceRef, null); continue; }
+    byOccurrence.set(accent.occurrenceRef, accent);
+  }
+  return byOccurrence;
+}
+
+/**
+ * One Upcoming row, optionally accented.
+ *
+ * The ordinary markup is emitted byte-for-byte in both cases — same element,
+ * same classes, same semantic mark, same title, same detail line, same
+ * whitespace. An accent only appends decoration and state attributes. All
+ * three decorations are absolutely positioned, so they sit outside the row's
+ * grid flow and cannot change its height, its columns, or its neighbours.
+ *
+ * The row ships in the `ordinary` state, exactly as the Spotlight panel does,
+ * so an absent or failed browser script leaves an ordinary row rather than a
+ * permanently lit one. The bounded controller switches state at the absolute
+ * instants below, which is what makes 4:00 PM ET exact rather than rounded to
+ * the next scheduled generation.
+ */
+function renderUpcomingEvent(item, accents) {
+  const content = `${activityVisual(item.event, 'upcoming-logo')}
+      <div><strong>${esc(cleanDisplayText(item.event.title))}</strong><span>${esc(rangeDetail(item))}</span></div>`;
+  const accent = accents.get(occurrenceId(item.event));
+  if (!accent) {
+    return `<div class="upcoming-event">
+      ${content}
+    </div>`;
+  }
+  const decoration = `<i class="accent-wash" aria-hidden="true"></i><i class="accent-doodle accent-doodle-${esc(accent.doodle)}" aria-hidden="true"></i>${accent.label ? `<b class="accent-label">${esc(accent.label)}</b>` : ''}`;
+  return `<div class="upcoming-event has-accent accent-tone-${esc(accent.tone)}" data-accent-id="${esc(accent.id)}" data-accent-state="ordinary" data-accent-activate-at="${accent.activateAt}" data-accent-expire-at="${accent.expireAt}">
+      ${content}
+      ${decoration}
+    </div>`;
+}
+
 function renderUpcoming(data) {
+  const accents = eventRowAccents(data);
   const allItems = collapseUpcomingEvents(data.upcomingEvents, data.today);
   const eventTarget = athleticsCardCount(data) === 1 ? 14 : 10;
   const grouped = new Map();
@@ -525,10 +602,7 @@ function renderUpcoming(data) {
     const days = daysFrom(data.today, day.key);
     const people = new Set(day.items.map(item => peopleForEvent(item.event)));
     const person = people.has('both') || (people.has('myles') && people.has('ophelia')) ? 'both' : (people.values().next().value || 'family');
-    const eventLines = day.items.map(item => `<div class="upcoming-event">
-      ${activityVisual(item.event, 'upcoming-logo')}
-      <div><strong>${esc(cleanDisplayText(item.event.title))}</strong><span>${esc(rangeDetail(item))}</span></div>
-    </div>`).join('');
+    const eventLines = day.items.map(item => renderUpcomingEvent(item, accents)).join('');
     return `<div class="upcoming-day person-${person}">
       <div class="date-tile"><span>${formatDate(date, { weekday: 'short' }).toUpperCase()}</span><b>${date.getDate()}</b></div>
       <div class="upcoming-events">${eventLines}</div>
@@ -646,11 +720,13 @@ function renderAthletics(data) {
     <i class="athletics-arrows" aria-hidden="true"></i>
     <div class="athletics-grid${marker} count-${cards.length}">${cards.join('') || '<div class="empty-state">Athletics are between seasons.</div>'}</div>`;
 
-  // Family Spotlight replaces only the panel's contents. athleticsCardCount()
-  // is deliberately untouched, so `.athletics-one` / `.athletics-multi` and the
-  // 26% / 40% panel heights resolve exactly as they would with no Spotlight.
+  // A feature-slot Spotlight replaces only the panel's contents.
+  // athleticsCardCount() is deliberately untouched, so `.athletics-one` /
+  // `.athletics-multi` and the 26% / 40% panel heights resolve exactly as they
+  // would with no Spotlight. The Athletics panel *is* the feature slot; its
+  // ordinary occupant is Athletics and its geometry never varies.
   let spotlight = null;
-  try { spotlight = selectFamilySpotlight(data, { now: data.now }); }
+  try { spotlight = selectFeatureSlotSpotlight(data, { now: data.now }); }
   catch { spotlight = null; }
 
   if (!spotlight) {
@@ -1004,6 +1080,39 @@ function browserScript() {
     scheduleSpotlight();
     addEventListener('pagehide', () => clearTimeout(spotlightTimer));
     addEventListener('beforeunload', () => clearTimeout(spotlightTimer));
+    // Event-row accents. Same contract as the Spotlight above: both
+    // presentations ship in one artifact, the row opens ordinary, and the
+    // controller compares integers only — it parses no timezone, computes no
+    // DST offset, and makes no network request. All Eastern reasoning happened
+    // once, in the generator, so 4:00 PM ET is exact rather than rounded up to
+    // the next scheduled generation.
+    const accentRows = [...document.querySelectorAll('.upcoming-event.has-accent[data-accent-activate-at][data-accent-expire-at]')];
+    let accentTimer;
+    window.updateEventRowAccents = value => {
+      const at = Number(value == null ? Date.now() : value);
+      return accentRows.map(row => {
+        const from = Number(row.dataset.accentActivateAt);
+        const until = Number(row.dataset.accentExpireAt);
+        const active = [at, from, until].every(Number.isFinite) && at >= from && at < until;
+        row.dataset.accentState = active ? 'active' : 'ordinary';
+        return active ? 'active' : 'ordinary';
+      });
+    };
+    const scheduleAccents = () => {
+      clearTimeout(accentTimer);
+      if (!accentRows.length) return;
+      const at = Date.now();
+      window.updateEventRowAccents(at);
+      const next = accentRows
+        .flatMap(row => [Number(row.dataset.accentActivateAt), Number(row.dataset.accentExpireAt)])
+        .filter(edge => Number.isFinite(edge) && edge > at)
+        .sort((x, y) => x - y)[0];
+      if (next == null) return;
+      accentTimer = setTimeout(scheduleAccents, Math.min(next - at + 50, 21600000));
+    };
+    scheduleAccents();
+    addEventListener('pagehide', () => clearTimeout(accentTimer));
+    addEventListener('beforeunload', () => clearTimeout(accentTimer));
     const fit = () => {
       if (!dashboard) return;
       const scale = Math.min(window.innerWidth / 2560, window.innerHeight / 1440);
@@ -1021,7 +1130,7 @@ function browserScript() {
 
 const CSS = `
 *{box-sizing:border-box}html,body{width:100%;height:100%;margin:0;overflow:hidden}body{background:#0b3528;font-family:"Trebuchet MS",Arial,sans-serif;color:${COLORS.ink}}
-.dashboard{--paper-image:none;--masthead-image:none;--section-green:none;--section-red:none;--section-purple:none;--arrow-image:none;position:absolute;width:2560px;height:1440px;transform-origin:top left;background-color:${COLORS.paper};background-image:var(--paper-image),radial-gradient(circle at 10% 12%,rgba(212,154,24,.08),transparent 24%),linear-gradient(105deg,rgba(255,255,255,.28),transparent 38%);background-size:560px 560px,auto,auto;padding:18px;display:grid;grid-template-columns:minmax(560px,29fr) minmax(1120px,59fr) minmax(260px,12fr);grid-template-rows:122px minmax(0,1fr) 92px 72px;gap:13px;isolation:isolate}
+.dashboard{--paper-image:none;--masthead-image:none;--section-green:none;--section-red:none;--section-purple:none;--arrow-image:none;--doodle-swim-goggles:none;--doodle-football-laces:none;position:absolute;width:2560px;height:1440px;transform-origin:top left;background-color:${COLORS.paper};background-image:var(--paper-image),radial-gradient(circle at 10% 12%,rgba(212,154,24,.08),transparent 24%),linear-gradient(105deg,rgba(255,255,255,.28),transparent 38%);background-size:560px 560px,auto,auto;padding:18px;display:grid;grid-template-columns:minmax(560px,29fr) minmax(1120px,59fr) minmax(260px,12fr);grid-template-rows:122px minmax(0,1fr) 92px 72px;gap:13px;isolation:isolate}
 .dashboard:after{content:"";position:absolute;inset:8px;border:2px solid rgba(15,74,54,.38);border-radius:18px;pointer-events:none;z-index:12;mix-blend-mode:multiply}
 .paper-panel,.rail-card{background:rgba(250,245,233,.84);border:1.5px solid rgba(190,141,43,.42);box-shadow:0 4px 12px rgba(45,29,11,.05),inset 0 0 28px rgba(255,255,255,.45);border-radius:15px;overflow:hidden}
 .masthead{grid-column:1/3;position:relative;display:flex;align-items:center;justify-content:center;color:#fff;overflow:hidden;padding:8px 90px}
@@ -1107,6 +1216,26 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .upcoming-panel.upcoming-dense .upcoming-logo{width:27px;height:27px}.upcoming-panel.upcoming-dense .upcoming-event strong{font-size:17px;line-height:1}.upcoming-panel.upcoming-dense .upcoming-event span{font-size:11px;line-height:1}
 .upcoming-panel.upcoming-dense .count-chip{font-size:11px;padding:3px 9px}
 .dashboard.athletics-one .upcoming-panel{height:72%}.dashboard.athletics-one .athletics-panel{height:26%}
+/* Event-row Accent: an owner-coloured brush wash and one decorative activity doodle behind an existing Upcoming row.
+   Every rule below is scoped to .upcoming-event.has-accent, so no ordinary row is reachable by any of them, and every
+   decoration is absolutely positioned, so it sits outside the row's grid flow and cannot change the row's height, its
+   columns, or the position of a neighbouring row. The wash reuses the shipped section brush as a mask, which is how
+   .athletic-ribbon already tints that artwork; when the brush asset is absent the mask resolves to none and the wash
+   degrades to a flat translucent block rather than disappearing. */
+.upcoming-event.has-accent{position:relative;z-index:0}
+.upcoming-event.has-accent>.accent-wash,.upcoming-event.has-accent>.accent-doodle,.upcoming-event.has-accent>.accent-label{position:absolute;display:none;pointer-events:none}
+.upcoming-event.has-accent[data-accent-state="active"]>.accent-wash,.upcoming-event.has-accent[data-accent-state="active"]>.accent-doodle,.upcoming-event.has-accent[data-accent-state="active"]>.accent-label{display:block}
+.upcoming-event.has-accent>.accent-wash{z-index:-1;left:-9px;right:-4px;top:-2px;bottom:-2px;-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.upcoming-event.accent-tone-red>.accent-wash{background-image:linear-gradient(90deg,rgba(185,54,36,0) 0,rgba(185,54,36,0) 46%,rgba(185,54,36,.12) 54%,rgba(185,54,36,.26) 72%,rgba(185,54,36,.30));-webkit-mask-image:var(--section-red);mask-image:var(--section-red)}
+.upcoming-event.accent-tone-purple>.accent-wash{background-image:linear-gradient(90deg,rgba(108,74,133,0) 0,rgba(108,74,133,0) 46%,rgba(108,74,133,.14) 54%,rgba(108,74,133,.30) 72%,rgba(108,74,133,.36));-webkit-mask-image:var(--section-purple);mask-image:var(--section-purple)}
+.upcoming-event.has-accent>.accent-doodle{z-index:-1;right:4px;top:-1px;bottom:-1px;width:44px;opacity:.5;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center}
+.upcoming-event.accent-tone-red>.accent-doodle{background-color:${COLORS.red}}
+.upcoming-event.accent-tone-purple>.accent-doodle{background-color:${COLORS.purple}}
+.accent-doodle-swim-goggles{-webkit-mask-image:var(--doodle-swim-goggles);mask-image:var(--doodle-swim-goggles)}
+.accent-doodle-football-laces{-webkit-mask-image:var(--doodle-football-laces);mask-image:var(--doodle-football-laces)}
+.upcoming-event.has-accent>.accent-label{z-index:1;right:54px;top:50%;transform:translateY(-50%);padding:3px 9px;border-radius:10px;color:#fff;font-size:10px;font-weight:900;letter-spacing:.07em;line-height:1.2;white-space:nowrap}
+.upcoming-event.accent-tone-red>.accent-label{background:${COLORS.red}}
+.upcoming-event.accent-tone-purple>.accent-label{background:${COLORS.purple}}
 .card-count-1 .athletics-grid{display:block}.card-count-1 .athletic-card{height:100%;padding-right:0;border-right:0;display:grid;grid-template-columns:150px minmax(0,1fr);grid-template-rows:44px auto 1fr;column-gap:22px}.card-count-1 .athletic-ribbon{grid-column:1/3}.card-count-1 .record{grid-column:1;grid-row:2/4;font-size:58px;margin-top:16px}.card-count-1 .athletic-card>small{grid-column:1;grid-row:3;margin-top:80px;font-size:18px}.card-count-1 .next-box{grid-column:2;grid-row:2/4;margin:12px 0 0;padding:12px 16px;justify-content:center}.card-count-1 .next-box b{font-size:16px}.card-count-1 .next-box span{font-size:25px;line-height:1}.card-count-1 .next-box strong{font-family:"Roboto Slab",Georgia,serif;font-size:27px;line-height:1.15;margin-top:7px}.card-count-1 .next-box small{font-size:18px;margin-top:5px}.card-count-1 .result-line,.card-count-1 .standing-line{display:none}
 .next-up-card{display:flex;flex-direction:column}.next-up-card:before{display:none}.next-up-label{flex:0 0 38px;width:100%}.next-up-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.next-up-item{position:relative;display:grid;grid-template-columns:58px minmax(0,1fr);gap:8px;padding:6px 2px 6px 9px;border-bottom:1px solid rgba(20,40,31,.14);min-height:0}.next-up-item:last-child{border-bottom:0}.next-up-item:before{content:"";position:absolute;left:-3px;top:7px;bottom:7px;width:5px;background:${COLORS.green}}.next-up-item.person-myles:before{background:${COLORS.red}}.next-up-item.person-ophelia:before{background:${COLORS.purple}}.next-up-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.next-up-item .next-up-date b{font-size:34px}.next-up-item .next-up-date span{font-size:11px}.next-up-item .next-up-copy strong{font-size:18px;line-height:1}.next-up-item .next-up-copy small{font-size:13px;line-height:1;margin-top:3px}
 /* TV readability tokens. Day is intentionally oatmeal; evening is a restrained warm reduction, not dark mode. */
@@ -1163,6 +1292,8 @@ function renderDashboardV2(digestData) {
   const doodleCalendar = optionalAssetDataUrl('doodle-gold-calendar.png');
   const doodleDinner = optionalAssetDataUrl('doodle-gold-dinner.png');
   const doodleArrows = optionalAssetDataUrl('doodle-gold-arrows.png');
+  const accentDoodleGoggles = V2_DOODLES['swim-goggles'];
+  const accentDoodleFootball = V2_DOODLES['football-laces'];
   const kalam400 = optionalAssetDataUrl('fonts/kalam-400.woff2');
   const kalam700 = optionalAssetDataUrl('fonts/kalam-700.woff2');
   const knewave400 = optionalAssetDataUrl('fonts/knewave-400.woff2');
@@ -1191,6 +1322,8 @@ function renderDashboardV2(digestData) {
     `--doodle-calendar:${doodleCalendar ? `url('${doodleCalendar}')` : 'none'}`,
     `--doodle-dinner:${doodleDinner ? `url('${doodleDinner}')` : 'none'}`,
     `--doodle-arrows:${doodleArrows ? `url('${doodleArrows}')` : 'none'}`,
+    `--doodle-swim-goggles:${accentDoodleGoggles ? `url('${accentDoodleGoggles}')` : 'none'}`,
+    `--doodle-football-laces:${accentDoodleFootball ? `url('${accentDoodleFootball}')` : 'none'}`,
   ].join(';');
   const cardCount = athleticsCardCount(data);
   const paletteSetting = ['day', 'evening'].includes(data.paletteMode) ? data.paletteMode : 'auto';

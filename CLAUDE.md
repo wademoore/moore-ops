@@ -591,6 +591,14 @@ Every anchor also carries a free-text `note` field (same precedent as `swim-anno
 
 ## Family Spotlight (Dashboard v2, Sept 2026)
 
+> **Superseded as the source of truth, Aug 29 2026.** The Spotlight is now one entry in
+> the generalized special-event registry — see **Generalized special-event foundation**
+> below for the schema, lifecycle, arbitration, and migration state. Everything in this
+> section still describes how the *rendered* Spotlight behaves, and Big Sports Saturday's
+> behaviour is byte- and pixel-identical after the migration; only its configuration
+> moved. Where the two sections disagree about *where configuration lives*, the newer one
+> is correct.
+
 A bounded special-event treatment that temporarily replaces **only the contents** of the
 Dashboard v2 Athletics panel. It is not a page, host, origin, variant, or pipeline — it is
 an in-panel content swap. First and currently only instance: "Big Sports Saturday",
@@ -745,6 +753,472 @@ packaged. That test carries an explicit allowlist for two **pre-existing** gaps 
 already degrade silently in production. Fixing those is separate work; the allowlist keeps
 them visible rather than hidden.
 
+## Generalized special-event foundation (Aug 29, 2026)
+
+Framework capability for Accent / Spotlight / Takeover treatments on Dashboard v2, built
+in four reviewable commits (P1 `3252b36`, P2 `6a966e5`, P3 `40b942a`, P4 this one).
+
+**Nothing is activated by this work.** No new visual treatment exists, no future event is
+configured, and the kill switch is off. Read that sentence before reading anything else
+here: the framework can *resolve* an Accent or a registry Takeover and report it in
+diagnostics, but neither has a renderer, and neither can reach a television.
+
+### What ships, and what does not
+
+| | State |
+|---|---|
+| Spotlight on the `feature-slot` | **Renderer exists** (the shipped in-panel treatment). One entry: Big Sports Saturday. |
+| Accent | **Framework only.** Resolves, arbitrates, reports `activatable: false`. No renderer, no visual design, no entry. |
+| Takeover from the registry | **Framework only.** Resolves, reports `activatable: false`. Never rendered from here. |
+| First Day Level-3 Takeover | **Unchanged and hard-wired.** `renderDashboardV2()` still early-returns to it, so no registry treatment can reach the page while it renders. Not migrated, not redesigned. |
+
+The categorized 2026-27 future-event register (Sept 19-20 Accents, Oct 17 Spotlight, the
+birthdays, Christmas morning, Last Day of School, and the rest) is **planning information
+only**. It is not in `data/special-events.json` and must not be added there as part of
+this foundation. Each entry needs its own scoping, and an Accent additionally needs a
+Designer pass that does not exist yet.
+
+### Modules
+
+All pure — no I/O, no `new Date()` of their own, no throwing. The caller's `now` governs,
+so every lifecycle is deterministic under an injected instant.
+
+| Module | Responsibility |
+|---|---|
+| `digest/specialEventSchema.js` | enums, priority bands, level defaults, reason codes, `validateRegistry()` |
+| `digest/specialEventOccurrences.js` | normalized occurrence model and index |
+| `digest/specialEventQualify.js` | qualification predicates and compound nodes |
+| `digest/specialEventLifecycle.js` | the six-state lifecycle, resolved to epoch milliseconds |
+| `digest/specialEventArbiter.js` | order-independent, fail-closed arbitration |
+| `digest/specialEventSelector.js` | orchestrator + `selectFeatureSlotSpotlight()` legacy-shaped adapter |
+| `digest/legacySpotlightCompat.js` | **temporary** migration shim — delete in P5 |
+
+### Registry — `data/special-events.json`
+
+`{ schemaVersion: 2, treatments: [...] }`. Each treatment carries `id`, `date`, `level`,
+`surface`, `audience`, `status`, `enabled`, `priority`, optional `exclusiveGroup`, and the
+`qualification` / `lifecycle` / `presentation` / `assets` / `fallback` sections.
+
+**This is the one live registry source.** `specialEventSelector.js` reads
+`data.specialEventsConfig` and nothing else; `render/dashboard-v2.js` reads neither
+config key and simply calls the selector.
+
+### Protected surfaces — enforced structurally, not by a runtime rule
+
+`SURFACES` holds exactly four replaceable regions:
+
+| surface | host panel | occupancy |
+|---|---|---|
+| `event-row` | `upcoming-panel` | per attached fact (a row) |
+| `athletics-card` | `athletics-panel` | per attached fact (a card) |
+| `feature-slot` | `athletics-panel` | singleton — the whole panel's contents |
+| `dashboard` | — | singleton — the page |
+
+Every other region carries operational or safety content and is **not addressable**:
+`today-panel`, `now-next`, `centers-block`, `alerts-panel`, `right-rail`, `sports-ticker`,
+the masthead, the weather card, and the clock. They appear only in `PROTECTED_REGIONS`,
+which a test asserts can never leak into the surface enum or the host-panel map. "Safety
+information always wins" therefore holds by construction — there is no rule a future entry
+could talk its way past, because there is no name it could write down.
+
+**The `feature-slot` is the lower-centre Athletics content area.** Its ordinary occupant is
+Athletics; a qualified Spotlight temporarily replaces the *contents* only.
+`athleticsCardCount()` is deliberately untouched, so `.athletics-one` / `.athletics-multi`
+and the 26% / 40% panel heights resolve exactly as they would with no treatment. Measured
+one-card footprint, identical in every state: **1473.83 × 315.63 px**.
+
+**Instance scoping matters, and getting it wrong is easy.** "One treatment per surface" and
+"two Accents per panel" are only compatible if `event-row` and `athletics-card` are
+instance-scoped. Occupancy is keyed on `(surface, attached fact)` for those two and on the
+surface alone for `feature-slot` and `dashboard`. The first implementation used the bare
+surface and silently capped the Upcoming panel at one Accent; the arbiter tests caught it.
+
+### Qualification
+
+Node types: `calendarOccurrence` (timed or all-day), `calendarRange` (multi-day, matched on
+its inclusive end), `sportsFixture` (stable `matchNumber`), `approvedDate`. Compound forms:
+`all`, `any`, `exactly: N of [...]` — where `exactly` counts **distinct** occurrences, so
+duplicate references can never satisfy a count.
+
+- **All-day dates are America/New_York calendar dates.** Google's `end.date` is exclusive;
+  the normalized wrapper exposes an inclusive final day as a derived field and **never
+  mutates or re-serializes `raw`**. Date arithmetic is anchored at UTC noon so it cannot
+  land on a DST boundary.
+- **Timed occurrences are bucketed through `Intl`, never a UTC string slice** — that is the
+  defect that once put 8 PM ET events on the following day.
+- **`sportsFixture` reads only immutable columns** (`matchNumber`, `date`, `time`, teams,
+  `venue`). Never `played`, `homeScore`, `awayScore`, so a treatment stays valid mid-event.
+  A test mutates those fields and asserts the resolved view is unchanged.
+- **`approvedDate` requires provenance** — `approvedBy`, `approvedOn`, `source` — and is
+  permitted at any level and audience. A draft, unconfirmed, or provenance-free date fails
+  closed. This is the only node type with no calendar anchor, which is exactly why the
+  provenance requirement is not optional.
+- **Forbidden inputs are rejected at load, before evaluation:** season-active flags
+  (`/^\w*Active$/`), card counts, rendered display text (`displayTime`, `subtitle`,
+  standings), and moving projections (`sharksNextGame`, `nextGame`, `sharksLastResult`).
+  **The scan walks qualification *field names*, recursively, at any nesting depth — never
+  values.** That distinction matters: `{ sharksActive: true }` is the forbidden input, and
+  a `titleMatch.value` of "Active Wear Day" is a real school event. An earlier version
+  matched against `JSON.stringify(qualification)` and rejected both. Both walkers are
+  bounded at `MAX_QUALIFICATION_DEPTH` (64) and fail closed past it, so a malformed
+  structure is a diagnostic rather than a `RangeError` escaping into the caller.
+
+### Lifecycle
+
+`not-included → staged → anticipation → today → live → expired`
+
+| level | inclusion lead | visible start | max concurrent | suppresses lower |
+|---|---|---|---|---|
+| `accent` | 48 h | previous day 4:00 PM ET | 2 per host panel | no |
+| `spotlight` | 72 h | previous day 4:00 PM ET | 1 global | no |
+| `takeover` | 7 d | **explicit, mandatory** | 1 global | **yes** by default |
+
+Default expiry: a timed anchor expires at **its end + 2 hours**; an all-day or multi-day
+anchor at **8:00 PM ET on the inclusive final day**. A multi-day event is **one span-wide
+treatment** — there is no per-day presentation mode, deliberately.
+
+**Explicit configuration always wins; defaults only fill an absent boundary.** That is the
+mechanism by which a migrated entry's timestamps stay bit-identical.
+
+Every boundary is resolved here, in the generator, to an **epoch millisecond**. The browser
+compares integers only: it parses no timezone, computes no DST offset, and makes no network
+request. All Eastern reasoning happens once, on this side, through `easternInstant()`.
+
+`staged` is the state that makes the whole design work: the treatment is embedded in the
+artifact but visibly ordinary, so the browser controller can switch at an exact instant
+with no regeneration and no fetch.
+
+### Arbitration
+
+Applied in order: exclusive groups → Takeover (and its suppression) → Spotlight → accent
+attachment → surface exclusivity → accent capacity.
+
+- **No array-order winner anywhere.** Every selection is by explicit `priority`; every
+  unresolved tie **drops the whole tied set**. Twenty shuffles of one scenario are asserted
+  to produce the same outcome.
+- Priority bands: Accent **100-199**, Spotlight **200-299**, Takeover **300-399**. A
+  duplicate `(level, surface, priority)` triple is rejected **at load**, as defence in depth
+  — so a same-band collision never reaches arbitration.
+- An Accent must attach to a resolved fact (`refIds` non-empty) before it competes.
+- An accent tier that would have to be *split* at the capacity boundary is admitted **not at
+  all**, because choosing among equals would be an array-order decision.
+- **First Day Level-3 is protected by two production mechanisms, and neither is the
+  arbiter.** `renderDashboardV2()` early-returns to the First Day renderer before
+  `renderAthletics()` runs, so a registry treatment cannot reach the page; and
+  `validateArtifact()` independently rejects any artifact carrying both a
+  `data-spotlight-id` and the first-day mode. The arbiter's `firstDayTakeoverActive`
+  option — which drops every candidate with `suppressed-by-first-day` — is an explicit
+  capability held ready for a future registry-driven page orchestrator. **No runtime
+  caller passes it today**; it is exercised only by tests. Do not cite it as the thing
+  keeping the two treatments apart.
+
+**Big Sports Saturday no longer depends on the old `MULTIPLE_IN_WINDOW` behaviour.** Two
+simultaneous entries are now resolved by priority; only a genuine tie fails closed, as
+`SPOTLIGHT_TIE`. `MULTIPLE_IN_WINDOW` is retained as an exported constant for the legacy
+selector and is **never emitted** by the arbiter — a test asserts that. With one enabled
+entry, every arbitration step is a no-op and the outcome is identical to before.
+
+### Kill switch — unchanged
+
+`FAMILY_SPOTLIGHT_ENABLED` (env) / `FamilySpotlightEnabled` (stack parameter), sourced from
+the GitHub repository variable, `Default: "0"`, **off**. Renaming it is deferred to P5 or
+later: renaming would touch the workflow, its read-back assertion, the template parameter
+and 25 tests, and would open a window where the deployed parameter and the workflow
+disagree — no payoff in a phase that activates nothing.
+
+The switch gates **every level**, evaluated before anything else: `data.familySpotlight !==
+true` returns an empty set for Accent, Spotlight and Takeover alike. Tested per level.
+Everything else about the switch — the `0|1` validation, the post-deploy read-back, the
+`paths:` filter, `test/deploy-workflow-spotlight-flag.test.js` — is untouched.
+
+### Migration state, and the four oracles
+
+`data/family-spotlight.json` was **not edited, moved, or deleted**. It is now a frozen test
+oracle, read only by tests, and is **no longer packaged** (`dataFiles` swapped it for
+`special-events.json`; count stays **10**).
+
+Four independent compatibility oracles stand until P5:
+
+1. `data/family-spotlight.json` — the pre-migration configuration, byte-unchanged
+2. `digest/familySpotlightSelector.js` — the pre-migration selector, unmodified
+3. `digest/familySpotlightSelector.test.js` — its suite, unmodified
+4. `test/artifact/family-spotlight-contract.test.js` — the artifact contract against that
+   pair, extended with three oracle-binding tests rather than repurposed
+
+Because nothing writes to any of them, they cannot drift into agreement with the code they
+check. That is the whole reason the registry is a *new* file rather than an edit of the old
+one: had it been edited in place, the equivalence test would compare the implementation
+against itself and a migration bug that changed both sides identically would pass.
+
+`test/fixtures/legacy-athletics-panels.json` is the same idea in fixture form — ten Athletics
+panels rendered by the pre-migration tree. Nothing regenerates it.
+
+**Temporary compatibility shim.** `digestData.familySpotlightConfig` is still present,
+**derived from `special-events.json`** through `digest/legacySpotlightCompat.js` — never
+loaded from the frozen file, and read by no runtime code. It projects only what a legacy
+Spotlight could have expressed (enabled, ready, `feature-slot`, `spotlight-children-v1`,
+prefix-matched timed children) and **omits rather than approximates** anything else: a
+compatibility key that lied would be worse than one that is empty. It round-trips exactly
+onto the frozen file modulo free-text notes, and feeding it to the legacy selector
+reproduces the generalized selector's view model at every lifecycle boundary.
+
+**The projection is contained twice**, in the shim and again at the `builder.js` call
+site. A compatibility-only key must never be able to fail `buildDigest`: on any failure it
+degrades to `null` and `specialEventsConfig` is untouched. `null` there means "no
+compatibility view", never "fall back to the legacy path" — nothing reads the key at
+runtime, so there is no fallback to have.
+
+### Deferred to P5 — do not do these early
+
+P5 is a **separate PR, after at least one real production cycle has run on the registry
+path**. Deleting the oracles before then removes the only thing that can prove a regression.
+
+- Delete `digest/legacySpotlightCompat.js` **and** the `familySpotlightConfig` line in
+  `digest/builder.js` together, plus its entry in `requiredBundleInputs` and the
+  `specialEventsSampleData` projection. A test asserts the bundle-input declaration exists
+  *exactly while* `builder.js` imports the shim, so a half-done removal fails rather than
+  leaving a dangling path.
+- Delete `digest/familySpotlightSelector.js`, its test, `data/family-spotlight.json`,
+  `test/artifact/family-spotlight-contract.test.js`, and
+  `test/fixtures/legacy-athletics-panels.json`.
+- Decide whether to rename the kill switch.
+- Decide whether First Day Level-3 becomes registry-driven — this should be settled before
+  any second Takeover (Christmas morning) is built, not after.
+
+### What was proved, and what CI still has to prove
+
+`scripts/verify-special-event-migration.mjs` reproduces the cross-tree proof on demand
+(create a worktree at the pre-migration commit and run it). It makes **22**
+comparisons, and the result at P3 was **22/22 identical** — ten whole-document Dashboard v2 comparisons across five lifecycle states with
+the switch on and off, ordinary Dashboard v2, the Dashboard v1 today card, and Athletics
+panel **pixels and geometry** across all four controller states plus ordinary Athletics.
+
+**✓ The package gate now runs, and now gates a pull request (Aug 29, 2026).** It has been
+executed for real twice: locally, with the SAM CLI installed into a throwaway virtualenv
+(`sam build` → Build Succeeded, then `dashboard artifact package: valid (10 data files,
+Emma parser/evaluator/builder markers present)`), and in pull-request CI, which now runs
+the same two commands. See "The package gate is a pull-request gate" below. The local
+substitutes that stood in for it while it could not run — the esbuild graph carrying all
+seven new modules and dropping `familySpotlightSelector.js`, and the built bundle
+initializing under `DASHBOARD_ASSET_DIR`, `DASHBOARD_FIRST_DAY_ASSET_DIR` and
+`DASHBOARD_DATA_DIR` — remain true and remain **not** equivalent to it, and neither are the
+markers surviving bundling.
+
+That gap is how the shim's missing bundle-input declaration was found at all, which is the
+argument for keeping the CI gate rather than waving it through.
+
+### The package gate is a pull-request gate (Aug 29, 2026)
+
+`npm run build:dashboard-artifact` (`sam build` + `prepare-dashboard-artifact-package.mjs`)
+and `npm run validate:dashboard-artifact-package` now run in `.github/workflows/ci.yml`,
+which triggers on `pull_request`. **Until this change they ran in exactly one place** —
+`deploy-dashboard-v2-artifact.yml`, on `push` to `main` — so the gate fired *after* merge,
+as the deploy job's first action. A package defect could not fail a pull request; the
+earliest it could surface was inside the workflow that also deploys.
+
+- **The deploy workflow is untouched.** It keeps its own copy of the step, still ahead of
+  `Configure AWS credentials`, so the gate is not weakened at the point it protects a real
+  deployment. Nothing was extracted into a shared script: two identical three-line steps
+  are cheaper to read than an indirection, and a test asserts they stay identical.
+- **CI gained no ability to deploy.** `aws-actions/setup-sam@v2` installs the SAM CLI and
+  nothing else — the template builds with `BuildMethod: esbuild`, so `sam build` runs
+  locally with no AWS credentials, no Docker, and no call to AWS. CI declares
+  `permissions: contents: read`, references no `secrets.`, requests no OIDC token, runs no
+  `aws` CLI command and no `sam deploy`.
+- **Ordering is asserted, not assumed.** Setup SAM precedes the build; the build precedes
+  the validator (the validator reads `.aws-sam/build/GeneratorFunction`, so a hollow build
+  would otherwise pass it); and the full suite still runs first.
+- `.aws-sam/` is gitignored — it is build output, regenerated by the build script, and both
+  CI and a local run now produce it.
+
+`test/ci-workflow-package-gate.test.js` (**13 tests**) proves all of the above against the
+shipped workflow, parsed structurally into steps rather than grepped: every assertion must
+be satisfied by a `uses:` value or an executable line of a `run:` body, with YAML comments
+skipped and shell comments stripped. Four negative controls prove that property rather than
+claiming it — commenting out the whole gate step, commenting out the validator line inside
+it, moving the command into an unrelated step, and keeping the step name with a stub body
+all fail to satisfy the gate. Verified to have teeth by running the file against the
+pre-change `ci.yml`: **9 of 13 fail**.
+
+## Event-row Accent (Dashboard v2, September 2026)
+
+The first reusable Accent, and the first thing the generalized special-event foundation
+actually renders beyond the Spotlight. It decorates a row the Next Two Weeks panel already
+drew. It is not a panel, a row, an information line, or a geometry change.
+
+**Two treatments ship, both Accents, neither promoted.**
+
+| id | owner | occurrence | visible from | expires |
+|---|---|---|---|---|
+| `ophelia-757swim-catch-em-all-1-2026-09-19` | Ophelia (purple) | one all-day Google event, Sept 19 → exclusive end Sept 21 | Fri Sept 18, 4:00 PM ET | Sun Sept 20, 8:00 PM ET |
+| `myles-flag-football-week1-2026-09-20` | Myles (red) | one all-day Google event, Sept 20 | Sat Sept 19, 4:00 PM ET | Sun Sept 20, 8:00 PM ET |
+
+Both take the framework's accent defaults in full — 48h inclusion lead, 4:00 PM ET the
+previous day, 8:00 PM ET on the inclusive final day. Neither pins a boundary; both
+`lifecycle` blocks carry only a `note`. Both sit in the accent priority band (150, 151),
+so the arbiter admits both under the two-per-host-panel cap and neither can become a
+Spotlight.
+
+**The swim meet is one occurrence, so it is one row and one accent.** Google returns a
+multi-day all-day event as a single instance with an exclusive `end.date`, and
+`upcomingEvents` is a filter, not an expansion — so the ordinary renderer draws exactly one
+row for the meet, grouped under Sept 19, and there is no Sunday copy to duplicate. The
+entry qualifies as a `calendarRange` matched on its inclusive end, which keeps the
+one-to-one explicit: a range that stopped spanning both days fails closed rather than
+accenting a changed event.
+
+**Both accents pin their calendar title with `titleMatch.mode: "literal"`, and that is
+load-bearing.** An event-row accent draws a wash that must stay clear of the text, and the
+clearance depends on the *rendered length* of the title — for the flag-football row it is
+19.7 px, about two characters. Under `prefix` matching a longer title still qualified: the
+same event with its venue spelled out extended 357 px into the wash, putting text over
+alpha ≈0.30 and quietly breaking the "contrast at least as strong" clause with no test
+failing, because the fixtures supply the title. `literal` compares the whole title byte for
+byte (after the occurrence model strips leading emoji and trims the ends), so any real edit
+— a suffix, an added venue, a changed dash, a different capitalisation, a doubled internal
+space — fails the node closed and the row renders ordinary until the treatment is
+deliberately revalidated. Moving the 46% gradient boundary rightwards was rejected as a
+fix: it only postpones the same failure for the next longer title.
+
+**The three modes, and why the schema now picks one for you.** `prefix` is a normalized,
+case-insensitive prefix match — the configured value must start the title and anything may
+follow. `exact` is a normalized *whole-title* match that ignores case and collapses internal
+whitespace. `literal` is whole cleaned-title equality that stays sensitive to case,
+punctuation and internal whitespace, tolerating only the emoji-strip and end-trim the
+occurrence model already applies to everyone.
+
+`exact` and `literal` read as synonyms in English and are not interchangeable in practice:
+`exact` accepts edits that change the title's *rendered width* — an all-caps rename, a
+doubled internal space — and `literal` does not. Measured: under `exact`, an all-caps
+flag-football title still qualifies and puts **53.5 px of text over the wash**, with every
+gate green. So `RENDERER_REQUIRED_TITLE_MATCH_MODE` in `specialEventSchema.js` requires
+`literal` for `accent-event-row-v1`, and an accent declaring `prefix` or `exact` is rejected
+at load with `title-match-too-permissive`. The rule is keyed on the **renderer**, not the
+level, and is applied to the flattened qualification leaves — so it reaches a calendar node
+at any nesting depth inside a compound qualifier and never touches `approvedDate` or
+`sportsFixture`, which carry no title at all.
+
+The Spotlight deliberately keeps `prefix` and is deliberately unconstrained: its
+presentation reads its own configured copy, so the rendered length of a calendar title is
+irrelevant to it. `literal` is a third mode alongside `prefix` and `exact`, not a
+replacement for either, and the mode is validated at load — an unrecognised value is rejected rather than silently falling through
+to `prefix`, which is the most permissive mode and so exactly the wrong default. Load-time
+validation also now *requires* a title match on every calendar-anchored node: without one a
+node binds on calendar and date alone and would accept any event sitting there.
+
+**The join is occurrence identity, not a title match.** The selector publishes
+`occurrenceRef` — the same `${raw.id}|${start}` identity `refIdentity()` and
+`nowNextSelector` already use — and `renderUpcomingEvent()` looks up each collapsed row by
+`occurrenceId(item.event)`. An accent can therefore only ever decorate a row that exists;
+it has no mechanism to introduce, duplicate, or move one. That is a structural guarantee,
+not a rule someone has to remember.
+
+**The Upcoming panel is a lookahead, so an event-row accent is an anticipation treatment.**
+`builder.js` excludes today from `upcomingEvents`, so a row leaves the panel the moment its
+own date arrives and moves to the Today panel. On Saturday the 19th the swim accent is
+still `live` and still in the artifact, but its row is gone and nothing is accented. That
+is correct and is asserted, not merely tolerated: an accent decorates rows the panel draws.
+The practical consequence is that the two accents are never *both* visible in the panel on
+a real clock — Saturday's row is gone by the time Sunday's accent turns on. Their
+coexistence is a property of one generation's arbitration, which is what the tests prove.
+
+**Approved visual contract, and why the wash is right-weighted.** The row keeps its
+existing text, detail line, semantic icon or official logo, ordering, date grouping and
+height. Added, all absolutely positioned so none of them is in the row's grid flow:
+
+- an owner-coloured brush wash (`--section-red` / `--section-purple` used as a CSS mask,
+  the same technique `.athletic-ribbon` already uses to tint that artwork);
+- one decorative activity doodle at the far-right edge — `doodle-swim-goggles.svg` and
+  `doodle-football-laces.svg`, repo-native transparent line-art SVGs, also masked so each
+  takes its owner's tone from the stylesheet rather than shipping in two colours;
+- the compact `FIRST GAME` chip, on the flag-football accent only. The 757swim row gets no
+  chip: its own title already reads as a meet at TV distance, so `MEET WEEKEND` would be
+  redundant.
+
+**The wash carries zero alpha across the text's reading area and ramps up to the right of
+it.** This is the one place the visual brief and the readability requirement pull against
+each other, and readability wins. A uniform translucent wash of either owner colour is a
+dark colour over tan paper: at 0.16 alpha it drops the title's contrast ratio from 10.8:1
+to 8.8:1 — still above AAA, but *lower*, and the contract says at least as strong. A
+gradient that starts at 46% of the row width leaves the background behind every glyph
+untouched, so contrast is unchanged by construction rather than by arithmetic. The colour
+still reads from across the room because it occupies the open right two-thirds.
+
+**The flag-football doodle is a football and laces, not a pennant.** The first
+implementation drew a field pennant, which reads "flag" as the wrong object: in flag
+football the flag is the belt flag pulled to end a play, and a pennant belongs to a
+touchline, not to this sport. The doodle key, asset, registry value, schema allowlist entry,
+CSS class and custom property are all `football-laces`; no `flag-pennant` terminology
+survives anywhere. Treatment colour, opacity, footprint, far-right placement and absolute
+positioning are unchanged, so the row geometry is bit-identical to the approved version.
+
+**No flag-football logo is invented.** Both entries declare `assets.logos: []`, and the
+flag-football row keeps the semantic sports mark the ordinary renderer gave it. There is no
+authoritative mark for that team; a doodle is decoration and never substitutes for one.
+
+**Both presentations ship in one artifact.** Each accented row is emitted with
+`data-accent-state="ordinary"` plus absolute `data-accent-activate-at` /
+`data-accent-expire-at` instants, and a bounded browser controller
+(`window.updateEventRowAccents`) switches state at those instants with no network request
+and no regeneration — the same contract the Spotlight panel already uses. All Eastern
+reasoning happens once, server-side, through `easternInstant()`; the browser compares
+integers. Without this the 4:00 PM boundary would round up to the next scheduled generation
+(4:10 PM). A failed or absent script leaves ordinary rows.
+
+**Fail-closed paths, all tested:** switch off, absent or malformed registry, missing clock,
+occurrence moved / cancelled / duplicated / retyped from all-day to timed, unknown doodle
+key, unresolved `ref`, two accents claiming one row, a throw anywhere in resolution. Each
+resolves to the ordinary row, and one invalid accent never disables the other.
+
+**Schema additions.** `ACCENT_RENDERERS = ['accent-event-row-v1']` is kept *disjoint* from
+`KNOWN_RENDERERS`: an accent decorates a row, `spotlight-children-v1` replaces a panel's
+whole contents, and a treatment admitted with a renderer that cannot fill its surface would
+fail on a television rather than at load. An accent with no renderer keeps the framework's
+original behaviour — resolved, reported, never activatable. `KNOWN_DOODLE_KEYS`,
+`MAX_ACCENT_LABEL_LENGTH` (14) and the shared `OWNER_TONE` map are validated at load, and
+`OWNER_TONE` replaced a duplicate literal that the Spotlight selector had been carrying —
+two identical maps for one concept is how the Spotlight and the Accent would eventually
+have drifted apart.
+
+**Both doodle assets are named in `requiredAssetFiles`.** Shipping inside a packaged asset
+*directory* is not enough: the renderer treats an unresolvable doodle as a reason to skip
+the accent, so a package built without them would render ordinary rows with no error
+anywhere — a correct fail-closed, and an invisible one. The per-file guard makes the real
+package validator fail by name instead. `test/artifact/required-doodle-assets.test.js`
+proves both directions by running the shipped validator against a synthetic package root.
+
+**Artifact contract.** `data-accent-id` is conditional and must never join
+`LEVEL2_REQUIRED_MARKERS`, or every ordinary day would fail validation. When present, the
+contract asserts at most `MAX_EVENT_ROW_ACCENTS` (2), one `data-accent-state="ordinary"`
+per accent (**counted**, because one row shipping already-active would light up regardless
+of the clock — and because the stylesheet's own `[data-accent-state="active"]` selector
+must not be able to satisfy the check), integer time attributes, the presence of
+the Upcoming panel's own opening tag, and that an accent never coexists with the First Day
+takeover. The panel check asserts `UPCOMING_PANEL_ELEMENT` — `<section class="paper-panel
+upcoming-panel` — not the bare token: the stylesheet names `.upcoming-panel` in every
+artifact, so `includes('upcoming-panel')` is satisfied even when the panel element is gone
+and can never fail. That is the same defect shape the Spotlight branch already avoids with
+`class="athletics-grid spotlight-ordinary`, and the negative control that proves it deletes
+the opening tag while leaving the CSS, the controller and the accented rows in place.
+
+**What was NOT touched:** NOW/NEXT, the clock, weather, alerts, the right rail, the sports
+ticker, Athletics geometry (the one-card panel still measures 1473.83 × 315.63), Dashboard
+v1, the email renderer, First Day Level-3, Pi hosting, deployment topology,
+`flag-football.json`, `sports-config.json`, season windows, and the kill switch — which
+keeps its name, its `"0"` default, and its off state. No repository variable was created or
+changed.
+
+**Two stale assertions were updated, deliberately and reportably.**
+`digest/specialEventSelector.test.js` asserted the registry declares *exactly one*
+treatment — a correct guard for the phase that shipped nothing, and wrong the moment an
+approved Accent is added. It is now an explicit enumeration of the approved set, so an
+unreviewed addition still fails. `digest/builder.test.js` compared the compatibility shim's
+projection length against the whole registry's length; the shim correctly omits accents
+(they have no legacy form), so that length proxy is replaced by a comparison against the
+legacy-expressible subset, plus a new assertion that the shim never approximates an accent
+as a spotlight. Neither change weakens a guard; both are recorded here rather than made
+quietly, because a silently relaxed assertion is how a guard stops guarding.
+
 ## Weekly Household Operations Review
 
 ### Phase 5 — Menu Planning (~5 min)
@@ -832,31 +1306,91 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Aug 28, 2026 at `e25109d`
+### Current baseline — measured Aug 29, 2026 at the CI-gate follow-up
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test`, no browser resolvable | 1296 | 1279 | 3 | 14 |
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1296 | **1296** | **0** | **0** |
-| CI (`ubuntu-latest`) | 1296 | 1296 | 0 | 0 |
+| `npm test`, no browser resolvable | 1797 | 1772 | 3 | 22 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1797 | **1797** | **0** | **0** |
 
-Node v22.22.2, after `npm install`. **Coder mode must keep `npm test` at 1296+ with no
-failures once a browser resolves.**
+Measured Aug 30, 2026 on `claude/dashboard-v2-accent-92mjzx`, whose merge base with
+`main` is `54edb4f`. The first event-row Accent added **+75**, and every unit of it is
+accounted for:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/specialEventSchema.test.js` | 87 | 95 | +8 |
+| `digest/specialEventSelector.test.js` | 68 | 69 | +1 |
+| `digest/specialEventAccents.test.js` (new) | — | 31 | +31 |
+| `render/dashboard-v2-accent.test.js` (new) | — | 20 | +20 |
+| `test/artifact/event-row-accent-contract.test.js` (new) | — | 9 | +9 |
+| `render/dashboard-v2-layout.test.js` | 15 | 21 | +6 |
+
+`digest/builder.test.js` contributes 0: it uses its own harness and surfaces as six
+`node:test` points either way. Its internal assertion count moved 123 → 126 (one stale
+length proxy replaced by three accurate assertions).
+
+**Correction to the previous entry, which recorded 1688.** That number is not reproducible
+on this machine. The merge base `54edb4f` was re-measured directly — `git worktree add` at
+that commit, same Node, same Chromium, browser-enabled `npm test` — and reports
+**1693 / 1693 / 0 / 0**. 1693 + 75 = 1768, so the per-file table above closes exactly
+against a measurement rather than against the recorded figure. Whether the 1688 was taken
+on a different tree or counted differently is not established here; what is established is
+that it does not reproduce. Re-measure the merge base yourself rather than trusting a
+recorded delta — that is the same lesson the globstar entry below already teaches, applied
+to the baseline itself.
+
+The browser-unavailable `cancelled` count moved 14 → 22 because the seven new layout tests
+are children of a `describe` whose `before` hook needs Chromium — the standing cause, not a
+new one. Re-measure and update this table in the same commit as any merge that adds tests.
+
+**CI rows are deliberately absent.** The previous table carried CI figures measured on a
+different branch; restating them here would make this table look like it says something
+about this one. CI will produce its own.
+
+**The last two rows differ by design, and the difference is not this branch's.** A `push`
+event tests the branch head; a `pull_request` event tests the *merge* of the branch into
+current `main`, so it also runs whatever `main` has that the branch does not. On this branch
+that is exactly one test — `W&M conference metadata is sport-specific for 2026`
+(`test/sports-ticker.test.js`, added by `e0653c5`). Confirm a merge-ref/branch-ref gap the
+same way rather than assuming it: align the two TAP streams by test name and identify the
+extra entry. An unexplained gap is a real finding; an explained one is arithmetic.
+
+**The exact invocations, so a future claim can be checked rather than believed:**
+
+```bash
+# browser-unavailable — the 3 failures and 14 cancelled below are the standing set
+npm test
+
+# browser-enabled — the row to compare against; must be fully green
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+Any Chromium build works; that path is the one preinstalled in the development sandbox
+(`npx playwright install chromium` is the alternative). Node v22.22.2, after `npm install`.
+**Coder mode must keep `npm test` at 1797+ with no failures once a browser resolves.**
 
 **This table is the only current baseline, and it is a measurement, not a constant.**
-It was taken at `e25109d` — this branch merged with `main` at `ad5e084`, which carries
-PR #28's NOW/NEXT temporal gating (+2 tests over the 1294 measured at `40c0240`). Any
-merge that adds tests moves these numbers; re-measure and update this table in the same
-commit rather than adding a second one. Dated changelog entries below quote the figures,
-and the "Chromium-environmental" label, as they stood when written; they are provenance
-for a particular change, not a second answer to "what should I see today."
+It was taken on a branch whose merge base with `main` is `ae7d581`, which measured **1298**
+with a browser. The foundation added **+377**: P1 +224 (five pure modules), P2 +68
+(registry, orchestrator and the legacy equivalence proof), P3 +62 (wiring, the
+compatibility shim, the second contract suite and the byte/pixel regressions), P4 +0
+(documentation), and the post-review cleanup +23 (forbidden-key scan, bounded walks, shim
+containment, and the strengthened legacy-contract binding). The CI-gate follow-up then added
+**+13** (`test/ci-workflow-package-gate.test.js`), for **1298 → 1688**.
+Any merge that adds tests moves these numbers;
+re-measure and update this table in the same commit rather than adding a second one. Dated
+changelog entries below quote the figures, and the "Chromium-environmental" label, as they
+stood when written; they are provenance for a particular change, not a second answer to
+"what should I see today."
 
 **There is now exactly one cause of a non-green local run: no browser.** Exactly two files
 launch Chromium. `render/first-day-level3-layout.test.js` holds three flat `test()` calls,
 so a thrown `before` hook surfaces them directly — those are the 3 failures.
-`render/dashboard-v2-layout.test.js` holds two `describe` blocks (`dashboard v2 2560x1440
-layout verification`, 6 children, and `family spotlight 2560x1440 footprint and
-readability`, 8), so its hook failure cancels 14 children instead. Supply a browser — `npx
+`render/dashboard-v2-layout.test.js` holds three `describe` blocks (`dashboard v2 2560x1440
+layout verification`, 7 children, `family spotlight 2560x1440 footprint and readability`,
+8, and `event-row accent 2560x1440 footprint and readability`, 7), so its hook failure
+cancels 22 children instead. Supply a browser — `npx
 playwright install chromium`, or point `DASHBOARD_BROWSER_PATH` at an existing build — and
 both numbers go to zero together. That is why the middle row, not the first, is the one to
 compare against.
@@ -965,6 +1499,177 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Accent title matching is now enforced by the schema, not by author discipline (Aug 30,
+  2026):** A second Reviewer pass found that the `literal` pinning added by the previous
+  commit was correct for the two shipped entries but held in place only by the author's
+  choice. `exact` and `literal` are English near-synonyms whose difference — case and
+  internal-whitespace sensitivity — is invisible in the name, and the schema accepted
+  `prefix`, `exact` or `literal` on an `accent-event-row-v1` treatment alike. Measured
+  consequence: an all-caps rename under `exact` still qualifies and puts 53.5 px of text
+  over the wash, reintroducing the exact defect the previous commit removed, with every gate
+  green. `RENDERER_REQUIRED_TITLE_MATCH_MODE` now pins the required mode per renderer and a
+  looser accent is rejected at load with `title-match-too-permissive` — distinct from
+  `title-match-invalid`, which stays reserved for a mode that does not exist. The rule is
+  keyed on the renderer rather than the level, is applied to the flattened qualification
+  leaves so it reaches any nesting depth, and never fires on `approvedDate` or
+  `sportsFixture`. Big Sports Saturday keeps its approved `prefix` nodes and is explicitly
+  unconstrained. Six mutations confirm the teeth, including two that check the rule is
+  neither over-broad (applied to every node type) nor mis-keyed (applied by level, which
+  would reject the Spotlight). All six approved panel crops remain byte-identical and no
+  rendered output changed. Tests **1787 → 1797**.
+
+- **Post-review cleanup on the first event-row Accent (Aug 30, 2026):** Three SHOULD FIX
+  findings from an independent Reviewer pass over `237e3b3`, addressed in one follow-up
+  commit that leaves `237e3b3` intact. **(1) Title/wash contrast drift.** The wash clears
+  the flag-football title by only 19.7 px, and `prefix` matching accepted a longer title:
+  the same event with its venue spelled out extended 357 px into the wash at alpha ≈0.30,
+  with no test failing because the fixtures supply the title. Both accents now pin their
+  title with a new `titleMatch.mode: "literal"` — byte-exact after the occurrence model's
+  own emoji-strip and trim — so any real edit fails closed to an ordinary row. Widening the
+  46% boundary was rejected: it only defers the same failure. The mode is validated at load
+  (an unknown mode is rejected rather than falling through to `prefix`), a title match is
+  now required on every calendar-anchored node, and the Spotlight keeps `prefix` because its
+  presentation does not depend on rendered title length. **(2) Unguarded doodle assets.**
+  Both SVGs are now in `requiredAssetFiles`; previously a package missing them rendered
+  ordinary rows with no error and still passed validation. **(3) A false-satisfiable
+  contract marker.** `html.includes('upcoming-panel')` was satisfied by the stylesheet — the
+  panel element could be deleted entirely and validation still passed. It now asserts the
+  element's own opening tag. Also here: the registry's cosmetic reformatting is undone, so
+  the Big Sports Saturday block is byte-identical to its parent and the diff against
+  `54edb4f` contains **zero deletions**. One correction found while writing the tests:
+  trailing/leading whitespace is *not* a title edit — `cleanTitle()` trims before matching
+  and the rendered text is unchanged — so it is deliberately tolerated, while a doubled
+  *internal* space, which does change rendered width, fails closed. The duplicated-occurrence
+  item stays documented and unfixed: production ingestion dedupes by id (`calendar.js:149`).
+  All six approved Upcoming-panel crops reproduce byte-for-byte; geometry unchanged. Tests
+  **1768 → 1787**.
+
+- **First Dashboard v2 event-row Accent implemented; two treatments added (Aug 30, 2026):**
+  The generalized special-event foundation gains its first accent renderer,
+  `accent-event-row-v1`, and two registry entries — Ophelia's Sept 19-20 757swim meet and
+  Myles's Sept 20 first fall flag-football game. Full design in **Event-row Accent** above.
+  **Nothing is enabled by this work**: the kill switch keeps its name, its `"0"` default and
+  its off state, no repository variable was created or changed, and no template, workflow or
+  Pi configuration was touched. **Three findings shaped the implementation.** (1) The swim
+  meet is a *single* Google all-day event with an exclusive `end.date`, and `upcomingEvents`
+  is a filter rather than an expansion — so the ordinary renderer already draws exactly one
+  row for it and there was never a Sunday row to duplicate. Qualifying it as a
+  `calendarRange` makes that one-to-one explicit rather than incidental. (2) The Upcoming
+  panel excludes today, so an event-row accent is inherently an *anticipation* treatment: on
+  Saturday the swim accent is still `live` but its row has moved to the Today panel and
+  there is nothing to decorate. That is asserted rather than tolerated, and it means the two
+  accents are never both visible on a real clock even though they coexist in one
+  generation's arbitration. (3) A uniform translucent wash of either owner colour *lowers*
+  title contrast (10.8:1 → 8.8:1 at 0.16 alpha) — still AAA, but the contract requires at
+  least as strong, so the wash carries zero alpha across the reading area and ramps up to
+  the right of it. Contrast is therefore unchanged by construction. **The first contrast
+  test had no teeth and was replaced**: it read computed styles via `elementsFromPoint`,
+  which skips the `pointer-events:none` wash entirely, so it passed against a deliberately
+  broken build. It is now a clipped-screenshot buffer comparison — identical pixels across
+  the reading area, different pixels in the open space right of it — and both halves were
+  proven to go red against three separate probe builds. Ordinary output is unchanged: with
+  the switch off, or outside either window, the document is byte-identical to one rendered
+  from a registry containing no accents. Also here: `OWNER_TONE` consolidates a tone map the
+  Spotlight selector had been duplicating, and two stale assertions from the
+  "nothing is activated" phase were updated (see the section above — reported, not quiet).
+  Gates run for real: browser-enabled `npm test` **1693 → 1768**, all passing; `sam build`
+  → Build Succeeded; `dashboard artifact package: valid (10 data files, ...)`;
+  `dashboard artifact deployment coverage: valid (41 local bundle inputs, 13 trigger paths)`.
+  The recorded 1688 baseline did not reproduce — the merge base re-measures at 1693; see
+  Test baseline.
+
+- **The Dashboard v2 package gate became a pull-request gate (Aug 29, 2026):** `sam build`
+  plus `validate:dashboard-artifact-package` ran in exactly one workflow —
+  `deploy-dashboard-v2-artifact.yml`, on `push` to `main` — so the check this file called a
+  "hard pre-merge gate" actually fired *after* merge, as the deploy job's first action. A
+  packaging defect could not fail a pull request. Found while reporting CI results on PR #32,
+  by reading which workflow owns the script rather than trusting the label. `ci.yml` now runs
+  the same two commands on `pull_request`, behind `aws-actions/setup-sam@v2` and nothing else:
+  the template builds with `BuildMethod: esbuild`, so the build needs no AWS credentials, no
+  Docker and no call to AWS. CI declares `permissions: contents: read`, references no
+  `secrets.`, requests no OIDC token, and runs neither the `aws` CLI nor `sam deploy`. **The
+  deploy workflow is unchanged** and keeps its own copy of the step ahead of
+  `Configure AWS credentials`; no shared script was extracted, because two identical
+  three-line steps read better than an indirection and a test now asserts they stay
+  identical. **The gate was also executed for real for the first time**, locally, with the
+  SAM CLI in a throwaway virtualenv: `sam build` → Build Succeeded, then `dashboard artifact
+  package: valid (10 data files, Emma parser/evaluator/builder markers present)` — retiring
+  the UNVERIFIED LOCALLY caveat that had stood since P1. `test/ci-workflow-package-gate.test.js`
+  (+13) parses the shipped workflow structurally into steps, so every assertion must be met
+  by a `uses:` value or an executable `run:` line; four negative controls prove a comment,
+  a stub body, or the command in an unrelated step cannot satisfy it, and the file was run
+  against the pre-change `ci.yml` to confirm it goes red (9 of 13 fail). Also here, while in
+  the same files: the obsolete "serialized qualification subtree" JSDoc above the key-only
+  walker is deleted, the changelog line claiming "the arbiter only observes" First Day
+  Level-3 now names the two real mechanisms, and `.aws-sam/` is gitignored (it is build
+  output, and both CI and a local run now produce it). The silent outer compatibility guard
+  in `digest/builder.js` is deliberately left as-is — it is a documented non-blocking
+  observability nit and changing it is not needed for this work. Tests **1675 → 1688**.
+
+- **Post-review cleanup on the special-event foundation (Aug 29, 2026):** An independent
+  Reviewer pass over `ae7d581..e90fb9d` returned five MINOR findings, all addressed here in
+  one commit. **(1)** The forbidden-qualifier scan matched `JSON.stringify(qualification)`,
+  so it rejected legitimate *values* as well as forbidden *field names* — a `titleMatch` of
+  "Active Wear Day" was refused as if it were a season flag. It now walks field names
+  recursively at any depth and never inspects values. **(2)** Both qualification walkers are
+  bounded at `MAX_QUALIFICATION_DEPTH` (128 walker levels) and fail closed past it, so a
+  malformed or cyclic structure is a diagnostic rather than a `RangeError`; a compound level
+  costs the key walker two levels, which the tests pin. **(3)** The compatibility projection
+  is now contained in the shim *and* at the `builder.js` call site: a projection failure
+  degrades `familySpotlightConfig` to `null` and cannot fail `buildDigest`, with
+  `specialEventsConfig` untouched. **(4)** The legacy artifact-contract test's binding
+  assertion covered only part of the legacy view model — mutating `eyebrowOn` in the frozen
+  selector left that file green. It now asserts both eyebrows and the logo marks against the
+  rendered HTML and the whole view model (covering `date` and `phase`, which are not
+  rendered); all three probes now turn it red. **(5)** `firstDayTakeoverActive` was described
+  as the mechanism protecting First Day Level-3; **it is not, and no runtime caller passes
+  it.** Production is protected by `renderDashboardV2()`'s early return plus the
+  artifact-contract rule forbidding coexistence. The flag is an arbiter capability held for a
+  future registry-driven page orchestrator, and is now documented as such in both the code
+  and this file — an inert parameter that reads as a gate is the exact pattern the gate
+  section of this file warns about. Also corrected: the cross-tree proof makes **22**
+  comparisons, not the 23 previously claimed here. Renderer, registry, `data/`,
+  `dashboard-artifact/`, `infrastructure/`, `.github/` and `scripts/` are untouched; the two
+  other special-event modules changed by comment only (0 non-comment lines). Cross-tree
+  proof re-run: **22/22 identical**. Tests **1652 → 1675** (+23).
+
+- **Generalized special-event foundation built; Big Sports Saturday migrated (Aug 29, 2026):**
+  Framework capability for Accent / Spotlight / Takeover treatments on Dashboard v2 — full
+  design in **Generalized special-event foundation** above. Four reviewable commits, each a
+  real rollback boundary: P1 `3252b36` (five pure modules, **zero runtime surface** —
+  nothing imported them), P2 `6a966e5` (`data/special-events.json`, the orchestrator, and
+  the legacy equivalence proof, still unwired), P3 `40b942a` (the wiring), P4 this entry.
+  **Nothing was activated.** The kill switch keeps its name, its `"0"` default and its off
+  state; no template, workflow, repository variable or Pi configuration was touched; and
+  the categorized 2026-27 future-event register stays planning information, deliberately
+  **not** added to the registry. Accents and registry-driven Takeovers have framework
+  support only — they resolve, arbitrate and report `activatable: false`, and have no
+  renderer. First Day Level-3 is unchanged and hard-wired, protected by `renderDashboardV2()`'s
+  early return and the artifact contract — not by the arbiter.
+  **Big Sports Saturday is the only live-registry entry and is behaviourally identical**:
+  a cross-tree proof against the pre-migration worktree came back **22/22 identical** —
+  ten whole-document Dashboard v2 comparisons across five lifecycle states with the switch
+  on and off, ordinary Dashboard v2, the Dashboard v1 today card, and Athletics panel
+  pixels *and* geometry across all four controller states plus ordinary Athletics
+  (1473.83 × 315.63, unmoved). `CSS`, `browserScript()`, the Spotlight markup and
+  `athleticsCardCount()` were not touched — they ship in every artifact, so editing them
+  would have changed ordinary output too. **Three findings changed the shape of the work.**
+  (1) Qualification for this entry is `any`, not `all`: the legacy selector resolved each
+  child independently, so a missing Myles occurrence produced a one-child Spotlight, not
+  ordinary Athletics — `all` would have been a silent behaviour change dressed as a
+  migration. (2) "One treatment per surface" and "two Accents per panel" are only
+  compatible if `event-row` and `athletics-card` are instance-scoped; the first arbiter
+  capped the Upcoming panel at one Accent until its own tests caught it. (3) The temporary
+  compatibility shim reached the Lambda bundle **undeclared** — found only because `sam` is
+  absent locally and the bundle graph had to be inspected by hand, which is the argument
+  for keeping CI package validation as a hard pre-merge gate rather than waving it through.
+  `digestData.familySpotlightConfig` is retained for the migration window, derived from the
+  one registry and read by no runtime code; `data/family-spotlight.json`, the legacy
+  selector, its suite and the legacy artifact-contract test are all retained **unmodified**
+  as four independent oracles until P5. Tests **1298 → 1652** (+354); see Test baseline for
+  the re-measured table and the exact invocations. **`sam build` is unverified locally and
+  is an explicit pre-merge CI gate.**
 
 - **School rotation rebuilt for the 2026-27 year (Aug 28, 2026):** `digest/schoolRotation.js` had been hard-stopped at `schoolYearEnd = new Date('2026-06-15')`, so `isSchoolDay()` returned `false` for every date since school resumed Aug 24 and **no backpack reminder fired all year**. Rather than ask Wade for values that already existed, all three constants were derived from live sources first: `SCHOOL_YEAR_START`/`SCHOOL_YEAR_END` (2026-08-24 / 2027-06-09) from the Family calendar's `🏫 First Day` / `🏫 Last Day` events; `NO_SCHOOL_DATES` (30 weekday closures) by expanding each `🏫` closure's `[start.date, end.date)` range — Google's all-day end is exclusive, so a break "ending Nov 28" really ends Nov 27; and the rotation itself from the kids' own Centers events plus `data/kids-profile.json`. **Three findings that changed the shape of the fix.** (1) Ophelia is on a **6-day** cycle, not the 7 the code had — she is grade 2 now — and both kids share one school-wide cycle: `PE1 → Art → Computer → PE2 → Media → Music`. Her anchor (2026-08-24 = Day 1) is transcribed from her own calendar entries, each captioned "Day N of 6-day rotation"; the tests assert against those ten real entries rather than against hand-computed values, so they are ground truth, not a restatement of the implementation. All 10 match, including the entry that explicitly skips the 9/4 and 9/7 closures. (2) `Media` is the 2026-27 label for what was `Library`; confirmed with Wade that it is still library-checkout day, so the reminder is preserved under the new name. (3) **Myles is deliberately left unanchored** — `ANCHORS.myles === null` — because his permanent Centers group was genuinely unassigned as of this date; `getRotation` returns a null day/centre while still answering `isSchoolDay` truthfully, so "centre unknown" never collapses into "school closed". **Three `🏫` Early Release events (2027-04-02, 06-08, 06-09) are excluded from the closure list on purpose** — early release is still a school day and the rotation advances. One source conflict was resolved by asking: the Winter Break event's `end.date` implies Dec 30 while its own description says "Dec 21-31"; Wade confirmed Dec 31 is closed. That single date mattered disproportionately — one wrong closure shifts every rotation day after it for the rest of the year. **The regression guard Wade asked for** lives in `digest/schoolRotation.test.js` and asserts against the *run date*, not a fixture date, so it goes red on its own the moment `SCHOOL_YEAR_END` lapses; proven to have teeth by rolling the constant back to the original `2026-06-15`, which turns 31 of 55 cases red with an actionable message. Two unrelated test files (`digest/builder.test.js`, `digest/generateTasks.test.js`) pinned their date fixtures to May 2026 and went red once that stopped being a school day — moved to Sep 2026, which is the same staleness in a second place and worth noting as a pattern. This change adds **+17 tests** (`digest/schoolRotation.test.js` 38 → 55). Measured on the branch before merging `main`: 1164 → 1181. After merging the family-spotlight work from #24, the combined local baseline is **1266 / 1249 passing / 3 failing / 14 cancelled** — the failures are the unchanged Chromium-environmental set, and the cancelled count rose 6 → 14 because #24 added browser-dependent layout subtests, not because of anything here. On CI, which provisions a browser, all 1266 pass.
 - **Special-event operational hardening: browser-path escape hatch and an explicit,
@@ -1095,6 +1800,11 @@ method, so they chain directly to the 988 pre-change number above.
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut.
 
 ## Known open items
+
+- **Special-event foundation P5 cleanup — blocked on a real production cycle, deliberately (Aug 29, 2026).** Delete `digest/legacySpotlightCompat.js` together with the `familySpotlightConfig` line in `digest/builder.js`, its `requiredBundleInputs` entry and the `specialEventsSampleData` projection; then delete the four oracles (`data/family-spotlight.json`, `digest/familySpotlightSelector.js`, its test, `test/artifact/family-spotlight-contract.test.js`) and `test/fixtures/legacy-athletics-panels.json`. **Do not do this until the registry path has run at least one real production cycle** — the oracles are the only thing that can prove a regression, and deleting them early is how a migration bug becomes undetectable. A test asserts the shim's bundle-input declaration exists *exactly while* `builder.js` imports it, so a half-done removal fails rather than leaving a dangling path. Also open at P5: whether to rename `FAMILY_SPOTLIGHT_ENABLED`, and whether First Day Level-3 becomes registry-driven — the latter should be settled **before** any second Takeover (Christmas morning) is built, not after.
+- **✓ RESOLVED Aug 29, 2026 — the package gate now runs before merge, not after it.** This bullet previously said `scripts/validate-dashboard-artifact-package.mjs` "must be green in CI before merge" — which was not true of any workflow that existed: it ran only in `deploy-dashboard-v2-artifact.yml` on `push` to `main`, so its first execution was *after* the merge, as the deploy job's first action. Two things changed. (1) The gate was finally executed for real: `sam` installed into a throwaway virtualenv locally gives `sam build` → Build Succeeded and `dashboard artifact package: valid (10 data files, Emma parser/evaluator/builder markers present)`. (2) `ci.yml` now runs the same two commands on `pull_request`, with `permissions: contents: read`, no secrets, no OIDC token, no AWS CLI and no `sam deploy` — see "The package gate is a pull-request gate" above for the full contract and its 13 tests. The deploy workflow keeps its own copy of the step ahead of `Configure AWS credentials`, so nothing is weakened where it guards a real deployment. **The general lesson outlives the fix:** a gate named in this file as pre-merge was, for as long as it was written down, post-merge only — nobody had checked *which workflow* ran it. Naming a check is not the same as knowing when it fires.
+- **The categorized 2026-27 future-event register is planning information, not configuration (Aug 29, 2026).** The approved categorization — Sept 19-20 swim and the first flag-football game as Accents, Oct 17 and Nov 7 as Spotlights, the Chesapeake Challenge Cup, Winter Champs and SE District 8&U Champs as Spotlights, the birthdays as Spotlights, Oct 31 Swim-a-Thon and Grandma's arrival as separate Accents, A Christmas Carol as a Family Spotlight, Christmas morning as a Family Takeover, Last Day of School as an Accent, and the Dec 12-13 swim meet as deliberately *not* qualifying because the Staunton trip is authoritative — **is not in `data/special-events.json` and must not be bulk-loaded into it.** Each entry needs its own scoping pass, most need facts that are still TBD, and every Accent additionally needs a Designer pass that does not exist. Adding them would activate treatments this foundation deliberately did not.
+- **Accent visual design does not exist (Aug 29, 2026).** Eleven of the register's non-Ordinary occurrences classify as Accents — the largest bucket — and there is no Accent renderer, no markup, and no approved visual. The framework resolves and arbitrates them and reports `activatable: false`; that is the whole of what exists. A Designer-mode session with a screenshot of current state is prerequisite to scoping any Accent phase.
 
 - **✓ RESOLVED Aug 28, 2026 — the dead `FAMILY_CALENDARS["WJCC Schools"]` entry was removed rather than repointed.** Wade has moved to putting WJCC calendar items directly on the **Family** calendar (the 12 `🏫`-prefixed 2026-27 academic-calendar events entered 2026-08-17), so the entry had no remaining purpose and the choice between the two repoint candidates below became moot. Removing it stops the `calendar-fetch-failure` red flag firing every run on a source nothing consumes. Dependency sweep before deletion confirmed nothing breaks: the only other code reference is `digest/builder.js`'s `SCHOOL_ROTATION_CALENDARS`, a display-name filter that could then match nothing — `'WJCC Schools'` was removed from that set too, leaving `new Set(['Routine'])`, since WJCC items are now permanently on the Family calendar and no feed will be repointed under that display name (a filter member matching nothing reads as live wiring); `routineAnchorsParser.js`'s `SCHOOL_EXCEPTION_CALENDAR` is `'Family'` and was never wired to WJCC; and every `'WJCC Schools'` string in the test suite is a hardcoded fixture label exercising the generic fetch-failure plumbing, never derived from `FAMILY_CALENDARS`. `scripts/orchestrate/occ-aging.mjs` iterates the map generically and simply sees one fewer calendar. Test count unchanged at 1164 / 1155 passing (the 3 failures and 6 cancelled are the standing Chromium-environmental set). **The diagnosis that led here is retained below, unchanged, because the repoint candidates and the unverified ICS feed are still the facts anyone would need if a WJCC calendar is ever wired back in.**
 - **[HISTORICAL — resolved above] `FAMILY_CALENDARS["WJCC Schools"]` points at a deleted calendar — diagnosed Aug 27, 2026, deliberately NOT repointed.** `o3oasbc616bhijsqn80a58jo7a40lrl2@import.calendar.google.com` returns `The requested event could not be found or has been deleted.` and does not appear in the account's calendar list at all. It was added 2026-08-02 in commit `2742410` — whose message reads "Editorial Meeting: downgrade unconfirmed relay near-record claim from MEDIUM to LOW", a second instance of the mislabeled-commit pattern already recorded in Key Learnings under `e4aa130`. Two candidates exist and **neither is obviously right**, which is why this was left for Wade rather than guessed at: `vhtjqgkt9s4oor47sujca22rfg@group.calendar.google.com` is a manually-created calendar literally named "WJCC Schools" (owner, created 2025-09-26, last updated 2026-05-12) holding hand-entered **2025-26** holidays only — nothing past Juneteenth 2026-06-19; and `n4kudi3ij2k314cup1finndhv8b9rqpc@import.calendar.google.com` is a live ICS subscription to `https://wjccschools.org/?wjcc_calendar_subscribe=1` that is **completely empty** across Jan 2026 – Jul 2027 and whose summary is still the raw URL (Google never resolved a display name from the feed). The ICS feed itself could not be verified from the session that diagnosed this — `wjccschools.org` is blocked by the sandbox network policy — so whether the feed is broken or merely not yet synced is **unestablished**, not ruled out. Until one is chosen the new `calendar-fetch-failure` flag fires every run, which is the intended behavior: the breakage is now visible daily instead of silent.

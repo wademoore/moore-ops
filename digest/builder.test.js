@@ -300,6 +300,79 @@ assert(Array.isArray(dig.upcomingEvents),             'upcomingEvents is array')
 assert(typeof dig.athletics === 'object',            'athletics is object');
 assert(Array.isArray(dig.activityComms),             'activityComms is array');
 assert(dig.nationalsData === null,                   'nationalsData null (set by index.js)');
+
+// Additive Dashboard v2 special-event inputs. SPORTS_PARAMS injects neither,
+// so these prove buildDigest still loads them from disk — the failure mode the
+// packaging test exists to prevent, observed from the builder's own side.
+assert(dig.specialEventsConfig && dig.specialEventsConfig.schemaVersion === 2,
+                                                     'specialEventsConfig loaded from data/special-events.json');
+assert(Array.isArray(dig.specialEventsConfig.treatments),
+                                                     'specialEventsConfig carries a treatments array');
+assert(dig.sharksSoccerData && Array.isArray(dig.sharksSoccerData.seasons),
+                                                     'sharksSoccerData surfaced for fixture joins');
+assert('familySpotlightConfig' in dig,                'familySpotlightConfig retained for the migration window');
+assert(dig.familySpotlightConfig && Array.isArray(dig.familySpotlightConfig.spotlights),
+                                                     'familySpotlightConfig carries a spotlights array');
+// The projection covers only what a legacy Family Spotlight could express —
+// enabled, ready, feature-slot, spotlight-children-v1 — and omits rather than
+// approximates anything else. Comparing against that subset rather than
+// against the whole registry is what keeps this a "one source" assertion now
+// that the registry also carries event-row accents, which have no legacy form.
+const legacyExpressible = dig.specialEventsConfig.treatments.filter(entry =>
+  entry.enabled === true && entry.status === 'ready'
+  && entry.level === 'spotlight' && entry.surface === 'feature-slot'
+  && entry.presentation?.renderer === 'spotlight-children-v1');
+assert(legacyExpressible.length > 0,                 'the registry still carries a legacy-expressible spotlight');
+assert(dig.familySpotlightConfig.spotlights.length === legacyExpressible.length,
+                                                     'the compatibility key projects the same registry, not a second source');
+assert(dig.familySpotlightConfig.spotlights.every((spotlight, index) => spotlight.id === legacyExpressible[index].id),
+                                                     'the compatibility key is derived from special-events.json');
+assert(!dig.familySpotlightConfig.spotlights.some(spotlight =>
+  dig.specialEventsConfig.treatments.some(entry => entry.id === spotlight.id && entry.level === 'accent')),
+                                                     'the compatibility key never approximates an accent as a spotlight');
+
+const digInjectedRegistry = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, banner: null,
+  ...SPORTS_PARAMS,
+  specialEventsData: { schemaVersion: 2, treatments: [] },
+});
+assert(digInjectedRegistry.specialEventsConfig.treatments.length === 0,
+                                                     'an injected registry is respected over the disk read');
+assert(digInjectedRegistry.familySpotlightConfig.spotlights.length === 0,
+                                                     'the compatibility key follows the injected registry, never the frozen oracle');
+
+const digNullRegistry = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, banner: null,
+  ...SPORTS_PARAMS,
+  specialEventsData: null,
+});
+assert(digNullRegistry.specialEventsConfig === null,  'an explicit null registry is respected as-is');
+assert(digNullRegistry.familySpotlightConfig === null, 'the compatibility key is null when there is no registry');
+
+// A projection failure must degrade the compatibility key alone. The registry
+// that parses but explodes when walked cannot come from JSON — that is the
+// point: the guard must not depend on the input path being well behaved.
+const explosiveRegistry = { schemaVersion: 2, treatments: [] };
+Object.defineProperty(explosiveRegistry, 'treatments', {
+  enumerable: true,
+  get() { throw new Error('projection blew up'); },
+});
+let digExplosive = null;
+try {
+  digExplosive = await buildDigest({
+    rawEvents: [], emails: [], docs: {}, banner: null,
+    ...SPORTS_PARAMS,
+    specialEventsData: explosiveRegistry,
+  });
+} catch (error) {
+  digExplosive = { __threw: error.message };
+}
+assert(!digExplosive.__threw,                        'a projection failure must not fail buildDigest');
+assert(digExplosive.familySpotlightConfig === null,  'a failed projection degrades the compatibility key to null');
+assert(digExplosive.specialEventsConfig === explosiveRegistry,
+                                                     'specialEventsConfig survives a projection failure untouched');
+assert(Array.isArray(digExplosive.days) && digExplosive.days.length === 3,
+                                                     'the rest of the digest is generated normally');
 assert(dig.banner === null,                          'banner null when not provided');
 
 // Day 0 (today)
