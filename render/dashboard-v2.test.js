@@ -397,9 +397,96 @@ describe('real-data resilience policies', () => {
     assert.match(swim757, /<span>757 Swim<\/span>/);
     assert.doesNotMatch(swim757, /Ophelia .* 757 Swim/);
 
-    const flag = renderDashboardV2({ ...sampleDashboardV2Data, athletics: { flagFootballActive: true } });
+    const flag = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      athletics: { flagFootballActive: true, flagTeamName: 'Cowboys' },
+    });
     assert.match(flag, /<span>NFL FLAG .* Cowboys<\/span>/);
     assert.doesNotMatch(flag, /Myles .* Cowboys/);
+  });
+
+  // ── Flag football ribbon derives from data, never a hardcoded team ─────────
+  // The card must survive a season whose NFL name differs from, or is not yet
+  // assigned by, the league — the expected fall-2026 state.
+  //
+  // Placeholder-leak assertions are scoped to the ribbon, never the whole
+  // document: the page embeds a browser script that legitimately contains the
+  // tokens "null" and "undefined".
+  const flagRibbon = html => {
+    const match = html.match(/<div class="athletic-ribbon">.*?<\/div>/s);
+    assert.ok(match, 'expected an athletic ribbon in the rendered page');
+    return match[0];
+  };
+
+  it('flag ribbon names the team from flagTeamName and carries its logo when one exists', () => {
+    // 'commanders' is a real V2_LOGOS key, so this exercises the lookup hit path.
+    const flag = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      athletics: { flagFootballActive: true, flagTeamName: 'Commanders' },
+    });
+    assert.match(flag, /<span>NFL FLAG · Commanders<\/span>/);
+    assert.doesNotMatch(flag, /Cowboys/, 'a non-Cowboys season must not render "Cowboys" anywhere');
+    assert.match(flag, /class="athletic-logo"/, 'a team with a known logo renders an img');
+  });
+
+  it('flag ribbon falls back to the no-logo mark when the team has no logo key', () => {
+    const flag = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      athletics: { flagFootballActive: true, flagTeamName: 'Seahawks' },
+    });
+    assert.match(flag, /<span>NFL FLAG · Seahawks<\/span>/);
+    // logo('') → the neutral activity-mark span, never a broken <img>.
+    assert.match(flag, /<div class="athletic-ribbon"><span class="activity-mark"/);
+  });
+
+  it('flag ribbon reads "NFL FLAG" alone when flagTeamName is null (fall-2026 initial state)', () => {
+    const flag = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      athletics: { flagFootballActive: true, flagTeamName: null },
+    });
+    assert.match(flag, /<span>NFL FLAG<\/span>/);
+    assert.doesNotMatch(flag, /NFL FLAG ·/, 'no dangling separator');
+    assert.doesNotMatch(flagRibbon(flag), /undefined|null|TBD/, 'never leaks a placeholder');
+    assert.match(flag, /<div class="athletic-ribbon"><span class="activity-mark"/);
+  });
+
+  it('flag ribbon treats a missing, empty, or whitespace-only team name identically to null', () => {
+    for (const flagTeamName of [undefined, '', '   ']) {
+      const flag = renderDashboardV2({
+        ...sampleDashboardV2Data,
+        athletics: { flagFootballActive: true, flagTeamName },
+      });
+      assert.match(flag, /<span>NFL FLAG<\/span>/, `failed for ${JSON.stringify(flagTeamName)}`);
+      assert.doesNotMatch(flagRibbon(flag), /undefined/, `leaked undefined for ${JSON.stringify(flagTeamName)}`);
+    }
+  });
+
+  it('flag logo lookup is case- and whitespace-normalized', () => {
+    const flag = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      athletics: { flagFootballActive: true, flagTeamName: '  cOmMaNdErS  ' },
+    });
+    // Name renders trimmed as authored; the logo still resolves.
+    assert.match(flag, /<span>NFL FLAG · cOmMaNdErS<\/span>/);
+    assert.match(flag, /class="athletic-logo"/);
+  });
+
+  it('flag team name is HTML-escaped', () => {
+    const flag = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      athletics: { flagFootballActive: true, flagTeamName: 'A&W <b>' },
+    });
+    assert.match(flag, /NFL FLAG · A&amp;W &lt;b&gt;/);
+    assert.doesNotMatch(flag, /NFL FLAG · A&W <b>/);
+  });
+
+  it('flag logo lookup cannot resolve an inherited Object property as an asset', () => {
+    const flag = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      athletics: { flagFootballActive: true, flagTeamName: 'constructor' },
+    });
+    assert.match(flag, /<div class="athletic-ribbon"><span class="activity-mark"/);
+    assert.doesNotMatch(flag, /function Object/);
   });
 
   it('ranks family milestones before nearer routine appointments and normalizes owner shorthand', () => {
