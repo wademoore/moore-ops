@@ -528,6 +528,10 @@ function renderCoachingChecklist(digestData) {
   const snackFamily = athletics?.currentSnackFamily || '(check snack schedule)';
   const captains    = athletics?.currentCaptains    || '(check Athletics doc)';
   const record      = athletics?.seasonRecord       || '?-?';
+  // Team name is null until the league assigns one; the heading drops the
+  // team segment entirely rather than showing a placeholder.
+  const teamName    = typeof athletics?.flagTeamName === 'string' ? athletics.flagTeamName.trim() : '';
+  const teamSegment = teamName ? ` — ${teamName}` : '';
 
   const items = [
     'Write the week\'s practice plan',
@@ -544,7 +548,7 @@ function renderCoachingChecklist(digestData) {
 
   return `
 <div style="border:1px solid ${C.border};border-left:4px solid ${C.coaching};border-radius:0 10px 10px 0;padding:10px 14px;margin-bottom:8px;">
-  <p style="font-size:13px;font-weight:700;color:${C.coaching};margin:0 0 6px 0;font-family:Arial,sans-serif;">🏈 Coaching Checklist — Cowboys (${record})</p>
+  <p style="font-size:13px;font-weight:700;color:${C.coaching};margin:0 0 6px 0;font-family:Arial,sans-serif;">🏈 Coaching Checklist${teamSegment} (${record})</p>
   ${rows}
 </div>`.trim();
 }

@@ -389,6 +389,55 @@ describe('renderEmail — Wade tab', () => {
     const wadeNoGame = renderEmail(makeDigestData(), 'wade');
     assert.ok(!wadeNoGame.html.includes('Coaching Checklist'));
   });
+
+  // ── Coaching checklist heading derives from flagTeamName ───────────────────
+  // Mirrors the Dashboard v2 ribbon: the team name comes from data, and an
+  // unassigned name drops the segment rather than showing a placeholder.
+
+  it('Coaching checklist heading names the team from flagTeamName', () => {
+    const html = renderCoachingChecklist({
+      athletics: { flagTeamName: 'Cowboys', seasonRecord: '3-0' },
+    });
+    assert.ok(html.includes('🏈 Coaching Checklist — Cowboys (3-0)'), html);
+  });
+
+  it('Coaching checklist heading follows a non-Cowboys team name', () => {
+    const html = renderCoachingChecklist({
+      athletics: { flagTeamName: 'Seahawks', seasonRecord: '1-1' },
+    });
+    assert.ok(html.includes('🏈 Coaching Checklist — Seahawks (1-1)'), html);
+    assert.ok(!html.includes('Cowboys'), 'must not render a hardcoded Cowboys');
+  });
+
+  it('Coaching checklist heading drops the team segment when flagTeamName is null', () => {
+    const html = renderCoachingChecklist({
+      athletics: { flagTeamName: null, seasonRecord: '0-0' },
+    });
+    assert.ok(html.includes('🏈 Coaching Checklist (0-0)'), html);
+    assert.ok(!html.includes('—'), 'no dangling em dash separator');
+    assert.ok(!/undefined|null|TBD/.test(html), 'never leaks a placeholder');
+  });
+
+  it('Coaching checklist treats missing, empty, and whitespace-only names as unknown', () => {
+    for (const flagTeamName of [undefined, '', '   ']) {
+      const html = renderCoachingChecklist({ athletics: { flagTeamName, seasonRecord: '0-0' } });
+      assert.ok(html.includes('🏈 Coaching Checklist (0-0)'), `failed for ${JSON.stringify(flagTeamName)}`);
+      assert.ok(!html.includes('undefined'), `leaked undefined for ${JSON.stringify(flagTeamName)}`);
+    }
+  });
+
+  it('Coaching checklist trims a stray transcription space in the team name', () => {
+    const html = renderCoachingChecklist({
+      athletics: { flagTeamName: '  Cowboys  ', seasonRecord: '3-0' },
+    });
+    assert.ok(html.includes('🏈 Coaching Checklist — Cowboys (3-0)'), html);
+  });
+
+  it('Coaching checklist survives athletics being absent entirely', () => {
+    const html = renderCoachingChecklist({});
+    assert.ok(html.includes('🏈 Coaching Checklist (?-?)'), html);
+    assert.ok(!html.includes('undefined'));
+  });
 });
 
 // ---------------------------------------------------------------------------

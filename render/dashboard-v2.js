@@ -678,9 +678,28 @@ function renderSharksCard(a) {
   </article>`;
 }
 
-function renderCowboysCard(a) {
+/**
+ * Resolve a flag football NFL team name to a logo asset.
+ *
+ * The lookup key is the team name lowercased and trimmed, matching V2_LOGOS'
+ * existing key convention. A miss — or a name that is null/empty because the
+ * league has not assigned one yet — returns '', which logo() renders as the
+ * neutral activity-mark span rather than a broken image.
+ *
+ * Object.hasOwn guards the lookup so an inherited property name can never be
+ * returned as if it were an asset URL.
+ */
+function flagTeamLogo(teamName) {
+  const key = typeof teamName === 'string' ? teamName.trim().toLowerCase() : '';
+  if (!key || !Object.hasOwn(V2_LOGOS, key)) return '';
+  return V2_LOGOS[key];
+}
+
+function renderFlagFootballCard(a) {
+  const teamName = typeof a.flagTeamName === 'string' ? a.flagTeamName.trim() : '';
+  const ribbonLabel = teamName ? `NFL FLAG · ${esc(teamName)}` : 'NFL FLAG';
   return `<article class="athletic-card tone-red">
-    <div class="athletic-ribbon">${logo(V2_LOGOS.cowboys, 'athletic-logo')}<span>NFL FLAG · Cowboys</span></div>
+    <div class="athletic-ribbon">${logo(flagTeamLogo(teamName), 'athletic-logo')}<span>${ribbonLabel}</span></div>
     <div class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</div>
     <small>${esc(a.seasonLabel || 'Season')}</small>
     ${a.lastResult ? `<div class="result-line"><b>${esc(a.lastResult)}</b><span>Latest result</span></div>` : ''}
@@ -692,7 +711,7 @@ function renderCowboysCard(a) {
 function renderAthletics(data) {
   const a = data.athletics || {};
   const cards = [];
-  if (a.flagFootballActive) cards.push(renderCowboysCard(a));
+  if (a.flagFootballActive) cards.push(renderFlagFootballCard(a));
   if (a.wavesActive) cards.push(renderWavesCard(a));
   if (a.wavesActive) cards.push(renderSwimmerCard('Wellington Waves', V2_LOGOS.waves, 'red', a.mylesPBRows, a.mylesSeason, a.mylesFooter));
   if (a.wavesActive || a.swim757Active) cards.push(renderSwimmerCard(
