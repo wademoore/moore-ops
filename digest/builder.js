@@ -191,7 +191,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.routineAnchorsData] Routine anchors (data/routine-anchors.json); null on file error — see digest/routineAnchorsParser.js. School-type anchors suppressed on 🏫 No School / Early Release days; caregiver-type anchors (a `caregiver` field) suppressed by emmaUnavailabilityParser.js blocks. No early-dismissal time computation.
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, specialEventsData, centersActionCues = [], calendarFetchFailures }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, specialEventsData, holidayThemesData, centersActionCues = [], calendarFetchFailures }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -225,6 +225,10 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   if (specialEventsData === undefined) {
     try { specialEventsData = await readDataFile('special-events.json'); }
     catch { specialEventsData = null; }  // non-critical — treat missing file as no treatments
+  }
+  if (holidayThemesData === undefined) {
+    try { holidayThemesData = await readDataFile('holiday-themes.json'); }
+    catch { holidayThemesData = null; }  // non-critical — treat missing file as no ambient theme
   }
 
   // Calendars that could not be read on this run. Normally rides along on the
@@ -432,5 +436,13 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     specialEventsConfig:   specialEventsData || null,
     familySpotlightConfig: safeLegacySpotlightConfig(specialEventsData || null),
     sharksSoccerData:      sharksData || null,
+    // The ambient Holiday Theme registry. Additive and display-only: it is
+    // read by render/dashboard-v2.js alone, and is ignored by the v1 renderers
+    // (render/dashboard.js, render/email.js) and by index.js. It is a wholly
+    // separate registry from specialEventsConfig, behind a wholly separate
+    // kill switch, so neither layer can enable, disable or reconfigure the
+    // other. A missing or unreadable file resolves to null, which the selector
+    // treats as "no theme" and renders the ordinary dashboard.
+    holidayThemesConfig:   holidayThemesData || null,
   };
 }

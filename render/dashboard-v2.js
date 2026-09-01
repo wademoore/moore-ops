@@ -6,6 +6,14 @@ import { formatSportsEventWhen } from '../sports/model.js';
 import { renderFirstDayLevel3, shouldRenderFirstDayLevel3 } from './first-day-level3.js';
 import { selectEventRowAccents, selectFeatureSlotSpotlight } from '../digest/specialEventSelector.js';
 import { occurrenceId } from '../digest/specialEventOccurrences.js';
+import { selectHolidayTheme } from '../digest/holidayThemeSelector.js';
+import {
+  DOODLE_ASSETS as HOLIDAY_DOODLE_ASSETS,
+  HEADING_STYLE_SPECS,
+  HOLIDAY_PALETTE_TOKENS,
+  isHeadingSpecSafe,
+  isHexColor,
+} from '../digest/holidayThemeSchema.js';
 
 /**
  * Canonical Moore Family Dashboard v2 renderer.
@@ -78,6 +86,25 @@ const V2_DOODLES = {
   'swim-goggles': optionalAssetDataUrl('doodle-swim-goggles.svg'),
   'football-laces': optionalAssetDataUrl('doodle-football-laces.svg'),
 };
+
+/**
+ * Decorative Holiday Theme doodles, keyed exactly as the schema's approved key
+ * list names them. The key→filename map lives in digest/holidayThemeSchema.js
+ * and nowhere else, so authored registry data never names a file.
+ *
+ * These are repo-native transparent line-art SVGs used as CSS masks, so each
+ * takes the active theme's highlight or brush tone from the stylesheet rather
+ * than shipping in a colour. A holiday doodle is ambient decoration only: it
+ * never replaces a row's semantic activity icon or an official sports logo,
+ * both of which the ordinary renderer has already drawn.
+ *
+ * A key whose asset does not resolve is absent from this map's truthy values,
+ * which makes the whole theme fail closed at validation rather than rendering
+ * with a mark silently missing.
+ */
+const HOLIDAY_DOODLES = Object.fromEntries(
+  Object.entries(HOLIDAY_DOODLE_ASSETS).map(([key, filename]) => [key, optionalAssetDataUrl(filename)]),
+);
 
 const V2_LOGOS = {
   cowboys: '',
@@ -529,6 +556,102 @@ function rangeDetail(item) {
  * claiming the same row all resolve to no accent for the affected row, which
  * renders ordinary.
  */
+/**
+ * Resolves the ambient Holiday Theme, if one applies.
+ *
+ * A theme is a decorative skin and nothing else, so this function is
+ * deliberately the *only* place the renderer consults it: nothing downstream
+ * branches on a theme, because no content, geometry, capacity or ordering
+ * decision may depend on one. What it returns is a set of colour tokens and a
+ * list of approved doodle keys.
+ *
+ * Fail-closed in every direction. A throw anywhere in resolution, a missing
+ * clock, a malformed registry, an unavailable doodle asset, an unresolved
+ * overlap or an out-of-window theme all produce `null`, which renders the
+ * ordinary dashboard.
+ *
+ * `availableDoodles` is derived from the assets that actually resolved, so a
+ * package built without a doodle file rejects the theme rather than rendering
+ * it with a mark silently missing.
+ */
+function holidayTheme(data) {
+  try {
+    return selectHolidayTheme(data, {
+      now: data.now,
+      availableDoodles: new Set(Object.keys(HOLIDAY_DOODLES).filter(key => HOLIDAY_DOODLES[key])),
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** kebab-cases an approved palette token: `surfacePanel` → `surface-panel`. */
+const holidayTokenName = token => token.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
+
+/**
+ * The theme's CSS custom properties, ready to join the dashboard's inline
+ * style attribute.
+ *
+ * Every value is re-checked against the hex validator here, at the point it
+ * becomes CSS text, rather than trusted because the schema already checked it.
+ * That is deliberate belt-and-braces: this is the one boundary where authored
+ * data would become a stylesheet, so it is the one boundary worth checking
+ * twice. A value that fails returns `null` and the whole theme is dropped —
+ * never a partial skin.
+ */
+function holidayStyleVars(theme) {
+  if (!theme) return null;
+  const vars = [];
+  for (const token of HOLIDAY_PALETTE_TOKENS) {
+    const day = theme.palette?.[token];
+    const evening = theme.paletteEvening?.[token];
+    if (!isHexColor(day) || !isHexColor(evening)) return null;
+    vars.push(`--holiday-${holidayTokenName(token)}:${day}`);
+    vars.push(`--holiday-evening-${holidayTokenName(token)}:${evening}`);
+  }
+  for (const key of theme.doodles || []) {
+    const asset = HOLIDAY_DOODLES[key];
+    if (!asset) return null;
+    vars.push(`--holiday-doodle-${key}:url('${asset}')`);
+  }
+  // Approved heading typography. The registry names a key; the concrete face,
+  // weight, style, tracking and shadow come from HEADING_STYLE_SPECS in
+  // digest/holidayThemeSchema.js, never from authored data. An unrecognised
+  // key drops the whole theme rather than falling back to a default, matching
+  // the palette's fail-closed rule.
+  if (theme.headingStyle != null) {
+    const spec = HEADING_STYLE_SPECS[theme.headingStyle];
+    // Re-checked at the point it becomes attribute text, exactly as the palette
+    // is: an unsafe value must drop the whole theme rather than truncate the
+    // style attribute and half-apply the skin.
+    if (!isHeadingSpecSafe(spec)) return null;
+    vars.push(`--holiday-heading-font:${spec.fontStack}`);
+    vars.push(`--holiday-heading-weight:${spec.weight}`);
+    vars.push(`--holiday-heading-style:${spec.style}`);
+    vars.push(`--holiday-heading-tracking:${spec.tracking}`);
+    vars.push(`--holiday-heading-transform:${spec.transform}`);
+    vars.push(`--holiday-heading-shadow:${spec.shadow}`);
+  }
+  return vars;
+}
+
+/**
+ * The decorative mark layer.
+ *
+ * Every mark is absolutely positioned inside an overlay that is `display:none`
+ * unless the theme is active, so in the ordinary state the element is
+ * definitively outside the dashboard's grid flow and cannot affect a track, a
+ * panel height, a row, or a neighbour. The overlay is `pointer-events:none`
+ * and `aria-hidden`, because it is decoration and carries no meaning.
+ */
+function holidaySkin(theme) {
+  if (!theme?.doodles?.length) return '';
+  const marks = theme.doodles
+    .map(key => `<i class="holiday-doodle holiday-doodle-${esc(key)}" aria-hidden="true"></i>`)
+    .join('');
+  return `<div class="holiday-skin" aria-hidden="true">${marks}</div>`;
+}
+
 function eventRowAccents(data) {
   let resolved = [];
   try { resolved = selectEventRowAccents(data, { now: data.now }) || []; }
@@ -1132,6 +1255,45 @@ function browserScript() {
     scheduleAccents();
     addEventListener('pagehide', () => clearTimeout(accentTimer));
     addEventListener('beforeunload', () => clearTimeout(accentTimer));
+    // Ambient Holiday Theme. Same contract as the Spotlight and the accents
+    // above: one artifact carries both presentations, the page ships in the
+    // ordinary state, and this controller switches at absolute instants the
+    // generator already resolved. It compares integers only — it parses no
+    // timezone, computes no DST offset, and makes no network request — so the
+    // 4:00 PM ET activation and the 4:00 AM ET expiry are exact rather than
+    // rounded up to the next scheduled generation, and the ordinary dashboard
+    // is restored locally without another artifact pull.
+    let holidayTimer;
+    const holidayBounds = () => {
+      if (!dashboard || !dashboard.dataset.holidayId) return null;
+      const from = Number(dashboard.dataset.holidayActivateAt);
+      const until = Number(dashboard.dataset.holidayExpireAt);
+      if (![from, until].every(Number.isFinite) || !(from < until)) return null;
+      if (!dashboard.querySelector('.holiday-skin')) return null;
+      return [from, until];
+    };
+    window.updateHolidayTheme = value => {
+      const bounds = holidayBounds();
+      if (!bounds) { if (dashboard && dashboard.dataset.holidayState) dashboard.dataset.holidayState = 'ordinary'; return 'off'; }
+      const at = Number(value == null ? Date.now() : value);
+      if (!Number.isFinite(at)) { dashboard.dataset.holidayState = 'ordinary'; return 'off'; }
+      const state = at < bounds[0] ? 'before' : at < bounds[1] ? 'active' : 'expired';
+      dashboard.dataset.holidayState = state === 'active' ? 'active' : 'ordinary';
+      return state;
+    };
+    const scheduleHoliday = () => {
+      clearTimeout(holidayTimer);
+      const bounds = holidayBounds();
+      if (!bounds) return;
+      const at = Date.now();
+      window.updateHolidayTheme(at);
+      const next = bounds.filter(edge => edge > at).sort((x, y) => x - y)[0];
+      if (next == null) return;
+      holidayTimer = setTimeout(scheduleHoliday, Math.min(next - at + 50, 21600000));
+    };
+    scheduleHoliday();
+    addEventListener('pagehide', () => clearTimeout(holidayTimer));
+    addEventListener('beforeunload', () => clearTimeout(holidayTimer));
     const fit = () => {
       if (!dashboard) return;
       const scale = Math.min(window.innerWidth / 2560, window.innerHeight / 1440);
@@ -1295,6 +1457,71 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .tone-purple .spotlight-name{color:${COLORS.purple}}
 .spotlight-title{font-family:"Roboto Slab",Georgia,serif;font-size:24px;line-height:1.05;font-weight:600;color:${COLORS.ink};margin-top:8px}
 .spotlight-detail{font-size:19px;line-height:1.15;font-weight:500;color:var(--secondary);margin-top:6px}
+/* ── Holiday Theme — ambient skin (holiday-theme-v1) ────────────────────────
+   A skin, never a layout. Every rule in this block is scoped to
+   [data-holiday-state="active"], so an artifact with no theme, a staged theme,
+   an expired theme or the switch off renders pixel-identically to one built
+   before this block existed.
+
+   Nothing here sets a font, a font size, a line height, a grid track, a panel
+   height, a position of content, an owner tone, an urgency/warning/weather/
+   status/countdown colour, a logo, or a semantic icon. It sets decorative
+   ground, paper, structural borders and hairlines, brush artwork, and three
+   absolutely-positioned decorative marks — that is the whole of it.
+
+   The brush recolour is applied only to the two *empty* brush surfaces
+   (.section-title:before and .masthead-brush). A CSS mask clips an
+   element's descendants as well as itself, so the text-bearing green labels
+   (.weather-label, .forecast-heading, .horizon-label, .next-up-label)
+   and the sports ticker are deliberately left at their production colour
+   rather than risk clipping a glyph. Red and purple section brushes are
+   excluded by selector: those are ownership cues, not decoration. */
+.holiday-skin{display:none;position:absolute;inset:0;pointer-events:none;z-index:13}
+.dashboard[data-holiday-state="active"] .holiday-skin{display:block}
+.holiday-doodle{position:absolute;background-color:var(--holiday-highlight-active);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center;mask-position:center}
+.holiday-doodle-spiderweb-corner{left:18px;top:18px;width:60px;height:60px;opacity:.72;-webkit-mask-image:var(--holiday-doodle-spiderweb-corner);mask-image:var(--holiday-doodle-spiderweb-corner);-webkit-mask-position:top left;mask-position:top left}
+.holiday-doodle-pumpkin-outline{left:520px;top:2px;width:74px;height:74px;opacity:.8;-webkit-mask-image:var(--holiday-doodle-pumpkin-outline);mask-image:var(--holiday-doodle-pumpkin-outline)}
+.holiday-doodle-bat-trio{left:1540px;top:4px;width:242px;height:72px;opacity:.62;background-color:var(--holiday-brush-active);-webkit-mask-image:var(--holiday-doodle-bat-trio);mask-image:var(--holiday-doodle-bat-trio)}
+/* A masthead pushes both panel-band marks down by its own track plus the grid
+   gap. The frame-corner web is anchored to the frame and does not move. */
+.dashboard.has-masthead .holiday-doodle-pumpkin-outline{top:141px}
+.dashboard.has-masthead .holiday-doodle-bat-trio{top:139px}
+.dashboard[data-holiday-state="active"]{--canvas:var(--holiday-canvas);--surface-panel:var(--holiday-surface-panel);--surface-alt:var(--holiday-surface-alt);--rule:var(--holiday-rule);--holiday-border-active:var(--holiday-panel-border);--holiday-frame-active:var(--holiday-frame);--holiday-brush-active:var(--holiday-brush);--holiday-highlight-active:var(--holiday-highlight);--holiday-heading-ink-active:var(--holiday-heading-ink)}
+.dashboard.palette-evening[data-holiday-state="active"]{--canvas:var(--holiday-evening-canvas);--surface-panel:var(--holiday-evening-surface-panel);--surface-alt:var(--holiday-evening-surface-alt);--rule:var(--holiday-evening-rule);--holiday-border-active:var(--holiday-evening-panel-border);--holiday-frame-active:var(--holiday-evening-frame);--holiday-brush-active:var(--holiday-evening-brush);--holiday-highlight-active:var(--holiday-evening-highlight);--holiday-heading-ink-active:var(--holiday-evening-heading-ink)}
+.dashboard[data-holiday-state="active"] .paper-panel,.dashboard[data-holiday-state="active"] .rail-card,.dashboard[data-holiday-state="active"] .alert-card{border-color:var(--holiday-border-active)}
+.dashboard[data-holiday-state="active"]:after{border-color:var(--holiday-frame-active)}
+.dashboard[data-holiday-state="active"] .section-title:not(.section-title-red):not(.section-title-purple):before{background-color:var(--holiday-brush-active)}
+/* The NOW/NEXT title also carries a second decorative bar, .section-title:after
+   — a green gradient the ordinary design draws behind the lettering. It is
+   hidden for every panel-level and dinner title, so NOW/NEXT is the only place
+   it shows; leaving it green was what made that one heading read olive while
+   every other brush had gone charcoal. Ownership variants are excluded by
+   selector, exactly as the brush is. */
+.dashboard[data-holiday-state="active"] .section-title:not(.section-title-red):not(.section-title-purple):after{background:linear-gradient(90deg,var(--holiday-brush-active) 0 88%,transparent 100%)}
+.dashboard[data-holiday-state="active"] .masthead-brush{background-color:var(--holiday-brush-active)}
+.dashboard[data-holiday-state="active"].has-brush .section-title:not(.section-title-red):not(.section-title-purple):before{background-image:none;background-color:var(--holiday-brush-active);-webkit-mask-image:var(--section-green);mask-image:var(--section-green);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center}
+.dashboard[data-holiday-state="active"].has-brush .masthead-brush{background-image:none;background-color:var(--holiday-brush-active);-webkit-mask-image:var(--masthead-image);mask-image:var(--masthead-image);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center}
+/* The brush surfaces that carry their own text cannot be masked directly — a
+   CSS mask clips an element's descendants too, which would nibble a glyph — so
+   the recoloured brush goes on a pseudo-element behind the text instead.
+   isolation:isolate keeps its z-index:-1 inside the label rather than
+   dropping it behind the card it sits in; neither declaration changes layout,
+   which the geometry assertions verify rather than assume. */
+.dashboard[data-holiday-state="active"] .weather-label,.dashboard[data-holiday-state="active"] .forecast-heading,.dashboard[data-holiday-state="active"] .horizon-label,.dashboard[data-holiday-state="active"] .next-up-label,.dashboard[data-holiday-state="active"] .sports-ticker{background-image:none;position:relative;isolation:isolate}
+.dashboard[data-holiday-state="active"] .weather-label:before,.dashboard[data-holiday-state="active"] .forecast-heading:before,.dashboard[data-holiday-state="active"] .horizon-label:before,.dashboard[data-holiday-state="active"] .next-up-label:before{content:"";position:absolute;inset:0;z-index:-1;background-color:var(--holiday-brush-active);-webkit-mask-image:var(--section-green);mask-image:var(--section-green);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.dashboard[data-holiday-state="active"] .sports-ticker:after{content:"";position:absolute;inset:0;z-index:-1;background-color:var(--holiday-brush-active);-webkit-mask-image:var(--masthead-image);mask-image:var(--masthead-image);-webkit-mask-size:100% 100%;mask-size:100% 100%;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+/* Approved heading typography, on decorative brush labels ONLY.
+
+   This selector list is the enforcement. It names the six large brush labels
+   and nothing else: body text, event rows, the clock, data values, sports
+   content, ownership labels, status labels, countdown chips and the athletic
+   ribbons are all out of scope because they are not in it. Red and purple
+   section titles are excluded for the same reason their brushes are - those are
+   ownership cues, not decoration.
+
+   No font-size is set here. The face changes; the type scale does not, so the
+   fixed-height title rows keep their geometry and nothing can reflow. */
+.dashboard[data-holiday-state="active"] .section-title:not(.section-title-red):not(.section-title-purple)>span,.dashboard[data-holiday-state="active"] .weather-label,.dashboard[data-holiday-state="active"] .forecast-heading,.dashboard[data-holiday-state="active"] .horizon-label,.dashboard[data-holiday-state="active"] .next-up-label{font-family:var(--holiday-heading-font);font-weight:var(--holiday-heading-weight);font-style:var(--holiday-heading-style);letter-spacing:var(--holiday-heading-tracking);text-transform:var(--holiday-heading-transform);color:var(--holiday-heading-ink-active);text-shadow:var(--holiday-heading-shadow)}
 `;
 
 function renderDashboardV2(digestData) {
@@ -1329,7 +1556,7 @@ function renderDashboardV2(digestData) {
     @font-face{font-family:"Barlow Semi Condensed";src:url('${barlow600}') format('woff2');font-style:normal;font-weight:600;font-display:block}
     @font-face{font-family:"Barlow Semi Condensed";src:url('${barlow700}') format('woff2');font-style:normal;font-weight:700;font-display:block}
   </style>`;
-  const styleVars = [
+  const styleVarList = [
     `--paper-image:${paper ? `url('${paper}')` : 'none'}`,
     `--masthead-image:${mastheadAsset ? `url('${mastheadAsset}')` : 'none'}`,
     `--section-green:${sectionGreen ? `url('${sectionGreen}')` : 'none'}`,
@@ -1343,7 +1570,19 @@ function renderDashboardV2(digestData) {
     `--doodle-arrows:${doodleArrows ? `url('${doodleArrows}')` : 'none'}`,
     `--doodle-swim-goggles:${accentDoodleGoggles ? `url('${accentDoodleGoggles}')` : 'none'}`,
     `--doodle-football-laces:${accentDoodleFootball ? `url('${accentDoodleFootball}')` : 'none'}`,
-  ].join(';');
+  ];
+  // The ambient Holiday Theme sits *beneath* the ordinary dashboard: it adds
+  // decorative custom properties and a decoration overlay, and changes nothing
+  // else. A theme whose style variables cannot be built is dropped whole —
+  // there is no partial skin — and the page renders ordinary.
+  const theme = holidayTheme(data);
+  const themeVars = holidayStyleVars(theme);
+  const activeTheme = themeVars ? theme : null;
+  if (themeVars) styleVarList.push(...themeVars);
+  const styleVars = styleVarList.join(';');
+  const holidayAttributes = activeTheme
+    ? ` data-holiday-id="${esc(activeTheme.id)}" data-holiday-renderer="${esc(activeTheme.renderer)}" data-holiday-state="ordinary" data-holiday-activate-at="${activeTheme.activateAt}" data-holiday-expire-at="${activeTheme.expireAt}"`
+    : '';
   const cardCount = athleticsCardCount(data);
   const paletteSetting = ['day', 'evening'].includes(data.paletteMode) ? data.paletteMode : 'auto';
   const initialPalette = paletteSetting === 'auto' ? paletteModeForDate(data.now ? new Date(data.now) : new Date()) : paletteSetting;
@@ -1359,7 +1598,7 @@ ${fontCss}
 <style>${CSS}</style>
 </head>
 <body>
-<main class="${classes}" data-palette="${paletteSetting}" data-sports-url="${esc(data.sportsFeedUrl || '')}" data-household-generated-at="${esc(data.householdGeneratedAt || '')}" data-release-manifest-url="${esc(data.releaseManifestUrl || '')}" data-first-day-coda-url="${esc(data.firstDayLevel3CodaUrl || '')}" data-first-day-coda-start="${esc(data.firstDayLevel3CodaStart || '')}" data-first-day-coda-end="${esc(data.firstDayLevel3CodaEnd || '')}" style="${styleVars}">
+<main class="${classes}" data-palette="${paletteSetting}" data-sports-url="${esc(data.sportsFeedUrl || '')}" data-household-generated-at="${esc(data.householdGeneratedAt || '')}" data-release-manifest-url="${esc(data.releaseManifestUrl || '')}" data-first-day-coda-url="${esc(data.firstDayLevel3CodaUrl || '')}" data-first-day-coda-start="${esc(data.firstDayLevel3CodaStart || '')}" data-first-day-coda-end="${esc(data.firstDayLevel3CodaEnd || '')}"${holidayAttributes} style="${styleVars}">
   ${renderMasthead(data)}
   ${renderToday(data)}
   ${renderUpcoming(data)}
@@ -1367,6 +1606,7 @@ ${fontCss}
   ${renderAlerts(data.flags)}
   ${renderRightRail(data)}
   ${renderTicker(data)}
+  ${holidaySkin(activeTheme)}
 </main>
 ${browserScript()}
 </body>
@@ -1399,6 +1639,10 @@ export {
   sportsMetadataCopy,
   PALETTE,
   V2_LOGOS,
+  HOLIDAY_DOODLES,
+  holidayTheme,
+  holidayStyleVars,
+  holidaySkin,
   renderFirstDayLevel3,
   shouldRenderFirstDayLevel3,
 };

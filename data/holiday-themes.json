@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "themes": [
+    {
+      "id": "halloween-2026",
+      "renderer": "holiday-theme-v1",
+      "status": "ready",
+      "enabled": true,
+      "priority": 100,
+      "timezone": "America/New_York",
+      "lifecycle": {
+        "activateAt": "2026-10-24T16:00",
+        "expireAt": "2026-11-01T04:00",
+        "note": "Explicit 2026 instants. This pilot deliberately has no annual recurrence rule: a 2027 Halloween is a new entry with its own dates, reviewed on its own. The window straddles the Nov 1 DST transition, so both stamps are resolved with the Eastern offset actually in effect on their own date."
+      },
+      "typography": {
+        "heading": "brush-display",
+        "note": "An approved key, never a font-family. It resolves in digest/holidayThemeSchema.js to Knewave, which is already packaged in render/assets-v2/fonts/ under the SIL OFL and already carries an @font-face rule in every artifact. It reaches large decorative brush labels only."
+      },
+      "palette": {
+        "canvas": "#d3bc8d",
+        "surfacePanel": "#f2dfbe",
+        "surfaceAlt": "#e9cfa4",
+        "panelBorder": "#8a5527d6",
+        "rule": "#7d4c246b",
+        "frame": "#2b1e12b8",
+        "brush": "#15120f",
+        "headingInk": "#f8e8c6",
+        "highlight": "#cf6412"
+      },
+      "paletteEvening": {
+        "canvas": "#c0a877",
+        "surfacePanel": "#e6cfa8",
+        "surfaceAlt": "#dcbf94",
+        "panelBorder": "#7c4a20e0",
+        "rule": "#6d40197a",
+        "frame": "#221709c9",
+        "brush": "#0f0d0b",
+        "headingInk": "#f4e0b8",
+        "highlight": "#c25c10"
+      },
+      "doodles": ["spiderweb-corner", "bat-trio", "pumpkin-outline"],
+      "note": "First Holiday Theme pilot, revised one controlled step stronger. Purple is deliberately absent from every token: purple is already Ophelia's ownership cue and must not become ambient decoration. The palette sets decorative ground, paper, structural borders, brush artwork, brush lettering and one restrained highlight — it cannot reach owner, urgency, warning, weather, status or countdown colours, because those tokens are not on the schema allowlist at all."
+    }
+  ]
+}

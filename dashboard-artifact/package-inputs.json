@@ -4,13 +4,16 @@
     "assets-first-day/composition-reference.png",
     "assets-first-day/icon-weather-sun.png",
     "assets-v2/doodle-swim-goggles.svg",
-    "assets-v2/doodle-football-laces.svg"
+    "assets-v2/doodle-football-laces.svg",
+    "assets-v2/doodle-holiday-pumpkin.svg",
+    "assets-v2/doodle-holiday-bats.svg",
+    "assets-v2/doodle-holiday-web.svg"
   ],
   "dataFiles": [
     "sports-config.json", "flag-football.json", "pb-records.json",
     "swim-results.json", "waves-season.json", "sharks-soccer.json",
     "vpsu-rankings.json", "league-results-v2.json", "swim-annotations.json",
-    "special-events.json"
+    "special-events.json", "holiday-themes.json"
   ],
   "requiredBundleInputs": [
     "dashboard-artifact/generator.js", "dashboard-v2-data.js", "auth.js", "calendar.js",
@@ -19,6 +22,7 @@
     "digest/specialEventSchema.js", "digest/specialEventOccurrences.js",
     "digest/specialEventQualify.js", "digest/specialEventLifecycle.js",
     "digest/specialEventArbiter.js", "digest/specialEventSelector.js",
-    "digest/legacySpotlightCompat.js"
+    "digest/legacySpotlightCompat.js",
+    "digest/holidayThemeSchema.js", "digest/holidayThemeSelector.js"
   ]
 }

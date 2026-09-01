@@ -49,6 +49,20 @@ const MAX_EVENT_ROW_ACCENTS = 2;
  * class token is what keeps that check falsifiable.
  */
 const UPCOMING_PANEL_ELEMENT = '<section class="paper-panel upcoming-panel';
+const HOLIDAY_TIME_ATTRIBUTES = Object.freeze([
+  'data-holiday-activate-at',
+  'data-holiday-expire-at',
+]);
+/**
+ * The ambient Holiday Theme's decoration overlay, as render/dashboard-v2.js
+ * emits it. Asserting the element's own opening tag rather than the bare
+ * `holiday-skin` token is what keeps the check falsifiable: the stylesheet and
+ * the browser controller both name that class in every artifact carrying a
+ * theme, so a substring check on the token alone could never fail.
+ */
+const HOLIDAY_SKIN_ELEMENT = '<div class="holiday-skin"';
+/** The one ambient renderer. A theme naming any other must not be published. */
+const HOLIDAY_RENDERER_MARKER = 'data-holiday-renderer="holiday-theme-v1"';
 const FORBIDDEN_PATTERNS = Object.freeze([
   /client_secret/i,
   /refresh_token/i,
@@ -140,6 +154,42 @@ function validateArtifact(html, { sportsFeedUrl, minBytes = MIN_ARTIFACT_BYTES, 
       }
     }
   }
+  // The ambient Holiday Theme is conditional in exactly the way a feature-slot
+  // Spotlight and an event-row accent are: `data-holiday-id` must never join
+  // LEVEL2_REQUIRED_MARKERS, or every ordinary day would fail validation.
+  // These assertions fire only when a theme is actually present.
+  if (html.includes('data-holiday-id')) {
+    // At most one ambient theme at a time. The selector enforces it upstream;
+    // asserting it here means a regression fails the build instead of reaching
+    // a television.
+    if ((html.match(/data-holiday-id="/g) || []).length > 1) {
+      failures.push('more than one holiday theme is present');
+    }
+    // A Takeover owns the complete visual surface and suppresses the ambient
+    // layer beneath it. Coexistence would mean two treatments claiming the
+    // page, which is the same failure the mode check above guards.
+    if (firstDay) failures.push('holiday theme must not coexist with the first-day treatment');
+    if (!html.includes(HOLIDAY_RENDERER_MARKER)) {
+      failures.push(`holiday artifact is missing required marker: ${HOLIDAY_RENDERER_MARKER}`);
+    }
+    if (!html.includes(HOLIDAY_SKIN_ELEMENT)) {
+      failures.push(`holiday artifact is missing required marker: ${HOLIDAY_SKIN_ELEMENT}`);
+    }
+    // The page ships in the ordinary state and is switched by the bounded
+    // controller, so a failed or absent script leaves the ordinary dashboard
+    // rather than a permanently themed one. The stylesheet cannot satisfy this:
+    // every rule in the theme block is scoped to `="active"`, never
+    // `="ordinary"`.
+    if (!html.includes('data-holiday-state="ordinary"')) {
+      failures.push('holiday artifact does not ship the ordinary fallback state');
+    }
+    for (const attribute of HOLIDAY_TIME_ATTRIBUTES) {
+      const values = [...html.matchAll(new RegExp(`${attribute}="([^"]*)"`, 'g'))].map(match => match[1]);
+      if (values.length !== 1 || !/^\d+$/.test(values[0])) {
+        failures.push(`holiday artifact is missing a valid ${attribute}`);
+      }
+    }
+  }
   for (const pattern of FORBIDDEN_PATTERNS) if (pattern.test(html)) failures.push(`forbidden content matched ${pattern}`);
   if (!/^<!doctype html>/i.test(html)) failures.push('artifact is not the expected HTML document');
   if (failures.length) throw new Error(failures.join('; '));
@@ -170,6 +220,9 @@ function createManifest({ generatedAt, artifactKey, artifactVersionId, bytes, ch
 
 export {
   ACCENT_TIME_ATTRIBUTES,
+  HOLIDAY_RENDERER_MARKER,
+  HOLIDAY_SKIN_ELEMENT,
+  HOLIDAY_TIME_ATTRIBUTES,
   ARTIFACT_VERSION,
   MAX_EVENT_ROW_ACCENTS,
   UPCOMING_PANEL_ELEMENT,
