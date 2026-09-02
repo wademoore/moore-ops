@@ -21,6 +21,11 @@ async function generateAndPublish({
   firstDayLevel3Handoff = process.env.FIRST_DAY_LEVEL3_HANDOFF || '07:45',
   firstDayLevel3Coda = process.env.FIRST_DAY_LEVEL3_CODA || '16:00',
   familySpotlightEnabled = process.env.FAMILY_SPOTLIGHT_ENABLED === '1',
+  // Independent of FAMILY_SPOTLIGHT_ENABLED in both directions: neither
+  // switch can enable or disable the other. Anything that is not exactly
+  // the string '1' is off, so an absent, blank or malformed environment
+  // value fails closed here as well as in the workflow that sets it.
+  holidayThemesEnabled = process.env.HOLIDAY_THEMES_ENABLED === '1',
   fetchData = fetchDashboardV2Data,
   render = renderDashboardV2,
   putObject = input => s3.send(new PutObjectCommand(input)),
@@ -39,6 +44,7 @@ async function generateAndPublish({
       firstDayLevel3Handoff,
       firstDayLevel3Coda,
       familySpotlight: familySpotlightEnabled,
+      holidayThemes: holidayThemesEnabled,
       sportsFeedUrl,
       householdGeneratedAt: generatedAt,
       releaseManifestUrl: '/release-manifest.json',

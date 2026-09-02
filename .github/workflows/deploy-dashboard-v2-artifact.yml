@@ -69,6 +69,31 @@ jobs:
           echo "SPOTLIGHT_ENABLED=$VALUE" >> "$GITHUB_ENV"
           echo "Family Spotlight kill switch will be deployed as $VALUE"
 
+      - name: Resolve Holiday Themes kill switch
+        env:
+          # Read through env, never interpolated into the script body: a
+          # repository variable is editable text and `${{ }}` inside a run block
+          # is substituted before bash ever sees it. Independent of
+          # FAMILY_SPOTLIGHT_ENABLED - neither switch reads or writes the other.
+          HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}
+        run: |
+          RAW="${HOLIDAY_THEMES_ENABLED:-}"
+          # Trim whitespace so a present-but-blank variable counts as absent.
+          VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+          if [ -z "$VALUE" ]; then
+            VALUE=0
+            echo "HOLIDAY_THEMES_ENABLED is absent or blank - failing closed to 0"
+          fi
+          case "$VALUE" in
+            0|1) ;;
+            *)
+              echo "::error::HOLIDAY_THEMES_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+              exit 1
+              ;;
+          esac
+          echo "HOLIDAY_ENABLED=$VALUE" >> "$GITHUB_ENV"
+          echo "Holiday Themes kill switch will be deployed as $VALUE"
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -112,7 +137,8 @@ jobs:
             --no-fail-on-empty-changeset \
             --parameter-overrides \
               "SourceRevision=$GITHUB_SHA" \
-              "FamilySpotlightEnabled=$SPOTLIGHT_ENABLED"
+              "FamilySpotlightEnabled=$SPOTLIGHT_ENABLED" \
+              "HolidayThemesEnabled=$HOLIDAY_ENABLED"
 
       - name: Verify deployed source revision
         env:
@@ -137,3 +163,19 @@ jobs:
             exit 1
           fi
           echo "Family Spotlight kill switch verified as $DEPLOYED"
+
+      - name: Verify deployed Holiday Themes kill switch
+        env:
+          STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+        run: |
+          # Selects exactly one parameter: no other stack parameter is read or printed.
+          DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='HolidayThemesEnabled'].ParameterValue | [0]" --output text)
+          if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+            echo "::error::HolidayThemesEnabled is absent from the deployed stack"
+            exit 1
+          fi
+          if [ "$DEPLOYED" != "$HOLIDAY_ENABLED" ]; then
+            echo "::error::HolidayThemesEnabled mismatch - intended $HOLIDAY_ENABLED, deployed $DEPLOYED"
+            exit 1
+          fi
+          echo "Holiday Themes kill switch verified as $DEPLOYED"

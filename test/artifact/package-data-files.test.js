@@ -69,7 +69,11 @@ test('the temporary compatibility shim is declared while it is still imported', 
 });
 
 test('the packaged data-file count matches the documented invariant', () => {
-  assert.equal(PACKAGE_INPUTS.dataFiles.length, 10);
+  // 10 → 11 with data/holiday-themes.json, the ambient Holiday Theme registry.
+  // This number is a deliberate tripwire, not a fact about the world: it is
+  // meant to fail when a data file is added, so that adding one is a reviewed
+  // change rather than a quiet one. Updated here on purpose, and reported.
+  assert.equal(PACKAGE_INPUTS.dataFiles.length, 11);
   assert.equal(new Set(PACKAGE_INPUTS.dataFiles).size, PACKAGE_INPUTS.dataFiles.length, 'no duplicates');
 });
 

@@ -1219,6 +1219,415 @@ legacy-expressible subset, plus a new assertion that the shim never approximates
 as a spotlight. Neither change weakens a guard; both are recorded here rather than made
 quietly, because a silently relaxed assertion is how a guard stops guarding.
 
+## Holiday Theme (Dashboard v2, October 2026)
+
+A reusable **ambient presentation layer**, `holiday-theme-v1`, and its first pilot:
+Halloween 2026. It is not a treatment, a panel, a page, a host, an origin, a variant, or a
+pipeline — it is a decorative **skin** applied beneath the ordinary dashboard.
+
+**The pilot ships disabled.** `HOLIDAY_THEMES_ENABLED` defaults to `0` at every layer this
+repository controls, and no GitHub repository variable was created or changed.
+
+### The composition model
+
+```
+        ordinary Dashboard v2
+      + optional Holiday Theme  (beneath)
+      + optional Accent or Spotlight  (above)
+  Takeover suppresses the theme and owns the complete visual surface.
+```
+
+Accents and Spotlights keep their own approved treatment colours when a theme is active —
+not by convention, but because a theme **cannot express an owner tone at all** (see the
+allowlist below). `FAMILY_SPOTLIGHT_ENABLED` (now deliberately `1`) and
+`HOLIDAY_THEMES_ENABLED` are wholly independent: separate repository variables, separate
+stack parameters, separate environment variables, separate registries, separate selectors.
+Neither reads the other, and a test asserts the holiday selector never mentions
+`familySpotlight` or `specialEventsConfig`.
+
+### What a theme may change, enforced structurally rather than by rule
+
+A theme names three things: one approved palette key, one approved heading style key, and at
+most three approved doodle keys. That is the whole of its expressive power. There is no
+field in which a theme could name a colour, a filename, a CSS declaration, a selector, or a
+content string — so there is nothing a future entry could talk its way past. This is the
+same discipline `PROTECTED_REGIONS` already applies to special-event surfaces.
+
+The palette a key resolves to sets exactly these nine ambient roles, and nothing else:
+
+| token | reaches |
+|---|---|
+| `canvas` | the page ground behind every panel |
+| `surfacePanel` / `surfaceAlt` | `.paper-panel` / `.rail-card` / `.alert-card` fills |
+| `panelBorder` | structural panel borders |
+| `rule` | structural hairlines between rows |
+| `frame` | the outer dashboard frame border |
+| `brush` | decorative brush / header artwork |
+| `headingInk` | lettering **on** a decorative brush — never a content row |
+| `highlight` | the restrained decorative highlight the doodles take |
+
+**Deliberately absent, each for a stated reason:** `secondary` and every other content text
+colour; owner tones (Myles `#b93624`, Ophelia `#6c4a85`); urgency, warning, weather, status
+and countdown colours; anything naming a logo or a semantic icon. A token outside the list
+is rejected **at load** with `holiday-palette-token-unknown`. `headingInk` is the one text
+colour a theme may set, and the selector list in the renderer is what confines it to six
+decorative brush labels — asserted structurally, not by convention.
+
+### Approved heading typography — the stronger theming device
+
+`typography.heading` names one key from `HOLIDAY_HEADING_STYLES`; the concrete face, weight,
+style, tracking and shadow live in `HEADING_STYLE_SPECS` in code. **There is no field in
+which authored data could write a `font-family`, a `font-size`, or any other CSS**, and a
+test asserts the registry contains none.
+
+| key | face | note |
+|---|---|---|
+| `brush-display` | **Knewave** | the pilot's choice |
+| `condensed-display` | Barlow Semi Condensed, heavier and tracked | the styled-existing-face alternative |
+
+**An existing packaged font was used — nothing was added, downloaded or hotlinked.** Knewave
+was already in `render/assets-v2/fonts/knewave-400.woff2` (17 KB, SIL OFL 1.1, Tyler Finck),
+already carried an `@font-face` rule in every artifact, and was **used by nothing**. It is a
+rough hand-painted brush face — storybook-spooky rather than horror — so the fallback path
+the brief allowed for (styling the existing display face through weight, casing and
+tracking) was not needed; it is retained as `condensed-display` so the allowlist is a real
+choice. Every family in either stack is either a packaged `@font-face` or a system fallback,
+and a test enumerates them against the shipped `@font-face` declarations.
+
+**The treatment reaches exactly six decorative brush labels**, by selector: the green
+`.section-title` spans (NOW / NEXT, COMING UP, ATHLETICS, TONIGHT'S DINNER, TODAY),
+`.weather-label`, `.forecast-heading`, `.horizon-label` and `.next-up-label`. Body text,
+event rows, the clock, data values, sports content, ownership labels, status labels,
+countdown chips and the athletic ribbons are out of scope because they are not in that
+selector list, and red/purple section titles are excluded because those brushes are
+ownership cues. **No font-size is set**, so the type scale — and therefore the geometry of
+every fixed-height title row — is unchanged.
+
+**Two defects were found here and are worth remembering.** The first draft used
+double-quoted CSS family names; those values are emitted into the dashboard element's inline
+`style` attribute, which is delimited by double quotes, so the attribute terminated early
+and **every heading declaration after the font stack was silently discarded**. It was
+invisible in the markup and showed up only as "the headings did not change" in a screenshot.
+`isHeadingSpecSafe()` now rejects a double quote, angle bracket or semicolon in any spec
+value, at load and again at the point the value becomes attribute text. The second: changing
+the heading `font-family` starts an **asynchronous** font load, so a measurement or
+screenshot taken immediately after activation captures the *fallback* face. Every preview
+and every layout assertion now awaits `document.fonts.ready` after applying a clock, and the
+layout suite asserts `document.fonts.check('30px Knewave')` — a silent fallback would
+otherwise make every computed-style assertion pass while the screen was wrong.
+
+### The registry selects a palette; it never authors one
+
+**A theme names an approved palette *key*. It cannot write a colour at all.** `palette:
+"halloween-ambient"` resolves in `digest/holidayThemeSchema.js` to
+`HOLIDAY_PALETTE_SPECS['halloween-ambient']`, which carries the reviewed day and evening
+maps. `paletteEvening` is not an authorable field — supplying one is rejected outright, so
+the evening variant can never drift from the day variant it belongs with.
+
+**This replaced a real hole, and the hole is worth remembering, because "valid hex" looked
+like safety and was not.** Validating a colour stops `url(...)`, a custom-property
+reference and a declaration terminator — but it says nothing about a *valid* colour that is
+unsafe. Every one of these validated and rendered under the old contract: `canvas:
+"#6c4a85"` (Ophelia's ownership purple as the page ground), `canvas: "#b93624"` (Myles's
+red), `headingInk` identical to `brush` (invisible headings), `surfacePanel: "#000000"`,
+`surfacePanel: "#00000000"` (a fully transparent panel). The only thing standing against any
+of it was one Halloween-shaped test that destructured `themes[0]` — so a second registry
+entry was never examined at all. Structure, not a test, is what closes that.
+
+**`auditHolidayPaletteSpec()` audits every code-owned spec before it can reach CSS**, and
+its failure is a fail-closed rejection (`holiday-palette-spec-unsafe`), not a warning:
+
+| audited property | why |
+|---|---|
+| exactly the nine required roles, no extras | an extra role reaches a surface the skin does not own; a missing one half-applies it |
+| every value a 6- or 8-digit hex | `#rgb` still rejected — a three-digit typo lands on valid-but-wrong |
+| surface and mark roles fully opaque | only `panelBorder`, `rule` and `frame` may carry alpha; a transparent panel fill is a readability failure in a decoration costume |
+| `headingInk` on `brush` ≥ 7:1 | WCAG AAA for normal text; the shipped palette measures **15.42** (day) and **14.96** (evening) |
+| no value within RGB distance 32 of an owner tone | `#b93624` / `#6c4a85`; the shipped palette's closest approach is **44** (evening `highlight` vs Myles red), so the threshold has headroom rather than being fitted to it |
+| no value reads as purple | blue and red both clearly above green — purple is Ophelia's cue and must never become ambient decoration |
+
+**Adding a future holiday palette is deliberately a reviewed code change, and that is the
+point rather than a limitation.** A palette authorable by typing hex into JSON would be
+production-authorable, and every property in that table would then rest on whoever typed it.
+Adding `HOLIDAY_PALETTE_SPECS['thanksgiving-ambient']` is a pull request; selecting it from
+the registry afterwards is a one-line declarative choice among things already reviewed. The
+registry stays declarative in exactly the same shape as typography and doodles: it names a
+palette key, a typography key and doodle keys, and authors none of their values.
+
+`HOLIDAY_PALETTE_SPECS` and every map inside it are frozen, and a test asserts that
+assignment throws rather than silently no-oping.
+
+**The renderer re-checks every value at the point it becomes CSS text** — two independent
+gates, not one — and drops the whole theme rather than emitting a partial skin. Mutation
+tests prove both halves in both directions: a schema mutant that skips the audit and admits
+`red;position:fixed` still cannot get it past `holidayStyleVars()`, and a renderer given an
+unsafe `HEADING_STYLE_SPECS` entry (a double-quoted font stack, an injected `;`, an angle
+bracket) returns no style variables at all. Both gates are injectable *only* through a
+default parameter used by tests; no production caller passes one.
+
+### The evening palette is not over-generalization
+
+Dashboard v2 already ships a day/evening reduction, so a skin that carried only a day
+palette would silently drop the evening reduction on a television at night. Every approved
+palette spec therefore carries **both** maps, audited by the same rules, and the registry
+cannot supply either — they come from the one spec together or neither does. It is one
+second map inside a reviewed code-owned spec, not a season system, a recurrence rule, or
+arbitrary CSS.
+
+### Halloween 2026 — the pilot
+
+`data/holiday-themes.json`, one entry, `priority: 100`, `status: ready`, `enabled: true`.
+
+| | |
+|---|---|
+| timezone | `America/New_York`, declared explicitly rather than assumed |
+| activate | **Oct 24 2026, 4:00 PM ET** → `1792872000000` |
+| expire | **Nov 1 2026, 4:00 AM ET** → `1793523600000` |
+| inclusion lead | 72 h, comfortably past the largest real pull gap (8h25m overnight) |
+| palette | `halloween-ambient` — an approved key; the registry authors no colour |
+| doodles | `spiderweb-corner`, `bat-trio`, `pumpkin-outline` |
+| heading | `brush-display` (Knewave) |
+
+**The window straddles the DST transition, and that is load-bearing.** October 24 is EDT
+(UTC−4); November 1 at 4:00 AM is EST (UTC−5), because the fallback happens at 2:00 AM that
+morning. `easternInstant()` resolves each stamp with the offset in effect on **its own**
+date, so a selector applying one offset to both would be an hour wrong at one end. A
+mutation test states both instants as absolute UTC and asserts the two offsets genuinely
+differ.
+
+**Explicit 2026 dates, no annual recurrence.** A 2027 Halloween is a new entry with its own
+reviewed dates. Inventing a recurrence rule in a pilot would be exactly the kind of
+generalization this section is otherwise arguing against.
+
+### Palette, and why purple is absent
+
+Light, TV-readable paper is retained — this is emphatically not a dark-mode dashboard.
+Day: canvas `#d3bc8d` (deeper warm autumn oat), panels `#f2dfbe` (light pumpkin-cream),
+panel borders `#8a5527d6` (muted copper at higher contrast), frame `#2b1e12b8`, rule
+`#7d4c246b`, brush `#15120f` (consistently charcoal-black, and *darker* than the production
+`#0f4a36`, so cream-on-brush contrast improves rather than degrades), headingInk `#f8e8c6`
+(warm cream), highlight `#cf6412` (restrained pumpkin orange). Evening is a deeper variant
+of the same.
+
+**Revised one controlled step stronger (~25%).** Canvas and evening canvas deepened, panel
+borders and frame given noticeably more contrast, brush moved from charcoal-evergreen to
+charcoal-black, highlight strengthened. Panel interiors stay light pumpkin-cream and no
+content row, owner rail, countdown pill, weather icon, sports mark or warning state is
+tinted individually — the framing is ambient and stays subordinate to NOW/NEXT.
+
+**No token reads as purple**, and a test asserts it numerically over both palettes: purple is
+already Ophelia's ownership cue and must never become ambient decoration.
+
+### Brush recolouring — scope, and the reason for it
+
+A CSS mask clips an element's **descendants** as well as itself, so the two *empty* brush
+surfaces (`.section-title:before`, `.masthead-brush`) are masked directly, while the
+text-bearing green surfaces (`.weather-label`, `.forecast-heading`, `.horizon-label`,
+`.next-up-label`, `.sports-ticker`) get the recoloured brush on a pseudo-element **behind**
+the text, with `isolation:isolate` keeping its `z-index:-1` inside the label rather than
+dropping it behind the card. Masking those directly would have nibbled glyphs.
+`.section-title-red` and `.section-title-purple` are excluded by selector: those brushes are
+ownership cues, not decoration. Neither added declaration changes layout, which the geometry
+assertions verify rather than assume.
+
+### Decorative doodles
+
+Three transparent, code-native SVGs in `render/assets-v2/` — `doodle-holiday-web.svg`,
+`doodle-holiday-bats.svg`, `doodle-holiday-pumpkin.svg` — used as CSS masks, so each takes
+its tone from the stylesheet rather than shipping in a colour. No emoji, no photograph, no
+generated bitmap, no external request, and never a substitute for a semantic icon or an
+official sports logo. **No animation.**
+
+They live in a `.holiday-skin` overlay that is `display:none` unless the theme is active, so
+in the ordinary state it is definitively outside the grid flow and cannot affect a track, a
+panel height, a row, or a neighbour. All three are absolutely positioned, `pointer-events:
+none`, `aria-hidden`.
+
+| mark | box (px) | placement | tone |
+|---|---|---|---|
+| `spiderweb-corner` | 60 × 60 at (18, 18) | moved inward from the extreme corner; five radials and five sagging rings | highlight |
+| `pumpkin-outline` | 74 × 74 at (520, 2) | NOW/NEXT title band, right of the brush; four ribs and a thick curled stem | highlight |
+| `bat-trio` | 242 × 72 at (1540, 4) | Coming Up title band, right of the lettering | brush |
+
+**The web moved inward at the cost of size, and that trade is forced.** The "NOW / NEXT"
+glyph rectangle begins at x = 82, so a mark anchored at (18, 18) cannot exceed 64 px wide
+without touching it. Legibility was bought with *ring density* instead — five radials and
+five cross-strands rather than three and three, which is what stops it reading as stray
+diagonals. The pumpkin gained ribs, a thicker curled stem and a squatter body for the same
+reason: at TV distance the earlier two-rib outline with a thin straight stem read as an
+apple.
+
+**Placement is measured, not chosen.** A test intersects each mark's box with the **client
+rectangles of every text node**, not by element hit-testing — a section title's `<span>` box
+spans the whole brush, so hit-testing would report "over the title" for a mark sitting in
+its empty left tail and would equally miss a real collision elsewhere.
+
+**Every mark's clearance is structural, and that is why a fourth was removed.** All three
+sit in a section-title band or a frame corner, regions that are empty in every data state.
+A fourth mark — a pumpkin-and-leaf cluster anchored near the footer — was built and then
+deleted at review: nothing near the footer is structurally clear (the sports ticker's four
+slots span x 40–2207 with its own gold mark at the right, and the frame margin is 18 px), so
+it had to sit in the trailing space of an alerts card. That space is empty in the fixture
+and in typical data but is not guaranteed by the layout, and **decorative art must never
+depend on an alert slot usually being empty.** It was removed rather than relocated; the web,
+pumpkin and bats are sufficient.
+
+Together the three cover **0.719% of the screen** by bounding box (26,500 px² of 3,686,400),
+the largest single mark being the bat trio at 0.473%. The global cap is therefore back at
+its **original 1.0%** — it had been raised to 1.5% for the footer anchor, and with that mark
+gone the guard returns to where it was rather than staying loose around an obsolete
+expectation. The per-mark cap of 0.6% is retained. Bounding boxes substantially over-state
+transparent line art, which is the right direction for a guard.
+
+### Lifecycle and the browser controller
+
+`not-included → staged → active → expired`, start-inclusive at activation, end-exclusive at
+expiry. Every boundary is resolved **in the generator** to an epoch millisecond; the browser
+compares integers only — it parses no timezone, computes no DST offset, and makes no network
+request. `window.updateHolidayTheme(at)` switches `data-holiday-state` at those exact
+instants, so 4:00 PM ET is exact rather than rounded up to the next scheduled generation
+(4:10 PM), and the ordinary dashboard is restored **locally** at expiry without another
+artifact pull. The page ships in the `ordinary` state, so a failed or absent script fails
+closed.
+
+**Fail-closed paths, all tested:** switch off (anything but boolean `true`), Takeover
+active, no clock, absent/malformed registry, wrong schema version, duplicate id, duplicate
+priority, entry disabled, status not ready, invalid window, unknown palette token,
+non-hex value, unknown doodle key, duplicated doodle key, too many doodles, missing doodle
+asset, unresolved overlap tie, outside window, and a throw anywhere in resolution. Each
+renders the ordinary dashboard.
+
+**Overlap is resolved by explicit priority, never array order; an unresolved tie drops the
+whole tied set** — the same rule the special-event arbiter keeps, for the same reason.
+A duplicate-priority document is additionally rejected *at load*, as defence in depth, so an
+ambiguous registry is a named error rather than a silent drop at render time.
+
+### Kill switch — `HOLIDAY_THEMES_ENABLED`
+
+Modelled exactly on the Family Spotlight switch, and independent of it in both directions.
+Repository variable → workflow resolve step (trim, then accept **only** `0` or `1`) →
+`HolidayThemesEnabled` stack parameter (`Default: "0"`, `AllowedValues: ["0","1"]`) →
+`HOLIDAY_THEMES_ENABLED` environment variable → `holidayThemes` render flag. Absent or blank
+resolves to `0`; anything else **fails the workflow before SAM runs**. A read-back step
+re-reads the deployed parameter and fails on `None` or a mismatch.
+
+`test/deploy-workflow-holiday-flag.test.js` lifts the shipped `run:` body out of the
+workflow and executes it under `bash -e`, so it cannot keep passing after the workflow
+drifts.
+
+**The `run:` body is not the whole path, and that gap was a real one.** `stepScript` lifts a
+step's script, so the `env:` mapping *above* it was never inspected — and two one-token edits
+therefore passed every gate: repointing the mapping at `vars.FAMILY_SPOTLIGHT_ENABLED`
+(deliberately `1`) deployed `HolidayThemesEnabled=1` with CI green, because the post-deploy
+read-back compares against the same wrongly-sourced value; deleting the mapping made the
+switch permanently unreachable. Both were silent. `assertDeploymentPath()` now checks the
+whole path over the workflow *source* — the variable is referenced, only ever as the `env:`
+mapping, fed by its own repository variable and no other, resolved before SAM runs, passed
+to SAM as `HolidayThemesEnabled=$HOLIDAY_ENABLED`, read back after the deploy, and compared
+against that same resolved value — and asserts that `SourceRevision` and
+`FamilySpotlightEnabled` keep their own overrides and their own read-backs untouched. Eight
+mutations run the real gate against a damaged workflow and each must fail **for its own
+reason**: delete the mapping, repoint it at the Spotlight variable, misspell it, remove the
+SAM override while leaving the same literal elsewhere in the file, move resolution after the
+deploy, delete the read-back, reorder the read-back ahead of the deploy, and compare the
+read-back against the Spotlight value. Its injection cases carry a **filesystem canary** rather than an echo: the step
+legitimately prints the rejected value back in its error message, so "the payload appears in
+stdout" cannot distinguish a value being *echoed* from one being *executed*. A file that
+does not exist afterwards can. Three mutation controls prove the guard has teeth (widened
+allow-list, removed blank check, removed trim).
+
+**From the first merge onward, every deployment matching the workflow's `paths:` filter
+asserts this parameter**, exactly as the Family Spotlight switch already does — so the AWS
+console is not a durable source of truth for it either. See "Managing the kill switch" in
+the Family Spotlight section; the same table applies.
+
+### Artifact contract
+
+`data-holiday-id` is conditional and **must never join `LEVEL2_REQUIRED_MARKERS`**, or every
+ordinary day would fail validation. When present, the contract asserts: at most one theme;
+the `holiday-theme-v1` renderer marker; the `<div class="holiday-skin"` element's own
+opening tag (not the bare token, which the stylesheet and controller both contain in every
+themed artifact); the presence of a shipped `data-holiday-state="ordinary"`; integer time
+attributes; and that a theme never coexists with the First Day takeover.
+
+**The single-instance guarantee is two parts, not one**, and this used to be stated
+inaccurately here. `validateArtifact` asserts the *presence* of
+`data-holiday-state="ordinary"` (`html.includes`), never a count; what bounds it to one is
+the separate assertion that `data-holiday-id="` occurs at most once, and the state attribute
+rides on that same element. Both halves are needed and neither is redundant: drop the count
+and two themes could ship, drop the presence check and one could ship already-active. The
+presence check is nonetheless genuinely falsifiable — the literal
+`data-holiday-state="ordinary"` appears in exactly one place in the renderer, the dashboard
+element itself. Every theme CSS rule is scoped to `="active"`, and the controller assigns
+through `dataset.holidayState`, so neither the stylesheet nor the script contains a string
+that could satisfy the check — the same false-satisfiability trap the accent contract
+already avoids.
+
+### What was NOT touched
+
+The canonical NOW/NEXT dashboard, the production pipeline, Raspberry Pi hosting (still
+`127.0.0.1:4173`, single host, no port 4174, no split hosting, no Windows viewer), selector
+behaviour, TV readability, ownership cues, official sports logos, transparent activity
+marks, semantic icon rules, Accent/Spotlight/Takeover qualification and arbitration,
+First Day Level-3, Dashboard v1, and the email digest. `FAMILY_SPOTLIGHT_ENABLED` keeps its
+name and its current value. No new service, port, host, viewer, artifact source or network
+request was created.
+
+### What was proved
+
+- **Dashboard v1 and the email digest are byte-identical to `origin/main`** (`5048f71`),
+  verified by rendering both from the same fixture in a worktree at the merge base.
+- **An ordinary Dashboard v2 artifact grows by exactly 10,515 bytes** — the theme stylesheet
+  block, the browser controller, and one empty skin placeholder line — and removing those
+  three makes the two trees byte-identical. It renders **pixel-identically** and with
+  identical geometry (`.athletics-panel` at `1473.83 × 485.59` in the three-card fixture,
+  `1473.83 × 315.63` one-card; `.dashboard` at `0,0,2560,1440`; and the three pseudo-element
+  brush labels at `285.77 × 38`, `285.77 × 42`, `273.77 × 46`).
+- **Switch-off and a post-expiry generation are byte-identical** to each other and to a
+  render with a null or empty registry.
+- **Activating the theme changes no geometry, capacity, ordering or content**: measured
+  boxes, row/day/card/priority/centre/ticker counts, row order and `innerText` are
+  `deepEqual` across the transition.
+- **Owner, status, urgency and semantic colours are unchanged** across the transition,
+  asserted both as equality and as specific values (`rgb(185,54,36)`, `rgb(108,74,133)`).
+- **Content typography is unchanged and heading typography is not**: the six brush labels
+  all resolve to Knewave at the cream ink and at their *original* font size, while the hero,
+  clock, event rows, priorities, owner pills, countdown chips, athletic ribbons, Centers and
+  horizon copy are `deepEqual` across the transition.
+- **The Takeover proof is taken inside the Halloween window** — both the generation instant
+  and the controller instant are Sun Oct 25 2026, 12:00 noon ET — and `report.json` records
+  zero holiday attributes, zero `.holiday-skin` elements, zero `.holiday-doodle` elements,
+  zero `--holiday-*` custom properties and no holiday controller in the rendered DOM.
+
+**One confounder was found and fixed rather than tolerated.** `renderDashboardV2` seeds
+`#live-clock` and the ticker stamp from the **real wall clock** (the controller overwrites
+both moments later), so two independent renders straddling a minute boundary differ by a few
+bytes for reasons unrelated to any theme — and two screenshots straddling the page's own
+15-second `tick()` differ for the same reason. Every byte-identity assertion here normalises
+that text, and every screenshot pins it first. Without that, the identity guards would have
+been rare flakes rather than guards. The preview script goes further for the states that
+claim to share one artifact: they share one rendered **string**, so "one artifact, only the
+browser clock changes" is a fact rather than a claim.
+
+**A second confounder was found in the preview harness and fixed.** `page.setContent()` does
+not reliably reset the JavaScript context, so a controller defined by one state's artifact
+survived into the next — and the Takeover artifact, which defines no holiday controller of
+its own, was answered by the *previous* state's leaked closure over a detached DOM. The
+evidence line read `holiday=expired` and looked live. Each preview state now renders on a
+fresh page.
+
+### Files
+
+New: `data/holiday-themes.json`, `digest/holidayThemeSchema.js`,
+`digest/holidayThemeSelector.js`, three `render/assets-v2/doodle-holiday-*.svg`,
+`scripts/render-dashboard-v2-holiday-states.mjs`, and seven test files.
+Modified: `render/dashboard-v2.js` (resolver, CSS block, controller, markup),
+`render/dashboard-v2.sample-data.js` (`holidayThemeSampleData`), `digest/builder.js`
+(`holidayThemesConfig`), `dashboard-artifact/{generator,contract,package-inputs}`,
+`infrastructure/dashboard-artifact-refresh/template.json`, the deploy workflow,
+`scripts/validate-dashboard-artifact-template.mjs`, `package.json`, and one documented
+invariant in `test/artifact/package-data-files.test.js`.
+
 ## Weekly Household Operations Review
 
 ### Phase 5 — Menu Planning (~5 min)
@@ -1306,7 +1715,86 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Aug 29, 2026 at the CI-gate follow-up
+### Current baseline — measured Sept 2, 2026 after the holiday-theme hardening
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2052 | **2052** | **0** | **0** |
+
+Measured on `claude/dashboard-holiday-theme-pilot-rrlqii` after the cleanup commit. The
+hardening added **+37** over the pilot's own measured 2015, and every unit is accounted for:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/holidayThemeSchema.test.js` | 60 | 86 | +26 |
+| `test/deploy-workflow-holiday-flag.test.js` | 31 | 40 | +9 |
+| `test/artifact/holiday-theme-mutations.test.js` | 14 | 16 | +2 |
+| `digest/holidayThemeSelector.test.js` | 35 | 35 | 0 |
+| `render/dashboard-v2-holiday.test.js` | 21 | 21 | 0 |
+| `render/dashboard-v2-holiday-layout.test.js` | 12 | 12 | 0 |
+| `test/artifact/holiday-theme-contract.test.js` | 22 | 22 | 0 |
+| **total** | | | **+37** |
+
+The schema suite grew where the safety moved into it: the palette-key contract and the
+code-owned spec audit. The workflow suite grew by one whole-path gate plus eight mutations
+that each have to fail for their own reason. Nothing was removed to make room — the
+Halloween-shaped purple guard was *generalized* to every approved spec rather than deleted,
+and the two palette mutation controls were retargeted at the new gates rather than dropped.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2052+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Aug 31, 2026 on the Holiday Theme pilot
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2015 | **2015** | **0** | **0** |
+
+Measured on `claude/dashboard-holiday-theme-pilot-rrlqii`, whose merge base with `main` is
+`5048f71`. **That merge base was re-measured directly in this session, before any change:
+1820 / 1820 / 0 / 0.** The Halloween Holiday Theme pilot added **+182**, and every unit of
+it is accounted for:
+
+| File | tests |
+|---|---|
+| `digest/holidayThemeSchema.test.js` (new) | 60 |
+| `digest/holidayThemeSelector.test.js` (new) | 35 |
+| `test/deploy-workflow-holiday-flag.test.js` (new) | 31 |
+| `test/artifact/holiday-theme-contract.test.js` (new) | 22 |
+| `render/dashboard-v2-holiday.test.js` (new) | 21 |
+| `test/artifact/holiday-theme-mutations.test.js` (new) | 14 |
+| `render/dashboard-v2-holiday-layout.test.js` (new) | 12 |
+| **total** | **195** |
+
+1820 + 195 = 2015, so the table closes exactly against a measurement rather than against a
+recorded figure. The stronger revision added **+13** over the first pass's 182: nine
+typography cases in the schema suite, two typography/scope cases in the renderer suite, one
+heading-and-content typography case in the layout suite, and one decoration-out-of-layout
+case. The footer anchor briefly contributed a fourteenth (its own packaging case); removing
+that mark removed the case with it. `test/artifact/package-data-files.test.js` contributes 0: one documented
+invariant inside it moved 10 → 11 packaged data files, which is a deliberate tripwire being
+updated rather than a test being added. **Re-measure the merge base yourself rather than
+trusting a recorded delta** — that is the lesson the previous entry already teaches, applied
+again.
+
+The browser-unavailable row is deliberately absent from this measurement: only the
+browser-enabled invocation was run this session, and quoting a figure that was not taken
+would be exactly the unfalsifiable claim this section exists to prevent. The standing cause
+of a red local run remains "no browser", and it now cancels the eleven new layout children
+too. Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+(Superseded — see Current baseline above.)
+
+### Previous baseline — measured Aug 29, 2026 at the CI-gate follow-up
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -1499,6 +1987,113 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Holiday theme configuration hardened after an independent Reviewer pass (Sept 2, 2026):**
+  A separate cleanup commit on top of the pilot; `402d762` was not amended. The approved
+  Halloween visuals are unchanged and proved so — **all 122 approval screenshots and all
+  nine rendered documents are byte-identical to `402d762`**, with identical geometry and
+  identical controller states, and Dashboard v1 and the email digest are unchanged too.
+  Still disabled: no repository variable, no deployment, no Pi contact, and
+  `FAMILY_SPOTLIGHT_ENABLED` untouched. **Two substantive findings and three minor ones.**
+  (1) **The registry can no longer author a colour.** It selects `palette:
+  "halloween-ambient"`, a key that resolves to a frozen code-owned spec in
+  `HOLIDAY_PALETTE_SPECS`, and an authored palette object — or an authored `paletteEvening`
+  — is rejected by name. The hole this closes is worth remembering: "valid hex" read as
+  safety and was not, so `canvas: "#6c4a85"` (Ophelia's ownership purple as the page
+  ground), `headingInk` equal to `brush` (invisible headings) and a fully transparent panel
+  fill all validated and rendered, guarded only by one Halloween-shaped test that inspected
+  `themes[0]` and so never saw a second entry at all. `auditHolidayPaletteSpec()` now audits
+  every approved spec — required roles both directions, opacity by role, ≥7:1 heading
+  contrast (shipped: 15.42 day / 14.96 evening), RGB distance ≥32 from either owner tone
+  (shipped closest: 44), and no value that reads as purple — and an unsafe spec fails closed
+  before emission. Adding a future palette is now deliberately a reviewed code change.
+  (2) **The kill switch's source variable is gated end to end.** `stepScript` lifts a step's
+  `run:` body, so the `env:` mapping above it was never inspected, and two one-token edits
+  passed all 31 tests: repointing the mapping at `vars.FAMILY_SPOTLIGHT_ENABLED` (which is
+  `1`) would have deployed the theme live with CI green, because the read-back compares
+  against the same wrongly-sourced value; deleting the mapping made the switch permanently
+  unreachable. `assertDeploymentPath()` checks the whole path and eight mutations each fail
+  for their own reason. (3) A mutation test now proves the renderer's own
+  `isHeadingSpecSafe` recheck fails closed against an unsafe `HEADING_STYLE_SPECS` entry —
+  previously the defence-in-depth pair had teeth on the schema half only. (4) The preview
+  script's state-9 note claimed byte-identity with state 7; it is state 8, and the two
+  differ by the 6,584-byte theme payload. (5) This file claimed the artifact contract counts
+  exactly one `data-holiday-state="ordinary"`; it asserts presence, and the single-instance
+  guarantee comes from the separate `data-holiday-id` count — both halves documented
+  accurately now. Gates: browser-enabled `npm test` **2015 → 2052**, all passing;
+  `sam build` → Build Succeeded; package valid (11 data files); deployment coverage valid
+  (43 inputs, 13 trigger paths); template valid.
+
+- **Halloween Holiday Theme revised one controlled step stronger (Aug 31, 2026, same
+  session, pre-approval):** Same architecture, lifecycle, controls, reliability work and
+  ordinary-state identity — the implementation was revised, not restarted. Full design in
+  **Holiday Theme (Dashboard v2, October 2026)** above. **Still ships disabled**; no
+  repository variable, deployment or Pi contact. Four changes. (1) **Heading typography
+  becomes the primary theming device**, through a new approved `typography.heading` token —
+  authored data names a key, never a font. **An existing packaged font was used**: Knewave
+  (SIL OFL, already in `render/assets-v2/fonts/`, already declared `@font-face`, and used by
+  nothing) reaches exactly six decorative brush labels and sets no font-size. (2) The
+  framing deepened ~25%: darker autumn-oat canvas, stronger copper borders and frame,
+  charcoal-**black** brushes, warm-cream heading ink via the new `headingInk` token — light
+  paper retained, no content row tinted. (3) Doodles refined: pumpkin gains four ribs and a
+  curled stem at 74 px, the web moved inward to (18, 18) with five radials and five rings,
+  and the bats grew to 242 × 72. A fourth mark — a pumpkin-and-leaf footer anchor — was
+  built in this revision and **removed at review**, because the only space available to it
+  near the footer was the trailing area of an alerts card, whose clearance the layout does
+  not guarantee. It was deleted outright rather than relocated, and the sparseness cap went
+  back to its original 1.0% (measured 0.719%) rather than staying at the 1.5% it had been
+  raised to.
+  (4) The Takeover proof was regenerated **inside** the Halloween window with structural DOM
+  evidence. **Three real defects were found and fixed, each worth remembering.** Double
+  quotes in a CSS font stack terminated the dashboard's inline `style` attribute and silently
+  discarded every heading declaration after it; changing the heading font-family starts an
+  *asynchronous* load, so a screenshot taken right after activation captured the fallback
+  face; and `page.setContent()` does not reset the JS context, so the previous state's leaked
+  controller answered for the Takeover artifact and made a stale evidence line look live.
+  Gates: browser-enabled `npm test` **1820 (merge base) → 2015**, all passing; `sam build` → Build
+  Succeeded; package valid (11 data files); deployment coverage valid (43 inputs, 13 trigger
+  paths); template valid. Dashboard v1 and the email digest remain byte-identical to
+  `origin/main`, and the ordinary v2 artifact remains pixel- and geometry-identical.
+  **One guard was deliberately changed and is reported rather than done quietly:** the
+  renderer suite's blanket "sets no typography" assertion, replaced by a stronger one that
+  confines every typography declaration to a named list of six heading selectors. The
+  sparseness cap ends this session unchanged at its original 1.0%, with a new per-mark cap
+  of 0.6% added alongside it.
+
+- **First Dashboard v2 Holiday Theme pilot built — Halloween 2026 (Aug 31, 2026):** A new
+  reusable ambient presentation layer, `holiday-theme-v1`, and one entry configured for it.
+  Full design in **Holiday Theme (Dashboard v2, October 2026)** above. **The pilot ships
+  disabled** — `HOLIDAY_THEMES_ENABLED` defaults to `0` at every layer this repository
+  controls, no GitHub repository variable was created or changed, nothing was deployed, and
+  the Pi was not contacted. `FAMILY_SPOTLIGHT_ENABLED` keeps its name and its current value
+  of `1`; the two switches are independent in both directions and a test asserts the holiday
+  selector never reads the other's config or flag. **Four findings shaped the work.**
+  (1) A CSS mask clips an element's *descendants*, so the text-bearing green brush surfaces
+  could not be masked directly without nibbling glyphs; they get the recoloured brush on a
+  pseudo-element behind the text instead, while the two empty brush surfaces are masked
+  directly and the red/purple ownership brushes are excluded by selector. (2) The corner
+  spiderweb was sized by measurement, not taste: at 96 px it overlapped the rendered glyph
+  box of the "NOW / NEXT" label (which begins at x = 82), so it is 76 px. The test that
+  found it intersects each mark with the **client rectangles of every text node** — element
+  hit-testing would have reported a false positive for a mark sitting in a title's empty
+  brush tail *and* could have missed a real collision. (3) The Halloween window straddles
+  the Nov 1 DST transition, so the two boundaries genuinely require different Eastern
+  offsets; a mutation test states both as absolute UTC and asserts the offsets differ.
+  (4) `renderDashboardV2` seeds the clock text from the **real wall clock**, which silently
+  confounded three byte-identity comparisons and would have made them rare flakes rather
+  than guards; every identity assertion now normalises that text and every screenshot pins
+  it. Also here: the evening palette is carried as an optional second map on the same token
+  allowlist, because a skin overriding only the day palette would have dropped Dashboard
+  v2's existing evening reduction on a television at night. **Gates run for real:**
+  browser-enabled `npm test` **1820 → 2002**, all passing (the merge base was re-measured in
+  the same session, not assumed); `sam build` → Build Succeeded; `dashboard artifact
+  package: valid (11 data files, ...)`; `dashboard artifact deployment coverage: valid (43
+  local bundle inputs, 13 trigger paths)`; `dashboard artifact refresh template: valid`.
+  Cross-tree proof against `origin/main` (`5048f71`): Dashboard v1 and the email digest
+  byte-identical; the ordinary v2 artifact **pixel-identical** and geometry-identical, its
+  only delta the 10,515 bytes of theme stylesheet, controller and one empty placeholder line.
+  One documented invariant was updated deliberately and is reported rather than changed
+  quietly: `test/artifact/package-data-files.test.js` moves 10 → 11 packaged data files.
 
 - **Accent title matching is now enforced by the schema, not by author discipline (Aug 30,
   2026):** A second Reviewer pass found that the `literal` pinning added by the previous

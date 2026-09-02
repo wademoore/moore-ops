@@ -311,10 +311,42 @@ function eventRowAccentSampleData({
   };
 }
 
+/**
+ * Deterministic ambient Holiday Theme fixture.
+ *
+ * Two things about it are load-bearing. `paletteMode` is pinned rather than
+ * left on `auto`, because the theme carries a day and an evening palette and
+ * an `auto` page would pick one from the *viewer's* wall clock — which would
+ * make a preview or a screenshot assertion depend on when it was taken.
+ * `now` is likewise explicit, so which lifecycle state ships in the artifact
+ * is a property of the fixture rather than of the machine.
+ *
+ * Everything else is the ordinary Dashboard v2 fixture, unchanged: a Holiday
+ * Theme is a skin, so the data underneath it must be identical to the data
+ * underneath an ordinary render or the comparison proves nothing.
+ */
+function holidayThemeSampleData({
+  now,
+  holidayThemesConfig,
+  holidayThemes = true,
+  paletteMode = 'day',
+  ...rest
+} = {}) {
+  return {
+    ...sampleDashboardV2Data,
+    now: new Date(now),
+    paletteMode,
+    holidayThemes,
+    holidayThemesConfig,
+    ...rest,
+  };
+}
+
 export {
   ACCENT_NEIGHBOURS,
   ACCENT_OCCURRENCES,
   eventRowAccentSampleData,
+  holidayThemeSampleData,
   familySpotlightSampleData,
   sampleDashboardV2Data,
   specialEventsSampleData,

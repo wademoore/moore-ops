@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none" stroke="#000" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Outline pumpkin. Repo-native line art, no fill, transparent ground: the
+       renderer uses it as a CSS mask so it takes the theme highlight tone from
+       the stylesheet rather than shipping in a colour. Decoration only - it
+       never replaces a semantic activity icon or an official sports logo.
+
+       Four interior ribs and a thick curled stem, both deliberate: at
+       television distance a two-rib outline with a thin straight stem read as
+       an apple. The wide squat body (ry noticeably less than rx) is the other
+       half of that fix. -->
+  <path d="M64 44c-10-12-27-13-36-3-9 10-10 30-3 47 7 17 21 28 39 28s32-11 39-28c7-17 6-37-3-47-9-10-26-9-36 3z"/>
+  <path d="M42 50c-7 13-7 39 0 60"/>
+  <path d="M86 50c7 13 7 39 0 60"/>
+  <path d="M53 46c-4 14-4 44 0 66"/>
+  <path d="M75 46c4 14 4 44 0 66"/>
+  <path d="M64 44c0-11 2-18 7-24" stroke-width="8"/>
+  <path d="M71 20c8-5 16-3 20 4 3 6 1 12-5 14" stroke-width="7"/>
+</svg>
