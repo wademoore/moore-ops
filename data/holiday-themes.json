@@ -17,30 +17,10 @@
         "heading": "brush-display",
         "note": "An approved key, never a font-family. It resolves in digest/holidayThemeSchema.js to Knewave, which is already packaged in render/assets-v2/fonts/ under the SIL OFL and already carries an @font-face rule in every artifact. It reaches large decorative brush labels only."
       },
-      "palette": {
-        "canvas": "#d3bc8d",
-        "surfacePanel": "#f2dfbe",
-        "surfaceAlt": "#e9cfa4",
-        "panelBorder": "#8a5527d6",
-        "rule": "#7d4c246b",
-        "frame": "#2b1e12b8",
-        "brush": "#15120f",
-        "headingInk": "#f8e8c6",
-        "highlight": "#cf6412"
-      },
-      "paletteEvening": {
-        "canvas": "#c0a877",
-        "surfacePanel": "#e6cfa8",
-        "surfaceAlt": "#dcbf94",
-        "panelBorder": "#7c4a20e0",
-        "rule": "#6d40197a",
-        "frame": "#221709c9",
-        "brush": "#0f0d0b",
-        "headingInk": "#f4e0b8",
-        "highlight": "#c25c10"
-      },
+      "palette": "halloween-ambient",
+      "paletteNote": "An approved palette key, never a colour. It resolves in digest/holidayThemeSchema.js to HOLIDAY_PALETTE_SPECS['halloween-ambient'], which carries the reviewed day and evening values and is audited for readability, opacity, completeness and ownership separation before it can reach CSS. Adding a future holiday palette is deliberately a reviewed code change: a palette authorable by typing hex into this file would be production-authorable, and every one of those properties would then rest on whoever typed it.",
       "doodles": ["spiderweb-corner", "bat-trio", "pumpkin-outline"],
-      "note": "First Holiday Theme pilot, revised one controlled step stronger. Purple is deliberately absent from every token: purple is already Ophelia's ownership cue and must not become ambient decoration. The palette sets decorative ground, paper, structural borders, brush artwork, brush lettering and one restrained highlight — it cannot reach owner, urgency, warning, weather, status or countdown colours, because those tokens are not on the schema allowlist at all."
+      "note": "First Holiday Theme pilot, revised one controlled step stronger. This entry is purely declarative: it selects one palette key, one typography key and three doodle keys, and authors none of their underlying values. Purple is deliberately absent from the approved palette: purple is already Ophelia's ownership cue and must not become ambient decoration. The palette sets decorative ground, paper, structural borders, brush artwork, brush lettering and one restrained highlight — it cannot reach owner, urgency, warning, weather, status or countdown colours, because those roles are not in the palette spec at all."
     }
   ]
 }

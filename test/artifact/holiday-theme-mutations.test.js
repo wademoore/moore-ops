@@ -217,41 +217,106 @@ describe('mutation control — approved-token validation', () => {
     id: 't', renderer: 'holiday-theme-v1', status: 'ready', enabled: true, priority: 100,
     timezone: 'America/New_York',
     lifecycle: { activateAt: '2026-10-24T16:00', expireAt: '2026-11-01T04:00' },
-    palette, doodles: [], ...overrides,
+    palette: 'halloween-ambient', doodles: [], ...overrides,
   });
 
-  it('rejects an unknown token, and a mutant that skips the allowlist accepts one', async () => {
+  /** A code-owned spec map carrying one key, injected through the seam. */
+  const specs = spec => ({ 'test-ambient': spec });
+
+  it('rejects an authored palette, and a mutant that drops the key contract accepts one', async () => {
     const shipped = await import('../../digest/holidayThemeSchema.js');
-    const forbidden = entry({ palette: { ...palette, secondary: '#333333' } });
-    assert.equal(shipped.validateHolidayTheme(forbidden).ok, false);
+    // Ophelia's ownership purple as the page ground — the exact shape the
+    // review found passing when a palette was authorable.
+    const authored = entry({ palette: { ...palette, canvas: '#6c4a85' } });
+    assert.equal(shipped.validateHolidayTheme(authored).ok, false);
+    assert.ok(shipped.validateHolidayTheme(authored).reasons
+      .includes(shipped.HOLIDAY_REASON.PALETTE_NOT_AUTHORABLE));
 
     const mutant = await loadMutant(
       'digest/holidayThemeSchema.js',
-      'if (!HOLIDAY_PALETTE_TOKENS.includes(token)) { reasons.push(HOLIDAY_REASON.PALETTE_TOKEN_UNKNOWN); return null; }',
-      '',
+      "if (typeof entry.palette !== 'string') return fail(HOLIDAY_REASON.PALETTE_NOT_AUTHORABLE);",
+      'if (typeof entry.palette !== \'string\') { const r = { ok: true, reasons: [], theme: Object.freeze({ id: entry.id, renderer: entry.renderer, status: entry.status, enabled: entry.enabled, priority: entry.priority, timezone: entry.timezone, activateAt: lifecycle.activateAt, expireAt: lifecycle.expireAt, paletteKey: null, palette: Object.freeze({ ...entry.palette }), paletteEvening: Object.freeze({ ...entry.palette }), headingStyle: null, doodles: Object.freeze([]) }) }; return r; }',
     );
-    assert.equal(mutant.validateHolidayTheme(forbidden).ok, true,
-      'the mutant must accept a token the shipped schema refuses');
+    assert.equal(mutant.validateHolidayTheme(authored).ok, true,
+      'the mutant must accept a palette the shipped schema refuses');
+    assert.equal(mutant.validateHolidayTheme(authored).theme.palette.canvas, '#6c4a85');
   });
 
-  it('rejects a non-hex value, and a mutant that skips the colour check accepts CSS', async () => {
+  it('rejects an unsafe code-owned spec, and a mutant that skips the audit emits it', async () => {
     const shipped = await import('../../digest/holidayThemeSchema.js');
-    const injected = entry({ palette: { ...palette, canvas: 'red;position:fixed' } });
-    assert.equal(shipped.validateHolidayTheme(injected).ok, false);
+    // A spec that is entirely valid hex and entirely unsafe: the heading
+    // lettering vanishes into its own brush, and the ground is Ophelia purple.
+    const unsafe = {
+      day: { ...palette, canvas: '#6c4a85', headingInk: palette.brush },
+      evening: { ...palette },
+    };
+    const selects = entry({ palette: 'test-ambient' });
+    assert.ok(shipped.auditHolidayPaletteSpec(unsafe).length);
+    const refused = shipped.validateHolidayTheme(selects, undefined, specs(unsafe));
+    assert.equal(refused.ok, false);
+    assert.ok(refused.reasons.includes(shipped.HOLIDAY_REASON.PALETTE_SPEC_UNSAFE));
 
     const mutant = await loadMutant(
       'digest/holidayThemeSchema.js',
-      'if (!isHexColor(value)) { reasons.push(HOLIDAY_REASON.PALETTE_VALUE_INVALID); return null; }',
-      '',
+      'if (auditHolidayPaletteSpec(spec).length) {',
+      'if (false) {',
     );
-    assert.equal(mutant.validateHolidayTheme(injected).ok, true,
-      'the mutant must accept a value the shipped schema refuses');
+    const smuggledResult = mutant.validateHolidayTheme(selects, undefined, specs(unsafe));
+    assert.equal(smuggledResult.ok, true,
+      'the mutant must admit a spec the shipped schema refuses');
+    assert.equal(smuggledResult.theme.palette.canvas, '#6c4a85');
+  });
 
-    // …and the renderer still refuses it, because it re-checks at the point the
-    // value would become CSS text. Two independent gates, not one.
+  it('rejects a non-hex value inside a spec, and the renderer refuses it independently', async () => {
+    const shipped = await import('../../digest/holidayThemeSchema.js');
+    const injected = { day: { ...palette, canvas: 'red;position:fixed' }, evening: { ...palette } };
+    assert.ok(shipped.auditHolidayPaletteSpec(injected).some(p => /not a hex colour/.test(p)));
+
+    // A mutant that both skips the audit AND skips the hex check still cannot
+    // reach CSS: the renderer re-validates at the point a value becomes
+    // attribute text. Two independent gates, not one.
+    const mutant = await loadMutant(
+      'digest/holidayThemeSchema.js',
+      'if (auditHolidayPaletteSpec(spec).length) {',
+      'if (false) {',
+    );
+    const smuggled = mutant.validateHolidayTheme(
+      entry({ palette: 'test-ambient' }), undefined, specs(injected),
+    ).theme;
+    assert.equal(smuggled.palette.canvas, 'red;position:fixed');
     const { holidayStyleVars } = await import('../../render/dashboard-v2.js');
-    const smuggled = mutant.validateHolidayTheme(injected).theme;
-    assert.equal(holidayStyleVars({ ...smuggled, paletteEvening: smuggled.palette }), null);
+    assert.equal(holidayStyleVars(smuggled), null);
+  });
+
+  it('the renderer refuses an unsafe heading spec at the attribute-emission boundary', async () => {
+    const { holidayStyleVars } = await import('../../render/dashboard-v2.js');
+    const { HEADING_STYLE_SPECS } = await import('../../digest/holidayThemeSchema.js');
+    const theme = {
+      palette, paletteEvening: palette, doodles: [], headingStyle: 'brush-display',
+    };
+    assert.ok(Array.isArray(holidayStyleVars(theme)), 'the approved spec must resolve');
+
+    // Every one of these would terminate the dashboard element's inline
+    // `style` attribute or inject a second declaration. The schema already
+    // refuses them; this proves the renderer's own recheck refuses them too,
+    // so removing either gate is caught rather than only the pair.
+    for (const damage of [
+      { fontStack: '"Knewave",sans-serif' },
+      { fontStack: "'Knewave',sans-serif;position:fixed" },
+      { shadow: '0 2px 0 rgba(0,0,0,.30)<script>' },
+      { weight: '400;color:red' },
+      { transform: 'uppercase"' },
+    ]) {
+      const unsafeSpecs = {
+        ...HEADING_STYLE_SPECS,
+        'brush-display': { ...HEADING_STYLE_SPECS['brush-display'], ...damage },
+      };
+      assert.equal(holidayStyleVars(theme, unsafeSpecs), null,
+        `an unsafe ${Object.keys(damage)[0]} must drop the whole theme`);
+    }
+
+    // A spec that simply is not there is the same fail-closed answer.
+    assert.equal(holidayStyleVars(theme, {}), null);
   });
 
   it('rejects an unapproved doodle key, and a mutant that skips the allowlist accepts one', async () => {

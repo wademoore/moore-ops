@@ -599,7 +599,7 @@ const holidayTokenName = token => token.replace(/[A-Z]/g, letter => `-${letter.t
  * twice. A value that fails returns `null` and the whole theme is dropped —
  * never a partial skin.
  */
-function holidayStyleVars(theme) {
+function holidayStyleVars(theme, headingSpecs = HEADING_STYLE_SPECS) {
   if (!theme) return null;
   const vars = [];
   for (const token of HOLIDAY_PALETTE_TOKENS) {
@@ -620,7 +620,10 @@ function holidayStyleVars(theme) {
   // key drops the whole theme rather than falling back to a default, matching
   // the palette's fail-closed rule.
   if (theme.headingStyle != null) {
-    const spec = HEADING_STYLE_SPECS[theme.headingStyle];
+    // `headingSpecs` defaults to the code-owned allowlist and is injectable
+    // ONLY so a mutation test can prove the recheck below still fails closed
+    // against an unsafe spec. No production caller passes it.
+    const spec = headingSpecs[theme.headingStyle];
     // Re-checked at the point it becomes attribute text, exactly as the palette
     // is: an unsafe value must drop the whole theme rather than truncate the
     // style attribute and half-apply the skin.

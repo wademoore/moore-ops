@@ -10,17 +10,30 @@
  * colours, urgency/warning/weather/status/countdown colours, official sports
  * logos, or semantic activity icons — and the way that is enforced is
  * structural rather than by rule: the only things authored data can express
- * are (a) a fixed allowlist of ambient palette tokens and (b) a fixed
- * allowlist of doodle *keys*. There is no field in which a theme could name a
- * filename, a CSS declaration, a selector, or a content string, so there is
- * nothing for a future entry to talk its way past.
+ * are three *keys* — one approved palette, one approved heading style, and up
+ * to three approved doodles. There is no field in which a theme could name a
+ * colour, a filename, a CSS declaration, a selector, or a content string, so
+ * there is nothing for a future entry to talk its way past.
+ *
+ * **Adding a future holiday palette is deliberately a reviewed code change.**
+ * That is the point, not a limitation: a palette that could be authored by
+ * typing colours into JSON would be production-authorable, and the reviewed
+ * properties below (readability, ownership separation, opacity) would rest on
+ * whoever typed it. Adding `HOLIDAY_PALETTE_SPECS['thanksgiving-ambient']` is
+ * a pull request; adding `"palette": "thanksgiving-ambient"` to the registry
+ * is then a one-line declarative selection of something already reviewed.
  *
  * Three properties this module exists to guarantee:
  *
- *   1. **No arbitrary CSS.** Every palette value is validated as a 6- or
- *      8-digit hex colour. A value that is not one is rejected at load. A
- *      theme therefore cannot inject `url(...)`, `expression(...)`, a custom
- *      property reference, or a declaration terminator.
+ *   1. **No authored colour at all.** A registry entry names an approved
+ *      palette *key*; the concrete colours live in `HOLIDAY_PALETTE_SPECS`
+ *      below, in code, frozen, and audited before they can reach CSS. There is
+ *      no field in which authored data could write a hex value, so it cannot
+ *      inject `url(...)`, `expression(...)`, a custom property reference, or a
+ *      declaration terminator — and it equally cannot author a *valid* colour
+ *      that is unreadable or that imitates an ownership cue. A valid hex is
+ *      not the same thing as a safe theme, and this is the distinction that
+ *      keeps them apart.
  *
  *   2. **No arbitrary filenames.** `DOODLE_ASSETS` is the one place a doodle
  *      key becomes a filename, and it lives here in code. Authored data names
@@ -71,6 +84,92 @@ const HOLIDAY_PALETTE_TOKENS = Object.freeze([
 
 /** Every token is required: a partial palette would be a half-applied skin. */
 const REQUIRED_PALETTE_TOKENS = HOLIDAY_PALETTE_TOKENS;
+
+/**
+ * Roles whose colour may carry alpha. Everything else is a *surface* or a
+ * *mark* and must be fully opaque: a transparent panel fill or brush would let
+ * whatever sits behind it show through content, which is a readability failure
+ * wearing a decoration costume.
+ */
+const ALPHA_PERMITTED_ROLES = Object.freeze(['panelBorder', 'rule', 'frame']);
+
+const OPAQUE_PALETTE_ROLES = Object.freeze(
+  HOLIDAY_PALETTE_TOKENS.filter(token => !ALPHA_PERMITTED_ROLES.includes(token)),
+);
+
+/**
+ * Dashboard v2 ownership cues. An ambient palette may not reuse or closely
+ * imitate either: purple is Ophelia and red is Myles, and a skin that borrowed
+ * one would turn an identity signal into decoration.
+ */
+const OWNER_TONES = Object.freeze({ myles: '#b93624', ophelia: '#6c4a85' });
+
+/**
+ * Minimum Euclidean RGB distance from an owner tone. The shipped Halloween
+ * palette's closest approach is 44 (evening `highlight` #c25c10 against Myles
+ * red #b93624), so 32 rejects reuse and near-copies while leaving the approved
+ * autumn oranges room to be autumn oranges.
+ */
+const OWNER_TONE_MIN_DISTANCE = 32;
+
+/**
+ * `headingInk` is lettering painted onto `brush`, so those two are the one
+ * pair inside an ambient palette that has to be legible against each other.
+ * WCAG AAA for normal text is 7:1; the shipped palette measures 15.42 (day)
+ * and 14.96 (evening), so the threshold is a floor, not a ceiling anyone is
+ * scraping against.
+ */
+const HOLIDAY_MIN_HEADING_CONTRAST = 7;
+
+/**
+ * The approved ambient palettes, and the ONE place a palette key becomes a
+ * colour.
+ *
+ * A registry entry names a key. It cannot author a hex value, an rgb(), a
+ * custom property, a CSS declaration or a selector, because no field accepts
+ * one — the same discipline `DOODLE_ASSETS` applies to filenames and
+ * `HEADING_STYLE_SPECS` applies to typography. Every spec here is audited by
+ * `auditHolidayPaletteSpec()` before it can reach CSS, so a code-owned palette
+ * that is unreadable, transparent where it must not be, missing a role or
+ * imitating an ownership cue is rejected rather than emitted.
+ *
+ * `halloween-ambient` is the reviewed 2026 pilot palette: warm autumn oat
+ * ground, light pumpkin-cream paper, muted copper structure, charcoal-black
+ * brush artwork, warm cream brush lettering, one restrained pumpkin highlight.
+ * Purple is deliberately absent from every value.
+ *
+ * Adding a palette here is a reviewed code change. See the module header.
+ */
+const HOLIDAY_PALETTE_SPECS = Object.freeze({
+  'halloween-ambient': Object.freeze({
+    day: Object.freeze({
+      canvas: '#d3bc8d',
+      surfacePanel: '#f2dfbe',
+      surfaceAlt: '#e9cfa4',
+      panelBorder: '#8a5527d6',
+      rule: '#7d4c246b',
+      frame: '#2b1e12b8',
+      brush: '#15120f',
+      headingInk: '#f8e8c6',
+      highlight: '#cf6412',
+    }),
+    evening: Object.freeze({
+      canvas: '#c0a877',
+      surfacePanel: '#e6cfa8',
+      surfaceAlt: '#dcbf94',
+      panelBorder: '#7c4a20e0',
+      rule: '#6d40197a',
+      frame: '#221709c9',
+      brush: '#0f0d0b',
+      headingInk: '#f4e0b8',
+      highlight: '#c25c10',
+    }),
+  }),
+});
+
+/** The keys a registry entry may select. */
+const HOLIDAY_PALETTE_KEYS = Object.freeze(Object.keys(HOLIDAY_PALETTE_SPECS));
+
 
 /**
  * Approved heading typography, and the one place a key becomes a font stack.
@@ -193,9 +292,9 @@ const HOLIDAY_REASON = Object.freeze({
   UNKNOWN_TIMEZONE: 'holiday-unknown-timezone',
   INVALID_WINDOW: 'holiday-invalid-window',
   PALETTE_MISSING: 'holiday-palette-missing',
-  PALETTE_TOKEN_UNKNOWN: 'holiday-palette-token-unknown',
-  PALETTE_TOKEN_MISSING: 'holiday-palette-token-missing',
-  PALETTE_VALUE_INVALID: 'holiday-palette-value-invalid',
+  PALETTE_KEY_UNKNOWN: 'holiday-palette-key-unknown',
+  PALETTE_NOT_AUTHORABLE: 'holiday-palette-not-authorable',
+  PALETTE_SPEC_UNSAFE: 'holiday-palette-spec-unsafe',
   DOODLES_INVALID: 'holiday-doodles-invalid',
   DOODLE_KEY_UNKNOWN: 'holiday-doodle-key-unknown',
   DOODLE_KEY_DUPLICATE: 'holiday-doodle-key-duplicate',
@@ -219,6 +318,120 @@ const HEX_COLOR = /^#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 
 const isHexColor = value => typeof value === 'string' && HEX_COLOR.test(value);
 
+/** [r, g, b, a] from a validated 6- or 8-digit hex. Alpha defaults to 255. */
+function hexChannels(value) {
+  const r = parseInt(value.slice(1, 3), 16);
+  const g = parseInt(value.slice(3, 5), 16);
+  const b = parseInt(value.slice(5, 7), 16);
+  const a = value.length === 9 ? parseInt(value.slice(7, 9), 16) : 255;
+  return [r, g, b, a];
+}
+
+/** WCAG relative luminance, alpha ignored (both operands are opaque roles). */
+function relativeLuminance(value) {
+  const [r, g, b] = hexChannels(value).map(channel => {
+    const c = channel / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return (0.2126 * r) + (0.7152 * g) + (0.0722 * b);
+}
+
+/** WCAG contrast ratio between two opaque colours, 1..21. */
+function contrastRatio(a, b) {
+  const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** Euclidean RGB distance, alpha ignored. */
+function colourDistance(a, b) {
+  const [ar, ag, ab] = hexChannels(a);
+  const [br, bg, bb] = hexChannels(b);
+  return Math.hypot(ar - br, ag - bg, ab - bb);
+}
+
+/**
+ * "Reads as purple" means blue and red both clearly above green — the shape of
+ * Ophelia's #6c4a85. Every warm autumn tone fails it, which is the point.
+ */
+function readsAsPurple(value) {
+  const [r, g, b] = hexChannels(value);
+  return b > g + 16 && r > g + 16;
+}
+
+/**
+ * Audits ONE code-owned palette spec and returns the problems found. An empty
+ * array means safe.
+ *
+ * This is the layer the structural allowlist cannot provide on its own: an
+ * allowlist stops authored data reaching a surface it does not own, but it
+ * says nothing about whether the colours a *reviewer* wrote are readable,
+ * opaque where they must be, complete, or free of ownership imitation. "Valid
+ * hex" is not "safe theme", and these are the properties that separate them.
+ *
+ * Exported so the whole map can be audited by a test as well as at resolution
+ * time; `specs` is injectable for the same reason `availableDoodles` is.
+ */
+function auditHolidayPaletteSpec(spec) {
+  const problems = [];
+  if (!isPlainObject(spec)) return ['spec is not an object'];
+  const modes = Object.keys(spec).sort();
+  if (modes.length !== 2 || modes[0] !== 'day' || modes[1] !== 'evening') {
+    problems.push(`spec must carry exactly day and evening, found ${modes.join(',') || 'nothing'}`);
+    return problems;
+  }
+  for (const mode of ['day', 'evening']) {
+    const palette = spec[mode];
+    if (!isPlainObject(palette)) { problems.push(`${mode}: palette is not an object`); continue; }
+    // Exactly the required roles, both directions: an extra role reaches a
+    // surface the skin does not own, a missing one half-applies it.
+    for (const token of Object.keys(palette)) {
+      if (!HOLIDAY_PALETTE_TOKENS.includes(token)) problems.push(`${mode}: unexpected token ${token}`);
+    }
+    for (const token of REQUIRED_PALETTE_TOKENS) {
+      if (!(token in palette)) problems.push(`${mode}: missing token ${token}`);
+    }
+    for (const [token, value] of Object.entries(palette)) {
+      if (!isHexColor(value)) { problems.push(`${mode}: ${token} is not a hex colour`); continue; }
+      if (OPAQUE_PALETTE_ROLES.includes(token) && hexChannels(value)[3] !== 255) {
+        problems.push(`${mode}: ${token} must be fully opaque`);
+      }
+      for (const [owner, tone] of Object.entries(OWNER_TONES)) {
+        if (colourDistance(value, tone) < OWNER_TONE_MIN_DISTANCE) {
+          problems.push(`${mode}: ${token} imitates the ${owner} ownership tone`);
+        }
+      }
+      if (readsAsPurple(value)) problems.push(`${mode}: ${token} reads as purple — purple is Ophelia ownership`);
+    }
+    const { brush, headingInk } = palette;
+    if (isHexColor(brush) && isHexColor(headingInk)) {
+      const ratio = contrastRatio(headingInk, brush);
+      if (ratio < HOLIDAY_MIN_HEADING_CONTRAST) {
+        problems.push(`${mode}: headingInk on brush is ${ratio.toFixed(2)}:1, below ${HOLIDAY_MIN_HEADING_CONTRAST}:1`);
+      }
+    }
+  }
+  return problems;
+}
+
+/**
+ * Resolves an approved palette key to its audited day/evening pair, or null.
+ *
+ * Both failure modes are fail-closed and distinguishable: an unknown key is a
+ * configuration error, an unsafe spec is a code error, and neither renders.
+ */
+function resolveHolidayPalette(key, specs = HOLIDAY_PALETTE_SPECS, reasons = []) {
+  if (typeof key !== 'string' || !Object.prototype.hasOwnProperty.call(specs, key)) {
+    reasons.push(HOLIDAY_REASON.PALETTE_KEY_UNKNOWN);
+    return null;
+  }
+  const spec = specs[key];
+  if (auditHolidayPaletteSpec(spec).length) {
+    reasons.push(HOLIDAY_REASON.PALETTE_SPEC_UNSAFE);
+    return null;
+  }
+  return { day: Object.freeze({ ...spec.day }), evening: Object.freeze({ ...spec.evening }) };
+}
+
 /** "YYYY-MM-DDTHH:MM" Eastern wall clock, the same stamp shape treatments use. */
 const STAMP = /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d$/;
 
@@ -227,34 +440,18 @@ const isHolidayStamp = value => typeof value === 'string' && STAMP.test(value);
 const isPlainObject = value => Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
 /**
- * Validates one palette map against the token allowlist.
- *
- * Both directions are checked, and both matter: an unknown token means the
- * author is trying to reach a surface the skin does not own, and a missing
- * token means the skin would be half-applied.
- */
-function validatePalette(palette, reasons) {
-  if (!isPlainObject(palette)) { reasons.push(HOLIDAY_REASON.PALETTE_MISSING); return null; }
-  const resolved = {};
-  for (const [token, value] of Object.entries(palette)) {
-    if (!HOLIDAY_PALETTE_TOKENS.includes(token)) { reasons.push(HOLIDAY_REASON.PALETTE_TOKEN_UNKNOWN); return null; }
-    if (!isHexColor(value)) { reasons.push(HOLIDAY_REASON.PALETTE_VALUE_INVALID); return null; }
-    resolved[token] = value;
-  }
-  for (const token of REQUIRED_PALETTE_TOKENS) {
-    if (!(token in resolved)) { reasons.push(HOLIDAY_REASON.PALETTE_TOKEN_MISSING); return null; }
-  }
-  return Object.freeze(resolved);
-}
-
-/**
  * Validates one theme entry.
  *
  * @param {object} entry               raw registry entry
  * @param {Set<string>} availableDoodles doodle keys whose asset actually resolved
+ * @param {object} paletteSpecs        code-owned palette allowlist (injectable)
  * @returns {{ok: boolean, theme: object|null, reasons: string[]}}
  */
-function validateHolidayTheme(entry, availableDoodles = new Set(KNOWN_HOLIDAY_DOODLE_KEYS)) {
+function validateHolidayTheme(
+  entry,
+  availableDoodles = new Set(KNOWN_HOLIDAY_DOODLE_KEYS),
+  paletteSpecs = HOLIDAY_PALETTE_SPECS,
+) {
   const reasons = [];
   const fail = reason => {
     if (reason) reasons.push(reason);
@@ -284,17 +481,19 @@ function validateHolidayTheme(entry, availableDoodles = new Set(KNOWN_HOLIDAY_DO
   // every pair that does not straddle a DST transition.
   if (!(lifecycle.activateAt < lifecycle.expireAt)) return fail(HOLIDAY_REASON.INVALID_WINDOW);
 
-  const palette = validatePalette(entry.palette, reasons);
-  if (!palette) return { ok: false, theme: null, reasons };
-  // The evening palette is optional and falls back to the day palette. It is
-  // not an over-generalization: Dashboard v2 already ships a day/evening
-  // reduction, and a skin that overrode only one of them would silently drop
-  // the evening reduction on a television at night.
-  let paletteEvening = palette;
-  if (entry.paletteEvening !== undefined) {
-    paletteEvening = validatePalette(entry.paletteEvening, reasons);
-    if (!paletteEvening) return { ok: false, theme: null, reasons };
-  }
+  // The registry SELECTS a palette; it never authors one. A raw palette object
+  // — the pre-hardening shape — is rejected by name rather than coerced, and an
+  // authored `paletteEvening` is rejected outright: the evening variant belongs
+  // to the code-owned spec, which is where its own audit happens. Dashboard v2
+  // already ships a day/evening reduction, and a skin carrying only one of them
+  // would silently drop that reduction on a television at night — so both come
+  // from the spec together or neither does.
+  if (entry.paletteEvening !== undefined) return fail(HOLIDAY_REASON.PALETTE_NOT_AUTHORABLE);
+  if (entry.palette == null) return fail(HOLIDAY_REASON.PALETTE_MISSING);
+  if (typeof entry.palette !== 'string') return fail(HOLIDAY_REASON.PALETTE_NOT_AUTHORABLE);
+  const resolvedPalette = resolveHolidayPalette(entry.palette, paletteSpecs, reasons);
+  if (!resolvedPalette) return { ok: false, theme: null, reasons };
+  const { day: palette, evening: paletteEvening } = resolvedPalette;
 
   // Optional approved heading typography. Absent means "no heading treatment",
   // which is the pre-existing behaviour; present means one key from the
@@ -341,6 +540,7 @@ function validateHolidayTheme(entry, availableDoodles = new Set(KNOWN_HOLIDAY_DO
       timezone: entry.timezone,
       activateAt: lifecycle.activateAt,
       expireAt: lifecycle.expireAt,
+      paletteKey: entry.palette,
       palette,
       paletteEvening,
       headingStyle,
@@ -360,7 +560,7 @@ function validateHolidayTheme(entry, availableDoodles = new Set(KNOWN_HOLIDAY_DO
  *
  * @returns {{themes: object[], rejected: Array<{id: string|null, reasons: string[]}>, reasons: string[]}}
  */
-function validateHolidayRegistry(config, { availableDoodles } = {}) {
+function validateHolidayRegistry(config, { availableDoodles, paletteSpecs = HOLIDAY_PALETTE_SPECS } = {}) {
   const reasons = [];
   const rejected = [];
   const available = availableDoodles instanceof Set
@@ -380,7 +580,7 @@ function validateHolidayRegistry(config, { availableDoodles } = {}) {
     if (id && seenIds.has(id)) { reasons.push(HOLIDAY_REASON.DUPLICATE_ID); return { themes: [], rejected, reasons }; }
     if (id) seenIds.add(id);
 
-    const result = validateHolidayTheme(entry, available);
+    const result = validateHolidayTheme(entry, available, paletteSpecs);
     if (!result.ok) { rejected.push({ id, reasons: result.reasons }); continue; }
     // Defence in depth against the arbitration tie below: a duplicate priority
     // can never reach overlap resolution, so an ambiguous registry is a load
@@ -398,6 +598,7 @@ function validateHolidayRegistry(config, { availableDoodles } = {}) {
 }
 
 export {
+  ALPHA_PERMITTED_ROLES,
   DOODLE_ASSETS,
   HEADING_SPEC_FORBIDDEN,
   HEADING_STYLE_SPECS,
@@ -405,7 +606,17 @@ export {
   HOLIDAY_HEADING_STYLES,
   HEX_COLOR,
   HOLIDAY_INCLUSION_LEAD_MS,
+  HOLIDAY_MIN_HEADING_CONTRAST,
+  HOLIDAY_PALETTE_KEYS,
+  HOLIDAY_PALETTE_SPECS,
   HOLIDAY_PALETTE_TOKENS,
+  OPAQUE_PALETTE_ROLES,
+  OWNER_TONES,
+  OWNER_TONE_MIN_DISTANCE,
+  auditHolidayPaletteSpec,
+  colourDistance,
+  contrastRatio,
+  resolveHolidayPalette,
   HOLIDAY_PRIORITY_BAND,
   HOLIDAY_REASON,
   HOLIDAY_RENDERERS,

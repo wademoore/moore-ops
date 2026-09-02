@@ -1247,11 +1247,13 @@ Neither reads the other, and a test asserts the holiday selector never mentions
 
 ### What a theme may change, enforced structurally rather than by rule
 
-A theme can set exactly eight ambient palette tokens and name at most three approved doodle
-**keys**. That is the whole of its expressive power. There is no field in which a theme
-could name a filename, a CSS declaration, a selector, or a content string — so there is
-nothing a future entry could talk its way past. This is the same discipline
-`PROTECTED_REGIONS` already applies to special-event surfaces.
+A theme names three things: one approved palette key, one approved heading style key, and at
+most three approved doodle keys. That is the whole of its expressive power. There is no
+field in which a theme could name a colour, a filename, a CSS declaration, a selector, or a
+content string — so there is nothing a future entry could talk its way past. This is the
+same discipline `PROTECTED_REGIONS` already applies to special-event surfaces.
+
+The palette a key resolves to sets exactly these nine ambient roles, and nothing else:
 
 | token | reaches |
 |---|---|
@@ -1314,20 +1316,63 @@ and every layout assertion now awaits `document.fonts.ready` after applying a cl
 layout suite asserts `document.fonts.check('30px Knewave')` — a silent fallback would
 otherwise make every computed-style assertion pass while the screen was wrong.
 
-**Every palette value is validated as a 6- or 8-digit hex colour**, so a theme cannot inject
-`url(...)`, a custom-property reference, or a declaration terminator. `#rgb` is deliberately
-rejected: a three-digit typo lands on a valid-but-wrong colour rather than failing.
+### The registry selects a palette; it never authors one
+
+**A theme names an approved palette *key*. It cannot write a colour at all.** `palette:
+"halloween-ambient"` resolves in `digest/holidayThemeSchema.js` to
+`HOLIDAY_PALETTE_SPECS['halloween-ambient']`, which carries the reviewed day and evening
+maps. `paletteEvening` is not an authorable field — supplying one is rejected outright, so
+the evening variant can never drift from the day variant it belongs with.
+
+**This replaced a real hole, and the hole is worth remembering, because "valid hex" looked
+like safety and was not.** Validating a colour stops `url(...)`, a custom-property
+reference and a declaration terminator — but it says nothing about a *valid* colour that is
+unsafe. Every one of these validated and rendered under the old contract: `canvas:
+"#6c4a85"` (Ophelia's ownership purple as the page ground), `canvas: "#b93624"` (Myles's
+red), `headingInk` identical to `brush` (invisible headings), `surfacePanel: "#000000"`,
+`surfacePanel: "#00000000"` (a fully transparent panel). The only thing standing against any
+of it was one Halloween-shaped test that destructured `themes[0]` — so a second registry
+entry was never examined at all. Structure, not a test, is what closes that.
+
+**`auditHolidayPaletteSpec()` audits every code-owned spec before it can reach CSS**, and
+its failure is a fail-closed rejection (`holiday-palette-spec-unsafe`), not a warning:
+
+| audited property | why |
+|---|---|
+| exactly the nine required roles, no extras | an extra role reaches a surface the skin does not own; a missing one half-applies it |
+| every value a 6- or 8-digit hex | `#rgb` still rejected — a three-digit typo lands on valid-but-wrong |
+| surface and mark roles fully opaque | only `panelBorder`, `rule` and `frame` may carry alpha; a transparent panel fill is a readability failure in a decoration costume |
+| `headingInk` on `brush` ≥ 7:1 | WCAG AAA for normal text; the shipped palette measures **15.42** (day) and **14.96** (evening) |
+| no value within RGB distance 32 of an owner tone | `#b93624` / `#6c4a85`; the shipped palette's closest approach is **44** (evening `highlight` vs Myles red), so the threshold has headroom rather than being fitted to it |
+| no value reads as purple | blue and red both clearly above green — purple is Ophelia's cue and must never become ambient decoration |
+
+**Adding a future holiday palette is deliberately a reviewed code change, and that is the
+point rather than a limitation.** A palette authorable by typing hex into JSON would be
+production-authorable, and every property in that table would then rest on whoever typed it.
+Adding `HOLIDAY_PALETTE_SPECS['thanksgiving-ambient']` is a pull request; selecting it from
+the registry afterwards is a one-line declarative choice among things already reviewed. The
+registry stays declarative in exactly the same shape as typography and doodles: it names a
+palette key, a typography key and doodle keys, and authors none of their values.
+
+`HOLIDAY_PALETTE_SPECS` and every map inside it are frozen, and a test asserts that
+assignment throws rather than silently no-oping.
+
 **The renderer re-checks every value at the point it becomes CSS text** — two independent
-gates, not one — and drops the whole theme rather than emitting a partial skin. A mutation
-test proves both halves: a schema mutant that accepts `red;position:fixed` still cannot get
-it past `holidayStyleVars()`.
+gates, not one — and drops the whole theme rather than emitting a partial skin. Mutation
+tests prove both halves in both directions: a schema mutant that skips the audit and admits
+`red;position:fixed` still cannot get it past `holidayStyleVars()`, and a renderer given an
+unsafe `HEADING_STYLE_SPECS` entry (a double-quoted font stack, an injected `;`, an angle
+bracket) returns no style variables at all. Both gates are injectable *only* through a
+default parameter used by tests; no production caller passes one.
 
 ### The evening palette is not over-generalization
 
-Dashboard v2 already ships a day/evening reduction, so a skin that overrode only the day
-palette would silently drop the evening reduction on a television at night. `paletteEvening`
-is optional, validated by the same allowlist, and falls back to `palette`. It is one
-optional second map — not a season system, a recurrence rule, or arbitrary CSS.
+Dashboard v2 already ships a day/evening reduction, so a skin that carried only a day
+palette would silently drop the evening reduction on a television at night. Every approved
+palette spec therefore carries **both** maps, audited by the same rules, and the registry
+cannot supply either — they come from the one spec together or neither does. It is one
+second map inside a reviewed code-owned spec, not a season system, a recurrence rule, or
+arbitrary CSS.
 
 ### Halloween 2026 — the pilot
 
@@ -1339,6 +1384,7 @@ optional second map — not a season system, a recurrence rule, or arbitrary CSS
 | activate | **Oct 24 2026, 4:00 PM ET** → `1792872000000` |
 | expire | **Nov 1 2026, 4:00 AM ET** → `1793523600000` |
 | inclusion lead | 72 h, comfortably past the largest real pull gap (8h25m overnight) |
+| palette | `halloween-ambient` — an approved key; the registry authors no colour |
 | doodles | `spiderweb-corner`, `bat-trio`, `pumpkin-outline` |
 | heading | `brush-display` (Knewave) |
 
@@ -1467,7 +1513,24 @@ re-reads the deployed parameter and fails on `None` or a mismatch.
 
 `test/deploy-workflow-holiday-flag.test.js` lifts the shipped `run:` body out of the
 workflow and executes it under `bash -e`, so it cannot keep passing after the workflow
-drifts. Its injection cases carry a **filesystem canary** rather than an echo: the step
+drifts.
+
+**The `run:` body is not the whole path, and that gap was a real one.** `stepScript` lifts a
+step's script, so the `env:` mapping *above* it was never inspected — and two one-token edits
+therefore passed every gate: repointing the mapping at `vars.FAMILY_SPOTLIGHT_ENABLED`
+(deliberately `1`) deployed `HolidayThemesEnabled=1` with CI green, because the post-deploy
+read-back compares against the same wrongly-sourced value; deleting the mapping made the
+switch permanently unreachable. Both were silent. `assertDeploymentPath()` now checks the
+whole path over the workflow *source* — the variable is referenced, only ever as the `env:`
+mapping, fed by its own repository variable and no other, resolved before SAM runs, passed
+to SAM as `HolidayThemesEnabled=$HOLIDAY_ENABLED`, read back after the deploy, and compared
+against that same resolved value — and asserts that `SourceRevision` and
+`FamilySpotlightEnabled` keep their own overrides and their own read-backs untouched. Eight
+mutations run the real gate against a damaged workflow and each must fail **for its own
+reason**: delete the mapping, repoint it at the Spotlight variable, misspell it, remove the
+SAM override while leaving the same literal elsewhere in the file, move resolution after the
+deploy, delete the read-back, reorder the read-back ahead of the deploy, and compare the
+read-back against the Spotlight value. Its injection cases carry a **filesystem canary** rather than an echo: the step
 legitimately prints the rejected value back in its error message, so "the payload appears in
 stdout" cannot distinguish a value being *echoed* from one being *executed*. A file that
 does not exist afterwards can. Three mutation controls prove the guard has teeth (widened
@@ -1484,10 +1547,20 @@ the Family Spotlight section; the same table applies.
 ordinary day would fail validation. When present, the contract asserts: at most one theme;
 the `holiday-theme-v1` renderer marker; the `<div class="holiday-skin"` element's own
 opening tag (not the bare token, which the stylesheet and controller both contain in every
-themed artifact); exactly one shipped `data-holiday-state="ordinary"`; integer time
-attributes; and that a theme never coexists with the First Day takeover. Every theme CSS
-rule is scoped to `="active"`, so the stylesheet contains no `"ordinary"` occurrence that
-could satisfy the fallback check — the same false-satisfiability trap the accent contract
+themed artifact); the presence of a shipped `data-holiday-state="ordinary"`; integer time
+attributes; and that a theme never coexists with the First Day takeover.
+
+**The single-instance guarantee is two parts, not one**, and this used to be stated
+inaccurately here. `validateArtifact` asserts the *presence* of
+`data-holiday-state="ordinary"` (`html.includes`), never a count; what bounds it to one is
+the separate assertion that `data-holiday-id="` occurs at most once, and the state attribute
+rides on that same element. Both halves are needed and neither is redundant: drop the count
+and two themes could ship, drop the presence check and one could ship already-active. The
+presence check is nonetheless genuinely falsifiable — the literal
+`data-holiday-state="ordinary"` appears in exactly one place in the renderer, the dashboard
+element itself. Every theme CSS rule is scoped to `="active"`, and the controller assigns
+through `dataset.holidayState`, so neither the stylesheet nor the script contains a string
+that could satisfy the check — the same false-satisfiability trap the accent contract
 already avoids.
 
 ### What was NOT touched
@@ -1642,7 +1715,41 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Aug 31, 2026 on the Holiday Theme pilot
+### Current baseline — measured Sept 2, 2026 after the holiday-theme hardening
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2052 | **2052** | **0** | **0** |
+
+Measured on `claude/dashboard-holiday-theme-pilot-rrlqii` after the cleanup commit. The
+hardening added **+37** over the pilot's own measured 2015, and every unit is accounted for:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/holidayThemeSchema.test.js` | 60 | 86 | +26 |
+| `test/deploy-workflow-holiday-flag.test.js` | 31 | 40 | +9 |
+| `test/artifact/holiday-theme-mutations.test.js` | 14 | 16 | +2 |
+| `digest/holidayThemeSelector.test.js` | 35 | 35 | 0 |
+| `render/dashboard-v2-holiday.test.js` | 21 | 21 | 0 |
+| `render/dashboard-v2-holiday-layout.test.js` | 12 | 12 | 0 |
+| `test/artifact/holiday-theme-contract.test.js` | 22 | 22 | 0 |
+| **total** | | | **+37** |
+
+The schema suite grew where the safety moved into it: the palette-key contract and the
+code-owned spec audit. The workflow suite grew by one whole-path gate plus eight mutations
+that each have to fail for their own reason. Nothing was removed to make room — the
+Halloween-shaped purple guard was *generalized* to every approved spec rather than deleted,
+and the two palette mutation controls were retargeted at the new gates rather than dropped.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2052+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Aug 31, 2026 on the Holiday Theme pilot
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -1685,7 +1792,7 @@ too. Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2015+ with no failures once a browser resolves.**
+(Superseded — see Current baseline above.)
 
 ### Previous baseline — measured Aug 29, 2026 at the CI-gate follow-up
 
@@ -1880,6 +1987,42 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Holiday theme configuration hardened after an independent Reviewer pass (Sept 2, 2026):**
+  A separate cleanup commit on top of the pilot; `402d762` was not amended. The approved
+  Halloween visuals are unchanged and proved so — **all 122 approval screenshots and all
+  nine rendered documents are byte-identical to `402d762`**, with identical geometry and
+  identical controller states, and Dashboard v1 and the email digest are unchanged too.
+  Still disabled: no repository variable, no deployment, no Pi contact, and
+  `FAMILY_SPOTLIGHT_ENABLED` untouched. **Two substantive findings and three minor ones.**
+  (1) **The registry can no longer author a colour.** It selects `palette:
+  "halloween-ambient"`, a key that resolves to a frozen code-owned spec in
+  `HOLIDAY_PALETTE_SPECS`, and an authored palette object — or an authored `paletteEvening`
+  — is rejected by name. The hole this closes is worth remembering: "valid hex" read as
+  safety and was not, so `canvas: "#6c4a85"` (Ophelia's ownership purple as the page
+  ground), `headingInk` equal to `brush` (invisible headings) and a fully transparent panel
+  fill all validated and rendered, guarded only by one Halloween-shaped test that inspected
+  `themes[0]` and so never saw a second entry at all. `auditHolidayPaletteSpec()` now audits
+  every approved spec — required roles both directions, opacity by role, ≥7:1 heading
+  contrast (shipped: 15.42 day / 14.96 evening), RGB distance ≥32 from either owner tone
+  (shipped closest: 44), and no value that reads as purple — and an unsafe spec fails closed
+  before emission. Adding a future palette is now deliberately a reviewed code change.
+  (2) **The kill switch's source variable is gated end to end.** `stepScript` lifts a step's
+  `run:` body, so the `env:` mapping above it was never inspected, and two one-token edits
+  passed all 31 tests: repointing the mapping at `vars.FAMILY_SPOTLIGHT_ENABLED` (which is
+  `1`) would have deployed the theme live with CI green, because the read-back compares
+  against the same wrongly-sourced value; deleting the mapping made the switch permanently
+  unreachable. `assertDeploymentPath()` checks the whole path and eight mutations each fail
+  for their own reason. (3) A mutation test now proves the renderer's own
+  `isHeadingSpecSafe` recheck fails closed against an unsafe `HEADING_STYLE_SPECS` entry —
+  previously the defence-in-depth pair had teeth on the schema half only. (4) The preview
+  script's state-9 note claimed byte-identity with state 7; it is state 8, and the two
+  differ by the 6,584-byte theme payload. (5) This file claimed the artifact contract counts
+  exactly one `data-holiday-state="ordinary"`; it asserts presence, and the single-instance
+  guarantee comes from the separate `data-holiday-id` count — both halves documented
+  accurately now. Gates: browser-enabled `npm test` **2015 → 2052**, all passing;
+  `sam build` → Build Succeeded; package valid (11 data files); deployment coverage valid
+  (43 inputs, 13 trigger paths); template valid.
 
 - **Halloween Holiday Theme revised one controlled step stronger (Aug 31, 2026, same
   session, pre-approval):** Same architecture, lifecycle, controls, reliability work and

@@ -168,7 +168,8 @@ const STATES = [
     name: '9-generated-after-expiry',
     real: true,
     note: 'A newly generated artifact after the window closes: the theme is not embedded at all, '
-      + 'so this document is byte-identical to state 7.',
+      + 'so this document is byte-identical to state 8 (switch-off) — NOT to state 7, which is '
+      + 'the staged artifact still carrying the theme with the controller reporting expired.',
     data: () => holidayThemeSampleData({ now: GENERATED_AFTER, holidayThemesConfig: HOLIDAY }),
     at: GENERATED_AFTER,
   },

@@ -48,11 +48,8 @@ const entry = (overrides = {}) => ({
   priority: 100,
   timezone: 'America/New_York',
   lifecycle: { activateAt: '2026-10-24T16:00', expireAt: '2026-11-01T04:00' },
-  palette: {
-    canvas: '#ddcaa2', surfacePanel: '#f0dcba', surfaceAlt: '#e8cfa8', panelBorder: '#9c6a3aa8',
-    rule: '#8a5a2e4d', frame: '#3a2a1c6b', brush: '#16241f', headingInk: '#f8e8c6',
-    highlight: '#c2611f',
-  },
+  // An approved key, never authored colour — the registry cannot express one.
+  palette: 'halloween-ambient',
   doodles: ['pumpkin-outline'],
   ...overrides,
 });
@@ -183,7 +180,10 @@ describe('holiday theme — every other fail-closed path', () => {
 
   it('renders ordinary when an unknown palette or doodle key is authored', () => {
     for (const override of [
-      { palette: { ...entry().palette, mystery: '#ffffff' } },
+      { palette: 'witching-hour' },
+      // Authoring colours directly is the pre-hardening shape, and it is now
+      // rejected rather than accepted at face value.
+      { palette: { canvas: '#6c4a85' } },
       { doodles: ['witch-hat'] },
     ]) {
       assert.equal(selectHolidayTheme(on({ holidayThemesConfig: registry([entry(override)]) })), null);
