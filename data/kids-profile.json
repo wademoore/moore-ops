@@ -17,8 +17,8 @@
     ],
     "centersGroup": null,
     "centersRotation": {
-      "note": "Collins homeroom sequence, confirmed from Open House packet Week 1 table. Not yet confirmed as Myles's permanent numbered group (groups assigned week of 8/31 based on music selection) — cross-check against whichever Group 1-6 pattern matches once assigned.",
-      "sequence": ["Music", "Music", "PE1", "Art", "Computer", "PE2", "Media"]
+      "note": "Centers cycle ORDER is confirmed: PE2 / Media / Music / PE1 / Art / Computer, the same school-wide six-day cycle Ophelia sits in, entered at a different phase. PHASE IS PROVISIONAL and is not settled by this entry. Two sources give phases exactly one cycle position apart. Reading (a): Aug 24, 2026 = Day 1, resting on a single child-reported observation that Myles had Music on Thu Sep 3 (the 9th school day; 9 mod 6 = 3). Reading (b): the Open House packet Week 1 table read day-by-day, with its two leading whole-grade Music days treated as off-rotation, starts the cycle on Aug 26 and puts Sep 3 on PE1, not Music. Sep 8, 2026 distinguishes them: Day 4 = PE1 under reading (a), Day 5 = Art under reading (b). Record what Myles actually has on Sep 8 and set the phase then. The day positions in `sequence` below encode reading (a) and must not be treated as settled. centersGroup is still unassigned, and ANCHORS.myles in digest/schoolRotation.js remains null; both are scoped separately.",
+      "sequence": ["PE2", "Media", "Music", "PE1", "Art", "Computer"]
     },
     "band": {
       "director": "Jamie Lantz",
