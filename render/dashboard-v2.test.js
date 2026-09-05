@@ -561,6 +561,16 @@ describe('real-data resilience policies', () => {
     assert.doesNotMatch(html, /https:\/\/example\.com\/unreliable/);
     assert.match(html, /logo-idance|data:image\/png;base64/);
   });
+
+  it('keeps transparent activity logos transparent in Next Two Weeks', () => {
+    const html = renderDashboardV2({
+      ...sampleDashboardV2Data,
+      upcomingEvents: [event('Ophelia · 757 Swim Practice', '2026-06-10T17:00:00-04:00')],
+    });
+    assert.match(html, /\.activity-visual img\{[^}]*background:transparent/);
+    assert.doesNotMatch(html, /\.activity-visual img\{[^}]*background:#e9dfcc/);
+    assert.match(html, /class="upcoming-logo semantic-icon activity-visual category-sports"/);
+  });
 });
 
 describe('television readability and horizon policies', () => {
