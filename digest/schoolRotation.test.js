@@ -17,6 +17,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   getRotation,
@@ -245,23 +246,49 @@ describe('Ophelia (grade 2, 6-day cycle) — matches her actual calendar entries
 });
 
 // ---------------------------------------------------------------------------
-// Section 3: Myles — deliberately unanchored
+// Section 3: Myles — anchored 2026-09-06, phase confirmed
 // ---------------------------------------------------------------------------
 
-describe('Myles — unanchored until his Centers group is assigned', () => {
-  it('has no anchor configured', () => {
-    assert.equal(ANCHORS.myles, null);
+describe('Myles — anchored on the confirmed school-wide phase', () => {
+  it('has an anchor with the same shape and values as Ophelia\'s', () => {
+    // Day numbering is school-wide, so the anchor is shared. What differs is
+    // MYLES_CENTERS, not this. A regression that reverted the anchor to null
+    // would land here first.
+    assert.notEqual(ANCHORS.myles, null);
+    assert.equal(ANCHORS.myles.day, 1);
+    assert.equal(ANCHORS.myles.cycleLength, 6);
+    assert.equal(ANCHORS.myles.date.getTime(), new Date(2026, 7, 24).getTime());
+    assert.equal(ANCHORS.myles.date.getTime(), ANCHORS.ophelia.date.getTime());
+    assert.equal(ANCHORS.myles.day, ANCHORS.ophelia.day);
   });
 
-  it('returns a null day and centre on an open school day', () => {
+  // The two observations that confirmed the phase, plus the cross-check that
+  // decided against the retired packet-derived reading. These are ground
+  // truth, not a restatement of the implementation: if the anchor, the cycle
+  // length, the closure list or MYLES_CENTERS drifts, one of these breaks.
+  it('Sep 3 2026 resolves to Music for Myles — the observation that anchored him', () => {
+    const r = getRotation('myles', d('2026-09-03'));
+    assert.equal(r.day, 3);        // 9th school day; 9 mod 6 = 3
+    assert.equal(r.center, 'Music');
+  });
+
+  it('Sep 8 2026 resolves to PE1 for Myles', () => {
     const r = getRotation('myles', d('2026-09-08'));
-    assert.equal(r.day, null);
-    assert.equal(r.center, null);
+    assert.equal(r.day, 4);        // 10th school day, after the Sep 4 and Sep 7 closures
+    assert.equal(r.center, 'PE1');
   });
 
-  it('still reports isSchoolDay truthfully on an open school day', () => {
-    // The distinction that matters: an unknown centre must not be
-    // indistinguishable from a closed school.
+  it('Sep 8 2026 resolves to PE2 for Ophelia — same day number, different centre', () => {
+    const r = getRotation('ophelia', d('2026-09-08'));
+    assert.equal(r.day, 4);
+    assert.equal(r.center, 'PE2');
+    // Same day number for both children on the same date is the whole point of
+    // a school-wide anchor; the centre differs only via the per-child map.
+    assert.equal(getRotation('myles', d('2026-09-08')).day, r.day);
+    assert.notEqual(getRotation('myles', d('2026-09-08')).center, r.center);
+  });
+
+  it('reports isSchoolDay truthfully on an open school day', () => {
     assert.equal(getRotation('myles', d('2026-09-08')).isSchoolDay, true);
   });
 
@@ -273,11 +300,23 @@ describe('Myles — unanchored until his Centers group is assigned', () => {
     assert.equal(getRotation('myles', d('2026-08-29')).isSchoolDay, false);
   });
 
-  it('raises no reminders while unanchored', () => {
-    const r = getRotation('myles', d('2026-09-08'));
-    assert.equal(r.needsLibraryBook, false);
-    assert.equal(r.needsRecorder, false);
-    assert.equal(r.warningText, null);
+  it('raises the library reminder on his Media day, and not on other days', () => {
+    // Myles's Media is Day 2 — Sep 2 and Sep 14, not Ophelia's Day 5 dates.
+    const media = getRotation('myles', d('2026-09-14'));
+    assert.equal(media.center, 'Media');
+    assert.equal(media.needsLibraryBook, true);
+    assert.equal(media.warningText, '⚠ Pack library book this morning (Myles — Media today)');
+
+    const notMedia = getRotation('myles', d('2026-09-08'));
+    assert.equal(notMedia.needsLibraryBook, false);
+    assert.equal(notMedia.warningText, null);
+  });
+
+  it('still raises no recorder reminder — the instrument item is a separate task', () => {
+    // needsRecorder is hardwired false for both children and nothing sets it.
+    // Myles plays baritone, not recorder; see the schoolRotation.js header.
+    assert.equal(getRotation('myles', d('2026-09-03')).center, 'Music');
+    assert.equal(getRotation('myles', d('2026-09-03')).needsRecorder, false);
   });
 });
 
@@ -285,19 +324,44 @@ describe('Myles — unanchored until his Centers group is assigned', () => {
 // Section 4: Centre label tables
 // ---------------------------------------------------------------------------
 
-describe('centre label tables — shared 6-day cycle', () => {
-  it('both kids use the same six labels in the same order', () => {
-    assert.deepEqual(MYLES_CENTERS, OPHELIA_CENTERS);
+describe('centre label tables — one cycle, two entry positions', () => {
+  it('the two maps hold the same six labels but NOT in the same order', () => {
+    // Before 2026-09-06 these were identical, which was Ophelia's mapping
+    // standing in for an unknown one of Myles's. With his anchor set, identical
+    // maps would print the wrong centre for him every day.
+    assert.deepEqual(Object.values(MYLES_CENTERS).slice().sort(), Object.values(OPHELIA_CENTERS).slice().sort());
+    assert.notDeepEqual(MYLES_CENTERS, OPHELIA_CENTERS);
   });
 
-  it('the cycle is PE1, Art, Computer, PE2, Media, Music', () => {
+  it('Ophelia enters at PE1: PE1, Art, Computer, PE2, Media, Music', () => {
     assert.deepEqual(OPHELIA_CENTERS, {
       1: 'PE1', 2: 'Art', 3: 'Computer', 4: 'PE2', 5: 'Media', 6: 'Music',
     });
   });
 
+  it('Myles enters at PE2: PE2, Media, Music, PE1, Art, Computer', () => {
+    assert.deepEqual(MYLES_CENTERS, {
+      1: 'PE2', 2: 'Media', 3: 'Music', 4: 'PE1', 5: 'Art', 6: 'Computer',
+    });
+  });
+
+  it('Myles\'s map is a rotation of the school-wide cycle, not a different cycle', () => {
+    // Rotating Ophelia's order by 3 positions must reproduce Myles's exactly.
+    const shared = Object.values(OPHELIA_CENTERS);
+    const rotated = [...shared.slice(3), ...shared.slice(0, 3)];
+    assert.deepEqual(Object.values(MYLES_CENTERS), rotated);
+  });
+
+  it('the two maps match the sequences in data/kids-profile.json', () => {
+    // These are duplicated across two files that nothing keeps in sync — see
+    // the warning above MYLES_CENTERS. This is the tripwire for that drift.
+    const profile = JSON.parse(readFileSync(new URL('../data/kids-profile.json', import.meta.url), 'utf8'));
+    assert.deepEqual(Object.values(MYLES_CENTERS), profile.myles.centersRotation.sequence);
+    assert.deepEqual(Object.values(OPHELIA_CENTERS), profile.ophelia.centersRotation.sequence);
+  });
+
   it('no stale 2025-26 labels survive', () => {
-    const labels = Object.values(OPHELIA_CENTERS);
+    const labels = [...Object.values(OPHELIA_CENTERS), ...Object.values(MYLES_CENTERS)];
     assert.ok(!labels.includes('Library'), "'Library' is the old label; 2026-27 uses 'Media'");
     assert.ok(!labels.includes('Technology Extension'), 'Technology Extension was 1st-grade only');
   });
@@ -342,8 +406,28 @@ describe('getSchoolStrip — combined digest output', () => {
     assert.equal(getSchoolStrip(d('2026-09-08')).ophelia.center, 'PE2');
   });
 
-  it('leaves Myles without a centre while he is unanchored', () => {
-    assert.equal(getSchoolStrip(d('2026-09-08')).myles.center, null);
+  it('places Myles in his own centre for the day, not Ophelia\'s', () => {
+    const strip = getSchoolStrip(d('2026-09-08'));
+    assert.equal(strip.myles.center, 'PE1');
+    assert.notEqual(strip.myles.center, strip.ophelia.center);
+  });
+
+  it('surfaces a Myles Media reminder the day before his Media day', () => {
+    // Myles's Media is Day 2 — Sep 2 and Sep 14. Sep 1 is the weekday eve of
+    // the first. Before he was anchored, getSchoolStrip emitted nothing for him
+    // on any date.
+    const strip = getSchoolStrip(d('2026-09-01'));
+    assert.ok(
+      strip.tomorrowWarnings.some(w => /myles/i.test(w) && /library book/i.test(w)),
+      `expected a Myles library-book warning, got ${JSON.stringify(strip.tomorrowWarnings)}`
+    );
+  });
+
+  it('raises no Myles reminder on a Friday whose Media day is the following Monday', () => {
+    // Sep 11 (Fri) → tomorrow is Saturday, so nothing fires even though his
+    // next Media day is Sep 14. The Sunday eve, Sep 13, is what carries it.
+    assert.deepEqual(getSchoolStrip(d('2026-09-11')).tomorrowWarnings, []);
+    assert.ok(getSchoolStrip(d('2026-09-13')).tomorrowWarnings.some(w => /myles/i.test(w)));
   });
 
   it('surfaces the Ophelia Media reminder the day before', () => {

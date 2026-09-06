@@ -2,9 +2,20 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { buildCentersWeek, centerEventDetails, isRoutineCentersEvent } from './centersProfile.js';
 
+// `provisional` keys off centersRotation.phaseConfirmed, never off centersGroup:
+// a numbered Centers group is a Grade 5 construct, so Ophelia's null is a correct
+// steady state rather than a gap. myles here carries a centersGroup *and* omits
+// phaseConfirmed, so the true case below can only be satisfied by the missing
+// confirmation — a fixture that left centersGroup null would still pass against
+// the old implementation and prove nothing.
 const profile = {
-  myles: { centersGroup: null, centersRotation: { sequence: ['Music', 'Music', 'PE1', 'Art', 'Computer', 'PE2', 'Media'] } },
+  myles: { centersGroup: 6, centersRotation: { sequence: ['Music', 'Music', 'PE1', 'Art', 'Computer', 'PE2', 'Media'] } },
   ophelia: { centersGroup: null, centersRotation: null },
+};
+
+const confirmedProfile = {
+  myles: { centersGroup: null, centersRotation: { phaseConfirmed: true, sequence: ['PE2', 'Media', 'Music', 'PE1', 'Art', 'Computer'] } },
+  ophelia: { centersGroup: null, centersRotation: { phaseConfirmed: true, sequence: ['PE1', 'Art', 'Computer', 'PE2', 'Media', 'Music'] } },
 };
 
 describe('calendar-driven Centers week', () => {
@@ -28,6 +39,17 @@ describe('calendar-driven Centers week', () => {
     assert.equal(week.children[0].provisional, true);
     assert.equal(week.children[1].available, false);
     assert.ok(week.children[1].days.every(day => day.center === null));
+  });
+
+  it('clears provisional once the rotation phase is confirmed, independent of centersGroup', () => {
+    const week = buildCentersWeek(confirmedProfile, new Date(2026, 7, 26), mylesWeek);
+    // Myles carries phaseConfirmed with centersGroup null; Ophelia will never hold a
+    // group number at all. Neither is provisional, so a permanently-null centersGroup
+    // no longer marks a confirmed rotation as unsettled.
+    assert.equal(week.children[0].provisional, false);
+    assert.equal(week.children[1].provisional, false);
+    // A child with no rotation data at all is still not flagged — the second conjunct.
+    assert.equal(buildCentersWeek(profile, new Date(2026, 7, 26), mylesWeek).children[1].provisional, false);
   });
 
   it('attaches date-scoped action cues without changing ordinary center cells', () => {
