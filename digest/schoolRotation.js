@@ -9,11 +9,12 @@
  *
  * KEY RULES:
  *   - Rotation advances ONLY on actual school days (Mon–Fri, no holidays)
- *   - Both kids are on the SAME school-wide 6-day subject cycle this year:
- *       PE1 → Art → Computer → PE2 → Media → Music
- *     They sit at different points in it (different day-1 anchors).
- *   - Ophelia anchor: Aug 24, 2026 (first day of school) = Day 1 (PE1)
- *   - Myles: NO ANCHOR YET — see "Myles is deliberately unanchored" below.
+ *   - The DAY NUMBER (1-6) is school-wide: every child is on the same numbered
+ *     cycle and shares the same Day 1 anchor. What differs per child is the
+ *     day-number → subject map, because each class group enters the cycle at a
+ *     different position. See MYLES_CENTERS / OPHELIA_CENTERS below.
+ *   - Both anchors: Aug 24, 2026 (first day of school) = Day 1.
+ *       Ophelia Day 1 = PE1;  Myles Day 1 = PE2.
  *
  * DIGEST REMINDER RULES:
  *   - Media day  → warn THE DAY BEFORE → Wade packs the library book.
@@ -21,26 +22,42 @@
  *     label for what earlier years called "Library"; the reminder is the same.
  *   - Music day  → no item needed for Ophelia (awareness only).
  *
- * ── Myles is deliberately unanchored ───────────────────────────────────────
+ * ── Myles's anchor, and how the phase was confirmed ────────────────────────
  *
- * Myles's permanent numbered Centers group had not been assigned as of
- * 2026-08-28 (groups are assigned the week of 8/31, based on music selection —
- * see data/kids-profile.json, where `myles.centersGroup` is still null). His
- * first two days of school (Aug 24-25) were whole-grade Music and sat OUTSIDE
- * the rotation entirely, and his calendar entries stop at Sep 1, so there is
- * no reliable anchor to derive.
+ * Myles was deliberately unanchored until 2026-09-06 because his rotation
+ * phase was genuinely unknown. It is now confirmed, from two independent
+ * observations that agree, so `ANCHORS.myles` is set.
  *
- * Rather than guess a group and print a wrong centre on the dashboard every
- * day, `ANCHORS.myles` is null and getRotation('myles', …) returns
- * `{ day: null, center: null, isSchoolDay: <real value> }`. Note the
- * distinction that shape carries: isSchoolDay is still answered truthfully,
- * so school-day-dependent logic keeps working; only the centre is unknown.
- * Both renderers already fall back to "—" for a null centre.
+ *   (1) Myles had Music on Thu Sep 3, 2026 — the 9th school day of the year;
+ *       9 mod 6 = 3, and Day 3 in MYLES_CENTERS is Music.
+ *   (2) Mrs. Pitts's teacher-maintained Daily Planner shows Ophelia has PE2
+ *       on Tue Sep 8, 2026 — the 10th school day (Sep 4 and Sep 7 are
+ *       closures); 10 mod 6 = 4, and Day 4 in OPHELIA_CENTERS is PE2.
  *
- * To finish this: set ANCHORS.myles to { date, day, cycleLength: 6 } once the
- * group is known, and decide whether his Music day still needs a recorder —
- * he is in 5th-grade Band on baritone this year, so the old 4th-grade recorder
- * rule may no longer apply. That is the only open question left here.
+ * Both resolve to the same school-wide anchor, Aug 24 2026 = Day 1, so the
+ * two children share an anchor and differ only in their subject map. A
+ * packet-derived alternative phase (cycle starting Aug 26, putting Sep 3 on
+ * PE1) was considered and retired; the Sep 8 planner observation decided
+ * against it. schoolRotation.test.js pins all three dates so the arithmetic
+ * cannot regress silently.
+ *
+ * Superseded notes, recorded so they are not reintroduced: this header
+ * previously said `myles.centersGroup` was null and that numbered groups were
+ * pending assignment the week of 8/31. Both are wrong. His group is 6, and
+ * numbered Centers groups are a Grade 5 construct at Stonehouse — lower grades
+ * are identified by teacher, so Ophelia has no group number and never will.
+ * A null centersGroup is therefore not a signal that a rotation is unconfirmed;
+ * data/kids-profile.json carries an explicit `phaseConfirmed` flag for that.
+ *
+ * ── OPEN ITEM: music-day instrument reminder ───────────────────────────────
+ *
+ * `needsRecorder` is still hardwired false for both children and nothing sets
+ * it true. Myles is in 5th-grade Band on baritone this year, the baritone
+ * comes home, and his Music day is now known — so a music-day packing
+ * reminder is newly buildable. It is deliberately NOT built here: the field
+ * name and the 'pack recorder tonight' string in getSchoolStrip() name the
+ * wrong instrument, and changing that string turns three v1 tests red, one of
+ * them inside the frozen render/dashboard.js surface. Separate scoped task.
  */
 
 // ---------------------------------------------------------------------------
@@ -149,10 +166,16 @@ function toDateKey(date) {
 // Schedule 2026-2027" sheet, and Wade confirmed the Day 1 = Aug 24 anchor
 // against her Daily Planner on 2026-08-28.
 //
-// Myles: null on purpose — see the header comment.
+// Myles: same school-wide anchor, confirmed 2026-09-06 from his own Sep 3
+// Music day cross-checked against Ophelia's Sep 8 planner entry — see the
+// header comment. He differs from Ophelia in MYLES_CENTERS, not here.
 
 const ANCHORS = {
-  myles: null,
+  myles: {
+    date: new Date(2026, 7, 24),  // local midnight Aug 24 — avoid UTC string parsing
+    day: 1,                       // anchor = Day 1 (PE2 for Myles)
+    cycleLength: 6,
+  },
   ophelia: {
     date: new Date(2026, 7, 24),  // local midnight Aug 24 — avoid UTC string parsing
     day: 1,                       // anchor = Day 1 (PE1)
@@ -164,9 +187,19 @@ const ANCHORS = {
 // 4. ROTATION LABELS
 // ---------------------------------------------------------------------------
 //
-// One shared 6-day cycle for the whole school this year. Kept as two named
-// exports because callers and tests already import them separately, and
-// because the two could diverge again in a future year.
+// One school-wide 6-day cycle, entered at a different position by each class
+// group. The day NUMBER is shared; the day-number → subject map is not, which
+// is why these are two separate maps rather than two copies of one.
+//
+// ⚠ THESE DUPLICATE data/kids-profile.json.
+// Each child's `centersRotation.sequence` there holds the same ordering, and
+// nothing keeps the two files in sync — they can drift. For anything that
+// RENDERS, THIS FILE IS AUTHORITATIVE: kids-profile.json is not in
+// dashboard-artifact/package-inputs.json, so it is absent from the artifact
+// Lambda and resolves to null there, while this module is bundled and reaches
+// both the artifact and the email digest. Treat kids-profile.json as the
+// documentary record (it carries the provenance notes and `phaseConfirmed`)
+// and this map as the rendering source. If you change one, change both.
 
 const CENTERS_6DAY = {
   1: 'PE1',
@@ -177,7 +210,22 @@ const CENTERS_6DAY = {
   6: 'Music',
 };
 
-const MYLES_CENTERS   = { ...CENTERS_6DAY };
+// Myles enters the cycle at PE2 — three positions ahead of Ophelia. Before
+// 2026-09-06 this was a copy of CENTERS_6DAY, which was Ophelia's mapping
+// showing under his name; with his anchor set that would have printed the
+// wrong centre for him every day, and moved his library-book reminder to the
+// wrong date. Mirrors myles.centersRotation.sequence in data/kids-profile.json.
+const MYLES_CENTERS = {
+  1: 'PE2',
+  2: 'Media',     // ⚠️ Library checkout — pack book the day before
+  3: 'Music',
+  4: 'PE1',
+  5: 'Art',
+  6: 'Computer',
+};
+
+// Ophelia enters at PE1, which is the school-wide cycle as written above.
+// Mirrors ophelia.centersRotation.sequence in data/kids-profile.json.
 const OPHELIA_CENTERS = { ...CENTERS_6DAY };
 
 // The centre label that triggers the pack-a-library-book reminder.
