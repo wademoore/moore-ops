@@ -71,7 +71,7 @@ function buildCentersWeek(kidsProfile, today, centerEvents = [], actionCues = []
       return { key, label, date: dateKey(date), center, isToday: dateKey(date) === dateKey(current), action: center ? cueFor(actionCues, child, date, center) : null };
     });
     const available = days.some(day => day.center);
-    const hasProvisionalProfile = profile?.centersGroup == null && Boolean(profile?.centersRotation?.sequence?.length);
+    const hasProvisionalProfile = profile?.centersRotation?.phaseConfirmed !== true && Boolean(profile?.centersRotation?.sequence?.length);
     return { child, name: child[0].toUpperCase() + child.slice(1), available, provisional: hasProvisionalProfile, days };
   });
   return { weekOf: dateKey(monday), currentSchoolDay: current.getDay() >= 1 && current.getDay() <= 5, children };
