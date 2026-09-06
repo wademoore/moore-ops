@@ -25,8 +25,11 @@
  * ── Myles's anchor, and how the phase was confirmed ────────────────────────
  *
  * Myles was deliberately unanchored until 2026-09-06 because his rotation
- * phase was genuinely unknown. It is now confirmed, from two independent
- * observations that agree, so `ANCHORS.myles` is set.
+ * phase was genuinely unknown. Two separate things were settled, and they do
+ * NOT rest on the same amount of evidence. Read the distinction before citing
+ * either as confirmed.
+ *
+ * THE SCHOOL-WIDE PHASE (Aug 24 2026 = Day 1) — two independent sources:
  *
  *   (1) Myles had Music on Thu Sep 3, 2026 — the 9th school day of the year;
  *       9 mod 6 = 3, and Day 3 in MYLES_CENTERS is Music.
@@ -34,12 +37,25 @@
  *       on Tue Sep 8, 2026 — the 10th school day (Sep 4 and Sep 7 are
  *       closures); 10 mod 6 = 4, and Day 4 in OPHELIA_CENTERS is PE2.
  *
- * Both resolve to the same school-wide anchor, Aug 24 2026 = Day 1, so the
- * two children share an anchor and differ only in their subject map. A
- * packet-derived alternative phase (cycle starting Aug 26, putting Sep 3 on
- * PE1) was considered and retired; the Sep 8 planner observation decided
- * against it. schoolRotation.test.js pins all three dates so the arithmetic
- * cannot regress silently.
+ * Both resolve to the same anchor, so the two children share it and differ
+ * only in their subject map. A packet-derived alternative phase (cycle
+ * starting Aug 26, putting Sep 3 on PE1) was considered and retired; the
+ * Sep 8 planner observation decided against it.
+ *
+ * MYLES_CENTERS — ONE source, and it is a child's verbal report:
+ *
+ * Observation (2) constrains the phase only. It says nothing about which
+ * subject Myles has on a given day number, and the phase it confirms was
+ * already established and tested before his anchor was set. So his
+ * day-number → subject map rests entirely on observation (1): Myles saying
+ * he had Music on Sep 3. Given the packet's cyclic subject order and
+ * school-wide day numbering, that one report determines the map uniquely —
+ * the derivation is sound — but it is single-sourced, and a second
+ * observation on any other date has never been taken. Treat a future
+ * contradiction as evidence against this map rather than as an anomaly.
+ *
+ * schoolRotation.test.js pins all three dates so the arithmetic cannot
+ * regress silently.
  *
  * Superseded notes, recorded so they are not reintroduced: this header
  * previously said `myles.centersGroup` was null and that numbered groups were
@@ -352,7 +368,8 @@ function getRotation(student, date) {
     warningText = `⚠ Pack library book this morning (${label} — Media today)`;
   }
   // Music day: awareness only for Ophelia, no item. Whether Myles's Music day
-  // needs a recorder is deferred with his anchor — see the header comment.
+  // needs an instrument packed is a separate open item — see the header
+  // comment. It is no longer blocked on his anchor, which is now set.
 
   return {
     day,
