@@ -2184,6 +2184,30 @@ method, so they chain directly to the 988 pre-change number above.
 
 ## Current state (changelog)
 
+### Schoolwork preview (September 7, 2026 — local, not deployed)
+
+Dashboard v2 now extracts `[Assignment]`, `[Quiz]`, `[Test]`, and `[Project]`
+entries from the existing Myles and Ophelia calendars. The v2 adapter filters
+these entries before digest assembly and horizon selection, leaving the email
+and frozen v1 paths unchanged. `digest/schoolwork.js` retains today's work and
+the next 14 days, calendar-failure metadata, and description/link details.
+The compact Schoolwork block below Centers shows at most five dated rows and
+an overflow count. Expanded details and completion tracking remain deferred.
+
+`scripts/preview-schoolwork.mjs` renders one-item and busy local previews with
+the verified September 10 Reading — Ancient Words quiz; surrounding dashboard
+content and additional schoolwork are illustrative fixtures. Browser checks at
+2560×1440 measure 61px and 221px respectively, without dinner overlap. Run with
+`DASHBOARD_BROWSER_PATH` pointing to local Chrome when necessary.
+
+Validation: four Schoolwork tests and both preview geometry checks pass. The
+full Windows run selected 2094 tests: 2056 passed, 38 failed. Those 38 also
+reproduce against the original files (artifact Windows path handling, workflow
+shell/CRLF assumptions, and agent frontmatter CRLF). The npm script's quoted
+globs selected zero tests here; the actual suite was run by passing the files
+enumerated under test, digest, and render directly to Node. No deployment.
+
+
 - **Enforcement config fixed after review (Sept 7, 2026):** Four findings against the
   Windows-compatible enforcement branch, all addressed. (1) **The archived-files guard is
   back.** It had been dropped from `settings.json` and replaced with `Edit`/`Write` deny

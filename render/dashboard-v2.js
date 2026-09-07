@@ -438,6 +438,21 @@ function renderCenters(centersWeek) {
   return `<div class="centers-block"><div class="subhead">Centers</div>${rows}</div>`;
 }
 
+function renderSchoolwork(schoolwork) {
+  if (!schoolwork) return '';
+  const items = schoolwork.items || [];
+  return `<div class="schoolwork-block"><div class="subhead">Schoolwork</div>
+    ${items.slice(0, 5).map(item => `<div class="schoolwork-row">
+      <time>${esc(new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', weekday: 'short', month: 'short', day: 'numeric' }).format(new Date(`${item.date}T12:00:00Z`)))}</time>
+      <span class="owner owner-${esc(item.child.toLowerCase())}">${esc(item.child)}</span>
+      <strong>${esc(item.title)}</strong><span class="schoolwork-type">${esc(item.type)}</span>
+    </div>`).join('')}
+    ${!items.length ? '<div class="schoolwork-note">No upcoming work listed</div>' : ''}
+    ${items.length > 5 ? `<div class="schoolwork-note">+${items.length - 5} more</div>` : ''}
+    ${schoolwork.unavailable?.length ? `<div class="schoolwork-note">Calendar unavailable: ${esc(schoolwork.unavailable.join(', '))}</div>` : ''}
+  </div>`;
+}
+
 function renderToday(data) {
   const today = data.days?.[0] || { events: [], tasks: [] };
   const events = (today.events || []).filter(event => event.cardType !== 'menu');
@@ -488,6 +503,7 @@ function renderToday(data) {
     ${taskRows ? `<div class="subhead">Tasks</div><div class="tasks">${taskRows}</div>` : ''}`}
     ${priorityRows ? `<div class="subhead">Weekly priorities</div><div class="priorities">${priorityRows}</div>` : ''}
     ${renderCenters(school.centersWeek)}
+    ${renderSchoolwork(data.schoolwork)}
     <div class="today-bottom">
       <div class="dinner-block">
         ${renderSectionTitle("Tonight's Dinner", 'green', 'dinner')}
@@ -1479,6 +1495,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
    and the sports ticker are deliberately left at their production colour
    rather than risk clipping a glyph. Red and purple section brushes are
    excluded by selector: those are ownership cues, not decoration. */
+.schoolwork-block{flex:0 0 auto;margin-top:8px}.schoolwork-row{display:grid;grid-template-columns:106px 65px minmax(0,1fr) 78px;align-items:center;gap:8px;min-height:34px;padding:5px 0;border-bottom:1px solid var(--rule);font-family:"Barlow Semi Condensed",sans-serif;font-size:19px;line-height:1.1}.schoolwork-row time{font-size:17px;font-weight:600}.schoolwork-row .owner{font-size:14px;text-align:center;padding:3px 4px}.schoolwork-row strong{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.schoolwork-type{font-size:15px;text-align:right;font-weight:700;color:var(--secondary)}.schoolwork-note{font-family:"Barlow Semi Condensed",sans-serif;font-size:16px;color:var(--secondary);padding-top:5px}
 .holiday-skin{display:none;position:absolute;inset:0;pointer-events:none;z-index:13}
 .dashboard[data-holiday-state="active"] .holiday-skin{display:block}
 .holiday-doodle{position:absolute;background-color:var(--holiday-highlight-active);-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-size:contain;mask-size:contain;-webkit-mask-position:center;mask-position:center}

@@ -8,6 +8,7 @@
 import { fetchDashboardWeather } from './weather.js';
 import { resolveEvent } from './digest/aliases.js';
 import { selectNowNext } from './digest/nowNextSelector.js';
+import { buildSchoolwork, withoutSchoolwork } from './digest/schoolwork.js';
 
 const WEATHER_FALLBACK = Object.freeze({
   unavailable: true,
@@ -49,8 +50,8 @@ async function fetchDashboardV2Data({
   ]);
 
   const digestData = await buildData({
-    rawEvents,
-    rawEvents14d,
+    rawEvents: withoutSchoolwork(rawEvents),
+    rawEvents14d: withoutSchoolwork(rawEvents14d),
     emails,
     docs,
     banner,
@@ -58,7 +59,8 @@ async function fetchDashboardV2Data({
 
   const dashboardData = {
     ...digestData,
-    horizonEvents: (rawEvents180d || []).map(event => resolveEvent({
+    schoolwork: buildSchoolwork(rawEvents14d, digestData.today),
+    horizonEvents: (withoutSchoolwork(rawEvents180d) || []).map(event => resolveEvent({
       ...event,
       _calName: event._calName || event.calendarName || '',
     })),
