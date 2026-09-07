@@ -38,7 +38,7 @@ Run `npm run preview:dashboard-v2:real` from a normal local checkout that alread
 
 The adapter lives in `dashboard-v2-data.js`. It deliberately does not import `index.js`, `mailer.js`, the production renderer, or `uploadDashboard()`. Running it cannot send the digest, upload a dashboard, or replace the v1 Drive file. Missing local Google auth fails before any read is attempted; a weather failure is non-fatal and renders an explicit fallback.
 
-The same v2 adapter used by production derives the approved `nowNext` display contract through the pure selector in `digest/nowNextSelector.js`. Selection is deterministic and emits reason codes plus diagnostics. Calendar events titled `Myles: [Center] (Centers)` or `Ophelia: [Center] (Centers)` populate the Centers strip and are filtered from NOW/NEXT and Next Two Weeks. Saturday and Sunday display the upcoming school week.
+The same v2 adapter used by production derives the approved `nowNext` display contract through the pure selector in `digest/nowNextSelector.js`. Selection is deterministic and emits reason codes plus diagnostics. Calendar events titled `Myles: [Center] (Centers)` or `Ophelia: [Center] (Centers)` populate the Centers strip and are filtered from NOW/NEXT, Next Two Weeks, and kid-activity conflict flags. Saturday and Sunday display the upcoming school week.
 
 Candidate diagnostics use concrete occurrence identity (`Google event id + start`) and consolidate competing reason types for the same occurrence before ranking. Significant events within four hours this morning sit below problem/imminent/preparation states but above tomorrow orientation. Supporting orientation excludes only the selected occurrence, then chooses the earliest relevant remaining occurrence with an explicit day label.
 
