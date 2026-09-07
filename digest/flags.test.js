@@ -78,6 +78,32 @@ describe('Regression — unchanged evaluators', () => {
   });
 });
 
+describe('Kid activity overlap', () => {
+  const timedKidEvent = (title, calendarName, start, end) => ev({
+    title,
+    _calName: calendarName,
+    raw: { start: { dateTime: start }, end: { dateTime: end } },
+  });
+
+  it('ignores routine Centers entries', () => {
+    const flags = computeFlags(ctx({ resolvedEvents: [
+      timedKidEvent('Myles: Music (Centers)', 'Myles', '2026-09-08T09:15:00-04:00', '2026-09-08T10:00:00-04:00'),
+      timedKidEvent('Ophelia: PE2 (Centers)', 'Ophelia', '2026-09-08T09:30:00-04:00', '2026-09-08T10:15:00-04:00'),
+    ] }));
+
+    assert.equal(flags.find(flag => flag.id === 'activity-overlap'), undefined);
+  });
+
+  it('continues to flag genuine overlapping kid activities', () => {
+    const flags = computeFlags(ctx({ resolvedEvents: [
+      timedKidEvent('Sharks Practice', 'Myles', '2026-09-08T18:00:00-04:00', '2026-09-08T19:00:00-04:00'),
+      timedKidEvent('Dance Class', 'Ophelia', '2026-09-08T18:30:00-04:00', '2026-09-08T19:30:00-04:00'),
+    ] }));
+
+    assert.ok(flags.find(flag => flag.id === 'activity-overlap'));
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Section 13 — Sort order
 // ---------------------------------------------------------------------------
