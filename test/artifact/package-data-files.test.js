@@ -7,16 +7,19 @@ const PACKAGE_INPUTS = JSON.parse(read('../../dashboard-artifact/package-inputs.
 const BUILDER = read('../../digest/builder.js');
 
 /**
- * Pre-existing packaging gaps, recorded rather than hidden.
+ * Pre-existing packaging gap, recorded rather than hidden.
  *
- * digest/builder.js reads these two files through the same non-fatal
- * readDataFile() path the Family Spotlight uses, but they are absent from the
- * Lambda package, so in production they silently resolve to null and their
- * features degrade with no error. Local tests pass because the repository files
- * exist. That is exactly the failure mode this test exists to prevent for new
- * data files; fixing these two is deliberately out of scope for this change.
+ * digest/builder.js reads this file through the same non-fatal readDataFile()
+ * path the Family Spotlight uses, but it is absent from the Lambda package, so
+ * in production it silently resolves to null and its feature degrades with no
+ * error. Local tests pass because the repository file exists. That is exactly
+ * the failure mode this test exists to prevent for new data files; fixing this
+ * one is deliberately out of scope for this change.
+ *
+ * kids-profile.json was on this list until it was added to dataFiles
+ * (Sept 2026); routine-anchors.json is the one remaining gap.
  */
-const KNOWN_UNPACKAGED = Object.freeze(['routine-anchors.json', 'kids-profile.json']);
+const KNOWN_UNPACKAGED = Object.freeze(['routine-anchors.json']);
 
 function builderDataFiles() {
   return [...BUILDER.matchAll(/readDataFile\('([^']+)'\)/g)].map(match => match[1]);
@@ -70,15 +73,16 @@ test('the temporary compatibility shim is declared while it is still imported', 
 
 test('the packaged data-file count matches the documented invariant', () => {
   // 10 → 11 with data/holiday-themes.json, the ambient Holiday Theme registry.
+  // 11 → 12 with data/kids-profile.json, previously a known-unpackaged gap.
   // This number is a deliberate tripwire, not a fact about the world: it is
   // meant to fail when a data file is added, so that adding one is a reviewed
   // change rather than a quiet one. Updated here on purpose, and reported.
-  assert.equal(PACKAGE_INPUTS.dataFiles.length, 11);
+  assert.equal(PACKAGE_INPUTS.dataFiles.length, 12);
   assert.equal(new Set(PACKAGE_INPUTS.dataFiles).size, PACKAGE_INPUTS.dataFiles.length, 'no duplicates');
 });
 
 test('the known-unpackaged allowlist has not silently grown', () => {
-  assert.deepEqual([...KNOWN_UNPACKAGED].sort(), ['kids-profile.json', 'routine-anchors.json']);
+  assert.deepEqual([...KNOWN_UNPACKAGED].sort(), ['routine-anchors.json']);
   for (const name of KNOWN_UNPACKAGED) {
     assert.ok(builderDataFiles().includes(name), `${name} is no longer read; drop it from the allowlist`);
   }
