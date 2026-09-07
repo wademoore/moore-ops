@@ -42,6 +42,14 @@
               "${CLAUDE_PROJECT_DIR}/.claude/hooks/block-main-push.mjs"
             ],
             "statusMessage": "Checking push target"
+          },
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-readonly.mjs"
+            ],
+            "statusMessage": "Checking read-only role"
           }
         ]
       }
