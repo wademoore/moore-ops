@@ -4,17 +4,44 @@
       "Bash(git push * main)",
       "Bash(git push * main *)",
       "Bash(git push * *:main)",
-      "Bash(git push * *:main *)"
+      "Bash(git push * *:main *)",
+      "Edit(data/archive/**)",
+      "Write(data/archive/**)",
+      "Edit(scripts/archive/**)",
+      "Write(scripts/archive/**)",
+      "Edit(.claude/settings.json)",
+      "Write(.claude/settings.json)",
+      "Edit(.claude/hooks/**)",
+      "Write(.claude/hooks/**)",
+      "Edit(.claude/agents/**)",
+      "Write(.claude/agents/**)"
     ]
   },
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|Bash",
+        "matcher": "Edit|Write|Bash|PowerShell",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/hooks/guard-archived-files.sh\""
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-archived-files.mjs"
+            ],
+            "statusMessage": "Checking for archived-file writes"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/block-main-push.mjs"
+            ],
+            "statusMessage": "Checking push target"
           }
         ]
       }

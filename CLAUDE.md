@@ -12,7 +12,8 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 624+ passing
+- Run npm test after changes — must stay at 2088+ passing with a browser
+  (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
 
@@ -90,13 +91,39 @@ merely frozen, is an open decision — and not one this section makes.
 
 ## Branching policy
 
-Direct-to-main after Reviewer sign-off remains this project's default for all Coder/Updater work, including small, well-specified changes. Feature branches are not the default safety mechanism — the Reviewer gate is. Use a feature branch as a deliberate escalation, not routine practice, specifically for changes where the risk is environment-dependent in a way local testing can't fully rule out (e.g. timezone/locale logic, dependency version bumps, anything sensitive to the Lambda runtime specifically) — in those cases, a branch + PR gets a free independent confirmation from CI (which runs under UTC, matching Lambda) before merge, which is a real benefit local subprocess-spawned tests can't fully replicate.
+**Feature branch + pull request is the only route to `main` (Sept 7, 2026).** Direct-to-main
+after Reviewer sign-off was this project's default until the enforcement config landed; it no
+longer is, and it is no longer possible by accident. Three layers stand between a session and
+`main`, and only the first is real enforcement:
 
-## The gate (`.claude/settings.json` + `scripts/hooks/guard-archived-files.sh`)
+- **server-side branch protection on `main`** — the actual gate; binds every route, the
+  GitHub API included;
+- **`permissions.deny` in `.claude/settings.json`** — the four `Bash(git push … main)` rules;
+- **`.claude/hooks/block-main-push.mjs`** — a `PreToolUse` hook on `Bash|PowerShell` that
+  refuses any `git push` while `main` is checked out, or whose command text contains the
+  word `main`.
 
-Installed in `4a8cc52`; the Bash arm and this section added in the follow-up. Two
-separate mechanisms live in `.claude/settings.json`, and they are not equally strong.
-Read this before assuming either one protects you.
+The Reviewer gate is unchanged in substance and moved in position: Reviewer sign-off is still
+required before the pull request is merged (open it, or mark it ready, only after the pass),
+and Reviewer checklist item 7 now expects a pushed feature branch with a PR open or ready —
+not a pushed `main`. Pushing a feature branch is not a delivery; merging is. CI runs on every
+pull request, so the "free independent confirmation under UTC" that used to be the argument
+for escalating to a branch is now part of every change rather than a special case.
+
+**Known over-block in the push hook, accepted deliberately.** It matches `\bmain\b` anywhere
+in the command text whenever `git push` also appears, so a compound command that merely
+*mentions* `main` is refused: a heredoc quoting the deny rules above, `git log
+origin/main..HEAD && git push -u origin feature`, or a push of a branch named `fix-main-menu`.
+Confirmed live on Sept 7, 2026 (the heredoc case, while writing `settings.json`). Split the
+command instead of weakening the hook — a false block is recoverable.
+
+## The gate (`.claude/settings.json` + `.claude/hooks/*.mjs`)
+
+Installed in `4a8cc52`; the Bash arm and this section added in the follow-up; the
+archived-files hook ported from bash to Node on Sept 7, 2026 so it runs on Windows too (see
+"The Node port" below). Three mechanisms now live in `.claude/settings.json` — the deny
+rules, the archived-files hook and the push hook — and they are not equally strong. Read
+this before assuming any of them protects you.
 
 ### What `permissions.deny` covers — reinstated, scoped to `main`
 
@@ -179,10 +206,21 @@ form — that is the whole reason this section names a version number.
 
 Bare `git push` is deliberately left allowed. Blocking it would require an exact-match
 rule on `git push`, which would also block a bare `git push` on a feature branch — the
-exact over-block that got the original rule removed. This is an **accident gate, not an
-adversary gate**, the same standing this project gives the archived-files hook: it stops
-the ways `main` actually gets pushed by mistake, not anyone who means it. The real
-enforcement remains branch protection on `main`.
+exact over-block that got the original rule removed. (`block-main-push.mjs` closes that
+hole from the other side: it asks git which branch is checked out, so a bare `git push`
+on `main` is refused by the hook even though no deny rule matches it.) This is an
+**accident gate, not an adversary gate**, the same standing this project gives the
+archived-files hook: it stops the ways `main` actually gets pushed by mistake, not anyone
+who means it. The real enforcement remains branch protection on `main`.
+
+**Added Sept 2026, alongside the push hook:** `Edit`/`Write` deny rules on
+`data/archive/**` and `scripts/archive/**` (a belt to the archived-files hook's braces —
+the path arm and the rule say the same thing by two mechanisms), and on
+`.claude/settings.json`, `.claude/hooks/**` and `.claude/agents/**`, so the enforcement
+config cannot be edited through the two exact-path tools. **These are `Edit`/`Write`-only.**
+A Bash heredoc reaches every one of those files — that is how this very change was made —
+so they are friction against an accidental edit, not a gate. Same lesson as the rest of
+this section.
 
 ### What `permissions.deny` did not cover
 
@@ -251,10 +289,12 @@ the likely path rather than an exotic one. Same shape, same fix: enumerate the r
 
 ### What the archived-files hook covers
 
-`PreToolUse` matcher `Edit|Write|Bash` → `scripts/hooks/guard-archived-files.sh`. Exit 2
-blocks the tool call and returns stderr to the model. The script is committed mode
-`100755`, but is still invoked as `bash "$CLAUDE_PROJECT_DIR/..."` so it does not depend
-on the exec bit or on cwd.
+`PreToolUse` matcher `Edit|Write|Bash|PowerShell` → `.claude/hooks/guard-archived-files.mjs`,
+declared in exec form (`"command": "node"`, `"args": ["${CLAUDE_PROJECT_DIR}/…"]`) so no
+shell is involved in launching it on either platform. Exit 2 blocks the tool call and
+returns stderr to the model. Until Sept 7, 2026 this was `scripts/hooks/guard-archived-files.sh`,
+invoked as `bash "$CLAUDE_PROJECT_DIR/..."`; the bash script is retired (deleted, not kept
+alongside) — see "The Node port" below.
 
 Two arms, and they differ in kind:
 
@@ -266,15 +306,22 @@ Two arms, and they differ in kind:
     segment. Scoped to the redirect target, so reads piped elsewhere still work.
   - (b) an archived path anywhere in a command running a write-capable utility:
     `tee cp mv rsync install ln rm rmdir unlink shred truncate touch mkdir chmod chown
-    chgrp patch dd find python python3 node perl ruby`.
+    chgrp patch dd find python python3 node perl ruby`, plus (since the Node port) the
+    PowerShell writers `Set-Content Add-Content Clear-Content Out-File Copy-Item Move-Item
+    Remove-Item New-Item Rename-Item`, matched case-insensitively.
   - (c) in-place stream editors: `sed`/`perl`/`awk` with `-i`/`--in-place`/`inplace`.
   - (d) mutating git subcommands: `checkout restore rm mv apply clean stash`. Read-only
     git (`log`, `show`, `diff`) stays allowed — the archive exists to be queried.
-  - (e) `cd` into an archive directory followed by any write indicator, which otherwise
-    defeats (a)–(d) because the archived path never appears in the write itself.
+  - (e) `cd` (or `Set-Location`) into an archive directory followed by any write
+    indicator, which otherwise defeats (a)–(d) because the archived path never appears in
+    the write itself.
 
   Redundant path separators are tolerated: `data/archive`, `data//archive`,
-  `data/./archive` all match.
+  `data/./archive` all match. Windows forms are covered since the port: backslashes are
+  normalized to `/` before matching in **both** arms (so `data\archive\x.json` is caught,
+  in a `file_path` or in a command), the path arm is case-insensitive because NTFS is, and
+  CRLF line breaks collapse exactly like LF. All three are deliberate over-blocks in the
+  Windows direction, on the usual grounds that a false block is recoverable.
 
 ### What the archived-files hook does not cover — named, not implied
 
@@ -327,11 +374,22 @@ whitespace-free token. Treat any new rule here as guilty until table-tested both
 ### Test matrix — committed, runs in the normal suite
 
 `test/hooks/guard-archived-files.test.js`, driven by
-`test/fixtures/guard-archived-files-cases.json`. **73 cases, +1 fixture-integrity check =
-74 tests.** It asserts both directions: every write form blocked, and every read of an
-archived file plus every write outside `archive/` still allowed. Each case spawns the
-real hook script with a real PreToolUse payload on stdin and asserts the exit code (2 =
-blocked, 0 = allowed), so it tests the shipped script, not a copy of its logic.
+`test/fixtures/guard-archived-files-cases.json`. **93 cases, +1 fixture-integrity check =
+94 tests** — the 73 from the bash era, unchanged and still passing against the port, plus
+20 Windows/PowerShell cases (74–93) added with it. It asserts both directions: every write
+form blocked, and every read of an archived file plus every write outside `archive/` still
+allowed. Each case spawns the real hook script (`process.execPath` + the `.mjs`, so the
+file runs unchanged on Windows) with a real PreToolUse payload on stdin and asserts the
+exit code (2 = blocked, 0 = allowed), so it tests the shipped script, not a copy of its
+logic.
+
+`test/hooks/enforcement-wiring.test.js` (**6 tests**) is the companion tripwire: it reads
+the shipped `settings.json` and agent files and asserts the guard is actually *wired* —
+matcher reaching `Edit`, `Write`, `Bash` and `PowerShell`, exec form, no BOM on any
+enforcement file, the reviewer/debugger frontmatter hooks present with the right role
+argument, every hook script parsing, and the retired bash guard absent. The matrix proves
+the script works; this proves something runs it. The gap between those two is exactly how
+the guard was dropped from `settings.json` unnoticed in Sept 2026.
 
 This supersedes the earlier 63-case matrix, which lived only in a session scratchpad and
 did not survive it. Coverage is a superset: all 24 rule-(b) utilities are now enumerated
@@ -354,11 +412,79 @@ during development. It is now bounded to a single whitespace-free token. Both ca
 confirmed to have teeth: against a copy of the hook with that one character class
 reverted, both flip from allow to block and the test fails.
 
-**Verified state:** 74/74 passing. The file sits in `test/hooks/`, a subdirectory, which
+**Verified state:** 94/94 passing (plus 6/6 wiring). The file sits in `test/hooks/`, a subdirectory, which
 is why it survived the globstar bug — that bug is fixed as of Aug 27, 2026 (see Test
 baseline), so plain `npm test` now picks up every test file regardless of depth and the
 placement no longer buys anything. Keeping it in `test/hooks/` remains fine on
 organizational grounds; it is simply no longer load-bearing.
+
+### The Node port (Sept 7, 2026)
+
+The bash hook could not run on Wade's Windows machine: no `jq`, and a CRLF checkout turns
+`#!/bin/bash` into `#!/bin/bash\r`. A review of the first Windows-compatible enforcement
+config found that the hook had been dropped from `settings.json` and replaced with
+`Edit`/`Write` deny rules only — which silently removed the whole Bash arm (redirects,
+`sed -i`, `cp`/`mv`, mutating git into the archive). The port restores it.
+
+- **Same five rule classes, same scoped-redirect approach, same messages.** Reads from
+  the archive stay allowed; the known holes and the known over-blocks are unchanged.
+- **Parity was proved before the bash script was retired, not assumed.** All 73 existing
+  fixture cases were run through both implementations with identical payloads: **73/73
+  identical exit codes.** The 20 new Windows cases diverge by design — the bash script
+  allows every one of them, which is the gap the port exists to close.
+- **Verified live in the session that made the change**, after Claude Code hot-reloaded
+  the edited `settings.json` (it does — the branch's push hook fired mid-session from a
+  file that did not exist at session start): a `cp` from the archive was BLOCKED by rule
+  (b), a `head` of the same file was allowed, and an `Edit` of it was refused by the deny
+  rule before the hook was even consulted.
+- **Exec form, deliberately.** `"command": "node"` with the script in `"args"` spawns
+  without a shell, so there is no `sh -c` on Linux and no PowerShell quoting on Windows to
+  get wrong. Confirmed to fire headless on Linux in both `settings.json` and agent
+  frontmatter (see the trust finding below).
+
+### Read-only role hooks live in agent frontmatter — and are gated on workspace trust
+
+`reviewer.md` and `debugger.md` carry their `PreToolUse` hook (`guard-readonly.mjs`, an
+allowlist that refuses everything but read-only commands) in their **frontmatter**, not in
+`settings.json`. A review reported the frontmatter hook not firing in a headless Linux run
+while the identical hook in `settings.json` did; Wade reported the same frontmatter hook
+firing in an interactive Windows session. **Both are true, and the variable is neither
+platform nor interactivity — it is workspace trust.** Resolved empirically on Sept 7, 2026
+with a throwaway project, `claude -p` headless on Linux, Claude Code 2.1.263, one probe
+subagent, and marker files written by each hook layer:
+
+| run | `settings.json` hook | frontmatter hook |
+|---|---|---|
+| headless, folder **not** trusted | fires | **does not fire** |
+| headless, folder trusted (`hasTrustDialogAccepted: true` in `~/.claude.json`) | fires | fires |
+| same two runs with the `"command": "node"` + `"args"` exec form | fires | as above |
+| Wade's interactive Windows session (his report, not re-measured here; consistent with a trusted folder) | fires | fires |
+
+This matches the documented rule (`code.claude.com/docs/en/sub-agents`): a project-level
+subagent's frontmatter hooks run only once the workspace trust dialog has been accepted for
+the folder containing the agent file; before 2.1.218 they ran from untrusted folders too,
+including non-interactive sessions. A headless run never shows the dialog, so unless trust
+was recorded earlier, the hook is simply absent. **This sandbox is exactly that case:**
+`~/.claude.json` records `hasTrustDialogAccepted: false` for this checkout, so in Claude
+Code on the web the Reviewer's and Debugger's shell is *not* restricted — `tools:` still
+limits them to Read/Grep/Glob/Bash, but Bash is unguarded.
+
+**Recommendation, and what was deliberately not done.** The hook stays in the frontmatter.
+It is the only role-scoped location, it is documented, and it fires wherever the folder is
+trusted — moving it to `settings.json` on the strength of one untrusted headless run would
+have applied the read-only allowlist to *every* session, Coder included. Two things follow:
+(1) do not rely on the read-only guard in a headless or remote session unless trust was
+recorded for the folder; (2) the `PreToolUse` payload carries `agent_type` (observed:
+`"agent_type":"probe"` on the settings-level hook when the probe subagent ran Bash), so a
+`settings.json`-level backstop that exits 0 unless `agent_type` is `reviewer` or
+`debugger` would hold in both environments. That is a separate decision — recorded under
+Known open items — not part of this change.
+
+**The BOMs were not the cause.** Every one of the five enforcement files arrived with a
+UTF-8 BOM (a Windows editor default). Probed: a BOM on `settings.json` and on the agent
+file changed nothing — both hooks still fired. They were stripped anyway: `main`'s
+versions have none, a strict `JSON.parse` refuses a BOM (the wiring test uses one), and a
+BOM is invisible in every editor and visible in every diff.
 
 ### Editing this section is itself partly blocked — read this before trying
 
@@ -372,6 +498,7 @@ edits of it. Probed against the live script:
 | Bash `grep '<literal>' CLAUDE.md` | **allowed** — `grep` is not a listed utility |
 | Bash `sed -i 's|<literal>|...|' CLAUDE.md` | **BLOCKED** by rule (c) |
 | Bash `python3`/`node`/`perl` rewriting `CLAUDE.md` with a literal in the command | **BLOCKED** by rule (b) |
+| Bash heredoc (any utility) whose text contains `git push` and the word `main` — e.g. quoting the four deny rules | **BLOCKED** by `block-main-push.mjs`, which reads the whole command text |
 
 So the section is editable, but not by every route. **Use the `Edit`/`Write` tool** — that
 is the supported path and it is not blocked. If you are in a mode that prefers Bash for
@@ -1715,7 +1842,43 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 6, 2026 on the Centers rotation branch
+### Current baseline — measured Sept 7, 2026 on the enforcement-config fixes branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test`, no browser resolvable | 2088 | 2051 | 3 | 34 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2088 | **2088** | **0** | **0** |
+
+Measured on `claude/enforcement-config-fixes-nzaq1q` after merging `main` at `35fc5d8`
+(PR #42). **The merge base was re-measured in the same session, before any change: 2062 /
+2062 / 0 / 0 with a browser, on both the un-merged branch and the merged tree** — #42 changed
+a test but added none, so the previously recorded 2062 was accurate. The stale figure was
+the `624+` in CODER MODE at the top of this file, which had not moved since July. This
+change adds **+26**, every unit accounted for:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/hooks/guard-archived-files.test.js` | 74 | 94 | +20 |
+| `test/hooks/enforcement-wiring.test.js` (new) | — | 6 | +6 |
+| **total** | | | **+26** |
+
+The no-browser row is back in the table because it had drifted too: the 3 failures are
+the three flat tests in `render/first-day-level3-layout.test.js`, and the 34 cancelled are
+`render/dashboard-v2-layout.test.js` (22, three `describe` blocks) plus
+`render/dashboard-v2-holiday-layout.test.js` (12) — the holiday suite was added after the
+last time that row was recorded (22). All 37 go to zero the moment a browser resolves; the
+standing cause is unchanged.
+
+Exact invocations:
+
+```bash
+npm test
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2088+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 6, 2026 on the Centers rotation branch
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -1744,7 +1907,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2062+ with no failures once a browser resolves.**
+(Superseded — see Current baseline above; the figure is now 2088.)
 
 ### Previous baseline — measured Sept 2, 2026 after the holiday-theme hardening
 
@@ -2020,6 +2183,25 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Enforcement config fixed after review (Sept 7, 2026):** Four findings against the
+  Windows-compatible enforcement branch, all addressed. (1) **The archived-files guard is
+  back.** It had been dropped from `settings.json` and replaced with `Edit`/`Write` deny
+  rules, which silently removed the whole Bash arm. It is now `.claude/hooks/guard-archived-files.mjs`,
+  a Node port of the bash hook (no `jq`, no shell, CRLF-tolerant), wired in exec form on
+  `Edit|Write|Bash|PowerShell`; the five rule classes and the scoped-redirect approach are
+  unchanged, Windows paths and PowerShell writers are added, parity was proved 73/73 against
+  the bash script before it was retired, and the live wiring was verified in-session. (2)
+  **The frontmatter-hook question is resolved, not guessed:** the reviewer/debugger read-only
+  hook fires wherever the folder is trusted and does not fire in an untrusted headless folder —
+  a documented trust gate since 2.1.218, reproduced here in both states. The hook stays in
+  the frontmatter; the gap and a possible `agent_type` backstop are recorded. (3) **Branching
+  policy corrected**: feature branch + PR is the only route to `main`, matching Reviewer item
+  7; the stale `624+` test figure is replaced by a measured one. (4) **BOMs stripped** from
+  all five enforcement files (probed first: they were not breaking anything on 2.1.263).
+  Also: a wiring tripwire test, and a documented over-block in `block-main-push.mjs` (any
+  command text containing `git push` and `main`), hit live while making this change. Tests
+  **2062 → 2088** with a browser, all passing.
 
 - **Holiday theme configuration hardened after an independent Reviewer pass (Sept 2, 2026):**
   A separate cleanup commit on top of the pilot; `402d762` was not amended. The approved
@@ -2425,9 +2607,21 @@ method, so they chain directly to the 988 pre-change number above.
 
 - **Champs/Summer Awards history migration: COMPLETE (August 2026).** Full project history: `docs/data-reload/champs-sa-migration-history.md`. Summary: 2024 Champs, 2025 Champs, and 2026 Summer Awards individual + relay results (3,844 individual + 172 relay rows) parsed and loaded into `league-results-history-v2.json`/`relay-results-history-v2.json`. Includes the wrong-file-write incident and correction that led to the current "current vs. archived" guard rail. Legacy files archived to `data/archive/` as part of this project.
 
-**Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut.
+**Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
 
 ## Known open items
+
+- **Read-only role guard is absent in untrusted headless sessions — backstop not decided
+  (Sept 7, 2026).** The reviewer/debugger `PreToolUse` hook lives in agent frontmatter and,
+  per the documented trust gate, does not fire unless the workspace trust dialog has been
+  accepted for the folder; this remote sandbox records `hasTrustDialogAccepted: false`, so a
+  Reviewer or Debugger spawned here has an unrestricted Bash. Evidence and the full probe
+  table are in "The gate" → "Read-only role hooks live in agent frontmatter". The
+  `PreToolUse` payload carries `agent_type`, so a `settings.json`-level hook that exits 0
+  unless `agent_type` is `reviewer` or `debugger` would enforce the allowlist in both
+  environments without touching Coder. Deliberately not done in the fixes branch — it changes
+  where the guard lives, which the review said not to do on the strength of one environment.
+  Decide, then do it as its own change with its own probe.
 
 - **Special-event foundation P5 cleanup — blocked on a real production cycle, deliberately (Aug 29, 2026).** Delete `digest/legacySpotlightCompat.js` together with the `familySpotlightConfig` line in `digest/builder.js`, its `requiredBundleInputs` entry and the `specialEventsSampleData` projection; then delete the four oracles (`data/family-spotlight.json`, `digest/familySpotlightSelector.js`, its test, `test/artifact/family-spotlight-contract.test.js`) and `test/fixtures/legacy-athletics-panels.json`. **Do not do this until the registry path has run at least one real production cycle** — the oracles are the only thing that can prove a regression, and deleting them early is how a migration bug becomes undetectable. A test asserts the shim's bundle-input declaration exists *exactly while* `builder.js` imports it, so a half-done removal fails rather than leaving a dangling path. Also open at P5: whether to rename `FAMILY_SPOTLIGHT_ENABLED`, and whether First Day Level-3 becomes registry-driven — the latter should be settled **before** any second Takeover (Christmas morning) is built, not after.
 - **✓ RESOLVED Aug 29, 2026 — the package gate now runs before merge, not after it.** This bullet previously said `scripts/validate-dashboard-artifact-package.mjs` "must be green in CI before merge" — which was not true of any workflow that existed: it ran only in `deploy-dashboard-v2-artifact.yml` on `push` to `main`, so its first execution was *after* the merge, as the deploy job's first action. Two things changed. (1) The gate was finally executed for real: `sam` installed into a throwaway virtualenv locally gives `sam build` → Build Succeeded and `dashboard artifact package: valid (10 data files, Emma parser/evaluator/builder markers present)`. (2) `ci.yml` now runs the same two commands on `pull_request`, with `permissions: contents: read`, no secrets, no OIDC token, no AWS CLI and no `sam deploy` — see "The package gate is a pull-request gate" above for the full contract and its 13 tests. The deploy workflow keeps its own copy of the step ahead of `Configure AWS credentials`, so nothing is weakened where it guards a real deployment. **The general lesson outlives the fix:** a gate named in this file as pre-merge was, for as long as it was written down, post-merge only — nobody had checked *which workflow* ran it. Naming a check is not the same as knowing when it fires.

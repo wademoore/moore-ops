@@ -1,10 +1,14 @@
 // Regression matrix for the archived-files PreToolUse hook.
 //
-// The hook (scripts/hooks/guard-archived-files.sh) is security-adjacent: it is the
+// The hook (.claude/hooks/guard-archived-files.mjs) is security-adjacent: it is the
 // accident gate that stands between an agent and the committed audit record. Its
 // Bash arm is pattern matching over a shell string and is best-effort by
 // construction, so it needs regression coverage in both directions -- every write
 // form still blocked, every read and every write outside the archive still allowed.
+//
+// The hook is Node (it was bash until Sept 2026) so that it runs on Windows as well
+// as Linux; cases 74-93 cover the Windows/PowerShell forms the port added. It is
+// spawned with process.execPath, so this file runs unchanged on both platforms.
 //
 // Fixtures live base64-encoded in test/fixtures/guard-archived-files-cases.json.
 // That is not obfuscation for its own sake: the live hook blocks any command whose
@@ -19,14 +23,14 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const HOOK = join(REPO, 'scripts', 'hooks', 'guard-archived-files.sh');
+const HOOK = join(REPO, '.claude', 'hooks', 'guard-archived-files.mjs');
 const FIXTURES = join(REPO, 'test', 'fixtures', 'guard-archived-files-cases.json');
 
 const { cases } = JSON.parse(readFileSync(FIXTURES, 'utf8'));
 
 /** Run the hook exactly as Claude Code does: payload on stdin, exit 2 == blocked. */
 function runHook(payload) {
-  const res = spawnSync('bash', [HOOK], {
+  const res = spawnSync(process.execPath, [HOOK], {
     input: JSON.stringify(payload),
     encoding: 'utf8',
     cwd: REPO
