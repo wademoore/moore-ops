@@ -1,20 +1,38 @@
-{
+﻿{
   "permissions": {
     "deny": [
       "Bash(git push * main)",
       "Bash(git push * main *)",
       "Bash(git push * *:main)",
-      "Bash(git push * *:main *)"
+      "Bash(git push * *:main *)",
+      "Edit(data/archive/**)",
+      "Write(data/archive/**)",
+      "Edit(scripts/archive/**)",
+      "Write(scripts/archive/**)",
+      "Edit(.claude/settings.json)",
+      "Write(.claude/settings.json)",
+      "Edit(.claude/hooks/**)",
+      "Write(.claude/hooks/**)",
+      "Edit(.claude/agents/**)",
+      "Write(.claude/agents/**)"
     ]
   },
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Edit|Write|Bash",
+        "matcher": "Bash|PowerShell",
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$CLAUDE_PROJECT_DIR/scripts/hooks/guard-archived-files.sh\""
+            "command": "powershell.exe",
+            "args": [
+              "-NoProfile",
+              "-ExecutionPolicy",
+              "Bypass",
+              "-File",
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/block-main-push.ps1"
+            ],
+            "statusMessage": "Checking push target"
           }
         ]
       }
