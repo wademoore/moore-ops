@@ -65,6 +65,24 @@ describe('deterministic NOW/NEXT selection', () => {
     assert.equal(selected.reasonCodes[0], R.ALL_CLEAR);
   });
 
+  it('keeps standing GK training out of ordinary NOW/NEXT promotion', () => {
+    const now = new Date('2026-09-08T17:15:00-04:00');
+    const routine = event('Myles: GK Training', '2026-09-08T18:00:00-04:00');
+    const selected = selectNowNext(data({ days: [{ events: [routine], tasks: [] }] }), { now });
+
+    assert.equal(selected.reasonCodes[0], R.ALL_CLEAR);
+    assert.equal(selected.diagnostics.candidateCount, 0);
+  });
+
+  it('still promotes a changed GK training occurrence', () => {
+    const now = new Date('2026-09-08T17:15:00-04:00');
+    const changed = event('Myles: GK Training — moved', '2026-09-08T18:00:00-04:00');
+    const selected = selectNowNext(data({ days: [{ events: [changed], tasks: [] }] }), { now });
+
+    assert.equal(selected.reasonCodes[0], R.MEANINGFUL_CHANGE);
+    assert.equal(selected.subject, 'Myles: GK Training — moved');
+  });
+
   it('does not invent a minute countdown or time-of-day state for all-day events', () => {
     const selected = selectNowNext(data({
       now: new Date('2026-08-28T06:39:00-04:00'),
