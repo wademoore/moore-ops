@@ -12,6 +12,9 @@
 //   - the archived-files guard is wired as a PreToolUse hook whose matcher reaches
 //     Edit, Write, Bash and PowerShell, and runs the Node port in exec form;
 //   - the push guard is wired for Bash and PowerShell;
+//   - the read-only guard is wired at settings level with no role argument, the
+//     backstop that restricts reviewer and debugger subagents in untrusted folders
+//     where frontmatter hooks do not fire;
 //   - the reviewer and debugger read-only guards are declared in their agent
 //     frontmatter with the right role argument;
 //   - every hook script parses, and no file under .claude/hooks or .claude/agents
@@ -73,11 +76,27 @@ test('the push guard is wired for Bash and PowerShell', () => {
   }
 });
 
+test('the read-only role backstop is wired for Bash and PowerShell, with no role argument', () => {
+  const guard = commandHooks().find((h) => (h.args ?? []).some((a) => a.endsWith('/.claude/hooks/guard-readonly.mjs')));
+  assert.ok(guard, 'a PreToolUse hook runs .claude/hooks/guard-readonly.mjs');
+  assert.equal(guard.type, 'command');
+  assert.equal(guard.command, 'node', 'exec form: command is the node binary, the script is in args');
+  assert.match(guard.args[0], /^\$\{CLAUDE_PROJECT_DIR\}\//, 'the script path is anchored on ${CLAUDE_PROJECT_DIR}');
+  assert.equal(guard.args.length, 1,
+    'no role argument: the settings-level call derives the role from agent_type on stdin, so one declaration covers both roles');
+  for (const tool of ['Bash', 'PowerShell']) {
+    assert.ok(matcherReaches(guard.matcher, tool), `matcher "${guard.matcher}" reaches ${tool}`);
+  }
+});
+
 test('reviewer and debugger declare the read-only guard in their frontmatter', () => {
   for (const role of ['reviewer', 'debugger']) {
     const src = readFileSync(join(AGENTS_DIR, `${role}.md`), 'utf8');
-    assert.ok(src.startsWith('---\n'), `${role}.md frontmatter opens at byte 0 (no BOM, no leading blank line)`);
-    const frontmatter = src.split('\n---')[0];
+    // CRLF-tolerant: Git converts line endings on checkout, so a Windows working
+    // copy opens with ---\r\n. Only the delimiter's line ending is allowed to vary;
+    // anything before it still fails, which is what makes this a byte-0 assertion.
+    assert.match(src, /^---\r?\n/, `${role}.md frontmatter opens at byte 0 (no BOM, no leading blank line)`);
+    const frontmatter = src.split(/\r?\n---/)[0];
     assert.match(frontmatter, /^hooks:\s*$/m, `${role}.md declares a hooks block`);
     assert.match(frontmatter, /^\s+PreToolUse:\s*$/m, `${role}.md hooks on PreToolUse`);
     assert.match(frontmatter, /guard-readonly\.mjs/, `${role}.md runs guard-readonly.mjs`);
