@@ -1,4 +1,4 @@
-﻿// PreToolUse hook: block pushes to main. Node so it runs on Windows and Linux alike.
+// PreToolUse hook: block pushes to main. Node so it runs on Windows and Linux alike.
 import { execFileSync } from "node:child_process";
 
 const chunks = [];

@@ -1,4 +1,4 @@
-﻿---
+---
 name: debugger
 description: Read-only investigation. Traces pipelines, reads logs and code, answers what is actually true right now. Never fixes anything. Safe to run alongside any other work.
 tools: Read, Grep, Glob, Bash

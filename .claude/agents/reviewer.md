@@ -1,4 +1,4 @@
-﻿---
+---
 name: reviewer
 description: Checklist-driven review of a diff or data change. Flags issues, never fixes them. Use after any Coder or Updater work, before push.
 tools: Read, Grep, Glob, Bash

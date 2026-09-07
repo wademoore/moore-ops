@@ -1,14 +1,15 @@
 {
   "_comment": [
-    "Fixtures for the archived-files PreToolUse hook (scripts/hooks/guard-archived-files.sh).",
-    "Each `b64` decodes to either a Bash command string or an Edit/Write file_path.",
+    "Fixtures for the archived-files PreToolUse hook (.claude/hooks/guard-archived-files.mjs).",
+    "Each `b64` decodes to either a Bash/PowerShell command string or an Edit/Write file_path.",
     "They are base64-encoded so this file contains no literal archived path: the live",
     "hook blocks any command whose text carries one, which would otherwise make this",
     "fixture file un-greppable, un-sed-able, and un-editable by ordinary tooling.",
-    "Regenerate with scratchpad/gen-fixtures.mjs (kept outside the repo for the same reason)."
+    "Regenerate with scratchpad/gen-fixtures.mjs (kept outside the repo for the same reason).",
+    "Cases 74-93 are the Windows/PowerShell additions from the Node port (Sept 2026)."
   ],
   "generated": "expect: block => hook exits 2; allow => hook exits 0",
-  "count": 73,
+  "count": 93,
   "cases": [
     {
       "id": 1,
@@ -593,6 +594,166 @@
       "expect": "block",
       "note": "OVER-BLOCK: a pure read through a listed interpreter",
       "b64": "cHl0aG9uMyAtYyAicHJpbnQob3BlbignZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24nKS5yZWFkKCkpIg=="
+    },
+    {
+      "id": 74,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "block",
+      "note": "WINDOWS: backslash-separated archived data path",
+      "b64": "QzpcVXNlcnNcd2FkZVxtb29yZS1vcHNcZGF0YVxhcmNoaXZlXGxlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 75,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "block",
+      "note": "WINDOWS: backslash-separated archived script path",
+      "b64": "QzpcVXNlcnNcd2FkZVxtb29yZS1vcHNcc2NyaXB0c1xhcmNoaXZlXHBhcnNlLWNoYW1wcy1oaXN0b3J5Lm1qcw=="
+    },
+    {
+      "id": 76,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "block",
+      "note": "WINDOWS: NTFS is case-insensitive, so the path arm is too",
+      "b64": "QzpcVXNlcnNcd2FkZVxtb29yZS1vcHNcRGF0YVxBcmNoaXZlXGxlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 77,
+      "kind": "path",
+      "rule": "edit-write",
+      "expect": "allow",
+      "note": "WINDOWS: backslash path to a current v2 file",
+      "b64": "QzpcVXNlcnNcd2FkZVxtb29yZS1vcHNcZGF0YVxsZWFndWUtcmVzdWx0cy12Mi5qc29u"
+    },
+    {
+      "id": 78,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "block",
+      "note": "WINDOWS: redirect to a backslash-separated archived path",
+      "b64": "ZWNobyB4ID4gZGF0YVxhcmNoaXZlXGxlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 79,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "block",
+      "note": "WINDOWS: CRLF line ending inside a multi-line command",
+      "b64": "cHJpbnRmIHggPiBkYXRhL2FyY2hpdmUvbGVhZ3VlLXJlc3VsdHMuanNvbg0KZWNobyBkb25l"
+    },
+    {
+      "id": 80,
+      "kind": "bash",
+      "rule": "a",
+      "expect": "allow",
+      "note": "WINDOWS: archive is the SOURCE, redirect target is elsewhere",
+      "b64": "R2V0LUNvbnRlbnQgZGF0YVxhcmNoaXZlXGxlYWd1ZS1yZXN1bHRzLmpzb24gPiBDOlx0bXBcb3V0LnR4dA=="
+    },
+    {
+      "id": 81,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "POWERSHELL: Set-Content writes",
+      "b64": "U2V0LUNvbnRlbnQgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24gLVZhbHVlIHg="
+    },
+    {
+      "id": 82,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "POWERSHELL: Add-Content appends",
+      "b64": "QWRkLUNvbnRlbnQgLVBhdGggZGF0YS9hcmNoaXZlL3JlbGF5LXJlc3VsdHMuanNvbiAtVmFsdWUgeA=="
+    },
+    {
+      "id": 83,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "POWERSHELL: Out-File writes",
+      "b64": "R2V0LUNvbnRlbnQgeC5qc29uIHwgT3V0LUZpbGUgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 84,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "POWERSHELL: Copy-Item (over-block, archive is the source -- same as case 71)",
+      "b64": "Q29weS1JdGVtIGRhdGFcYXJjaGl2ZVxsZWFndWUtcmVzdWx0cy5qc29uIEM6XHRtcFxiYWNrdXAuanNvbg=="
+    },
+    {
+      "id": 85,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "POWERSHELL: Remove-Item deletes",
+      "b64": "UmVtb3ZlLUl0ZW0gZGF0YVxhcmNoaXZlXGxlYWd1ZS1yZXN1bHRzLmpzb24="
+    },
+    {
+      "id": 86,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "POWERSHELL: Move-Item",
+      "b64": "TW92ZS1JdGVtIGRhdGEvYXJjaGl2ZS9sZWFndWUtcmVzdWx0cy5qc29uIGRhdGEveS5qc29u"
+    },
+    {
+      "id": 87,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "POWERSHELL: Rename-Item",
+      "b64": "UmVuYW1lLUl0ZW0gZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24gb2xkLmpzb24="
+    },
+    {
+      "id": 88,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "block",
+      "note": "POWERSHELL: cmdlet names are case-insensitive",
+      "b64": "c2V0LWNvbnRlbnQgZGF0YS9hcmNoaXZlL2xlYWd1ZS1yZXN1bHRzLmpzb24gLVZhbHVlIHg="
+    },
+    {
+      "id": 89,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "allow",
+      "note": "POWERSHELL: Get-Content and Select-String are reads",
+      "b64": "R2V0LUNvbnRlbnQgZGF0YVxhcmNoaXZlXGxlYWd1ZS1yZXN1bHRzLmpzb24gfCBTZWxlY3QtU3RyaW5nIHN3aW1tZXI="
+    },
+    {
+      "id": 90,
+      "kind": "bash",
+      "rule": "b",
+      "expect": "allow",
+      "note": "POWERSHELL: Get-ChildItem is a read",
+      "b64": "R2V0LUNoaWxkSXRlbSBkYXRhXGFyY2hpdmU="
+    },
+    {
+      "id": 91,
+      "kind": "bash",
+      "rule": "e",
+      "expect": "block",
+      "note": "POWERSHELL: Set-Location then New-Item",
+      "b64": "U2V0LUxvY2F0aW9uIGRhdGEvYXJjaGl2ZTsgTmV3LUl0ZW0gbGVhZ3VlLXJlc3VsdHMuanNvbg=="
+    },
+    {
+      "id": 92,
+      "kind": "bash",
+      "rule": "e",
+      "expect": "block",
+      "note": "WINDOWS: cd with backslash path then a cmdlet write",
+      "b64": "Y2QgZGF0YVxhcmNoaXZlOyBTZXQtQ29udGVudCB4Lmpzb24gLVZhbHVlIHk="
+    },
+    {
+      "id": 93,
+      "kind": "bash",
+      "rule": "e",
+      "expect": "allow",
+      "note": "POWERSHELL: Set-Location then a read only",
+      "b64": "U2V0LUxvY2F0aW9uIGRhdGEvYXJjaGl2ZTsgR2V0LUNvbnRlbnQgbGVhZ3VlLXJlc3VsdHMuanNvbg=="
     }
   ]
 }

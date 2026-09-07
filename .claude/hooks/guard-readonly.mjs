@@ -1,4 +1,4 @@
-﻿// PreToolUse hook for read-only roles. Usage: node guard-readonly.mjs <reviewer|debugger>
+// PreToolUse hook for read-only roles. Usage: node guard-readonly.mjs <reviewer|debugger>
 const ROLE = (process.argv[2] || "reviewer").toLowerCase();
 
 const SHARED = [
