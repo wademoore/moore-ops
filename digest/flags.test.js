@@ -102,6 +102,15 @@ describe('Kid activity overlap', () => {
 
     assert.ok(flags.find(flag => flag.id === 'activity-overlap'));
   });
+
+  it('ignores standing GK training with the household standard coverage setup', () => {
+    const flags = computeFlags(ctx({ resolvedEvents: [
+      timedKidEvent('Myles: GK Training', 'Myles', '2026-09-08T18:00:00-04:00', '2026-09-08T19:00:00-04:00'),
+      timedKidEvent('Dance Class', 'Ophelia', '2026-09-08T18:30:00-04:00', '2026-09-08T19:30:00-04:00'),
+    ] }));
+
+    assert.equal(flags.find(flag => flag.id === 'activity-overlap'), undefined);
+  });
 });
 
 // ---------------------------------------------------------------------------

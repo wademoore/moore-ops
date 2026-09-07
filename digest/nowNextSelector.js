@@ -1,4 +1,5 @@
 import { normalizeDashboardText } from './displayNormalization.js';
+import { isStandardCoverageRoutine } from './routineEventPolicy.js';
 
 const MINUTE = 60 * 1000;
 const HOUR = 60 * MINUTE;
@@ -178,6 +179,7 @@ function eventCandidates(data, now, options = {}) {
     const operation = isTimed ? operationalTiming(event, when, options) : null;
     const text = `${event.title || ''} ${event.subtitle || ''}`;
     const changed = /\b(cancel(?:led|ed)?|reschedul(?:e|ed)|changed?|new (?:time|location)|unavailable|moved)\b/i.test(text);
+    const standardCoverageRoutine = isStandardCoverageRoutine(event);
 
     if (changed && delta >= -HOUR && delta <= 48 * HOUR) {
       result.push(candidate(REASON.MEANINGFUL_CHANGE, {
@@ -191,7 +193,7 @@ function eventCandidates(data, now, options = {}) {
     const operationallyImminent = isTimed && key === todayKey && operation && (
       departureDelta != null ? departureDelta >= 0 && departureDelta <= 90 * MINUTE : deadlineDelta >= 0 && deadlineDelta <= 90 * MINUTE
     );
-    if (operationallyImminent || (isTimed && key === todayKey && !operation && delta >= 0 && delta <= 90 * MINUTE)) {
+    if (!standardCoverageRoutine && (operationallyImminent || (isTimed && key === todayKey && !operation && delta >= 0 && delta <= 90 * MINUTE))) {
       const leave = /\b(practice|game|meet|appointment|camp|school|flight|train|depart|drop[ -]?off|pickup)\b/i.test(text);
       const actionDelta = departureDelta ?? delta;
       const minutes = Math.max(0, Math.round(actionDelta / MINUTE));
@@ -212,14 +214,14 @@ function eventCandidates(data, now, options = {}) {
       && morningDelta > 90 * MINUTE
       && morningDelta <= 4 * HOUR
       && /\b(camp|school|appointment|doctor|dentist|physical|flight|train|trip|performance|recital|game|meet|drop[ -]?off|pickup)\b/i.test(text);
-    if (significantThisMorning) {
+    if (!standardCoverageRoutine && significantThisMorning) {
       result.push(candidate(REASON.THIS_MORNING, {
         signal: 'This morning', subject: subjectFor(event), context: operation ? [operation.context] : eventContext(when, event.subtitle),
         sourceType: 'event', ...identity, sortTime: when.getTime(),
       }));
     }
 
-    if (isTimed && key === tomorrowKey && easternHour(when) < 12) {
+    if (!standardCoverageRoutine && isTimed && key === tomorrowKey && easternHour(when) < 12) {
       result.push(candidate(REASON.TOMORROW_MORNING, {
         signal: 'Tomorrow morning', subject: subjectFor(event), context: operation ? [operation.context] : eventContext(when, event.subtitle),
         sourceType: 'event', ...identity, sortTime: when.getTime(),
@@ -232,7 +234,7 @@ function eventCandidates(data, now, options = {}) {
       }
     }
 
-    if (isTimed && delta > 90 * MINUTE && delta <= 48 * HOUR && !changed) {
+    if (!standardCoverageRoutine && isTimed && delta > 90 * MINUTE && delta <= 48 * HOUR && !changed) {
       result.push(candidate(REASON.THEN_LATER, {
         signal: key === todayKey ? 'Later today' : 'Then', subject: subjectFor(event), context: operation ? [operation.context] : eventContext(when, event.subtitle),
         sourceType: 'event', ...identity, sortTime: when.getTime(),

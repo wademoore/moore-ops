@@ -43,6 +43,7 @@
  */
 
 import { isRoutineCentersEvent } from './centersProfile.js';
+import { isStandardCoverageRoutine } from './routineEventPolicy.js';
 
 // ---------------------------------------------------------------------------
 // 1. DATE WINDOW HELPERS
@@ -145,7 +146,8 @@ const EVALUATORS = [
     const isKidActivity = (event, calendarName) => event._calName === calendarName
       && event.cardType !== 'menu'
       && event.cardType !== 'info'
-      && !isRoutineCentersEvent(event);
+      && !isRoutineCentersEvent(event)
+      && !isStandardCoverageRoutine(event);
     const mylesEvents  = ctx.resolvedEvents.filter(event => isKidActivity(event, 'Myles'));
     const opheliaEvents = ctx.resolvedEvents.filter(event => isKidActivity(event, 'Ophelia'));
 
