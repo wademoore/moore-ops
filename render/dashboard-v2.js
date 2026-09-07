@@ -218,7 +218,9 @@ function peopleForEvent(event) {
 
 function activityLogo(event) {
   const text = `${event?.title || ''} ${event?.subtitle || ''}`.toLowerCase();
-  if (/tidewater sharks|sharks soccer/.test(text)) return V2_LOGOS.sharks;
+  const mylesGoalkeeping = peopleForEvent(event) === 'myles'
+    && /\b(?:goal\s*keeping|gk)\s+training\b/.test(text);
+  if (/\bsharks\b/.test(text) || mylesGoalkeeping) return V2_LOGOS.sharks;
   if (/757/.test(text)) return V2_LOGOS.swim757;
   if (/\bidance\b|institute for dance/.test(text)) return V2_LOGOS.idance;
   return '';

@@ -562,6 +562,36 @@ describe('real-data resilience policies', () => {
     assert.match(html, /logo-idance|data:image\/png;base64/);
   });
 
+  it('shows Sharks logos for short team titles and Myles goalkeeping training', () => {
+    for (const fields of [
+      { title: 'Myles · Sharks Practice' },
+      { title: 'Sharks @ Beach FC Anderson Waves (Away)', _calName: 'Myles' },
+      { title: 'Goalkeeping Training', _calName: 'Myles' },
+      { title: 'Myles · Goalkeeping Training' },
+      { title: 'Myles: GK Training' },
+      { title: 'GK Training', _calName: 'Myles' },
+      { title: 'Tidewater Sharks' },
+      { title: 'Sharks Soccer' },
+    ]) {
+      const html = renderUpcoming({
+        today: new Date('2026-06-09T12:00:00-04:00'),
+        upcomingEvents: [{ ...event(fields.title, '2026-06-10T17:00:00-04:00'), ...fields }],
+      });
+      assert.ok(html.includes(V2_LOGOS.sharks), `${fields.title} should show the Sharks logo`);
+    }
+    for (const fields of [
+      { title: 'Goalkeeping Training', _calName: 'Ophelia' },
+      { title: 'GK Training', _calName: 'Ophelia' },
+      { title: 'Myles · Dentist' },
+    ]) {
+      const html = renderUpcoming({
+        today: new Date('2026-06-09T12:00:00-04:00'),
+        upcomingEvents: [{ ...event(fields.title, '2026-06-10T17:00:00-04:00'), ...fields }],
+      });
+      assert.ok(!html.includes(V2_LOGOS.sharks), `${fields.title} should not show the Sharks logo`);
+    }
+  });
+
   it('keeps transparent activity logos transparent in Next Two Weeks', () => {
     const html = renderDashboardV2({
       ...sampleDashboardV2Data,
