@@ -13,7 +13,7 @@
     "sports-config.json", "flag-football.json", "pb-records.json",
     "swim-results.json", "waves-season.json", "sharks-soccer.json",
     "vpsu-rankings.json", "league-results-v2.json", "swim-annotations.json",
-    "special-events.json", "holiday-themes.json"
+    "special-events.json", "holiday-themes.json", "kids-profile.json"
   ],
   "requiredBundleInputs": [
     "dashboard-artifact/generator.js", "dashboard-v2-data.js", "auth.js", "calendar.js",
