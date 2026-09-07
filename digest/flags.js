@@ -42,6 +42,8 @@
  * }
  */
 
+import { isRoutineCentersEvent } from './centersProfile.js';
+
 // ---------------------------------------------------------------------------
 // 1. DATE WINDOW HELPERS
 // ---------------------------------------------------------------------------
@@ -140,8 +142,12 @@ const EVALUATORS = [
   // Myles and Ophelia have overlapping activities at different locations.
   // Default pattern: Wade takes Myles, Robyn takes Ophelia (Section 6 always-on rule).
   (ctx) => {
-    const mylesEvents  = ctx.resolvedEvents.filter(e => e._calName === 'Myles'   && e.cardType !== 'menu' && e.cardType !== 'info');
-    const opheliaEvents = ctx.resolvedEvents.filter(e => e._calName === 'Ophelia' && e.cardType !== 'menu' && e.cardType !== 'info');
+    const isKidActivity = (event, calendarName) => event._calName === calendarName
+      && event.cardType !== 'menu'
+      && event.cardType !== 'info'
+      && !isRoutineCentersEvent(event);
+    const mylesEvents  = ctx.resolvedEvents.filter(event => isKidActivity(event, 'Myles'));
+    const opheliaEvents = ctx.resolvedEvents.filter(event => isKidActivity(event, 'Ophelia'));
 
     // Check for same-day events that have start times (not all-day)
     const mylesTimedEvents   = mylesEvents.filter(e => e.raw?.start?.dateTime);
