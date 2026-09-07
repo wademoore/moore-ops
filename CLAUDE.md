@@ -90,7 +90,34 @@ merely frozen, is an open decision — and not one this section makes.
 
 ## Branching policy
 
-Direct-to-main after Reviewer sign-off remains this project's default for all Coder/Updater work, including small, well-specified changes. Feature branches are not the default safety mechanism — the Reviewer gate is. Use a feature branch as a deliberate escalation, not routine practice, specifically for changes where the risk is environment-dependent in a way local testing can't fully rule out (e.g. timezone/locale logic, dependency version bumps, anything sensitive to the Lambda runtime specifically) — in those cases, a branch + PR gets a free independent confirmation from CI (which runs under UTC, matching Lambda) before merge, which is a real benefit local subprocess-spawned tests can't fully replicate.
+**Every change reaches `main` through a pull request. Direct-to-main is not a permitted
+route for any work — Coder, Updater, documentation, or a one-line fix — and a `PreToolUse`
+hook now enforces that locally** (`.claude/hooks/block-main-push.ps1`, wired in
+`.claude/settings.json`; Sept 7, 2026). The workflow is: feature branch → Reviewer pass on
+the branch → push the branch → open the PR → merge after CI and review. Reviewer sign-off
+is still required before the push (see "Reviewer sign-off before push is non-negotiable"
+under Key learnings); the PR is in addition to the Reviewer gate, not a replacement for it.
+
+**This supersedes the previous policy, which read the other way.** Until Sept 7, 2026 this
+section said direct-to-main after Reviewer sign-off was the default and a feature branch
+was a deliberate escalation reserved for environment-dependent risk (timezone/locale logic,
+dependency bumps, anything sensitive to the Lambda runtime). That text is gone rather than
+softened, because the hook makes it false: a session following the old default would be
+blocked at push time and would either stall or route around the gate through the GitHub
+API — the exact bootstrap failure recorded in the gate section below. The rationale the old
+policy gave for a PR in the risky cases holds for every case: CI runs under UTC, matching
+Lambda, and is an independent confirmation that local subprocess-spawned tests cannot fully
+replicate. Now it is simply always taken.
+
+**What the hook is, and is not.** Like the archived-files hook and the `permissions.deny`
+push rules described below, `block-main-push.ps1` is an **accident gate, not an adversary
+gate**: it stops a session from pushing to `main` by mistake, in the same local-tooling
+layer as the deny rules, and it shares their limits — it covers the Bash route only, and a
+session that never loads this settings file (a fresh clone, CI, a different cwd, or a host
+without PowerShell — the Linux cloud sandbox has no `pwsh`) does not run it. **The real
+enforcement remains server-side branch protection on `main`**, which requires a PR and
+binds every route including the API. Verify it there, not here; a green local hook is not
+proof that `main` is protected.
 
 ## The gate (`.claude/settings.json` + `scripts/hooks/guard-archived-files.sh`)
 
@@ -1746,6 +1773,59 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 
 **Coder mode must keep `npm test` at 2062+ with no failures once a browser resolves.**
 
+### Reviewer cross-check — explicit file list, no shell globbing (Sept 7, 2026)
+
+The cross-check that proves `npm test` ran *every* test file is now an explicit file list,
+not a shell glob option. The previously documented method — enable `shopt -s globstar`,
+then re-run the full `**` glob by hand and compare — is retired for two reasons. It cannot
+run under the Reviewer's shell: `.claude/hooks/reviewer-readonly.ps1` restricts the
+Reviewer agent to read-only commands, and a bash-only shell option that has to be set before
+the run is exactly the kind of prelude that restriction does not admit. And it was checking
+the wrong layer anyway: since the Aug 27 glob fix the `**` patterns are Node's to expand,
+not the shell's, so re-globbing in the shell verifies the shell, not the runner.
+
+The check has three parts, and each is a command whose output gets pasted, not described:
+
+```bash
+# 1. The inventory git knows about. This is the ground truth for "every test file".
+git ls-files '*.test.js' | wc -l                                  # 64 as of Sept 7, 2026
+
+# 2. Every file must sit under one of the three roots package.json scans. Must print nothing.
+git ls-files '*.test.js' | grep -vE '^(test|digest|render)/'
+
+# 3. Run that exact list, bypassing package.json's patterns entirely, and compare trailers.
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome \
+  node --experimental-vm-modules --test $(git ls-files '*.test.js')
+```
+
+Compare the `# tests` / `# pass` / `# fail` / `# cancelled` trailer of step 3 against the
+trailer of a plain `npm test` run on the same tree. **They must be identical.** A lower
+`npm test` figure means `package.json`'s patterns are dropping files — the globstar failure
+shape, reintroduced; a non-empty step 2 means a test file lives where `npm test` never
+looks and would never run under any shell. Node's TAP output names tests, not files, so the
+inventory in step 1 is the file-level evidence — there is no per-file count to pull out of
+the runner's own output.
+
+Measured on this branch, both invocations on the same tree with a browser:
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` | 2062 | 2062 | 0 | 0 |
+| `node --test $(git ls-files '*.test.js')` | 2062 | 2062 | 0 | 0 |
+
+Step 2 printed nothing (all 64 files are under `test/`, `digest/` or `render/`), and the
+`git ls-files` inventory was also diffed against a `find` of the working tree — identical,
+so no untracked test file is being counted or missed.
+
+Why this is the better check even where `globstar` is available: it needs no shell option,
+no `.npmrc`, and no state set before the command, so it behaves the same under `dash`, `bash`
+and a restricted shell; the file list comes from git rather than from a second glob
+implementation that could share the first one's blind spot; and it is a **positive**
+assertion (this exact list ran) rather than a negative one (a second glob agreed with the
+first). Verified here under `bash`. The `$(...)` form is also valid PowerShell subexpression
+syntax and should splat the list into separate arguments, but that was **not** exercised in
+this session — confirm it on Wade's machine before quoting it as PowerShell-verified.
+
 ### Previous baseline — measured Sept 2, 2026 after the holiday-theme hardening
 
 | Invocation | tests | pass | fail | cancelled |
@@ -2020,6 +2100,24 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Branching policy corrected to PR-required; test cross-check made Reviewer-compatible
+  (Sept 7, 2026):** Two documentation corrections that ride with the Claude Code
+  enforcement config (`.claude/settings.json`, `.claude/hooks/block-main-push.ps1`,
+  `.claude/hooks/reviewer-readonly.ps1`, `.claude/agents/reviewer.md`). (1) The Branching
+  policy section said direct-to-main after Reviewer sign-off was the default and a feature
+  branch a deliberate escalation. A `PreToolUse` hook now blocks pushes to `main`, so that
+  text was false rather than merely stale: a session following it would have been blocked
+  at push time or routed around the gate through the API. It now says every change reaches
+  `main` through a PR, with the Reviewer gate still ahead of the push, and names the hook
+  as an accident gate in the same standing as the deny rules — branch protection remains
+  the real enforcement. (2) The documented way to prove `npm test` ran every file was
+  `shopt -s globstar` plus a hand-run full glob, which the Reviewer's read-only shell
+  cannot execute and which re-globs in the shell rather than checking the runner. Replaced
+  by an explicit `git ls-files '*.test.js'` list passed straight to `node --test`, compared
+  trailer-for-trailer against `npm test`; measured here as **2062 / 2062 / 0 / 0** on both,
+  64 files, none outside the three scanned roots. No code, data, test or workflow changed;
+  the baseline figure is unchanged.
 
 - **Holiday theme configuration hardened after an independent Reviewer pass (Sept 2, 2026):**
   A separate cleanup commit on top of the pilot; `402d762` was not amended. The approved
@@ -2419,7 +2517,7 @@ method, so they chain directly to the 988 pre-change number above.
 
 **A commit message that doesn't describe its own content defeats every drift-detection habit this project relies on.** Confirmed August 2026: `e4aa130`'s message named an unrelated editorial doc change while the same commit carried the `sharksActive`/`renderSharksCard`/sports-config `sharks` scaffolding, the `gmailParser` sharks routing entry, and (per a still-unresolved test-only string) possibly `flags.js` changes — none of it discoverable by searching commit history for anything sharks-related. Worth a standing habit: when a commit touches more than one logical concern, or when scaffolding for a future feature rides along with an unrelated change, the message should name both, not just the primary one.
 
-**✓ FIXED Aug 27, 2026 — but read this anyway; the lesson outlived the bug.** The patterns in `package.json` are now single-quoted, so the shell passes them through and Node's `--test` resolver does the globbing. Plain `npm test` runs all 1062 tests. See "The glob fix" under Test baseline for the mechanism, the three options that were empirically compared, and the asymmetry table. **What the fix does not retire:** this bug hid a genuine failing test (`test/pi-dashboard-pull.test.js`'s umask 0644 credentials defect) for as long as it existed, and the recorded baseline then mis-described that failure as environmental. A silent-skip bug and an unfalsifiable summary of the result are the same failure in two places, and only one of them was in the glob. The original description follows, for provenance.
+**✓ FIXED Aug 27, 2026 — but read this anyway; the lesson outlived the bug.** The patterns in `package.json` are now single-quoted, so the shell passes them through and Node's `--test` resolver does the globbing. Plain `npm test` runs all 1062 tests. See "The glob fix" under Test baseline for the mechanism, the three options that were empirically compared, and the asymmetry table. **What the fix does not retire:** this bug hid a genuine failing test (`test/pi-dashboard-pull.test.js`'s umask 0644 credentials defect) for as long as it existed, and the recorded baseline then mis-described that failure as environmental. A silent-skip bug and an unfalsifiable summary of the result are the same failure in two places, and only one of them was in the glob. **The cross-check the original description recommends — `shopt -s globstar` before a hand-run full glob — is itself retired as of Sept 7, 2026:** it cannot run under the Reviewer's read-only shell, and re-globbing in the shell verifies the shell rather than the runner. Use the explicit-file-list check documented under "Reviewer cross-check" in Test baseline instead. The original description follows, for provenance.
 
 **`npm test`'s glob pattern silently drops every test file that sits directly in `test/` (not in a subdirectory) — a pre-existing, shell-dependent bug, not a regression.** `package.json`'s test script was `node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js`. Without `bash`'s `globstar` shell option enabled (the default in most non-interactive shells, including the one `npm test` itself spawns via `sh -c` on this system), `test/**/*.test.js` does **not** recurse — it behaves like `test/*/*.test.js`, matching only `test/skills/*.test.js` and silently excluding every file directly under `test/` (`test/data.test.js`, `test/athleticsParser.test.js`, `test/wavesParser.test.js`, `test/dateUtils.test.js`, `test/calendar.test.js`, `test/flagFootballParser.test.js`, `test/gmailParser.test.js`, `test/pdfReloadParser.test.js`, `test/swimParser.test.js`, `test/weeklyPrioritiesParser.test.js`, and now `test/sharksParser.test.js`). `digest/**/*.test.js` and `render/**/*.test.js` are unaffected because those patterns fail to pre-expand in the same broken shell and are instead handed to Node's own `--test` glob resolution, which *does* recurse correctly. Net effect: a literal `npm test` run in an affected shell reports far fewer tests than actually exist (395 passing observed in this environment vs. the documented baseline of 645+) with zero failures either way — it looks clean, not broken, which is what makes it dangerous. **To get an accurate count, run with `shopt -s globstar` enabled first**, or pass the file list explicitly. Not fixed as part of the Sharks card work (out of scope for that task) — flagging here so a future session doesn't mistake a low `npm test` count for a real regression, and doesn't mistake a passing `npm test` for full coverage. **The "395 vs. 645+" figures above are a historical observation from the session that found the bug, not current.** For the measured pair as of Aug 26, 2026 — full glob 1062 / literal `npm test` 631 — and the rule that every "tests passing" claim must name its invocation, see the Test baseline section.
 
