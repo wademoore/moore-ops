@@ -1842,7 +1842,61 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 7, 2026 on the enforcement-config fixes branch
+### Current baseline — measured Sept 8, 2026 on the baritone-reminder branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test`, no browser resolvable | 2135 | 2098 | 3 | 34 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2135 | **2135** | **0** | **0** |
+
+Measured on `claude/baritone-reminder-myles-b38gz4`, whose merge base with `main` is
+**`eeccad2`** (PR #48). **That merge base was re-measured in the same session, before any
+change: 2127 / 2127 / 0 / 0 with a browser** — not the 2088 recorded below, which was taken
+before PRs #40–#48 landed. Re-measuring rather than trusting the recorded delta is now
+three-for-three.
+
+⚠ **Read this before re-deriving the merge base: `git merge-base HEAD origin/main` lied
+here, and a Reviewer pass caught it.** This checkout's `origin/main` ref was stale at
+`a604faf`, nine commits behind, so the merge base first recorded in this block was that SHA —
+which measures ~2052, not 2127, and would have made this table look broken to the next
+session that followed the re-measure instruction. `git fetch origin main` moved the ref to
+`eeccad2` and the merge base with it. **Fetch before trusting a merge base**, and note this
+is not the "recorded number went stale" failure this section already documents twice — it is
+a correct measurement pinned to the wrong commit, which is just as misleading and harder to
+spot.
+
+The no-browser row is included deliberately, because the Sept 7 entry restored it after it
+had drifted and dropping it one baseline later would repeat that. The 3 failures are the
+three flat tests in `render/first-day-level3-layout.test.js`; the 34 cancelled are
+`render/dashboard-v2-layout.test.js` (22) plus `render/dashboard-v2-holiday-layout.test.js`
+(12). All 37 go to zero the moment a browser resolves — the standing cause, unchanged by
+this work.
+
+This change adds **+8**, all in one file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/schoolRotation.test.js` | 63 | 71 | +8 |
+
+Accounted for individually: +1 whole-cycle Ophelia negative control; +2 net from replacing
+the single `needsRecorder === false` case with three (instrument named, non-Music days,
+one-warningText-slot); +4 adjacency cases in the `getSchoolStrip` section; +1 `INSTRUMENTS`
+drift tripwire against `data/kids-profile.json`, added after review.
+
+**Do not read this row without `npm install` first.** A fresh clone in this sandbox reports
+1808 / 1793 / 15 / 0, and every one of the 15 is `ERR_MODULE_NOT_FOUND` for a declared
+dependency (`@googleapis/calendar`, `playwright`) — the documented fresh-clone case, not a
+regression. It looks alarming and is not.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2135+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 7, 2026 on the enforcement-config fixes branch
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -2183,6 +2237,33 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Music-day baritone reminder built; the dead `needsRecorder` boolean removed (Sept 8, 2026):**
+  `needsRecorder` was initialised `false`, never assigned, and returned — its only reader was
+  an unreachable `getSchoolStrip()` branch naming an instrument Myles does not play. It is now
+  `needsInstrument`, gated on a new `INSTRUMENTS` map (`myles: 'baritone'`, `ophelia: null`),
+  and Myles's Music day sets `warningText` to `⚠ Pack baritone this morning (Myles — Music
+  today)` — which `generateTasks()` converts into a real Wade task at "Before work", the
+  channel that matches when a baritone actually goes in the car. **The Media/Music adjacency
+  is resolved by warning on the day only**; the unreachable day-before push is deleted rather
+  than repointed. Scope was one module and its test file: no renderer, no data file, no
+  packaging, no flag, and **nothing in the frozen v1 surface**. Full reasoning and the two
+  rejected alternatives are in the header of `digest/schoolRotation.js`; the Known-open-item
+  entry records two claims from the prior note that measurement contradicted. **Guards proved
+  to have teeth rather than asserted:** three mutation sites, run at four values —
+  reintroducing the rejected day-before push (3 cases red), mapping Ophelia to an instrument
+  (3), and corrupting `INSTRUMENTS.myles`, tried both as "recorder" and as a silent drift to
+  "trombone" (4 each, the same four cases — one site, two values, not two independent
+  mutations) — each turns the suite red on cases that name the specific defect. Tests **2127 → 2135**, all passing; the merge base was re-measured in-session
+  rather than taken from this file. **An independent Reviewer pass returned PASS with no
+  BLOCKING findings**, and five of its findings were acted on here: the baseline's merge-base
+  SHA was wrong (a stale `origin/main` ref — `git merge-base` answered `a604faf`, nine commits
+  behind, until `git fetch` corrected it to `eeccad2`); the header overstated the
+  warningText channel by omitting a pre-existing `generateTasks` fan-out that repeats today's
+  task on every school day in the window; one adjacency case used `continue` where a failed
+  precondition would have left it asserting nothing; `INSTRUMENTS` claimed the
+  `MYLES_CENTERS` drift-tripwire precedent without honouring it; and the no-browser row had
+  been dropped one baseline after being deliberately restored.
 
 ### Schoolwork preview (September 7, 2026 — local, not deployed)
 
@@ -2635,6 +2716,8 @@ enumerated under test, digest, and render directly to Node. No deployment.
 
 ## Known open items
 
+- **Today's backpack `warningText` fans out onto every school day in the 72h window — pre-existing, blast radius widened Sept 8, 2026.** `digest/builder.js` computes ONE `schoolStrip` for today (`getSchoolStrip(today)`) and passes that same object to `generateTasks()` for every day in the window; `digest/generateTasks.js` gates only on `isSchoolDay(date)`, never on whether `date` **is** today. So today's `myles.warningText` / `ophelia.warningText` is re-emitted as a Wade task under each subsequent school day. Reproduced directly: a Wed Oct 21 2026 `⚠ Pack baritone this morning (Myles — Music today)` task also appears under Thu Oct 22 and Fri Oct 23, neither of which is a Music day. **This is not new** — the library-book string has always fanned out through the identical code path — but the baritone reminder makes it a second string doing it, so the defect is now twice as visible. **Not fixed alongside the baritone work on purpose:** the defect lives in `builder.js`/`generateTasks.js`, outside that change's target-file authority, and any fix changes the library book's shipped behaviour in the v1 email too. It needs its own spec deciding whether the correct shape is a per-day strip, a `date`-vs-`today` guard in `generateTasks`, or leaving the repetition as deliberate reinforcement. Found by an independent Reviewer pass, not by the tests — nothing asserts task-list contents across the window, which is the more general gap.
+
 - **Read-only role guard is absent in untrusted headless sessions — backstop not decided
   (Sept 7, 2026).** The reviewer/debugger `PreToolUse` hook lives in agent frontmatter and,
   per the documented trust gate, does not fire unless the workspace trust dialog has been
@@ -2655,7 +2738,7 @@ enumerated under test, digest, and render directly to Node. No deployment.
 - **✓ RESOLVED Aug 28, 2026 — the dead `FAMILY_CALENDARS["WJCC Schools"]` entry was removed rather than repointed.** Wade has moved to putting WJCC calendar items directly on the **Family** calendar (the 12 `🏫`-prefixed 2026-27 academic-calendar events entered 2026-08-17), so the entry had no remaining purpose and the choice between the two repoint candidates below became moot. Removing it stops the `calendar-fetch-failure` red flag firing every run on a source nothing consumes. Dependency sweep before deletion confirmed nothing breaks: the only other code reference is `digest/builder.js`'s `SCHOOL_ROTATION_CALENDARS`, a display-name filter that could then match nothing — `'WJCC Schools'` was removed from that set too, leaving `new Set(['Routine'])`, since WJCC items are now permanently on the Family calendar and no feed will be repointed under that display name (a filter member matching nothing reads as live wiring); `routineAnchorsParser.js`'s `SCHOOL_EXCEPTION_CALENDAR` is `'Family'` and was never wired to WJCC; and every `'WJCC Schools'` string in the test suite is a hardcoded fixture label exercising the generic fetch-failure plumbing, never derived from `FAMILY_CALENDARS`. `scripts/orchestrate/occ-aging.mjs` iterates the map generically and simply sees one fewer calendar. Test count unchanged at 1164 / 1155 passing (the 3 failures and 6 cancelled are the standing Chromium-environmental set). **The diagnosis that led here is retained below, unchanged, because the repoint candidates and the unverified ICS feed are still the facts anyone would need if a WJCC calendar is ever wired back in.**
 - **[HISTORICAL — resolved above] `FAMILY_CALENDARS["WJCC Schools"]` points at a deleted calendar — diagnosed Aug 27, 2026, deliberately NOT repointed.** `o3oasbc616bhijsqn80a58jo7a40lrl2@import.calendar.google.com` returns `The requested event could not be found or has been deleted.` and does not appear in the account's calendar list at all. It was added 2026-08-02 in commit `2742410` — whose message reads "Editorial Meeting: downgrade unconfirmed relay near-record claim from MEDIUM to LOW", a second instance of the mislabeled-commit pattern already recorded in Key Learnings under `e4aa130`. Two candidates exist and **neither is obviously right**, which is why this was left for Wade rather than guessed at: `vhtjqgkt9s4oor47sujca22rfg@group.calendar.google.com` is a manually-created calendar literally named "WJCC Schools" (owner, created 2025-09-26, last updated 2026-05-12) holding hand-entered **2025-26** holidays only — nothing past Juneteenth 2026-06-19; and `n4kudi3ij2k314cup1finndhv8b9rqpc@import.calendar.google.com` is a live ICS subscription to `https://wjccschools.org/?wjcc_calendar_subscribe=1` that is **completely empty** across Jan 2026 – Jul 2027 and whose summary is still the raw URL (Google never resolved a display name from the feed). The ICS feed itself could not be verified from the session that diagnosed this — `wjccschools.org` is blocked by the sandbox network policy — so whether the feed is broken or merely not yet synced is **unestablished**, not ruled out. Until one is chosen the new `calendar-fetch-failure` flag fires every run, which is the intended behavior: the breakage is now visible daily instead of silent.
 - **Production impact of the dead WJCC calendar was near-zero, for a reason that is itself a finding.** `digest/builder.js`'s `SCHOOL_ROTATION_CALENDARS` filters `WJCC Schools` events out of both the 72-hour window and the 14-day lookahead, `getSchoolStrip()` never reads calendar events at all (pure date arithmetic), and `addNoSchoolDate()` — the only hook that could have fed closures in from a calendar — **is called by nothing outside its own test**. The 🏫 school-closure suppression in `routineAnchorsParser.js` reads `SCHOOL_EXCEPTION_CALENDAR = 'Family'`, not WJCC. The real 2026-27 academic calendar was hand-entered onto the **Family** calendar on 2026-08-17 (12 `🏫` events, each described "Source: WJCC 2026-27 Academic Calendar (adopted 3/24/26)"), so closure data does flow. The WJCC entry in `FAMILY_CALENDARS` is effectively vestigial — do not assume repointing it restores anything until a consumer is wired to it. **This finding is what justified deletion over repointing (Aug 28, 2026); it still governs any future attempt to add a WJCC calendar back — wire a consumer first, or you will have re-added a source nothing reads.**
-- **Music-day instrument reminder — not built, newly buildable (Sept 6, 2026).** `needsRecorder` in `digest/schoolRotation.js` is hardwired `false` for both children and nothing sets it true; its only consumer is the string `'Tomorrow: Myles has Music — pack recorder tonight'` in `getSchoolStrip`. Myles is in 5th-grade Band on **baritone**, the baritone comes home, and his Music day is now known (Day 3 — Sep 3, Sep 15, Sep 23…), so the reminder is finally derivable. Deliberately not built in PR #41. Two things make it more than a one-line change: the field name and the string both say "recorder", and changing that string turns **three v1 tests red** — `render/email.test.js` (×2, asserting `includes('recorder')`) and `render/dashboard.test.js`, the last inside the **frozen** `render/dashboard.js` surface, where CLAUDE.md permits fixing or skipping a failing v1 test only to unblock CI and requires reporting it. Note also that his Media day (Day 2) immediately precedes his Music day, so the instrument reminder would land on the same morning as the library-book one — decide whether they combine. Needs a short spec before coding.
+- **✓ RESOLVED Sept 8, 2026 — the music-day instrument reminder is built.** `needsRecorder` is gone, replaced by `needsInstrument`, which is genuinely set. It is gated on a new `INSTRUMENTS` map in `digest/schoolRotation.js` (`myles: 'baritone'`, `ophelia: null`) rather than a hardcoded name test, so Ophelia's exclusion is a stated fact and a second child joining band is a one-line edit. On Myles's Music day `warningText` becomes `⚠ Pack baritone this morning (Myles — Music today)`, which `generateTasks()` turns into a real Wade task at "Before work". **The Media/Music adjacency is resolved by warning on the day only** — no day-before instrument entry — because `warningText` is the sole channel `generateTasks()` reads, and because a day-before entry would land on the one morning already carrying his library-book task. See the header of `digest/schoolRotation.js` for the full reasoning and the two rejected alternatives. **Two claims in the superseded entry were wrong and are corrected here rather than quietly dropped.** (1) It said changing the string "turns **three v1 tests red**", one inside the frozen `render/dashboard.js` surface. It does not: those three cases build their own fixture strings and pass them straight into the renderers — they never call `getSchoolStrip()`, so they assert renderer pass-through, not rotation output. All three are green and **the frozen surface was never touched or at risk**; the freeze's failing-v1-test exception was not needed and was not used. Measured, not assumed. (2) It implied the day-before/Media collision is unconditional. Across the full 2026-27 year, 25 of Myles's 30 Music-eves are Media days but **5 are not** (four Sundays plus the Oct 12 closure), so a "suppress when today is Media" conditional would have been live code, not dead — it was rejected on cost, not on impossibility.
 
 - **Aug 24-25 2026 contradicts the rotation model for Myles, unreconciled (Sept 6, 2026).** With his anchor set, the model outputs Myles Aug 24 = `PE2` and Aug 25 = `Media` (a library-book day). Three other sources say those two days were **off-rotation whole-grade Music**: this file's Aug 28 entry, the Open House packet, and the calendar fixtures in `digest/centersProfile.test.js:24-25` (`Myles: Music (Centers)` on both dates). The new `schoolRotation.js` header retires the packet-derived *phase* reading but never says what those two days actually were. **Zero production impact** — both dates are past and `getSchoolStrip` only renders today/tomorrow — but it is the first thing anyone re-deriving the phase will hit, and it is currently unexplained. Most likely the two whole-grade Music days sat outside the cycle without advancing it, which is consistent with Aug 24 = Day 1 for numbering purposes; that has not been confirmed and should not be assumed.
 
