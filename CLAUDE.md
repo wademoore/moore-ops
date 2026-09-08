@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2137+ passing with a browser
+- Run npm test after changes — must stay at 2139+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -1846,8 +1846,8 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test`, no browser resolvable | 2137 | 2100 | 3 | 34 |
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2137 | **2137** | **0** | **0** |
+| `npm test`, no browser resolvable | 2139 | 2102 | 3 | 34 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2139 | **2139** | **0** | **0** |
 
 Measured on `claude/pr-49-known-item-fix-7depq6`, whose merge base with `main` is
 **`d1ee107`** (PR #49). **That merge base was re-measured in this session, before any change:
@@ -1862,15 +1862,18 @@ Sept 7 after drifting, and dropping it one baseline later would repeat that. Its
 cancellations are the standing no-browser set, unchanged by this work — all of them go to
 zero the moment a browser resolves.
 
-This change adds **+2**, both in one file:
+This change adds **+4**, all in one file:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `digest/builder.test.js` | 6 | 8 | +2 |
+| `digest/builder.test.js` | 6 | 10 | +4 |
 
 Accounted for individually: +1 generic 26-morning cross-window sweep asserting every day of
 every 72h window against a `getRotation()`-derived oracle; +1 pinning the specific Oct 21
-2026 case the Known-open-item entry reported. No test was deleted, skipped, or rewritten —
+2026 case the Known-open-item entry reported; +2 added after the Reviewer pass, pinning the
+two cross-day interactions the fix creates in the email (the Music-eve co-appearance, and the
+night-before strip line coexisting with the next day's own row) so that neither is incidental
+output. No test was deleted, skipped, or rewritten —
 nothing in the suite had ever asserted the old fan-out behaviour, which is precisely the gap
 the sweep closes. `digest/builder.test.js` surfaces as `node:test` suites, so its internal
 assertion count is not what moves here; the two new points are real `it()` cases.
@@ -1881,7 +1884,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2137+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2139+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 8, 2026 on the baritone-reminder branch
 
@@ -1935,7 +1938,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-(Superseded — see Current baseline above; the figure is now 2137.)
+(Superseded — see Current baseline above; the figure is now 2139.)
 
 ### Previous baseline — measured Sept 7, 2026 on the enforcement-config fixes branch
 
@@ -2296,17 +2299,31 @@ method, so they chain directly to the 988 pre-change number above.
   NOW/NEXT read `days[0]` alone, and `days[0]` is unchanged by construction — so the whole
   correction lands in the email's second and third day blocks. The frozen v1 surface was
   neither touched nor at risk, and the freeze's failing-test exception was not needed.
-  Wording was deliberately not changed: `"this morning"` under a Thursday header is scoped by
-  that header, and the shipped email already ships `"tonight"` in future day blocks via the
-  solo-evening row. **The general gap the entry named — nothing asserted task-list contents
+  Wording was deliberately not changed: the row carries two relative words (`"this morning"`
+  and `"— Music today"`), both scoped by the `dayHeader(day.date)` they sit under, and the
+  shipped email already ships `"tonight"` in future day blocks via the solo-evening row. **The general gap the entry named — nothing asserted task-list contents
   across the window — is closed generically**, by a 26-morning sweep comparing every day of
   every window against an oracle derived from `getRotation()` rather than by pinning the
-  baritone string; the specific Oct 21 case is pinned separately. **Both guards proved to have
+  baritone string; the specific Oct 21 case is pinned separately. **The fix creates two cross-day interactions in the email, found by review rather than by
+  the tests, and both are now pinned as stated properties rather than left incidental.**
+  (1) On all **25** school-day Music-eves, Myles's baritone row now appears in the same email
+  as his library-book row — the exact 25 the collision argument in `schoolRotation.js` counts.
+  That argument rejected a *Tuesday-morning* "pack the baritone tonight" nudge on Tuesday's own
+  line; what ships is Wednesday's item under Wednesday's own header in a three-day lookahead,
+  which states what a later day owes rather than adding an action to a crowded morning. The
+  `tomorrowWarnings` channel stays free of instrument warnings and a test asserts it.
+  (2) On **59** mornings a year the school strip's "pack library book tonight" line and the
+  day-1 block's own "pack library book this morning" row describe one action through two
+  channels in one email. Kept: they are different instructions at different times, and
+  suppressing the day-1 row would put back the false negative the whole change removes.
+  Neither is a regression — pre-fix, day 1 showed *today's* row instead — but both were
+  unremarked, and an unremarked interaction is how a rationale and its behaviour drift apart.
+  **Both guards proved to have
   teeth against two mutants**, not asserted: the pre-fix today-strip, and a today-only guard
   that removes the stale rows while keeping all 177 false negatives — the second is the
   tempting half-fix, and the sweep rejects it on its own assertion. No test was deleted or
   skipped, and none needed updating: nothing had ever asserted the old behaviour. Tests
-  **2135 → 2137**, all passing.
+  **2135 → 2139**, all passing.
 
 - **Music-day baritone reminder built; the dead `needsRecorder` boolean removed (Sept 8, 2026):**
   `needsRecorder` was initialised `false`, never assigned, and returned — its only reader was
@@ -2786,7 +2803,7 @@ enumerated under test, digest, and render directly to Node. No deployment.
 
 ## Known open items
 
-- **✓ RESOLVED Sept 8, 2026 — each day of the 72h window now gets its own prep item.** `digest/builder.js` derives the strip per day (`generateTasks(day.events, day.date, getSchoolStrip(day.date))`) instead of handing one today-strip to all three days. `generateTasks()` is unchanged: its contract was always "emit from the strip you are given", and it was the caller that gave it the wrong one — so its ~40 existing unit tests stand untouched rather than being rewritten to a new contract. **The entry this replaces was right about the mechanism and understated the damage in one direction.** It named the false positive (a stale row repeated on later days) but not the false negative: the same slot is single-valued, so Wednesday's stale baritone row *displaced* Friday's genuine Ophelia library-book row rather than merely joining it. Simulating all 290 mornings of the 2026-27 school year: **123 stale prep rows shipped per year** (58% of the 212 the email emitted) on **71 mornings (24.5%)**, and **177 genuinely-owed prep rows never appeared on their own day.** After the fix the year emits 266 rows, all correct — net **+54 rows/year**, about +0.19 per morning. **Blast radius is narrower than "the digest":** only `render/email.js` renders past `days[0]`; `render/dashboard.js` (frozen v1), `render/dashboard-v2.js` and `digest/nowNextSelector.js` all read `days[0]` alone, and `days[0]`'s task list is unchanged by construction — so the entire correction lands in the email's second and third day blocks and the frozen surface was neither touched nor at risk. Wording was deliberately left alone: `"this morning"` under a *Thursday* day header is scoped by that header, and the shipped email already does exactly this with the solo-evening row's `"tonight"`, so no new precedent is set. **The general gap the entry named — "nothing asserts task-list contents across the window" — is what the test closes**, generically: a 26-morning sweep in `digest/builder.test.js` compares every day of every window against an oracle derived straight from `getRotation()`, so it fails for any day-specific prep item on any wrong day in either direction. Proved to have teeth against two mutants: the pre-fix today-strip (both new tests red) and a today-only guard, which kills the stale rows but keeps all 177 false negatives (both red, on the false-negative assertion) — so the sweep discriminates between the fix and the tempting half-fix.
+- **✓ RESOLVED Sept 8, 2026 — each day of the 72h window now gets its own prep item.** `digest/builder.js` derives the strip per day (`generateTasks(day.events, day.date, getSchoolStrip(day.date))`) instead of handing one today-strip to all three days. `generateTasks()` is unchanged: its contract was always "emit from the strip you are given", and it was the caller that gave it the wrong one — so its ~40 existing unit tests stand untouched rather than being rewritten to a new contract. **The entry this replaces was right about the mechanism and understated the damage in one direction.** It named the false positive (a stale row repeated on later days) but not the false negative: the same slot is single-valued, so Wednesday's stale baritone row *displaced* Friday's genuine Ophelia library-book row rather than merely joining it. Simulating all 290 mornings of the 2026-27 school year: **123 stale prep rows shipped per year** (58% of the 212 the email emitted) on **71 mornings (24.5%)**, and **177 genuinely-owed prep rows never appeared on their own day.** After the fix the year emits 266 rows, all correct — net **+54 rows/year**, about +0.19 per morning. **Blast radius is narrower than "the digest":** only `render/email.js` renders past `days[0]`; `render/dashboard.js` (frozen v1), `render/dashboard-v2.js` and `digest/nowNextSelector.js` all read `days[0]` alone, and `days[0]`'s task list is unchanged by construction — so the entire correction lands in the email's second and third day blocks and the frozen surface was neither touched nor at risk. Wording was deliberately left alone: the row reads `"⚠ Pack library book **this morning** (Ophelia — Media **today**)"` — two relative words, not one — and both are scoped by the `dayHeader(day.date)` the row sits under. The shipped email already does exactly this with the solo-evening row's `"tonight"` in future day blocks, so no new precedent is set. **The general gap the entry named — "nothing asserts task-list contents across the window" — is what the test closes**, generically: a 26-morning sweep in `digest/builder.test.js` compares every day of every window against an oracle derived straight from `getRotation()`, so it fails for any day-specific prep item on any wrong day in either direction. **Two cross-day interactions the fix creates were found by review and are now pinned rather than left incidental:** on all **25** school-day Music-eves Myles's baritone row shares an email with his library-book row (the same 25 the `schoolRotation.js` collision argument counts — but as Wednesday's item under Wednesday's header, not as the Tuesday-morning nudge that argument rejected; `tomorrowWarnings` stays free of instrument warnings and a test asserts it), and on **59** mornings a year the strip's "pack library book tonight" line coexists with the day-1 block's own "pack library book this morning" row (kept — different instructions at different times, and suppressing the day-1 row would restore the false negative). Neither is a regression; pre-fix that block carried *today's* row instead. Proved to have teeth against two mutants: the pre-fix today-strip (both new tests red) and a today-only guard, which kills the stale rows but keeps all 177 false negatives (both red, on the false-negative assertion) — so the sweep discriminates between the fix and the tempting half-fix.
 
 - **Read-only role guard is absent in untrusted headless sessions — backstop not decided
   (Sept 7, 2026).** The reviewer/debugger `PreToolUse` hook lives in agent frontmatter and,

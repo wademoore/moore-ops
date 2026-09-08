@@ -772,10 +772,22 @@ describe('buildDigest — calendar fetch failures', () => {
 //
 // The sweep below is deliberately GENERIC rather than a reproduction of the
 // baritone row that exposed the defect. It compares each day's emitted prep
-// rows against an oracle derived straight from schoolRotation.getRotation(),
-// so it fails for ANY day-specific prep item landing on ANY wrong day, in
-// either direction — a row emitted that is not owed, or a row owed that is
-// not emitted. The specific Oct 21 instance is pinned separately below.
+// rows against an oracle derived from schoolRotation.getRotation(), so it
+// fails for ANY day-specific prep item landing on ANY wrong day, in either
+// direction — a row emitted that is not owed, or a row owed that is not
+// emitted. The specific Oct 21 instance is pinned separately below, and that
+// one IS an independent oracle: it asserts literal strings.
+//
+// Two honest limits on what the sweep proves, stated rather than implied.
+// (1) It is a DATE-THREADING oracle, not a content oracle: it calls the same
+//     getRotation()/isSchoolDay() that the code under test reaches, so a
+//     defect inside schoolRotation.js moves both sides together and passes
+//     here. That module carries its own 71-test suite; this one guards the
+//     threading of dates through builder.js, which is where the defect was.
+// (2) It asserts each day's rows are consistent with that day's `day.date`,
+//     not that `day.date` is itself the right date. A wrong window would move
+//     the oracle with it. digest/builder.contract.test.js covers the window's
+//     shape; this file does not, and should not be read as if it did.
 //
 // Only render/email.js renders days beyond days[0]; the dashboards and
 // NOW/NEXT read days[0] alone. So these assertions are the only guard over
@@ -793,6 +805,11 @@ describe('buildDigest — day-specific prep tasks belong to the day they are owe
       : []
   ).sort();
 
+  // 'Before work' is exactly and only the backpack block's label today
+  // (digest/generateTasks.js is its sole emitter). If a third task ever adopts
+  // it, this filter silently widens and the sweep starts asserting more than it
+  // means to; if the backpack rows move to a different label, it fails loudly,
+  // which is the safe direction.
   const emittedOn = day =>
     (day.tasks || []).filter(t => t.time === PREP_TIME).map(t => t.text).sort();
 
@@ -808,26 +825,38 @@ describe('buildDigest — day-specific prep tasks belong to the day they are owe
   // Oct 20→21, both Saturdays and Sundays, and the Mon Oct 12 Student Holiday
   // closure — so windows that open on a closed day, close on one, and straddle
   // one are all represented, as are windows owing nothing at all.
+  // Built from calendar day-of-month rather than by adding 86400000 ms. This
+  // range holds no DST transition, so both forms agree today — but a ms step
+  // silently drifts an hour and mislabels a day if the range is ever widened
+  // across one, and the whole point of this file is date threading.
   const SWEEP = [];
-  for (let d = new Date(2026, 9, 5); d <= new Date(2026, 9, 30); d = new Date(d.getTime() + 86400000)) {
-    SWEEP.push(new Date(d));
-  }
+  for (let dom = 5; dom <= 30; dom++) SWEEP.push(new Date(2026, 9, dom));
+
+  // buildDigest under a pinned clock. Every caller below needs the same three
+  // things — mock, build, always reset — and a missed reset leaks into the rest
+  // of the suite, so it is written once.
+  const digestOn = async anchor => {
+    mock.timers.enable({ apis: ['Date'], now: noonEtOn(anchor) });
+    try {
+      return await buildDigest({
+        rawEvents: [], rawEvents14d: [], emails: [], docs: {}, banner: null,
+        // Injected rather than left undefined: undefined triggers a live
+        // calendar read, and this suite builds 28 digests — 28 real Google
+        // calls on any machine that happens to have credentials.json. [] is
+        // the same value the failed fetch degrades to in this sandbox.
+        emmaUnavailableBlocks: [], ...SPORTS_PARAMS,
+      });
+    } finally {
+      mock.timers.reset();
+    }
+  };
 
   it('emits exactly the prep rows each day of the 72h window owes, across a 26-morning sweep', async () => {
     let checkedDays = 0;
     let daysOwingSomething = 0;
 
     for (const anchor of SWEEP) {
-      const now = noonEtOn(anchor);
-      mock.timers.enable({ apis: ['Date'], now });
-      let result;
-      try {
-        result = await buildDigest({
-          rawEvents: [], rawEvents14d: [], emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
-        });
-      } finally {
-        mock.timers.reset();
-      }
+      const result = await digestOn(anchor);
 
       nodeAssert.equal(result.days.length, 3, `${label(anchor)}: expected a 3-day window`);
 
@@ -847,23 +876,73 @@ describe('buildDigest — day-specific prep tasks belong to the day they are owe
     // or a window that stopped containing school days, would make every
     // deepEqual above pass while asserting nothing.
     nodeAssert.equal(checkedDays, SWEEP.length * 3, 'every day of every window must be checked');
-    nodeAssert.ok(daysOwingSomething >= 10, `sweep must exercise real prep rows, saw ${daysOwingSomething}`);
+    // Measured on this range: 26 of the 78 days owe a prep row. Pinned exactly
+    // rather than as a loose floor — a floor of 10 would still pass with two
+    // thirds of the sweep gone, which is the failure mode this guard exists for.
+    nodeAssert.equal(daysOwingSomething, 26, `sweep must keep exercising real prep rows, saw ${daysOwingSomething}`);
+  });
+
+  // ── The two cross-day interactions this fix CREATES ─────────────────────
+  //
+  // Both were found by review, not by the tests, and both are consequences of
+  // days 1 and 2 finally carrying their own items. Neither is a regression and
+  // neither is wrong, but leaving them unremarked is how a documented rationale
+  // and its shipped behaviour drift apart — so they are pinned here as stated,
+  // guarded properties rather than left as incidental output.
+
+  // S1. digest/schoolRotation.js deliberately declines to warn the night before
+  // a Music day, because Myles's Media day is the school day immediately before
+  // it and a second packing item would land on the morning already carrying his
+  // library book. Per-day strips mean the baritone row now appears in the SAME
+  // EMAIL as the library-book row on all 25 of his school-day Music-eves.
+  //
+  // That is not the thing that was rejected, and the difference is the whole
+  // reason this is a test rather than a revert: what was rejected was a
+  // Tuesday-morning "pack the baritone tonight" nudge on Tuesday's own line.
+  // What ships is Wednesday's item under Wednesday's own day header, in a
+  // three-day lookahead. One adds an action to a crowded morning; the other
+  // states what a later day owes. The rejection still stands for the
+  // tomorrowWarnings channel, which remains empty of instrument warnings.
+  it('shows Myles\'s library book on his Media day and his baritone under the NEXT day, in one email', async () => {
+    const result = await digestOn(new Date(2026, 9, 20)); // Tue Oct 20 2026
+    const [tue, wed] = result.days;
+
+    nodeAssert.deepEqual(emittedOn(tue), ['⚠ Pack library book this morning (Myles — Media today)']);
+    nodeAssert.deepEqual(emittedOn(wed), ['⚠ Pack baritone this morning (Myles — Music today)']);
+
+    // The rejected channel stays rejected: no instrument warning the night before.
+    nodeAssert.equal(
+      result.schoolStrip.tomorrowWarnings.some(w => /baritone|instrument|Music/i.test(w)),
+      false,
+      'tomorrowWarnings must still carry no instrument warning',
+    );
+  });
+
+  // S2. When tomorrow is a Media day the school strip already says "pack the
+  // library book tonight", and the day-1 block now also carries that child's
+  // own "pack library book this morning" row. One action, two channels, one
+  // email — on 59 mornings a year. Kept deliberately: they are different
+  // instructions at different times (pack it tonight vs. it is needed that
+  // morning), and suppressing the day-1 row would put back the false negative
+  // this whole change removes. Pinned so the duplication is a decision.
+  it('lets the night-before strip line and the next day\'s own row coexist', async () => {
+    const result = await digestOn(new Date(2026, 9, 19)); // Mon Oct 19 2026
+
+    nodeAssert.ok(
+      result.schoolStrip.tomorrowWarnings.includes('Tomorrow: Myles has Media — pack library book tonight'),
+      'the night-before strip line must still fire',
+    );
+    nodeAssert.deepEqual(
+      emittedOn(result.days[1]),
+      ['⚠ Pack library book this morning (Myles — Media today)'],
+      'and the next day must still carry its own row',
+    );
   });
 
   // The specific instance recorded in the Known-open-item entry, pinned so the
   // exact reported symptom cannot come back even if the sweep is ever narrowed.
   it('does not repeat Wednesday\'s baritone row under Thursday and Friday (the reported Oct 21 2026 case)', async () => {
-    const anchor = new Date(2026, 9, 21);
-    mock.timers.enable({ apis: ['Date'], now: noonEtOn(anchor) });
-    let result;
-    try {
-      result = await buildDigest({
-        rawEvents: [], rawEvents14d: [], emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
-      });
-    } finally {
-      mock.timers.reset();
-    }
-
+    const result = await digestOn(new Date(2026, 9, 21));
     const [wed, thu, fri] = result.days;
 
     nodeAssert.deepEqual(emittedOn(wed), ['⚠ Pack baritone this morning (Myles — Music today)'],

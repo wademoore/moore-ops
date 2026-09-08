@@ -119,6 +119,20 @@
  * lands in the email's second and third day blocks and nowhere else. The
  * cross-window assertion in digest/builder.test.js is what keeps it fixed.
  *
+ * ⚠ READ THIS NEXT TO THE PARAGRAPH ABOVE, because the fix partially touches
+ * what that paragraph rejected. With per-day strips, the baritone row now
+ * appears in the SAME EMAIL as the library-book row on all 25 school-day
+ * Music-eves — the exact 25 the collision argument above counts. That is not a
+ * reversal, and the difference is the reason it was kept rather than special-
+ * cased. What was rejected is a Tuesday-morning "pack the baritone tonight"
+ * nudge sitting on Tuesday's own line, adding a second action to a morning
+ * already carrying the library book. What now ships is Wednesday's item under
+ * Wednesday's own day header, in a three-day lookahead — a statement of what a
+ * later day owes, not an instruction for today. The tomorrowWarnings channel
+ * is still free of instrument warnings, and a test asserts that it stays so.
+ * Suppressing the day-1 row instead would reintroduce the false negative the
+ * fix exists to remove. Both properties are pinned in digest/builder.test.js.
+ *
  * The remaining 5 Music-eves are NOT Media days — four Sundays (Jan 10, Feb 7,
  * Mar 7, Apr 25) and the Mon Oct 12 Student Holiday — so a "suppress the
  * night-before when today is Media" conditional would be live rather than dead.
