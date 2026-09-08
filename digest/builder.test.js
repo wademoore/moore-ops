@@ -8,7 +8,7 @@
 
 import { buildDigest, generateTasks } from './builder.js';
 import { attachFetchFailures } from '../calendar.js';
-import { isSchoolDay } from './schoolRotation.js';
+import { isSchoolDay, getRotation } from './schoolRotation.js';
 import { startOfTodayET } from './dateUtils.js';
 import { FIXTURE_CONFIG } from '../test/fixtures/sports-config.fixture.js';
 
@@ -757,6 +757,123 @@ describe('buildDigest — calendar fetch failures', () => {
     });
     nodeAssert.deepEqual(result.calendarFetchFailures, []);
     nodeAssert.equal(result.flags.find(f => f.id === 'calendar-fetch-failure'), undefined);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Day-specific prep tasks belong to the day they are owed on
+//
+// This closes the general gap named by the Known-open-item entry that sent us
+// here, in its own words: "nothing asserts task-list contents across the
+// window". Nothing in this suite looked past days[0].tasks, so builder.js
+// could hand one today-strip to all three days of the 72h window and stay
+// green — which it did, shipping a stale prep row on 24.5% of school-year
+// mornings while the items those days genuinely owed never appeared.
+//
+// The sweep below is deliberately GENERIC rather than a reproduction of the
+// baritone row that exposed the defect. It compares each day's emitted prep
+// rows against an oracle derived straight from schoolRotation.getRotation(),
+// so it fails for ANY day-specific prep item landing on ANY wrong day, in
+// either direction — a row emitted that is not owed, or a row owed that is
+// not emitted. The specific Oct 21 instance is pinned separately below.
+//
+// Only render/email.js renders days beyond days[0]; the dashboards and
+// NOW/NEXT read days[0] alone. So these assertions are the only guard over
+// the two day blocks where this defect was visible.
+// ---------------------------------------------------------------------------
+describe('buildDigest — day-specific prep tasks belong to the day they are owed on', () => {
+  const PREP_TIME = 'Before work';
+
+  // Oracle. Derived from schoolRotation directly, not from anything on the
+  // buildDigest path, so a defect that changed both sides identically cannot
+  // pass. Returns the prep rows `date` genuinely owes, sorted.
+  const owedOn = date => (
+    isSchoolDay(date)
+      ? ['myles', 'ophelia'].map(s => getRotation(s, date).warningText).filter(Boolean)
+      : []
+  ).sort();
+
+  const emittedOn = day =>
+    (day.tasks || []).filter(t => t.time === PREP_TIME).map(t => t.text).sort();
+
+  const label = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  // Noon ET on the given calendar date — comfortably clear of the ≥8 PM ET
+  // rollover window startOfTodayET() exists to handle, so the anchor buildDigest
+  // resolves is unambiguously the date we intend.
+  const noonEtOn = d => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 16, 0, 0));
+
+  // Oct 5–30 2026 covers every shape a 72h window can take: Media days for
+  // each child, Myles's Music (baritone) days, the Media→Music adjacency on
+  // Oct 20→21, both Saturdays and Sundays, and the Mon Oct 12 Student Holiday
+  // closure — so windows that open on a closed day, close on one, and straddle
+  // one are all represented, as are windows owing nothing at all.
+  const SWEEP = [];
+  for (let d = new Date(2026, 9, 5); d <= new Date(2026, 9, 30); d = new Date(d.getTime() + 86400000)) {
+    SWEEP.push(new Date(d));
+  }
+
+  it('emits exactly the prep rows each day of the 72h window owes, across a 26-morning sweep', async () => {
+    let checkedDays = 0;
+    let daysOwingSomething = 0;
+
+    for (const anchor of SWEEP) {
+      const now = noonEtOn(anchor);
+      mock.timers.enable({ apis: ['Date'], now });
+      let result;
+      try {
+        result = await buildDigest({
+          rawEvents: [], rawEvents14d: [], emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+        });
+      } finally {
+        mock.timers.reset();
+      }
+
+      nodeAssert.equal(result.days.length, 3, `${label(anchor)}: expected a 3-day window`);
+
+      for (const day of result.days) {
+        const owed = owedOn(day.date);
+        nodeAssert.deepEqual(
+          emittedOn(day),
+          owed,
+          `digest generated ${label(anchor)} — prep rows under ${label(day.date)} must be exactly what that day owes`,
+        );
+        checkedDays++;
+        if (owed.length) daysOwingSomething++;
+      }
+    }
+
+    // Guards the sweep itself: an oracle that quietly returned [] everywhere,
+    // or a window that stopped containing school days, would make every
+    // deepEqual above pass while asserting nothing.
+    nodeAssert.equal(checkedDays, SWEEP.length * 3, 'every day of every window must be checked');
+    nodeAssert.ok(daysOwingSomething >= 10, `sweep must exercise real prep rows, saw ${daysOwingSomething}`);
+  });
+
+  // The specific instance recorded in the Known-open-item entry, pinned so the
+  // exact reported symptom cannot come back even if the sweep is ever narrowed.
+  it('does not repeat Wednesday\'s baritone row under Thursday and Friday (the reported Oct 21 2026 case)', async () => {
+    const anchor = new Date(2026, 9, 21);
+    mock.timers.enable({ apis: ['Date'], now: noonEtOn(anchor) });
+    let result;
+    try {
+      result = await buildDigest({
+        rawEvents: [], rawEvents14d: [], emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+      });
+    } finally {
+      mock.timers.reset();
+    }
+
+    const [wed, thu, fri] = result.days;
+
+    nodeAssert.deepEqual(emittedOn(wed), ['⚠ Pack baritone this morning (Myles — Music today)'],
+      'Wed Oct 21 is Myles\'s Music day and owes the baritone row');
+    nodeAssert.deepEqual(emittedOn(thu), [],
+      'Thu Oct 22 is neither a Media nor a Music day and owes nothing');
+    // The false-negative half of the same defect: Friday is Ophelia's Media
+    // day, and her row used to be displaced by Wednesday's stale baritone row.
+    nodeAssert.deepEqual(emittedOn(fri), ['⚠ Pack library book this morning (Ophelia — Media today)'],
+      'Fri Oct 23 is Ophelia\'s Media day and owes her library-book row');
   });
 });
 

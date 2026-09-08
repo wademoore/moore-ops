@@ -107,17 +107,17 @@
  * channel. It is simply the wrong one here, because it produces no task and
  * because it is the channel that collides with the library book.
  *
- * ⚠ ONE CAVEAT ON THAT CHANNEL, measured rather than assumed. builder.js
- * computes ONE schoolStrip for today and passes it to generateTasks() for
- * every day in the window, and generateTasks() gates only on isSchoolDay(date)
- * — not on whether date IS today. So today's warningText is re-emitted as a
- * Wade task on every school day in the 72h block: a Wed Oct 21 baritone task
- * also appears under Thu Oct 22 and Fri Oct 23. This is PRE-EXISTING and not
- * introduced here — the library-book string has always fanned out the same way
- * through the same code path — but it means "becomes an actual Wade task" is
- * strictly true only of the first day. It is a defect in builder.js/
- * generateTasks.js, not here, and fixing it would change the library book's
- * shipped behaviour too, so it is left for its own scoped change.
+ * ⚠ THE CAVEAT THIS BLOCK USED TO CARRY IS FIXED (2026-09-08, its own change).
+ * builder.js computed ONE schoolStrip for today and passed it to
+ * generateTasks() for every day in the 72h window, while generateTasks() gated
+ * only on isSchoolDay(date) — so today's warningText was re-emitted on every
+ * later school day in the block (a Wed Oct 21 baritone row also appeared under
+ * Thu Oct 22 and Fri Oct 23) AND those days' own items never appeared at all.
+ * builder.js now derives each day's strip from that day's date, so warningText
+ * "becomes an actual Wade task" is true of every day in the window, each with
+ * its own item. Only render/email.js renders past days[0], so the correction
+ * lands in the email's second and third day blocks and nowhere else. The
+ * cross-window assertion in digest/builder.test.js is what keeps it fixed.
  *
  * The remaining 5 Music-eves are NOT Media days — four Sundays (Jan 10, Feb 7,
  * Mar 7, Apr 25) and the Mon Oct 12 Student Holiday — so a "suppress the
