@@ -825,10 +825,12 @@ describe('buildDigest — day-specific prep tasks belong to the day they are owe
   // Oct 20→21, both Saturdays and Sundays, and the Mon Oct 12 Student Holiday
   // closure — so windows that open on a closed day, close on one, and straddle
   // one are all represented, as are windows owing nothing at all.
-  // Built from calendar day-of-month rather than by adding 86400000 ms. This
-  // range holds no DST transition, so both forms agree today — but a ms step
-  // silently drifts an hour and mislabels a day if the range is ever widened
-  // across one, and the whole point of this file is date threading.
+  // Built from calendar day-of-month rather than by adding 86400000 ms. The
+  // ANCHORS (Oct 5-30 2026) hold no DST transition, so both forms agree today.
+  // Note the days ASSERTED run one further, to Nov 1 — which is the fallback
+  // date; it is a Sunday owing nothing, so nothing turns on it, but that is one
+  // day of margin. A ms step silently drifts an hour and mislabels a day once a
+  // range crosses a transition, and date threading is the whole point here.
   const SWEEP = [];
   for (let dom = 5; dom <= 30; dom++) SWEEP.push(new Date(2026, 9, dom));
 
@@ -841,9 +843,10 @@ describe('buildDigest — day-specific prep tasks belong to the day they are owe
       return await buildDigest({
         rawEvents: [], rawEvents14d: [], emails: [], docs: {}, banner: null,
         // Injected rather than left undefined: undefined triggers a live
-        // calendar read, and this suite builds 28 digests — 28 real Google
-        // calls on any machine that happens to have credentials.json. [] is
-        // the same value the failed fetch degrades to in this sandbox.
+        // calendar read, and this block builds 29 digests (26 in the sweep
+        // plus three singles) — 29 real Google calls on any machine that
+        // happens to have credentials.json. [] is the same value the failed
+        // fetch degrades to in this sandbox.
         emmaUnavailableBlocks: [], ...SPORTS_PARAMS,
       });
     } finally {

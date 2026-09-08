@@ -88,6 +88,9 @@
  * book this morning" (a task, via generateTasks) alongside "pack baritone
  * tonight" (the amber backpack-reminder flag, via flags.js). Measured over
  * the whole 2026-27 year, that collision lands on 25 of his 30 Music-eves.
+ * (⚠ Read the reconciliation paragraph further down before citing this: the
+ * per-day-strip fix means those same 25 emails DO carry both items — under
+ * separate day headers, which is not the thing this paragraph rejects.)
  *
  * So the instrument warns on the day only. That also puts it in the channel
  * with more delivery power: generateTasks() reads warningText and nothing
@@ -130,8 +133,9 @@
  * Wednesday's own day header, in a three-day lookahead — a statement of what a
  * later day owes, not an instruction for today. The tomorrowWarnings channel
  * is still free of instrument warnings, and a test asserts that it stays so.
- * Suppressing the day-1 row instead would reintroduce the false negative the
- * fix exists to remove. Both properties are pinned in digest/builder.test.js.
+ * Suppressing the day-1 row instead would put back 25 of the 177 false
+ * negatives the fix removed — not all of them, but the 25 this very paragraph
+ * is about. Both properties are pinned in digest/builder.test.js.
  *
  * The remaining 5 Music-eves are NOT Media days — four Sundays (Jan 10, Feb 7,
  * Mar 7, Apr 25) and the Mon Oct 12 Student Holiday — so a "suppress the
@@ -515,7 +519,10 @@ function getSchoolStrip(today) {
   // No day-before instrument warning, deliberately. Myles's Media day is the
   // school day immediately before his Music day, so one here would land on the
   // same morning as his library-book task on 25 of his 30 Music-eves. The
-  // instrument warns on the day instead, through warningText — see the header.
+  // instrument warns on the day instead, through warningText — see the header,
+  // and read its ⚠ reconciliation paragraph too: since the per-day-strip fix
+  // those 25 emails do show both items, under separate day headers. This
+  // channel stays empty of instrument warnings, and a test asserts that.
   // needsInstrument is still returned by getRotation() so a caller that wants
   // "is today an instrument day" does not have to parse warningText.
   if (opheliaTomorrow.needsLibraryBook) {
