@@ -27,6 +27,7 @@ import {
   addNoSchoolDate,
   MYLES_CENTERS,
   OPHELIA_CENTERS,
+  INSTRUMENTS,
   ANCHORS,
   SCHOOL_YEAR_START,
   SCHOOL_YEAR_END,
@@ -229,12 +230,31 @@ describe('Ophelia (grade 2, 6-day cycle) — matches her actual calendar entries
     assert.match(r.warningText, /Ophelia/);
   });
 
-  it('Music day needs no item (awareness only)', () => {
+  // UPDATED 2026-09-08 with the instrument reminder. This case previously
+  // asserted `needsRecorder === false` on Ophelia's Music day. The assertion
+  // was renamed rather than dropped, and its MEANING is deliberately
+  // unchanged: Ophelia's Music day is still awareness-only. What changed is
+  // why — it used to be false because nothing in the module ever set it, and
+  // it is now false because INSTRUMENTS maps her to null. Same expected
+  // output, a real gate behind it, so this is now the negative control that
+  // proves the reminder does not leak from Myles to her.
+  it('Music day needs no item for a child with no instrument (awareness only)', () => {
     const r = getRotation('ophelia', d('2026-08-31'));
     assert.equal(r.center, 'Music');
     assert.equal(r.needsLibraryBook, false);
-    assert.equal(r.needsRecorder, false);
+    assert.equal(r.needsInstrument, false);
     assert.equal(r.warningText, null);
+  });
+
+  it('never raises an instrument reminder for Ophelia on ANY day of her cycle', () => {
+    // Stronger than the single-date case above: walks a whole cycle so a
+    // future mis-gate cannot hide on a day the spot check does not visit.
+    for (const day of ['2026-08-24', '2026-08-25', '2026-08-26',
+                       '2026-08-27', '2026-08-28', '2026-08-31']) {
+      const r = getRotation('ophelia', d(day));
+      assert.equal(r.needsInstrument, false, `${day} (${r.center}) raised an instrument reminder for Ophelia`);
+      assert.ok(!/baritone/i.test(r.warningText || ''), `${day} named an instrument for Ophelia`);
+    }
   });
 
   it('weekend returns a null day and isSchoolDay false', () => {
@@ -312,11 +332,39 @@ describe('Myles — anchored on the confirmed school-wide phase', () => {
     assert.equal(notMedia.warningText, null);
   });
 
-  it('still raises no recorder reminder — the instrument item is a separate task', () => {
-    // needsRecorder is hardwired false for both children and nothing sets it.
-    // Myles plays baritone, not recorder; see the schoolRotation.js header.
-    assert.equal(getRotation('myles', d('2026-09-03')).center, 'Music');
-    assert.equal(getRotation('myles', d('2026-09-03')).needsRecorder, false);
+  // REPLACED 2026-09-08. This case asserted `needsRecorder === false` on
+  // Myles's Music day, i.e. that no instrument reminder fires. That is the
+  // exact behaviour this change reverses, so the assertion is inverted rather
+  // than removed: same date, same centre, opposite expectation, and now also
+  // pinning the instrument name so a revert to "recorder" fails here.
+  it('raises the baritone reminder on his Music day, and names the right instrument', () => {
+    const music = getRotation('myles', d('2026-09-03'));
+    assert.equal(music.center, 'Music');
+    assert.equal(music.needsInstrument, true);
+    assert.equal(music.warningText, '⚠ Pack baritone this morning (Myles — Music today)');
+    assert.ok(!/recorder/i.test(music.warningText), 'recorder is the wrong instrument — Myles plays baritone');
+  });
+
+  it('raises no instrument reminder on his non-Music days', () => {
+    for (const day of ['2026-09-01', '2026-09-02', '2026-09-08', '2026-09-09', '2026-09-10']) {
+      const r = getRotation('myles', d(day));
+      assert.notEqual(r.center, 'Music');
+      assert.equal(r.needsInstrument, false, `${day} (${r.center}) raised an instrument reminder`);
+    }
+  });
+
+  it('the library and instrument warnings never share the one warningText slot', () => {
+    // generateTasks() emits exactly ONE task per child from warningText, so a
+    // day that tried to set both would silently drop an action rather than add
+    // one. Walk a full cycle and assert at most one item is ever named.
+    for (const day of ['2026-09-01', '2026-09-02', '2026-09-03',
+                       '2026-09-08', '2026-09-09', '2026-09-10']) {
+      const r = getRotation('myles', d(day));
+      const named = [r.needsLibraryBook, r.needsInstrument].filter(Boolean).length;
+      assert.ok(named <= 1, `${day} (${r.center}) set both flags at once`);
+      if (r.needsLibraryBook) assert.match(r.warningText, /library book/);
+      if (r.needsInstrument) assert.match(r.warningText, /baritone/);
+    }
   });
 });
 
@@ -358,6 +406,29 @@ describe('centre label tables — one cycle, two entry positions', () => {
     const profile = JSON.parse(readFileSync(new URL('../data/kids-profile.json', import.meta.url), 'utf8'));
     assert.deepEqual(Object.values(MYLES_CENTERS), profile.myles.centersRotation.sequence);
     assert.deepEqual(Object.values(OPHELIA_CENTERS), profile.ophelia.centersRotation.sequence);
+  });
+
+  it('INSTRUMENTS matches the band data in data/kids-profile.json', () => {
+    // INSTRUMENTS' own comment claims "same divergence risk, and same rule, as
+    // MYLES_CENTERS above". MYLES_CENTERS has the tripwire directly above this;
+    // without this case the analogy would be drawn and then not honoured, which
+    // is the `phaseConfirmed` gap in CLAUDE.md's Known open items a third time.
+    const profile = JSON.parse(readFileSync(new URL('../data/kids-profile.json', import.meta.url), 'utf8'));
+
+    // Case-normalised on purpose: the JSON says "Baritone" (a proper noun in a
+    // record), the map says 'baritone' (mid-sentence in a reminder string).
+    // That difference is intended; any OTHER difference is drift.
+    assert.equal(
+      INSTRUMENTS.myles?.toLowerCase(),
+      profile.myles.band.instrument.toLowerCase(),
+      'INSTRUMENTS.myles has drifted from myles.band.instrument'
+    );
+
+    // Ophelia must have no band block at all, or an explicit null instrument.
+    // If she ever takes one up, this fails and forces a deliberate decision
+    // rather than letting her silently keep or silently gain a reminder.
+    assert.equal(profile.ophelia.band ?? null, null, 'Ophelia now has band data — revisit INSTRUMENTS.ophelia');
+    assert.equal(INSTRUMENTS.ophelia, null);
   });
 
   it('no stale 2025-26 labels survive', () => {
@@ -436,6 +507,65 @@ describe('getSchoolStrip — combined digest output', () => {
       strip.tomorrowWarnings.some(w => /ophelia/i.test(w) && /library book/i.test(w)),
       `expected an Ophelia library-book warning, got ${JSON.stringify(strip.tomorrowWarnings)}`
     );
+  });
+
+  // ── The Media/Music adjacency ───────────────────────────────────────────
+  //
+  // Myles's Media day (Day 2) is the school day immediately before his Music
+  // day (Day 3), so a day-before instrument warning would land on the same
+  // morning as his library-book task. These cases pin the chosen resolution
+  // — warn on the day only — rather than leaving it to the comment.
+
+  it('emits no day-before instrument warning on the eve of his Music day', () => {
+    // Sep 2 is his Media day AND the eve of his Sep 3 Music day: the exact
+    // collision. The strip must carry his library-book task and nothing about
+    // the baritone.
+    const strip = getSchoolStrip(d('2026-09-02'));
+    assert.equal(strip.myles.center, 'Media');
+    assert.match(strip.myles.warningText, /library book/);
+    assert.ok(
+      !strip.tomorrowWarnings.some(w => /baritone|instrument|recorder/i.test(w)),
+      `no instrument warning belongs on the Media morning, got ${JSON.stringify(strip.tomorrowWarnings)}`
+    );
+  });
+
+  it('gives Wade exactly one Myles packing item on the collision morning', () => {
+    // The acceptance criterion, stated directly: across BOTH channels — the
+    // morning-of warningText and the day-before list — the Media morning names
+    // one Myles item, not two. Checked on every Media/Music adjacency in the
+    // autumn term so it cannot pass on a lucky date.
+    for (const day of ['2026-09-02', '2026-09-14', '2026-09-22', '2026-10-01', '2026-10-20']) {
+      const strip = getSchoolStrip(d(day));
+      // Hard precondition, NOT a `continue`. Skipping a date whose centre has
+      // moved would let this whole case pass green having asserted nothing —
+      // which is exactly the failure mode it exists to catch.
+      assert.equal(strip.myles.center, 'Media', `${day} is no longer a Myles Media day; re-derive these dates`);
+      const mylesItems = [
+        ...(strip.myles.warningText ? [strip.myles.warningText] : []),
+        ...strip.tomorrowWarnings.filter(w => /myles/i.test(w)),
+      ];
+      assert.equal(mylesItems.length, 1, `${day}: expected one Myles item, got ${JSON.stringify(mylesItems)}`);
+      assert.match(mylesItems[0], /library book/);
+    }
+  });
+
+  it('carries the baritone on the Music morning itself, through warningText', () => {
+    const strip = getSchoolStrip(d('2026-09-03'));
+    assert.equal(strip.myles.center, 'Music');
+    assert.equal(strip.myles.needsInstrument, true);
+    assert.match(strip.myles.warningText, /Pack baritone this morning/);
+    // Ophelia is unaffected on the same date.
+    assert.equal(strip.ophelia.needsInstrument, false);
+  });
+
+  it('never names an instrument in the day-before list on any date of the year', () => {
+    // The day-before channel is library-book-only by design. Walk every
+    // calendar day of the school year rather than sampling.
+    for (let i = 0; i < 340; i++) {
+      const strip = getSchoolStrip(new Date(2026, 7, 24 + i));
+      const leaked = strip.tomorrowWarnings.filter(w => /baritone|recorder|instrument/i.test(w));
+      assert.deepEqual(leaked, [], `day-before instrument warning leaked: ${JSON.stringify(leaked)}`);
+    }
   });
 
   it('raises no warnings on a day before a closure', () => {

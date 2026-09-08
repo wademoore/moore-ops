@@ -17,10 +17,15 @@
  *       Ophelia Day 1 = PE1;  Myles Day 1 = PE2.
  *
  * DIGEST REMINDER RULES:
- *   - Media day  → warn THE DAY BEFORE → Wade packs the library book.
+ *   - Media day  → warn THE DAY BEFORE (a tomorrowWarnings entry) AND again
+ *     ON THE DAY (warningText) → Wade packs the library book.
  *     "Media" is the media centre, i.e. library checkout. It is the 2026-27
  *     label for what earlier years called "Library"; the reminder is the same.
- *   - Music day  → no item needed for Ophelia (awareness only).
+ *   - Music day  → warn ON THE DAY ONLY (warningText), and only for a child
+ *     who actually has an instrument — see INSTRUMENTS. Ophelia has none, so
+ *     her Music day stays awareness-only. Myles packs his baritone.
+ *     The deliberate absence of a day-before instrument warning is explained
+ *     at the tomorrowWarnings block in getSchoolStrip().
  *
  * ── Myles's anchor, and how the phase was confirmed ────────────────────────
  *
@@ -65,15 +70,62 @@
  * A null centersGroup is therefore not a signal that a rotation is unconfirmed;
  * data/kids-profile.json carries an explicit `phaseConfirmed` flag for that.
  *
- * ── OPEN ITEM: music-day instrument reminder ───────────────────────────────
+ * ── Music-day instrument reminder, and the Media/Music adjacency ───────────
  *
- * `needsRecorder` is still hardwired false for both children and nothing sets
- * it true. Myles is in 5th-grade Band on baritone this year, the baritone
- * comes home, and his Music day is now known — so a music-day packing
- * reminder is newly buildable. It is deliberately NOT built here: the field
- * name and the 'pack recorder tonight' string in getSchoolStrip() name the
- * wrong instrument, and changing that string turns three v1 tests red, one of
- * them inside the frozen render/dashboard.js surface. Separate scoped task.
+ * Built 2026-09-08, replacing a `needsRecorder` boolean that was initialised
+ * false, never assigned, and returned — its only reader was an unreachable
+ * getSchoolStrip() branch naming an instrument Myles does not play. The field
+ * is now `needsInstrument`, is genuinely set, and is driven by INSTRUMENTS
+ * rather than by a hardcoded child name, so a second child joining band is a
+ * one-line data edit and Ophelia's exclusion is a fact rather than an omission.
+ *
+ * THE ADJACENCY, AND WHY THE INSTRUMENT WARNS ONLY ON THE DAY:
+ *
+ * In MYLES_CENTERS, Media is Day 2 and Music is Day 3 — his Media day is the
+ * school day immediately before his Music day. Mirroring the library book's
+ * two-channel treatment would therefore put a second Myles packing item on
+ * the one morning that already carries his library-book task: "pack library
+ * book this morning" (a task, via generateTasks) alongside "pack baritone
+ * tonight" (the amber backpack-reminder flag, via flags.js). Measured over
+ * the whole 2026-27 year, that collision lands on 25 of his 30 Music-eves.
+ *
+ * So the instrument warns on the day only. That also puts it in the channel
+ * with more delivery power: generateTasks() reads warningText and nothing
+ * else, so a morning-of warning becomes an actual Wade TASK at "Before work",
+ * which is when a baritone goes in the car. It also drives the ⚠ glyph beside
+ * his name in the email school strip (render/email.js) and in the frozen v1
+ * dashboard (render/dashboard.js) — but lean on the TASK, not the glyph:
+ * renderWade() includes the strip only when tomorrowWarnings is non-empty, so
+ * on a Music morning, which by design has none, Wade's own tab shows no strip
+ * and therefore no glyph. The task is what actually reaches him that day.
+ *
+ * To be precise about the road not taken, because an earlier draft of this
+ * paragraph got it wrong: a tomorrowWarnings entry is NOT merely flag text.
+ * It has two production consumers — the amber backpack-reminder flag body
+ * (digest/flags.js) and its own amber line in the email school strip, which
+ * it also gates into Wade's tab (render/email.js). It is a perfectly visible
+ * channel. It is simply the wrong one here, because it produces no task and
+ * because it is the channel that collides with the library book.
+ *
+ * ⚠ ONE CAVEAT ON THAT CHANNEL, measured rather than assumed. builder.js
+ * computes ONE schoolStrip for today and passes it to generateTasks() for
+ * every day in the window, and generateTasks() gates only on isSchoolDay(date)
+ * — not on whether date IS today. So today's warningText is re-emitted as a
+ * Wade task on every school day in the 72h block: a Wed Oct 21 baritone task
+ * also appears under Thu Oct 22 and Fri Oct 23. This is PRE-EXISTING and not
+ * introduced here — the library-book string has always fanned out the same way
+ * through the same code path — but it means "becomes an actual Wade task" is
+ * strictly true only of the first day. It is a defect in builder.js/
+ * generateTasks.js, not here, and fixing it would change the library book's
+ * shipped behaviour too, so it is left for its own scoped change.
+ *
+ * The remaining 5 Music-eves are NOT Media days — four Sundays (Jan 10, Feb 7,
+ * Mar 7, Apr 25) and the Mon Oct 12 Student Holiday — so a "suppress the
+ * night-before when today is Media" conditional would be live rather than dead.
+ * It was still rejected: it buys five non-school-evening nudges a year at the
+ * cost of a second channel for one object and a branch whose correctness
+ * silently depends on Media continuing to precede Music. Recorded here so the
+ * option is not re-derived from scratch.
  */
 
 // ---------------------------------------------------------------------------
@@ -247,6 +299,25 @@ const OPHELIA_CENTERS = { ...CENTERS_6DAY };
 // The centre label that triggers the pack-a-library-book reminder.
 const LIBRARY_CENTER = 'Media';
 
+// The centre label that triggers the pack-an-instrument reminder.
+const MUSIC_CENTER = 'Music';
+
+// Which child carries an instrument to school on their Music day, and what it
+// is. A child mapped to null gets no instrument reminder — their Music day is
+// awareness-only. This is deliberately a map rather than a `student ===
+// 'myles'` test: the exclusion is then a stated fact about Ophelia rather than
+// an omission, and a second child joining band is a one-line edit here.
+//
+// ⚠ MIRRORS data/kids-profile.json → myles.band.instrument ("Baritone").
+// Same divergence risk, and same rule, as MYLES_CENTERS above: nothing keeps
+// the two in sync, this module is what renders, so change both together.
+// It is held here rather than read from that file because this module is pure
+// — no I/O — and is imported by builder.js and generateTasks.js as such.
+const INSTRUMENTS = {
+  myles:   'baritone',  // 5th-grade Band, director Jamie Lantz; comes home nightly
+  ophelia: null,        // Grade 2 — no band instrument
+};
+
 // ---------------------------------------------------------------------------
 // 5. CORE CALCULATOR
 // ---------------------------------------------------------------------------
@@ -329,7 +400,11 @@ function getRotationDay(student, targetDate) {
  *                                        student, so a null centre and a closed
  *                                        school stay distinguishable.
  * @property {boolean}     needsLibraryBook - true if Wade must pack a library book TODAY
- * @property {boolean}     needsRecorder    - true if Wade must pack a recorder TODAY
+ * @property {boolean}     needsInstrument  - true if Wade must pack this child's
+ *                                        band instrument TODAY, i.e. it is their
+ *                                        Music day AND INSTRUMENTS names one for
+ *                                        them. Always false for a child with no
+ *                                        instrument, on every day of the cycle.
  * @property {string|null} warningText  - human-readable prep warning, or null
  */
 
@@ -351,32 +426,40 @@ function getRotation(student, date) {
       // An unanchored student on an open school day still reports true here.
       isSchoolDay: isSchoolDay(date),
       needsLibraryBook: false,
-      needsRecorder: false,
+      needsInstrument: false,
       warningText: null,
     };
   }
 
   const center = centers[day];
   let needsLibraryBook = false;
-  let needsRecorder = false;
+  let needsInstrument = false;
   let warningText = null;
 
   const label = student === 'myles' ? 'Myles' : 'Ophelia';
+  const instrument = INSTRUMENTS[student];
 
+  // These two branches share ONE warningText slot, and generateTasks() emits
+  // exactly one task per child from it — so a second writer would silently
+  // delete an action rather than add one. They are mutually exclusive because
+  // LIBRARY_CENTER and MUSIC_CENTER are different labels and `center` is one
+  // value; `else if` makes that structural instead of incidental.
   if (center === LIBRARY_CENTER) {
     needsLibraryBook = true;
     warningText = `⚠ Pack library book this morning (${label} — Media today)`;
+  } else if (center === MUSIC_CENTER && instrument) {
+    // A child with no instrument falls through: their Music day is awareness
+    // only, exactly as before this reminder existed.
+    needsInstrument = true;
+    warningText = `⚠ Pack ${instrument} this morning (${label} — Music today)`;
   }
-  // Music day: awareness only for Ophelia, no item. Whether Myles's Music day
-  // needs an instrument packed is a separate open item — see the header
-  // comment. It is no longer blocked on his anchor, which is now set.
 
   return {
     day,
     center,
     isSchoolDay: true,
     needsLibraryBook,
-    needsRecorder,
+    needsInstrument,
     warningText,
   };
 }
@@ -415,9 +498,12 @@ function getSchoolStrip(today) {
   if (mylesTomorrow.needsLibraryBook) {
     tomorrowWarnings.push('Tomorrow: Myles has Media — pack library book tonight');
   }
-  if (mylesTomorrow.needsRecorder) {
-    tomorrowWarnings.push('Tomorrow: Myles has Music — pack recorder tonight');
-  }
+  // No day-before instrument warning, deliberately. Myles's Media day is the
+  // school day immediately before his Music day, so one here would land on the
+  // same morning as his library-book task on 25 of his 30 Music-eves. The
+  // instrument warns on the day instead, through warningText — see the header.
+  // needsInstrument is still returned by getRotation() so a caller that wants
+  // "is today an instrument day" does not have to parse warningText.
   if (opheliaTomorrow.needsLibraryBook) {
     tomorrowWarnings.push('Tomorrow: Ophelia has Media — pack library book tonight');
   }
@@ -450,6 +536,7 @@ export {
   isSchoolDay,
   MYLES_CENTERS,
   OPHELIA_CENTERS,
+  INSTRUMENTS,
   ANCHORS,
   SCHOOL_YEAR_START,
   SCHOOL_YEAR_END,
