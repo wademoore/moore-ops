@@ -10,7 +10,15 @@
  *
  * @param {ResolvedEvent[]} resolvedEvents  Output of aliases.resolveEvent() for the day
  * @param {Date}            date            The calendar date being processed
- * @param {object}          schoolStrip     Output of schoolRotation.getSchoolStrip()
+ * @param {object}          schoolStrip     getSchoolStrip(date) — the strip for
+ *   THIS day, never today's strip reused across a multi-day window. Everything
+ *   below derives from `date`; warningText is the one value that arrives from
+ *   the caller, so a strip built for a different date silently emits that other
+ *   day's prep item here and suppresses this day's own. builder.js passed one
+ *   today-strip to all three days of its 72h window until 2026-09, which put a
+ *   stale "pack the baritone" row under two later days in the email and hid the
+ *   real items owed on them. There is no date on a strip to check this against,
+ *   so the guard is the cross-window assertion in digest/builder.test.js.
  * @returns {Task[]}
  *
  * Task { time: string, owner: 'wade'|'robyn'|'emma'|'coaching', text: string }

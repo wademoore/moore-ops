@@ -315,8 +315,19 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   schoolStrip.centersWeek = buildCentersWeek(kidsProfile, today, allResolved14d, centersActionCues);
 
   // ── 7. Generate tasks for each day ──────────────────────────────────────
+  // Each day gets the strip for ITS OWN date. Passing today's strip to all
+  // three days was a real defect, not a shortcut: generateTasks() gates the
+  // backpack block on isSchoolDay(date) — a per-day fact — but read
+  // warningText off the caller's strip — a today-only fact. The two halves
+  // disagreed about which day they described, so today's prep item was
+  // re-emitted on Thursday and Friday while those days' own items never
+  // appeared at all. Only render/email.js renders days beyond days[0], so the
+  // repetition landed in the email and nowhere else. getSchoolStrip() is pure
+  // date arithmetic over module constants, so three calls cost nothing, and
+  // day 0's strip is content-identical to `schoolStrip` for the two fields
+  // generateTasks reads — the dashboards and NOW/NEXT are unmoved.
   for (const day of dayMap.values()) {
-    day.tasks = generateTasks(day.events, day.date, schoolStrip);
+    day.tasks = generateTasks(day.events, day.date, getSchoolStrip(day.date));
   }
 
   const days = [...dayMap.values()];

@@ -88,6 +88,9 @@
  * book this morning" (a task, via generateTasks) alongside "pack baritone
  * tonight" (the amber backpack-reminder flag, via flags.js). Measured over
  * the whole 2026-27 year, that collision lands on 25 of his 30 Music-eves.
+ * (⚠ Read the reconciliation paragraph further down before citing this: the
+ * per-day-strip fix means those same 25 emails DO carry both items — under
+ * separate day headers, which is not the thing this paragraph rejects.)
  *
  * So the instrument warns on the day only. That also puts it in the channel
  * with more delivery power: generateTasks() reads warningText and nothing
@@ -107,17 +110,32 @@
  * channel. It is simply the wrong one here, because it produces no task and
  * because it is the channel that collides with the library book.
  *
- * ⚠ ONE CAVEAT ON THAT CHANNEL, measured rather than assumed. builder.js
- * computes ONE schoolStrip for today and passes it to generateTasks() for
- * every day in the window, and generateTasks() gates only on isSchoolDay(date)
- * — not on whether date IS today. So today's warningText is re-emitted as a
- * Wade task on every school day in the 72h block: a Wed Oct 21 baritone task
- * also appears under Thu Oct 22 and Fri Oct 23. This is PRE-EXISTING and not
- * introduced here — the library-book string has always fanned out the same way
- * through the same code path — but it means "becomes an actual Wade task" is
- * strictly true only of the first day. It is a defect in builder.js/
- * generateTasks.js, not here, and fixing it would change the library book's
- * shipped behaviour too, so it is left for its own scoped change.
+ * ⚠ THE CAVEAT THIS BLOCK USED TO CARRY IS FIXED (2026-09-08, its own change).
+ * builder.js computed ONE schoolStrip for today and passed it to
+ * generateTasks() for every day in the 72h window, while generateTasks() gated
+ * only on isSchoolDay(date) — so today's warningText was re-emitted on every
+ * later school day in the block (a Wed Oct 21 baritone row also appeared under
+ * Thu Oct 22 and Fri Oct 23) AND those days' own items never appeared at all.
+ * builder.js now derives each day's strip from that day's date, so warningText
+ * "becomes an actual Wade task" is true of every day in the window, each with
+ * its own item. Only render/email.js renders past days[0], so the correction
+ * lands in the email's second and third day blocks and nowhere else. The
+ * cross-window assertion in digest/builder.test.js is what keeps it fixed.
+ *
+ * ⚠ READ THIS NEXT TO THE PARAGRAPH ABOVE, because the fix partially touches
+ * what that paragraph rejected. With per-day strips, the baritone row now
+ * appears in the SAME EMAIL as the library-book row on all 25 school-day
+ * Music-eves — the exact 25 the collision argument above counts. That is not a
+ * reversal, and the difference is the reason it was kept rather than special-
+ * cased. What was rejected is a Tuesday-morning "pack the baritone tonight"
+ * nudge sitting on Tuesday's own line, adding a second action to a morning
+ * already carrying the library book. What now ships is Wednesday's item under
+ * Wednesday's own day header, in a three-day lookahead — a statement of what a
+ * later day owes, not an instruction for today. The tomorrowWarnings channel
+ * is still free of instrument warnings, and a test asserts that it stays so.
+ * Suppressing the day-1 row instead would put back 25 of the 177 false
+ * negatives the fix removed — not all of them, but the 25 this very paragraph
+ * is about. Both properties are pinned in digest/builder.test.js.
  *
  * The remaining 5 Music-eves are NOT Media days — four Sundays (Jan 10, Feb 7,
  * Mar 7, Apr 25) and the Mon Oct 12 Student Holiday — so a "suppress the
@@ -501,7 +519,10 @@ function getSchoolStrip(today) {
   // No day-before instrument warning, deliberately. Myles's Media day is the
   // school day immediately before his Music day, so one here would land on the
   // same morning as his library-book task on 25 of his 30 Music-eves. The
-  // instrument warns on the day instead, through warningText — see the header.
+  // instrument warns on the day instead, through warningText — see the header,
+  // and read its ⚠ reconciliation paragraph too: since the per-day-strip fix
+  // those 25 emails do show both items, under separate day headers. This
+  // channel stays empty of instrument warnings, and a test asserts that.
   // needsInstrument is still returned by getRotation() so a caller that wants
   // "is today an instrument day" does not have to parse warningText.
   if (opheliaTomorrow.needsLibraryBook) {
