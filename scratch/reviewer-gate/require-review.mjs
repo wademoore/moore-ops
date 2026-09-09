@@ -200,8 +200,17 @@ if (sessionId && /^[A-Za-z0-9._-]+$/.test(sessionId)) {
       // genuine git failure and nothing else. Only now is failing open correct.
       const anc = isAncestor(record.sha, head);
       if (anc === null) bailOpen('git could not compare the reviewed commit with HEAD');
-      if (anc === true) reviewedSha = record.sha;
-      else recordNote = `the reviewed commit ${record.sha.slice(0, 7)} is not an ancestor of HEAD (rebased, amended, or from another branch)`;
+      if (anc === true) {
+        reviewedSha = record.sha;
+        // A verdict WAS recorded; it just does not reach HEAD any more. Leaving the
+        // default note here would report "no Reviewer verdict has been recorded" to a
+        // session that ran one -- the same false assertion this file's header
+        // criticises in the container hook, and the one case where the model would
+        // draw the wrong conclusion from a correct block. Say what actually happened.
+        recordNote = `the last Reviewer verdict covers ${record.sha.slice(0, 7)}, which is behind HEAD`;
+      } else {
+        recordNote = `the reviewed commit ${record.sha.slice(0, 7)} is not an ancestor of HEAD (rebased, amended, or from another branch)`;
+      }
     }
   }
 }

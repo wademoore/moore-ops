@@ -249,6 +249,13 @@ test('blocks: reviewed early, then kept editing (the load-bearing case)', () => 
   assert.equal(code, 2);
   assert.match(stderr, /2 commits are not covered/);
   assert.match(stderr, new RegExp(`${repo.shas[0].slice(0, 7)}\\.\\.${repo.head.slice(0, 7)}`));
+  // The reason string is part of the contract, not decoration. Asserting only the
+  // count and the range let this branch keep the DEFAULT note -- telling a session
+  // that had reviewed that "no Reviewer verdict has been recorded", which is false
+  // and is the one case where the model draws the wrong conclusion from a correct
+  // block. Review caught it precisely because this assertion was missing.
+  assert.match(stderr, new RegExp(`covers ${repo.shas[0].slice(0, 7)}, which is behind HEAD`));
+  assert.doesNotMatch(stderr, /no Reviewer verdict has been recorded/);
 });
 
 test('blocks: another session\'s passing verdict does not cover this session', () => {

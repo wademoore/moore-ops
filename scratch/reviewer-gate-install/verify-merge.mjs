@@ -22,6 +22,25 @@ const readJson = (p) => JSON.parse(readFileSync(p, 'utf8'));
 const current = readJson(CURRENT);
 const fragment = readJson(FRAGMENT);
 
+// PRE-INSTALL ONLY, and it refuses rather than lying about it.
+//
+// Once .claude/settings.json carries the two keys, `merged` equals `current` and
+// every invariant below passes trivially -- including the "+ exactly SubagentStop
+// and Stop" one, because a Set union is idempotent. Worse, the write would mirror
+// whatever is installed back into this directory, laundering any drift into an
+// apparently-green report. A check that cannot fail is not a check.
+if (current.hooks.SubagentStop || current.hooks.Stop) {
+  console.error(
+    'REFUSING: .claude/settings.json already declares SubagentStop and/or Stop.\n'
+    + 'This tool compares a PRE-install settings file against the fragment. Run against\n'
+    + 'an installed one it would compare the file with itself, pass all 13 invariants\n'
+    + 'vacuously, and overwrite this directory\'s settings.json with whatever is live.\n'
+    + 'If you are verifying an installed gate, use the wiring and behaviour checks in\n'
+    + 'INSTALL.md instead.',
+  );
+  process.exit(1);
+}
+
 // --- build ------------------------------------------------------------------
 // structuredClone so the comparison below reads the written file, not this object.
 const merged = structuredClone(current);

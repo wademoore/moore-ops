@@ -2,8 +2,10 @@
 //
 // This is the bench version of the live sequence in ADVERSARIAL-TEST.md. It builds
 // a throwaway repository and drives the two hooks with real payloads, so you can
-// watch the gate block and release before trusting it in a session. It touches
-// nothing outside its own temp directory and never reads or writes .claude/.
+// watch the gate block and release before trusting it in a session. It WRITES
+// nothing outside its own temp directory. With --installed it READS the two scripts
+// from .claude/hooks/, which is the whole point of that flag; without it, it reads
+// them from scratch/reviewer-gate/. It never writes to either.
 //
 // Point it at either location:
 //   node scratch/reviewer-gate-install/adversarial-test.mjs                 (pre-install: scratch/)

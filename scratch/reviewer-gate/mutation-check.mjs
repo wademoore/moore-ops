@@ -50,6 +50,14 @@ const MUTATIONS = [
     "    } else if (record.verdict === 'unknown') {\n      process.exit(0);",
     ['verdict "unknown" from a message with no sentinel', 'verdict "unknown" from no readable message']],
 
+  // Stale coverage must say so. Without this the branch keeps the DEFAULT note and
+  // tells a session that DID review that no verdict was recorded -- a false
+  // assertion, and the shape this file's header criticises in the container hook.
+  ['stale coverage reports "no verdict recorded"', GATE,
+    'recordNote = `the last Reviewer verdict covers ${record.sha.slice(0, 7)}, which is behind HEAD`;',
+    '',
+    ['kept editing']],
+
   ['keys on whether the Reviewer ran, not on unreviewed commits', GATE,
     '} else if (record.sha === head) {', "} else if (record.verdict === 'pass') {",
     ['kept editing']],

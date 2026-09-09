@@ -1892,9 +1892,18 @@ the tests spawn the scripts by path against throwaway git repositories. It lives
 and `render/**`, so a test under `scratch/` would never run here or in CI.
 
 Companion mutation harness, **not** part of `npm test` and run on demand:
-`node scratch/reviewer-gate/mutation-check.mjs` → 24 mutations, 24/24 proven, green
+`node scratch/reviewer-gate/mutation-check.mjs` → 25 mutations, 25/25 proven, green
 control, plus two self-test rows that inject a real syntax error to prove the harness's
 own hollowness check is live.
+
+`scratch/reviewer-gate-install/` holds the paste-ready install artifacts for that gate:
+complete post-install contents for the four destinations under `.claude/`, an install
+checklist, the adversarial-test procedure, and three on-demand scripts —
+`verify-merge.mjs` (proves the settings merge is additive; **pre-install only, refuses
+once installed**), `adversarial-test.mjs` (ten-scenario proof that the gate blocks), and
+`location-independence.mjs` (the measurement behind "the hooks need not move to work,
+only to be protected"). None runs in `npm test`. The gate itself remains uninstalled —
+writing under `.claude/` is deliberately outside what these artifacts do.
 
 The no-browser row is kept for the reason the entry below gives. Its failures and
 cancellations are the standing no-browser set, unchanged by this work.

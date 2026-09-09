@@ -55,6 +55,13 @@ Nothing else changes:
   classifier — so without this step the gate never releases except through the
   override. Append to `reviewer.md`:
 
+  **The current wording lives in `scratch/reviewer-gate-install/reviewer.md`, already
+  applied — use that file rather than retyping from here.** The sketch below is what
+  this README originally proposed and is kept only so the two are not silently
+  divergent; it is weaker, because it does not say the line must be bare and in plain
+  text, and a backticked, fenced, bulleted or `**REVIEW:** PASS`-style line does not
+  match the sentinel.
+
   ```
   8. VERDICT LINE. After the pass/fail summary, emit a final line that is exactly
      `REVIEW: PASS` or `REVIEW: FAIL` and nothing else. A Stop hook reads it.
@@ -165,10 +172,19 @@ report. The lesson is the one directly above, arriving a second time in a new
 substrate: the first fix removed prose scoring but kept a positional tiebreak, and a
 tiebreak is still an inference about intent. Nothing is inferred from position now.
 
-**Residual, named rather than implied:** a review that emits no verdict line of its
-own, and quotes a bare, unfenced, un-backticked `REVIEW: PASS` alone on a line, still
-records a pass. That is not a shape a Reviewer writes by accident, and this is an
-accident gate.
+**Residuals, named rather than implied.** All of these require the Reviewer to emit
+no verdict line of its own — with one present, exclusivity makes any stray literal
+resolve to `unknown`, which blocks. Found by review rather than assumed absent:
+
+* a bare, unfenced, un-backticked sentinel alone on a line, quoted rather than meant;
+* an **indented** (four-space) markdown code block containing one — only *fenced*
+  blocks are stripped;
+* matching is case-insensitive, so a bare `review: pass` in ordinary prose counts;
+* the fence stripper accepts ` ``` ` as a closer for a `~~~` block, so a mis-paired
+  pair can strip a `REVIEW: FAIL` and leave a later `REVIEW: PASS` standing.
+
+None is a shape a Reviewer writes by accident, and this is an accident gate. Item 8
+asks that quoted sentinels stay inline in backticks, which defeats all four.
 
 **This replaced a token heuristic, and the reason is worth keeping.** The first
 version classified the Reviewer's free prose: pass and fail words, a 15-line tail
