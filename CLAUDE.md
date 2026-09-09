@@ -1889,7 +1889,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2285 | **2285** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2284 | **2284** | **0** | **0** |
 
 Measured on `claude/mobile-dashboard-contract-59kk82`, whose merge base with `main` is
 **`ada361f`** (PR #57). **That merge base was re-measured in this session, before any change,
@@ -1897,11 +1897,11 @@ after `npm install`: 2242 / 2242 / 0 / 0 with a browser** — and `git fetch ori
 before deriving it, per the standing warning; the ref was stale at `2d01027` and the fetch moved
 it to `ada361f`, which is also this branch's head, so the merge base is the branch point.
 
-This change adds **+43**, in two new files:
+This change adds **+42**, in two new files:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `test/artifact/mobile-publishing-contract.test.js` (new) | — | 37 | +37 |
+| `test/artifact/mobile-publishing-contract.test.js` (new) | — | 36 | +36 |
 | `test/deploy-workflow-mobile-flag.test.js` (new) | — | 6 | +6 |
 
 `test/artifact/holiday-theme-contract.test.js` and `test/deploy-workflow-holiday-flag.test.js`
@@ -1918,12 +1918,12 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2285+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2284+ with no failures once a browser resolves.**
 
 Companion mutation harness, **committed** and run on demand — `node
 scratch/mobile-publishing-contract/mutation-check.mjs` → 23 mutations, 23/23 proven, green
 control, green restore, plus a self-test row that injects a real syntax error and requires the
-harness's own hollowness check to catch it (2 tests versus a control of 44). It lives in the repository rather than a session scratchpad precisely
+harness's own hollowness check to catch it (2 tests versus a control of 43). It lives in the repository rather than a session scratchpad precisely
 because a mutation count nobody can re-derive is not evidence; `package.json`'s globs are
 `test/**`, `digest/**` and `render/**`, so nothing under `scratch/` runs in `npm test`.
 
@@ -2005,7 +2005,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2196+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2285.)
+Current baseline above; the figure is now 2284.)
 
 ### Previous baseline — measured Sept 8, 2026 on the prep-task fan-out branch
 
@@ -2527,7 +2527,7 @@ method, so they chain directly to the 988 pre-change number above.
   discovery route, defaulting either kill switch on, merging the two publish paths into one try,
   fetching the data build twice, widening the Pi reader to the whole bucket, and merging the two
   write grants — each turns the suite red for its own reason, with a green control and a green
-  restore. Tests **2242 → 2285**, all passing with a browser.
+  restore. Tests **2242 → 2284**, all passing with a browser.
 
   **An independent Reviewer pass returned PASS with no BLOCKING findings**, and every SHOULD FIX
   it raised was acted on here — two of them in the failure family this file already documents.
@@ -2558,6 +2558,25 @@ method, so they chain directly to the 988 pre-change number above.
   survived, and the first version of that test hung instead of failing — which the harness had been
   scoring as a survival, because a run that produces no summary parses the same as a run with no
   failures. The harness now reports an inconclusive run as its own outcome.
+
+  **A third Reviewer round over that fix commit returned FAIL, and it was right.** Two of the
+  fixes were themselves defective. (1) The new "default duration bound" case observed the bound
+  behaviourally by waiting on an upload that never settles — **60.05 seconds** in a file whose
+  other 36 tests sum to under two, and the mutation harness runs that file 26 times, so a harness
+  run went from about a minute to about half an hour. I added it and read past the full-suite
+  duration going 44s to 86s. It also proved nothing: an explicit `mobileTimeoutMs` argument always
+  beats a destructuring default, so no call can observe what the default is, and the 66ms case
+  beside it already proved the bound is applied. Worse, the same commit added a harness comment
+  reading "the whole suite runs in a few seconds", which that block made false on arrival. The
+  block is removed, the signature assertion (the only thing that can see a changed default) stays,
+  and 23/23 mutations still hold without it — the mutation that removes `withTimeout` is caught by
+  the 66ms case. (2) The new synchronous-throw case could not fail: `publishAll` is `async`, so a
+  synchronous throw from the fetcher becomes a rejection carrying the same message under every
+  candidate form — lazy or eager, wrapped or not — with identical zero puts. It is deleted rather
+  than patched; the wrapper stays as defence in depth, but nothing claims a test proves it.
+  **That is the third consecutive round in which a guard of this change read as protective and was
+  not**, each one level down from the last — the strongest argument in this file for why the
+  mutation harness is committed, and for why "it passes" is never the same as "it would fail".
 
   **A second Reviewer round over the fix commit returned PASS with no BLOCKING findings**, and its
   three SHOULD FIX items were taken. Two were the same shape one level down. (1) The laziness was claimed in a
