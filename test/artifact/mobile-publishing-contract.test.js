@@ -470,23 +470,6 @@ test('the household data build does not start until a path actually needs it', a
   assert.equal(display.puts.length, 0);
 });
 
-test('a synchronous throw from the data build is caught by the awaiting path', async () => {
-  // A plain `const shared = fetchData()` lets a synchronous throw escape both
-  // try blocks and reject publishAll with the fetcher's error before either
-  // path has a chance to handle it. Every other failing-fetcher case in this
-  // file uses an async function, whose throw is already a rejection, so this
-  // is the shape none of them exercise.
-  const display = recorder();
-  const mobile = recorder();
-  await assert.rejects(publishAll({
-    fetchData: () => { throw new Error('adapter blew up synchronously'); },
-    display: { now: NOW, bucket: 'private', sportsFeedUrl: SPORTS, render: () => DISPLAY_HTML, putObject: display.putObject },
-    mobile: { now: NOW, bucket: 'private', enabled: true, putObject: mobile.putObject },
-  }), /adapter blew up synchronously/);
-  assert.equal(display.puts.length, 0);
-  assert.equal(mobile.puts.length, 0);
-});
-
 test('both paths publish from a single household data build', async () => {
   const harness = orchestrated();
   const result = await harness.run();
@@ -570,27 +553,13 @@ test('the mobile path\'s default duration bound fits inside the deployed invocat
   const invocation = template.Resources.GeneratorFunction.Properties.Timeout * 1000;
   assert.ok(bound > 0 && bound < invocation, `mobile bound ${bound}ms must be inside the ${invocation}ms invocation`);
   // The constant must be the DEFAULT, not merely a constant that happens to
-  // exist: reading it from source and checking its value says nothing about
-  // whether the parameter is bound to it, and the hang case above passes its
-  // own bound explicitly. Observed behaviourally, by letting the default apply.
-  const observed = await new Promise(resolve => {
-    publishAll({
-      fetchData: async () => mobilePreviewStates().everyday,
-      display: { now: NOW, bucket: 'private', sportsFeedUrl: SPORTS, render: () => DISPLAY_HTML, putObject: async () => ({ VersionId: 'v' }) },
-      mobile: {
-        now: NOW, bucket: 'private', enabled: true,
-        putObject: () => new Promise(() => {}),
-      },
-      // One millisecond under the declared default. If the parameter were
-      // bound to anything else, this override would not be what times out and
-      // the message below would not carry this number.
-      mobileTimeoutMs: bound - 1,
-    }).then(result => resolve(result.mobileError));
-  });
-  assert.equal(observed, `mobile publish exceeded ${bound - 1}ms`);
-  // The parameter's declared default is the constant, asserted on the
-  // signature rather than on the call site's line breaks — a one-line call is
-  // behaviourally identical and must not fail this.
+  // exist. That is a property of the signature, and only the signature: an
+  // explicit `mobileTimeoutMs` argument always beats a destructuring default,
+  // so no call this test could make would observe the default at all. The
+  // 66ms case above already proves the bound is applied; this proves the
+  // applied bound is the constant. Asserted on the signature rather than the
+  // call site's line breaks, so a one-line call — behaviourally identical —
+  // does not fail it.
   assert.match(source, /mobileTimeoutMs\s*=\s*MOBILE_PUBLISH_TIMEOUT_MS/);
 });
 

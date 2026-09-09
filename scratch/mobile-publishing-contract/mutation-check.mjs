@@ -76,8 +76,10 @@ const MUTATIONS = [
 
 // Without a timeout a genuinely hanging mutant blocks the harness forever and
 // never reaches the INCONCLUSIVE check below, which would make that check's
-// "hang" claim false. Generous enough that a slow machine is not mistaken for
-// a hang; the whole suite runs in a few seconds.
+// "hang" claim false. The suite runs in about five seconds, so this leaves
+// ample headroom for a slow machine without letting a hang run unbounded.
+// Keep it honest: if the suite's own runtime ever grows materially, revisit
+// this number rather than leaving the sentence above false.
 const SUITE_TIMEOUT_MS = 180_000;
 
 function runSuite() {

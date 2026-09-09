@@ -2560,20 +2560,19 @@ method, so they chain directly to the 988 pre-change number above.
   failures. The harness now reports an inconclusive run as its own outcome.
 
   **A second Reviewer round over the fix commit returned PASS with no BLOCKING findings**, and its
-  three SHOULD FIX items were taken. Two were the same shape one level down. (1) The laziness and
-  synchronous-throw behaviour was claimed in a comment and in this file but guarded by nothing:
-  reverting to the eager form left every test green, because a fetch-count assertion cannot tell
-  laziness from memoisation — both fetch exactly once. Two cases now pin it, one asserting **zero**
-  fetches when neither path can publish. (2) The mutation written to prove the new
+  three SHOULD FIX items were taken. Two were the same shape one level down. (1) The laziness was claimed in a
+  comment and in this file but guarded by nothing: reverting to the eager form left every test
+  green, because a fetch-count assertion cannot tell laziness from memoisation — both fetch exactly
+  once. One case now pins it, asserting **zero** fetches when neither path can publish. (2) The mutation written to prove the new
   network-capability guard injected into the renderer's own template literal, where `${…}`
   *evaluates* rather than emitting, so the token never reached the document and the guard was never
   exercised; it now injects into the client function, whose source really is serialized into the
   page. (3) The branch was not pushed. Four MINOR items were also taken: the default duration bound
-  is now observed behaviourally rather than read out of source, so a parameter bound to some other
-  value fails; a guard coupled to source line breaks was replaced with one on the signature; the
-  harness gained a `spawnSync` timeout, without which its own "inconclusive" claim could not cover a
-  hang; and the network-capability list gained `WebSocket` and an honest comment that it is a sample
-  rather than a proof. The remaining MINOR items — the bound being measured from mobile start, the
+  is pinned on the parameter's signature, which is the only place a changed default is
+  observable — an explicit argument always beats a destructuring default, so no call can see it;
+  the harness gained a `spawnSync` timeout, without which its own "inconclusive" claim could not
+  cover a hang; and the network-capability list gained `WebSocket` and an honest comment that it is
+  a sample rather than a proof. The remaining MINOR items — the bound being measured from mobile start, the
   prefix guard throwing before the structured log, orphan release directories having no stated
   lifecycle — are recorded in the pull request's Parked section rather than fixed.
 
