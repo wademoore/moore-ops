@@ -50,20 +50,19 @@ Nothing else changes:
 * **No deny-rule change is needed.** `.claude/settings.json` already denies
   `Edit(.claude/hooks/**)` and `Write(.claude/hooks/**)`, so both new scripts
   inherit that protection the moment they land in that directory.
-* **No agent-file change is *required*, but one is strongly recommended.** The gate
-  reads the verdict out of the Reviewer's final message and works with the existing
-  free-form convention. But the free-form path is a heuristic, and the exact path is
-  only reachable if the Reviewer actually emits the sentinel. To make verdicts
-  deterministic, append this to `.claude/agents/reviewer.md`:
+* **`.claude/agents/reviewer.md` MUST gain a verdict line. This is not optional.**
+  A pass is produced by an exact sentinel and by nothing else — there is no prose
+  classifier — so without this step the gate never releases except through the
+  override. Append to `reviewer.md`:
 
   ```
   8. VERDICT LINE. After the pass/fail summary, emit a final line that is exactly
      `REVIEW: PASS` or `REVIEW: FAIL` and nothing else. A Stop hook reads it.
   ```
 
-  Without it every real verdict is classified by the tail heuristic below — which
-  is biased toward `fail` and so cannot wave work through, but can withhold a pass
-  it should have granted. **This is the single highest-value optional step here.**
+  This file does not make that edit, because writing under `.claude/` is outside
+  what this artifact is allowed to do. It is yours to apply, and the gate is
+  incomplete until you do.
 * **`package.json` is untouched.** The test file is already inside the suite's globs.
 
 Claude Code hot-reloads an edited `settings.json` mid-session, so the hooks take
@@ -144,30 +143,36 @@ The `SubagentStop` payload carries `last_assistant_message` (the Reviewer's fina
 message text) and `agent_transcript_path` as a fallback. Both are read; the
 transcript is only parsed when the convenience field is absent.
 
-Two tiers:
+**A pass comes from the sentinel and from nothing else.** A message containing
+`REVIEW: PASS` or `REVIEW: FAIL` (last match wins) records that verdict. Every other
+message — however clean it reads — records `unknown`, which the gate treats as no
+coverage. There is no scoring of prose, no keyword list, and no tail window.
 
-1. **Explicit sentinel**, exact: a line containing `REVIEW: PASS`, `REVIEWER
-   VERDICT: FAIL`, or any of that shape. Last match wins. **This is the reliable
-   form** — if you want the gate to be deterministic, have the Reviewer end with it.
-2. **Tail heuristic**, best effort, scanned in **two scopes**:
-   * `BLOCKING` — the project's severity label — is scanned over the **whole
-     message**. A review that states a blocking finding early and then closes with a
-     long per-item recap of passes presents a clean tail, and a tail-only scan would
-     record that as a pass.
-   * `FAIL` / `REJECTED` / `BLOCKING` and the pass tokens are scanned over the **last
-     15 non-empty lines**, where the summary lives.
+**This replaced a token heuristic, and the reason is worth keeping.** The first
+version classified the Reviewer's free prose: pass and fail words, a 15-line tail
+window, negation stripping so "no BLOCKING findings" would not read as a failure.
+Review found four defects in it, in both directions:
 
-   Negation is stripped first, in **both directions** — "no BLOCKING findings" and
-   "BLOCKING — none" are each how a clean run is normally reported, and without the
-   strip the gate could never be satisfied. Neither scan matches the bare word
-   `block`: "an automatic BLOCK" and "blocked by policy" are quoted from the
-   Reviewer's own checklist, so matching them would fail every review that recites
-   what it checked.
+* an early `FAIL —` followed by a long per-item recap of passes presented a clean
+  tail and recorded a **pass**;
+* the same shape using the checklist's own phrase "an automatic BLOCK" did too —
+  and that phrase cannot be excluded as boilerplate, because it is also exactly
+  what a genuine automatic-BLOCK finding says;
+* a markdown heading with the negation on the next line (`## BLOCKING` / `None.`)
+  recorded a clean review as a **failure**, because the negation strip needed a
+  separator on the same line;
+* the negation strip added to fix that widened the first two.
 
-Tier 2 resolves every ambiguity toward `fail`. It can withhold a pass it should have
-granted; it cannot grant one it should have withheld.
+Those are not four bugs. They are the standing cost of deciding a gate's verdict by
+pattern-matching prose, and a fifth shape was always going to turn up. Making the
+sentinel the only path removes the entire class rather than the four instances.
 
----
+An earlier version of this README claimed the heuristic "can withhold a pass it
+should have granted; it cannot grant one it should have withheld." **That was
+false** — two of the four defects above are false passes — and it was load-bearing,
+because it was the stated reason the `reviewer.md` step was optional. The claim is
+gone and the step is mandatory. All ten shapes above and below are pinned as named
+regression tests, so the heuristic cannot creep back in unnoticed.
 
 ## Records
 
@@ -210,6 +215,18 @@ supersedes the previous verdict in both directions.
   human prompt ⇔ `type: "user"` + non-sidechain + string content", verified against
   real transcripts on Claude Code 2.1.266. A future feature that writes a user-type
   string entry on the model's behalf would defeat it silently.
+* **The block message prints the override phrase, and that is safe for a reason
+  worth writing down.** On exit 2 the gate tells the model the phrase exists — which
+  puts it into the transcript. It cannot self-release: a hook blocking message
+  persists as an entry of type `attachment`, with no `message.content`, so the
+  override scan rejects it on both of its tests. That was verified against a real
+  transcript on 2.1.266. It is nonetheless a property of how blocking messages are
+  persisted, not a guarantee, and it is the concrete instance of the version
+  coupling named above.
+* **The agent must be named `reviewer`.** That name is asserted in two places that
+  have to agree: the `matcher` in the settings fragment, and the `agent_type` guard
+  in the recorder. Rename the agent and the gate becomes unsatisfiable except
+  through the override, with no error to explain why.
 * **Claude Code caps consecutive Stop-hook blocks** and overrides the hook after a
   few, with a note to the user. The loop guard means that cap should not be reached
   in normal operation; the override phrase is the intended escape.
@@ -218,14 +235,14 @@ supersedes the previous verdict in both directions.
 
 ## Tests
 
-`test/hooks/reviewer-gate.test.js` — 48 cases, inside the normal `npm test` globs.
+`test/hooks/reviewer-gate.test.js` — 51 cases, inside the normal `npm test` globs.
 Each spawns the real script with a real hook payload against a real throwaway git
 repository and asserts the exit code, so it tests the shipped scripts rather than a
 copy of their logic.
 
-`node scratch/reviewer-gate/mutation-check.mjs` — 21 mutations. Each removes exactly
+`node scratch/reviewer-gate/mutation-check.mjs` — 18 mutations. Each removes exactly
 one deliberate decision from the hooks, runs that same test file against the damaged
-copy, and must go red **in the cases that name that decision**. Result: 21/21 proven,
+copy, and must go red **in the cases that name that decision**. Result: 18/18 proven,
 with a green control row.
 
 Three properties make the table mean something rather than merely look green:
@@ -233,11 +250,14 @@ Three properties make the table mean something rather than merely look green:
 * **each patch asserts it applied exactly once** — a silently-unapplied mutation
   would run the pristine hooks and report green as "the guard has teeth" (this fired
   for real: three anchors went stale during a rewrite and the harness refused them);
-* **at least one test must survive** — pass count zero means the mutation broke
-  parseability rather than behaviour;
-* **failures must stay within a blast radius of 6** — a mutation that reddens the
-  file proves nothing attributable to one guard. This is the check that actually
-  catches a dangling-`else` syntax error: 18 tests still *pass* in that case, because
-  the syntax error is in the hook rather than in the test file, so a survivor count
-  alone would wave it through. Verified by deliberately introducing that mutation and
-  observing the row report `HOLLOW`.
+* **the mutated file must still parse** — `node --check` is run on it before the
+  suite. A syntax error reddens most of the file, the expected case names appear
+  among the wreckage, and the row would otherwise print "as expected" while proving
+  nothing. This replaced a blast-radius threshold, which was a proxy for the same
+  question and a poor one: measured here, a syntax error in the recorder fails 16
+  cases and one in the gate fails 31, while the broadest legitimate mutation fails
+  11 — a two-case gap to thread, which the next added test would have closed.
+  Verified by deliberately introducing a dangling-`else` and observing the row
+  report `HOLLOW: mutation does not parse`;
+* **at least one test must survive** — parseability is settled above, but a module
+  that parses and then throws while loading would redden the file the same way.

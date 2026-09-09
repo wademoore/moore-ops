@@ -20,10 +20,6 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, '..', '..');
 const TEST = join(REPO, 'test', 'hooks', 'reviewer-gate.test.js');
 
-// A guard worth having is narrow. Every mutation below should redden a handful of
-// named cases, not the file; anything wider is not attributable to one decision.
-const MAX_BLAST_RADIUS = 6;
-
 const GATE = 'require-review.mjs';
 const REC = 'record-review-verdict.mjs';
 
@@ -42,9 +38,17 @@ const MUTATIONS = [
     '    return true;',
     ['assistant message does not release', 'sidechain) prompt does not release', 'tool result does not release']],
 
-  ['any recorded verdict counts as coverage', GATE,
+  ['a non-pass verdict counts as coverage', GATE,
     "record.verdict !== 'pass'", 'false',
-    ['verdict is "fail"', 'verdict is "unknown"']],
+    ['verdict is "fail"']],
+
+  // 'unknown' is caught by its own earlier branch, so the mutation above no longer
+  // reaches it. Without this row that branch would be unguarded -- which is how a
+  // guard quietly stops being covered when the code around it grows a new case.
+  ['an unknown verdict counts as coverage', GATE,
+    "    } else if (record.verdict === 'unknown') {",
+    "    } else if (record.verdict === 'unknown') {\n      process.exit(0);",
+    ['verdict is "unknown"']],
 
   ['keys on whether the Reviewer ran, not on unreviewed commits', GATE,
     '} else if (record.sha === head) {', "} else if (record.verdict === 'pass') {",
@@ -75,14 +79,12 @@ const MUTATIONS = [
     "if (!gitDir || !head) { process.stderr.write('mutant\\n'); process.exit(2); }",
     ['not a git repository']],
 
-  ['recorder resolves ambiguity toward pass', REC,
-    "return PASS_TOKEN.test(tail) && !hasFail && !FAIL_TOKEN.test(tail) ? 'pass' : 'fail';",
-    "return PASS_TOKEN.test(tail) ? 'pass' : 'fail';",
-    ['ambiguous summary']],
-
-  ['recorder drops before-the-label negation', REC,
-    '.replace(NEGATED_BEFORE, \' \')', '',
-    ['no BLOCKING findings', 'negation before the label']],
+  // The invariant that replaced the prose classifier: no sentinel, no pass. This is
+  // the broadest legitimate mutation here (11 cases) and that is proper -- the
+  // invariant it removes is itself broad.
+  ['recorder falls back to classifying prose', REC,
+    "return verdict ?? 'unknown';", "return verdict ?? 'pass';",
+    ['no sentinel, no pass', 'no sentinel, no release']],
 
   ['recorder records an undeterminable verdict as a pass', REC,
     "if (typeof text !== 'string' || !text.trim()) return 'unknown';",
@@ -92,20 +94,6 @@ const MUTATIONS = [
   ['recorder drops the agent_type guard', REC,
     "if (agentType !== 'reviewer') process.exit(0);", '',
     ['non-reviewer subagent']],
-
-  ['recorder scans only the tail for a blocking finding', REC,
-    'const hasFail = BLOCKING_FINDING.test(stripped);',
-    'const hasFail = false;',
-    ['laundered by a clean tail']],
-
-  ['recorder drops after-the-label negation', REC,
-    '.replace(NEGATED_AFTER, \' \')', '',
-    ['negation after the label']],
-
-  ['recorder fail scan matches the bare word "block"', REC,
-    'const FAIL_TOKEN = /\\b(?:FAIL(?:ED|S|URE)?|BLOCKING|REJECTED?)\\b/i;',
-    'const FAIL_TOKEN = /\\b(?:FAIL(?:ED|S|URE)?|BLOCK(?:ING|ED|S)?|REJECTED?)\\b/i;',
-    ['checklist boilerplate']],
 
   ['recorder records for an unidentified agent', REC,
     "if (agentType !== 'reviewer') process.exit(0);",
@@ -150,7 +138,19 @@ function mutate(file, find, replace) {
   const hits = src.split(find).length - 1;
   if (hits !== 1) throw new Error(`patch anchor matched ${hits} times in ${file} (expected exactly 1)`);
   writeFileSync(target, src.replace(find, replace));
-  return dir;
+
+  // Did this change BEHAVIOUR, or merely parseability? A mutation that breaks the
+  // syntax reddens most of the file, the expected case names appear among the
+  // wreckage, and the row would print "as expected" while proving nothing.
+  //
+  // `node --check` answers that question directly. It replaced a blast-radius
+  // bound, which was only ever a proxy for it and a poor one: measured here, a
+  // syntax error in the recorder fails 16 cases and one in the gate fails 31,
+  // while the broadest LEGITIMATE mutation below fails 11 -- so any threshold had
+  // to thread a two-case gap, and would have started rejecting honest mutations
+  // the moment an invariant grew another test.
+  const check = spawnSync(process.execPath, ['--check', target], { encoding: 'utf8' });
+  return { dir, parses: check.status === 0, parseError: (check.stderr || '').split('\n')[0] };
 }
 
 const rows = [];
@@ -164,25 +164,24 @@ if (control.fail !== 0 || control.pass <= 0) harnessOk = false;
 for (const [name, file, find, replace, expect] of MUTATIONS) {
   let row;
   try {
-    const dir = mutate(file, find, replace);
+    const { dir, parses, parseError } = mutate(file, find, replace);
+    if (!parses) {
+      harnessOk = false;
+      rows.push([name, '-', '-', `HOLLOW: mutation does not parse (${parseError})`]);
+      continue;
+    }
     const r = runSuite(dir);
     const joined = r.failedNames.join(' | ');
     const missed = expect.filter((e) => !joined.includes(e));
 
-    // A mutation that broke PARSEABILITY rather than behaviour reddens everything,
-    // the expected names appear among the wreckage, and the row would print "as
-    // expected" while proving nothing about the guard. Requiring survivors makes
-    // that a property of the harness instead of a thing the author has to
-    // remember: a syntax error leaves pass === 0, and a mutation that reddens the
-    // whole suite is reported as too broad to attribute to one guard.
+    // Parseability is settled above. Survivors are still required: a module that
+    // parses but throws while loading would otherwise redden the file the same way.
     const survivors = r.pass > 0;
-    const targeted = r.fail <= MAX_BLAST_RADIUS;
-    const ok = r.fail > 0 && missed.length === 0 && survivors && targeted;
+    const ok = r.fail > 0 && missed.length === 0 && survivors;
     if (!ok) harnessOk = false;
 
     let why = `RED (${r.fail}) as expected`;
-    if (!survivors) why = 'HOLLOW: no test survived (syntax error, not behaviour)';
-    else if (!targeted) why = `HOLLOW: ${r.fail} failures exceeds the blast radius`;
+    if (!survivors) why = 'HOLLOW: no test survived (the module never loaded)';
     else if (missed.length) why = `UNPROVEN: missing ${missed.join(', ')}`;
     else if (r.fail === 0) why = 'UNPROVEN: no failures at all';
     row = [name, r.pass, r.fail, why];

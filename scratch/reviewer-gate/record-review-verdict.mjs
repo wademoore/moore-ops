@@ -16,9 +16,10 @@
 //                           as no coverage, so an undeterminable review blocks
 //                           exactly as an absent one does.
 //
-//   Ambiguous verdict text (a pass token and a fail token both present)
-//                        -> record "fail". FAIL CLOSED, same reasoning: only an
-//                           unambiguous pass is allowed to count as one.
+//   Any message without an exact "REVIEW: PASS" / "REVIEW: FAIL" sentinel
+//                        -> record "unknown". FAIL CLOSED: only an exact sentinel
+//                           produces a pass, so no wording of a review -- however
+//                           clean it reads -- can be mistaken for one.
 //
 //   Malformed stdin payload, unresolvable git dir, git command failure, or an
 //   unwritable record path
@@ -54,9 +55,10 @@ try {
 }
 
 // Guard first: bail on anything that is not a reviewer conclusion.
-// agent_type is REQUIRED on SubagentStop (agent_type:s(), not .optional() -- the
-// optional form belongs to SubagentStart), so an absent value means this is not a
-// payload we understand and we record nothing. Strict rather than permissive: a
+// agent_type is REQUIRED on SubagentStop: the schema reads agent_type:s(). The
+// .optional() form appears in the shared base schema and in SessionStart -- NOT in
+// SubagentStart, which also declares it required. So an absent value here means
+// this is not a payload we understand, and we record nothing. Strict rather than permissive: a
 // recorder that writes a verdict for an unidentified agent is a fail-OPEN in a
 // guard whose whole job is defence in depth. Recording nothing is fail-CLOSED and
 // recoverable -- the gate blocks and the override releases it.
@@ -89,60 +91,37 @@ if (!gitDir || !head) process.exit(0);
 
 // --- verdict extraction -----------------------------------------------------
 //
-// Tier 1 is an explicit sentinel and is exact. Tier 2 is a best-effort reading of
-// the Reviewer's existing free-form convention ("End with: pass/fail summary"),
-// scoped to the tail of the message because that is where the summary is. Tier 2
-// resolves every ambiguity toward "fail", so the fallback can withhold a pass it
-// should have granted but can never grant one it should have withheld.
+// One tier, not two: an exact sentinel, or "unknown". See classify() below for
+// what was there before and why it is gone.
 
-const SENTINEL = /\bREVIEW(?:ER)?(?:\s+VERDICT)?\s*[:=–—-]\s*\**\s*(PASS|FAIL)\b/gi;
+const SENTINEL = /\bREVIEW(?:ER)?(?:\s+VERDICT)?\s*[:=\u2013\u2014-]\s*\**\s*(PASS|FAIL)\b/gi;
 
-// "no BLOCKING findings" and "BLOCKING - none" are both passes, not fails, and
-// they are the Reviewer's two most natural ways of reporting a clean run. Both
-// directions of negation are stripped before any fail scan; without this the gate
-// could never be satisfied by a clean review.
-const NEGATED_BEFORE = /\b(?:no|zero|none|without|non|0)\b[\s,'"()*_-]*(?:\w+[\s,'"()*_-]+){0,3}?blocking\b/gi;
-const NEGATED_AFTER = /\bblocking\b(?:\s+\w+){0,2}?\s*[:=–—-]+\s*(?:none|zero|nil|0)\b/gi;
-
-// Scanned over the WHOLE message. BLOCKING is this project's severity label, so
-// an un-negated occurrence anywhere is a reported blocking finding wherever it
-// sits. Deliberately NOT the bare word "block": the Reviewer checklist itself
-// says "an automatic BLOCK" and "blocked by policy", and matching those would
-// fail every review on its own boilerplate.
-const BLOCKING_FINDING = /\bBLOCKING\b/i;
-
-// Scanned over the tail only, where the summary lives. Adds the words that read
-// as a verdict in a closing line. Like BLOCKING_FINDING it excludes the bare word
-// "block": "an automatic BLOCK" and "blocked by policy" are both quoted from the
-// Reviewer's own checklist, so matching them would fail every review that recites
-// what it checked -- which is the one thing the checklist asks the Reviewer to do.
-const FAIL_TOKEN = /\b(?:FAIL(?:ED|S|URE)?|BLOCKING|REJECTED?)\b/i;
-const PASS_TOKEN = /\b(?:PASS(?:ED|ES)?|APPROVED?)\b/i;
-const TAIL_LINES = 15;
-
+// A pass is produced by the sentinel and by NOTHING else.
+//
+// An earlier version of this file classified the Reviewer's free prose with token
+// heuristics -- pass/fail words, a tail window, negation stripping. Review found
+// four defects in it, in both directions: an early "FAIL" laundered by a clean
+// per-item recap tail; the same shape with the checklist's own "automatic BLOCK";
+// a markdown heading whose negation sat on the next line ("## BLOCKING" / "None.")
+// recording a clean review as a failure; and the negation strip added to fix that
+// last one widening the first two.
+//
+// They are not four independent bugs. They are the standing cost of deciding a
+// gate's verdict by pattern-matching prose, and a fifth shape was always going to
+// exist. Every one of them disappears if the only thing that can produce a pass is
+// an exact string, so that is what this does. Anything else is "unknown", which the
+// gate treats as no coverage.
+//
+// The cost is real and is paid deliberately: the Reviewer MUST emit the sentinel or
+// the gate never releases except through the override. That makes the reviewer.md
+// install step in the README mandatory rather than optional -- which is the honest
+// shape of this design, and was already true before, only hidden behind a heuristic
+// that looked like it could stand in.
 function classify(text) {
   if (typeof text !== 'string' || !text.trim()) return 'unknown';
-
-  // Tier 1: last explicit sentinel wins.
-  let sentinel = null;
-  for (const m of text.matchAll(SENTINEL)) sentinel = m[1].toLowerCase();
-  if (sentinel) return sentinel;
-
-  // Tier 2. The fail scan is split across two scopes on purpose. A review that
-  // states a BLOCKING finding early and then closes with a long per-item recap of
-  // passes presents a clean tail, and a tail-only scan would record that as a
-  // pass -- the one direction this heuristic must never fail in.
-  const stripped = text.replace(NEGATED_BEFORE, ' ').replace(NEGATED_AFTER, ' ');
-  const hasFail = BLOCKING_FINDING.test(stripped);
-
-  const tail = stripped
-    .split(/\r?\n/)
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .slice(-TAIL_LINES)
-    .join('\n');
-
-  return PASS_TOKEN.test(tail) && !hasFail && !FAIL_TOKEN.test(tail) ? 'pass' : 'fail';
+  let verdict = null;
+  for (const m of text.matchAll(SENTINEL)) verdict = m[1].toLowerCase(); // last wins
+  return verdict ?? 'unknown';
 }
 
 let text = typeof payload?.last_assistant_message === 'string' ? payload.last_assistant_message : '';

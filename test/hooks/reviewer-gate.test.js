@@ -174,12 +174,12 @@ test('blocks: verdict is "fail"', () => {
   assert.match(stderr, /last Reviewer verdict was "fail"/);
 });
 
-test('blocks: verdict is "unknown"', () => {
+test('blocks: verdict is "unknown", and names the missing sentinel', () => {
   const repo = makeRepo({ commits: 1 });
   writeRecord(repo, { schema: 1, sessionId: SESSION, sha: repo.head, verdict: 'unknown' });
   const { code, stderr } = gate(repo);
   assert.equal(code, 2);
-  assert.match(stderr, /"unknown", not a pass/);
+  assert.match(stderr, /emitted no "REVIEW: PASS"/);
 });
 
 test('blocks: a truthy non-pass verdict is not treated as a pass', () => {
@@ -388,30 +388,6 @@ test('recorder: the last sentinel wins over an earlier one', () => {
   assert.equal(readRecord(repo).verdict, 'pass');
 });
 
-test('recorder: tail heuristic reads "PASS - no BLOCKING findings" as a pass', () => {
-  const repo = makeRepo({ commits: 1 });
-  recorder(repo, { last_assistant_message: 'Item 7 checked.\n\nPASS - no BLOCKING findings, 2 SHOULD FIX.' });
-  assert.equal(readRecord(repo).verdict, 'pass');
-});
-
-test('recorder: tail heuristic reads an actual blocking finding as a fail', () => {
-  const repo = makeRepo({ commits: 1 });
-  recorder(repo, { last_assistant_message: 'FAIL - 1 BLOCKING: wrong target file.' });
-  assert.equal(readRecord(repo).verdict, 'fail');
-});
-
-test('recorder: an ambiguous summary is recorded as a fail, not a pass', () => {
-  const repo = makeRepo({ commits: 1 });
-  recorder(repo, { last_assistant_message: 'Items 1-6 PASS. Item 7 is BLOCKING.' });
-  assert.equal(readRecord(repo).verdict, 'fail');
-});
-
-test('recorder: a message with no verdict language at all is a fail, never a pass', () => {
-  const repo = makeRepo({ commits: 1 });
-  recorder(repo, { last_assistant_message: 'I looked at the diff and it seems fine.' });
-  assert.equal(readRecord(repo).verdict, 'fail');
-});
-
 test('recorder: no message and no readable transcript records "unknown"', () => {
   const repo = makeRepo({ commits: 1 });
   const { code } = recorder(repo, { last_assistant_message: undefined });
@@ -456,7 +432,7 @@ test('recorder: never exits 2, on any input', () => {
   const earlyBail = ['{ not json', '', '[]', 'null', JSON.stringify({ agent_type: 'reviewer' })];
   const fullPath = [
     subagentPayload(repo, { last_assistant_message: 'REVIEW: PASS' }),
-    subagentPayload(repo, { last_assistant_message: 'FAIL - 1 BLOCKING finding.' }),
+    subagentPayload(repo, { last_assistant_message: 'REVIEW: FAIL' }),
     subagentPayload(repo, { last_assistant_message: undefined }),
     subagentPayload(repo, { agent_type: 'debugger', last_assistant_message: 'REVIEW: PASS' }),
   ];
@@ -476,43 +452,53 @@ test('recorder: outside a git repository it writes nothing and does not throw', 
   assert.equal(code, 0);
 });
 
-test('recorder: a BLOCKING finding stated early is not laundered by a clean tail', () => {
-  const repo = makeRepo({ commits: 1 });
-  // The shape that defeats a tail-only scan: the finding is up top, then a long
-  // per-item recap of passes fills the closing lines.
-  const body = [
-    'BLOCKING: item 1 wrote to an archived path.',
-    '', 'Detail follows.', '',
-  ].concat(Array.from({ length: 20 }, (_, i) => `Item ${i}: PASS, checked and clean.`));
-  recorder(repo, { last_assistant_message: body.join('\n') });
-  assert.equal(readRecord(repo).verdict, 'fail');
-});
-
-test('recorder: "BLOCKING - none" reads as a pass (negation after the label)', () => {
-  const repo = makeRepo({ commits: 1 });
-  recorder(repo, { last_assistant_message: '### BLOCKING - none.\n\nPASS. 2 SHOULD FIX.' });
-  assert.equal(readRecord(repo).verdict, 'pass');
-});
-
-test('recorder: "Zero BLOCKING findings" reads as a pass (negation before the label)', () => {
-  const repo = makeRepo({ commits: 1 });
-  recorder(repo, { last_assistant_message: 'Zero BLOCKING findings.\n\nPASS.' });
-  assert.equal(readRecord(repo).verdict, 'pass');
-});
-
-test('recorder: checklist boilerplate about blocking does not force a fail', () => {
-  const repo = makeRepo({ commits: 1 });
-  // Both phrases paraphrase .claude/agents/reviewer.md. A fail scan matching the
-  // bare word "block" would fail every review on its own boilerplate.
-  recorder(repo, {
-    last_assistant_message: [
-      'Item 1: an archived path is an automatic BLOCK. None present.',
+// The invariant that replaced the prose heuristic: a message with no sentinel can
+// never produce a pass, whatever it says. Four of these are the exact shapes review
+// found defeating the previous token classifier -- kept as named regressions so the
+// heuristic cannot creep back in without turning one of them red.
+const NO_SENTINEL_SHAPES = [
+  ['a clean-looking summary', 'PASS - no BLOCKING findings, 2 SHOULD FIX.'],
+  ['an explicit failure', 'FAIL - 1 BLOCKING finding.'],
+  ['an ambiguous summary', 'Items 1-6 PASS. Item 7 is BLOCKING.'],
+  ['no verdict language at all', 'I looked at the diff and it seems fine.'],
+  ['negation after the label', '### BLOCKING - none.\n\nPASS. 2 SHOULD FIX.'],
+  ['negation before the label', 'Zero BLOCKING findings.\n\nPASS.'],
+  [
+    'F1: markdown heading with the negation on the next line',
+    '## BLOCKING\n\nNone.\n\n## Summary\n\nPASS.',
+  ],
+  [
+    'F2: an early FAIL laundered by a clean recap tail',
+    ['FAIL - item 4 row counts do not reconcile.', '', 'Detail follows.', '']
+      .concat(Array.from({ length: 20 }, (_, i) => `Item ${i}: PASS.`)).join('\n'),
+  ],
+  [
+    'F3: an early automatic BLOCK laundered by a clean recap tail',
+    ['Item 1: an archived path was written - an automatic BLOCK.', '']
+      .concat(Array.from({ length: 20 }, (_, i) => `Item ${i}: PASS.`)).join('\n'),
+  ],
+  [
+    'checklist boilerplate reciting what was checked',
+    ['Item 1: an archived path is an automatic BLOCK. None present.',
       'Item 7: pushing to the default branch is blocked by policy and by hook.',
-      '',
-      'PASS.',
-    ].join('\n'),
+      '', 'PASS.'].join('\n'),
+  ],
+];
+
+for (const [label, message] of NO_SENTINEL_SHAPES) {
+  test(`no sentinel, no pass: ${label}`, () => {
+    const repo = makeRepo({ commits: 1 });
+    recorder(repo, { last_assistant_message: message });
+    const rec = readRecord(repo);
+    assert.notEqual(rec.verdict, 'pass', 'a message with no sentinel must never record a pass');
+    assert.equal(rec.verdict, 'unknown');
   });
-  assert.equal(readRecord(repo).verdict, 'pass');
+}
+
+test('no sentinel, no release: an unreviewable message leaves the gate blocking', () => {
+  const repo = makeRepo({ commits: 1 });
+  recorder(repo, { last_assistant_message: 'Everything looks fine to me.' });
+  assert.equal(gate(repo).code, 2);
 });
 
 test('recorder: an absent agent_type records nothing', () => {
@@ -550,6 +536,7 @@ test('end to end: block, review, release, commit again, block again', () => {
 
 test('end to end: a failing review does not release', () => {
   const repo = makeRepo({ commits: 1 });
-  recorder(repo, { last_assistant_message: 'FAIL - 1 BLOCKING finding.' });
+  recorder(repo, { last_assistant_message: 'One BLOCKING finding.\n\nREVIEW: FAIL' });
+  assert.equal(readRecord(repo).verdict, 'fail');
   assert.equal(gate(repo).code, 2);
 });

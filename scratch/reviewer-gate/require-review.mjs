@@ -176,6 +176,9 @@ if (sessionId && /^[A-Za-z0-9._-]+$/.test(sessionId)) {
       recordNote = `the recorded Reviewer verdict uses an unrecognised schema (${JSON.stringify(record.schema)})`;
     } else if (typeof record.sha !== 'string' || !/^[0-9a-f]{40}$/.test(record.sha)) {
       recordNote = 'the recorded Reviewer verdict carries no usable commit SHA';
+    } else if (record.verdict === 'unknown') {
+      recordNote = 'the Reviewer ran but emitted no "REVIEW: PASS" / "REVIEW: FAIL" line, '
+        + 'so no verdict could be recorded (see the reviewer.md install step in the README)';
     } else if (record.verdict !== 'pass') {
       recordNote = `the last Reviewer verdict was ${JSON.stringify(record.verdict)}, not a pass`;
     } else if (git(['rev-parse', '--verify', '--quiet', `${record.sha}^{commit}`]) === null) {
