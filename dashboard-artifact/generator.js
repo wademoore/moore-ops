@@ -114,7 +114,7 @@ async function generateAndPublish({
  * own artifact identity. generateAndPublish() itself is unchanged by the
  * mobile work; the isolation lives here and in mobile-generator.js.
  *
- * The data build is resolved exactly ONCE and the same settled promise is
+ * The data build is resolved exactly ONCE, lazily, and the same promise is
  * injected into both paths. fetchDashboardV2Data() reads three calendar
  * windows, Gmail, Drive, the nationals feed, sports and weather, so fetching
  * twice would double that cost and could hand the two surfaces two different
@@ -135,17 +135,49 @@ async function generateAndPublish({
  * dashboard_mobile_generation_failed record the mobile path already emits, and
  * in this function's return value.
  */
+/**
+ * Ceiling on the mobile path's share of one invocation.
+ *
+ * publishAll catches a mobile *throw*, but a throw is not the only way a path
+ * can spend the invocation. The function runs inside a 180 s Lambda with two
+ * configured retries, so a mobile path that HANGS — rather than failing —
+ * would time the invocation out after the display pointer had already been
+ * written, and EventBridge would retry and republish a display artifact that
+ * was already good. That is precisely the outcome the asymmetric failure
+ * handling below exists to prevent, so duration is bounded as well as
+ * rejection. A timeout is reported exactly like any other mobile failure.
+ */
+const MOBILE_PUBLISH_TIMEOUT_MS = 60_000;
+
+function withTimeout(promise, ms, label) {
+  let timer;
+  const guard = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} exceeded ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, guard]).finally(() => clearTimeout(timer));
+}
+
 async function publishAll({
   fetchData = fetchDashboardV2Data,
   display = {},
   mobile = {},
+  mobileTimeoutMs = MOBILE_PUBLISH_TIMEOUT_MS,
 } = {}) {
-  const shared = fetchData();
-  // Whichever path awaits it first will observe a rejection; this no-op keeps
-  // a rejection raised before either path awaits from becoming an unhandled
-  // rejection. generateAndPublish validates its environment before awaiting.
-  Promise.resolve(shared).catch(() => {});
-  const shareData = () => shared;
+  // Resolved lazily and memoised, so the build starts on the first AWAIT
+  // rather than at call time. generateAndPublish validates its environment
+  // before it awaits, and starting the build eagerly would mean a misconfigured
+  // Lambda called Google, Gmail, Drive, sports and weather before discovering
+  // it had nowhere to publish. Memoising is what makes it one shared build.
+  let shared;
+  const shareData = () => {
+    if (!shared) {
+      // Wrapped so a SYNCHRONOUS throw from fetchData becomes a rejection the
+      // calling path's own try can catch, rather than escaping both of them.
+      shared = (async () => fetchData())();
+      shared.catch(() => {});
+    }
+    return shared;
+  };
 
   let displayResult = null;
   let displayError = null;
@@ -158,7 +190,11 @@ async function publishAll({
   let mobileResult = null;
   let mobileError = null;
   try {
-    mobileResult = await publishMobileArtifact({ ...mobile, fetchData: shareData });
+    mobileResult = await withTimeout(
+      publishMobileArtifact({ ...mobile, fetchData: shareData }),
+      mobileTimeoutMs,
+      'mobile publish',
+    );
   } catch (error) {
     mobileError = error;
   }

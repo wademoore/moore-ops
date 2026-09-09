@@ -88,6 +88,12 @@ the two are independent and either may move without the other.
 validated it, and uploaded it. A failed run writes nothing at all. The field is
 therefore evidence of the last **success**, never of the last **attempt**.
 
+`generatedAt` is the instant that generation **began**, not the instant it
+finished, and each surface stamps its own. The wall display and the phone are
+rendered from one household data build but publish sequentially, so their two
+`generatedAt` values are close together and are not required to be equal. Do not
+use one surface's timestamp to reason about the other's.
+
 The same instant is readable directly out of the document, without fetching the
 manifest, as the `data-household-generated-at` attribute on the
 `.mobile-dashboard` element. A document whose attribute is missing, empty or
@@ -116,7 +122,17 @@ A document substantially older than it is.
 Publishing is ordered: immutable release, then the discovery route beside it,
 then the pointer. Any failure before the pointer write leaves the previously
 published document and manifest in place, **byte-unchanged**, at their previous
-`generatedAt`. There is no partial publish and no torn state.
+`generatedAt`.
+
+**Nothing a consumer can reach is ever partial.** The pointer is the only
+mutable object and it is written last, so it always addresses a complete
+release. One failure shape — the discovery upload failing after the release
+upload succeeded — does leave an orphan release directory holding `index.html`
+with no adjacent `release-manifest.json`. That directory is inert: no pointer
+addresses it, nothing advertises it, and the next successful run writes a new
+release under its own key. It is named here rather than glossed, and asserted
+in `test/artifact/mobile-publishing-contract.test.js`, because "no partial
+publish" would otherwise be a slightly stronger claim than the code makes.
 
 Concretely, all of these leave the last good document serving:
 
@@ -131,9 +147,25 @@ by an attempt.
 
 ## Discovery route
 
-`release-manifest.json`, **same-origin, adjacent to the document**. An origin
-that serves the current release directory publishes it for free; the body is
+`release-manifest.json`, **same-origin, adjacent to the document**; the body is
 byte-identical to the pointer manifest.
+
+**How "current" is resolved, since the paths are relative and the base matters.**
+The pointer at `dashboard-mobile/current/manifest.json` is authoritative: its
+`artifact.key` names the current release object, and the release directory is
+that key's parent prefix. An origin serves that directory, and within it
+`discovery.manifestPath` and `discovery.documentPath` resolve **relative to the
+served release directory** — not relative to the pointer's own key, where
+`dashboard-mobile/current/release-manifest.json` does not exist. Concretely, for
+`artifact.key` of `dashboard-mobile/releases/<r>/index.html` the discovery route
+is the object `dashboard-mobile/releases/<r>/release-manifest.json`, served to
+the browser at `release-manifest.json` beside the page.
+
+Never pick a release by sorting key prefixes. Release directories are named
+after `generatedAt`, so the newest prefix is usually the current one — but an
+orphan directory from the failure shape described under **Last-good behaviour**
+would sort newest and has no discovery route at all. Resolve through the
+pointer.
 
 Poll it to learn the current `artifactVersion` and `generatedAt` without
 fetching the document, which is close to a megabyte. Reload the document only
@@ -187,6 +219,11 @@ handling.
   display publishing. It surfaces as a `dashboard_mobile_generation_failed`
   log record. Making it fail the invocation would let a phone-only defect force
   repeated republishing of a perfectly good display artifact.
+- A mobile **hang** is treated as a mobile failure, for the same reason. Both
+  paths share one bounded invocation, so a mobile path that never returned
+  would time the invocation out after the display had already published and
+  trigger exactly the retry-and-republish this design exists to avoid. The
+  mobile path is therefore bounded in duration as well as caught on rejection.
 - A display failure still rejects, exactly as it did before mobile publishing
   existed, so retries and existing alarms behave identically — and the mobile
   document publishes anyway.

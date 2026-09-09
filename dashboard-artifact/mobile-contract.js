@@ -44,8 +44,12 @@ import { FORBIDDEN_PATTERNS } from './contract.js';
 
 /**
  * The mobile schema's own version line. Independent of the display's
- * SCHEMA_VERSION: the two documents are allowed to diverge, and a test asserts
- * that this constant is declared here rather than re-exported from there.
+ * SCHEMA_VERSION: the two documents are allowed to diverge. It starts at the
+ * same number the display happens to use, so no value assertion can express
+ * that independence — what a test enforces instead is that this is a
+ * declaration here and not `SCHEMA_VERSION` re-exported from the display
+ * contract, which would couple the two schema lines forever while leaving every
+ * value assertion green.
  */
 const MOBILE_SCHEMA_VERSION = 1;
 

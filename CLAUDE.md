@@ -1889,7 +1889,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2279 | **2279** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2283 | **2283** | **0** | **0** |
 
 Measured on `claude/mobile-dashboard-contract-59kk82`, whose merge base with `main` is
 **`ada361f`** (PR #57). **That merge base was re-measured in this session, before any change,
@@ -1897,11 +1897,11 @@ after `npm install`: 2242 / 2242 / 0 / 0 with a browser** — and `git fetch ori
 before deriving it, per the standing warning; the ref was stale at `2d01027` and the fetch moved
 it to `ada361f`, which is also this branch's head, so the merge base is the branch point.
 
-This change adds **+37**, in two new files:
+This change adds **+41**, in two new files:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `test/artifact/mobile-publishing-contract.test.js` (new) | — | 31 | +31 |
+| `test/artifact/mobile-publishing-contract.test.js` (new) | — | 35 | +35 |
 | `test/deploy-workflow-mobile-flag.test.js` (new) | — | 6 | +6 |
 
 `test/artifact/holiday-theme-contract.test.js` and `test/deploy-workflow-holiday-flag.test.js`
@@ -1918,11 +1918,13 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2279+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2283+ with no failures once a browser resolves.**
 
-Companion mutation harnesses, **not** part of `npm test` and run on demand from the session
-scratchpad: 18 mutations against the mobile publishing contract (green control, 18/18 proven,
-green restore) and 3 against the repaired holiday step-boundary slices.
+Companion mutation harness, **committed** and run on demand — `node
+scratch/mobile-publishing-contract/mutation-check.mjs` → 23 mutations, 23/23 proven, green
+control, green restore. It lives in the repository rather than a session scratchpad precisely
+because a mutation count nobody can re-derive is not evidence; `package.json`'s globs are
+`test/**`, `digest/**` and `render/**`, so nothing under `scratch/` runs in `npm test`.
 
 ### Previous baseline — measured Sept 9, 2026 on the Reviewer-gate branch
 
@@ -2002,7 +2004,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2196+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2279.)
+Current baseline above; the figure is now 2283.)
 
 ### Previous baseline — measured Sept 8, 2026 on the prep-task fan-out branch
 
@@ -2524,7 +2526,37 @@ method, so they chain directly to the 988 pre-change number above.
   discovery route, defaulting either kill switch on, merging the two publish paths into one try,
   fetching the data build twice, widening the Pi reader to the whole bucket, and merging the two
   write grants — each turns the suite red for its own reason, with a green control and a green
-  restore. Tests **2242 → 2279**, all passing with a browser.
+  restore. Tests **2242 → 2283**, all passing with a browser.
+
+  **An independent Reviewer pass returned PASS with no BLOCKING findings**, and every SHOULD FIX
+  it raised was acted on here — two of them in the failure family this file already documents.
+  (1) A comment claimed a test enforced that `MOBILE_SCHEMA_VERSION` is declared rather than
+  re-exported; no such test existed, and the `typeof` pair standing in for it could not fail. Both
+  constants are `1`, so no value assertion can express independence — the test now reads the module
+  and asserts the declaration plus that `contract.js` contributes only `FORBIDDEN_PATTERNS`.
+  (2) The last-good test ended in a tautology whose comment named the wrong dangerous case: it
+  filtered both sides down to the pointer key, which the preceding assertion had already
+  established, and the release-upload failure it warned about is the one shape that *cannot* leave a
+  key — the discovery-upload failure genuinely can. It now asserts the whole key set and names the
+  orphan explicitly. (3) A mobile *hang*, as opposed to a throw, could still time the shared
+  invocation out after the display had published and trigger the retry-and-republish the design
+  exists to prevent; the mobile path is now bounded in duration as well as caught on rejection.
+  (4) The contract document's "no partial publish and no torn state" was stronger than the code, and
+  left the base ambiguous for its relative discovery paths; both are now stated precisely, along
+  with `generatedAt` being the start-of-run instant stamped per surface. (5) The mutation harness is
+  committed rather than left in a scratchpad. Four MINOR findings were also taken: the shared data
+  build is now lazy (a misconfigured Lambda no longer calls Google before discovering it has nowhere
+  to publish) and tolerates a synchronous throw from the fetcher; the pointer key's environment
+  override is refused unless it is under the mobile prefix; the object metadata derives its schema
+  number instead of hardcoding it; and two guards satisfiable by the wrong thing were replaced —
+  absence of the v2 dashboard's two specific strings became absence of any network-request
+  capability, and a regex over the generator source became a parsed import list.
+
+  **Two of those fixes were themselves caught by the harness rather than by inspection**, which is
+  the argument for keeping it: the duration bound shipped with no test at all until the mutation
+  survived, and the first version of that test hung instead of failing — which the harness had been
+  scoring as a survival, because a run that produces no summary parses the same as a run with no
+  failures. The harness now reports an inconclusive run as its own outcome.
 
 - **Mobile companion — local implementation (Sept 9, 2026):**
   `render/dashboard-mobile.js` consumes the existing v2 adapter output, with six

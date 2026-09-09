@@ -67,11 +67,24 @@ test('the mobile artifact identity is distinct from the display artifact identit
   assert.equal(MOBILE_ARTIFACT_VERSION, 'dashboard-mobile');
   assert.equal(ARTIFACT_VERSION, 'dashboard-v2');
   assert.notEqual(MOBILE_ARTIFACT_VERSION, ARTIFACT_VERSION);
-  // The two schema lines are separate declarations, so the documents may
-  // diverge. They happen to start equal; what matters is that they are not the
-  // same constant, which this asserts by value and by independence of source.
   assert.equal(typeof MOBILE_SCHEMA_VERSION, 'number');
   assert.equal(typeof SCHEMA_VERSION, 'number');
+});
+
+test('the mobile schema version is its own declaration, not the display constant re-exported', async () => {
+  // A `typeof` pair asserted neither value nor independence, while the module
+  // comment claimed a test enforced the latter. Both constants are currently 1,
+  // so equality proves nothing — what has to be false is that the two are the
+  // SAME constant. Replacing the declaration with
+  // `export { SCHEMA_VERSION as MOBILE_SCHEMA_VERSION }` would couple the two
+  // schema lines forever while leaving every value assertion green, and
+  // divergence is exactly what a separate identity exists to allow.
+  const source = await readFile(new URL('../../dashboard-artifact/mobile-contract.js', import.meta.url), 'utf8');
+  assert.match(source, /^const MOBILE_SCHEMA_VERSION = \d+;$/m, 'MOBILE_SCHEMA_VERSION must be declared in the mobile contract');
+  const imported = [...source.matchAll(/import\s*\{([^}]*)\}\s*from '\.\/contract\.js';/g)]
+    .flatMap(match => match[1].split(',').map(name => name.trim()));
+  assert.deepEqual(imported, ['FORBIDDEN_PATTERNS'], 'the mobile contract may import only the shared secret scan from the display contract');
+  assert.doesNotMatch(source, /SCHEMA_VERSION as MOBILE_SCHEMA_VERSION/);
 });
 
 test('the mobile key prefix is outside every key the wall display reads or writes', () => {
@@ -232,8 +245,17 @@ test('nothing in the published contract implies a live refresh', () => {
   // The document itself carries no refresh or polling URL: a phone that
   // reloads discovers whatever generation is published, and the contract must
   // not suggest that reopening the page reruns household selection.
-  assert.doesNotMatch(mobileHtml(), /data-release-manifest-url/);
-  assert.doesNotMatch(mobileHtml(), /setInterval\(checkRelease/);
+  // Asserting the absence of the v2 dashboard's own two strings would be passed
+  // by a mobile poller added under any other name. What the document must not
+  // do is make a network request at all, so assert the capability rather than
+  // one implementation of it. (`setInterval` itself is legitimately present:
+  // the shipped client re-evaluates freshness locally on a timer, which makes
+  // no request.)
+  const document = mobileHtml();
+  for (const capability of ['fetch(', 'XMLHttpRequest', 'EventSource', 'navigator.sendBeacon', 'import(']) {
+    assert.ok(!document.includes(capability), `the mobile document must issue no network request, found: ${capability}`);
+  }
+  assert.doesNotMatch(document, /data-release-manifest-url/);
 });
 
 // ---------------------------------------------------------------------------
@@ -334,10 +356,40 @@ test('a failed generation leaves the previous document and manifest untouched', 
     assert.equal(JSON.parse(pointer).generatedAt, good.generatedAt, `${label}: generatedAt must record the last success, not the last attempt`);
     assert.equal(JSON.parse(pointer).artifact.key, good.artifact.key, `${label}: the pointer must still address the last good release`);
   }
-  // The release-upload failure case is the only one that can add a key, and it
-  // must not: an unversioned or failed release never reaches the bucket in a
-  // state the pointer references.
-  assert.deepEqual([...bucket.keys()].filter(key => key === MOBILE_MANIFEST_KEY), keysAfterSuccess.filter(key => key === MOBILE_MANIFEST_KEY));
+  // Both sides of the previous form of this assertion filtered down to
+  // [MOBILE_MANIFEST_KEY] whenever that key existed, which the pointer equality
+  // above had already established — so it could not detect an added key of any
+  // kind, and its comment named the wrong dangerous case. The release-upload
+  // failure is the one that CANNOT add a key; the discovery-upload failure is
+  // the one that genuinely can, because the release object lands first.
+  //
+  // What actually matters is that no failed attempt leaves anything the pointer
+  // could ever address. Assert the whole key set, and state the orphan
+  // explicitly rather than letting a filter hide it.
+  const added = [...bucket.keys()].filter(key => !keysAfterSuccess.includes(key));
+  const pointer = JSON.parse(bucket.get(MOBILE_MANIFEST_KEY));
+  assert.ok(!added.includes(MOBILE_MANIFEST_KEY));
+  for (const key of added) {
+    assert.ok(key.startsWith(`${MOBILE_KEY_PREFIX}/releases/`), `a failed attempt wrote outside the release space: ${key}`);
+    assert.notEqual(key, pointer.artifact.key, 'a failed attempt must never write the object the pointer addresses');
+  }
+  // The discovery-upload failure is the only shape that leaves anything behind:
+  // an immutable release directory holding index.html with no adjacent
+  // release-manifest.json. It is inert — the pointer still addresses the last
+  // good release and nothing advertises the orphan — and it is asserted here
+  // rather than tolerated silently, because "no partial publish" is a claim the
+  // contract document makes and this is the one place it needs qualifying.
+  assert.deepEqual(added, ['dashboard-mobile/releases/2026-09-09T211000-000Z/index.html']);
+  assert.equal(bucket.has('dashboard-mobile/releases/2026-09-09T211000-000Z/release-manifest.json'), false);
+});
+
+test('the mobile pointer key may not be pointed outside the mobile prefix', async () => {
+  const { puts, putObject } = recorder();
+  await assert.rejects(
+    publishMobileArtifact(publishOptions({ putObject, manifestKey: 'dashboard-v2/current/manifest.json' })),
+    /mobile manifest key must live under dashboard-mobile\//,
+  );
+  assert.equal(puts.length, 0, 'nothing may be written when the pointer key is refused');
 });
 
 test('a later successful generation advances the timestamp', async () => {
@@ -432,6 +484,54 @@ test('mutation: a display validation failure does not stop the mobile publishing
   assert.equal(harness.mobile.puts.length, 3);
 });
 
+test('mutation: a hanging mobile generation does not consume the display\'s invocation', async () => {
+  // A throw is not the only way the mobile path can spend the invocation. Both
+  // paths share one bounded Lambda run with configured retries, so a mobile
+  // path that never returns would time the invocation out AFTER the display had
+  // already published, and the retry would republish an artifact that was
+  // already good — the exact outcome the asymmetric failure handling exists to
+  // prevent. Duration is therefore bounded as well as rejection.
+  const display = recorder();
+  const mobile = recorder();
+  const started = Date.now();
+  // Raced against a test-local deadline so that a build which declares the
+  // bound but does not APPLY it fails this case rather than hanging it. A
+  // hanging test yields no summary at all, which a mutation harness cannot
+  // distinguish from a clean run — so the failure has to be an assertion.
+  const result = await Promise.race([
+    publishAll({
+      fetchData: async () => mobilePreviewStates().everyday,
+      mobileTimeoutMs: 50,
+      display: { now: NOW, bucket: 'private', sportsFeedUrl: SPORTS, render: () => DISPLAY_HTML, putObject: display.putObject },
+      mobile: { now: NOW, bucket: 'private', enabled: true, putObject: () => new Promise(() => {}) },
+    }),
+    new Promise(resolve => setTimeout(() => resolve('publishAll did not return: the mobile path is not bounded'), 3_000)),
+  ]);
+  assert.notEqual(typeof result, 'string', String(result));
+  assert.ok(Date.now() - started < 5_000, 'the invocation must not wait on a hanging mobile path');
+  assert.equal(display.puts.length, 2, 'the display must still publish');
+  assert.equal(display.puts.at(-1).Key, 'dashboard-v2/current/manifest.json');
+  assert.equal(mobile.puts.length, 0);
+  assert.equal(result.mobile, null);
+  assert.match(result.mobileError, /mobile publish exceeded 50ms/);
+});
+
+test('the mobile path\'s default duration bound fits inside the deployed invocation', async () => {
+  // The case above passes its own short bound, so it says nothing about the
+  // default a real invocation uses. A default at or above the Lambda's own
+  // timeout would be no bound at all: the invocation would die first, which is
+  // the failure the bound exists to prevent.
+  const source = await readFile(new URL('../../dashboard-artifact/generator.js', import.meta.url), 'utf8');
+  const declared = /const MOBILE_PUBLISH_TIMEOUT_MS = ([0-9_]+);/.exec(source);
+  assert.ok(declared, 'the mobile publish path must declare a default duration bound');
+  const bound = Number(declared[1].replaceAll('_', ''));
+  const template = JSON.parse(await readFile(new URL('../../infrastructure/dashboard-artifact-refresh/template.json', import.meta.url), 'utf8'));
+  const invocation = template.Resources.GeneratorFunction.Properties.Timeout * 1000;
+  assert.ok(bound > 0 && bound < invocation, `mobile bound ${bound}ms must be inside the ${invocation}ms invocation`);
+  // And the bound must actually be applied, not merely declared.
+  assert.match(source, /withTimeout\(\s*\n\s*publishMobileArtifact\(/);
+});
+
 test('mutation: a mobile upload failure does not stop the display publishing', async () => {
   const harness = orchestrated({ mobilePut: async () => { throw new Error('mobile bucket unavailable'); } });
   const result = await harness.run();
@@ -468,11 +568,11 @@ test('the mobile publish path contains no selection logic of its own', async () 
     const imports = [...source.matchAll(/^import[^;]*?from '([^']+)';/gms)].map(match => match[1]);
     assert.ok(!imports.some(specifier => specifier.includes('/digest/')), `${name} must not reach into digest/: selection already happened upstream`);
   }
+  // Parsed imports, not a regex over the whole file: a comment mentioning the
+  // renderer would satisfy a substring match just as well as an import does.
   const generator = await readFile(new URL('../../dashboard-artifact/mobile-generator.js', import.meta.url), 'utf8');
-  // The one renderer, and the one adapter. Anything else here would be a
-  // second derivation of something the shared pipeline already produced.
-  assert.match(generator, /from '\.\.\/render\/dashboard-mobile\.js'/);
-  assert.match(generator, /from '\.\.\/dashboard-v2-data\.js'/);
+  const specifiers = [...generator.matchAll(/^import[^;]*?from '([^']+)';/gms)].map(match => match[1]);
+  assert.deepEqual(specifiers.filter(specifier => specifier.startsWith('..')).sort(), ['../dashboard-v2-data.js', '../render/dashboard-mobile.js']);
 });
 
 test('the mobile document is rendered from the shared selection output', async () => {

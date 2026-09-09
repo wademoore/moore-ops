@@ -24,6 +24,7 @@ import {
   MOBILE_DOCUMENT_PATH,
   MOBILE_KEY_PREFIX,
   MOBILE_MANIFEST_KEY,
+  MOBILE_SCHEMA_VERSION,
   createMobileManifest,
   validateMobileArtifact,
 } from './mobile-contract.js';
@@ -57,6 +58,14 @@ async function publishMobileArtifact({
     return null;
   }
   if (!bucket) throw new Error('ARTIFACT_BUCKET is required');
+  // The pointer key is environment-overridable, and the generator's IAM now
+  // permits both prefixes, so a misconfiguration could otherwise aim the mobile
+  // pointer at the display's key. The Pi would still fail closed on
+  // artifactVersion, but failing closed downstream is not a reason to let this
+  // path write outside its own prefix.
+  if (!manifestKey.startsWith(`${MOBILE_KEY_PREFIX}/`)) {
+    throw new Error(`mobile manifest key must live under ${MOBILE_KEY_PREFIX}/, got ${manifestKey}`);
+  }
   const startedAt = Date.now();
   structured('log', 'dashboard_mobile_generation_started', { sourceRevision });
   try {
@@ -87,7 +96,7 @@ async function publishMobileArtifact({
       Body: html,
       ContentType: 'text/html; charset=utf-8',
       CacheControl: 'no-store',
-      Metadata: { sha256, generatedat: generatedAt, schemaversion: '1' },
+      Metadata: { sha256, generatedat: generatedAt, schemaversion: String(MOBILE_SCHEMA_VERSION) },
     });
     if (!artifactResult.VersionId) throw new Error('versioned mobile artifact upload did not return VersionId');
 
