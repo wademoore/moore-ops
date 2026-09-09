@@ -202,7 +202,7 @@ tests. Also blocked: pushing a ref named `main` to *any* remote, and a src-only 
 a branch that does not exist locally (git would refuse it anyway).
 
 Every one of these decisions is proved by mutation rather than asserted —
-`node scripts/verify-push-hook-mutations.mjs`, 35 mutations, each required to redden the
+`node scripts/verify-push-hook-mutations.mjs`, 44 mutations, each required to redden the
 cases that name it. See "Test matrix" below.
 
 ## The gate (`.claude/settings.json` + `.claude/hooks/*.mjs`)
@@ -484,7 +484,7 @@ file runs unchanged on Windows) with a real PreToolUse payload on stdin and asse
 exit code (2 = blocked, 0 = allowed), so it tests the shipped script, not a copy of its
 logic.
 
-`test/hooks/block-main-push.test.js` (**141 tests**) is the same standard applied to the push
+`test/hooks/block-main-push.test.js` (**155 tests**) is the same standard applied to the push
 hook, and until Sept 9, 2026 it did not exist — `enforcement-wiring.test.js` proved that hook
 was *wired* and nothing proved what it *decided*. That gap is exactly how three defects
 reached a live session. Cases spawn the real hook against real throwaway git repositories and
@@ -496,7 +496,7 @@ post-review commit too, 15 of them blocks the Reviewer showed were missing.
 
 `BLOCK_MAIN_PUSH_HOOK` exists only so `scripts/verify-push-hook-mutations.mjs` can point that
 file at a damaged copy; no production caller sets it. That harness is **not** part of
-`npm test` — it spawns the whole matrix once per mutation. It runs **39 mutations**, each
+`npm test` — it spawns the whole matrix once per mutation. It runs **44 mutations**, each
 required to redden the cases that name it *specifically*, plus a green control and two
 self-tests that prove its own hollow-mutation and syntax-error checks are live. Three of its
 rows carry an explicit note that a case which looks like proof is not: `$BRANCH`, `ma"in"` and
@@ -1987,7 +1987,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2337 | **2337** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2351 | **2351** | **0** | **0** |
 
 Measured on `claude/push-main-hook-targets-kawlik`, whose merge base with `main` is
 **`261a6b2`** (PR #54). **That merge base was re-measured in this session, before any change:
@@ -1996,11 +1996,11 @@ the recorded delta has now held for a third consecutive baseline. Re-measure any
 `git fetch origin main` was run *before* deriving the merge base, per the standing warning;
 the ref was stale at `2d01027` and the fetch moved it to `261a6b2`.
 
-This change adds **+141**, all in one new file:
+This change adds **+155**, all in one new file:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `test/hooks/block-main-push.test.js` (new) | — | 141 | +141 |
+| `test/hooks/block-main-push.test.js` (new) | — | 155 | +155 |
 
 No existing test changed, because **no existing test asserted the push hook's behaviour** —
 `enforcement-wiring.test.js` asserts only that it is wired, and its 7 cases are untouched and
@@ -2009,7 +2009,7 @@ coverage shipped three live defects, two of them over-blocks and twenty-one of t
 under-blocks nobody had looked for.
 
 Companion mutation harness, **not** part of `npm test` and run on demand:
-`node scripts/verify-push-hook-mutations.mjs` → 39 mutations, 39/39 proven, green control,
+`node scripts/verify-push-hook-mutations.mjs` → 44 mutations, 44/44 proven, green control,
 plus two self-test rows that prove the harness's own hollow-mutation and syntax-error checks
 are live.
 
@@ -2023,7 +2023,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2337+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2351+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
@@ -2059,7 +2059,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 Coder mode had to keep `npm test` at 2284+ under this baseline. (Superseded — see
-Current baseline above; the figure is now 2337.)
+Current baseline above; the figure is now 2351.)
 
 Companion mutation harness, **committed** and run on demand — `node
 scratch/mobile-publishing-contract/mutation-check.mjs` → 23 mutations, 23/23 proven, green
@@ -2146,7 +2146,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2196+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2337.)
+Current baseline above; the figure is now 2351.)
 
 ### Previous baseline — measured Sept 8, 2026 on the prep-task fan-out branch
 
@@ -2608,7 +2608,7 @@ method, so they chain directly to the 988 pre-change number above.
   `push.default` table was verified against real pushes to a local bare remote, not inferred.
   Resolution failure is always a block; the one fail-*open* is a malformed payload, the house
   convention `guard-readonly.mjs` documents at the same call site. **Guards proved by
-  mutation, not asserted:** `scripts/verify-push-hook-mutations.mjs`, 35 mutations, each
+  mutation, not asserted:** `scripts/verify-push-hook-mutations.mjs`, 44 mutations, each
   required to redden the cases naming it specifically, with a green control and two
   self-tests. That harness earned its keep three times over: it found a real over-block by
   refusing its own diagnostic (an unresolvable `git` *global* was blocking before the
@@ -2625,9 +2625,19 @@ method, so they chain directly to the 988 pre-change number above.
   (`git -c alias.p=push p`) that the alias lookup could not see because it read the repository
   instead of the `-c` overrides. The fix was not a longer wrapper list — an unrecognised
   command word now causes a scan for a `git` in any later argument position. Relocating
-  environment variables (`GIT_DIR`, `GIT_CONFIG_*`) were closed in the same round. 23 cases
-  and 6 mutations added; 15 of the new cases fail against the pre-review commit.
-  Tests **2196 → 2337**, all passing.
+  environment variables (`GIT_DIR`, `GIT_CONFIG_*`) were closed in the same round.
+  **A second round found the same root cause surviving in the two arms the first fix had not
+  visited:** a shell invoked with `-c` inside an option cluster reached `main`, because that
+  arm matched `-c` as an exact token and then *returned* a verdict, so the fallback never ran.
+  PowerShell's `-Command` had the same shape via abbreviation. Both arms now fall through
+  instead of returning. Also that round: an aliased push under an unresolvable repository was
+  allowed because the unresolvable verdict was applied before the alias was read, and one
+  dropped opts argument lost `unknownSuffix` at the shell-alias boundary. 37 cases and 11
+  mutations added across the two rounds; 15 of them fail against the pre-review commit and 8
+  more against the round-1 fix. The Reviewer also caught this file contradicting itself on the
+  mutation count **in the commit that added the count** — the same drift the gate section
+  names as a recurring failure — now corrected in all four places.
+  Tests **2196 → 2351**, all passing.
 
 - **Mobile publishing contract defined and encoded (Sept 9, 2026):** The handoff item
   `docs/dashboard-v2/mobile-dashboard-spec.md` listed as number 3 — "define successful-generation

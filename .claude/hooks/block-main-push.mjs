@@ -562,15 +562,31 @@ function evaluateSimpleCommand(tokens, depth, opts = {}) {
   if (word === "eval") {
     return scan(rest.map((t) => t.text).join(" "), depth + 1, next);
   }
+  // NOTE the missing `return allow()` in both arms below. It was there, and it was
+  // the round-1 bug surviving in the two places the round-1 fix did not visit: an
+  // arm that reads a wrapper's own options too narrowly and then returns a verdict
+  // never gives the fallback a chance. `bash -lc 'git push origin main'` reached
+  // main that way. These arms now fall through instead.
   if (SHELLS.has(word)) {
-    const idx = rest.findIndex((t) => t.text === "-c");
+    // -c arrives in a cluster as often as alone: `bash -lc`, `sh -ec`, `zsh -fc`
+    // all take the NEXT token as the script to run.
+    const idx = rest.findIndex((t) => /^-[A-Za-z]*c[A-Za-z]*$/.test(t.text));
     if (idx !== -1 && idx + 1 < rest.length) return scan(rest[idx + 1].text, depth + 1, next);
-    return allow();
-  }
-  if (POWERSHELLS.has(word)) {
-    const idx = rest.findIndex((t) => /^-(c|command)$/i.test(t.text));
-    if (idx !== -1 && idx + 1 < rest.length) return scan(rest[idx + 1].text, depth + 1, next);
-    return allow();
+  } else if (POWERSHELLS.has(word)) {
+    // PowerShell accepts any unambiguous prefix, so -Comm and -Co are -Command.
+    for (let j = 0; j + 1 < rest.length; j += 1) {
+      const flag = /^-([A-Za-z]+)$/.exec(rest[j].text);
+      if (!flag) continue;
+      const name = flag[1].toLowerCase();
+      if ("command".startsWith(name)) return scan(rest[j + 1].text, depth + 1, next);
+      if ("encodedcommand".startsWith(name)) {
+        // -EncodedCommand carries base64 UTF-16LE. Decoding costs four lines; the
+        // alternative is a blind spot on the whole Windows arm.
+        let decoded = "";
+        try { decoded = Buffer.from(rest[j + 1].text, "base64").toString("utf16le"); } catch { decoded = ""; }
+        if (decoded.trim()) return scan(decoded, depth + 1, next);
+      }
+    }
   }
   if (word === "xargs") {
     // xargs appends arguments from stdin this hook cannot see, so a push underneath
@@ -670,8 +686,6 @@ function evaluateGit(args, depth, { unknownSuffix = false, envReason = null } = 
   const sub = args[i];
   if (!sub) return allow(); // bare `git`
   const rest = args.slice(i + 1);
-  // A global we could not resolve only matters if this turns out to be a push.
-  if (unresolvable) return sub.text === "push" ? block(unresolvable) : allow();
 
   const ctx = {
     dir,
@@ -681,7 +695,11 @@ function evaluateGit(args, depth, { unknownSuffix = false, envReason = null } = 
       : git(dir, ["config", "--get", key])),
   };
 
-  if (sub.text === "push") return evaluatePush(rest, ctx);
+  // An unresolved global/env is applied at each point a push is IDENTIFIED, not
+  // before the subcommand is read. Applying it early meant `git --git-dir=X p`
+  // (alias p = push) took the not-a-push branch and was allowed, because the
+  // subcommand token is the alias name and never the literal "push".
+  if (sub.text === "push") return unresolvable ? block(unresolvable) : evaluatePush(rest, ctx);
   if (sub.dynamic) return allow(); // `git $CMD` -- named hole, see header
 
   // An alias can be a push wearing another name. Resolving it closes a hole the old
@@ -690,13 +708,21 @@ function evaluateGit(args, depth, { unknownSuffix = false, envReason = null } = 
   // Read through ctx.config, NOT the repository directly: an alias can be defined
   // on the command line, and `git -c alias.p=push p origin main` is a real push
   // that no repository lookup would ever find.
+  //
+  // Residual, named rather than implied: when the repository itself is unknown
+  // (--git-dir, GIT_DIR), this lookup still reads the cwd's config, so an alias
+  // defined ONLY in that other repository is not seen. A command-line alias is,
+  // which is the form that can be written deliberately.
   if (depth < MAX_DEPTH) {
     const alias = ctx.config(`alias.${sub.text}`);
     if (alias) {
-      if (alias.startsWith("!")) return scan(alias.slice(1), depth + 1);
+      // Thread opts: dropping them here lost unknownSuffix and envReason at the
+      // shell-alias boundary, so `xargs git <!alias>` fell through to default
+      // resolution as though nothing were appended to it.
+      if (alias.startsWith("!")) return scan(alias.slice(1), depth + 1, { unknownSuffix, envReason: unresolvable });
       const expanded = tokenize(alias)[0] ?? [];
       if (expanded.length && expanded[0].text === "push") {
-        return evaluatePush([...expanded.slice(1), ...rest], ctx);
+        return unresolvable ? block(unresolvable) : evaluatePush([...expanded.slice(1), ...rest], ctx);
       }
     }
   }

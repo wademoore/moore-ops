@@ -106,6 +106,10 @@ const upstreamIsMain = makeRepo({
 const matching = makeRepo({ head: 'feature', config: { 'push.default': 'matching' } });
 const detached = makeRepo({ detach: true });
 const aliased = makeRepo({ config: { 'alias.p': 'push', 'alias.shp': '!git push origin main' } });
+// A shell alias that names no destination. Under xargs the appended argument is
+// what makes it a push to main, so this only blocks if unknownSuffix survives the
+// shell-alias boundary -- the opts-threading gap found in round 2.
+const shellAlias = makeRepo({ head: 'feature', config: { 'alias.shp2': '!git push' } });
 const nothingDefault = makeRepo({ config: { 'push.default': 'nothing' } });
 const currentDefault = makeRepo({ head: 'feature', config: { 'push.default': 'current' } });
 // The remote-litter case in its sharpest form: the branch reached the remote and is no
@@ -217,6 +221,23 @@ const BLOCK_INDIRECT = [
   ['GIT_CONFIG_* setting push.default out from under the resolver',
     'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=push.default GIT_CONFIG_VALUE_0=matching git push origin', onToken],
   ['a relocating variable passed through env', 'env GIT_DIR=/tmp/other/.git git push origin feature', onToken],
+  // --- round 2 of review: the same root cause surviving in the arms round 1's
+  // fix did not visit. A wrapper arm that reads its own options too narrowly and
+  // then RETURNS a verdict never gives the fallback a chance.
+  ['-c inside an option cluster', "bash -lc 'git push origin main'", onMain],
+  ['-c clustered with -e', "sh -ec 'git push origin main'", onMain],
+  ['-c clustered with -x', 'bash -xc "git push origin main"', onMain],
+  ['-c clustered the other way round', "zsh -cf 'git push origin main'", onMain],
+  ['a PowerShell abbreviation of -Command', 'pwsh -Comm "git push origin main"', onMain],
+  ['the shortest PowerShell abbreviation', 'pwsh -c "git push origin main"', onMain],
+  // An aliased push under an unresolvable repository: the subcommand token is the
+  // alias name, never the literal "push", so applying the unresolvable verdict
+  // before reading the alias let this through.
+  ['a command-line alias under a relocated git dir',
+    'git -c alias.p=push --git-dir=/tmp/x/.git p origin main', onToken],
+  ['a repository alias under a relocating environment variable', 'GIT_DIR=/tmp/other/.git git p', aliased],
+  // Only blocks if unknownSuffix survives the shell-alias boundary.
+  ['a shell alias naming no destination, under xargs', 'echo main | xargs git shp2', shellAlias],
   ['an alias that expands to push, on main', 'git p', aliased],
   ['a shell alias that pushes to main', 'git shp', aliased],
 ];
@@ -318,6 +339,12 @@ const ALLOW_ORDINARY = [
     `GIT_TERMINAL_PROMPT=0 git push origin ${TOKEN_BRANCH}`, onToken],
   ['a benign GIT_ assignment on a read', 'GIT_PAGER=cat git log --oneline -3', onMain],
   ['a relocating variable on a command that is not a push', 'GIT_DIR=/tmp/other/.git git status', onMain],
+  ['a clustered -c running a feature-branch push', `bash -lc 'git push origin ${TOKEN_BRANCH}'`, onToken],
+  ['a clustered -c running an ordinary read', "bash -lc 'git log --oneline -3'", onMain],
+  ['a shell invoked on a script file, with no -c at all', 'bash scripts/build.sh', onMain],
+  ['a PowerShell abbreviation running a feature-branch push',
+    `pwsh -Comm "git push origin ${TOKEN_BRANCH}"`, onToken],
+  ['a shell alias naming no destination, on its own feature branch', 'git shp2', shellAlias],
 ];
 
 // Option arity, isolated. Reading an option's value as a positional shifts the

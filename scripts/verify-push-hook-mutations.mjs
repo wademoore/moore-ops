@@ -114,10 +114,41 @@ const MUTATIONS = [
 
   // An unresolvable git global must not condemn a subcommand that is not a push.
   ['an unresolvable git global blocks before the subcommand is known',
-    'if (unresolvable) return sub.text === "push" ? block(unresolvable) : allow();',
-    'if (unresolvable) return block(unresolvable);',
+    'if (sub.text === "push") return unresolvable ? block(unresolvable) : evaluatePush(rest, ctx);',
+    'if (unresolvable) return block(unresolvable);\n  if (sub.text === "push") return evaluatePush(rest, ctx);',
     ['a read through a runtime-built -C directory', 'init through a runtime-built -C directory',
       'a read through a relocated git dir', 'a relocating variable on a command that is not a push']],
+
+  // ...and must still condemn one that is.
+  ['an unresolvable git global stops mattering once a push is identified',
+    'if (sub.text === "push") return unresolvable ? block(unresolvable) : evaluatePush(rest, ctx);',
+    'if (sub.text === "push") return evaluatePush(rest, ctx);',
+    ['a git global that relocates the repository', '--work-tree relocates too',
+      'GIT_DIR in the environment', 'a relocating variable passed through env']],
+
+  // --- round 2 of review ----------------------------------------------------
+  // The round-1 root cause survived in the two arms the round-1 fix did not visit.
+  ['the shell arm matches -c as an exact token, missing clusters',
+    'const idx = rest.findIndex((t) => /^-[A-Za-z]*c[A-Za-z]*$/.test(t.text));',
+    'const idx = rest.findIndex((t) => t.text === "-c");',
+    ['-c inside an option cluster', '-c clustered with -e', '-c clustered with -x',
+      '-c clustered the other way round']],
+
+  ['PowerShell -Command is matched by exact spelling only',
+    'if ("command".startsWith(name)) return scan(rest[j + 1].text, depth + 1, next);',
+    'if (name === "command") return scan(rest[j + 1].text, depth + 1, next);',
+    ['a PowerShell abbreviation of -Command']],
+
+  ['an unresolvable global is applied before the alias is read',
+    'if (sub.text === "push") return unresolvable ? block(unresolvable) : evaluatePush(rest, ctx);\n  if (sub.dynamic) return allow(); // `git $CMD` -- named hole, see header',
+    'if (unresolvable) return sub.text === "push" ? block(unresolvable) : allow();\n  if (sub.text === "push") return evaluatePush(rest, ctx);\n  if (sub.dynamic) return allow();',
+    ['a command-line alias under a relocated git dir',
+      'a repository alias under a relocating environment variable']],
+
+  ['opts are dropped at the shell-alias boundary',
+    'if (alias.startsWith("!")) return scan(alias.slice(1), depth + 1, { unknownSuffix, envReason: unresolvable });',
+    'if (alias.startsWith("!")) return scan(alias.slice(1), depth + 1);',
+    ['a shell alias naming no destination, under xargs']],
 
   ['an unknown git global condemns every subcommand',
     'return args.slice(i).some((t) => t.text === "push") ? block(unresolvable) : allow();',
@@ -140,13 +171,13 @@ const MUTATIONS = [
     ['an alias that expands to push, on main']],
 
   ['a shell alias body is no longer scanned',
-    'if (alias.startsWith("!")) return scan(alias.slice(1), depth + 1);', '',
+    'if (alias.startsWith("!")) return scan(alias.slice(1), depth + 1, { unknownSuffix, envReason: unresolvable });', '',
     ['a shell alias that pushes to main']],
 
   ['sh -c and bash -c are no longer re-scanned',
-    'if (idx !== -1 && idx + 1 < rest.length) return scan(rest[idx + 1].text, depth + 1, next);\n    return allow();\n  }\n  if (POWERSHELLS.has(word)) {',
-    'return allow();\n  }\n  if (POWERSHELLS.has(word)) {',
-    ['bash -c', 'sh -c']],
+    'if (idx !== -1 && idx + 1 < rest.length) return scan(rest[idx + 1].text, depth + 1, next);\n  } else if (POWERSHELLS.has(word)) {',
+    '} else if (POWERSHELLS.has(word)) {',
+    ['bash -c', 'sh -c', '-c inside an option cluster']],
 
   ['eval is no longer re-scanned',
     'return scan(rest.map((t) => t.text).join(" "), depth + 1, next);', 'return allow();',
@@ -201,13 +232,15 @@ const MUTATIONS = [
 
   // REMOVED, and the reason matters more than the row did. There used to be a
   // 'leading environment assignments hide the command' mutation here, proved by
-  // `GIT_TERMINAL_PROMPT=0 git push origin main`. Once the unrecognised-command-word
-  // fallback landed, removing the assignment stripping changed nothing observable:
-  // the fallback finds the `git` token regardless, so every case stayed green and
-  // the row would have reported a guard as proven while proving nothing. The
-  // assignment loop is still load-bearing -- it is what detects ENV_RELOCATING --
-  // and that part IS proved, by the relocating-GIT_-variable row above. A mutation
-  // that cannot fail is worse than no mutation, so it is gone rather than adjusted.
+  // `GIT_TERMINAL_PROMPT=0 git push origin main`. Be precise about what stopped
+  // being distinguishable: deleting the assignment LOOP outright still changes
+  // behaviour today, because the loop is what sets envReason and four
+  // GIT_DIR/GIT_CONFIG cases go red. What is no longer distinguishable is the
+  // loop's *stripping* half, isolated from its detection half -- once the
+  // unrecognised-command-word fallback landed, the fallback finds the `git` token
+  // whether or not the assignments were stripped. The detection half is proved by
+  // the relocating-GIT_-variable row above. A mutation that cannot fail is worse
+  // than no mutation, so this one is gone rather than adjusted to look busy.
 
   ['a path-qualified git is not recognised',
     'if (slash !== -1) w = w.slice(slash + 1);', '',
