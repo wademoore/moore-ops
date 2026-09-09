@@ -1889,7 +1889,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2283 | **2283** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2285 | **2285** | **0** | **0** |
 
 Measured on `claude/mobile-dashboard-contract-59kk82`, whose merge base with `main` is
 **`ada361f`** (PR #57). **That merge base was re-measured in this session, before any change,
@@ -1897,11 +1897,11 @@ after `npm install`: 2242 / 2242 / 0 / 0 with a browser** — and `git fetch ori
 before deriving it, per the standing warning; the ref was stale at `2d01027` and the fetch moved
 it to `ada361f`, which is also this branch's head, so the merge base is the branch point.
 
-This change adds **+41**, in two new files:
+This change adds **+43**, in two new files:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `test/artifact/mobile-publishing-contract.test.js` (new) | — | 35 | +35 |
+| `test/artifact/mobile-publishing-contract.test.js` (new) | — | 37 | +37 |
 | `test/deploy-workflow-mobile-flag.test.js` (new) | — | 6 | +6 |
 
 `test/artifact/holiday-theme-contract.test.js` and `test/deploy-workflow-holiday-flag.test.js`
@@ -1918,11 +1918,12 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2283+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2285+ with no failures once a browser resolves.**
 
 Companion mutation harness, **committed** and run on demand — `node
 scratch/mobile-publishing-contract/mutation-check.mjs` → 23 mutations, 23/23 proven, green
-control, green restore. It lives in the repository rather than a session scratchpad precisely
+control, green restore, plus a self-test row that injects a real syntax error and requires the
+harness's own hollowness check to catch it (2 tests versus a control of 44). It lives in the repository rather than a session scratchpad precisely
 because a mutation count nobody can re-derive is not evidence; `package.json`'s globs are
 `test/**`, `digest/**` and `render/**`, so nothing under `scratch/` runs in `npm test`.
 
@@ -2004,7 +2005,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2196+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2283.)
+Current baseline above; the figure is now 2285.)
 
 ### Previous baseline — measured Sept 8, 2026 on the prep-task fan-out branch
 
@@ -2526,7 +2527,7 @@ method, so they chain directly to the 988 pre-change number above.
   discovery route, defaulting either kill switch on, merging the two publish paths into one try,
   fetching the data build twice, widening the Pi reader to the whole bucket, and merging the two
   write grants — each turns the suite red for its own reason, with a green control and a green
-  restore. Tests **2242 → 2283**, all passing with a browser.
+  restore. Tests **2242 → 2285**, all passing with a browser.
 
   **An independent Reviewer pass returned PASS with no BLOCKING findings**, and every SHOULD FIX
   it raised was acted on here — two of them in the failure family this file already documents.
@@ -2557,6 +2558,24 @@ method, so they chain directly to the 988 pre-change number above.
   survived, and the first version of that test hung instead of failing — which the harness had been
   scoring as a survival, because a run that produces no summary parses the same as a run with no
   failures. The harness now reports an inconclusive run as its own outcome.
+
+  **A second Reviewer round over the fix commit returned PASS with no BLOCKING findings**, and its
+  three SHOULD FIX items were taken. Two were the same shape one level down. (1) The laziness and
+  synchronous-throw behaviour was claimed in a comment and in this file but guarded by nothing:
+  reverting to the eager form left every test green, because a fetch-count assertion cannot tell
+  laziness from memoisation — both fetch exactly once. Two cases now pin it, one asserting **zero**
+  fetches when neither path can publish. (2) The mutation written to prove the new
+  network-capability guard injected into the renderer's own template literal, where `${…}`
+  *evaluates* rather than emitting, so the token never reached the document and the guard was never
+  exercised; it now injects into the client function, whose source really is serialized into the
+  page. (3) The branch was not pushed. Four MINOR items were also taken: the default duration bound
+  is now observed behaviourally rather than read out of source, so a parameter bound to some other
+  value fails; a guard coupled to source line breaks was replaced with one on the signature; the
+  harness gained a `spawnSync` timeout, without which its own "inconclusive" claim could not cover a
+  hang; and the network-capability list gained `WebSocket` and an honest comment that it is a sample
+  rather than a proof. The remaining MINOR items — the bound being measured from mobile start, the
+  prefix guard throwing before the structured log, orphan release directories having no stated
+  lifecycle — are recorded in the pull request's Parked section rather than fixed.
 
 - **Mobile companion — local implementation (Sept 9, 2026):**
   `render/dashboard-mobile.js` consumes the existing v2 adapter output, with six

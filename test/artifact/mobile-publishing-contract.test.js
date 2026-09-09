@@ -252,8 +252,12 @@ test('nothing in the published contract implies a live refresh', () => {
   // the shipped client re-evaluates freshness locally on a timer, which makes
   // no request.)
   const document = mobileHtml();
-  for (const capability of ['fetch(', 'XMLHttpRequest', 'EventSource', 'navigator.sendBeacon', 'import(']) {
-    assert.ok(!document.includes(capability), `the mobile document must issue no network request, found: ${capability}`);
+  // A sample of request-issuing capabilities, not an exhaustive proof that the
+  // document makes no request — no substring check could be that. WebSocket is
+  // included deliberately: a persistent socket is the capability that would
+  // most directly contradict the contract's "scheduled, not live" claim.
+  for (const capability of ['fetch(', 'XMLHttpRequest', 'EventSource', 'WebSocket', 'navigator.sendBeacon', 'import(']) {
+    assert.ok(!document.includes(capability), `the mobile document must not reach the network, found: ${capability}`);
   }
   assert.doesNotMatch(document, /data-release-manifest-url/);
 });
@@ -446,6 +450,43 @@ function orchestrated({ displayRender = () => DISPLAY_HTML, mobileRender = rende
   };
 }
 
+test('the household data build does not start until a path actually needs it', async () => {
+  // Memoisation and laziness are different properties, and only the first was
+  // guarded: the eager form also resolves the build exactly once, so a
+  // fetch-count assertion cannot tell them apart. What laziness buys is that a
+  // misconfigured invocation never calls Google, Gmail, Drive, sports and
+  // weather before discovering it has nowhere to publish — which is only
+  // observable when every path refuses before awaiting.
+  let fetches = 0;
+  const display = recorder();
+  await assert.rejects(publishAll({
+    fetchData: async () => { fetches += 1; return mobilePreviewStates().everyday; },
+    // No sportsFeedUrl, so generateAndPublish throws before it awaits.
+    display: { now: NOW, bucket: 'private', putObject: display.putObject },
+    // Disabled, so the mobile path returns before it awaits either.
+    mobile: { now: NOW, bucket: 'private', enabled: false },
+  }), /ARTIFACT_BUCKET and SPORTS_FEED_URL are required/);
+  assert.equal(fetches, 0, 'no household data may be fetched when neither path can publish');
+  assert.equal(display.puts.length, 0);
+});
+
+test('a synchronous throw from the data build is caught by the awaiting path', async () => {
+  // A plain `const shared = fetchData()` lets a synchronous throw escape both
+  // try blocks and reject publishAll with the fetcher's error before either
+  // path has a chance to handle it. Every other failing-fetcher case in this
+  // file uses an async function, whose throw is already a rejection, so this
+  // is the shape none of them exercise.
+  const display = recorder();
+  const mobile = recorder();
+  await assert.rejects(publishAll({
+    fetchData: () => { throw new Error('adapter blew up synchronously'); },
+    display: { now: NOW, bucket: 'private', sportsFeedUrl: SPORTS, render: () => DISPLAY_HTML, putObject: display.putObject },
+    mobile: { now: NOW, bucket: 'private', enabled: true, putObject: mobile.putObject },
+  }), /adapter blew up synchronously/);
+  assert.equal(display.puts.length, 0);
+  assert.equal(mobile.puts.length, 0);
+});
+
 test('both paths publish from a single household data build', async () => {
   const harness = orchestrated();
   const result = await harness.run();
@@ -528,8 +569,29 @@ test('the mobile path\'s default duration bound fits inside the deployed invocat
   const template = JSON.parse(await readFile(new URL('../../infrastructure/dashboard-artifact-refresh/template.json', import.meta.url), 'utf8'));
   const invocation = template.Resources.GeneratorFunction.Properties.Timeout * 1000;
   assert.ok(bound > 0 && bound < invocation, `mobile bound ${bound}ms must be inside the ${invocation}ms invocation`);
-  // And the bound must actually be applied, not merely declared.
-  assert.match(source, /withTimeout\(\s*\n\s*publishMobileArtifact\(/);
+  // The constant must be the DEFAULT, not merely a constant that happens to
+  // exist: reading it from source and checking its value says nothing about
+  // whether the parameter is bound to it, and the hang case above passes its
+  // own bound explicitly. Observed behaviourally, by letting the default apply.
+  const observed = await new Promise(resolve => {
+    publishAll({
+      fetchData: async () => mobilePreviewStates().everyday,
+      display: { now: NOW, bucket: 'private', sportsFeedUrl: SPORTS, render: () => DISPLAY_HTML, putObject: async () => ({ VersionId: 'v' }) },
+      mobile: {
+        now: NOW, bucket: 'private', enabled: true,
+        putObject: () => new Promise(() => {}),
+      },
+      // One millisecond under the declared default. If the parameter were
+      // bound to anything else, this override would not be what times out and
+      // the message below would not carry this number.
+      mobileTimeoutMs: bound - 1,
+    }).then(result => resolve(result.mobileError));
+  });
+  assert.equal(observed, `mobile publish exceeded ${bound - 1}ms`);
+  // The parameter's declared default is the constant, asserted on the
+  // signature rather than on the call site's line breaks — a one-line call is
+  // behaviourally identical and must not fail this.
+  assert.match(source, /mobileTimeoutMs\s*=\s*MOBILE_PUBLISH_TIMEOUT_MS/);
 });
 
 test('mutation: a mobile upload failure does not stop the display publishing', async () => {

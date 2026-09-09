@@ -62,8 +62,8 @@ const MUTATIONS = [
   ['the mobile schema version is re-exported from the display contract', 'dashboard-artifact/mobile-contract.js',
     s => s.replace("import { FORBIDDEN_PATTERNS } from './contract.js';", "import { FORBIDDEN_PATTERNS, SCHEMA_VERSION } from './contract.js';")
           .replace('const MOBILE_SCHEMA_VERSION = 1;', 'const MOBILE_SCHEMA_VERSION = SCHEMA_VERSION;')],
-  ['the document gains a network request', 'render/dashboard-mobile.js',
-    s => s.replace('<main>', '<main data-probe="${esc(String(typeof fetch(0)))}">')],
+  ['the document gains a network request', 'render/dashboard-mobile-client.js',
+    s => s.replace("  root.classList.add('enhanced');", "  setInterval(() => fetch('/release-manifest.json'), 300000);\n  root.classList.add('enhanced');")],
   ['the wall display reader is widened to the whole bucket', 'infrastructure/dashboard-artifact-refresh/template.json',
     s => s.replace('"Action": ["s3:GetObject", "s3:GetObjectVersion"], "Resource": { "Fn::Sub": "${ArtifactBucket.Arn}/dashboard-v2/*" }',
       '"Action": ["s3:GetObject", "s3:GetObjectVersion"], "Resource": { "Fn::Sub": "${ArtifactBucket.Arn}/*" }')],
@@ -74,8 +74,14 @@ const MUTATIONS = [
     s => s.replace('"MobileArtifactEnabled": { "Type": "String", "Default": "0"', '"MobileArtifactEnabled": { "Type": "String", "Default": "1"')],
 ];
 
+// Without a timeout a genuinely hanging mutant blocks the harness forever and
+// never reaches the INCONCLUSIVE check below, which would make that check's
+// "hang" claim false. Generous enough that a slow machine is not mistaken for
+// a hang; the whole suite runs in a few seconds.
+const SUITE_TIMEOUT_MS = 180_000;
+
 function runSuite() {
-  const result = spawnSync(process.execPath, ['--experimental-vm-modules', '--test', ...SUITE], { cwd: root, encoding: 'utf8' });
+  const result = spawnSync(process.execPath, ['--experimental-vm-modules', '--test', ...SUITE], { cwd: root, encoding: 'utf8', timeout: SUITE_TIMEOUT_MS });
   const out = result.stdout || '';
   const pass = Number(/^# pass (\d+)$/m.exec(out)?.[1] ?? -1);
   const fail = Number(/^# fail (\d+)$/m.exec(out)?.[1] ?? -1);
@@ -110,6 +116,21 @@ for (const [label, file, mutate] of MUTATIONS) {
   proven += 1;
   console.log(`caught (${outcome.fail} failing): ${label}`);
 }
+// Self-test: prove this harness's own hollowness check is live, following the
+// precedent scratch/reviewer-gate/mutation-check.mjs sets. A syntax error must
+// be reported as HOLLOW rather than scored as a caught mutation — otherwise
+// every "caught" row above could be a parse failure wearing a mutation's name.
+const selfTestPath = resolve(root, 'dashboard-artifact/mobile-contract.js');
+const selfTestOriginal = readFileSync(selfTestPath, 'utf8');
+writeFileSync(selfTestPath, `${selfTestOriginal}\nthis is not valid javascript(`);
+let selfTest;
+try { selfTest = runSuite(); } finally { writeFileSync(selfTestPath, selfTestOriginal); }
+if (selfTest.total >= control.total) {
+  console.error('SELF-TEST FAILED: a syntax error still ran the full suite, so the HOLLOW check is not live');
+  process.exit(1);
+}
+console.log(`self-test: a syntax error reports ${selfTest.total} tests (control ${control.total}) - the hollowness check is live`);
+
 const after = runSuite();
 console.log(`restored: ${after.total} tests, ${after.pass} pass, ${after.fail} fail`);
 console.log(`${proven}/${MUTATIONS.length} mutations proven`);
