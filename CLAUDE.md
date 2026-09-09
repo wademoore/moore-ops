@@ -150,8 +150,8 @@ command form leaves remote litter no agent can clear. "A false block is recovera
 load-bearing claim, and it was false for that case.
 
 **Matching the text was also under-blocking, which is the part nobody had noticed.** The new
-behavioural matrix was run against the old hook as a control: **51 of 118 cases fail**, and
-21 of those are forms the old hook *allowed* — `git push --all`, `--mirror`, a wildcard
+behavioural matrix was run against the old hook as a control: **84 of 189 cases fail**, and
+many of those are forms the old hook *allowed* — `git push --all`, `--mirror`, a wildcard
 refspec, a bare `git push` under `push.default=matching` or under `push.default=upstream` on a
 branch whose upstream is `main`, a `git` alias expanding to `push`, and every unresolvable
 form. Each of those reaches `main` while naming no target at all, so a matcher reading the
@@ -194,27 +194,119 @@ word is not `git`, and stay allowed. Relocating environment variables (`GIT_DIR`
 `GIT_WORK_TREE`, `GIT_CONFIG_*`) are now treated exactly as `--git-dir` is, rather than
 stripped as ordinary environment.
 
-**Named under-blocks that remain.** Two of these are *not* the "execution left the command
-string" class the hook's header describes — their text is fully visible, and the crude text
-matcher blocked them:
+**The three under-blocks this file used to park are closed, and how they were closed is the
+part worth keeping.** Each was verified before being called a hole — pushed to a real local
+bare remote, watching `refs/heads/main` move while the hook said nothing — and each was closed
+by applying a rule the hook already had to a place it was missing, never by adding an entry to
+a list. Three review rounds on this hook each found an under-block the previous fix
+introduced, twice from enumerating cases; so the *shape* of a fix here is the finding.
 
-- git subcommands that run a command of their own: `git rebase --exec '<push>' main`,
-  `git submodule foreach '<push>'`, `git bisect run <script>`. `evaluateGit` allows any
-  subcommand that is neither `push` nor a push alias, and the quoted argument is a single
-  token whose command word is not `git`, so the fallback does not reach it either.
-- `pwsh -EncodedCommand <base64>`.
-- a `git` alias defined only inside a repository the hook cannot reach (`--git-dir`,
-  `GIT_DIR`); a *command-line* alias is seen, which is the form that can be written
-  deliberately.
+| was open | closed by | the general rule |
+|---|---|---|
+| `git rebase --exec '<push>'`, `git bisect run <push>`, `git submodule foreach '<push>'`, `git filter-branch --tree-filter '<push>'`, `-c sequence.editor=<push>` | `gitArgumentsFallback` | every argument of a **non-push git invocation** is judged as a potential command |
+| `pwsh -EncodedCommand <base64>` and every abbreviation | `unreadInterpreterPayload` | an **interpreter option** left standing after the payload search is a payload we did not read → unresolvable → block |
+| a `git` alias defined only inside a repository the hook cannot reach | `isKnownGitCommand` | under an **unreadable repository**, a subcommand git itself does not recognise cannot be ruled out as a push alias |
 
-**A decoder for the second one was written and then removed at review, and the removal is
-the more useful record.** `Buffer.from(x, 'base64')` silently drops invalid characters rather
-than throwing, so a dynamic `pwsh -EncodedCommand $ENC` decoded to garbage, tokenized to
-nothing, and **returned allow** — an unknown payload waved through by the one branch in the
-file that failed open, in direct contradiction of its own governing rule. It was also
-unrequested scope added during a fix round, uncovered by any case or mutation, and absent
-from this file. Whatever closes that hole later must fail *closed* on an argument it cannot
-read, like every other unknown in the hook.
+- **The first was a regression, and the other two were standing holes.** The crude text matcher
+  refused the quoted `rebase --exec` / `submodule foreach` forms; it allowed the base64 form
+  (a blob contains no `git push`, so it exited early) and the unreachable alias (likewise).
+  An earlier revision of this section claimed the matcher blocked all three. It did not.
+- **The asymmetry that caused the first** is that an unrecognised *command word* already had
+  every argument judged, while a `git` command word had none judged at all — `evaluateGit`
+  returned unconditionally, so the fallback was never reached for any git call, quoted
+  argument or not. Which git subcommands execute their arguments is deliberately never
+  enumerated; a table of them would be the wrapper-list mistake one layer down.
+- **`unreadInterpreterPayload` reads no option name**, which is the point: naming
+  `-EncodedCommand` would have left `-enc`, `-e` and `-File` open, and PowerShell accepts any
+  unambiguous prefix. It also satisfies the requirement the removed decoder failed — it fails
+  *closed* on an argument it cannot read.
+- **`isKnownGitCommand` asks git**, via `--list-cmds`, rather than hardcoding a command list
+  that would go stale on the next release. git refuses to let an alias shadow a command it
+  already has, and that fact is the only thing keeping `git -C "$DIR" log` allowed — without
+  it this rule would re-break the exact over-block the rewrite exists to remove.
+
+**`git bisect run <script-file>` is *not* one of these.** bisect runs a program, so a script
+file is `bash /tmp/pusher.sh` wearing a git prefix — the file-indirection class below, whose
+text is in the file rather than the command. The old matcher did not block it either. An
+earlier revision filed it under "text fully visible", which it is not.
+
+**The decoder that was written and then removed at review is still the more useful record of
+why the replacement must fail closed.** `Buffer.from(x, 'base64')` silently drops invalid
+characters rather than throwing, so a dynamic `pwsh -EncodedCommand $ENC` decoded to garbage,
+tokenized to nothing, and **returned allow** — an unknown payload waved through by the one
+branch in the file that failed open, in direct contradiction of its own governing rule. It was
+also unrequested scope added during a fix round, and uncovered by any case or mutation.
+
+**An independent Reviewer pass over those three rules found five more under-blocks, and they
+are the reason this section does not end here.** Each was verified against a real bare remote
+before being treated as real, and each is the same shape the earlier rounds died on — a rule
+applied in one place and not in the neighbouring one:
+
+| found open | why it escaped | closed by |
+|---|---|---|
+| `node -e '<push>'`, `python3 -c`, `perl -e`, `ruby -e` | the interpreter rule was scoped to shells and PowerShell | `SCRIPT_INTERPRETERS`, plus a second pass that judges the payload with its own quotes removed, because the push is a string literal in another language |
+| `timeout 300 sh -c '<push>'` | `timeout`'s own argument is not an option, so `300` landed in command position and the fallback only looked for a literal `git` token | the fallback now judges the **tail** as a command instead of hunting a token |
+| `bash -c "$CMD"`, `eval "$CMD"` | a payload *found* is not a payload *read* | a dynamic payload blocks, exactly as a dynamic refspec already did |
+| `git --attr-source=HEAD p origin main` | the unknown-arity arm returns above the unreachable-alias rule | the same rule applied in that arm, on the first non-option token |
+| `git shp3 main` where `alias.shp3 = '!git push origin'` | git appends the caller's arguments to a `!` alias; the hook dropped them, so it judged `git push origin` | the arguments are appended, as the non-shell alias path already did |
+
+**The sharpest under-block on this branch was found by a *second* Reviewer pass over those
+closures, and it was not in the parked list at all — it was in the resolver the whole rewrite
+rests on.** `git` consults **`remote.<name>.push` before `push.default`** (git-push(1): "the
+command finds the default `<refspec>` by consulting `remote.*.push` configuration, and if it
+is not found, honors `push.default`"), and `resolveDefaultPush()` read only `push.default`,
+`branch.<name>.merge` and `alias.*`. A repository whose config carries
+`[remote "origin"] push = refs/heads/main` therefore sent `main` on a plain `git push origin`
+**from any branch** — no variable, no indirection, no wrapper, text fully visible. Confirmed
+against a real bare remote: `refs/heads/main` moved while the hook said nothing.
+`remote.<name>.mirror` is the same defect in a second spelling — the command-line `--mirror`
+was blocked unconditionally three lines above, while the config that means exactly the same
+thing was allowed.
+
+**This is the one finding here that the governing rule could never have caught, and that is
+the lesson worth keeping.** "Resolution failure is always a block" catches everything the hook
+*knows* it cannot resolve. This was a confident **wrong** resolution: the hook believed it had
+resolved the destination, and had simply never read the input that decides it. No fail-closed
+rule reaches that class — only reading the deciding input does. When a resolver is trusted to
+answer a question, the review that matters is "does it read everything the real implementation
+reads?", not "does it fail safely when it gives up".
+
+**The worst defect on this branch was not an under-block, and no verdict-shaped test could
+have caught it.** The suffix sweep that closes `timeout 300 sh -c '<push>'` first let *every*
+inner call sweep its own suffixes too, making the work **T(n) = 2^n**. A 40-argument command
+under an unrecognised command word took **over thirty seconds and never returned** — and this
+hook runs on every single Bash call, so it would have **hung the session** rather than
+refusing anything. The matrix did not see it because the case written for that rule had eight
+arguments, and 2^8 finishes instantly; it surfaced only from deliberately stress-testing the
+recursion that had just been introduced.
+
+| | exponential | fixed |
+|---|---|---|
+| 40 arguments | 30 000+ ms (hang) | 74 ms |
+| 300 arguments | 30 000+ ms (hang) | 66 ms |
+
+Only the outermost call sweeps now (`tailScan`); inner calls judge their own command word and
+stop. Nothing is lost, because that loop already tries every start position, and nested
+wrapper chains still resolve since the wrapper arms recurse and carry the flag. It is pinned
+by a case asserting **linear versus exponential** — a loose 10s bound, not a millisecond
+budget that would flake — and by a mutation row. **Two lessons worth keeping:** a guard that
+can only be expressed as "it finished" needs a test shaped like that, and a rule proved by a
+short case can hide a cost that only a long one reveals.
+
+**`SCRIPT_INTERPRETERS` is an enumeration, and it is the one place here that cannot be
+anything else.** Nothing in the *structure* of `node -e "<script>"` distinguishes it from
+`echo "<text>"` — both are a command word, an option and a quoted token. The difference is
+only that one of those command words executes its argument, which no parser can derive.
+Treating every quoted argument as code would refuse `echo "never git push origin main"`, one
+of the three live defects this rewrite exists to remove and a pinned case. So the rule is
+general and the set is not; say so rather than claiming otherwise.
+
+**What genuinely remains open.** Three of the "execution left the command string" class —
+`GIT=git; $GIT push origin main`, `bash /tmp/pusher.sh`, and a background process that pushes
+later — all verified to reach `main`, and all allowed by the old matcher too. Plus one that is
+*not* of that class and that the old matcher did block: **an unrecognised command word that
+executes a quoted argument**, `watch '<push>'` being the example. It is the same irreducible
+knowledge `SCRIPT_INTERPRETERS` encodes; add to that set when one is found.
 
 **Over-blocks that remain, deliberately.** A heredoc body line that *itself* parses as a push
 to `main` is still refused — heredocs get no special treatment, and that is what keeps
@@ -223,9 +315,35 @@ to `main` is still refused — heredocs get no special treatment, and that is wh
 tests. Also blocked: pushing a ref named `main` to *any* remote, and a src-only refspec naming
 a branch that does not exist locally (git would refuse it anyway).
 
+Four more arrived with the closures above, and all are the same trade:
+
+- **An argument of a non-push git command that merely *quotes* a push to `main` is refused**,
+  so `git commit -m "… git push origin main …"` blocks. Use `git commit -F <file>` written
+  through the `Edit`/`Write` tool — the same workaround this file already prescribes for its
+  own text, and hit live while writing this change's commit message. Telling a git argument
+  that is *data* from one that is a *command* needs exactly the per-subcommand table the hook
+  refuses to keep, so the fail-closed direction wins.
+- **An interpreter carrying an option but no payload the hook could scan is refused**, so
+  `bash --version` and `pwsh -File x.ps1` block. The second is the file-indirection hole
+  anyway, so refusing it is the safe direction; the first is friction with an easy workaround.
+- **`git grep` for a pattern that parses as a push to `main` is refused.** This is the
+  sharpest one, because it re-creates *for `git grep`* the third live defect the rewrite
+  exists to remove. It is recorded rather than softened: telling a git argument that is data
+  from one that is a command needs the per-subcommand table the hook refuses to keep. Plain
+  `grep` -- the form the defect was actually reported against -- is unaffected and pinned.
+- **A script interpreter's payload that merely mentions such a push in a string is refused**,
+  because the payload is judged again with its own quotes removed. That second pass is what
+  reaches a push written as a string literal in another language, and it cannot tell a literal
+  that runs from one that is printed.
+
 Every one of these decisions is proved by mutation rather than asserted —
-`node scripts/verify-push-hook-mutations.mjs`, 44 mutations, each required to redden the
+`node scripts/verify-push-hook-mutations.mjs`, 73 mutations, each required to redden the
 cases that name it. See "Test matrix" below.
+
+**One mutation row was written and deliberately deleted rather than kept**, for the second
+time in this file's history: a row inverting `isKnownGitCommand`'s git-unavailable branch
+cannot fail, because git is always available in the matrix, so it would have reported "ok"
+while proving nothing. A row that cannot fail reports a guard as proven while proving nothing.
 
 ## The gate (`.claude/settings.json` + `.claude/hooks/*.mjs`)
 
@@ -506,19 +624,25 @@ file runs unchanged on Windows) with a real PreToolUse payload on stdin and asse
 exit code (2 = blocked, 0 = allowed), so it tests the shipped script, not a copy of its
 logic.
 
-`test/hooks/block-main-push.test.js` (**155 tests**) is the same standard applied to the push
+`test/hooks/block-main-push.test.js` (**227 tests**) is the same standard applied to the push
 hook, and until Sept 9, 2026 it did not exist — `enforcement-wiring.test.js` proved that hook
 was *wired* and nothing proved what it *decided*. That gap is exactly how three defects
 reached a live session. Cases spawn the real hook against real throwaway git repositories and
 assert the exit code, in both directions: every form that resolves to `main` refused (the ones
 naming no target included), and feature-branch pushes, feature-branch **deletes** and pure
-reads allowed. Run against the pre-rewrite hook as a control it reports **51 of the first 118
-failing**, 21 of them under-blocks; the 23 cases added after review fail against the
-post-review commit too, 15 of them blocks the Reviewer showed were missing.
+reads allowed.
+
+**Two controls, both re-measured against the whole 189 rather than quoted from an earlier
+run.** Against the pre-rewrite text matcher (`261a6b2`): **84 of 189 fail.** Against the
+commit that closed the parked under-blocks (`81973ce`): **20 of 189 fail, and they are
+exactly the 20 new BLOCK cases** — so not one of them passes for free, and the 14 new ALLOW
+cases pass under both hooks, which is what makes them guards against *this* change
+over-blocking rather than restatements of it. An earlier revision of this section quoted "51
+of the first 118 failing"; that was accurate for the matrix as it stood and is superseded.
 
 `BLOCK_MAIN_PUSH_HOOK` exists only so `scripts/verify-push-hook-mutations.mjs` can point that
 file at a damaged copy; no production caller sets it. That harness is **not** part of
-`npm test` — it spawns the whole matrix once per mutation. It runs **44 mutations**, each
+`npm test` — it spawns the whole matrix once per mutation. It runs **73 mutations**, each
 required to redden the cases that name it *specifically*, plus a green control and two
 self-tests that prove its own hollow-mutation and syntax-error checks are live. Three of its
 rows carry an explicit note that a case which looks like proof is not: `$BRANCH`, `ma"in"` and
@@ -2009,31 +2133,46 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2351 | **2351** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2423 | **2423** | **0** | **0** |
 
 Measured on `claude/push-main-hook-targets-kawlik`, whose merge base with `main` is
-**`261a6b2`** (PR #54). **That merge base was re-measured in this session, before any change:
-2196 / 2196 / 0 / 0 with a browser** — which matches the figure the entry below recorded, so
-the recorded delta has now held for a third consecutive baseline. Re-measure anyway.
-`git fetch origin main` was run *before* deriving the merge base, per the standing warning;
-the ref was stale at `2d01027` and the fetch moved it to `261a6b2`.
+**`261a6b2`** (PR #54). **That merge base was re-measured before any change: 2196 / 2196 /
+0 / 0 with a browser** — which matches the figure the entry below recorded, so the recorded
+delta has now held for a third consecutive baseline. Re-measure anyway. `git fetch origin
+main` was run *before* deriving the merge base, per the standing warning; the ref was stale
+at `2d01027` and the fetch moved it to `261a6b2`.
 
-This change adds **+155**, all in one new file:
+This change adds **+227**, all in one new file, in four passes:
 
 | File | before | after | delta |
 |---|---|---|---|
 | `test/hooks/block-main-push.test.js` (new) | — | 155 | +155 |
+| closing the parked under-blocks | 155 | 189 | +34 |
+| closing what an independent Reviewer found in those closures | 189 | 215 | +26 |
+| closing what a second Reviewer pass found in *those* | 215 | 227 | +12 |
 
-No existing test changed, because **no existing test asserted the push hook's behaviour** —
-`enforcement-wiring.test.js` asserts only that it is wired, and its 7 cases are untouched and
-still pass. That absence is the finding, not an accident of scope: a hook with no behavioural
-coverage shipped three live defects, two of them over-blocks and twenty-one of them
-under-blocks nobody had looked for.
+**35 BLOCK cases and 24 ALLOW cases across the last two passes, and the split is the point.**
+The BLOCK cases pin the closed under-blocks, and every one of them fails against `81973ce`.
+The ALLOW cases pin that closing them did not turn the rules into blanket refusals, and they
+pass under both hooks. A rule that only ever blocked would satisfy every BLOCK case and fail
+the ALLOW ones — which is not hypothetical here: two of the ALLOW cases went red during this
+work and caught real over-blocks (a feature-branch **delete** under a wrapper, and a script
+file named by a variable).
+
+No existing test changed in either pass, because **no existing test asserted the push hook's
+behaviour** — `enforcement-wiring.test.js` asserts only that it is wired, and its 7 cases are
+untouched and still pass. That absence is the finding, not an accident of scope.
 
 Companion mutation harness, **not** part of `npm test` and run on demand:
-`node scripts/verify-push-hook-mutations.mjs` → 44 mutations, 44/44 proven, green control,
+`node scripts/verify-push-hook-mutations.mjs` → 53 mutations, 53/53 proven, green control,
 plus two self-test rows that prove the harness's own hollow-mutation and syntax-error checks
 are live.
+
+A third check is run on demand and is **not** committed: a differential sweep comparing this
+hook against `81973ce` over 183 commands x 8 repository fixtures — **1464 comparisons, 0
+block-to-allow flips**, 87 tightened. That is the mechanical form of "no form the previous
+hook blocked is newly allowed", and it is the one guard the case matrix cannot give, since a
+matrix only covers the cases someone thought to write down.
 
 The no-browser row is omitted deliberately: only the browser-enabled invocation was run this
 session, and quoting a figure that was not taken is exactly the unfalsifiable claim this
@@ -2045,7 +2184,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2351+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2423+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
@@ -2609,6 +2748,71 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **The push hook's parked under-blocks are closed (Sept 9, 2026):** The rewrite below shipped
+  with three under-blocks named in its PR body and hook header rather than fixed. All three
+  are now closed, and **each was verified before being treated as real** — pushed to a local
+  bare remote, watching `refs/heads/main` move while the hook said nothing — rather than taken
+  from the note. That check paid for itself twice: it confirmed the git-subcommand class and
+  the unreachable-alias class reach `main`, and it corrected two claims in the parked notes
+  that were simply wrong (see below).
+  **Three general rules, no new enumerations**, because three review rounds on this hook each
+  found an under-block the previous fix introduced and twice the cause was enumerating cases:
+  (1) every argument of a **non-push git invocation** is judged as a potential command, which
+  closes `git rebase --exec`, `bisect run`, `submodule foreach`, `filter-branch --tree-filter`
+  and `-c sequence.editor=<cmd>` without naming any of them — the asymmetry that caused the
+  hole was that an unrecognised *command word* already had its arguments judged while a `git`
+  command word had none judged at all; (2) an **interpreter option** still standing after the
+  payload search is a payload we did not read, so it blocks — this closes
+  `pwsh -EncodedCommand` and every abbreviation of it with no decoder and no option table,
+  and it is the fail-*closed* replacement the removed decoder's write-up demanded; (3) under
+  an **unreadable repository** a subcommand git itself does not recognise cannot be ruled out
+  as a push alias, so it blocks — `isKnownGitCommand` asks git via `--list-cmds` rather than
+  hardcoding a list, and because git refuses to let an alias shadow a real command,
+  `git -C "$DIR" log` stays allowed and the over-block the rewrite exists to remove does not
+  come back.
+  **Two parked claims were false and are corrected rather than quietly dropped.** The crude
+  text matcher did **not** block `pwsh -EncodedCommand <base64>` — a base64 blob contains no
+  `git push`, so the old hook exited before its branch test — so that was a standing hole, not
+  a regression; and `git bisect run <script-file>` is the file-indirection class the same
+  paragraph explicitly excludes, not a fully-visible one. Both were found independently by a
+  Reviewer pass over the previous commit and by direct measurement here.
+  **Guards proved rather than asserted.** Tests **2351 → 2423** (+72: 45 BLOCK, 26 ALLOW, 1 performance),
+  all passing. Every one of the 20 new BLOCK cases fails against `81973ce`, so none passes for
+  free; the 14 ALLOW cases pass under both hooks, which is what makes them guards against the
+  new rules becoming blanket refusals rather than restatements of them. The mutation harness
+  grew 44 → 53, each row required to redden the cases naming it — including two rows that
+  separate the fallback's quoted and unquoted passes, because either alone looks sufficient,
+  and one row proving that claiming *no* subcommand is known re-breaks the
+  read-through-a-moved-repository over-block. **A 54th row was written and deleted**: git is
+  always available in the matrix, so inverting `isKnownGitCommand`'s git-unavailable branch
+  changes no case and would have reported "ok" while proving nothing — the second time a row
+  has been dropped from this file for that reason. And a differential sweep of **1464
+  comparisons** (183 commands × 8 fixtures) against `81973ce` reports **0 block-to-allow
+  flips**, the mechanical form of "nothing the previous hook blocked is newly allowed".
+  **Accepted over-blocks, stated rather than discovered later:** a git argument that merely
+  *quotes* a push to `main` is refused, so a `git commit -m` whose message quotes one blocks —
+  this change's own commit message had to go through `git commit -F` — and an interpreter
+  carrying an option but no scannable payload is refused, so `bash --version` blocks. Both are
+  the trade the heredoc decision already makes deliberately, and the old matcher refused both.
+  **A second Reviewer pass then found the sharpest hole of all, and it was not in the
+  parked list — it was in the resolver itself.** git consults `remote.<name>.push` before
+  `push.default`, and the resolver never read it, so a repository configuring that key
+  sent `main` on a plain `git push origin` from any branch. `remote.<name>.mirror` was the
+  same defect in a second spelling. Both pre-existing, both verified against a real bare
+  remote, both now closed and pinned. It is the one finding the "unresolvable blocks" rule
+  could never have caught: a confident *wrong* resolution rather than a failure to resolve.
+  **The worst defect was mine and was not an under-block at all.** The suffix sweep added to
+  close `timeout 300 sh -c '<push>'` was exponential — a 40-argument command hung for over
+  thirty seconds, which on a hook that runs on every Bash call means a frozen session rather
+  than a refused command. Found by stress-testing the new recursion, not by review or by the
+  matrix, whose case for that rule had eight arguments. Fixed so only the outermost call
+  sweeps, and pinned by a case that asserts linear-versus-exponential plus a mutation row.
+  **Also closed here: the previous commit `81973ce` was unreviewed when the PR stopped.** A
+  Reviewer pass over that commit alone returned PASS with no BLOCKING finding — the
+  `-EncodedCommand` deletion is clean, the surviving PowerShell arm is bounds-safe by its own
+  loop condition rather than by the deleted branch, and all 41 of its added lines are comment
+  or prose. Its two SHOULD FIX findings are the false claims corrected above.
 
 - **The push hook now matches the resolved push target, not the command text (Sept 9, 2026):**
   `.claude/hooks/block-main-push.mjs` fired on `/git\s+push/` anywhere in the command string

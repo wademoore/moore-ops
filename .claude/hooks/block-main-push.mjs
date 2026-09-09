@@ -48,24 +48,55 @@
 //   - `bash /tmp/pusher.sh`                 -- indirection through a file
 //   - a background process that pushes later
 //
-// Three more, named here because a hole that is written down can be closed and one
-// that is merely implied cannot. The first two are NOT of the class above -- their
-// text is fully visible, so "execution left the command string" is not the excuse:
-//   - git subcommands that run a command of their own:
-//       `git rebase --exec '<push>' main`, `git submodule foreach '<push>'`,
-//       `git bisect run <script>`. evaluateGit returns allow for any subcommand
-//       that is neither push nor a push alias, and the quoted argument is a single
-//       token whose command word is not `git`, so the fallback does not see it
-//       either. The crude text matcher this file replaced did block these.
-//   - `pwsh -EncodedCommand <base64>`. A decoder for this was written and then
-//       REMOVED at review, and the removal is the more useful record: because
-//       Buffer.from(x,'base64') silently drops invalid characters instead of
-//       throwing, a dynamic `-EncodedCommand $ENC` decoded to garbage, tokenized
-//       to nothing, and RETURNED ALLOW -- an unknown payload waved through by the
-//       one branch in this file that failed open. Whatever closes this must fail
-//       closed on an argument it cannot read, like every other unknown here.
-//   - a `git` alias defined only inside a repository this hook cannot reach
-//       (see the residual note at the alias lookup).
+// And ONE that is not of that class, because its text is fully visible:
+//   - an UNRECOGNISED command word that executes a QUOTED argument. `watch '<push>'`
+//     is the example; the crude matcher refused it and this file does not. The
+//     payload is a single token whose command word is the whole string, and the
+//     only way to know `watch` runs it -- rather than printing it, as `echo` does
+//     -- is to know what `watch` is. That is the same knowledge SCRIPT_INTERPRETERS
+//     encodes, and the reason that set exists and cannot be a general rule. Treating
+//     every quoted argument as code would refuse `echo "never git push origin main"`,
+//     one of the three live defects this rewrite exists to remove.
+//
+// `git bisect run <script-file>` is this same class and not a separate one: bisect
+// runs a program, so a script file is `bash /tmp/pusher.sh` wearing a git prefix.
+// An earlier revision of this header filed it under "text fully visible", which it
+// is not -- the text of the script is in the file, not in the command.
+//
+// THREE HOLES THAT WERE NAMED HERE AND ARE NOW CLOSED
+// ---------------------------------------------------
+// Each was closed by applying a rule this file already had to a place it was
+// missing, NOT by adding a case to a list. Three review rounds on this hook each
+// found an under-block introduced by enumerating cases, twice from a list; the
+// shape is the finding, so it is recorded next to the fix.
+//
+//   - git subcommands that RUN a command of their own -- `git rebase --exec`,
+//     `git bisect run`, `git submodule foreach`, `git filter-branch --tree-filter`,
+//     `-c sequence.editor=<cmd>`. Verified against a real bare remote before being
+//     called a hole: refs/heads/main moved while this hook said nothing, and the
+//     crude text matcher HAD refused the quoted forms, so allowing them was a
+//     regression. The asymmetry that caused it is that an unrecognised command
+//     word already had every argument judged while a `git` command word had none
+//     judged at all. gitArgumentsFallback removes the asymmetry. Which git
+//     subcommands execute their arguments is deliberately never enumerated.
+//   - `pwsh -EncodedCommand <base64>`, and every abbreviation of it. Closed by
+//     unreadInterpreterPayload, which reads no option name at all: an interpreter
+//     option left standing after the payload search is a payload we did not read,
+//     and unresolvable blocks. That satisfies the requirement the removed decoder
+//     failed -- it FAILS CLOSED on an argument it cannot read. The decoder is
+//     still the more useful record of why: Buffer.from(x, 'base64') silently drops
+//     invalid characters instead of throwing, so a dynamic `-EncodedCommand $ENC`
+//     decoded to garbage, tokenized to nothing, and RETURNED ALLOW -- an unknown
+//     payload waved through by the one branch here that failed open.
+//     (The crude text matcher did NOT block this form; a base64 blob contains no
+//     "git push", so it exited early. Allowing it was a standing hole, not a
+//     regression. An earlier revision of this header claimed otherwise.)
+//   - a `git` alias defined only inside a repository this hook cannot reach.
+//     Also verified against a real bare remote. Closed by isKnownGitCommand: git
+//     will not let an alias shadow a command it already has, so a name git knows
+//     cannot be the hidden push, and anything else under an unreadable repository
+//     cannot be ruled out. Asking git which names it knows, rather than writing
+//     them down here, is what keeps `git -C "$DIR" log` allowed.
 // `eval`, `sh -c`, `bash -c`, `pwsh -Command`, `xargs`, command substitutions, git
 // aliases (including `-c alias.x=push`) and any UNRECOGNISED command word wrapping
 // a git call are re-scanned rather than waved through.
@@ -100,6 +131,27 @@
 //   - An unrecognised `git push` option is blocked. The option set is finite and
 //     stable; an unknown one is a typo or a git upgrade that warrants updating
 //     PUSH option tables here.
+//   - An argument of a non-push git command that merely QUOTES a push to main is
+//     blocked, so `git commit -m "... git push origin main ..."` is refused. Use
+//     `git commit -F <file>` written through the Edit/Write tool -- the same
+//     workaround the gate section of CLAUDE.md already prescribes for its own
+//     text, and the same trade the heredoc decision above already makes. Judging
+//     which git arguments are data and which are commands would need exactly the
+//     per-subcommand table this file refuses to keep.
+//   - An interpreter carrying an option but no payload we could scan is blocked,
+//     so `bash --version` and `pwsh -File x.ps1` are refused. The second is the
+//     file-indirection hole anyway, so refusing it is the safe direction; the
+//     first is friction with a one-word workaround.
+//   - `git grep '<pattern that parses as a push to main>'` is refused. This is the
+//     sharpest over-block here, because it re-creates for `git grep` the third live
+//     defect named at the top of this file -- and it is recorded rather than
+//     softened, because separating a git argument that is DATA from one that is a
+//     COMMAND needs the per-subcommand table this file refuses to keep. Plain
+//     `grep`, which is the form that defect was actually reported against, is
+//     unaffected and is pinned by a case.
+//   - A script interpreter's payload that merely MENTIONS a push to main in a
+//     string is refused, because the payload is judged again with its own quotes
+//     removed. Same trade as the heredoc decision.
 import { execFileSync } from "node:child_process";
 import { isAbsolute, resolve as resolvePath } from "node:path";
 
@@ -348,6 +400,10 @@ const block = (why) => ({ blocked: true, why });
  */
 function evaluatePush(args, ctx) {
   const flags = new Map(); // canonical option -> boolean (last wins, --no- clears)
+  // --repo names the remote as an OPTION rather than a positional, and the remote
+  // is what decides which remote.<name>.push config governs a refspec-less push.
+  // null means "named at runtime", which is unresolvable rather than absent.
+  let repoOption;
   const positionals = [];
   let endOfOptions = false;
 
@@ -367,9 +423,12 @@ function evaluatePush(args, ctx) {
 
     if (VALUE_ARG.has(canon)) {
       flags.set(canon, !negated);
-      if (eq === -1 && !negated) {
+      if (eq !== -1) {
+        if (canon === "--repo") repoOption = tok.dynamic ? null : raw.slice(eq + 1);
+      } else if (!negated) {
         if (i + 1 >= args.length) return block(`git push option ${raw} is missing its value`);
         i += 1; // consume the value so it is never read as a positional
+        if (canon === "--repo") repoOption = args[i].dynamic ? null : args[i].text;
       }
       continue;
     }
@@ -406,6 +465,14 @@ function evaluatePush(args, ctx) {
 
   const on = (...names) => names.some((n) => flags.get(n) === true);
 
+  // SHOULD FIX from review: the dynamic guard was applied to refspecs and not to
+  // the token one position earlier. `git push "$@"` puts a runtime-built word in
+  // the REPOSITORY slot, and `$@` expands to several words, so that one token can
+  // become `origin main`. Same rule, adjacent position.
+  if (positionals.length && positionals[0].dynamic) {
+    return block(`the push repository "${positionals[0].text}" is built at runtime, so its destination is unknown`);
+  }
+
   // Forms that push every branch. main is among them, and the remote's refs cannot
   // be enumerated offline, so these are unconditional.
   if (on("--all", "--branches")) return block("--all pushes every branch, main included");
@@ -423,7 +490,7 @@ function evaluatePush(args, ctx) {
     // (verified against git 2.43). --follow-tags does not suppress it.
     if (on("--tags")) return allow();
     if (deleting) return allow(); // git refuses --delete with no refs; nothing reaches the remote
-    return resolveDefaultPush(ctx);
+    return resolveDefaultPush(ctx, positionals[0] ?? null, repoOption);
   }
 
   for (const spec of refspecs) {
@@ -477,10 +544,53 @@ function evaluateRefspec(tok, deleting, ctx) {
  * The table below was verified against real pushes to a local bare remote
  * (--dry-run --porcelain), not inferred from documentation.
  */
-function resolveDefaultPush(ctx) {
+function resolveDefaultPush(ctx, remoteTok, repoOption) {
   const head = git(ctx.dir, ["rev-parse", "--abbrev-ref", "HEAD"]);
   if (!head || head === "HEAD") {
     return block("the current branch cannot be read, so the push destination is unknown");
+  }
+
+  // BEFORE push.default, git consults the REMOTE's own configuration -- and this
+  // function did not, which is the hole an independent review found. git-push(1):
+  // "the command finds the default <refspec> by consulting remote.*.push
+  // configuration, and if it is not found, honors push.default."
+  //
+  // It reaches main with no variable, no indirection and no wrapper: a repository
+  // whose config carries `[remote "origin"] push = refs/heads/main` sends main on a
+  // plain `git push origin` from any branch. Confirmed against a real bare remote,
+  // where refs/heads/main moved while this hook said nothing. remote.<name>.mirror
+  // is the same defect in a second spelling -- the command-line `--mirror` is
+  // blocked unconditionally a few lines above, while the config that means exactly
+  // the same thing was allowed.
+  //
+  // This is NOT a resolution failure, which the governing rule would already have
+  // caught. It is a confident WRONG resolution, which no fail-closed rule can catch
+  // -- the only fix is to read the input that decides the answer.
+  let remoteName;
+  if (remoteTok) {
+    // Never dynamic here: evaluatePush refuses a runtime-built repository position
+    // before this function is called, which is the guard that case belongs to.
+    remoteName = remoteTok.text;
+  } else if (repoOption !== undefined) {
+    remoteName = repoOption; // null when --repo names the remote at runtime
+  } else {
+    remoteName = ctx.config(`branch.${head}.remote`) || "origin";
+  }
+  if (remoteName === null) {
+    return block("the push remote is built at runtime, so its configured refspec cannot be read");
+  }
+  if ((ctx.config(`remote.${remoteName}.mirror`) || "").toLowerCase() === "true") {
+    return block(`remote.${remoteName}.mirror makes every push a mirror push, main included`);
+  }
+  const configured = ctx.configAll(`remote.${remoteName}.push`);
+  if (configured.length) {
+    // These are ordinary refspecs and are judged by the ordinary refspec rule, so
+    // a configured push of a feature branch stays allowed.
+    for (const spec of configured) {
+      const verdict = evaluateRefspec({ text: spec, dynamic: false }, false, ctx);
+      if (verdict.blocked) return verdict;
+    }
+    return allow();
   }
 
   const mode = (ctx.config("push.default") || "simple").toLowerCase();
@@ -515,6 +625,26 @@ function resolveDefaultPush(ctx) {
 // ---------------------------------------------------------------------------
 const SHELLS = new Set(["bash", "sh", "zsh", "dash", "ksh", "ash"]);
 const POWERSHELLS = new Set(["pwsh", "powershell"]);
+// Interpreters that run a script given as an ARGUMENT rather than as a shell
+// command: `node -e`, `python3 -c`, `perl -e`, `ruby -e`. A review found every one
+// of them pushing to main with the text fully visible in the command while this
+// hook said nothing, and the crude text matcher had refused all of them.
+//
+// THIS SET IS AN ENUMERATION, AND IT IS THE ONE PLACE HERE THAT CANNOT BE ANYTHING
+// ELSE. Every other list in this file was replaced by a general rule after a review
+// found a way past it, so it is worth being exact about why this one survives:
+// nothing in the STRUCTURE of `node -e "<script>"` distinguishes it from
+// `echo "<text>"`. Both are a command word, an option, and a quoted token. The
+// difference is only that one of those command words executes its argument, which
+// is semantic knowledge no parser can derive. Treating every quoted argument as
+// code would refuse `echo "never git push origin main"` -- one of the three live
+// defects this rewrite exists to remove, and a pinned case.
+//
+// So the rule is general and the SET is not, and any command word outside it that
+// executes an argument is an open hole. `watch '<push>'` is exactly that and is
+// named in the header. Add to this set when one is found; do not pretend the set
+// is a general rule.
+const SCRIPT_INTERPRETERS = new Set(["node", "python", "python3", "perl", "ruby"]);
 // Wrappers that run the command that follows them. Recursing through these gives a
 // tighter reading than the fallback below (it reaches `sudo bash -c ...`), but the
 // list is NOT what makes them safe -- see UNRECOGNISED COMMAND WORDS.
@@ -548,7 +678,150 @@ function scan(src, depth, opts = {}) {
   return allow();
 }
 
-function evaluateSimpleCommand(tokens, depth, opts = {}) {
+/**
+ * An interpreter exists to RUN a payload. When one of the arms above resolved a
+ * payload it was scanned and judged; reaching here means it did not, and any
+ * option still standing is a payload this hook has not read.
+ *
+ * This is the same rule the file already applies to an unrecognised `git push`
+ * option and to an unrecognised git global -- an argument we cannot account for
+ * makes the destination unresolvable, and unresolvable blocks. The shell and
+ * PowerShell arms were simply the third place it was missing.
+ *
+ * It is deliberately NOT an option table. A table would have to name
+ * -EncodedCommand, -File, -c, and whatever the next release adds, which is the
+ * enumerate-the-cases shape that produced an under-block in each of the three
+ * review rounds on this hook. The reason -EncodedCommand needs this rather than a
+ * decoder is written up in the header: a decoder failed OPEN on an argument it
+ * could not decode, and the requirement recorded there was that whatever closes
+ * it must fail CLOSED on an argument it cannot read. Refusing to read it is that.
+ *
+ * A bare "-" or "--" carries nothing, so neither is treated as a payload.
+ *
+ * `slashOptions` exists for PowerShell only, and it is a deliberate over-block on
+ * an unverifiable premise rather than a demonstrated hole: this sandbox has no
+ * pwsh, so whether powershell.exe accepts `/EncodedCommand` as well as
+ * `-EncodedCommand` could not be tested here. If it does, ignoring the prefix is
+ * an under-block on the one platform this hook's PowerShell arm exists for. If it
+ * does not, the cost is that `pwsh /home/me/x.ps1` is refused -- and that form is
+ * the file-indirection hole anyway, which this rule already refuses in its
+ * `-File` spelling. Under-blocking is the failure mode that matters, so the
+ * untestable premise is resolved in the blocking direction. Shells are excluded:
+ * on a POSIX shell a leading "/" is an absolute script path and nothing else.
+ */
+function unreadInterpreterPayload(rest, { slashOptions = false } = {}) {
+  const isOption = (t) => (t.text.startsWith("-") || (slashOptions && t.text.startsWith("/")))
+    && t.text !== "-" && t.text !== "--" && t.text !== "/";
+  const opt = rest.find(isOption);
+  return opt
+    ? `${opt.text} carries an interpreter payload this hook cannot read`
+    : null;
+}
+
+/**
+ * A git invocation that is NOT a push can still RUN one. `git rebase --exec`,
+ * `git bisect run`, `git submodule foreach`, `git filter-branch --tree-filter`
+ * and `-c sequence.editor=<cmd>` all execute a command given to them as an
+ * argument, and every one of them was refused by the crude text matcher this file
+ * replaced -- so allowing them was a REGRESSION.
+ *
+ * Two were confirmed the whole way, by running them against a local bare remote
+ * and watching refs/heads/main move while this hook said nothing: `rebase --exec`
+ * and `bisect run`. The rest are the same class and are covered by the same rule;
+ * saying they were all observed moving a ref would be an overclaim. Two forms
+ * tested alongside them did NOT move it in the shape tested -- `submodule foreach`
+ * (a submodule checkout has a detached HEAD and no local main to push) and
+ * `-c core.pager` (git spawns no pager when stdout is not a terminal) -- and they
+ * are blocked anyway, because the rule judges the payload rather than the odds.
+ *
+ * Which subcommands do this is deliberately not enumerated. A list of git
+ * subcommands would be the same mistake as the list of wrapper commands that
+ * rounds 1 and 2 both found their way past, one layer down. The asymmetry that
+ * actually caused the hole is that an UNRECOGNISED command word already has every
+ * argument judged (see evaluateSimpleCommand) while a `git` command word had none
+ * judged at all. This removes the asymmetry rather than patching its symptoms.
+ *
+ * Two passes, because a payload arrives in two shapes: unquoted, where `git` is a
+ * token of its own (`git bisect run git push origin main`), and quoted, where the
+ * whole command is one token (`git rebase --exec '...'`). A `k=v` token is also
+ * judged on its value, which is how `-c sequence.editor=<cmd>` is reached.
+ *
+ * COST, ACCEPTED: a git argument that merely QUOTES a push to a protected branch
+ * is refused -- `git commit -m "... git push origin main ..."` blocks. That is the
+ * same over-block the heredoc decision already accepts on purpose, it is the
+ * direction this file fails in by design, and the old matcher refused it too. Use
+ * `git commit -F <file>` written through the Edit/Write tool, exactly as the gate
+ * section of CLAUDE.md already prescribes for its own text.
+ */
+function scanArgumentsAsCommands(args, depth, opts, { unquote = false } = {}) {
+  for (const tok of args) {
+    const verdict = scan(tok.text, depth + 1, opts);
+    if (verdict.blocked) return verdict;
+    // A script interpreter's payload is code in ANOTHER language, so the push is
+    // usually a string literal inside it -- `node -e 'x("git push origin main")'`
+    // tokenizes to one quoted token whose command word is the whole string, and the
+    // scan above finds nothing. Judging the payload again with its own quote
+    // characters removed reaches it. Only interpreters get this: it is the fail-
+    // closed reading of a payload whose grammar this hook does not speak, and
+    // applying it anywhere else would refuse `echo "never git push origin main"`.
+    // Cost, accepted: an interpreter payload that merely MENTIONS such a push in a
+    // string is refused too -- the same trade the heredoc decision already makes.
+    if (unquote) {
+      const bare = tok.text.replace(/['"`]/g, " ");
+      if (bare !== tok.text) {
+        const nested = scan(bare, depth + 1, opts);
+        if (nested.blocked) return nested;
+      }
+    }
+    const eq = tok.text.indexOf("=");
+    if (eq > 0) {
+      const value = scan(tok.text.slice(eq + 1), depth + 1, opts);
+      if (value.blocked) return value;
+    }
+  }
+  return allow();
+}
+
+function gitArgumentsFallback(args, depth, opts) {
+  for (let j = 0; j < args.length; j += 1) {
+    if (commandWord(args[j]) !== "git") continue;
+    const verdict = evaluateGit(args.slice(j + 1), depth + 1, opts);
+    if (verdict.blocked) return verdict;
+  }
+  return scanArgumentsAsCommands(args, depth, opts);
+}
+
+/**
+ * The set of subcommands git itself recognises, asked of git rather than written
+ * down here -- a hardcoded list would go stale on the next git release, and this
+ * one is only ever consulted to decide whether a name COULD be an alias.
+ *
+ * git refuses to let an alias shadow an existing command, so a name git already
+ * knows cannot be one. Read from the payload's cwd, which is a repository this
+ * hook can always reach; it never depends on the relocated repository whose
+ * unreadability is the thing being guarded against.
+ *
+ * Fails closed: if git cannot be asked, nothing is known to be a real command, so
+ * every subcommand under an unresolvable repository blocks.
+ */
+let gitCommandNames;
+function isKnownGitCommand(name) {
+  if (gitCommandNames === undefined) {
+    const listed = git(baseCwd, ["--list-cmds=builtins,main,others"]);
+    gitCommandNames = listed === null
+      ? null
+      : new Set(listed.split("\n").map((n) => n.trim()).filter(Boolean));
+  }
+  return gitCommandNames === null ? false : gitCommandNames.has(name);
+}
+
+/**
+ * @param tailScan when false, this call judges its own command word and stops --
+ *   it does not re-scan its own argument suffixes. Only the OUTERMOST call of a
+ *   suffix sweep needs to iterate; letting each inner call sweep again made the
+ *   work 2^n. See the fallback at the bottom of this function.
+ */
+function evaluateSimpleCommand(tokens, depth, opts = {}, tailScan = true) {
   if (depth > MAX_DEPTH) return block("command nesting is too deep to resolve");
 
   // Leading VAR=value assignments are environment, not the command -- but a few of
@@ -576,9 +849,10 @@ function evaluateSimpleCommand(tokens, depth, opts = {}) {
     // the fallback below is.
     let k = 0;
     while (k < rest.length && rest[k].text.startsWith("-")) k += 1;
-    return evaluateSimpleCommand(rest.slice(k), depth + 1, next);
+    return evaluateSimpleCommand(rest.slice(k), depth + 1, next, tailScan);
   }
   if (word === "eval") {
+    if (rest.some((t) => t.dynamic)) return block("eval runs a command built at runtime, so its push destination is unknown");
     return scan(rest.map((t) => t.text).join(" "), depth + 1, next);
   }
   // NOTE the missing `return allow()` in both arms below. It was there, and it was
@@ -590,15 +864,58 @@ function evaluateSimpleCommand(tokens, depth, opts = {}) {
     // -c arrives in a cluster as often as alone: `bash -lc`, `sh -ec`, `zsh -fc`
     // all take the NEXT token as the script to run.
     const idx = rest.findIndex((t) => /^-[A-Za-z]*c[A-Za-z]*$/.test(t.text));
-    if (idx !== -1 && idx + 1 < rest.length) return scan(rest[idx + 1].text, depth + 1, next);
+    if (idx !== -1 && idx + 1 < rest.length) {
+      // A payload FOUND is not a payload READ. `bash -c "$CMD"` resolves to one
+      // dynamic token, and scanning it finds nothing -- so before this guard the
+      // arm returned allow for a script it could not see, while
+      // `git push origin $BRANCH` blocked for exactly the same reason.
+      if (rest[idx + 1].dynamic) return block(`${word} runs a script built at runtime, so its push destination is unknown`);
+      return scan(rest[idx + 1].text, depth + 1, next);
+    }
+    const unread = unreadInterpreterPayload(rest);
+    if (unread) return block(unread);
   } else if (POWERSHELLS.has(word)) {
     // PowerShell accepts any unambiguous prefix, so -Comm and -Co are -Command.
     for (let j = 0; j + 1 < rest.length; j += 1) {
       const flag = /^-([A-Za-z]+)$/.exec(rest[j].text);
       if (!flag) continue;
       const name = flag[1].toLowerCase();
-      if ("command".startsWith(name)) return scan(rest[j + 1].text, depth + 1, next);
+      if ("command".startsWith(name)) {
+        if (rest[j + 1].dynamic) return block("PowerShell runs a script built at runtime, so its push destination is unknown");
+        return scan(rest[j + 1].text, depth + 1, next);
+      }
     }
+    const unread = unreadInterpreterPayload(rest, { slashOptions: true });
+    if (unread) return block(unread);
+  }
+  if (SCRIPT_INTERPRETERS.has(word)) {
+    // A code-carrying option's payload must be READABLE, exactly as `bash -c`'s is:
+    // `node -e "$CODE"` is a script this hook cannot see and blocks.
+    //
+    // The dynamic rule is scoped to that option and NOT to every argument, which is
+    // the second attempt at this line. Applying it to every argument refused
+    // `node "$DIR"/script.mjs` -- a script FILE, which is the named indirection
+    // hole and is allowed for `bash "$DIR"/script.sh`, so refusing it for node was
+    // an inconsistency rather than a gate. It fired on this very session's own
+    // tooling, which is how it was caught.
+    const codeIdx = rest.findIndex((t) => /^--?(e|eval|c|p|print)$/i.test(t.text));
+    if (codeIdx !== -1 && codeIdx + 1 < rest.length && rest[codeIdx + 1].dynamic) {
+      return block(`${word} runs a script built at runtime, so its push destination is unknown`);
+    }
+    // ...and the same option with its value ATTACHED. `node -e"$CODE"` is one token,
+    // so the separate-token check above never sees it, and the unquote pass finds
+    // nothing in an expansion it cannot read. The shell arm already fails closed on
+    // the identical shape via unreadInterpreterPayload; this is that backstop for
+    // the interpreters, which have no equivalent. The short forms are matched with
+    // a required following character so `--experimental-vm-modules` -- which does
+    // begin "-", "-e" -- is not mistaken for one.
+    if (rest.some((t) => t.dynamic && (/^-(e|c|p)./.test(t.text) || /^--(eval|print)=/i.test(t.text)))) {
+      return block(`${word} runs a script built at runtime, so its push destination is unknown`);
+    }
+    // Every argument still judged as a script. `node script.js` resolves to a file
+    // this hook cannot read and stays allowed, exactly as `bash script.sh` does.
+    const verdict = scanArgumentsAsCommands(rest, depth, next, { unquote: true });
+    if (verdict.blocked) return verdict;
   }
   if (word === "xargs") {
     // xargs appends arguments from stdin this hook cannot see, so a push underneath
@@ -608,7 +925,7 @@ function evaluateSimpleCommand(tokens, depth, opts = {}) {
     // straight through while blocking the plain form.
     let k = 0;
     while (k < rest.length && rest[k].text.startsWith("-")) k += 1;
-    return evaluateSimpleCommand(rest.slice(k), depth + 1, { ...next, unknownSuffix: true });
+    return evaluateSimpleCommand(rest.slice(k), depth + 1, { ...next, unknownSuffix: true }, tailScan);
   }
   if (word === "git") return evaluateGit(rest, depth, next);
 
@@ -624,12 +941,62 @@ function evaluateSimpleCommand(tokens, depth, opts = {}) {
   // is refused. The quoted forms that matter are not: `echo "git push origin main"`
   // and `grep 'git push .* main' f` carry the phrase as a single token whose
   // command word is not `git`, so both stay allowed.
+  //
+  // Judging the TAIL rather than looking for a literal `git` is the round-3
+  // generalisation: a review found `timeout 300 sh -c '<push>'` allowed, because
+  // `timeout`'s own argument is not an option, so `300` landed in command position
+  // and the only thing the fallback then looked for was a bare `git` token. Every
+  // interpreter, wrapper and git call is reachable this way, and the `git` check is
+  // simply the case where the tail happens to start with `git`.
+  //
+  // TWO THINGS ABOUT THIS LOOP, both of which were defects first.
+  //
+  // The depth is NOT incremented. These suffixes are SIBLINGS, not nesting: each is
+  // the same command line read from a later starting point. Charging them against
+  // MAX_DEPTH made every unrecognised command word with four or more arguments
+  // exhaust the budget and block -- caught by the pinned case
+  // `timeout 300 git push origin --delete <branch>`, a feature-branch DELETE, the
+  // single form this whole rewrite exists to keep working. The nesting budget
+  // belongs to scan(), which is where a payload is genuinely entered.
+  //
+  // And the recursive calls pass tailScan=false, so only THIS loop sweeps. Without
+  // that, each inner call swept its own suffixes and the work was T(n) = 2^n: a
+  // 40-argument command took over 30 SECONDS and never returned. That is worse than
+  // any over-block, because this hook runs on every single Bash call -- it would
+  // have hung the session rather than refused a command. Nothing is lost by the
+  // flag: this loop already tries every start position, so an inner sweep could
+  // only redo work already scheduled. A nested WRAPPER chain still resolves,
+  // because the wrapper arms recurse on their own and carry the flag through.
+  if (!tailScan) return allow();
+  // The sweep carries context FORWARD, and the correction is worth recording. An
+  // earlier revision of the comment above claimed "nothing is lost by the flag",
+  // reasoning that this loop already visits every start position. That is true of
+  // token POSITIONS and false of opts: a construct at position i -- `xargs`, or a
+  // repository-relocating assignment -- makes every push to its RIGHT unresolvable,
+  // and an inner call that stops at tailScan=false never told the later positions.
+  // (Measured, and it was not a regression: `ls xargs zz git push origin` is
+  // allowed by the pre-change hook too, because its fallback only looked for a
+  // literal `git` token. The false claim was the defect; this closes the gap.)
+  let sweepOpts = next;
   for (let j = 0; j < rest.length; j += 1) {
-    if (commandWord(rest[j]) !== "git") continue;
-    const verdict = evaluateGit(rest.slice(j + 1), depth + 1, next);
+    const verdict = evaluateSimpleCommand(rest.slice(j), depth, sweepOpts, false);
     if (verdict.blocked) return verdict;
+    sweepOpts = contextAfter(rest[j], sweepOpts);
   }
   return allow();
+}
+
+/** Context a construct at one sweep position imposes on every position after it. */
+function contextAfter(tok, opts) {
+  if (commandWord(tok) === "xargs") return { ...opts, unknownSuffix: true };
+  const eq = tok.text.indexOf("=");
+  if (eq > 0) {
+    const name = tok.text.slice(0, eq);
+    if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(name) && ENV_RELOCATING.test(name)) {
+      return { ...opts, envReason: `${name} in the environment moves the repository or its config, so the push destination cannot be resolved here` };
+    }
+  }
+  return opts;
 }
 
 /**
@@ -692,11 +1059,26 @@ function evaluateGit(args, depth, { unknownSuffix = false, envReason = null } = 
   // arguments -- a far tighter scope than the whole command line the old matcher
   // read, and one that still refuses the push while leaving other git calls alone.
   if (unknownArity) {
-    return args.slice(i).some((t) => t.text === "push") ? block(unresolvable) : allow();
+    if (args.slice(i).some((t) => t.text === "push")) return block(unresolvable);
+    // The unreachable-alias rule lives at the bottom of this function, and this arm
+    // returns before reaching it -- so `git --attr-source=HEAD p origin main` (a
+    // real git global, with `alias.p = push`) was allowed by the very rule written
+    // to catch it. Same rule, applied here: the subcommand's position is unknown,
+    // so the first non-option token is the best candidate for it, and a candidate
+    // git does not recognise cannot be ruled out as a push alias.
+    const candidate = args.slice(i).find((t) => !t.text.startsWith("-"));
+    if (candidate && !isKnownGitCommand(candidate.dynamic ? "" : candidate.text)) return block(unresolvable);
+    return gitArgumentsFallback(args, depth, { unknownSuffix, envReason });
   }
 
   const sub = args[i];
-  if (!sub) return allow(); // bare `git`
+  // No subcommand: `git`, or `git --paginate`, or globals with nothing after them.
+  // This returned allow() outright, which was the one remaining arm of this function
+  // that decided without letting the fallback run -- the exact shape rounds 1 and 2
+  // both died on. No push is known to reach main this way, so this is closing the
+  // shape rather than a demonstrated hole; the fallback over an empty argument list
+  // is a no-op, so it costs nothing to be consistent here.
+  if (!sub) return gitArgumentsFallback(args, depth, { unknownSuffix, envReason });
   const rest = args.slice(i + 1);
 
   const ctx = {
@@ -705,6 +1087,13 @@ function evaluateGit(args, depth, { unknownSuffix = false, envReason = null } = 
     config: (key) => (overrides.has(key.toLowerCase())
       ? overrides.get(key.toLowerCase())
       : git(dir, ["config", "--get", key])),
+    // remote.<name>.push is multi-valued, and `--get` returns only the first, so a
+    // second configured refspec would be invisible. --get-all returns one per line.
+    configAll: (key) => {
+      if (overrides.has(key.toLowerCase())) return [overrides.get(key.toLowerCase())];
+      const out = git(dir, ["config", "--get-all", key]);
+      return out ? out.split("\n").map((v) => v.trim()).filter(Boolean) : [];
+    },
   };
 
   // An unresolved global/env is applied at each point a push is IDENTIFIED, not
@@ -712,7 +1101,6 @@ function evaluateGit(args, depth, { unknownSuffix = false, envReason = null } = 
   // (alias p = push) took the not-a-push branch and was allowed, because the
   // subcommand token is the alias name and never the literal "push".
   if (sub.text === "push") return unresolvable ? block(unresolvable) : evaluatePush(rest, ctx);
-  if (sub.dynamic) return allow(); // `git $CMD` -- named hole, see header
 
   // An alias can be a push wearing another name. Resolving it closes a hole the old
   // text matcher had too: `git p` never contained the string "git push".
@@ -725,20 +1113,45 @@ function evaluateGit(args, depth, { unknownSuffix = false, envReason = null } = 
   // (--git-dir, GIT_DIR), this lookup still reads the cwd's config, so an alias
   // defined ONLY in that other repository is not seen. A command-line alias is,
   // which is the form that can be written deliberately.
-  if (depth < MAX_DEPTH) {
+  if (!sub.dynamic && depth < MAX_DEPTH) {
     const alias = ctx.config(`alias.${sub.text}`);
     if (alias) {
       // Thread opts: dropping them here lost unknownSuffix and envReason at the
       // shell-alias boundary, so `xargs git <!alias>` fell through to default
       // resolution as though nothing were appended to it.
-      if (alias.startsWith("!")) return scan(alias.slice(1), depth + 1, { unknownSuffix, envReason: unresolvable });
+      if (alias.startsWith("!")) {
+        // git runs a shell alias as `sh -c '<alias> "$@"' <alias> <rest>`, so the
+        // caller's trailing arguments ARE appended. Dropping them meant
+        // `git shp main` with `alias.shp = "!git push origin"` was judged as
+        // `git push origin` -- default resolution on a feature branch, allowed --
+        // while really pushing main. Verified against a real bare remote. The
+        // non-shell alias path one line below already appends `rest`; the two
+        // paths simply disagreed.
+        const appended = [alias.slice(1), ...rest.map((t) => t.text)].join(" ");
+        return scan(appended, depth + 1, { unknownSuffix, envReason: unresolvable });
+      }
       const expanded = tokenize(alias)[0] ?? [];
       if (expanded.length && expanded[0].text === "push") {
         return unresolvable ? block(unresolvable) : evaluatePush([...expanded.slice(1), ...rest], ctx);
       }
     }
   }
-  return allow();
+
+  // The alias lookup above reads the config of the directory this hook can see.
+  // When a global or a GIT_* variable has moved the repository, the config that
+  // actually governs is one we cannot read, so an alias defined only THERE is
+  // invisible and `git p` is a push this hook never sees. Verified against a real
+  // bare remote: refs/heads/main moves and the hook says nothing.
+  //
+  // git will not let an alias shadow a command it already has, so a subcommand git
+  // recognises cannot be that alias -- which is what keeps `git -C "$DIR" log`
+  // allowed. Anything git does NOT recognise, under a repository we cannot read,
+  // is exactly the case that cannot be ruled out. A dynamic subcommand is never a
+  // name git knows, so it lands here too.
+  if (unresolvable && !isKnownGitCommand(sub.dynamic ? "" : sub.text)) return block(unresolvable);
+
+  // Not a push. Its arguments may still run one -- see gitArgumentsFallback.
+  return gitArgumentsFallback(args, depth, { unknownSuffix, envReason });
 }
 
 // ---------------------------------------------------------------------------

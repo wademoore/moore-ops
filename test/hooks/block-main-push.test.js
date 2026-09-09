@@ -78,11 +78,18 @@ function makeRepo({ head = 'main', config = {}, detach = false } = {}) {
   return dir;
 }
 
+// The timeout is load-bearing, not hygiene. Without it a mutant that makes the hook
+// non-terminating produces no verdict at all: the child never returns, the assertion
+// never runs, and the mutation harness HANGS rather than reporting the row red. A
+// hang is not a red, and a row that can only hang is a row that cannot fail. That is
+// not hypothetical -- the exponential-sweep mutation is exactly such a mutant.
+// 15s is ~200x the observed worst case (~75ms), so it cannot flake on a busy machine.
 function runHook(command, cwd) {
   const res = spawnSync(process.execPath, [HOOK], {
     input: JSON.stringify({ cwd, tool_input: { command } }),
     encoding: 'utf8',
-    cwd: REPO
+    cwd: REPO,
+    timeout: 15000
   });
   return { code: res.status, stderr: res.stderr || '' };
 }
@@ -109,7 +116,18 @@ const aliased = makeRepo({ config: { 'alias.p': 'push', 'alias.shp': '!git push 
 // A shell alias that names no destination. Under xargs the appended argument is
 // what makes it a push to main, so this only blocks if unknownSuffix survives the
 // shell-alias boundary -- the opts-threading gap found in round 2.
-const shellAlias = makeRepo({ head: 'feature', config: { 'alias.shp2': '!git push' } });
+const shellAlias = makeRepo({ head: 'feature', config: {
+  'alias.shp2': '!git push',
+  // git runs a shell alias as `sh -c '<alias> "$@"' <alias> <rest>`, so
+  // `git shp3 main` really pushes main. Verified against a real bare remote.
+  'alias.shp3': '!git push origin'
+} });
+// git consults remote.<name>.push BEFORE push.default, so these decide a
+// refspec-less push on their own. Both verified against a real bare remote:
+// refs/heads/main moved from a FEATURE branch while the hook said nothing.
+const remotePushMain = makeRepo({ head: 'feature', config: { 'remote.origin.push': 'refs/heads/main' } });
+const remotePushFeature = makeRepo({ head: 'feature', config: { 'remote.origin.push': 'refs/heads/feature' } });
+const remoteMirror = makeRepo({ head: 'feature', config: { 'remote.origin.mirror': 'true' } });
 const nothingDefault = makeRepo({ config: { 'push.default': 'nothing' } });
 const currentDefault = makeRepo({ head: 'feature', config: { 'push.default': 'current' } });
 // The remote-litter case in its sharpest form: the branch reached the remote and is no
@@ -260,11 +278,131 @@ const BLOCK_UNRESOLVABLE = [
   ['a value option with no value', 'git push -o', onToken],
 ];
 
+// A git subcommand that RUNS a command of its own. Each of these was refused by
+// the crude text matcher this hook replaced and allowed by the target-resolving
+// rewrite, so each is a regression guard, not merely a hole. Verified by pushing
+// to a real bare remote and watching refs/heads/main move -- `rebase --exec` and
+// `bisect run` both moved it, which is what makes this a class rather than a note.
+//
+// Every case runs on a FEATURE branch fixture, deliberately: on `onMain` a stray
+// default-push reading could produce the same verdict for the wrong reason, and
+// the case would prove nothing about the argument it is named for.
+const BLOCK_GIT_SUBCOMMAND_PAYLOAD = [
+  ['rebase --exec', `git rebase --exec 'git push origin main' HEAD~1`, onToken],
+  ['rebase -x, the short form', `git rebase -x 'git push origin main' HEAD~1`, onToken],
+  ['submodule foreach', `git submodule foreach 'git push origin main'`, onToken],
+  ['filter-branch --tree-filter', `git filter-branch --tree-filter 'git push origin main' HEAD`, onToken],
+  // Unquoted, so `git` is a token of its own rather than a whole command in one
+  // token. The two shapes take different passes of the fallback and a fix that
+  // handled only the quoted one would let this through.
+  ['bisect run, with the command unquoted', 'git bisect run git push origin main', onToken],
+  // Reached through a git GLOBAL rather than a subcommand argument: -c names a
+  // config key whose VALUE git executes. Covered by the same rule, which is the
+  // point -- nothing here enumerates which git arguments are commands.
+  ['-c sequence.editor names a command git runs', `git -c sequence.editor='git push origin main' rebase -i HEAD~1`, onToken],
+  ['-c core.pager names a command git runs', `git -c core.pager='git push origin main' log -1`, onToken],
+];
+
+// An interpreter's payload that this hook cannot read. Not a decoder and not an
+// option table: an option left over after the payload search is a payload we did
+// not read, and unresolvable blocks. -EncodedCommand is the form the PR parked,
+// but nothing here names it.
+const BLOCK_UNREAD_PAYLOAD = [
+  ['pwsh -EncodedCommand', 'pwsh -EncodedCommand ZwBpAHQAIABwAHUAcwBoAA==', onToken],
+  ['powershell.exe -EncodedCommand', 'powershell -EncodedCommand ZwBpAHQAIABwAHUAcwBoAA==', onToken],
+  // PowerShell accepts any unambiguous prefix, so naming only the long spelling
+  // would have left the abbreviations open. The rule never reads the name at all.
+  ['the -enc abbreviation', 'pwsh -enc ZwBpAHQAIABwAHUAcwBoAA==', onToken],
+  ['the -e abbreviation', 'pwsh -e ZwBpAHQAIABwAHUAcwBoAA==', onToken],
+  ['-File, whose script this hook never sees', 'pwsh -File /tmp/x.ps1', onToken],
+  ['-Command with no argument at all', 'pwsh -Command', onToken],
+  ['a shell reading its script from stdin', 'bash -s', onToken],
+  ['-c with no script following it', 'bash -c', onToken],
+];
+
+// A subcommand that git itself does not recognise, under a repository this hook
+// cannot read, cannot be ruled out as an alias for push -- and an alias defined
+// only in that repository is invisible here. Verified against a real bare remote:
+// refs/heads/main moved while the hook said nothing.
+const BLOCK_UNREACHABLE_ALIAS = [
+  ['an unknown subcommand under a relocated git dir', 'git --git-dir=/tmp/far/.git p origin main', onToken],
+  ['an unknown subcommand under GIT_DIR', 'GIT_DIR=/tmp/far/.git git p origin main', onToken],
+  ['an unknown subcommand under a runtime-built -C', 'git -C "$DIR" p origin main', onToken],
+  ['an unknown subcommand naming no destination', 'git --git-dir=/tmp/far/.git p', onToken],
+  ['a dynamic subcommand under a relocated git dir', 'git --git-dir=/tmp/far/.git $CMD', onToken],
+];
+
+// Found by an independent Reviewer pass over the three rules above, then verified
+// against a real bare remote before being treated as real. Every one of these was
+// refused by the crude text matcher (except the two dynamic-payload rows and the
+// alias rows, which it allowed too), so most are regressions in the same sense the
+// parked git-subcommand class was.
+const BLOCK_REVIEW_ROUND = [
+  // The interpreter rule was scoped to a hardcoded set of shells, so anything that
+  // runs a script as an ARGUMENT rather than as a shell command walked past it.
+  ['node -e', 'node -e "require(0)(\\"git push origin main\\")"', onToken],
+  ['python3 -c', 'python3 -c "import os; os.system(\'git push origin main\')"', onToken],
+  ['perl -e', 'perl -e "system(q(git push origin main))"', onToken],
+  ['ruby -e', 'ruby -e \'system("git push origin main")\'', onToken],
+  // A wrapper whose own argument is not an option leaves a non-command in command
+  // position, and the fallback only ever looked for a literal `git` token.
+  ['a wrapper with a positional argument, then a shell', 'timeout 300 sh -c "git push origin main"', onToken],
+  ['a listed wrapper with an option value, then a shell', 'sudo -u wade sh -c "git push origin main"', onToken],
+  // A payload FOUND is not a payload READ.
+  ['a shell payload built at runtime', 'bash -c "$CMD"', onToken],
+  ['a clustered shell payload built at runtime', 'bash -lc "$CMD"', onToken],
+  ['an eval payload built at runtime', 'eval "$CMD"', onToken],
+  ['a PowerShell payload built at runtime', 'pwsh -Command "$CMD"', onToken],
+  ['a node -e payload built at runtime', 'node -e "$CODE"', onToken],
+  ['a python3 -c payload built at runtime', 'python3 -c "$CODE"', onToken],
+  // The unreachable-alias rule lived below the unknown-arity arm, which returned
+  // first. `--attr-source` is a real git global that is not in either table.
+  ['an alias behind an unrecognised git global', 'git --attr-source=HEAD p origin main', onToken],
+  // git appends the caller's arguments to a `!` alias; the hook dropped them, so
+  // it judged `git push origin` and the real command was `git push origin main`.
+  ['a shell alias whose destination arrives as a trailing argument', 'git shp3 main', shellAlias],
+  // PowerShell's second option prefix. Untestable here (no pwsh in this sandbox),
+  // resolved in the blocking direction because under-blocking is the failure mode.
+  ['a slash-prefixed PowerShell option', 'pwsh /EncodedCommand ZwBpAHQA', onToken],
+];
+
+// Round 3 of review. The first two are the sharpest under-blocks found on this
+// branch: they reach main from a feature branch with NO variable, NO indirection
+// and NO wrapper -- the remote's own configuration decides the refspec, and the
+// resolver never read it. Both verified against a real bare remote.
+const BLOCK_REMOTE_CONFIG = [
+  ['remote.<name>.push, which git consults before push.default',
+    'git push origin', remotePushMain],
+  ['the same, with no remote named at all', 'git push', remotePushMain],
+  ['the same, with the remote given as --repo', 'git push --repo=origin', remotePushMain],
+  // The command-line --mirror is blocked unconditionally; the config spelling means
+  // exactly the same thing and was allowed. Same inconsistency shape as the above.
+  ['remote.<name>.mirror, the config spelling of --mirror', 'git push origin', remoteMirror],
+  // Two distinct guards, and each now has a case only IT covers -- the harness
+  // found them masking each other's mutation, so neither was provable.
+  ['a runtime-built remote given as --repo', 'git push --repo="$REMOTE"', onToken],
+  // The dynamic guard was applied to refspecs and not to the token one position
+  // earlier. `$@` expands to several words, so it can become `origin main`.
+  ['a runtime-built repository position', 'git push "$@"', onToken],
+  // An attached code option is one token, so the separate-token guard never sees it.
+  ['an attached interpreter code option built at runtime', 'node -e"$CODE"', onToken],
+  ['the same with an attached --eval', 'node --eval="$CODE"', onToken],
+  // Context established mid-sweep must reach the positions to its right.
+  ['xargs reached through a swept unrecognised word', 'ls xargs zz git push origin', onToken],
+  ['a relocating variable reached through a swept unrecognised word',
+    'ls GIT_DIR=/tmp/x zz git push origin', onToken],
+];
+
 for (const [group, cases] of [
   ['names main', BLOCK_NAMED],
   ['names no target', BLOCK_UNNAMED],
   ['reaches main indirectly', BLOCK_INDIRECT],
   ['cannot be resolved', BLOCK_UNRESOLVABLE],
+  ['is run by a git subcommand', BLOCK_GIT_SUBCOMMAND_PAYLOAD],
+  ['hides in a payload this hook cannot read', BLOCK_UNREAD_PAYLOAD],
+  ['hides behind an unreachable alias', BLOCK_UNREACHABLE_ALIAS],
+  ['was found by the round-3 review', BLOCK_REVIEW_ROUND],
+  ['is decided by the remote configuration', BLOCK_REMOTE_CONFIG],
 ]) {
   for (const [label, command, cwd] of cases) {
     test(`blocks (${group}): ${label}`, () => {
@@ -345,6 +483,62 @@ const ALLOW_ORDINARY = [
   ['a PowerShell abbreviation running a feature-branch push',
     `pwsh -Comm "git push origin ${TOKEN_BRANCH}"`, onToken],
   ['a shell alias naming no destination, on its own feature branch', 'git shp2', shellAlias],
+  // The other half of "a git subcommand can run a command". Judging every argument
+  // of a non-push git call only counts as a guard if it JUDGES rather than
+  // refuses: each of these carries a payload, and each payload is fine.
+  ['rebase --exec running something harmless', `git rebase --exec 'npm test' HEAD~1`, onToken],
+  ['rebase --exec pushing a feature branch', `git rebase --exec 'git push origin feature' HEAD~1`, onToken],
+  ['submodule foreach pushing a feature branch', `git submodule foreach 'git push origin ${TOKEN_BRANCH}'`, onToken],
+  ['bisect run on a script file this hook cannot read', 'git bisect run /tmp/pusher.sh', onToken],
+  ['-c naming a config value that is not a command', 'git -c core.editor=vim rebase -i HEAD~1', onToken],
+  ['ordinary subcommands with ordinary arguments', 'git rebase origin/main', onToken],
+  ['a commit with an ordinary message', 'git commit -m "fix the parser"', onToken],
+  ['submodule update, which runs nothing of ours', 'git submodule update --init --recursive', onToken],
+  ['bisect reset', 'git bisect reset', onToken],
+  // The boundary of the unreachable-alias rule. git refuses to let an alias shadow
+  // a command it already has, so a subcommand git KNOWS cannot be the hidden push
+  // -- which is the whole reason reads through a moved repository stay allowed.
+  // Without that distinction this rule would re-break the over-block the rewrite
+  // exists to remove, and these are the cases that would go red.
+  ['a known subcommand under a relocated git dir', 'git --git-dir=/tmp/far/.git cherry-pick abc123', onMain],
+  ['a known subcommand under GIT_DIR', 'GIT_DIR=/tmp/far/.git git worktree list', onMain],
+  ['a known subcommand under a runtime-built -C', 'git -C "$DIR" show HEAD --stat', onMain],
+  // An interpreter carrying no option carries no payload we failed to read. This
+  // is the named file-indirection hole, and it must stay an ALLOW rather than
+  // being swept up by the unread-payload rule.
+  ['a shell invoked on a script file, with no options', 'sh scripts/build.sh', onMain],
+  ['pwsh invoked bare', 'pwsh', onMain],
+  // The script-interpreter rule must judge a payload, not refuse every interpreter.
+  // These are the commands this repository actually runs; if the rule turned into a
+  // blanket block, running the suite would be the first casualty.
+  ['node running the test suite', 'node --test test/hooks/block-main-push.test.js', onMain],
+  ['node running a script file', 'node scripts/verify-push-hook-mutations.mjs', onMain],
+  // A script FILE named by a variable is the indirection hole, not a payload:
+  // `bash "$DIR"/x.sh` is allowed, so refusing the node spelling would be an
+  // inconsistency. Pinned because the first version of the rule did refuse it.
+  ['node running a script file named by a variable', 'node "$DIR"/differential.mjs a b', onMain],
+  ['python3 running a script file', 'python3 scripts/thing.py --flag value', onMain],
+  ['node -e with a harmless payload', `node -e "console.log(1)"`, onMain],
+  ['an interpreter payload pushing a feature branch', `node -e "run('git push origin feature')"`, onToken],
+  // The tail fallback must not turn a wrapper into a blanket block. The delete row
+  // is the one that matters: it is the live defect this whole rewrite exists to fix,
+  // and it has four trailing tokens, which is what exhausted the depth budget when
+  // the fallback charged sibling suffixes against MAX_DEPTH.
+  ['a wrapper with a positional argument, around a feature push',
+    `timeout 300 git push origin ${TOKEN_BRANCH}`, onToken],
+  ['a wrapper with a positional argument, around a feature delete',
+    `timeout 300 git push origin --delete ${TOKEN_BRANCH}`, onToken],
+  ['a wrapper with a positional argument, then a shell doing a feature push',
+    `timeout 300 sh -c "git push origin ${TOKEN_BRANCH}"`, onToken],
+  ['a long ordinary command under an unrecognised word', 'foo --a b --c d --e f -g h', onMain],
+  // The remote-config rule must JUDGE the configured refspec, not refuse every
+  // repository that has one. Without this the rule would be a blanket block and
+  // every project configuring a push refspec would be unable to push at all.
+  ['remote.<name>.push naming a feature branch', 'git push origin', remotePushFeature],
+  // A DYNAMIC token beginning "--e" is what discriminates here: the first version
+  // of this case used a static one, so the loosened pattern could not redden it.
+  ['a node long option that merely begins with a code letter',
+    'node --experimental-loader="$LOADER" --test x.js', onMain],
 ];
 
 // Option arity, isolated. Reading an option's value as a positional shifts the
@@ -414,6 +608,32 @@ test('payload: a non-Bash payload with no command is allowed', () => {
 
 test('payload: a whitespace-only command is allowed', () => {
   assert.equal(runHook('   \n  ', onMain).code, 0);
+});
+
+// A HANG IS WORSE THAN A WRONG VERDICT, and this hook runs on every Bash call, so
+// the cost of the suffix sweep is a correctness property rather than a nicety.
+//
+// The first version of that sweep let every inner call sweep its own suffixes too,
+// making the work T(n) = 2^n. A 40-argument command took over THIRTY SECONDS and
+// never returned -- it would have frozen the session rather than refused anything,
+// and no verdict-shaped assertion in this file could have caught it. Found by
+// stress-testing the recursion, not by review.
+//
+// The bound is deliberately loose. This asserts the difference between linear and
+// exponential, not a millisecond budget that would flake on a busy machine: at 2^n
+// the 40-argument case alone exceeds it by three orders of magnitude.
+test('performance: a long argument list does not blow up the suffix sweep', () => {
+  for (const n of [40, 120, 300]) {
+    const command = `foo ${Array.from({ length: n }, (_, i) => `a${i}`).join(' ')}`;
+    const started = Date.now();
+    const { code } = runHook(command, onMain);
+    const elapsed = Date.now() - started;
+    assert.equal(code, 0, `${n} plain arguments must be allowed`);
+    // code is null when the 15s runHook timeout killed the child, which is what a
+    // non-terminating sweep produces -- so the equality above is the real guard and
+    // this bound is the belt.
+    assert.ok(elapsed < 12000, `${n} arguments took ${elapsed}ms; the sweep is not linear`);
+  }
 });
 
 test('payload: with no cwd the hook still resolves against a real repository', () => {
