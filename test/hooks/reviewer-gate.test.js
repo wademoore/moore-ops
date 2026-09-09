@@ -330,7 +330,25 @@ test('releases: origin/main does not resolve (fail open, not a false assertion)'
   const repo = makeRepo({ commits: 2, withOriginMain: false });
   const { code, stderr } = gate(repo);
   assert.equal(code, 0);
-  assert.equal(stderr, '');
+  assert.equal(stderr, '', 'fail-open must not assert anything on stderr');
+});
+
+test('releases loudly: a gate that cannot evaluate says so instead of going quiet', () => {
+  const repo = makeRepo({ commits: 2, withOriginMain: false });
+  const { code, stdout } = gate(repo);
+  assert.equal(code, 0);
+  const out = JSON.parse(stdout.trim());
+  assert.equal(out.hookSpecificOutput.hookEventName, 'Stop');
+  assert.match(out.hookSpecificOutput.additionalContext, /did not evaluate/);
+  assert.match(out.hookSpecificOutput.additionalContext, /failing open/);
+});
+
+test('releases quietly: a repo with nothing to review emits no signal', () => {
+  // The signal is for "had commits, could not evaluate", not for every exit 0.
+  const repo = makeRepo({ commits: 0 });
+  const { code, stdout } = gate(repo);
+  assert.equal(code, 0);
+  assert.equal(stdout.trim(), '');
 });
 
 test('releases: a session id that could not name a record file is not used as a path', () => {
@@ -456,6 +474,58 @@ test('recorder: outside a git repository it writes nothing and does not throw', 
     agent_type: 'reviewer', last_assistant_message: 'REVIEW: PASS',
   }, outside);
   assert.equal(code, 0);
+});
+
+test('recorder: a BLOCKING finding stated early is not laundered by a clean tail', () => {
+  const repo = makeRepo({ commits: 1 });
+  // The shape that defeats a tail-only scan: the finding is up top, then a long
+  // per-item recap of passes fills the closing lines.
+  const body = [
+    'BLOCKING: item 1 wrote to an archived path.',
+    '', 'Detail follows.', '',
+  ].concat(Array.from({ length: 20 }, (_, i) => `Item ${i}: PASS, checked and clean.`));
+  recorder(repo, { last_assistant_message: body.join('\n') });
+  assert.equal(readRecord(repo).verdict, 'fail');
+});
+
+test('recorder: "BLOCKING - none" reads as a pass (negation after the label)', () => {
+  const repo = makeRepo({ commits: 1 });
+  recorder(repo, { last_assistant_message: '### BLOCKING - none.\n\nPASS. 2 SHOULD FIX.' });
+  assert.equal(readRecord(repo).verdict, 'pass');
+});
+
+test('recorder: "Zero BLOCKING findings" reads as a pass (negation before the label)', () => {
+  const repo = makeRepo({ commits: 1 });
+  recorder(repo, { last_assistant_message: 'Zero BLOCKING findings.\n\nPASS.' });
+  assert.equal(readRecord(repo).verdict, 'pass');
+});
+
+test('recorder: checklist boilerplate about blocking does not force a fail', () => {
+  const repo = makeRepo({ commits: 1 });
+  // Both phrases paraphrase .claude/agents/reviewer.md. A fail scan matching the
+  // bare word "block" would fail every review on its own boilerplate.
+  recorder(repo, {
+    last_assistant_message: [
+      'Item 1: an archived path is an automatic BLOCK. None present.',
+      'Item 7: pushing to the default branch is blocked by policy and by hook.',
+      '',
+      'PASS.',
+    ].join('\n'),
+  });
+  assert.equal(readRecord(repo).verdict, 'pass');
+});
+
+test('recorder: an absent agent_type records nothing', () => {
+  const repo = makeRepo({ commits: 1 });
+  // agent_type is required on SubagentStop, so its absence means this is not a
+  // payload we understand. Recording a verdict for an unidentified agent would be
+  // a fail-open in the one guard that exists as defence in depth.
+  const { code } = runHook(RECORDER, {
+    session_id: SESSION, cwd: repo.dir, hook_event_name: 'SubagentStop',
+    last_assistant_message: 'REVIEW: PASS',
+  }, repo.dir);
+  assert.equal(code, 0);
+  assert.equal(readRecord(repo), null);
 });
 
 // ---------------------------------------------------------------------------

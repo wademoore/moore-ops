@@ -50,9 +50,20 @@ Nothing else changes:
 * **No deny-rule change is needed.** `.claude/settings.json` already denies
   `Edit(.claude/hooks/**)` and `Write(.claude/hooks/**)`, so both new scripts
   inherit that protection the moment they land in that directory.
-* **No agent-file change is needed.** `reviewer.md` is untouched. The gate reads the
-  verdict out of the Reviewer's final message; it does not require the Reviewer to
-  be told anything new.
+* **No agent-file change is *required*, but one is strongly recommended.** The gate
+  reads the verdict out of the Reviewer's final message and works with the existing
+  free-form convention. But the free-form path is a heuristic, and the exact path is
+  only reachable if the Reviewer actually emits the sentinel. To make verdicts
+  deterministic, append this to `.claude/agents/reviewer.md`:
+
+  ```
+  8. VERDICT LINE. After the pass/fail summary, emit a final line that is exactly
+     `REVIEW: PASS` or `REVIEW: FAIL` and nothing else. A Stop hook reads it.
+  ```
+
+  Without it every real verdict is classified by the tail heuristic below — which
+  is biased toward `fail` and so cannot wave work through, but can withhold a pass
+  it should have granted. **This is the single highest-value optional step here.**
 * **`package.json` is untouched.** The test file is already inside the suite's globs.
 
 Claude Code hot-reloads an edited `settings.json` mid-session, so the hooks take
@@ -138,11 +149,20 @@ Two tiers:
 1. **Explicit sentinel**, exact: a line containing `REVIEW: PASS`, `REVIEWER
    VERDICT: FAIL`, or any of that shape. Last match wins. **This is the reliable
    form** — if you want the gate to be deterministic, have the Reviewer end with it.
-2. **Tail heuristic**, best effort: the last 15 non-empty lines are scanned for pass
-   and fail tokens, and a pass is recorded only when a pass token is present and no
-   fail token is. Negated forms — "no BLOCKING findings", "zero blocking issues" —
-   are stripped first, because that is the Reviewer's most natural way of reporting
-   a clean run and without the strip the gate could never be satisfied.
+2. **Tail heuristic**, best effort, scanned in **two scopes**:
+   * `BLOCKING` — the project's severity label — is scanned over the **whole
+     message**. A review that states a blocking finding early and then closes with a
+     long per-item recap of passes presents a clean tail, and a tail-only scan would
+     record that as a pass.
+   * `FAIL` / `REJECTED` / `BLOCKING` and the pass tokens are scanned over the **last
+     15 non-empty lines**, where the summary lives.
+
+   Negation is stripped first, in **both directions** — "no BLOCKING findings" and
+   "BLOCKING — none" are each how a clean run is normally reported, and without the
+   strip the gate could never be satisfied. Neither scan matches the bare word
+   `block`: "an automatic BLOCK" and "blocked by policy" are quoted from the
+   Reviewer's own checklist, so matching them would fail every review that recites
+   what it checked.
 
 Tier 2 resolves every ambiguity toward `fail`. It can withhold a pass it should have
 granted; it cannot grant one it should have withheld.
@@ -172,6 +192,24 @@ supersedes the previous verdict in both directions.
   archived-files hook.
 * **It does not look at uncommitted or unpushed work.** That is the container Stop
   hook's job and duplicating it would be noise. This hook checks one condition.
+* **The record is forgeable, and this is an accident gate rather than an adversary
+  gate.** The gate reads `.git/moore-ops-review-gate/<session_id>.json`, which any
+  Bash-capable agent can write directly; the session id is discoverable, since
+  transcript filenames are `<session_id>.jsonl`. Nothing here defends against a model
+  or human that means to get around it, exactly as the archived-files hook does not.
+  What it stops is the ordinary way review gets skipped: forgetting. Named here
+  rather than implied, per this project's own convention.
+* **"Mandatory" means one blocking shot per stop cycle, not an inescapable gate.**
+  Honouring `stop_hook_active` is what the spec asked for and what keeps the turn
+  from wedging, but it does mean a determined model that simply stops again ends the
+  turn. See the loop guard section.
+* **The override is session-wide and retroactive.** The transcript is scanned whole,
+  so one utterance releases every subsequent stop in that session. There is no
+  per-turn form.
+* **The override's "is this a human?" test is version-coupled.** It rests on "genuine
+  human prompt ⇔ `type: "user"` + non-sidechain + string content", verified against
+  real transcripts on Claude Code 2.1.266. A future feature that writes a user-type
+  string entry on the model's behalf would defeat it silently.
 * **Claude Code caps consecutive Stop-hook blocks** and overrides the hook after a
   few, with a note to the user. The loop guard means that cap should not be reached
   in normal operation; the override phrase is the intended escape.
@@ -180,13 +218,26 @@ supersedes the previous verdict in both directions.
 
 ## Tests
 
-`test/hooks/reviewer-gate.test.js` — 41 cases, inside the normal `npm test` globs.
+`test/hooks/reviewer-gate.test.js` — 48 cases, inside the normal `npm test` globs.
 Each spawns the real script with a real hook payload against a real throwaway git
 repository and asserts the exit code, so it tests the shipped scripts rather than a
 copy of their logic.
 
-`node scratch/reviewer-gate/mutation-check.mjs` — 15 mutations. Each removes exactly
+`node scratch/reviewer-gate/mutation-check.mjs` — 21 mutations. Each removes exactly
 one deliberate decision from the hooks, runs that same test file against the damaged
-copy, and must go red **in the cases that name that decision**. Each patch asserts it
-applied exactly once, because a mutation that silently failed to apply would run the
-pristine hooks and report green as "the guard has teeth". Result: 15/15 proven.
+copy, and must go red **in the cases that name that decision**. Result: 21/21 proven,
+with a green control row.
+
+Three properties make the table mean something rather than merely look green:
+
+* **each patch asserts it applied exactly once** — a silently-unapplied mutation
+  would run the pristine hooks and report green as "the guard has teeth" (this fired
+  for real: three anchors went stale during a rewrite and the harness refused them);
+* **at least one test must survive** — pass count zero means the mutation broke
+  parseability rather than behaviour;
+* **failures must stay within a blast radius of 6** — a mutation that reddens the
+  file proves nothing attributable to one guard. This is the check that actually
+  catches a dangling-`else` syntax error: 18 tests still *pass* in that case, because
+  the syntax error is in the hook rather than in the test file, so a survivor count
+  alone would wave it through. Verified by deliberately introducing that mutation and
+  observing the row report `HOLLOW`.

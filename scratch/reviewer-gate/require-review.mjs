@@ -24,7 +24,11 @@
 //
 //   Not a git repo, unresolvable origin/main, merge-base failure, rev-list
 //   failure, git missing from PATH, unreadable transcript
-//                        -> FAIL OPEN. None of these say anything about whether a
+//                        -> FAIL OPEN, but not silently: where the gate had commits
+//                           to consider and could not evaluate them it reports the
+//                           reason through non-blocking additionalContext, because a
+//                           gate that stops gating with no output is worse than no
+//                           gate. None of these say anything about whether a
 //                           review happened, and blocking on them would repeat the
 //                           container Stop hook's bug: `if ! git diff --quiet` treats
 //                           git's error status (>1) as identical to its "differences
@@ -116,6 +120,25 @@ function git(args) {
   }
 }
 
+/**
+ * Fail open, but never silently. A gate that stops gating with no output is the
+ * failure mode this project keeps re-learning ("a silently skipped test is exactly
+ * how a frozen surface rots with no signal"). Stop supports non-error
+ * additionalContext, so the direction stays OPEN while the fact is still reported.
+ * Used only where the gate had commits to consider and could not evaluate them --
+ * not for "this is not a repo", where there is nothing to consider in the first
+ * place, and not for a malformed payload, which would spam on any junk input.
+ */
+function bailOpen(reason) {
+  process.stdout.write(`${JSON.stringify({
+    hookSpecificOutput: {
+      hookEventName: 'Stop',
+      additionalContext: `Reviewer gate did not evaluate: ${reason}. It is failing open, so nothing is being enforced this turn.`,
+    },
+  })}\n`);
+  process.exit(0);
+}
+
 /** true / false / null(=error). The three-way answer the container hook collapses. */
 function isAncestor(a, b) {
   try {
@@ -167,7 +190,7 @@ if (sessionId && /^[A-Za-z0-9._-]+$/.test(sessionId)) {
       // Both operands are known commits, so a non-zero status other than 1 is a
       // genuine git failure and nothing else. Only now is failing open correct.
       const anc = isAncestor(record.sha, head);
-      if (anc === null) process.exit(0);   // git error: fail open
+      if (anc === null) bailOpen('git could not compare the reviewed commit with HEAD');
       if (anc === true) reviewedSha = record.sha;
       else recordNote = `the reviewed commit ${record.sha.slice(0, 7)} is not an ancestor of HEAD (rebased, amended, or from another branch)`;
     }
@@ -179,15 +202,17 @@ if (sessionId && /^[A-Za-z0-9._-]+$/.test(sessionId)) {
 let base = reviewedSha;
 if (!base) {
   // No coverage. Everything this branch adds past its base is unreviewed.
-  if (git(['rev-parse', '--verify', '--quiet', `${BASE_REF}^{commit}`]) === null) process.exit(0);
+  if (git(['rev-parse', '--verify', '--quiet', `${BASE_REF}^{commit}`]) === null) {
+    bailOpen(`${BASE_REF} does not resolve here, so there is no base to measure against`);
+  }
   base = git(['merge-base', 'HEAD', BASE_REF]);
-  if (!base) process.exit(0); // unrelated histories or git error: fail open
+  if (!base) bailOpen(`HEAD and ${BASE_REF} have no common ancestor`);
 }
 
 if (base === head) process.exit(0);
 
 const countRaw = git(['rev-list', '--count', `${base}..HEAD`]);
-if (countRaw === null || !/^\d+$/.test(countRaw)) process.exit(0); // git error: fail open
+if (countRaw === null || !/^\d+$/.test(countRaw)) bailOpen('git could not count the commits past the base'); // git error: fail open
 
 const count = Number(countRaw);
 if (count === 0) process.exit(0);

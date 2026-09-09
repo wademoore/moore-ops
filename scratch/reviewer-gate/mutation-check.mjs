@@ -20,6 +20,10 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, '..', '..');
 const TEST = join(REPO, 'test', 'hooks', 'reviewer-gate.test.js');
 
+// A guard worth having is narrow. Every mutation below should redden a handful of
+// named cases, not the file; anything wider is not attributable to one decision.
+const MAX_BLAST_RADIUS = 6;
+
 const GATE = 'require-review.mjs';
 const REC = 'record-review-verdict.mjs';
 
@@ -72,12 +76,13 @@ const MUTATIONS = [
     ['not a git repository']],
 
   ['recorder resolves ambiguity toward pass', REC,
-    "return hasPass && !hasFail ? 'pass' : 'fail';", "return hasPass ? 'pass' : 'fail';",
+    "return PASS_TOKEN.test(tail) && !hasFail && !FAIL_TOKEN.test(tail) ? 'pass' : 'fail';",
+    "return PASS_TOKEN.test(tail) ? 'pass' : 'fail';",
     ['ambiguous summary']],
 
-  ['recorder drops negated-blocking handling', REC,
-    '.replace(NEGATED_BLOCKING, \' \')', '',
-    ['no BLOCKING findings']],
+  ['recorder drops before-the-label negation', REC,
+    '.replace(NEGATED_BEFORE, \' \')', '',
+    ['no BLOCKING findings', 'negation before the label']],
 
   ['recorder records an undeterminable verdict as a pass', REC,
     "if (typeof text !== 'string' || !text.trim()) return 'unknown';",
@@ -85,8 +90,37 @@ const MUTATIONS = [
     ['records "unknown"']],
 
   ['recorder drops the agent_type guard', REC,
-    "if (agentType && agentType !== 'reviewer') process.exit(0);", '',
+    "if (agentType !== 'reviewer') process.exit(0);", '',
     ['non-reviewer subagent']],
+
+  ['recorder scans only the tail for a blocking finding', REC,
+    'const hasFail = BLOCKING_FINDING.test(stripped);',
+    'const hasFail = false;',
+    ['laundered by a clean tail']],
+
+  ['recorder drops after-the-label negation', REC,
+    '.replace(NEGATED_AFTER, \' \')', '',
+    ['negation after the label']],
+
+  ['recorder fail scan matches the bare word "block"', REC,
+    'const FAIL_TOKEN = /\\b(?:FAIL(?:ED|S|URE)?|BLOCKING|REJECTED?)\\b/i;',
+    'const FAIL_TOKEN = /\\b(?:FAIL(?:ED|S|URE)?|BLOCK(?:ING|ED|S)?|REJECTED?)\\b/i;',
+    ['checklist boilerplate']],
+
+  ['recorder records for an unidentified agent', REC,
+    "if (agentType !== 'reviewer') process.exit(0);",
+    "if (agentType && agentType !== 'reviewer') process.exit(0);",
+    ['absent agent_type']],
+
+  ['gate self-disables silently', GATE,
+    "    bailOpen(`${BASE_REF} does not resolve here, so there is no base to measure against`);",
+    '    process.exit(0);',
+    ['says so instead of going quiet']],
+
+  ['gate signals on every release, drowning the real one', GATE,
+    'if (base === head) process.exit(0);',
+    "if (base === head) bailOpen('nothing to do');",
+    ['emits no signal']],
 
   ['recorder is allowed to block', REC,
     '}\n\nprocess.exit(0);\n', '}\n\nprocess.exit(2);\n',
@@ -134,9 +168,24 @@ for (const [name, file, find, replace, expect] of MUTATIONS) {
     const r = runSuite(dir);
     const joined = r.failedNames.join(' | ');
     const missed = expect.filter((e) => !joined.includes(e));
-    const ok = r.fail > 0 && missed.length === 0;
+
+    // A mutation that broke PARSEABILITY rather than behaviour reddens everything,
+    // the expected names appear among the wreckage, and the row would print "as
+    // expected" while proving nothing about the guard. Requiring survivors makes
+    // that a property of the harness instead of a thing the author has to
+    // remember: a syntax error leaves pass === 0, and a mutation that reddens the
+    // whole suite is reported as too broad to attribute to one guard.
+    const survivors = r.pass > 0;
+    const targeted = r.fail <= MAX_BLAST_RADIUS;
+    const ok = r.fail > 0 && missed.length === 0 && survivors && targeted;
     if (!ok) harnessOk = false;
-    row = [name, r.pass, r.fail, ok ? `RED (${r.fail}) as expected` : `UNPROVEN: missing ${missed.join(', ') || '(no failures at all)'}`];
+
+    let why = `RED (${r.fail}) as expected`;
+    if (!survivors) why = 'HOLLOW: no test survived (syntax error, not behaviour)';
+    else if (!targeted) why = `HOLLOW: ${r.fail} failures exceeds the blast radius`;
+    else if (missed.length) why = `UNPROVEN: missing ${missed.join(', ')}`;
+    else if (r.fail === 0) why = 'UNPROVEN: no failures at all';
+    row = [name, r.pass, r.fail, why];
   } catch (err) {
     harnessOk = false;
     row = [name, '-', '-', `HARNESS ERROR: ${err.message}`];

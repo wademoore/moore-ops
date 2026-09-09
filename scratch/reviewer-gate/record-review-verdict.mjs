@@ -54,8 +54,14 @@ try {
 }
 
 // Guard first: bail on anything that is not a reviewer conclusion.
+// agent_type is REQUIRED on SubagentStop (agent_type:s(), not .optional() -- the
+// optional form belongs to SubagentStart), so an absent value means this is not a
+// payload we understand and we record nothing. Strict rather than permissive: a
+// recorder that writes a verdict for an unidentified agent is a fail-OPEN in a
+// guard whose whole job is defence in depth. Recording nothing is fail-CLOSED and
+// recoverable -- the gate blocks and the override releases it.
 const agentType = String(payload?.agent_type ?? '').toLowerCase().split(':').pop();
-if (agentType && agentType !== 'reviewer') process.exit(0);
+if (agentType !== 'reviewer') process.exit(0);
 
 const sessionId = typeof payload?.session_id === 'string' ? payload.session_id : '';
 if (!sessionId) process.exit(0);
@@ -90,11 +96,27 @@ if (!gitDir || !head) process.exit(0);
 // should have granted but can never grant one it should have withheld.
 
 const SENTINEL = /\bREVIEW(?:ER)?(?:\s+VERDICT)?\s*[:=–—-]\s*\**\s*(PASS|FAIL)\b/gi;
-// "no BLOCKING findings" is a pass, not a fail. Strip negated forms before the
-// fail scan, or the Reviewer's most natural way of reporting a clean run reads
-// as a failure and the gate can never be satisfied.
-const NEGATED_BLOCKING = /\b(?:no|zero|none|without|non|0)\b[\s,'"()-]*(?:\w+[\s,'"()-]+){0,3}?blocking\b/gi;
-const FAIL_TOKEN = /\b(?:FAIL(?:ED|S|URE)?|BLOCK(?:ING|ED|S)?|REJECTED?)\b/i;
+
+// "no BLOCKING findings" and "BLOCKING - none" are both passes, not fails, and
+// they are the Reviewer's two most natural ways of reporting a clean run. Both
+// directions of negation are stripped before any fail scan; without this the gate
+// could never be satisfied by a clean review.
+const NEGATED_BEFORE = /\b(?:no|zero|none|without|non|0)\b[\s,'"()*_-]*(?:\w+[\s,'"()*_-]+){0,3}?blocking\b/gi;
+const NEGATED_AFTER = /\bblocking\b(?:\s+\w+){0,2}?\s*[:=–—-]+\s*(?:none|zero|nil|0)\b/gi;
+
+// Scanned over the WHOLE message. BLOCKING is this project's severity label, so
+// an un-negated occurrence anywhere is a reported blocking finding wherever it
+// sits. Deliberately NOT the bare word "block": the Reviewer checklist itself
+// says "an automatic BLOCK" and "blocked by policy", and matching those would
+// fail every review on its own boilerplate.
+const BLOCKING_FINDING = /\bBLOCKING\b/i;
+
+// Scanned over the tail only, where the summary lives. Adds the words that read
+// as a verdict in a closing line. Like BLOCKING_FINDING it excludes the bare word
+// "block": "an automatic BLOCK" and "blocked by policy" are both quoted from the
+// Reviewer's own checklist, so matching them would fail every review that recites
+// what it checked -- which is the one thing the checklist asks the Reviewer to do.
+const FAIL_TOKEN = /\b(?:FAIL(?:ED|S|URE)?|BLOCKING|REJECTED?)\b/i;
 const PASS_TOKEN = /\b(?:PASS(?:ED|ES)?|APPROVED?)\b/i;
 const TAIL_LINES = 15;
 
@@ -106,18 +128,21 @@ function classify(text) {
   for (const m of text.matchAll(SENTINEL)) sentinel = m[1].toLowerCase();
   if (sentinel) return sentinel;
 
-  // Tier 2: tail heuristic.
-  const tail = text
+  // Tier 2. The fail scan is split across two scopes on purpose. A review that
+  // states a BLOCKING finding early and then closes with a long per-item recap of
+  // passes presents a clean tail, and a tail-only scan would record that as a
+  // pass -- the one direction this heuristic must never fail in.
+  const stripped = text.replace(NEGATED_BEFORE, ' ').replace(NEGATED_AFTER, ' ');
+  const hasFail = BLOCKING_FINDING.test(stripped);
+
+  const tail = stripped
     .split(/\r?\n/)
     .map((l) => l.trim())
     .filter(Boolean)
     .slice(-TAIL_LINES)
-    .join('\n')
-    .replace(NEGATED_BLOCKING, ' ');
+    .join('\n');
 
-  const hasFail = FAIL_TOKEN.test(tail);
-  const hasPass = PASS_TOKEN.test(tail);
-  return hasPass && !hasFail ? 'pass' : 'fail';
+  return PASS_TOKEN.test(tail) && !hasFail && !FAIL_TOKEN.test(tail) ? 'pass' : 'fail';
 }
 
 let text = typeof payload?.last_assistant_message === 'string' ? payload.last_assistant_message : '';
