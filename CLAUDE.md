@@ -121,8 +121,9 @@ longer is, and it is no longer possible by accident. Three layers stand between 
   GitHub API included;
 - **`permissions.deny` in `.claude/settings.json`** — the four `Bash(git push … main)` rules;
 - **`.claude/hooks/block-main-push.mjs`** — a `PreToolUse` hook on `Bash|PowerShell` that
-  refuses any `git push` while `main` is checked out, or whose command text contains the
-  word `main`.
+  parses the command, finds real `git push` invocations, and refuses any whose destination
+  **resolves** to `main`. Rewritten Sept 9, 2026; see "The push hook matches the resolved
+  target" below for what it now covers and what it deliberately does not.
 
 The Reviewer gate is unchanged in substance and moved in position: Reviewer sign-off is still
 required before the pull request is merged (open it, or mark it ready, only after the pass),
@@ -131,12 +132,57 @@ not a pushed `main`. Pushing a feature branch is not a delivery; merging is. CI 
 pull request, so the "free independent confirmation under UTC" that used to be the argument
 for escalating to a branch is now part of every change rather than a special case.
 
-**Known over-block in the push hook, accepted deliberately.** It matches `\bmain\b` anywhere
-in the command text whenever `git push` also appears, so a compound command that merely
-*mentions* `main` is refused: a heredoc quoting the deny rules above, `git log
-origin/main..HEAD && git push -u origin feature`, or a push of a branch named `fix-main-menu`.
-Confirmed live on Sept 7, 2026 (the heredoc case, while writing `settings.json`). Split the
-command instead of weakening the hook — a false block is recoverable.
+**The push hook matches the resolved target, not the command text (Sept 9, 2026).** This
+paragraph used to describe a deliberate over-block: the hook matched `\bmain\b` anywhere in
+the command text whenever `git push` also appeared, and the advice was "split the command
+instead of weakening the hook — a false block is recoverable." That advice was wrong about
+its own premise, and three consequences were confirmed live rather than argued:
+
+| form | old | now |
+|---|---|---|
+| `git push -u origin claude/push-main-hook-targets-kawlik` | refused | allowed |
+| `git push origin --delete <that branch>` (and `-d`, and `:<branch>`) | refused | allowed |
+| `grep -n 'git push .* main' CLAUDE.md`, `echo "never git push origin main"` | refused | allowed |
+
+The delete row is the one that mattered. A blocked push has a workaround — rename the branch,
+split the command — but a branch that already reached the remote and cannot be deleted by any
+command form leaves remote litter no agent can clear. "A false block is recoverable" was the
+load-bearing claim, and it was false for that case.
+
+**Matching the text was also under-blocking, which is the part nobody had noticed.** The new
+behavioural matrix was run against the old hook as a control: **51 of 118 cases fail**, and
+21 of those are forms the old hook *allowed* — `git push --all`, `--mirror`, a wildcard
+refspec, a bare `git push` under `push.default=matching` or under `push.default=upstream` on a
+branch whose upstream is `main`, a `git` alias expanding to `push`, and every unresolvable
+form. Each of those reaches `main` while naming no target at all, so a matcher reading the
+command text for the word could not see any of them. Both empirically verified against real
+pushes to a local bare remote, not inferred from documentation.
+
+**What the hook now does.** It tokenizes the command quote-aware, splits it into simple
+commands, and treats a push as a push only in *command position* — so `grep 'git push …'`
+carries the phrase as an argument and is not an invocation. It honours `git -C` and
+`git -c k=v`, parses the full `git push` option table with correct arity, and resolves each
+refspec's destination; a refspec-less push is resolved from `push.default`, the current
+branch and `branch.<name>.merge`. `eval`, `sh -c`/`bash -c`, `pwsh -Command`, `xargs`,
+command substitutions, `sudo`/`env`-style wrappers and git aliases are re-scanned rather than
+waved through.
+
+**Resolution failure is always a block.** Unknown option, unknown `push.default`, unreadable
+HEAD, a `$VAR` destination, a wildcard, a repo-relocating global — each refuses. The single
+deliberate fail-*open* is a malformed hook payload, the house convention `guard-readonly.mjs`
+documents at the same call site: this hook runs on every Bash call, so exiting 2 on our own
+parse error would freeze the main thread with recovery blocked behind a deny-listed file.
+
+**Over-blocks that remain, deliberately.** A heredoc body line that *itself* parses as a push
+to `main` is still refused — heredocs get no special treatment, and that is what keeps
+`bash <<'EOF'` closed. Writing a file whose content quotes such a command still needs the
+`Edit`/`Write` tool rather than a heredoc; that was hit live while writing this change's own
+tests. Also blocked: pushing a ref named `main` to *any* remote, and a src-only refspec naming
+a branch that does not exist locally (git would refuse it anyway).
+
+Every one of these decisions is proved by mutation rather than asserted —
+`node scripts/verify-push-hook-mutations.mjs`, 35 mutations, each required to redden the
+cases that name it. See "Test matrix" below.
 
 ## The gate (`.claude/settings.json` + `.claude/hooks/*.mjs`)
 
@@ -238,8 +284,11 @@ form — that is the whole reason this section names a version number.
 Bare `git push` is deliberately left allowed. Blocking it would require an exact-match
 rule on `git push`, which would also block a bare `git push` on a feature branch — the
 exact over-block that got the original rule removed. (`block-main-push.mjs` closes that
-hole from the other side: it asks git which branch is checked out, so a bare `git push`
-on `main` is refused by the hook even though no deny rule matches it.) This is an
+hole from the other side: it resolves where a refspec-less push would land — from
+`push.default`, the checked-out branch and that branch's configured upstream — so a bare
+`git push` on `main` is refused by the hook even though no deny rule matches it, and so is
+a bare `git push` from a *feature* branch whose upstream is `main`, which no rule reading
+the command text could ever see.) This is an
 **accident gate, not an adversary gate**, the same standing this project gives the
 archived-files hook: it stops the ways `main` actually gets pushed by mistake, not anyone
 who means it. The real enforcement remains branch protection on `main`.
@@ -414,7 +463,27 @@ file runs unchanged on Windows) with a real PreToolUse payload on stdin and asse
 exit code (2 = blocked, 0 = allowed), so it tests the shipped script, not a copy of its
 logic.
 
-`test/hooks/enforcement-wiring.test.js` (**6 tests**) is the companion tripwire: it reads
+`test/hooks/block-main-push.test.js` (**118 tests**) is the same standard applied to the push
+hook, and until Sept 9, 2026 it did not exist — `enforcement-wiring.test.js` proved that hook
+was *wired* and nothing proved what it *decided*. That gap is exactly how three defects
+reached a live session. Cases spawn the real hook against real throwaway git repositories and
+assert the exit code, in both directions: every form that resolves to `main` refused (the ones
+naming no target included), and feature-branch pushes, feature-branch **deletes** and pure
+reads allowed. Run against the pre-rewrite hook as a control it reports **51 of 118 failing**,
+21 of them under-blocks.
+
+`BLOCK_MAIN_PUSH_HOOK` exists only so `scripts/verify-push-hook-mutations.mjs` can point that
+file at a damaged copy; no production caller sets it. That harness is **not** part of
+`npm test` — it spawns the whole matrix once per mutation. It runs **35 mutations**, each
+required to redden the cases that name it *specifically*, plus a green control and two
+self-tests that prove its own hollow-mutation and syntax-error checks are live. Three of its
+rows carry an explicit note that a case which looks like proof is not: `$BRANCH`, `ma"in"` and
+a single-quoted `'main'` all still block through the ref-resolution guard, so crediting the
+dynamic-refspec or quoting decisions for those blocks would be false confidence. The harness
+also found a real over-block — an unresolvable `git` *global* was blocking before the
+subcommand was known, so `git -C "$DIR" log` was refused — by refusing its own diagnostic.
+
+`test/hooks/enforcement-wiring.test.js` (**7 tests**) is the companion tripwire: it reads
 the shipped `settings.json` and agent files and asserts the guard is actually *wired* —
 matcher reaching `Edit`, `Write`, `Bash` and `PowerShell`, exec form, no BOM on any
 enforcement file, the reviewer/debugger frontmatter hooks present with the right role
@@ -541,7 +610,9 @@ edits of it. Probed against the live script:
 | Bash `grep '<literal>' CLAUDE.md` | **allowed** — `grep` is not a listed utility |
 | Bash `sed -i 's|<literal>|...|' CLAUDE.md` | **BLOCKED** by rule (c) |
 | Bash `python3`/`node`/`perl` rewriting `CLAUDE.md` with a literal in the command | **BLOCKED** by rule (b) |
-| Bash heredoc (any utility) whose text contains `git push` and the word `main` — e.g. quoting the four deny rules | **BLOCKED** by `block-main-push.mjs`, which reads the whole command text |
+| Bash heredoc (any utility) merely *mentioning* `main` — e.g. quoting the four deny rules | **allowed** since Sept 9, 2026; a mention is not an invocation |
+| Bash heredoc whose body line itself parses as a push resolving to `main` | **BLOCKED** by `block-main-push.mjs` — heredoc bodies get no special treatment, which is what keeps `bash <<'EOF'` closed |
+| Bash heredoc whose body line is a push with a `$VAR` refspec | **BLOCKED** — unresolvable, so it fails closed; hit live while writing this change's tests |
 
 So the section is editable, but not by every route. **Use the `Edit`/`Write` tool** — that
 is the supported path and it is not blocked. If you are in a mode that prefers Bash for
@@ -1885,7 +1956,49 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
+### Current baseline — measured Sept 9, 2026 on the push-hook-target branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2314 | **2314** | **0** | **0** |
+
+Measured on `claude/push-main-hook-targets-kawlik`, whose merge base with `main` is
+**`261a6b2`** (PR #54). **That merge base was re-measured in this session, before any change:
+2196 / 2196 / 0 / 0 with a browser** — which matches the figure the entry below recorded, so
+the recorded delta has now held for a third consecutive baseline. Re-measure anyway.
+`git fetch origin main` was run *before* deriving the merge base, per the standing warning;
+the ref was stale at `2d01027` and the fetch moved it to `261a6b2`.
+
+This change adds **+118**, all in one new file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/hooks/block-main-push.test.js` (new) | — | 118 | +118 |
+
+No existing test changed, because **no existing test asserted the push hook's behaviour** —
+`enforcement-wiring.test.js` asserts only that it is wired, and its 7 cases are untouched and
+still pass. That absence is the finding, not an accident of scope: a hook with no behavioural
+coverage shipped three live defects, two of them over-blocks and twenty-one of them
+under-blocks nobody had looked for.
+
+Companion mutation harness, **not** part of `npm test` and run on demand:
+`node scripts/verify-push-hook-mutations.mjs` → 35 mutations, 35/35 proven, green control,
+plus two self-test rows that prove the harness's own hollow-mutation and syntax-error checks
+are live.
+
+The no-browser row is omitted deliberately: only the browser-enabled invocation was run this
+session, and quoting a figure that was not taken is exactly the unfalsifiable claim this
+section exists to prevent. The standing cause of a red local run remains "no browser".
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2314+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -1918,7 +2031,8 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2284+ with no failures once a browser resolves.**
+Coder mode had to keep `npm test` at 2284+ under this baseline. (Superseded — see
+Current baseline above; the figure is now 2314.)
 
 Companion mutation harness, **committed** and run on demand — `node
 scratch/mobile-publishing-contract/mutation-check.mjs` → 23 mutations, 23/23 proven, green
@@ -2005,7 +2119,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2196+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2284.)
+Current baseline above; the figure is now 2314.)
 
 ### Previous baseline — measured Sept 8, 2026 on the prep-task fan-out branch
 
@@ -2446,6 +2560,37 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **The push hook now matches the resolved push target, not the command text (Sept 9, 2026):**
+  `.claude/hooks/block-main-push.mjs` fired on `/git\s+push/` anywhere in the command string
+  and blocked on `/\bmain\b/` anywhere in it. Neither half had any relationship to where a
+  push would land. **Three consequences, all reproduced live against the shipped hook before
+  anything was changed:** a feature branch whose name contains `main` as a word-boundary token
+  could not be pushed (`claude/push-main-hook-targets-kawlik` is exactly such a branch); the
+  same branch could not be **deleted** by any available form — `--delete`, `-d`, or
+  `:branch` — which is the sharp one, because a blocked push has a workaround and a branch
+  that reached the remote and cannot be cleared does not; and pure reads such as
+  `grep -n 'git push .* main' CLAUDE.md` were refused. The hook now tokenizes the command
+  quote-aware, treats a push as a push only in **command position**, and resolves each
+  destination against the repository. **The under-blocking half is the part nobody had
+  noticed:** run against the old hook the new matrix reports 51 of 118 failing, and 21 of
+  those are forms the old hook *allowed* — `--all`, `--mirror`, wildcard refspecs, a bare
+  push under `push.default=matching` or under `push.default=upstream` on a branch tracking
+  `main`, git aliases expanding to `push`, a detached HEAD, and every unrecognised option.
+  Each reaches `main` while naming no target, so no text matcher could see them. The
+  `push.default` table was verified against real pushes to a local bare remote, not inferred.
+  Resolution failure is always a block; the one fail-*open* is a malformed payload, the house
+  convention `guard-readonly.mjs` documents at the same call site. **Guards proved by
+  mutation, not asserted:** `scripts/verify-push-hook-mutations.mjs`, 35 mutations, each
+  required to redden the cases naming it specifically, with a green control and two
+  self-tests. That harness earned its keep three times over: it found a real over-block by
+  refusing its own diagnostic (an unresolvable `git` *global* was blocking before the
+  subcommand was known, so `git -C "$DIR" log` was refused), and it rejected four cases of
+  mine that looked like proof and were not — a poisoned `push.default` fixture that passed
+  through a different guard entirely, and `$BRANCH`/`ma"in"`/`'main'` cases credited to
+  guards that were not the ones doing the blocking. No test was deleted or skipped, and none
+  needed updating: **nothing had ever asserted this hook's behaviour**, which is the whole
+  finding. Tests **2196 → 2314**, all passing.
 
 - **Mobile publishing contract defined and encoded (Sept 9, 2026):** The handoff item
   `docs/dashboard-v2/mobile-dashboard-spec.md` listed as number 3 — "define successful-generation
