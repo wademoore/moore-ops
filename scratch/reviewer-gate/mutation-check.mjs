@@ -1,0 +1,255 @@
+// Mutation harness: break one guard at a time and prove the suite goes red.
+//
+// A guard that has never been observed failing is not a proven guard. Every
+// mutation below removes exactly one deliberate decision from the hooks, runs the
+// real test file against the damaged copy, and must produce failures -- and must
+// produce them in the cases that name that specific decision, not just somewhere.
+//
+// Each patch asserts it applied exactly once. A mutation that silently failed to
+// apply would run the pristine hooks and report a green suite as "the guard has
+// teeth", which is the exact false confidence this harness exists to prevent.
+//
+// Run: node scratch/reviewer-gate/mutation-check.mjs
+import { spawnSync } from 'node:child_process';
+import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const REPO = join(HERE, '..', '..');
+const TEST = join(REPO, 'test', 'hooks', 'reviewer-gate.test.js');
+
+const GATE = 'require-review.mjs';
+const REC = 'record-review-verdict.mjs';
+
+/** [name, file, find, replace, expected-red substrings] */
+const MUTATIONS = [
+  ['loop guard removed', GATE,
+    'if (payload?.stop_hook_active === true) process.exit(0);', '',
+    ['loop guard']],
+
+  ['escape valve removed', GATE,
+    'if (overrideRequested(payload?.transcript_path)) process.exit(0);', '',
+    ['override phrase in a genuine user prompt']],
+
+  ['override honoured from any transcript entry', GATE,
+    "    if (entry?.type !== 'user') continue;\n    if (entry?.isSidechain === true) continue;\n    const content = entry?.message?.content;\n    if (typeof content !== 'string') continue;\n    if (content.includes(OVERRIDE)) return true;",
+    '    return true;',
+    ['assistant message does not release', 'sidechain) prompt does not release', 'tool result does not release']],
+
+  ['a non-pass verdict counts as coverage', GATE,
+    "record.verdict !== 'pass'", 'false',
+    ['verdict is "fail"']],
+
+  // 'unknown' is caught by its own earlier branch, so the mutation above no longer
+  // reaches it. Without this row that branch would be unguarded -- which is how a
+  // guard quietly stops being covered when the code around it grows a new case.
+  ['an unknown verdict counts as coverage', GATE,
+    "    } else if (record.verdict === 'unknown') {",
+    "    } else if (record.verdict === 'unknown') {\n      process.exit(0);",
+    ['verdict "unknown" from a message with no sentinel', 'verdict "unknown" from no readable message']],
+
+  // Stale coverage must say so. Without this the branch keeps the DEFAULT note and
+  // tells a session that DID review that no verdict was recorded -- a false
+  // assertion, and the shape this file's header criticises in the container hook.
+  ['stale coverage reports "no verdict recorded"', GATE,
+    'recordNote = `the last Reviewer verdict covers ${record.sha.slice(0, 7)}, which is behind HEAD`;',
+    '',
+    ['kept editing']],
+
+  ['keys on whether the Reviewer ran, not on unreviewed commits', GATE,
+    '} else if (record.sha === head) {', "} else if (record.verdict === 'pass') {",
+    ['kept editing']],
+
+  ['malformed record fails open', GATE,
+    "recordNote = 'the recorded Reviewer verdict is malformed and cannot be read';", 'process.exit(0);',
+    ['unparseable JSON', 'non-object']],
+
+  ['unknown-schema record fails open', GATE,
+    'recordNote = `the recorded Reviewer verdict uses an unrecognised schema (${JSON.stringify(record.schema)})`;',
+    'process.exit(0);',
+    ['unrecognised schema']],
+
+  ['invented SHA reaches --is-ancestor and fails open', GATE,
+    "git(['rev-parse', '--verify', '--quiet', `${record.sha}^{commit}`]) === null", 'false',
+    ['names no commit']],
+
+  // Mutated at the isAncestor CALL, not by deleting the `if` -- deleting it leaves
+  // a dangling `else`, and a syntax error reddens the whole file while proving
+  // nothing about this guard. A mutation must change behaviour, not parseability.
+  ['non-ancestor SHA counts as coverage', GATE,
+    'const anc = isAncestor(record.sha, head);', 'const anc = true;',
+    ['not an ancestor of HEAD']],
+
+  ['git failure fails closed instead of open', GATE,
+    'if (!gitDir || !head) process.exit(0); // not a repo, or no commits yet: fail open',
+    "if (!gitDir || !head) { process.stderr.write('mutant\\n'); process.exit(2); }",
+    ['not a git repository']],
+
+  // The invariant that replaced the prose classifier: no sentinel, no pass. This is
+  // the broadest legitimate mutation here and that is proper -- the invariant it
+  // removes is itself broad.
+  ['recorder defaults a sentinel-less message to pass', REC,
+    "return seen.size === 1 ? [...seen][0] : 'unknown'; // none, or self-contradictory",
+    "return seen.size === 1 ? [...seen][0] : 'pass';",
+    ['no sentinel, no pass', 'no sentinel, no release', 'contradicting sentinels']],
+
+  ['sentinel matches inside prose (anchoring removed)', REC,
+    'const SENTINEL = /^[ \\t]*(?:\\*\\*)?REVIEW:[ \\t]*(PASS|FAIL)(?:\\*\\*)?[ \\t.]*$/gim;',
+    'const SENTINEL = /REVIEW:[ \\t]*(PASS|FAIL)/gi;',
+    ['embedded in prose', 'quotes the pass form']],
+
+  ['fenced examples cast a vote', REC,
+    "text.replace(FENCED, '').matchAll(SENTINEL)", 'text.matchAll(SENTINEL)',
+    ['fenced example']],
+
+  ['contradiction resolved by position (last match wins)', REC,
+    "return seen.size === 1 ? [...seen][0] : 'unknown'; // none, or self-contradictory",
+    "return seen.size >= 1 ? [...seen][seen.size - 1] : 'unknown';",
+    ['contradicting sentinels']],
+
+  ['gate follows a traversal session id', GATE,
+    "if (sessionId && /^[A-Za-z0-9._-]+$/.test(sessionId)) {", 'if (sessionId) {',
+    ['will not follow a traversal session id']],
+
+  ['recorder writes through a traversal session id', REC,
+    "if (!/^[A-Za-z0-9._-]+$/.test(sessionId)) process.exit(0);", '',
+    ['will not write through a traversal']],
+
+  ['gate asserts one cause of "unknown" for both', GATE,
+    '      recordNote = record.source\n        ? ', '      recordNote = true\n        ? ',
+    ['no readable message says THAT']],
+
+  ['recorder records an undeterminable verdict as a pass', REC,
+    "if (typeof text !== 'string' || !text.trim()) return 'unknown';",
+    "if (typeof text !== 'string' || !text.trim()) return 'pass';",
+    ['records "unknown"']],
+
+  ['recorder drops the agent_type guard', REC,
+    "if (agentType !== 'reviewer') process.exit(0);", '',
+    ['non-reviewer subagent']],
+
+  ['recorder records for an unidentified agent', REC,
+    "if (agentType !== 'reviewer') process.exit(0);",
+    "if (agentType && agentType !== 'reviewer') process.exit(0);",
+    ['absent agent_type']],
+
+  ['gate self-disables silently', GATE,
+    "    bailOpen(`${BASE_REF} does not resolve here, so there is no base to measure against`);",
+    '    process.exit(0);',
+    ['says so instead of going quiet']],
+
+  ['gate signals on every release, drowning the real one', GATE,
+    'if (base === head) process.exit(0);',
+    "if (base === head) bailOpen('nothing to do');",
+    ['emits no signal']],
+
+  ['recorder is allowed to block', REC,
+    '}\n\nprocess.exit(0);\n', '}\n\nprocess.exit(2);\n',
+    ['never exits 2']],
+];
+
+function runSuite(hookDir) {
+  const res = spawnSync(process.execPath, ['--test', TEST], {
+    encoding: 'utf8',
+    cwd: REPO,
+    env: { ...process.env, REVIEWER_GATE_HOOK_DIR: hookDir },
+    maxBuffer: 64 * 1024 * 1024,
+  });
+  const out = `${res.stdout}\n${res.stderr}`;
+  const num = (k) => Number((out.match(new RegExp(`^# ${k} (\\d+)$`, 'm')) || [])[1] ?? -1);
+  const failedNames = [...out.matchAll(/^not ok \d+ - (.+)$/gm)].map((m) => m[1].trim());
+  return { pass: num('pass'), fail: num('fail'), failedNames };
+}
+
+const temps = [];
+function mutate(file, find, replace) {
+  const dir = mkdtempSync(join(tmpdir(), 'reviewer-gate-mutant-'));
+  temps.push(dir);
+  cpSync(HERE, dir, { recursive: true });
+  const target = join(dir, file);
+  const src = readFileSync(target, 'utf8');
+  const hits = src.split(find).length - 1;
+  if (hits !== 1) throw new Error(`patch anchor matched ${hits} times in ${file} (expected exactly 1)`);
+  writeFileSync(target, src.replace(find, replace));
+
+  // Did this change BEHAVIOUR, or merely parseability? A mutation that breaks the
+  // syntax reddens most of the file, the expected case names appear among the
+  // wreckage, and the row would print "as expected" while proving nothing.
+  //
+  // `node --check` answers that question directly. It replaced a blast-radius
+  // threshold, which was only ever a proxy for it and a poor one: the gap between
+  // a whole-file break and the broadest legitimate mutation was two cases, so the
+  // next added test would have closed it. The SELF-TEST rows above prove this
+  // check is live, on every run, rather than citing a measurement taken once by
+  // hand and quoted thereafter.
+  const check = spawnSync(process.execPath, ['--check', target], { encoding: 'utf8' });
+  return { dir, parses: check.status === 0, parseError: (check.stderr || '').split('\n')[0] };
+}
+
+const rows = [];
+let harnessOk = true;
+
+// Self-test, run before the table. The harness argues that a guard never seen
+// failing is not a proven guard; that argument applies to the harness's own
+// hollowness detector, so it is exercised here on every run rather than by a
+// one-off manual check whose result lived only in a commit message.
+for (const file of [REC, GATE]) {
+  const dir = mkdtempSync(join(tmpdir(), 'reviewer-gate-selftest-'));
+  temps.push(dir);
+  cpSync(HERE, dir, { recursive: true });
+  const target = join(dir, file);
+  writeFileSync(target, `${readFileSync(target, 'utf8')}\nif (true) {\n`); // unterminated
+  const check = spawnSync(process.execPath, ['--check', target], { encoding: 'utf8' });
+  const caught = check.status !== 0;
+  if (!caught) harnessOk = false;
+  rows.push([`SELF-TEST: syntax error in ${file}`, '-', '-',
+    caught ? 'caught before the suite ran' : 'NOT CAUGHT -- the hollowness check is inert']);
+}
+
+// Control. If the pristine tree is not green the rest of the table means nothing.
+const control = runSuite(HERE);
+rows.push(['CONTROL (unmutated)', control.pass, control.fail, control.fail === 0 ? 'green' : 'NOT GREEN']);
+if (control.fail !== 0 || control.pass <= 0) harnessOk = false;
+
+for (const [name, file, find, replace, expect] of MUTATIONS) {
+  let row;
+  try {
+    const { dir, parses, parseError } = mutate(file, find, replace);
+    if (!parses) {
+      harnessOk = false;
+      rows.push([name, '-', '-', `HOLLOW: mutation does not parse (${parseError})`]);
+      continue;
+    }
+    const r = runSuite(dir);
+    const joined = r.failedNames.join(' | ');
+    const missed = expect.filter((e) => !joined.includes(e));
+
+    // Parseability is settled above. Survivors are still required: a module that
+    // parses but throws while loading would otherwise redden the file the same way.
+    const survivors = r.pass > 0;
+    const ok = r.fail > 0 && missed.length === 0 && survivors;
+    if (!ok) harnessOk = false;
+
+    let why = `RED (${r.fail}) as expected`;
+    if (!survivors) why = 'HOLLOW: no test survived (the module never loaded)';
+    else if (missed.length) why = `UNPROVEN: missing ${missed.join(', ')}`;
+    else if (r.fail === 0) why = 'UNPROVEN: no failures at all';
+    row = [name, r.pass, r.fail, why];
+  } catch (err) {
+    harnessOk = false;
+    row = [name, '-', '-', `HARNESS ERROR: ${err.message}`];
+  }
+  rows.push(row);
+}
+
+const w = [Math.max(...rows.map((r) => String(r[0]).length)), 5, 5];
+const line = (r) => `| ${String(r[0]).padEnd(w[0])} | ${String(r[1]).padStart(w[1])} | ${String(r[2]).padStart(w[2])} | ${r[3]}`;
+console.log(line(['mutation', 'pass', 'fail', 'result']));
+console.log(`|${'-'.repeat(w[0] + 2)}|${'-'.repeat(w[1] + 2)}|${'-'.repeat(w[2] + 2)}|--------`);
+for (const r of rows) console.log(line(r));
+console.log(`\n${MUTATIONS.length} mutations, ${harnessOk ? 'ALL PROVEN' : 'NOT ALL PROVEN'}`);
+
+for (const d of temps) { try { rmSync(d, { recursive: true, force: true }); } catch { /* best effort */ } }
+process.exit(harnessOk ? 0 : 1);
