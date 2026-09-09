@@ -94,6 +94,32 @@ jobs:
           echo "HOLIDAY_ENABLED=$VALUE" >> "$GITHUB_ENV"
           echo "Holiday Themes kill switch will be deployed as $VALUE"
 
+      - name: Resolve mobile artifact kill switch
+        env:
+          # Read through env, never interpolated into the script body: a
+          # repository variable is editable text and `${{ }}` inside a run block
+          # is substituted before bash ever sees it. Sourced
+          # from its own repository variable and no other - the two existing
+          # switches are read here neither as a fallback nor as a default.
+          MOBILE_ARTIFACT_ENABLED: ${{ vars.MOBILE_ARTIFACT_ENABLED }}
+        run: |
+          RAW="${MOBILE_ARTIFACT_ENABLED:-}"
+          # Trim whitespace so a present-but-blank variable counts as absent.
+          VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+          if [ -z "$VALUE" ]; then
+            VALUE=0
+            echo "MOBILE_ARTIFACT_ENABLED is absent or blank - failing closed to 0"
+          fi
+          case "$VALUE" in
+            0|1) ;;
+            *)
+              echo "::error::MOBILE_ARTIFACT_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+              exit 1
+              ;;
+          esac
+          echo "MOBILE_ENABLED=$VALUE" >> "$GITHUB_ENV"
+          echo "Mobile artifact kill switch will be deployed as $VALUE"
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -138,7 +164,8 @@ jobs:
             --parameter-overrides \
               "SourceRevision=$GITHUB_SHA" \
               "FamilySpotlightEnabled=$SPOTLIGHT_ENABLED" \
-              "HolidayThemesEnabled=$HOLIDAY_ENABLED"
+              "HolidayThemesEnabled=$HOLIDAY_ENABLED" \
+              "MobileArtifactEnabled=$MOBILE_ENABLED"
 
       - name: Verify deployed source revision
         env:
@@ -179,3 +206,19 @@ jobs:
             exit 1
           fi
           echo "Holiday Themes kill switch verified as $DEPLOYED"
+
+      - name: Verify deployed mobile artifact kill switch
+        env:
+          STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+        run: |
+          # Selects exactly one parameter: no other stack parameter is read or printed.
+          DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='MobileArtifactEnabled'].ParameterValue | [0]" --output text)
+          if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+            echo "::error::MobileArtifactEnabled is absent from the deployed stack"
+            exit 1
+          fi
+          if [ "$DEPLOYED" != "$MOBILE_ENABLED" ]; then
+            echo "::error::MobileArtifactEnabled mismatch - intended $MOBILE_ENABLED, deployed $DEPLOYED"
+            exit 1
+          fi
+          echo "Mobile artifact kill switch verified as $DEPLOYED"

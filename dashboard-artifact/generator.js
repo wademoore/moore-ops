@@ -3,6 +3,7 @@ import { fetchDashboardV2Data } from '../dashboard-v2-data.js';
 import { renderDashboardV2 } from '../render/dashboard-v2.js';
 import { hasFirstDayMilestone, timeline as firstDayTimeline } from '../render/first-day-level3.js';
 import { createManifest, validateArtifact } from './contract.js';
+import { publishMobileArtifact } from './mobile-generator.js';
 
 const s3 = new S3Client({});
 
@@ -104,8 +105,70 @@ async function generateAndPublish({
   }
 }
 
-async function handler() {
-  return generateAndPublish();
+/**
+ * Two independent publish paths from ONE household data build.
+ *
+ * The wall display and the phone are separate consumers with separate failure
+ * modes, and neither failing may prevent the other from publishing. That is
+ * why each path has its own try, its own validator, its own key prefix and its
+ * own artifact identity. generateAndPublish() itself is unchanged by the
+ * mobile work; the isolation lives here and in mobile-generator.js.
+ *
+ * The data build is resolved exactly ONCE and the same settled promise is
+ * injected into both paths. fetchDashboardV2Data() reads three calendar
+ * windows, Gmail, Drive, the nationals feed, sports and weather, so fetching
+ * twice would double that cost and could hand the two surfaces two different
+ * snapshots of the same morning. Sharing it also means the phone consumes the
+ * display's own selection output rather than any second derivation of it.
+ *
+ * They run in sequence rather than concurrently, display first. The display is
+ * the production surface, so it gets the invocation's time budget first, and a
+ * sequential run removes any question of two renderers reading one object at
+ * once.
+ *
+ * Failure semantics are deliberately asymmetric, and the asymmetry is the
+ * point rather than an oversight. A display failure still rejects, exactly as
+ * it did before this change, so EventBridge retries and existing alarms behave
+ * identically. A mobile failure does NOT reject: making it do so would let a
+ * phone-only defect force repeated republishing of a perfectly good display
+ * artifact. It surfaces instead as the structured
+ * dashboard_mobile_generation_failed record the mobile path already emits, and
+ * in this function's return value.
+ */
+async function publishAll({
+  fetchData = fetchDashboardV2Data,
+  display = {},
+  mobile = {},
+} = {}) {
+  const shared = fetchData();
+  // Whichever path awaits it first will observe a rejection; this no-op keeps
+  // a rejection raised before either path awaits from becoming an unhandled
+  // rejection. generateAndPublish validates its environment before awaiting.
+  Promise.resolve(shared).catch(() => {});
+  const shareData = () => shared;
+
+  let displayResult = null;
+  let displayError = null;
+  try {
+    displayResult = await generateAndPublish({ ...display, fetchData: shareData });
+  } catch (error) {
+    displayError = error;
+  }
+
+  let mobileResult = null;
+  let mobileError = null;
+  try {
+    mobileResult = await publishMobileArtifact({ ...mobile, fetchData: shareData });
+  } catch (error) {
+    mobileError = error;
+  }
+
+  if (displayError) throw displayError;
+  return { display: displayResult, mobile: mobileResult, mobileError: mobileError ? mobileError.message : null };
 }
 
-export { generateAndPublish, handler };
+async function handler() {
+  return publishAll();
+}
+
+export { generateAndPublish, handler, publishAll };
