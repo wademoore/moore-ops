@@ -3,6 +3,15 @@ import { fetchCalendarEvents } from '../calendar.js';
 
 const CALENDAR_ID = '6ac1de94baada01a89e5bcf845d71c5d02301b5a62d9406c1069430341e3ccc2@group.calendar.google.com';
 
+// Lower bound for the overdue fetch only. The practical start of this
+// calendar's history — its earliest event starts 2026-05-25 — so this floor is
+// effectively unbounded while keeping the API call sane.
+//
+// Deliberately a FIXED date, not a rolling N-day lookback. A rolling floor
+// reintroduces the exact bug this constant exists to fix (items aging out of
+// the window while still open), just with a longer fuse.
+const OVERDUE_FLOOR = '2026-01-01';
+
 // ---------------------------------------------------------------------------
 // Pure helpers — exported for unit testing
 // ---------------------------------------------------------------------------
@@ -36,13 +45,22 @@ export function classifyEvent(event, todayMidnight, thisSundayMidnight) {
     const [y, m, d] = event.end.date.split('-').map(Number);
     endDateMidnight = new Date(y, m - 1, d);
   } else if (event.end?.dateTime) {
-    // NOTE: unlike the all-day branch above, this constructs local-midnight
-    // directly from a raw UTC-instant Date with no ET-anchoring step first —
-    // plausible sibling of the dueDay timezone bug fixed below, but unverified
-    // (no current test exercises event.end.dateTime). Out of scope here — flag
-    // for a future session, do not fix as part of this task.
-    const dt = new Date(event.end.dateTime);
-    endDateMidnight = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    // CONFIRMED DEFECT, fixed here (Aug 2026). The prior version read the raw
+    // UTC instant with local accessors (getFullYear/getMonth/getDate). Under
+    // Lambda/CI's UTC that rolled a 23:59 ET end time forward into the next
+    // day: 2026-07-12T23:59:00-04:00 resolved to Jul 13, not Jul 12. Every
+    // Weekly Priorities event uses dateTime at 23:59 ET, so this under-reported
+    // daysOverdue by 1 across the board and pushed same-day items into
+    // 'active' instead of 'overdue'. Flagged as unverified by commit d10b3df;
+    // verified broken and fixed in this change.
+    //
+    // Now ET-anchored exactly once, matching parseEventDate() in dateUtils.js
+    // and the all-day branch above. Do not re-convert the result through
+    // toLocaleDateString again — see the double-convert rule in CLAUDE.md.
+    const etStr = new Date(event.end.dateTime)
+      .toLocaleDateString('en-CA', { timeZone: 'America/New_York' });
+    const [y, m, d] = etStr.split('-').map(Number);
+    endDateMidnight = new Date(y, m - 1, d);
   }
 
   if (endDateMidnight && endDateMidnight.getTime() <= todayMidnight.getTime()) {
@@ -105,13 +123,19 @@ function toDateStr(date) {
 }
 
 // ---------------------------------------------------------------------------
-// Main async export
+// Fetch-window computation — exported for unit testing
 // ---------------------------------------------------------------------------
 
-export async function parseWeeklyPriorities() {
-  const auth = await getAuthClient();
-
-  const today = new Date();
+/**
+ * Computes both fetch windows plus the two date anchors partitionEvents needs.
+ * Pure and exported so the window bounds are unit-testable without auth — the
+ * original one-week-lookback bug lived entirely in these bounds and was
+ * untestable while they were inlined in the async function below.
+ *
+ * `weekly` drives the active/upcoming view and is unchanged from the original.
+ * `overdue` is the same window widened at the bottom to OVERDUE_FLOOR.
+ */
+export function computeFetchWindows(today = new Date()) {
   const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
   // thisMonday: subtract (day + 6) % 7 days — maps Mon→0 days back, Sun→6 days back
@@ -132,11 +156,53 @@ export async function parseWeeklyPriorities() {
     thisSunday.getDate()
   );
 
-  const timeMin = `${toDateStr(lastMonday)}T00:00:00${getEtOffset(lastMonday)}`;
+  const [fy, fm, fd] = OVERDUE_FLOOR.split('-').map(Number);
+  const floorDate = new Date(fy, fm - 1, fd);
+
+  // Shared upper bound — both views stop at the end of the current week.
   const timeMax = `${toDateStr(thisSunday)}T23:59:59${getEtOffset(thisSunday)}`;
 
-  const events = await fetchCalendarEvents(auth, CALENDAR_ID, timeMin, timeMax);
-  const { active, completed, overdue } = partitionEvents(events, todayMidnight, thisSundayMidnight);
+  return {
+    todayMidnight,
+    thisSundayMidnight,
+    weekly: {
+      timeMin: `${toDateStr(lastMonday)}T00:00:00${getEtOffset(lastMonday)}`,
+      timeMax,
+    },
+    overdue: {
+      // Offset resolved at the floor date itself (January → EST), consistent
+      // with how each other bound is offset at its own date.
+      timeMin: `${toDateStr(floorDate)}T00:00:00${getEtOffset(floorDate)}`,
+      timeMax,
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Main async export
+// ---------------------------------------------------------------------------
+
+export async function parseWeeklyPriorities() {
+  const auth = await getAuthClient();
+
+  const { todayMidnight, thisSundayMidnight, weekly, overdue: overdueWindow } =
+    computeFetchWindows(new Date());
+
+  // Two fetches, not one widened fetch. classifyEvent tests [DONE] before the
+  // date check, so a single widened window would route every historical [DONE]
+  // item into `completed` and balloon that bucket from a handful to the whole
+  // calendar's history. Keeping the windows separate leaves `completed` and
+  // `active` exactly as they were and confines the change to `overdue`.
+  const [weeklyEvents, overdueEvents] = await Promise.all([
+    fetchCalendarEvents(auth, CALENDAR_ID, weekly.timeMin, weekly.timeMax),
+    fetchCalendarEvents(auth, CALENDAR_ID, overdueWindow.timeMin, overdueWindow.timeMax),
+  ]);
+
+  // The windows overlap, but the buckets consumed from each are disjoint — the
+  // weekly fetch supplies active/completed, the overdue fetch supplies overdue.
+  // No dedup step is needed or wanted; don't add one.
+  const { active, completed } = partitionEvents(weeklyEvents, todayMidnight, thisSundayMidnight);
+  const { overdue } = partitionEvents(overdueEvents, todayMidnight, thisSundayMidnight);
 
   return { weeklyPriorities: { active, completed, overdue } };
 }
