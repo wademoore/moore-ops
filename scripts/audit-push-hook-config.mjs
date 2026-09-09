@@ -205,6 +205,22 @@ c({ id: "b4", entry: "B4 default origin", watch: "bare",
   command: "git push", note: "" });
 c({ id: "b7-matching", entry: "B7 push.default=matching", watch: "bare",
   setup: (f, g) => g("git config push.default matching"), command: "git push origin", note: "" });
+// The `simple` arm is the DEFAULT push.default and governs the commonest real
+// case, so its "cannot reach a differently-named branch" property is the one that
+// most deserves a measurement rather than a reading of the code. The mismatched
+// upstream is the whole point: `simple` must refuse rather than send feature->main.
+c({ id: "b7-simple-mismatch", entry: "B7 push.default=simple, upstream named differently", watch: "bare",
+  setup: (f, g) => g("git config push.default simple"
+    + " && git config branch.feature.remote origin"
+    + " && git config branch.feature.merge refs/heads/main"),
+  command: "git push",
+  note: "git must refuse outright; the hook allows because the destination is same-name" });
+c({ id: "b7-current", entry: "B7 push.default=current", watch: "bare",
+  setup: (f, g) => g("git config push.default current"), command: "git push origin",
+  note: "sends feature to a same-named ref" });
+c({ id: "b7-nothing", entry: "B7 push.default=nothing", watch: "bare",
+  setup: (f, g) => g("git config push.default nothing"), command: "git push origin",
+  note: "git refuses; nothing reaches the remote" });
 c({ id: "b8", entry: "B8 branch.<name>.merge", watch: "bare",
   setup: (f, g) => g("git config push.default upstream"
     + " && git config branch.feature.remote origin"

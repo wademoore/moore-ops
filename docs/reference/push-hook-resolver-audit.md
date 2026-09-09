@@ -190,12 +190,12 @@ the resolver.
 | B4 | default `origin` | read | `:577` | `b4` BLOCK/true |
 | B5 | `remote.<name>.push` | read | `:585` `configAll` | `ctl-b5` BLOCK/true — but on the remote RC1 resolved |
 | B6 | `remote.<name>.mirror` | read | `:582` | `b1-mirror` **ALLOW/true** — hole via RC1 |
-| B7 | `push.default` | read | `:596-618` | `b7-matching` BLOCK; `simple`/`current`/`nothing` allow correctly |
+| B7 | `push.default` | read | `:596-618` | `b7-matching` BLOCK/false; `b7-current` ALLOW/false; `b7-nothing` ALLOW/false (`exit 128`); `b7-simple-mismatch` ALLOW/false (`exit 128` — git refuses the differently-named upstream) |
 | B8 | `branch.<name>.merge` | read | `:607` | `b8` BLOCK/true |
 | B9 | `push.autoSetupRemote` | **not read** | — | `b9` ALLOW/**false** — destination stays same-name. **Checked; does not matter.** |
 | B10 | `push.followTags` | **not read** | — | `b10` ALLOW/true, but the ref is `refs/tags/main`, deliberately outside `PROTECTED` (`:162`). Not a branch hole; **a policy question, not a resolver defect.** |
 | B11 | `push.recurseSubmodules` | **not read** | — | config spelling of A11; see below |
-| B12 | current branch / `HEAD` | read | `:548-551`, blocks on detached | code + `simple`/`current` arms |
+| B12 | current branch / `HEAD` | read | `:548-551`, blocks on detached | **code reading only** for the detached-`HEAD` block; the `simple`/`current` arms it feeds are measured by `b7-current` and `b7-simple-mismatch` |
 
 ### C — remote definition
 
@@ -233,7 +233,7 @@ the resolver.
 |---|---|---|---|---|
 | E1 | `GIT_DIR` / `--git-dir` | caught | `GLOBAL_RELOCATING` `:383`, `ENV_RELOCATING` `:655` | `env-GIT_DIR` and `glob-gitdir` both BLOCK/true |
 | E2 | `GIT_WORK_TREE` / `--work-tree` / `core.worktree` | env+option caught; `core.worktree` not read | `:383`, `:655` | `env-GIT_WORK_TREE`, `glob-worktree` BLOCK/true; `e2` BLOCK/true — `core.worktree` does not relocate config |
-| E3 | `git -C` / cwd | read | `:1022-1030`, `baseCwd` `:183` | over-blocks on a malformed `-C` (hit while writing this document) |
+| E3 | `git -C` / cwd | read | `:1022-1030`, `baseCwd` `:183` | **no harness row.** The over-block noted below is an unreproducible anecdote from writing this document, not a measurement. Reading plus anecdote. |
 | E4 | `GIT_COMMON_DIR` | caught | `ENV_RELOCATING` `:655` | `e4` BLOCK/true |
 | E5 | `GIT_CEILING_DIRECTORIES` | **not read** | — | `e5` and `e5-sub` both BLOCK/true — the ceiling does not stop the hook reading the same config git reads. **Checked; does not matter.** |
 | E6 | `--bare` | caught | `GLOBAL_RELOCATING` `:383` | `glob-bare` BLOCK |
@@ -283,15 +283,30 @@ Worth stating, because it is the part that is easy to lose in a list of holes:
   *environment* that call inherits, not in the decision to make the call.
 - **The `push.default` arms are right**, including the non-obvious one: `simple`
   refuses outright when the upstream is named differently, so it cannot reach a
-  differently-named branch.
+  differently-named branch. That was a code reading until a second review round
+  pointed out that `simple` is the *default* mode and governs the commonest real
+  case, making it the arm least suited to being taken on trust. It has a row now:
+  `b7-simple-mismatch` sets `branch.feature.merge = refs/heads/main` under
+  `push.default=simple` and runs a bare `git push`. The hook ALLOWS (the destination
+  it resolves is same-name) and git **refuses outright** — `exit 128`, `main`
+  unmoved. `b7-current` and `b7-nothing` are measured too.
 - **`ENV_RELOCATING` and `GLOBAL_RELOCATING` catch what they enumerate — measured,
   not inferred.** An earlier draft asserted this from the shape of the regex after
   testing only two of the names, which a review correctly called an unmarked
-  code-reading under a heading that says "confirms". The harness now sets **all
-  eleven** `ENV_RELOCATING` names (`env-GIT_*`) and passes **all five**
-  `GLOBAL_RELOCATING` options (`glob-*`), each on a command that would otherwise
-  reach `main` because `remote.origin.push` is set to a main-bound refspec. All
-  sixteen block.
+  code-reading under a heading that says "confirms". The harness now sets eleven
+  `ENV_RELOCATING` names (`env-GIT_*`) and passes all five `GLOBAL_RELOCATING`
+  options (`glob-*`). **All sixteen block.**
+  Two qualifications, because a second review round found this bullet still looser
+  than the table it summarises. (i) Thirteen of the sixteen run a command that
+  *would* otherwise have reached `main`, because `remote.origin.push` is set to a
+  main-bound refspec in setup. The other three could not have reached
+  `refs/heads/main` in any case: `env-GIT_NAMESPACE` and `glob-namespace` retarget
+  the send at `refs/namespaces/ns/refs/heads/main`, and `--exec-path` with no value
+  makes git print a path and exit without pushing at all. Those three prove the hook
+  blocks, not that it blocked something dangerous. (ii) The regex has **fourteen**
+  alternatives, not eleven: the loop covers the eleven fixed names, and the numbered
+  `GIT_CONFIG_COUNT` / `KEY_<n>` / `VALUE_<n>` family is covered separately by `d9`.
+  Coverage is complete; the count in the loop is not the count in the regex.
 
 ## Two over-blocks found while doing this work
 
@@ -346,10 +361,11 @@ into a clean document teaches nothing:
 
 | Finding | Disposition |
 |---|---|
+| **BLOCKING** — nothing was committed; all three files were untracked, so the branch carried none of the work | Resolved by committing and pushing. Listed here because the first version of this table recorded the four lesser findings and silently omitted the highest-rated one, on the reasoning that a process state fixed by the act of committing has no place inside the committed file. A second round called that out, and it was right: a review record that drops its own top finding is not a review record. |
 | A6's evidence cited a "pass-1 row" for `--tags` that **existed in no harness case and no recorded run** | Fixed. `a6` is now a real shipped case, and it changed the verdict's wording from an assertion to a measurement (ALLOW/false). |
 | "`ENV_RELOCATING` and `GLOBAL_RELOCATING` catch what they enumerate" asserted 16 names on the strength of 2 tested, unmarked as a code reading | Fixed. All 11 env names and all 5 global options now have rows. All block. |
 | C7 cited `config/remote.txt:75-77`, which is `pruneTags`; `vcs` is at 61-63 | Fixed in the enumeration. |
-| ~14 cited ids were unreachable from the harness the "Reproduce" line points at | Fixed. The shipped script grew from 31 to 66 cases; every cited id is now one of them. |
+| ~14 cited ids were unreachable from the harness the "Reproduce" line points at | Fixed. The shipped script grew from 31 to **67** cases; every cited id is now one of them. (A second round caught this row itself claiming 66 against an artifact that emitted 64 — a stated number not matching the artifact, in the very row recording the fix to that defect. The figure now comes from counting emitted rows, not from counting `c({…})` calls.) |
 | Wrong pass labels on `c7` and `e5`; A1 and the `alias.txt` and `push.txt` line ranges slightly off; "the one entry this audit could not settle" when C7 is a second; the 7/8/10 count relationship never stated; harness folded a non-2 hook exit into ALLOW | All fixed. |
 
 **Two of the reviewer's checks came back unverified rather than passed, and that
@@ -369,3 +385,33 @@ mechanisms, their ten rows, the hook line references, the git citations includin
 the load-bearing `remote.<name>.push`-before-`push.default` ordering and the whole
 C group, the fixture genuinely leaving `feature` ahead of `main`, and the honest
 labelling of the two unresolved entries and the two out-of-scope tag rows.
+
+### Second round
+
+The re-review returned **`REVIEW: PASS`** and confirmed the five fixes above, the
+most important of which was that no cited id is unreachable any more. It still found
+two SHOULD FIX accuracy defects and three MINORs, all of them fixed here rather than
+left standing behind a passing verdict:
+
+| Finding | Disposition |
+|---|---|
+| **The stated case count was wrong** — the audit said 67 (then 66); the artifact emitted **64** | Fixed, and pointedly: this was a stated number not matching the artifact, sitting in the table row that records the fix to a finding about stated numbers not matching the artifact. The figure is now taken from counting emitted rows. |
+| **"each on a command that would otherwise reach `main`" was false for three of the sixteen** relocating rows | Fixed. `env-GIT_NAMESPACE` and `glob-namespace` retarget at `refs/namespaces/…`, and `--exec-path` with no value never pushes. The summary sentence was looser than the per-entry cells it summarised, which were already careful. |
+| **The `simple` arm's "refuses outright" property had no harness row** — and `simple` is the *default* mode, so it is the arm where an unmarked code reading matters most | Fixed by measurement, not by adding a marker: `b7-simple-mismatch`, `b7-current` and `b7-nothing` are new cases. `b7-simple-mismatch` confirms the hook ALLOWS while git refuses with `exit 128`. |
+| "all eleven `ENV_RELOCATING` names" described the loop, not the regex, which has fourteen alternatives | Fixed. Coverage is complete — `d9` carries the numbered `GIT_CONFIG_*` family — but the sentence conflated two counts. |
+| "code reading only" marking applied unevenly (E3, B12 unmarked) | Fixed. E3's evidence was an unreproducible anecdote and now says so; B12 is split into its unmeasured half and its measured half. |
+
+**The same two verification limits applied in both rounds**, and they are the reason
+neither verdict is worth more than it says: the Reviewer's read-only allowlist refuses
+`node scripts/audit-push-hook-config.mjs`, `curl` and even `git --version`, so on both
+passes it **could not run the harness, could not fetch the git documentation
+independently, and could not measure the test suite**. It verified citations against
+the doc sources retained in the session scratchpad — the author's own artifacts — and
+said so. A fabricated source file would not have been caught by that method.
+
+This is the CLAUDE.md *Known open item* about Reviewer tooling showing up in a second
+place. The allowlist is start-anchored on `npm test` and `node --test`, so **no
+on-demand script can be run by a Reviewer at all**: evidence that takes the form of a
+script cannot be independently re-executed by the one role whose job is to distrust
+it. That is a real limit on how much either `REVIEW: PASS` here is worth, and it is
+recorded rather than glossed.
