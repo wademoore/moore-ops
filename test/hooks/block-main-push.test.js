@@ -192,6 +192,31 @@ const BLOCK_INDIRECT = [
   ['a backtick substitution', 'echo `git push origin main`', onMain],
   ['after an unrelated read', 'git log --oneline -1 && git push origin main', onMain],
   ['a heredoc body that is itself a push to main', "cat <<'EOF'\ngit push origin main\nEOF", onMain],
+  // --- the four under-blocks an independent Reviewer pass found -------------
+  // Three of these were refused by the crude text matcher this hook replaced, so
+  // each is a regression guard as well as a hole. Their shared root cause is that
+  // the first implementation trusted a LIST of wrapper commands; the fallback that
+  // replaced it looks for a `git` in any argument position instead.
+  ['a wrapper that was not on the list', 'timeout 300 git push origin main', onMain],
+  ['a listed wrapper whose own option ate the next token', 'sudo -u wade git push origin main', onMain],
+  ['nice with a separate option value', 'nice -n 10 git push origin main', onMain],
+  ['a brace group', '{ git push origin main; }', onMain],
+  ['the body of an if', 'if git diff --quiet; then git push origin main; fi', onMain],
+  ['the body of a while loop', 'while true; do git push origin main; done', onMain],
+  ['negated with !', '! git push origin main', onMain],
+  ['xargs wrapping a shell rather than git directly', "echo x | xargs sh -c 'git push origin main'", onMain],
+  ['xargs wrapping env', 'echo "" | xargs env git push origin main', onMain],
+  ['an alias defined on the command line, which no repository lookup would find',
+    'git -c alias.p=push p origin main', onToken],
+  ['a command-line alias reached with no explicit destination', 'git -c alias.p=push p', onMain],
+  // GIT_DIR and friends relocate the repository exactly as --git-dir does, and
+  // GIT_CONFIG_* can set push.default out from under the resolver. A leading
+  // assignment is otherwise stripped as ordinary environment.
+  ['GIT_DIR in the environment', 'GIT_DIR=/tmp/other/.git git push origin feature', onToken],
+  ['GIT_WORK_TREE in the environment', 'GIT_WORK_TREE=/tmp/other git push origin feature', onToken],
+  ['GIT_CONFIG_* setting push.default out from under the resolver',
+    'GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=push.default GIT_CONFIG_VALUE_0=matching git push origin', onToken],
+  ['a relocating variable passed through env', 'env GIT_DIR=/tmp/other/.git git push origin feature', onToken],
   ['an alias that expands to push, on main', 'git p', aliased],
   ['a shell alias that pushes to main', 'git shp', aliased],
 ];
@@ -280,6 +305,19 @@ const ALLOW_ORDINARY = [
   ['init through a runtime-built -C directory', 'git -C "$DIR" init --quiet', onMain],
   ['a read through a relocated git dir', 'git --git-dir=/tmp/other/.git log --oneline', onMain],
   ['an unrecognised global on a non-push subcommand', 'git --frobnicate status', onMain],
+  // The fallback that closed the wrapper holes must not turn every mention into a
+  // block. A quoted phrase is one token whose command word is not `git`, which is
+  // what keeps the read cases below working; an unquoted mention is an accepted
+  // over-block and is asserted as a block above, not here.
+  ['a wrapper around an ordinary git read', 'timeout 30 git log --oneline -3', onMain],
+  ['a wrapper around a feature-branch push', `timeout 300 git push origin ${TOKEN_BRANCH}`, onToken],
+  ['a wrapper around a feature-branch delete', `timeout 300 git push origin --delete ${TOKEN_BRANCH}`, onToken],
+  ['an if body pushing a feature branch', `if git diff --quiet; then git push origin ${TOKEN_BRANCH}; fi`, onToken],
+  ['xargs wrapping a non-git command', 'echo x | xargs echo', onMain],
+  ['a benign leading GIT_ assignment is still just environment',
+    `GIT_TERMINAL_PROMPT=0 git push origin ${TOKEN_BRANCH}`, onToken],
+  ['a benign GIT_ assignment on a read', 'GIT_PAGER=cat git log --oneline -3', onMain],
+  ['a relocating variable on a command that is not a push', 'GIT_DIR=/tmp/other/.git git status', onMain],
 ];
 
 // Option arity, isolated. Reading an option's value as a positional shifts the

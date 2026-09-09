@@ -117,7 +117,7 @@ const MUTATIONS = [
     'if (unresolvable) return sub.text === "push" ? block(unresolvable) : allow();',
     'if (unresolvable) return block(unresolvable);',
     ['a read through a runtime-built -C directory', 'init through a runtime-built -C directory',
-      'a read through a relocated git dir']],
+      'a read through a relocated git dir', 'a relocating variable on a command that is not a push']],
 
   ['an unknown git global condemns every subcommand',
     'return args.slice(i).some((t) => t.text === "push") ? block(unresolvable) : allow();',
@@ -144,29 +144,70 @@ const MUTATIONS = [
     ['a shell alias that pushes to main']],
 
   ['sh -c and bash -c are no longer re-scanned',
-    'if (idx !== -1 && idx + 1 < rest.length) return scan(rest[idx + 1].text, depth + 1);\n    return allow();\n  }\n  if (POWERSHELLS.has(word)) {',
+    'if (idx !== -1 && idx + 1 < rest.length) return scan(rest[idx + 1].text, depth + 1, next);\n    return allow();\n  }\n  if (POWERSHELLS.has(word)) {',
     'return allow();\n  }\n  if (POWERSHELLS.has(word)) {',
     ['bash -c', 'sh -c']],
 
   ['eval is no longer re-scanned',
-    'return scan(rest.map((t) => t.text).join(" "), depth + 1);', 'return allow();',
+    'return scan(rest.map((t) => t.text).join(" "), depth + 1, next);', 'return allow();',
     ['eval', 'eval with a quoted string']],
 
   ['command wrappers such as sudo are no longer unwrapped',
-    'return evaluateSimpleCommand(rest.slice(k), depth + 1);', 'return allow();',
+    'return evaluateSimpleCommand(rest.slice(k), depth + 1, next);', 'return allow();',
     ['sudo', 'env with an assignment']],
 
   ['xargs no longer forces a block',
-    'return evaluateGit(inner.slice(1), depth, { unknownSuffix: true });', 'return allow();',
-    ['xargs, whose appended argument is unknowable']],
+    'return evaluateSimpleCommand(rest.slice(k), depth + 1, { ...next, unknownSuffix: true });',
+    'return allow();',
+    ['xargs, whose appended argument is unknowable', 'xargs wrapping a shell rather than git directly']],
+
+  // --- the four under-blocks an independent Reviewer pass found --------------
+  // The shared root cause was trusting a LIST of wrapper commands. These rows
+  // exist so that regression cannot come back quietly.
+  ['an unrecognised command word is trusted, as it was before review',
+    'for (let j = 0; j < rest.length; j += 1) {\n    if (commandWord(rest[j]) !== "git") continue;\n    const verdict = evaluateGit(rest.slice(j + 1), depth + 1, next);\n    if (verdict.blocked) return verdict;\n  }\n  return allow();',
+    'return allow();',
+    ['a wrapper that was not on the list', 'a listed wrapper whose own option ate the next token',
+      'nice with a separate option value', 'a brace group', 'the body of an if',
+      'the body of a while loop', 'negated with !']],
+
+  // The other direction: the fallback must JUDGE what it finds, not condemn it.
+  ['the fallback condemns any command mentioning git',
+    'const verdict = evaluateGit(rest.slice(j + 1), depth + 1, next);',
+    'const verdict = block("mutant");',
+    ['a wrapper around an ordinary git read', 'a wrapper around a feature-branch push',
+      'a wrapper around a feature-branch delete', 'an if body pushing a feature branch']],
+
+  ['xargs hand-rolls its own git check instead of recursing',
+    'return evaluateSimpleCommand(rest.slice(k), depth + 1, { ...next, unknownSuffix: true });',
+    'const inner = rest.filter((t) => !t.text.startsWith("-"));\n    if (inner.length && commandWord(inner[0]) === "git") return evaluateGit(inner.slice(1), depth, { ...next, unknownSuffix: true });\n    return allow();',
+    ['xargs wrapping a shell rather than git directly', 'xargs wrapping env']],
+
+  ['the alias lookup reads the repository instead of the -c overrides',
+    'const alias = ctx.config(`alias.${sub.text}`);',
+    'const alias = git(dir, ["config", "--get", `alias.${sub.text}`]);',
+    ['an alias defined on the command line, which no repository lookup would find',
+      'a command-line alias reached with no explicit destination']],
+
+  ['a relocating GIT_ variable is stripped as ordinary environment',
+    'if (ENV_RELOCATING.test(name)) {', 'if (false) {',
+    ['GIT_DIR in the environment', 'GIT_WORK_TREE in the environment',
+      'GIT_CONFIG_* setting push.default out from under the resolver',
+      'a relocating variable passed through env']],
 
   ['command substitution bodies are no longer scanned',
     'for (const body of substitutionBodies(src)) {', 'for (const body of []) {',
     ['a command substitution inside double quotes']],
 
-  ['leading environment assignments hide the command',
-    'while (start < tokens.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[start].text)) start += 1;', '',
-    ['a leading assignment']],
+  // REMOVED, and the reason matters more than the row did. There used to be a
+  // 'leading environment assignments hide the command' mutation here, proved by
+  // `GIT_TERMINAL_PROMPT=0 git push origin main`. Once the unrecognised-command-word
+  // fallback landed, removing the assignment stripping changed nothing observable:
+  // the fallback finds the `git` token regardless, so every case stayed green and
+  // the row would have reported a guard as proven while proving nothing. The
+  // assignment loop is still load-bearing -- it is what detects ENV_RELOCATING --
+  // and that part IS proved, by the relocating-GIT_-variable row above. A mutation
+  // that cannot fail is worse than no mutation, so it is gone rather than adjusted.
 
   ['a path-qualified git is not recognised',
     'if (slash !== -1) w = w.slice(slash + 1);', '',

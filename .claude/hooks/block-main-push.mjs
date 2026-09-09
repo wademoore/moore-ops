@@ -47,10 +47,20 @@
 //   - `GIT=git; $GIT push origin main`      -- the command word is a variable
 //   - `bash /tmp/pusher.sh`                 -- indirection through a file
 //   - a background process that pushes later
-// `eval`, `sh -c`, `bash -c`, `pwsh -Command`, `xargs`, command substitutions and
-// git aliases are all re-scanned rather than waved through, so the easy half of
-// that class is closed -- including `git p` for `alias.p = push`, which the old
-// text matcher never saw because it contained no "git push".
+// `eval`, `sh -c`, `bash -c`, `pwsh -Command`, `xargs`, command substitutions, git
+// aliases (including `-c alias.x=push`) and any UNRECOGNISED command word wrapping
+// a git call are re-scanned rather than waved through.
+//
+// Do not extend that sentence into a claim that a wrapper LIST is what closes it.
+// A first version of this file kept one, and a review found four ways past it in
+// minutes: `timeout 300 git push origin main` (not on the list), `sudo -u wade git
+// push origin main` (the wrapper's own option ate the next token), `if ...; then
+// git push origin main; fi` and `{ git push origin main; }` (a reserved word or
+// brace in command position), and `xargs sh -c '...'` (the xargs arm hand-rolled
+// its own git check instead of recursing). Three of the four were blocked by the
+// crude text matcher this file replaced. The fallback in evaluateSimpleCommand --
+// look for a `git` in ANY argument position of an unrecognised command -- is what
+// actually closes them; the list is only a tighter reading on top of it.
 //
 // This remains an ACCIDENT GATE, not an adversary gate -- the same standing every
 // other hook here has. The real enforcement is server-side branch protection on
@@ -486,9 +496,14 @@ function resolveDefaultPush(ctx) {
 // ---------------------------------------------------------------------------
 const SHELLS = new Set(["bash", "sh", "zsh", "dash", "ksh", "ash"]);
 const POWERSHELLS = new Set(["pwsh", "powershell"]);
-// Wrappers that run the command that follows them. Today's text matcher blocks
-// `sudo git push origin main`; dropping these would be a regression in blocking.
-const PREFIX_WRAPPERS = new Set(["sudo", "env", "nohup", "time", "command", "nice", "stdbuf", "doas"]);
+// Wrappers that run the command that follows them. Recursing through these gives a
+// tighter reading than the fallback below (it reaches `sudo bash -c ...`), but the
+// list is NOT what makes them safe -- see UNRECOGNISED COMMAND WORDS.
+const PREFIX_WRAPPERS = new Set(["sudo", "env", "nohup", "time", "command", "nice", "stdbuf", "doas", "timeout"]);
+// Environment variables that move the repository or its configuration out from
+// under us. A leading assignment of one of these makes the destination
+// unresolvable exactly as `--git-dir` does, so it is treated the same way.
+const ENV_RELOCATING = /^GIT_(DIR|WORK_TREE|COMMON_DIR|NAMESPACE|INDEX_FILE|OBJECT_DIRECTORY|ALTERNATE_OBJECT_DIRECTORIES|CONFIG|CONFIG_GLOBAL|CONFIG_SYSTEM|CONFIG_NOSYSTEM|CONFIG_COUNT|CONFIG_KEY_\d+|CONFIG_VALUE_\d+)$/i;
 const MAX_DEPTH = 4;
 
 function commandWord(tok) {
@@ -500,61 +515,92 @@ function commandWord(tok) {
 }
 
 /** Evaluate every simple command in `src`, plus every substitution body. First block wins. */
-function scan(src, depth) {
+function scan(src, depth, opts = {}) {
   if (depth > MAX_DEPTH) return block("command nesting is too deep to resolve");
   for (const tokens of tokenize(src)) {
-    const verdict = evaluateSimpleCommand(tokens, depth);
+    const verdict = evaluateSimpleCommand(tokens, depth, opts);
     if (verdict.blocked) return verdict;
   }
   for (const body of substitutionBodies(src)) {
     if (!body.trim()) continue;
-    const verdict = scan(body, depth + 1);
+    const verdict = scan(body, depth + 1, opts);
     if (verdict.blocked) return verdict;
   }
   return allow();
 }
 
-function evaluateSimpleCommand(tokens, depth) {
+function evaluateSimpleCommand(tokens, depth, opts = {}) {
   if (depth > MAX_DEPTH) return block("command nesting is too deep to resolve");
 
-  // Leading VAR=value assignments are environment, not the command.
+  // Leading VAR=value assignments are environment, not the command -- but a few of
+  // them relocate the repository or its config, which makes any push under them
+  // unresolvable for the same reason `--git-dir` is.
   let start = 0;
-  while (start < tokens.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[start].text)) start += 1;
+  let envReason = opts.envReason ?? null;
+  while (start < tokens.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[start].text)) {
+    const name = tokens[start].text.slice(0, tokens[start].text.indexOf("="));
+    if (ENV_RELOCATING.test(name)) {
+      envReason = `${name} in the environment moves the repository or its config, so the push destination cannot be resolved here`;
+    }
+    start += 1;
+  }
   if (start >= tokens.length) return allow();
 
+  const next = { ...opts, envReason };
   const rest = tokens.slice(start + 1);
   const word = commandWord(tokens[start]);
 
   if (PREFIX_WRAPPERS.has(word)) {
-    // Drop the wrapper's own options and re-read what it runs.
+    // Drop the wrapper's own options and re-read what it runs. Options whose value
+    // is a separate token (`sudo -u wade`, `nice -n 10`) leave that value in
+    // command position, which is why this is a convenience and not the guarantee --
+    // the fallback below is.
     let k = 0;
     while (k < rest.length && rest[k].text.startsWith("-")) k += 1;
-    return evaluateSimpleCommand(rest.slice(k), depth + 1);
+    return evaluateSimpleCommand(rest.slice(k), depth + 1, next);
   }
   if (word === "eval") {
-    return scan(rest.map((t) => t.text).join(" "), depth + 1);
+    return scan(rest.map((t) => t.text).join(" "), depth + 1, next);
   }
   if (SHELLS.has(word)) {
     const idx = rest.findIndex((t) => t.text === "-c");
-    if (idx !== -1 && idx + 1 < rest.length) return scan(rest[idx + 1].text, depth + 1);
+    if (idx !== -1 && idx + 1 < rest.length) return scan(rest[idx + 1].text, depth + 1, next);
     return allow();
   }
   if (POWERSHELLS.has(word)) {
     const idx = rest.findIndex((t) => /^-(c|command)$/i.test(t.text));
-    if (idx !== -1 && idx + 1 < rest.length) return scan(rest[idx + 1].text, depth + 1);
+    if (idx !== -1 && idx + 1 < rest.length) return scan(rest[idx + 1].text, depth + 1, next);
     return allow();
   }
   if (word === "xargs") {
-    // xargs appends arguments from stdin this hook cannot see, so a push
-    // underneath it can never be cleared.
-    const inner = rest.filter((t) => !t.text.startsWith("-"));
-    if (inner.length && commandWord(inner[0]) === "git") {
-      return evaluateGit(inner.slice(1), depth, { unknownSuffix: true });
-    }
-    return allow();
+    // xargs appends arguments from stdin this hook cannot see, so a push underneath
+    // it can never be cleared. Recursing rather than hand-rolling a `git` check is
+    // deliberate: the first version looked only for a literal `git` as the first
+    // non-option word, which let `xargs sh -c '...'` and `xargs env git push ...`
+    // straight through while blocking the plain form.
+    let k = 0;
+    while (k < rest.length && rest[k].text.startsWith("-")) k += 1;
+    return evaluateSimpleCommand(rest.slice(k), depth + 1, { ...next, unknownSuffix: true });
   }
-  if (word === "git") return evaluateGit(rest, depth, {});
+  if (word === "git") return evaluateGit(rest, depth, next);
 
+  // UNRECOGNISED COMMAND WORDS.
+  //
+  // An unknown word may well run what follows it, and enumerating the wrappers that
+  // do is a losing game: `timeout 300 git push ...`, `sudo -u wade git push ...`,
+  // `{ git push ...; }`, `if ...; then git push ...; fi` and `! git push ...` all
+  // reached main past a wrapper list. So instead of trusting the list, look for a
+  // `git` in any later argument position and judge it on its own terms.
+  //
+  // This costs an over-block on an UNQUOTED mention -- `echo git push origin main`
+  // is refused. The quoted forms that matter are not: `echo "git push origin main"`
+  // and `grep 'git push .* main' f` carry the phrase as a single token whose
+  // command word is not `git`, so both stay allowed.
+  for (let j = 0; j < rest.length; j += 1) {
+    if (commandWord(rest[j]) !== "git") continue;
+    const verdict = evaluateGit(rest.slice(j + 1), depth + 1, next);
+    if (verdict.blocked) return verdict;
+  }
   return allow();
 }
 
@@ -567,10 +613,10 @@ function evaluateSimpleCommand(tokens, depth) {
  * reads, and exactly the over-block this rewrite exists to remove. The verdict is
  * deferred until the subcommand is known.
  */
-function evaluateGit(args, depth, { unknownSuffix = false } = {}) {
+function evaluateGit(args, depth, { unknownSuffix = false, envReason = null } = {}) {
   let dir = baseCwd;
   const overrides = new Map();
-  let unresolvable = null; // why the destination could not be resolved, if so
+  let unresolvable = envReason; // why the destination could not be resolved, if so
   let unknownArity = false; // an unknown option whose value count we cannot guess
   let i = 0;
 
@@ -638,10 +684,14 @@ function evaluateGit(args, depth, { unknownSuffix = false } = {}) {
   if (sub.text === "push") return evaluatePush(rest, ctx);
   if (sub.dynamic) return allow(); // `git $CMD` -- named hole, see header
 
-  // An alias can be a push wearing another name. Resolving it closes a hole the
-  // old text matcher had too: `git p` never contained the string "git push".
+  // An alias can be a push wearing another name. Resolving it closes a hole the old
+  // text matcher had too: `git p` never contained the string "git push".
+  //
+  // Read through ctx.config, NOT the repository directly: an alias can be defined
+  // on the command line, and `git -c alias.p=push p origin main` is a real push
+  // that no repository lookup would ever find.
   if (depth < MAX_DEPTH) {
-    const alias = git(dir, ["config", "--get", `alias.${sub.text}`]);
+    const alias = ctx.config(`alias.${sub.text}`);
     if (alias) {
       if (alias.startsWith("!")) return scan(alias.slice(1), depth + 1);
       const expanded = tokenize(alias)[0] ?? [];

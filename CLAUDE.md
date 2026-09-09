@@ -173,6 +173,27 @@ deliberate fail-*open* is a malformed hook payload, the house convention `guard-
 documents at the same call site: this hook runs on every Bash call, so exiting 2 on our own
 parse error would freeze the main thread with recovery blocked behind a deny-listed file.
 
+**Enumerating wrappers was the wrong instinct, and a review proved it in minutes.** The first
+implementation trusted a list of commands that run what follows them (`sudo`, `env`, `nice`,
+…). An independent Reviewer pass found four ways past it, **three of which the crude text
+matcher had blocked**: `timeout 300 git push origin main` (not on the list), `sudo -u wade git
+push origin main` (the wrapper's own option consumed the next token, so `wade` landed in
+command position), `if …; then git push origin main; fi` and `{ git push origin main; }` (a
+reserved word or brace in command position — `(` was a separator and `{` was not), and
+`xargs sh -c 'git push origin main'` (the `xargs` arm hand-rolled its own `git` check instead
+of recursing). A fifth, `git -c alias.p=push p origin main`, slipped past because the alias
+lookup read the repository directly instead of through the `-c` overrides the same function
+had already collected.
+
+What closes them is **not** a longer list. An unrecognised command word now causes a scan for
+a `git` in any later argument position, judged on its own terms; the wrapper list survives
+only as a tighter reading layered on top. The cost is one accepted over-block: an *unquoted*
+mention, `echo git push origin main`, is refused. The quoted forms that actually occur —
+`echo "git push origin main"`, `grep 'git push .* main' f` — are a single token whose command
+word is not `git`, and stay allowed. Relocating environment variables (`GIT_DIR`,
+`GIT_WORK_TREE`, `GIT_CONFIG_*`) are now treated exactly as `--git-dir` is, rather than
+stripped as ordinary environment.
+
 **Over-blocks that remain, deliberately.** A heredoc body line that *itself* parses as a push
 to `main` is still refused — heredocs get no special treatment, and that is what keeps
 `bash <<'EOF'` closed. Writing a file whose content quotes such a command still needs the
@@ -463,18 +484,19 @@ file runs unchanged on Windows) with a real PreToolUse payload on stdin and asse
 exit code (2 = blocked, 0 = allowed), so it tests the shipped script, not a copy of its
 logic.
 
-`test/hooks/block-main-push.test.js` (**118 tests**) is the same standard applied to the push
+`test/hooks/block-main-push.test.js` (**141 tests**) is the same standard applied to the push
 hook, and until Sept 9, 2026 it did not exist — `enforcement-wiring.test.js` proved that hook
 was *wired* and nothing proved what it *decided*. That gap is exactly how three defects
 reached a live session. Cases spawn the real hook against real throwaway git repositories and
 assert the exit code, in both directions: every form that resolves to `main` refused (the ones
 naming no target included), and feature-branch pushes, feature-branch **deletes** and pure
-reads allowed. Run against the pre-rewrite hook as a control it reports **51 of 118 failing**,
-21 of them under-blocks.
+reads allowed. Run against the pre-rewrite hook as a control it reports **51 of the first 118
+failing**, 21 of them under-blocks; the 23 cases added after review fail against the
+post-review commit too, 15 of them blocks the Reviewer showed were missing.
 
 `BLOCK_MAIN_PUSH_HOOK` exists only so `scripts/verify-push-hook-mutations.mjs` can point that
 file at a damaged copy; no production caller sets it. That harness is **not** part of
-`npm test` — it spawns the whole matrix once per mutation. It runs **35 mutations**, each
+`npm test` — it spawns the whole matrix once per mutation. It runs **39 mutations**, each
 required to redden the cases that name it *specifically*, plus a green control and two
 self-tests that prove its own hollow-mutation and syntax-error checks are live. Three of its
 rows carry an explicit note that a case which looks like proof is not: `$BRANCH`, `ma"in"` and
@@ -482,6 +504,11 @@ a single-quoted `'main'` all still block through the ref-resolution guard, so cr
 dynamic-refspec or quoting decisions for those blocks would be false confidence. The harness
 also found a real over-block — an unresolvable `git` *global* was blocking before the
 subcommand was known, so `git -C "$DIR" log` was refused — by refusing its own diagnostic.
+One mutation row was **deleted** rather than repaired during the review round: the
+leading-assignment guard became redundant once the unrecognised-command-word fallback landed,
+so no case could distinguish it and the row would have reported a proven guard while proving
+nothing. The loop it covered is still load-bearing and is proved instead by the
+relocating-`GIT_`-variable row.
 
 `test/hooks/enforcement-wiring.test.js` (**7 tests**) is the companion tripwire: it reads
 the shipped `settings.json` and agent files and asserts the guard is actually *wired* —
@@ -1960,7 +1987,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2314 | **2314** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2337 | **2337** | **0** | **0** |
 
 Measured on `claude/push-main-hook-targets-kawlik`, whose merge base with `main` is
 **`261a6b2`** (PR #54). **That merge base was re-measured in this session, before any change:
@@ -1969,11 +1996,11 @@ the recorded delta has now held for a third consecutive baseline. Re-measure any
 `git fetch origin main` was run *before* deriving the merge base, per the standing warning;
 the ref was stale at `2d01027` and the fetch moved it to `261a6b2`.
 
-This change adds **+118**, all in one new file:
+This change adds **+141**, all in one new file:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `test/hooks/block-main-push.test.js` (new) | — | 118 | +118 |
+| `test/hooks/block-main-push.test.js` (new) | — | 141 | +141 |
 
 No existing test changed, because **no existing test asserted the push hook's behaviour** —
 `enforcement-wiring.test.js` asserts only that it is wired, and its 7 cases are untouched and
@@ -1982,7 +2009,7 @@ coverage shipped three live defects, two of them over-blocks and twenty-one of t
 under-blocks nobody had looked for.
 
 Companion mutation harness, **not** part of `npm test` and run on demand:
-`node scripts/verify-push-hook-mutations.mjs` → 35 mutations, 35/35 proven, green control,
+`node scripts/verify-push-hook-mutations.mjs` → 39 mutations, 39/39 proven, green control,
 plus two self-test rows that prove the harness's own hollow-mutation and syntax-error checks
 are live.
 
@@ -1996,7 +2023,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2314+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2337+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
@@ -2032,7 +2059,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 Coder mode had to keep `npm test` at 2284+ under this baseline. (Superseded — see
-Current baseline above; the figure is now 2314.)
+Current baseline above; the figure is now 2337.)
 
 Companion mutation harness, **committed** and run on demand — `node
 scratch/mobile-publishing-contract/mutation-check.mjs` → 23 mutations, 23/23 proven, green
@@ -2119,7 +2146,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2196+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2314.)
+Current baseline above; the figure is now 2337.)
 
 ### Previous baseline — measured Sept 8, 2026 on the prep-task fan-out branch
 
@@ -2590,7 +2617,17 @@ method, so they chain directly to the 988 pre-change number above.
   through a different guard entirely, and `$BRANCH`/`ma"in"`/`'main'` cases credited to
   guards that were not the ones doing the blocking. No test was deleted or skipped, and none
   needed updating: **nothing had ever asserted this hook's behaviour**, which is the whole
-  finding. Tests **2196 → 2314**, all passing.
+  finding. **An independent Reviewer pass returned FAIL on the first round**, with four
+  under-blocks — three of which the crude text matcher had caught: an unlisted wrapper
+  (`timeout`), a listed wrapper whose own option ate the next token (`sudo -u wade`), a shell
+  reserved word or brace in command position (`if …; then git push origin main; fi`), and
+  `xargs` wrapping anything other than `git` directly; plus a command-line alias
+  (`git -c alias.p=push p`) that the alias lookup could not see because it read the repository
+  instead of the `-c` overrides. The fix was not a longer wrapper list — an unrecognised
+  command word now causes a scan for a `git` in any later argument position. Relocating
+  environment variables (`GIT_DIR`, `GIT_CONFIG_*`) were closed in the same round. 23 cases
+  and 6 mutations added; 15 of the new cases fail against the pre-review commit.
+  Tests **2196 → 2337**, all passing.
 
 - **Mobile publishing contract defined and encoded (Sept 9, 2026):** The handoff item
   `docs/dashboard-v2/mobile-dashboard-spec.md` listed as number 3 — "define successful-generation
