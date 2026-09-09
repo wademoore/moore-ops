@@ -45,6 +45,27 @@
 - Use /plan before Planner prompts to enforce no-edit mode
 - An explicit no-commit/no-push instruction given in a session's own prompt (e.g. "hold at a pre-push checkpoint") takes precedence over the local git-check stop hook — don't let the hook's "commit and push" nudge override a task that deliberately asked to stop short of that.
 
+## Surface boundaries
+
+**Ownership.** Codex owns presentation surfaces. The loop owns digest logic,
+parsers, data, and enforcement.
+
+**Base discipline.** Every branch on either surface starts from a freshly
+fetched `origin/main`, never from another surface's branch. If a task needs
+unmerged work from the other side, that work merges first. Both surfaces report
+`pwd`, branch, base SHA, and `git log --oneline -3` at session start.
+
+**Handoff.** When Codex needs a field or shape the digest doesn't produce, it
+stops and the request goes to Wade's coordinating chat. That chat scopes it,
+the loop implements it, it merges, and Codex builds on top. Codex never reaches
+into the digest layer to add what it needs.
+
+The digest layer is a bottleneck by design. If Codex is blocked waiting on a
+field, that is a loop task that must be prioritized like any other. The handoff
+routes the decision through the coordinating chat rather than letting each
+surface fix its own blockers across the ownership boundary. The bottleneck is
+the feature.
+
 ## Frozen surfaces
 
 ### v1 dashboard is frozen (2026-08-27)
