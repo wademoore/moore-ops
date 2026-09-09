@@ -25,6 +25,13 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   const teamsMap = new Map(season.teams.map(t => [t.abbr, t.teamName]));
   const todayStr = refDate.toISOString().slice(0, 10);
 
+  // Season-level NFL team identity, distinct from teams[].teamName (per-opponent).
+  // Absent, null, or whitespace-only all collapse to null so renderers get one
+  // "unknown" value to branch on — the expected state for a season entered
+  // before the league assigns its NFL name.
+  const seasonTeamName =
+    (typeof season.teamName === 'string' ? season.teamName.trim() : '') || null;
+
   // Base filter: final regular non-friendly games
   const eligibleGames = (season.games || []).filter(
     g => g.type === 'regular' && g.status === 'final' && !g.friendly
@@ -137,6 +144,7 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
     seasonComplete,
     finalRecord,
     seasonLabel:  season.label,
+    teamName:     seasonTeamName,
     nextFlagGame,
   };
 }

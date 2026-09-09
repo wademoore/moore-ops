@@ -1,0 +1,46 @@
+{
+  "_comment": [
+    "MERGE these two keys into the existing \"hooks\" object in .claude/settings.json.",
+    "Do not replace the file: it already declares PreToolUse, and this fragment does not.",
+    "The existing permissions.deny already covers Edit(.claude/hooks/**) and",
+    "Write(.claude/hooks/**), so both new scripts inherit that protection with no",
+    "change to the deny list.",
+    "Exec form (\"command\": \"node\" + \"args\") is used deliberately, matching the three",
+    "shipped hooks: no shell is involved on either platform, so there is no sh -c",
+    "quoting on Linux and no PowerShell quoting on Windows to get wrong.",
+    "The SubagentStop matcher matches the agent_type field (verified against the",
+    "installed Claude Code build), so \"reviewer\" selects the Reviewer subagent."
+  ],
+  "hooks": {
+    "SubagentStop": [
+      {
+        "matcher": "reviewer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/record-review-verdict.mjs"
+            ],
+            "statusMessage": "Recording Reviewer verdict"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/require-review.mjs"
+            ],
+            "statusMessage": "Checking Reviewer coverage"
+          }
+        ]
+      }
+    ]
+  }
+}

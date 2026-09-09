@@ -23,6 +23,7 @@
  *   days:            DigestDay[]     72-hour window (up to 3 days)
  *   flags:           Flag[]
  *   schoolStrip:     object
+ *   routineAnchorsToday: object[]  Active routine anchors for `today`; each anchor is independently suppressed by the source appropriate to its type — school-type anchors by a 🏫 Family-calendar exception, caregiver-type anchors (a `caregiver` field) by emmaUnavailabilityParser.js blocks (see digest/routineAnchorsParser.js)
  *   upcomingEvents:  ResolvedEvent[] 14-day lookahead for dashboard
  *   athletics:       AthleticsData
  *   menuEvent:       ResolvedEvent|null   today's dinner
@@ -42,19 +43,26 @@
  *
  * Task {
  *   time:  string
- *   owner: 'wade'|'robyn'|'madison'|'coaching'
+ *   owner: 'wade'|'robyn'|'emma'|'coaching'
  *   text:  string
  * }
  */
 
 import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+import { readFetchFailures } from '../calendar.js';
 import { resolveEvent } from './aliases.js';
 import { computeFlags } from './flags.js';
 import { getSchoolStrip } from './schoolRotation.js';
+import { buildCentersWeek, isRoutineCentersEvent } from './centersProfile.js';
+import { getActiveAnchors, isRoutineSuppressedByCalendar, isCaregiverAnchorSuppressed } from './routineAnchorsParser.js';
 import { midnight, daysBetween, toDateKey, parseEventDate, normalizeEvent, startOfTodayET } from './dateUtils.js';
 import { parseAthleticsDoc } from './athleticsParser.js';
 import { buildGmailHits, buildActivityCommsLines } from './gmailParser.js';
 import { parseWeeklyPriorities } from './weeklyPrioritiesParser.js';
+// TEMPORARY migration shim — delete with the familySpotlightConfig line in P5.
+import { toLegacyFamilySpotlightConfig } from './legacySpotlightCompat.js';
+import { fetchEmmaUnavailabilityBlocks } from './emmaUnavailabilityParser.js';
 import { generateTasks } from './generateTasks.js';
 
 // Re-export so existing callers (e.g. builder.test.js) continue to work.
@@ -68,8 +76,10 @@ export { generateTasks };
 // the sports params are not injected by a caller (e.g. in tests).
 
 async function readDataFile(filename) {
-  const url = new URL(`../data/${filename}`, import.meta.url);
-  return JSON.parse(await readFile(url, 'utf8'));
+  const path = process.env.DASHBOARD_DATA_DIR
+    ? resolve(process.env.DASHBOARD_DATA_DIR, filename)
+    : new URL(`../data/${filename}`, import.meta.url);
+  return JSON.parse(await readFile(path, 'utf8'));
 }
 
 // ---------------------------------------------------------------------------
@@ -101,10 +111,24 @@ async function readDataFile(filename) {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// 8. LOOK-AHEAD BAG PREP TASKS (Madison, next 7 days)
+// 8. LOOK-AHEAD BAG PREP TASKS (Emma, next 7 days)
 // ---------------------------------------------------------------------------
-// Surface upcoming activity events so Madison is never caught off guard.
+// Surface upcoming activity events so Emma is never caught off guard.
 // These appear in the digest as amber flags, not as today's task list.
+
+/**
+ * TEMPORARY migration shim wrapper — delete with the familySpotlightConfig
+ * line in P5.
+ *
+ * The shim already contains its own failures, but the digest must not depend
+ * on that: this is the outer guard that keeps a compatibility-only key from
+ * ever being able to fail buildDigest. Every other non-critical input in this
+ * file is wrapped the same way.
+ */
+function safeLegacySpotlightConfig(specialEventsData) {
+  try { return toLegacyFamilySpotlightConfig(specialEventsData); }
+  catch { return null; }
+}
 
 function buildBagPrepLookahead(allResolvedEvents, today) {
   const warnings = [];
@@ -112,7 +136,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
 
   for (const ev of allResolvedEvents) {
     if (!ev.gearReminder) continue;
-    if (!ev.owner.includes('madison')) continue;
+    if (!ev.owner.includes('emma')) continue;
 
     const evDate = parseEventDate(ev.raw);
     if (!evDate) continue;
@@ -164,9 +188,10 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object}       [params.wavesSeasonData]  Waves season data (data/waves-season.json)
  * @param {object|null}  [params.vpsuRankings]     VPSU league rankings (data/vpsu-rankings.json); null on file error
  * @param {object|null}  [params.sharksData]       Tidewater Sharks soccer season data (data/sharks-soccer.json)
+ * @param {object|null}  [params.routineAnchorsData] Routine anchors (data/routine-anchors.json); null on file error — see digest/routineAnchorsParser.js. School-type anchors suppressed on 🏫 No School / Early Release days; caregiver-type anchors (a `caregiver` field) suppressed by emmaUnavailabilityParser.js blocks. No early-dismissal time computation.
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, specialEventsData, holidayThemesData, centersActionCues = [], calendarFetchFailures }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -188,6 +213,30 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   if (annotations      === undefined) {
     try { annotations  = await readDataFile('swim-annotations.json'); }
     catch { annotations = null; }
+  }
+  if (routineAnchorsData === undefined) {
+    try { routineAnchorsData = await readDataFile('routine-anchors.json'); }
+    catch { routineAnchorsData = null; }
+  }
+  if (kidsProfile === undefined) {
+    try { kidsProfile = await readDataFile('kids-profile.json'); }
+    catch { kidsProfile = null; }
+  }
+  if (specialEventsData === undefined) {
+    try { specialEventsData = await readDataFile('special-events.json'); }
+    catch { specialEventsData = null; }  // non-critical — treat missing file as no treatments
+  }
+  if (holidayThemesData === undefined) {
+    try { holidayThemesData = await readDataFile('holiday-themes.json'); }
+    catch { holidayThemesData = null; }  // non-critical — treat missing file as no ambient theme
+  }
+
+  // Calendars that could not be read on this run. Normally rides along on the
+  // event arrays from calendar.js (see attachFetchFailures there); left as an
+  // injectable param so tests can supply it directly, same convention as
+  // emmaUnavailableBlocks above — only undefined falls back to the arrays.
+  if (calendarFetchFailures === undefined) {
+    calendarFetchFailures = readFetchFailures(rawEvents, rawEvents14d);
   }
 
   if (!config) throw new Error('[buildDigest] config is required — ensure data/sports-config.json is valid');
@@ -212,14 +261,17 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
 
   // Filter out school rotation / Centers entries from both the 72-hour
   // window and the 14-day lookahead (they display in the school strip).
-  const SCHOOL_ROTATION_CALENDARS = new Set(['WJCC Schools', 'Routine']);
-  const CENTERS_RE = /^Centers\s*—/i;
-
+  // 'WJCC Schools' was dropped from this set when its FAMILY_CALENDARS entry
+  // was removed: that calendar is deleted, WJCC items now live on the Family
+  // calendar permanently, and no feed will be repointed under that display
+  // name. A filter member matching nothing reads as live wiring, so it is gone
+  // rather than kept as a hedge.
+  const SCHOOL_ROTATION_CALENDARS = new Set(['Routine']);
   const windowEvents = allResolved.filter(ev => {
     const d = parseEventDate(ev.raw);
     if (!d || d < todayMid || d >= in72h) return false;
     if (SCHOOL_ROTATION_CALENDARS.has(ev._calName)) return false;
-    if (CENTERS_RE.test(ev.title)) return false;
+    if (isRoutineCentersEvent(ev)) return false;
     return true;
   });
 
@@ -232,7 +284,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     if (ev.cardType === 'menu') return false;
     // Skip school rotation / Centers entries
     if (SCHOOL_ROTATION_CALENDARS.has(ev._calName)) return false;
-    if (CENTERS_RE.test(ev.title)) return false;
+    if (isRoutineCentersEvent(ev)) return false;
     return true;
   });
 
@@ -260,10 +312,22 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
 
   // ── 6. School rotation strip ─────────────────────────────────────────────
   const schoolStrip = getSchoolStrip(today);
+  schoolStrip.centersWeek = buildCentersWeek(kidsProfile, today, allResolved14d, centersActionCues);
 
   // ── 7. Generate tasks for each day ──────────────────────────────────────
+  // Each day gets the strip for ITS OWN date. Passing today's strip to all
+  // three days was a real defect, not a shortcut: generateTasks() gates the
+  // backpack block on isSchoolDay(date) — a per-day fact — but read
+  // warningText off the caller's strip — a today-only fact. The two halves
+  // disagreed about which day they described, so today's prep item was
+  // re-emitted on Thursday and Friday while those days' own items never
+  // appeared at all. Only render/email.js renders days beyond days[0], so the
+  // repetition landed in the email and nowhere else. getSchoolStrip() is pure
+  // date arithmetic over module constants, so three calls cost nothing, and
+  // day 0's strip is content-identical to `schoolStrip` for the two fields
+  // generateTasks reads — the dashboards and NOW/NEXT are unmoved.
   for (const day of dayMap.values()) {
-    day.tasks = generateTasks(day.events, day.date, schoolStrip);
+    day.tasks = generateTasks(day.events, day.date, getSchoolStrip(day.date));
   }
 
   const days = [...dayMap.values()];
@@ -300,6 +364,30 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     console.warn('[builder:buildDigest] weeklyPriorities fetch failed — continuing:', err.message);
   }
 
+  // ── 12.6. Emma unavailability blocks ─────────────────────────────────────
+  // Params are left as optional so tests can inject fixture arrays directly,
+  // same convention as routineAnchorsData/pbRecords/etc above — only
+  // undefined (param absent) triggers the live calendar fetch.
+  if (emmaUnavailableBlocks === undefined) {
+    emmaUnavailableBlocks = [];
+    try {
+      const euResult = await fetchEmmaUnavailabilityBlocks(today);
+      emmaUnavailableBlocks = euResult.emmaUnavailableBlocks;
+    } catch (err) {
+      console.warn('[builder:buildDigest] emmaUnavailableBlocks fetch failed — continuing:', err.message);
+    }
+  }
+
+  // ── 12.7. Routine anchors (computed here, after 12.6, because caregiver-
+  // type anchors need emmaUnavailableBlocks for suppression; school-type
+  // anchors are suppressed independently via the 🏫 Family-calendar scan —
+  // each anchor is checked against only the suppression source that applies
+  // to it, not a single blanket check across the whole array) ──────────────
+  const routineAnchorsToday = getActiveAnchors(routineAnchorsData?.anchors, today)
+    .filter(anchor => anchor.caregiver
+      ? !isCaregiverAnchorSuppressed(emmaUnavailableBlocks, today)
+      : !isRoutineSuppressedByCalendar(normalized14d, today));
+
   // ── 13. Bag prep look-ahead warnings ────────────────────────────────────
   const bagPrepWarnings = buildBagPrepLookahead(allResolved, today);
   // Merge with school rotation tomorrow warnings for the school strip
@@ -320,6 +408,8 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     pbRecords:     pbRecords     || {},
     swimResults:   swimResults   || [],
     champsTargets: config.champsTargets || {},
+    emmaUnavailableBlocks,
+    calendarFetchFailures,
   });
 
   // ── 15. Assemble and return ──────────────────────────────────────────────
@@ -328,6 +418,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     days,
     flags,
     schoolStrip,
+    routineAnchorsToday,
     upcomingEvents,
     athletics,
     menuEvent,
@@ -336,5 +427,33 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     activityComms,
     banner,
     weeklyPriorities,
+    calendarFetchFailures,
+    // Additive, display-only, Dashboard v2 special-event inputs. All three are
+    // ignored by the v1 renderers (render/dashboard.js, render/email.js) and
+    // by index.js. sharksSoccerData is the object already loaded above — it is
+    // surfaced, not re-read, so a treatment can join the full division
+    // schedule on a stable matchNumber.
+    //
+    // specialEventsConfig is the ONE live registry source: it is what the
+    // runtime selector reads, and the only thing it reads.
+    // familySpotlightConfig is a temporary migration key kept for the
+    // migration window and *derived from the same registry* — never loaded
+    // from data/family-spotlight.json, which is now a frozen test oracle.
+    // The projection is contained twice (here and inside the shim) so a
+    // failure degrades that one key to null rather than failing buildDigest;
+    // specialEventsConfig is unaffected either way, and null never means
+    // "fall back to the legacy path".
+    // Both this line and digest/legacySpotlightCompat.js are deleted in P5.
+    specialEventsConfig:   specialEventsData || null,
+    familySpotlightConfig: safeLegacySpotlightConfig(specialEventsData || null),
+    sharksSoccerData:      sharksData || null,
+    // The ambient Holiday Theme registry. Additive and display-only: it is
+    // read by render/dashboard-v2.js alone, and is ignored by the v1 renderers
+    // (render/dashboard.js, render/email.js) and by index.js. It is a wholly
+    // separate registry from specialEventsConfig, behind a wholly separate
+    // kill switch, so neither layer can enable, disable or reconfigure the
+    // other. A missing or unreadable file resolves to null, which the selector
+    // treats as "no theme" and renders the ordinary dashboard.
+    holidayThemesConfig:   holidayThemesData || null,
   };
 }

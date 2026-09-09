@@ -78,6 +78,7 @@ export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootba
     mylesCaptain:       ff.mylesCaptain,
     nextFlagGame:       ff.nextFlagGame,
     seasonLabel:        ff.seasonLabel,
+    flagTeamName:       ff.teamName,   // season.teamName; null until the NFL name is assigned
 
     // Myles swim
     mylesSeason:  swim.mylesSeason,
@@ -123,7 +124,7 @@ export function buildEmptyAthletics() {
     currentSnackFamily: '(check snack schedule)', standings: [],
     hasGameThisWeek: false, thisWeekOpponent: null, thisWeekTime: null,
     seasonComplete: false, finalRecord: null, mylesCaptain: false,
-    nextFlagGame: null, seasonLabel: null,
+    nextFlagGame: null, seasonLabel: null, flagTeamName: null,
 
     // Myles swim
     mylesSeason: 'Pre-Season', mylesPBRows: [], mylesFooter: '',

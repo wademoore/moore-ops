@@ -9,9 +9,9 @@
  *   - Gmail safety (no forbidden tokens in any output path)
  *   - Every primitive: badge, eventCard, taskRow, dinnerStrip, alertBox
  *   - School strip rendering
- *   - Tab routing: all / wade / robyn / madison
+ *   - Tab routing: all / wade / robyn / emma
  *   - Coaching checklist injection on flag game days
- *   - Madison-off alert
+ *   - Emma-off alert
  *   - Activity comms + newsletter section
  *   - Subject line format
  *   - Safety guard throws on forbidden token
@@ -64,7 +64,7 @@ function makeEvent(overrides = {}) {
     subtitle:      '6:45 PM · Myles · GREEN kit',
     cardType:      'standard',
     gearReminder:  'GREEN jersey · black shorts',
-    owner:         ['madison'],
+    owner:         ['emma'],
     isFlagGame:    false,
     isSoloEvening: false,
     _calName:      'Myles',
@@ -123,8 +123,8 @@ describe('badge primitive', () => {
     assert.ok(rBadge.includes('ROBYN'));
   });
 
-  it('Madison badge uses correct green', () => {
-    assert.ok(badge('madison').includes('#1A7A3C'));
+  it('Emma badge uses correct green', () => {
+    assert.ok(badge('emma').includes('#1A7A3C'));
   });
 
   it('Coaching badge uses correct amber', () => {
@@ -389,6 +389,55 @@ describe('renderEmail — Wade tab', () => {
     const wadeNoGame = renderEmail(makeDigestData(), 'wade');
     assert.ok(!wadeNoGame.html.includes('Coaching Checklist'));
   });
+
+  // ── Coaching checklist heading derives from flagTeamName ───────────────────
+  // Mirrors the Dashboard v2 ribbon: the team name comes from data, and an
+  // unassigned name drops the segment rather than showing a placeholder.
+
+  it('Coaching checklist heading names the team from flagTeamName', () => {
+    const html = renderCoachingChecklist({
+      athletics: { flagTeamName: 'Cowboys', seasonRecord: '3-0' },
+    });
+    assert.ok(html.includes('🏈 Coaching Checklist — Cowboys (3-0)'), html);
+  });
+
+  it('Coaching checklist heading follows a non-Cowboys team name', () => {
+    const html = renderCoachingChecklist({
+      athletics: { flagTeamName: 'Seahawks', seasonRecord: '1-1' },
+    });
+    assert.ok(html.includes('🏈 Coaching Checklist — Seahawks (1-1)'), html);
+    assert.ok(!html.includes('Cowboys'), 'must not render a hardcoded Cowboys');
+  });
+
+  it('Coaching checklist heading drops the team segment when flagTeamName is null', () => {
+    const html = renderCoachingChecklist({
+      athletics: { flagTeamName: null, seasonRecord: '0-0' },
+    });
+    assert.ok(html.includes('🏈 Coaching Checklist (0-0)'), html);
+    assert.ok(!html.includes('—'), 'no dangling em dash separator');
+    assert.ok(!/undefined|null|TBD/.test(html), 'never leaks a placeholder');
+  });
+
+  it('Coaching checklist treats missing, empty, and whitespace-only names as unknown', () => {
+    for (const flagTeamName of [undefined, '', '   ']) {
+      const html = renderCoachingChecklist({ athletics: { flagTeamName, seasonRecord: '0-0' } });
+      assert.ok(html.includes('🏈 Coaching Checklist (0-0)'), `failed for ${JSON.stringify(flagTeamName)}`);
+      assert.ok(!html.includes('undefined'), `leaked undefined for ${JSON.stringify(flagTeamName)}`);
+    }
+  });
+
+  it('Coaching checklist trims a stray transcription space in the team name', () => {
+    const html = renderCoachingChecklist({
+      athletics: { flagTeamName: '  Cowboys  ', seasonRecord: '3-0' },
+    });
+    assert.ok(html.includes('🏈 Coaching Checklist — Cowboys (3-0)'), html);
+  });
+
+  it('Coaching checklist survives athletics being absent entirely', () => {
+    const html = renderCoachingChecklist({});
+    assert.ok(html.includes('🏈 Coaching Checklist (?-?)'), html);
+    assert.ok(!html.includes('undefined'));
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -415,37 +464,37 @@ describe('renderEmail — Robyn tab', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Section 12: renderEmail — Madison tab
+// Section 12: renderEmail — Emma tab
 // ---------------------------------------------------------------------------
 
-describe('renderEmail — Madison tab', () => {
-  it('Madison tab is Gmail-safe, shows madison task, excludes wade task', () => {
-    const madisonData = makeDigestData({
+describe('renderEmail — Emma tab', () => {
+  it('Emma tab is Gmail-safe, shows emma task, excludes wade task', () => {
+    const emmaData = makeDigestData({
       days: [makeDay({
         tasks: [
-          makeTask({ owner: 'madison', text: 'Pack swim bag' }),
-          makeTask({ owner: 'wade',    text: 'Drop Myles' }),
+          makeTask({ owner: 'emma', text: 'Pack swim bag' }),
+          makeTask({ owner: 'wade', text: 'Drop Myles' }),
         ],
-        events: [makeEvent({ owner: ['madison'], title: 'Swim Team Practice — bag prep' })],
+        events: [makeEvent({ owner: ['emma'], title: 'Swim Team Practice — bag prep' })],
       })],
       schoolStrip: { myles: { center: 'PE', warningText: null }, ophelia: { center: 'Art', warningText: null }, tomorrowWarnings: [] },
     });
-    const madisonEmail = renderEmail(madisonData, 'madison');
-    assertGmailSafe(madisonEmail.html, 'Madison tab email');
-    assert.ok(madisonEmail.html.includes('Pack swim bag'));
-    assert.ok(!madisonEmail.html.includes('Drop Myles'));
+    const emmaEmail = renderEmail(emmaData, 'emma');
+    assertGmailSafe(emmaEmail.html, 'Emma tab email');
+    assert.ok(emmaEmail.html.includes('Pack swim bag'));
+    assert.ok(!emmaEmail.html.includes('Drop Myles'));
   });
 
-  it('Madison off-day — tab is Gmail-safe and shows "You Are Off" alert', () => {
-    const madisonOffData = makeDigestData({
+  it('Emma off-day — tab is Gmail-safe and shows "You Are Off" alert', () => {
+    const emmaOffData = makeDigestData({
       days: [makeDay({
-        events: [makeEvent({ title: 'Madison Off', cardType: 'urgent', owner: ['wade', 'robyn'] })],
+        events: [makeEvent({ title: 'Emma Off', cardType: 'urgent', owner: ['wade', 'robyn'] })],
         tasks: [],
       })],
     });
-    const madisonOffEmail = renderEmail(madisonOffData, 'madison');
-    assertGmailSafe(madisonOffEmail.html, 'Madison tab (off day)');
-    assert.ok(madisonOffEmail.html.includes('You Are Off'));
+    const emmaOffEmail = renderEmail(emmaOffData, 'emma');
+    assertGmailSafe(emmaOffEmail.html, 'Emma tab (off day)');
+    assert.ok(emmaOffEmail.html.includes('You Are Off'));
   });
 });
 

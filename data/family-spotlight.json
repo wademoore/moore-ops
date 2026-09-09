@@ -1,0 +1,47 @@
+{
+  "spotlights": [
+    {
+      "id": "big-sports-saturday-2026-09-12",
+      "date": "2026-09-12",
+      "activateAt": "2026-09-11T16:00",
+      "expireAt": "2026-09-12T17:00",
+      "headline": "BIG SPORTS SATURDAY!",
+      "note": "First reusable Family Spotlight. Both children qualify from their exact calendar occurrences, never from season flags — the 2026-27 swim757 window in sports-config.json is stale and swim757Active is false on this date, which is deliberately irrelevant here. expireAt is 5:00 PM ET: the Ophelia event runs 12:30-4:30 PM (team picture, intrasquad meet, then the Kick-Off Party), and the full event participates, so expiry is 30 minutes after the latest participating end.",
+      "children": [
+        {
+          "owner": "Ophelia",
+          "label": "OPHELIA",
+          "title": "757SWIM KICK-OFF",
+          "logo": "swim757",
+          "match": {
+            "calendar": "Ophelia",
+            "titleStartsWith": "757swim Kick-Off Party",
+            "startsAt": "12:30"
+          },
+          "detail": {
+            "line": "Team pic 12:30 · Intrasquad 1:00",
+            "note": "Authored literal. The 12:30 team picture and 1:00 intrasquad meet exist only as prose inside one 12:30-4:30 PM calendar event, so there is nothing structured to derive. The literal is anchored to the data by match.startsAt: if the event moves, the child fails closed rather than showing a stale time."
+          }
+        },
+        {
+          "owner": "Myles",
+          "label": "MYLES",
+          "title": "SHARKS SEASON OPENER",
+          "logo": "sharks",
+          "match": {
+            "calendar": "Myles",
+            "titleStartsWith": "Sharks vs VIP United",
+            "startsAt": "13:15"
+          },
+          "detail": {
+            "source": "sharksFixture",
+            "matchNumber": 641,
+            "opponentLabel": "VIP United",
+            "venueLabel": "Blayton",
+            "note": "Joined to data/sharks-soccer.json on the stable matchNumber, never on athletics.sharksNextGame — that pointer advances as soon as the match is marked played and would invalidate this child mid-treatment. opponentLabel and venueLabel are display shortenings and are honoured only while they remain truthful substrings of the authoritative row values."
+          }
+        }
+      ]
+    }
+  ]
+}

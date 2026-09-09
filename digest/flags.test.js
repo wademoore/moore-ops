@@ -78,6 +78,41 @@ describe('Regression — unchanged evaluators', () => {
   });
 });
 
+describe('Kid activity overlap', () => {
+  const timedKidEvent = (title, calendarName, start, end) => ev({
+    title,
+    _calName: calendarName,
+    raw: { start: { dateTime: start }, end: { dateTime: end } },
+  });
+
+  it('ignores routine Centers entries', () => {
+    const flags = computeFlags(ctx({ resolvedEvents: [
+      timedKidEvent('Myles: Music (Centers)', 'Myles', '2026-09-08T09:15:00-04:00', '2026-09-08T10:00:00-04:00'),
+      timedKidEvent('Ophelia: PE2 (Centers)', 'Ophelia', '2026-09-08T09:30:00-04:00', '2026-09-08T10:15:00-04:00'),
+    ] }));
+
+    assert.equal(flags.find(flag => flag.id === 'activity-overlap'), undefined);
+  });
+
+  it('continues to flag genuine overlapping kid activities', () => {
+    const flags = computeFlags(ctx({ resolvedEvents: [
+      timedKidEvent('Sharks Practice', 'Myles', '2026-09-08T18:00:00-04:00', '2026-09-08T19:00:00-04:00'),
+      timedKidEvent('Dance Class', 'Ophelia', '2026-09-08T18:30:00-04:00', '2026-09-08T19:30:00-04:00'),
+    ] }));
+
+    assert.ok(flags.find(flag => flag.id === 'activity-overlap'));
+  });
+
+  it('ignores standing GK training with the household standard coverage setup', () => {
+    const flags = computeFlags(ctx({ resolvedEvents: [
+      timedKidEvent('Myles: GK Training', 'Myles', '2026-09-08T18:00:00-04:00', '2026-09-08T19:00:00-04:00'),
+      timedKidEvent('Dance Class', 'Ophelia', '2026-09-08T18:30:00-04:00', '2026-09-08T19:30:00-04:00'),
+    ] }));
+
+    assert.equal(flags.find(flag => flag.id === 'activity-overlap'), undefined);
+  });
+});
+
 // ---------------------------------------------------------------------------
 // Section 13 — Sort order
 // ---------------------------------------------------------------------------
@@ -204,5 +239,183 @@ describe('evaluateChampsQualifiers', () => {
     const flags = computeFlags(champsCtx('2026-06-30', pb, []));
     const f = flags.find(f => f.id === 'champs-qualifier-myles-50m-freestyle-2026-06-29');
     assert.equal(f.swimmerColor, '#E24B4A');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 16 — Emma unavailability evaluator
+// ---------------------------------------------------------------------------
+
+describe('evaluateEmmaUnavailability', () => {
+  function block(overrides = {}) {
+    return {
+      id: 'emma-unavail-2026-10-16-uta-reserve',
+      type: 'UTA (Reserve)',
+      startDate: '2026-10-16',
+      endDate: '2026-10-19',
+      ...overrides,
+    };
+  }
+
+  it('fires for a block starting within the next 14 days', () => {
+    // today = 2026-10-10, block starts 2026-10-16 (6 days out)
+    const flags = computeFlags(ctx({ today: d('2026-10-10'), emmaUnavailableBlocks: [block()] }));
+    const f = flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve');
+    assert.ok(f, 'flag should fire');
+    assert.equal(f.level, 'amber');
+    assert.deepEqual(f.owner, []);
+    assert.equal(f.bannerOnly, undefined);
+    assert.equal(f.body, 'Emma unavailable Oct 16–19 (UTA (Reserve)) — confirm coverage.');
+    assert.equal(f.nowNextEligibleFrom, '2026-10-15');
+  });
+
+  it('keeps the Sep 11 absence as advance planning on Aug 28', () => {
+    const tour = block({
+      id: 'emma-unavail-2026-09-11-annual-tour-duty-reserve',
+      type: 'Annual Tour Duty (Reserve)',
+      startDate: '2026-09-11',
+      endDate: '2026-09-18',
+    });
+    const f = computeFlags(ctx({ today: d('2026-08-28'), emmaUnavailableBlocks: [tour] }))
+      .find(flag => flag.id === tour.id);
+    assert.ok(f, 'planning flag should remain available outside NOW/NEXT');
+    assert.equal(f.nowNextEligibleFrom, '2026-09-10');
+  });
+
+  it('does not fire for a block starting more than 14 days out', () => {
+    // today = 2026-09-30, block starts 2026-10-16 (16 days out)
+    const flags = computeFlags(ctx({ today: d('2026-09-30'), emmaUnavailableBlocks: [block()] }));
+    assert.ok(!flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve'));
+  });
+
+  it('fires for a block starting exactly 14 days out (boundary: inclusive)', () => {
+    // today = 2026-10-02, block starts 2026-10-16 (exactly 14 days out)
+    const flags = computeFlags(ctx({ today: d('2026-10-02'), emmaUnavailableBlocks: [block()] }));
+    assert.ok(flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve'));
+  });
+
+  it('does not fire for a block starting exactly 15 days out (boundary: exclusive)', () => {
+    // today = 2026-10-01, block starts 2026-10-16 (exactly 15 days out)
+    const flags = computeFlags(ctx({ today: d('2026-10-01'), emmaUnavailableBlocks: [block()] }));
+    assert.ok(!flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve'));
+  });
+
+  it('fires for a block already in progress', () => {
+    // today = 2026-10-18, inside [10-16, 10-19]
+    const flags = computeFlags(ctx({ today: d('2026-10-18'), emmaUnavailableBlocks: [block()] }));
+    assert.ok(flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve'));
+  });
+
+  it('does not fire for a block that already ended', () => {
+    // today = 2026-10-20, block ended 2026-10-19
+    const flags = computeFlags(ctx({ today: d('2026-10-20'), emmaUnavailableBlocks: [block()] }));
+    assert.ok(!flags.find(f => f.id === 'emma-unavail-2026-10-16-uta-reserve'));
+  });
+
+  it('does not fire and does not throw when emmaUnavailableBlocks is absent', () => {
+    const flags = computeFlags(ctx({ today: d('2026-10-10') }));
+    assert.ok(!flags.find(f => f.id && f.id.startsWith('emma-unavail-')));
+  });
+
+  it('does not fire and does not throw when emmaUnavailableBlocks is empty', () => {
+    const flags = computeFlags(ctx({ today: d('2026-10-10'), emmaUnavailableBlocks: [] }));
+    assert.ok(!flags.find(f => f.id && f.id.startsWith('emma-unavail-')));
+  });
+
+  it('fires both flags when two blocks are simultaneously in-window', () => {
+    // An annual-tour block in progress, with a UTA weekend rolling in
+    // shortly after it ends — both in-window on the same day.
+    const tour = block({
+      id: 'emma-unavail-2026-09-11-annual-tour-duty-reserve',
+      type: 'Annual Tour Duty (Reserve)',
+      startDate: '2026-09-11',
+      endDate: '2026-09-25',
+    });
+    const uta = block({
+      id: 'emma-unavail-2026-09-26-uta-reserve',
+      type: 'UTA (Reserve)',
+      startDate: '2026-09-26',
+      endDate: '2026-09-29',
+    });
+    // today = 2026-09-15: tour is in progress; uta starts in 11 days (<=14).
+    const flags = computeFlags(ctx({ today: d('2026-09-15'), emmaUnavailableBlocks: [uta, tour] }));
+    assert.ok(flags.find(f => f.id === 'emma-unavail-2026-09-11-annual-tour-duty-reserve'));
+    assert.ok(flags.find(f => f.id === 'emma-unavail-2026-09-26-uta-reserve'));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 17 — Calendar fetch failure evaluator
+//
+// The regression this guards: a permanently 404ing calendar produced an empty
+// event list, and the digest rendered that as a clear day. Nothing downstream
+// can tell the two apart, so the flag is the only signal.
+// ---------------------------------------------------------------------------
+
+describe('evaluateCalendarFetchFailure', () => {
+  const failure = (name, id, message = 'Not Found') => ({
+    calendarName: name,
+    calendarId: id,
+    message,
+  });
+
+  const find = flags => flags.find(f => f.id === 'calendar-fetch-failure');
+
+  it('does not fire when every calendar loaded', () => {
+    assert.equal(find(computeFlags(ctx({ calendarFetchFailures: [] }))), undefined);
+  });
+
+  it('does not fire when the context omits the field entirely', () => {
+    assert.equal(find(computeFlags(ctx())), undefined);
+  });
+
+  it('fires red when a calendar could not be read', () => {
+    const flags = computeFlags(ctx({
+      calendarFetchFailures: [failure('WJCC Schools', 'wjcc@import')],
+    }));
+    const flag = find(flags);
+    assert.ok(flag, 'expected calendar-fetch-failure to fire');
+    assert.equal(flag.level, 'red');
+    assert.deepEqual(flag.owner, ['wade']);
+    assert.match(flag.title, /1 Source Failed/);
+    assert.match(flag.body, /WJCC Schools/);
+  });
+
+  it('names the underlying error so the cause is visible in the digest', () => {
+    const flags = computeFlags(ctx({
+      calendarFetchFailures: [
+        failure('WJCC Schools', 'wjcc@import', 'The requested event could not be found or has been deleted.'),
+      ],
+    }));
+    assert.match(find(flags).body, /could not be found or has been deleted/);
+  });
+
+  it('says the source is unknown rather than clear', () => {
+    const flags = computeFlags(ctx({
+      calendarFetchFailures: [failure('WJCC Schools', 'wjcc@import')],
+    }));
+    assert.match(find(flags).body, /unknown today, not clear/);
+  });
+
+  it('pluralizes and lists every failing calendar', () => {
+    const flags = computeFlags(ctx({
+      calendarFetchFailures: [
+        failure('Family', 'family@group'),
+        failure('WJCC Schools', 'wjcc@import'),
+      ],
+    }));
+    const flag = find(flags);
+    assert.match(flag.title, /2 Sources Failed/);
+    assert.match(flag.body, /Family, WJCC Schools/);
+    assert.match(flag.body, /These calendars/);
+  });
+
+  it('sorts ahead of amber and blue flags', () => {
+    const flags = computeFlags(ctx({
+      calendarFetchFailures: [failure('WJCC Schools', 'wjcc@import')],
+      schoolStrip: { myles: {}, ophelia: {}, tomorrowWarnings: ['Tomorrow: Myles has Library — pack book tonight'] },
+    }));
+    assert.ok(flags.length > 1, 'expected at least one other flag alongside');
+    assert.equal(flags[0].id, 'calendar-fetch-failure');
   });
 });

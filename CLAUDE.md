@@ -12,7 +12,8 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 624+ passing
+- Run npm test after changes — must stay at 2196+ passing with a browser
+  (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
 
@@ -25,7 +26,11 @@
 
 ### DESIGNER MODE
 - Used for visual or content presentation changes only
-- Read render/dashboard.js to understand available data
+- Read digest/builder.js for available data — its
+  `OUTPUT — digestData` block is the field-level contract
+  every surface renders from
+- Read render/dashboard-v2.js for the current rendered
+  surface (v1 is frozen — see Frozen surfaces)
 - Requires a screenshot of current state to be useful
 - Translate vague visual goals into a precise spec
 - Output: layout description, hierarchy, spacing, 
@@ -38,12 +43,523 @@
 - New task = new session
 - Update CLAUDE.md after any significant change
 - Use /plan before Planner prompts to enforce no-edit mode
+- An explicit no-commit/no-push instruction given in a session's own prompt (e.g. "hold at a pre-push checkpoint") takes precedence over the local git-check stop hook — don't let the hook's "commit and push" nudge override a task that deliberately asked to stop short of that.
+
+## Surface boundaries
+
+**Ownership.** Codex owns presentation surfaces. The loop owns digest logic,
+parsers, data, and enforcement.
+
+**Base discipline.** Every branch on either surface starts from a freshly
+fetched `origin/main`, never from another surface's branch. If a task needs
+unmerged work from the other side, that work merges first. Both surfaces report
+`pwd`, branch, base SHA, and `git log --oneline -3` at session start.
+
+**Handoff.** When Codex needs a field or shape the digest doesn't produce, it
+stops and the request goes to Wade's coordinating chat. That chat scopes it,
+the loop implements it, it merges, and Codex builds on top. Codex never reaches
+into the digest layer to add what it needs.
+
+The digest layer is a bottleneck by design. If Codex is blocked waiting on a
+field, that is a loop task that must be prioritized like any other. The handoff
+routes the decision through the coordinating chat rather than letting each
+surface fix its own blockers across the ownership boundary. The bottleneck is
+the feature.
+
+## Frozen surfaces
+
+### v1 dashboard is frozen (2026-08-27)
+
+`render/dashboard.js` (v1) is frozen. Do not iterate, improve, refactor, or
+debug it unless Wade explicitly asks in that session. It stays deployed; it
+does not get worked on.
+
+Before scoping any task touching a rendered surface, confirm the change
+reaches v2 (`render/dashboard-v2.js`) or the email digest. If the only
+consumer is v1, say so and stop rather than writing a spec — a fix to a
+surface nobody reads produces no signal when it breaks, which is how the
+school-strip bug survived unnoticed from June until it was found by accident
+in August.
+
+This applies to the strategy layer as much as to Claude Code: the
+school-rotation prompt was nearly written without asking which surface
+consumed the output.
+
+This does not freeze the shared pipeline. `digest/builder.js` and the modules
+it calls serve every surface; changes there are in scope as normal.
+
+**One exception — a failing v1 test.** `render/dashboard.test.js` is 81
+v1-only tests inside the suite, so a v1 failure turns CI red while the freeze
+otherwise forbids touching v1. To unblock CI you may fix the failing test, or
+skip it, and nothing further. That is the only v1 work permitted without Wade
+explicitly asking for it. Report it — in the session and in the PR — rather
+than doing it quietly: a silently skipped test is exactly how a frozen surface
+rots with no signal, which is the failure mode this whole section exists to
+prevent.
+
+**`scripts/renderTest.js` is half-frozen.** It renders both surfaces for
+visual inspection: `renderEmail()` → `scripts/out-email.html`, and v1's
+`renderTodayCard()` → `scripts/out-dashboard.html`. The email half is live and
+in scope; the dashboard half is v1-only and frozen with it. There is no v2
+equivalent and none should be built here — `render/dashboard-v2.js` is
+exercised through `dashboard-artifact/generator.js`. Do not invest in the
+dashboard half.
+
+**Freezing is not retiring.** The "Dashboard v2 canonical composition" entry
+in Known open items describes v1 as a rollback path pending a production
+soak. Whether that soak is done, and whether v1 should be deleted rather than
+merely frozen, is an open decision — and not one this section makes.
 
 ## Branching policy
 
-Direct-to-main after Reviewer sign-off remains this project's default for all Coder/Updater work, including small, well-specified changes. Feature branches are not the default safety mechanism — the Reviewer gate is. Use a feature branch as a deliberate escalation, not routine practice, specifically for changes where the risk is environment-dependent in a way local testing can't fully rule out (e.g. timezone/locale logic, dependency version bumps, anything sensitive to the Lambda runtime specifically) — in those cases, a branch + PR gets a free independent confirmation from CI (which runs under UTC, matching Lambda) before merge, which is a real benefit local subprocess-spawned tests can't fully replicate.
+**Feature branch + pull request is the only route to `main` (Sept 7, 2026).** Direct-to-main
+after Reviewer sign-off was this project's default until the enforcement config landed; it no
+longer is, and it is no longer possible by accident. Three layers stand between a session and
+`main`, and only the first is real enforcement:
+
+- **server-side branch protection on `main`** — the actual gate; binds every route, the
+  GitHub API included;
+- **`permissions.deny` in `.claude/settings.json`** — the four `Bash(git push … main)` rules;
+- **`.claude/hooks/block-main-push.mjs`** — a `PreToolUse` hook on `Bash|PowerShell` that
+  refuses any `git push` while `main` is checked out, or whose command text contains the
+  word `main`.
+
+The Reviewer gate is unchanged in substance and moved in position: Reviewer sign-off is still
+required before the pull request is merged (open it, or mark it ready, only after the pass),
+and Reviewer checklist item 7 now expects a pushed feature branch with a PR open or ready —
+not a pushed `main`. Pushing a feature branch is not a delivery; merging is. CI runs on every
+pull request, so the "free independent confirmation under UTC" that used to be the argument
+for escalating to a branch is now part of every change rather than a special case.
+
+**Known over-block in the push hook, accepted deliberately.** It matches `\bmain\b` anywhere
+in the command text whenever `git push` also appears, so a compound command that merely
+*mentions* `main` is refused: a heredoc quoting the deny rules above, `git log
+origin/main..HEAD && git push -u origin feature`, or a push of a branch named `fix-main-menu`.
+Confirmed live on Sept 7, 2026 (the heredoc case, while writing `settings.json`). Split the
+command instead of weakening the hook — a false block is recoverable.
+
+## The gate (`.claude/settings.json` + `.claude/hooks/*.mjs`)
+
+Installed in `4a8cc52`; the Bash arm and this section added in the follow-up; the
+archived-files hook ported from bash to Node on Sept 7, 2026 so it runs on Windows too (see
+"The Node port" below). **Six mechanisms now live in `.claude/settings.json`** — the deny
+rules, the archived-files hook and the push hook (the three this section was originally
+written around), plus three added since: the settings-level read-only role backstop
+(`guard-readonly.mjs`, `bf3be6f` / #46) and the Reviewer gate's `record-review-verdict.mjs`
+on `SubagentStop` and `require-review.mjs` on `Stop` (`1bad0fd` / #53). They are not equally
+strong. Read this before assuming any of them protects you.
+
+This count has drifted twice, silently, and the mechanism is blunter than "someone forgot
+to update a cross-reference": **neither `bf3be6f` nor `1bad0fd` touched `CLAUDE.md` at
+all.** Both wired a new hook into `settings.json` and shipped with no update to this file
+whatsoever, against its own "Update CLAUDE.md after any significant change" convention. The
+count was not left behind by a documentation change that moved elsewhere; there was no
+documentation change. If you wire a seventh, correct this sentence in the same commit.
+
+### What `permissions.deny` covers — reinstated, scoped to `main`
+
+**History.** `4a8cc52` shipped one rule, `Bash(git push:*)`, and PR #15 removed it. It
+failed in both directions at once: too narrow to be a gate (see below), and
+simultaneously too broad to be useful friction. Scoped to the verb `git push` with no
+remote or branch qualifier, it blocked *every* push, including the push of a feature
+branch — the sanctioned way to get a change onto `main` now that `main` requires a PR.
+It obstructed the reviewed path and left the API route wide open, which is precisely
+backwards. A rule that makes the safe route harder and the risky route no harder is
+worse than no rule.
+
+**Reinstated, scoped to the outcome instead of the verb.** Four rules:
+
+```json
+"deny": [
+  "Bash(git push * main)",
+  "Bash(git push * main *)",
+  "Bash(git push * *:main)",
+  "Bash(git push * *:main *)"
+]
+```
+
+Verified empirically against the installed build, **Claude Code 2.1.246** — not the
+2.1.243 the original note was written against. Method: a throwaway git repo whose
+`origin` is a bare repo in the same temp directory, one headless `claude -p` session per
+case with the rules in `.claude/settings.json`, and two independent signals per case —
+whether the harness recorded a permission denial for the exact command, and whether the
+bare repo's ref actually moved (proof the push really ran, rather than the sub-agent
+merely narrating).
+
+| Command | On branch | `git push * main` alone | All four rules (shipping) |
+|---|---|---|---|
+| `git push` | `main` | allowed | **allowed — hole, see below** |
+| `git push` | feature | allowed | allowed |
+| `git push origin main` | `main` | DENIED | DENIED |
+| `git push -u origin main` | `main` | DENIED | DENIED |
+| `git push --force origin main` | `main` | DENIED | DENIED |
+| `git push --force-with-lease origin main` | `main` | DENIED | DENIED |
+| `git push origin main --force` | `main` | allowed | DENIED |
+| `git push origin HEAD:main` | `main` | allowed | DENIED |
+| `git push origin main:main` | `main` | allowed | DENIED |
+| `git push origin my-feature` | `my-feature` | allowed | allowed |
+| `git push -u origin claude/foo` | `claude/foo` | allowed | allowed |
+
+Every outcome above was produced by a live tool call under the rule set named in its
+column. They were additionally cross-checked against the matcher extracted verbatim from
+the installed binary (function `ru` plus its four regex constants), which agreed with the
+live harness on 11 of 11 live-confirmed cases.
+
+**Why the wildcard form (`*`) and not the prefix form (`:*`).** A `:*` rule is a literal
+prefix match, so `Bash(git push * main:*)` classifies as the prefix `git push * main` and
+looks for a literal asterisk — it matches nothing. Only the wildcard form compiles to a
+regex: `git push * main` becomes `/^git push .* main$/s`, which is what pins the branch
+name while letting the remote and any inserted flags float. Claude Code emits a
+validation warning about a wildcard "before the rest of the command" also matching
+inserted options; that warning is aimed at *allow* rules. For a *deny* rule, matching
+inserted options is exactly the point.
+
+**Correction to the original note, which was wrong on this build.** `4a8cc52`'s commit
+message claimed `Bash(git push *)` "compiles to the anchored regex `/^git push .*$/`,
+which requires a space after `push` and so does NOT match a bare `git push`" — and that
+claim was the stated reason for choosing `:*` over `*`. **It does not hold on 2.1.246.**
+The compiler special-cases a pattern ending in ` *` with exactly one star, rewriting the
+trailing ` .*` to `( .*)?`, so `git push *` compiles to `/^git push( .*)?$/s` and *does*
+match a bare `git push`. Confirmed live: under `Bash(git push *)` a bare `git push` is
+DENIED, identically to `Bash(git push:*)`. Whether 2.1.243 genuinely differed is not
+established here; what is established is that the claim is false for the version now
+installed. Re-verify against the build you are actually running before relying on either
+form — that is the whole reason this section names a version number.
+
+**Residual holes, named rather than implied.** These reach `main` and are *not* blocked:
+
+| Form | Why it escapes |
+|---|---|
+| `git push` with `main` checked out | no branch name in the command text to match |
+| `git push origin +main` | `+main` is not preceded by a space, so ` main` never matches |
+| `git push origin refs/heads/main` | ends in `/main`, not ` main` |
+| every non-Bash route (MCP tools, REST API, a script, a human) | unchanged — see below |
+
+Bare `git push` is deliberately left allowed. Blocking it would require an exact-match
+rule on `git push`, which would also block a bare `git push` on a feature branch — the
+exact over-block that got the original rule removed. (`block-main-push.mjs` closes that
+hole from the other side: it asks git which branch is checked out, so a bare `git push`
+on `main` is refused by the hook even though no deny rule matches it.) This is an
+**accident gate, not an adversary gate**, the same standing this project gives the
+archived-files hook: it stops the ways `main` actually gets pushed by mistake, not anyone
+who means it. The real enforcement remains branch protection on `main`.
+
+**Added Sept 2026, alongside the push hook:** `Edit`/`Write` deny rules on
+`data/archive/**` and `scripts/archive/**` (a belt to the archived-files hook's braces —
+the path arm and the rule say the same thing by two mechanisms), and on
+`.claude/settings.json`, `.claude/hooks/**` and `.claude/agents/**`, so the enforcement
+config cannot be edited through the two exact-path tools. **These are `Edit`/`Write`-only.**
+A Bash heredoc reaches every one of those files — that is how this very change was made —
+so they are friction against an accidental edit, not a gate. Same lesson as the rest of
+this section.
+
+### What `permissions.deny` did not cover
+
+It did not cover the *outcome* "commits reach the remote." It covered one tool taking
+one route to that outcome. Everything else that reaches the same place was untouched:
+
+- the GitHub MCP tools (`create_or_update_file`, `push_files`, `merge_pull_request`)
+- the GitHub REST API over `curl`
+- `git` invoked from inside a script the model runs
+- any session that did not load this settings file (a fresh clone, CI, a different cwd)
+- a human at a terminal
+
+**This is not hypothetical — it happened during this gate's own bootstrap.** In the
+session that produced `4a8cc52`, the deny rule blocked `git push`, and that session
+pushed the commit through the GitHub API instead. The gate did not stop the push; it
+chose the route the push took.
+
+**The evidence is the committer identity, quoted here so the claim does not depend on a
+reachable commit.** Two identities appear on Claude-authored work in this repo:
+
+| Identity string | What produces it |
+|---|---|
+| `Claude <noreply@anthropic.com>` | an ordinary local `git commit` from a Claude Code session |
+| `wademoore <68702425+wademoore@users.noreply.github.com>` | a write through the GitHub API / web UI |
+
+`4a8cc52` — the commit that *installed* the `git push` deny rule — carries the second
+identity on **both** its author and committer fields. A commit that installs a local
+push gate, written by the very session the gate was blocking, could not have been
+created by a local `git commit` that the gate would have stopped; the API identity is
+what it left behind instead. That contrast is the whole of the proof, and it is
+reproduced above in full — no SHA lookup required.
+
+Corroboration, not evidence: `4a8cc52` was never merged into `main` (PR #15 squash-merged
+its content), so it survives only on branch `claude/subagent-files-git-hooks-m7lccy`. If
+that branch is ever deleted the commit becomes unreachable and the identity strings above
+become the only remaining record. Do not delete that branch casually — but the argument
+no longer collapses if someone does.
+
+### The generalizable lesson
+
+**A deny rule scoped to a tool is not scoped to an outcome. Any other tool that reaches
+the same outcome is an open door.** When you write a rule, name the outcome you want
+prevented, then enumerate every tool that can reach it. If the rule only covers some of
+them, you have friction, not a gate — and friction that reads like a gate is worse than
+no gate, because it buys false confidence.
+
+For push specifically: **the real enforcement is branch protection on `main`**, which is
+server-side and binds every route including the API. The local deny rule was friction, not
+the thing standing between a bad commit and `main`. Never treat a green local deny rule as
+proof that `main` is safe. Verify protection at the server: `main` reports
+`"protected": true` via the branch API; every other branch in this repo reports `false`.
+
+The local push rule **has now been reinstated** on exactly that principle: scoped to the
+outcome worth preventing — a push *to `main`* — not to the verb `git push`. Blocking the
+verb punished the PR workflow and stopped nothing that mattered. See "What
+`permissions.deny` covers" above for the four rules, the empirical match table, and the
+holes that remain. None of that changes this paragraph's point: the local rule is still
+friction, still Bash-only, and still not the thing standing between a bad commit and
+`main`. Server-side branch protection is. Re-verify it there, not here.
+
+**The `Edit|Write` vs. `Bash` gap below is the same lesson in a second place.** The
+archived-files hook originally matched only `Edit|Write` — it was scoped to two tools,
+not to the outcome "an archived file gets modified." A shell redirect reached that
+outcome untouched, and this environment often prefers Bash for edits, so the bypass was
+the likely path rather than an exotic one. Same shape, same fix: enumerate the routes.
+
+### What the archived-files hook covers
+
+`PreToolUse` matcher `Edit|Write|Bash|PowerShell` → `.claude/hooks/guard-archived-files.mjs`,
+declared in exec form (`"command": "node"`, `"args": ["${CLAUDE_PROJECT_DIR}/…"]`) so no
+shell is involved in launching it on either platform. Exit 2 blocks the tool call and
+returns stderr to the model. Until Sept 7, 2026 this was `scripts/hooks/guard-archived-files.sh`,
+invoked as `bash "$CLAUDE_PROJECT_DIR/..."`; the bash script is retired (deleted, not kept
+alongside) — see "The Node port" below.
+
+Two arms, and they differ in kind:
+
+- **`Edit|Write` — reliable.** Checks `.tool_input.file_path`, an exact path. A path
+  either is under `data/archive/` or `scripts/archive/` or it is not.
+- **`Bash` — best-effort.** Checks `.tool_input.command`, a shell string, by pattern.
+  Pattern-matching shell is never airtight. The rules are:
+  - (a) redirect (`>` `>>` `>|` `1>` `&>`) whose target contains an `archive/` path
+    segment. Scoped to the redirect target, so reads piped elsewhere still work.
+  - (b) an archived path anywhere in a command running a write-capable utility:
+    `tee cp mv rsync install ln rm rmdir unlink shred truncate touch mkdir chmod chown
+    chgrp patch dd find python python3 node perl ruby`, plus (since the Node port) the
+    PowerShell writers `Set-Content Add-Content Clear-Content Out-File Copy-Item Move-Item
+    Remove-Item New-Item Rename-Item`, matched case-insensitively.
+  - (c) in-place stream editors: `sed`/`perl`/`awk` with `-i`/`--in-place`/`inplace`.
+  - (d) mutating git subcommands: `checkout restore rm mv apply clean stash`. Read-only
+    git (`log`, `show`, `diff`) stays allowed — the archive exists to be queried.
+  - (e) `cd` (or `Set-Location`) into an archive directory followed by any write
+    indicator, which otherwise defeats (a)–(d) because the archived path never appears in
+    the write itself.
+
+  Redundant path separators are tolerated: `data/archive`, `data//archive`,
+  `data/./archive` all match. Windows forms are covered since the port: backslashes are
+  normalized to `/` before matching in **both** arms (so `data\archive\x.json` is caught,
+  in a `file_path` or in a command), the path arm is case-insensitive because NTFS is, and
+  CRLF line breaks collapse exactly like LF. All three are deliberate over-blocks in the
+  Windows direction, on the usual grounds that a false block is recoverable.
+
+### What the archived-files hook does not cover — named, not implied
+
+These were probed against the actual script and **confirmed to escape**. They are not
+theoretical:
+
+| Escaping form | Why |
+|---|---|
+| `D=data/archive; cat > $D/x.json` | variable indirection — the literal path never appears in the command text |
+| `cat > $(echo data/archive)/x.json` | command substitution — same reason |
+| `cat > "data/arch""ive/x.json"` | string splitting across quotes |
+| `printf x > da't'a/archive/x.json` | intra-word quoting |
+| `bash /tmp/writer.sh` | indirection through a file — the hook never sees the write |
+| any long-running process that writes later | the hook is `PreToolUse` on one command |
+
+The first four are deliberate evasion, and **this gate is not an adversary gate** — it is
+an accident gate, built because the Champs/SA wrong-file incident survived a full
+Reviewer pass. Against a model or human actively trying to get around it, string matching
+loses; the only real protection for archived content is that it is committed to git and a
+bad write is recoverable and reviewable. The last two are unclosable by string matching at
+all: **once execution leaves the command string, a `PreToolUse` text hook has no reach.**
+
+Known over-blocks, accepted deliberately (false blocks are recoverable; false allows are
+the incident):
+
+- `cp data/archive/x.json /tmp/backup.json` — blocked though the archive is the *source*.
+- `echo note > /tmp/my/archive/notes.txt` — any path with an `archive/` segment.
+- `python3 -c "print(open('data/archive/x.json').read())"` — a read through an
+  interpreter in the (b) list.
+- **Any command that contains an archived path literal *and* also names a listed
+  write-capable utility, in-place editor, or mutating git subcommand** — even when the
+  command is a pure read. This catches a test harness run via `node`/`python3` and a doc
+  edit via `sed -i`. Work around it by putting the literals in a file outside the repo
+  and running that file, which is why `scratchpad/gen-fixtures.mjs` lives outside the
+  repo.
+
+  **This bullet previously overstated the rule**, claiming that *any* command whose text
+  merely contains a literal is blocked, "including a test harness, a `grep` for the
+  pattern, or a doc edit quoting it." Probed against the live script: a bare
+  `grep '<literal>' CLAUDE.md` is **allowed** (`grep` is not in the (b) list), and so is
+  a `cat > CLAUDE.md <<'EOF'` heredoc whose body quotes a literal (`cat` is not either,
+  and the redirect target is not an archived path). The literal alone is not sufficient —
+  a listed utility has to be present too.
+
+Rule (e) needed tightening during development for exactly this class of reason: its `cd`
+argument pattern was initially `[^;|&]*`, which spans whitespace, so a `cd` anywhere in a
+script plus the word "archive" in a later comment matched. Bounded to a single
+whitespace-free token. Treat any new rule here as guilty until table-tested both ways.
+
+### Test matrix — committed, runs in the normal suite
+
+`test/hooks/guard-archived-files.test.js`, driven by
+`test/fixtures/guard-archived-files-cases.json`. **93 cases, +1 fixture-integrity check =
+94 tests** — the 73 from the bash era, unchanged and still passing against the port, plus
+20 Windows/PowerShell cases (74–93) added with it. It asserts both directions: every write
+form blocked, and every read of an archived file plus every write outside `archive/` still
+allowed. Each case spawns the real hook script (`process.execPath` + the `.mjs`, so the
+file runs unchanged on Windows) with a real PreToolUse payload on stdin and asserts the
+exit code (2 = blocked, 0 = allowed), so it tests the shipped script, not a copy of its
+logic.
+
+`test/hooks/enforcement-wiring.test.js` (**6 tests**) is the companion tripwire: it reads
+the shipped `settings.json` and agent files and asserts the guard is actually *wired* —
+matcher reaching `Edit`, `Write`, `Bash` and `PowerShell`, exec form, no BOM on any
+enforcement file, the reviewer/debugger frontmatter hooks present with the right role
+argument, every hook script parsing, and the retired bash guard absent. The matrix proves
+the script works; this proves something runs it. The gap between those two is exactly how
+the guard was dropped from `settings.json` unnoticed in Sept 2026.
+
+This supersedes the earlier 63-case matrix, which lived only in a session scratchpad and
+did not survive it. Coverage is a superset: all 24 rule-(b) utilities are now enumerated
+individually rather than sampled.
+
+**Why the fixtures are base64-encoded.** The live hook blocks any command that pairs an
+archived path literal with a listed utility (see over-blocks above), which would make a
+plain-text fixture file impossible to `sed -i`, or to process with `node`/`python3`,
+through ordinary tooling. Encoding the inputs — command strings and file paths alike —
+keeps the test maintainable: no file in the repo contains a matching literal. Regenerate
+with `node <scratchpad>/gen-fixtures.mjs test/fixtures/guard-archived-files-cases.json`;
+the generator is deliberately kept **outside** the repo because it does contain the
+literals verbatim.
+
+**Rule (e) has an explicit false-positive regression test** (cases 64–65). Rule (e)'s
+`cd`-argument pattern was originally `[^;|&]*`, which spans whitespace, so a `cd`
+anywhere in a command plus the bare word "archive" later in the same line — a trailing
+comment, say — matched and blocked. It false-positived on a real negative-control command
+during development. It is now bounded to a single whitespace-free token. Both cases were
+confirmed to have teeth: against a copy of the hook with that one character class
+reverted, both flip from allow to block and the test fails.
+
+**Verified state:** 94/94 passing (plus 6/6 wiring). The file sits in `test/hooks/`, a subdirectory, which
+is why it survived the globstar bug — that bug is fixed as of Aug 27, 2026 (see Test
+baseline), so plain `npm test` now picks up every test file regardless of depth and the
+placement no longer buys anything. Keeping it in `test/hooks/` remains fine on
+organizational grounds; it is simply no longer load-bearing.
+
+### The Node port (Sept 7, 2026)
+
+The bash hook could not run on Wade's Windows machine: no `jq`, and a CRLF checkout turns
+`#!/bin/bash` into `#!/bin/bash\r`. A review of the first Windows-compatible enforcement
+config found that the hook had been dropped from `settings.json` and replaced with
+`Edit`/`Write` deny rules only — which silently removed the whole Bash arm (redirects,
+`sed -i`, `cp`/`mv`, mutating git into the archive). The port restores it.
+
+- **Same five rule classes, same scoped-redirect approach, same messages.** Reads from
+  the archive stay allowed; the known holes and the known over-blocks are unchanged.
+- **Parity was proved before the bash script was retired, not assumed.** All 73 existing
+  fixture cases were run through both implementations with identical payloads: **73/73
+  identical exit codes.** The 20 new Windows cases diverge by design — the bash script
+  allows every one of them, which is the gap the port exists to close.
+- **Verified live in the session that made the change**, after Claude Code hot-reloaded
+  the edited `settings.json` (it does — the branch's push hook fired mid-session from a
+  file that did not exist at session start): a `cp` from the archive was BLOCKED by rule
+  (b), a `head` of the same file was allowed, and an `Edit` of it was refused by the deny
+  rule before the hook was even consulted.
+- **Exec form, deliberately.** `"command": "node"` with the script in `"args"` spawns
+  without a shell, so there is no `sh -c` on Linux and no PowerShell quoting on Windows to
+  get wrong. Confirmed to fire headless on Linux in both `settings.json` and agent
+  frontmatter (see the trust finding below).
+
+### Read-only role hooks live in agent frontmatter — and are gated on workspace trust
+
+`reviewer.md` and `debugger.md` carry their `PreToolUse` hook (`guard-readonly.mjs`, an
+allowlist that refuses everything but read-only commands) in their **frontmatter**, not in
+`settings.json`. A review reported the frontmatter hook not firing in a headless Linux run
+while the identical hook in `settings.json` did; Wade reported the same frontmatter hook
+firing in an interactive Windows session. **Both are true, and the variable is neither
+platform nor interactivity — it is workspace trust.** Resolved empirically on Sept 7, 2026
+with a throwaway project, `claude -p` headless on Linux, Claude Code 2.1.263, one probe
+subagent, and marker files written by each hook layer:
+
+| run | `settings.json` hook | frontmatter hook |
+|---|---|---|
+| headless, folder **not** trusted | fires | **does not fire** |
+| headless, folder trusted (`hasTrustDialogAccepted: true` in `~/.claude.json`) | fires | fires |
+| same two runs with the `"command": "node"` + `"args"` exec form | fires | as above |
+| Wade's interactive Windows session (his report, not re-measured here; consistent with a trusted folder) | fires | fires |
+
+This matches the documented rule (`code.claude.com/docs/en/sub-agents`): a project-level
+subagent's frontmatter hooks run only once the workspace trust dialog has been accepted for
+the folder containing the agent file; before 2.1.218 they ran from untrusted folders too,
+including non-interactive sessions. A headless run never shows the dialog, so unless trust
+was recorded earlier, the hook is simply absent. **This sandbox was exactly that case** when
+the paragraph was written: `~/.claude.json` records `hasTrustDialogAccepted: false` for this
+checkout, so the frontmatter copy does not fire here, and for a period the Reviewer's and
+Debugger's Bash was genuinely unguarded in Claude Code on the web.
+
+**✓ That gap is closed — the backstop was built, and this paragraph used to say it had not
+been.** `bf3be6f` (#46) added a second, settings-level `PreToolUse` entry running the same
+`guard-readonly.mjs`, and the two copies are deliberately configured differently:
+
+| copy | role source | fires when |
+|---|---|---|
+| `reviewer.md` / `debugger.md` frontmatter | explicit argv role (`"reviewer"`) | the folder is trusted |
+| `.claude/settings.json` | **no argv role** → falls back to the payload's `agent_type` | always, trust or not |
+
+That is precisely option (2) this paragraph once described as "a separate decision — not
+part of this change": the script resolves `ROLE = argvRole || fromPayload`, and
+`if (!isRole(ROLE)) process.exit(0)` makes it **fail open** for any unrecognised role. So
+the objection that a `settings.json` copy "would have applied the read-only allowlist to
+*every* session, Coder included" does not hold against the shipped design — Coder's
+`agent_type` is not a guarded role and the hook exits 0 for it.
+
+**Do not read the old warning as current.** The read-only guard *is* now enforced in an
+untrusted headless session; verified live rather than argued, in the session that corrected
+this text, where a Reviewer subagent running headless in this very sandbox had `git fetch
+origin main` and an env-prefixed `node --test` refused by the allowlist. The frontmatter
+copies stay where they are — they remain the only role-scoped location and are what fires
+on a trusted folder — so both copies coexist by design, not by oversight.
+
+**The BOMs were not the cause.** Every one of the five enforcement files arrived with a
+UTF-8 BOM (a Windows editor default). Probed: a BOM on `settings.json` and on the agent
+file changed nothing — both hooks still fired. They were stripped anyway: `main`'s
+versions have none, a strict `JSON.parse` refuses a BOM (the wiring test uses one), and a
+BOM is invisible in every editor and visible in every diff.
+
+### Editing this section is itself partly blocked — read this before trying
+
+The gate section you are reading quotes archived path literals, so the hook reacts to
+edits of it. Probed against the live script:
+
+| Route | Result |
+|---|---|
+| `Edit` / `Write` tool on `CLAUDE.md` | **allowed** — the path arm checks `file_path` only, never content |
+| Bash `cat > CLAUDE.md <<'EOF'` heredoc quoting a literal | **allowed** — `cat` is not a listed utility |
+| Bash `grep '<literal>' CLAUDE.md` | **allowed** — `grep` is not a listed utility |
+| Bash `sed -i 's|<literal>|...|' CLAUDE.md` | **BLOCKED** by rule (c) |
+| Bash `python3`/`node`/`perl` rewriting `CLAUDE.md` with a literal in the command | **BLOCKED** by rule (b) |
+| Bash heredoc (any utility) whose text contains `git push` and the word `main` — e.g. quoting the four deny rules | **BLOCKED** by `block-main-push.mjs`, which reads the whole command text |
+
+So the section is editable, but not by every route. **Use the `Edit`/`Write` tool** — that
+is the supported path and it is not blocked. If you are in a mode that prefers Bash for
+edits, this is the case where Bash genuinely cannot do the job and falling back to the
+dedicated tool is correct, not a workaround. Do not route around the hook by obfuscating
+the literal.
 
 ## Sports data architecture (as of June 2026)
+
+### First Day of School Level-3 takeover (August 2026)
+
+`render/first-day-level3.js` is a preview-only morning takeover selected by `renderDashboardV2()` when a same-day first-day-of-school milestone is present. It uses the locked production composition as its static backdrop and overlays live clock/date, NOW, NEXT, weather, dinner, and at most three Coming Up items. Athletics, weekly priorities, alerts, horizon, and the sports ticker are absent in this mode. A timed school departure/arrival ends the takeover 30 minutes after the latest handoff event; `firstDayLevel3Until` can provide an explicit pipeline cutoff, and all-day milestones fall back to 9:00 AM ET. `firstDayLevel3: false` disables it, while `true` enables deterministic preview fixtures.
+
+Dashboard v2 Phase 4A added a private artifact generator in stack `moore-ops-dashboard-v2-artifact-refresh` and a least-privilege Pi staging puller (architecture, credential rotation/revocation, and validation evidence recorded in `docs/dashboard-v2/phase-4a-household-refresh.md`). **Phase 4B activated this path in production on Aug 16, 2026 (commit `8652963`)**: `moore-dashboard-refresh.timer` is enabled on the Pi and pulls a new artifact five times daily, validating and atomically activating each release automatically — see `docs/dashboard-v2/phase-4b-production-refresh.md` for activation evidence.
+
+Dashboard v2 sports live refresh Phase 3B was deployed in `us-east-2` as stack `moore-ops-sports-live-refresh` (deployment evidence, exact CORS origins, validation, costs and rollback recorded in `docs/dashboard-v2/sports-live-refresh-phase-3b.md`); at that point production Pi/DAKboard cutover was intentionally not yet complete. **That cutover has since happened** — Phase 3C (Aug 15, 2026) put the Pi on Dashboard v2 in production; see `docs/dashboard-v2/phase-3c-production-cutover.md`. The account concurrency quota is 10, so the endpoint must not configure positive reserved concurrency unless that quota is raised first.
+
+W&M football is a Patriot League associate member beginning with the 2026 season; its ticker feed uses conference short name `Patriot`. W&M men's basketball remains in the CAA. ESPN standings group `81` is the FCS umbrella payload (not a CAA-only group) and contains W&M under the Patriot League child group, so keep that group on the football feed. The ticker's local `wm`/`tribe` identity keys resolve to the official stroked interlocked W&M simple primary athletics mark in `render/assets-v2/logo-wm.webp`.
 
 ### Local JSON files (`data/` folder — committed to repo)
 
@@ -212,6 +728,1076 @@ Run `reauthorize.js` (project root, gitignored) when the OAuth token needs new s
 - Token has been revoked (check CloudWatch for 401 errors)
 - Never needed for routine Lambda runs — the token auto-refreshes via the `tokens` event in `auth.js`
 
+## Routine Anchors
+
+**Architectural intent — explicitly not a Dashboard v2 UI feature.** Routine Anchors is a data/context layer describing recurring daily coverage windows (school hours, a caregiver's working hours), intended as an input for a future NOW/NEXT decision engine that does not exist yet. `digestData.routineAnchorsToday` is computed and populated on every run, the same way `schoolStrip` or `flags` are, but **no renderer currently consumes it** — that is by design, not an oversight. The existence of an anchor should not automatically create its own dashboard presentation ahead of the NOW/NEXT engine being built. (A UI was in fact built for this — see History below — and was deliberately removed once that framing was clarified.)
+
+**Data file — `data/routine-anchors.json`.** Schema: `anchors` array. Two live entries as of Aug 2026:
+
+- `school-weekday` — `appliesTo: ["Myles", "Ophelia"]`, `weekdays: [1,2,3,4,5]`, `effectiveStart: "2026-08-24"` / `effectiveEnd: "2027-06-09"` (both independently re-verified live against the Family calendar's First/Last Day of School events), `arrivalTime: "07:30"` / `endTime: "15:49"` (Rec Connect before-school drop-off through actual bus arrival home at the corner of Frederick Dr. and Merestep Away — a confirmed fixed daily time, not an estimate), `label: "School"`.
+- `emma-weekday` — the first caregiver-type anchor. `appliesTo: ["Myles", "Ophelia"]` (unchanged from the school anchor's meaning — both kids benefit from her coverage), `caregiver: "Emma"` (the field that marks this as a caregiver-type anchor — see suppression below), `weekdays: [1,2,3,4,5]`, `effectiveStart: "2026-08-10"` (verified against two independent real artifacts: the "Emma: First Day" calendar notification and the actual sent morning digest from that date), `effectiveEnd: null` (no known end date as of this writing — not a claim of permanence; update or remove the field when one exists), `arrivalTime: "13:00"` / `endTime: "18:00"`, `label: "Emma"`.
+
+Every anchor also carries a free-text `note` field (same precedent as `swim-annotations.json`'s per-row `note`) explaining reasoning that isn't derivable from the other fields — e.g. why the school window starts at drop-off rather than class start, or why `effectiveEnd` is `null` rather than a real date.
+
+**Parser — `digest/routineAnchorsParser.js`.** No file I/O of its own; `data/routine-anchors.json` is read by `builder.js`'s standard `readDataFile()` convention and passed in. Exports:
+- `isAnchorActiveOn(anchor, date)` / `getActiveAnchors(anchors, date)` — pure weekday + `[effectiveStart, effectiveEnd]` inclusive-range matching. A falsy (including `null`) `effectiveEnd` is already treated as no upper bound by the existing guard — the `emma-weekday` anchor's open-ended `effectiveEnd: null` required zero changes here.
+- `schoolExceptionSuppressesAnchor(summary)` / `isRoutineSuppressedByCalendar(events, date)` — suppression for school-type anchors: a `"🏫 No School"` or any `"Early Release"` titled all-day event on the Family calendar (already fetched as part of the normal 14-day pull — no new calendar fetch) suppresses the anchor for that date; `"🏫 First Day of School"` (no "Early Release" in the title) does not.
+- `isCaregiverAnchorSuppressed(blocks, date)` — suppression for caregiver-type anchors (any anchor carrying a `caregiver` field): true if any block in `emmaUnavailabilityParser.js`'s already-parsed `{ startDate, endDate }` array covers `date`. Both dates are inclusive here (unlike the school check's exclusive-end raw-event comparison), because `emmaUnavailabilityParser.js` already converts Google's exclusive `end.date` to an inclusive last day before this module ever sees it. Generic over which caregiver — the function itself doesn't know or care whose blocks it's checking; `builder.js` decides which blocks array to pass based on which anchor's `caregiver` field is being evaluated.
+
+**Two separate suppression mechanisms, not one unified one, on purpose:** school and caregiver anchors are suppressed by fundamentally different signals — a calendar-title scan for school (the source data is all-day Family-calendar events with informative titles) vs. pre-parsed unavailability blocks for a caregiver (the source data is already-structured date ranges from a dedicated parser). Forcing both into one mechanism would mean either scanning calendar titles for caregiver anchors (no such titled events exist for normal caregiver absence) or parsing blocks for school (school has no equivalent block structure) — neither fits. The branching between the two checks lives in `builder.js`, keyed generically on `anchor.caregiver` presence, not hardcoded to "Emma" — a second caregiver-type anchor would reuse `isCaregiverAnchorSuppressed()` with its own blocks source.
+
+**Wiring — `digest/builder.js`.** `routineAnchorsToday` is computed at step "12.7", after the existing Emma-unavailability fetch at step "12.6" (originally at step "6.5", moved when Emma's anchor was added — caregiver-type anchors need `emmaUnavailableBlocks` already available). No new calendar fetch: `emmaUnavailableBlocks` was already being fetched every run for the existing Emma-unavailability `flags.js` alert; the reorder just makes it available earlier in the pipeline for the anchor computation to consume too. `emmaUnavailableBlocks` is also an optional injectable `buildDigest()` param now (same convention as `routineAnchorsData`/`pbRecords`/etc. — `undefined` triggers the real fetch, an explicit value including `[]` is respected as-is), added specifically so tests can control it.
+
+**Key Learning — blanket vs. per-anchor suppression bug, caught before shipping.** The original (school-only) suppression logic applied a single global boolean across the entire `anchors` array: suppress everything, or nothing. That was harmless with one anchor, but would have been actively wrong the moment a second anchor existed — a school holiday would have wrongly suppressed Emma's anchor too, and Emma being unavailable would have wrongly suppressed school's anchor. Caught and fixed while adding Emma (the model's first real generalization test) by making `routineAnchorsToday` a per-anchor filter, each anchor checked only against the suppression source appropriate to its type. Confirmed via three coexistence test scenarios in `digest/builder.test.js` (both anchors active; Emma suppressed alone; school suppressed alone) that neither suppression path cross-contaminates the other.
+
+**Explicitly deferred / out of scope (not gaps to "fix," just not built yet):**
+- **Coverage-gap detection** (e.g. flagging "school let out early and Emma isn't on yet") — a separate, more complex initiative, deliberately deferred by Wade. Requires cross-anchor reconciliation this module does not attempt.
+- **Overlapping-anchor reconciliation** more generally — `getActiveAnchors` returns all active, unsuppressed anchors independently; nothing currently examines the *relationship* between two anchors active on the same day.
+- **The NOW/NEXT decision engine itself** — does not exist yet. Routine Anchors is prep work for it, not a preview of it.
+- **Travel-time/cushion/leave-by computation** for the school anchor — no data or computation for this exists anywhere in the codebase; the anchor's `arrivalTime`/`endTime` are coverage-window boundaries, not commute-adjusted times.
+- **Any Dashboard v2 UI presentation** — deliberately removed (see History below), not merely unbuilt.
+
+**History (Aug 2026, chronological):** Phase 1 (`e82b3b6`) added the data file, parser, and a static Dashboard v2 school-hours line. Phase 2 (`4a11f84`) added school's calendar-title suppression. Phase 3 (`ff5159b`) replaced the static line with a live client-side countdown. Wade then clarified the architectural intent above — Routine Anchors was meant as a NOW/NEXT data layer, not a standalone dashboard feature — and the UI (all of Phase 1's static line and all of Phase 3's countdown) was fully descoped (`ec1ce9a`), confirmed byte-for-byte reverting `render/dashboard-v2.js`/`render/dashboard-v2.test.js` to their pre-Phase-1 state. The data layer was rebuilt with clean history (`cdf57bc`, merged to `main` as `9377de3`) preserving only the final architecture, not the build-then-revert churn. Two data corrections followed real-fact verification: `b0aba05` (school's placeholder `08:15`/`15:45` times were never checked against real facts) and `8c017c6` (extended `endTime` once the school bus's fixed arrival time was confirmed). Emma was added as the second anchor and first generalization test in `235e11a`.
+
+## Family Spotlight (Dashboard v2, Sept 2026)
+
+> **Superseded as the source of truth, Aug 29 2026.** The Spotlight is now one entry in
+> the generalized special-event registry — see **Generalized special-event foundation**
+> below for the schema, lifecycle, arbitration, and migration state. Everything in this
+> section still describes how the *rendered* Spotlight behaves, and Big Sports Saturday's
+> behaviour is byte- and pixel-identical after the migration; only its configuration
+> moved. Where the two sections disagree about *where configuration lives*, the newer one
+> is correct.
+
+A bounded special-event treatment that temporarily replaces **only the contents** of the
+Dashboard v2 Athletics panel. It is not a page, host, origin, variant, or pipeline — it is
+an in-panel content swap. First and currently only instance: "Big Sports Saturday",
+September 12, 2026.
+
+**Footprint is preserved by not touching what determines it.** `athleticsCardCount()` is
+deliberately unmodified, so `.athletics-one` / `.athletics-multi` and the 26% / 40% panel
+heights resolve exactly as they would with no Spotlight. On Sept 12 only the Sharks season
+is active, so the real state is one-card: measured **1473.83 × 315.63 px**, identical in
+every Spotlight state (proved numerically in `render/dashboard-v2-layout.test.js`).
+`.upcoming-panel` is untouched; Next Two Weeks loses no space.
+
+**The ordinary title and grid must stay direct children of `.paper-panel`.** Several
+shipped rules use the child combinator — `.paper-panel>.section-title` sets its height,
+offset and 30px type. An early implementation wrapped them in a `.spotlight-ordinary`
+div and silently shrank the ordinary Athletics title from 70px to 48px. The Spotlight is
+therefore a *sibling*, and `data-spotlight-state` on the panel hides one side or the
+other. The `spotlight-ordinary` marker rides as an extra class on `.athletics-grid`.
+Spotlight internals use their own `spotlight-*` class names: the `.card-count-1` block
+rewrites `.athletics-grid`/`.athletic-card`/`.record`/`.next-box` and hides two of them,
+and inheriting that would deform the Spotlight in the one state that actually ships.
+
+**Candidate inclusion and visible phase are separate.** From `activateAt − 48h` the pure
+selector returns the qualified candidate so the generator embeds *both* presentations in
+one artifact; a bounded browser controller then switches between them at exact instants
+with no network request, no reload, and no generator run. At/after `expireAt` the selector
+returns nothing, so a newly generated artifact is simply ordinary. The 48h lead comfortably
+exceeds the largest real pull gap (8h25m overnight), so no boundary falls between pulls.
+
+**Concretely, for Big Sports Saturday.** `activateAt` is Fri Sept 11 2026 4:00 PM ET, so
+the inclusion window opens **Wed Sept 9 2026 at 4:00 PM ET**, and the first scheduled
+generation that can carry the candidate is **Wed Sept 9 at 4:10 PM ET** (the generator
+runs 4:35 AM, then 8:10 / 12:10 / 16:10 / 20:10 ET). Enabling the switch earlier than that
+is correct and produces ordinary Athletics until that generation — expected, not a fault.
+The visible 4:00 PM Friday and midnight transitions are then browser-side and exact; the
+generation and pull cadence governs only whether the artifact *contains* the candidate.
+
+**All timezone reasoning happens server-side, once.** `easternInstant()` in
+`digest/dateUtils.js` converts Eastern wall-clock config into absolute instants using the
+offset actually in effect on that date; the generator emits epoch milliseconds and the
+browser only compares integers. The browser never parses an Eastern string or computes
+DST. (`render/first-day-level3.js` keeps its own private copy of this helper — deliberately
+not refactored here; see Known open items.)
+
+- **Data** — `data/family-spotlight.json`, loaded by `builder.js` on the standard
+  non-fatal `readDataFile()` pattern and surfaced as `digestData.familySpotlightConfig`.
+  `digestData.sharksSoccerData` surfaces the already-loaded schedule (no extra I/O).
+  Both are additive and read by nothing in Dashboard v1.
+- **Selector** — `digest/familySpotlightSelector.js`. Pure: no I/O, no `new Date()` of its
+  own. Qualifies from the exact calendar occurrences (union of `days[*].events` and
+  `upcomingEvents` — required, because `upcomingEvents` excludes today), never from
+  `swim757Active`, `sharksActive`, or the card count.
+- **Myles resolves from `matchNumber` 641**, joined into the full division schedule —
+  never from `athletics.sharksNextGame`, which advances the moment the match is marked
+  played and would invalidate the child mid-treatment. The selector reads only immutable
+  fields (`matchNumber`, `date`, `time`, teams, `venue`) and never `played` or scores.
+- **Ophelia's detail line is an authored literal**, because "team picture 12:30" and
+  "intrasquad 1:00" exist only as prose inside one 12:30–4:30 PM event. It is anchored to
+  reality by `match.startsAt`: if the event moves, the child fails closed.
+- **Display overrides must be truthful substrings** of the authoritative value
+  (`VIP United` ⊂ `VIP United TASL B2015/2016 Red (VA)`). A shortening may shorten; it may
+  never lie. A stale override invalidates the child rather than naming the wrong team.
+- **Ownership colours are Dashboard v2's** — Myles `#b93624`, Ophelia `#6c4a85`. The
+  `#7F77DD` / `#E24B4A` pair in `digest/flags.js` is the v1 champs-banner lineage and is
+  *not* used here; a test asserts neither appears in Spotlight markup.
+- **Kill switch** — `FAMILY_SPOTLIGHT_ENABLED` env / `FamilySpotlightEnabled` stack
+  parameter, both defaulting to `"0"`. The renderer requires `familySpotlight === true`;
+  anything else is off. Off at any layer disables the feature. **The intended value lives
+  in exactly one place: the GitHub repository variable `FAMILY_SPOTLIGHT_ENABLED`** — see
+  "Managing the kill switch" below.
+- **Fail-closed** — disabled, missing/malformed config, no clock, multiple in-window
+  entries, zero valid children, or any throw all render ordinary Athletics. The panel is
+  rendered in the `ordinary` state, so a failed or absent script also fails closed.
+- **Multiple in-window entries fail closed rather than being arbitrated.** With no approved
+  priority system, picking one deterministically would mask a configuration error.
+
+**Operational recovery, in order** (do step 1 first, or the next scheduled artifact
+re-enables a known-bad Spotlight): (1) set the repository variable
+`FAMILY_SPOTLIGHT_ENABLED` to `0` and re-run the deploy workflow — the authoritative
+layer, but *not* the fast one: it is a stack update behind CI, and the workflow's own
+safe-window guard hard-fails between 3:30 and 4:30 AM ET; (2) if the screen must be fixed
+now, re-point the Pi's `current`
+symlink at `previous-known-good` via `activate-dashboard-release`; (3) invoke the
+generator Lambda directly, then `systemctl start moore-dashboard-refresh.service` to force
+the pull; (4) confirm subsequent scheduled cycles stay ordinary. **Deleting
+`data/family-spotlight.json` is not an operational kill** — it needs a source deployment
+and is slower than every step above.
+
+**Managing the kill switch (Aug 28, 2026).** `.github/workflows/deploy-dashboard-v2-artifact.yml`
+now supplies `FamilySpotlightEnabled` explicitly on every deploy instead of letting SAM
+inherit it, and asserts the result afterwards.
+
+- **Source of truth** — the GitHub repository variable `FAMILY_SPOTLIGHT_ENABLED`. It is
+  read through a step-level `env:` mapping, never interpolated into a `run:` body: a
+  repository variable is editable text, and `${{ }}` inside a script is substituted before
+  bash sees it. A `Resolve Family Spotlight kill switch` step trims surrounding whitespace,
+  then accepts **only** `0` or `1`.
+- **Absent or blank is `0`.** An unset or whitespace-only variable resolves to `0` and the
+  deploy proceeds with the Spotlight off. Any other value — `2`, `true`, `01`, `on`,
+  anything with a shell metacharacter — **fails the workflow before SAM is invoked**, so a
+  typo can never deploy an unintended state, in either direction.
+- **Read-back assertion.** After deploying, `Verify deployed Family Spotlight kill switch`
+  re-reads the parameter from the deployed stack and fails on a missing (`None`) or
+  mismatched value, modelled on the existing `Verify deployed source revision` step. Its
+  JMESPath selects that one parameter, so no other stack parameter is read or printed.
+- **Why explicit at all.** SAM preserves unsupplied parameters — `merge_parameters` marks
+  them `UsePreviousValue: True` and `create_changeset` keeps that on an UPDATE — so
+  inheritance *worked*. What it could not do is make the intended value reviewable: it
+  lived only inside AWS, no deploy asserted it, and drift had no signal. That is the same
+  shape as every other defect in this file's Key Learnings.
+- **The deploy now takes authority over the parameter — read this before touching the
+  console.** Supplying the override means `merge_parameters` writes a `ParameterValue`
+  instead of `UsePreviousValue`, so CloudFormation *overwrites* whatever is deployed. From
+  the first merge onward, every deployment matching the workflow's `paths:` filter asserts
+  the repository variable's value:
+
+  | `FAMILY_SPOTLIGHT_ENABLED` | Every matching deployment |
+  |---|---|
+  | absent or blank | explicitly deploys `0`, **overwriting a manually configured value** |
+  | `0` | explicitly deploys `0` and verifies off |
+  | `1` | explicitly deploys `1` and verifies on, every subsequent deployment |
+  | anything else | fails before SAM runs; nothing is deployed |
+
+  **The AWS console is therefore no longer a durable source of truth for this parameter.**
+  A value set there survives only until the next matching deployment — and the `paths:`
+  filter is broad (`digest/**`, `render/**`, `data/**`, `*.js`, the template, this
+  workflow), so that can be an unrelated merge. `FAMILY_SPOTLIGHT_ENABLED` is the durable
+  operational control; set it there, not in the console. The template's `Default: "0"`
+  remains the fail-closed behaviour for a **new or recreated** stack only — it does not
+  govern updates.
+- **Stack recreation stays fail-closed.** The template default remains `"0"`, and on a
+  CREATE changeset SAM strips every `UsePreviousValue`, so a recreated stack comes up off
+  regardless of the repository variable — the deploy then sets it and the read-back proves
+  it.
+- **Not covered.** This is a deploy-time control. It does not make the kill *fast*: see
+  Operational recovery above, where re-pointing the Pi's `current` symlink remains the
+  quickest way to get a bad Spotlight off the wall.
+
+Behaviour is covered by `test/deploy-workflow-spotlight-flag.test.js`, which lifts the
+`run:` body out of the shipped workflow and executes it under `bash -e` for absent, blank,
+`0`, `1`, whitespace-padded, invalid and shell-injection inputs — the same
+run-the-real-thing standard as `test/hooks/guard-archived-files.test.js`, so the test
+cannot keep passing after the workflow drifts.
+
+**Packaging is not optional.** `family-spotlight.json` is read through the same non-fatal
+loader as everything else, so if it were missing from the Lambda package it would resolve
+to `null` and the feature would silently never appear, while local tests passed. It is in
+`dashboard-artifact/package-inputs.json` (`dataFiles`, now **10** entries), and
+`test/artifact/package-data-files.test.js` asserts every file `builder.js` reads is
+packaged. That test carries an explicit allowlist for two **pre-existing** gaps —
+`routine-anchors.json` and `kids-profile.json`, which are read but not packaged and so
+already degrade silently in production. Fixing those is separate work; the allowlist keeps
+them visible rather than hidden.
+
+## Generalized special-event foundation (Aug 29, 2026)
+
+Framework capability for Accent / Spotlight / Takeover treatments on Dashboard v2, built
+in four reviewable commits (P1 `3252b36`, P2 `6a966e5`, P3 `40b942a`, P4 this one).
+
+**Nothing is activated by this work.** No new visual treatment exists, no future event is
+configured, and the kill switch is off. Read that sentence before reading anything else
+here: the framework can *resolve* an Accent or a registry Takeover and report it in
+diagnostics, but neither has a renderer, and neither can reach a television.
+
+### What ships, and what does not
+
+| | State |
+|---|---|
+| Spotlight on the `feature-slot` | **Renderer exists** (the shipped in-panel treatment). One entry: Big Sports Saturday. |
+| Accent | **Framework only.** Resolves, arbitrates, reports `activatable: false`. No renderer, no visual design, no entry. |
+| Takeover from the registry | **Framework only.** Resolves, reports `activatable: false`. Never rendered from here. |
+| First Day Level-3 Takeover | **Unchanged and hard-wired.** `renderDashboardV2()` still early-returns to it, so no registry treatment can reach the page while it renders. Not migrated, not redesigned. |
+
+The categorized 2026-27 future-event register (Sept 19-20 Accents, Oct 17 Spotlight, the
+birthdays, Christmas morning, Last Day of School, and the rest) is **planning information
+only**. It is not in `data/special-events.json` and must not be added there as part of
+this foundation. Each entry needs its own scoping, and an Accent additionally needs a
+Designer pass that does not exist yet.
+
+### Modules
+
+All pure — no I/O, no `new Date()` of their own, no throwing. The caller's `now` governs,
+so every lifecycle is deterministic under an injected instant.
+
+| Module | Responsibility |
+|---|---|
+| `digest/specialEventSchema.js` | enums, priority bands, level defaults, reason codes, `validateRegistry()` |
+| `digest/specialEventOccurrences.js` | normalized occurrence model and index |
+| `digest/specialEventQualify.js` | qualification predicates and compound nodes |
+| `digest/specialEventLifecycle.js` | the six-state lifecycle, resolved to epoch milliseconds |
+| `digest/specialEventArbiter.js` | order-independent, fail-closed arbitration |
+| `digest/specialEventSelector.js` | orchestrator + `selectFeatureSlotSpotlight()` legacy-shaped adapter |
+| `digest/legacySpotlightCompat.js` | **temporary** migration shim — delete in P5 |
+
+### Registry — `data/special-events.json`
+
+`{ schemaVersion: 2, treatments: [...] }`. Each treatment carries `id`, `date`, `level`,
+`surface`, `audience`, `status`, `enabled`, `priority`, optional `exclusiveGroup`, and the
+`qualification` / `lifecycle` / `presentation` / `assets` / `fallback` sections.
+
+**This is the one live registry source.** `specialEventSelector.js` reads
+`data.specialEventsConfig` and nothing else; `render/dashboard-v2.js` reads neither
+config key and simply calls the selector.
+
+### Protected surfaces — enforced structurally, not by a runtime rule
+
+`SURFACES` holds exactly four replaceable regions:
+
+| surface | host panel | occupancy |
+|---|---|---|
+| `event-row` | `upcoming-panel` | per attached fact (a row) |
+| `athletics-card` | `athletics-panel` | per attached fact (a card) |
+| `feature-slot` | `athletics-panel` | singleton — the whole panel's contents |
+| `dashboard` | — | singleton — the page |
+
+Every other region carries operational or safety content and is **not addressable**:
+`today-panel`, `now-next`, `centers-block`, `alerts-panel`, `right-rail`, `sports-ticker`,
+the masthead, the weather card, and the clock. They appear only in `PROTECTED_REGIONS`,
+which a test asserts can never leak into the surface enum or the host-panel map. "Safety
+information always wins" therefore holds by construction — there is no rule a future entry
+could talk its way past, because there is no name it could write down.
+
+**The `feature-slot` is the lower-centre Athletics content area.** Its ordinary occupant is
+Athletics; a qualified Spotlight temporarily replaces the *contents* only.
+`athleticsCardCount()` is deliberately untouched, so `.athletics-one` / `.athletics-multi`
+and the 26% / 40% panel heights resolve exactly as they would with no treatment. Measured
+one-card footprint, identical in every state: **1473.83 × 315.63 px**.
+
+**Instance scoping matters, and getting it wrong is easy.** "One treatment per surface" and
+"two Accents per panel" are only compatible if `event-row` and `athletics-card` are
+instance-scoped. Occupancy is keyed on `(surface, attached fact)` for those two and on the
+surface alone for `feature-slot` and `dashboard`. The first implementation used the bare
+surface and silently capped the Upcoming panel at one Accent; the arbiter tests caught it.
+
+### Qualification
+
+Node types: `calendarOccurrence` (timed or all-day), `calendarRange` (multi-day, matched on
+its inclusive end), `sportsFixture` (stable `matchNumber`), `approvedDate`. Compound forms:
+`all`, `any`, `exactly: N of [...]` — where `exactly` counts **distinct** occurrences, so
+duplicate references can never satisfy a count.
+
+- **All-day dates are America/New_York calendar dates.** Google's `end.date` is exclusive;
+  the normalized wrapper exposes an inclusive final day as a derived field and **never
+  mutates or re-serializes `raw`**. Date arithmetic is anchored at UTC noon so it cannot
+  land on a DST boundary.
+- **Timed occurrences are bucketed through `Intl`, never a UTC string slice** — that is the
+  defect that once put 8 PM ET events on the following day.
+- **`sportsFixture` reads only immutable columns** (`matchNumber`, `date`, `time`, teams,
+  `venue`). Never `played`, `homeScore`, `awayScore`, so a treatment stays valid mid-event.
+  A test mutates those fields and asserts the resolved view is unchanged.
+- **`approvedDate` requires provenance** — `approvedBy`, `approvedOn`, `source` — and is
+  permitted at any level and audience. A draft, unconfirmed, or provenance-free date fails
+  closed. This is the only node type with no calendar anchor, which is exactly why the
+  provenance requirement is not optional.
+- **Forbidden inputs are rejected at load, before evaluation:** season-active flags
+  (`/^\w*Active$/`), card counts, rendered display text (`displayTime`, `subtitle`,
+  standings), and moving projections (`sharksNextGame`, `nextGame`, `sharksLastResult`).
+  **The scan walks qualification *field names*, recursively, at any nesting depth — never
+  values.** That distinction matters: `{ sharksActive: true }` is the forbidden input, and
+  a `titleMatch.value` of "Active Wear Day" is a real school event. An earlier version
+  matched against `JSON.stringify(qualification)` and rejected both. Both walkers are
+  bounded at `MAX_QUALIFICATION_DEPTH` (64) and fail closed past it, so a malformed
+  structure is a diagnostic rather than a `RangeError` escaping into the caller.
+
+### Lifecycle
+
+`not-included → staged → anticipation → today → live → expired`
+
+| level | inclusion lead | visible start | max concurrent | suppresses lower |
+|---|---|---|---|---|
+| `accent` | 48 h | previous day 4:00 PM ET | 2 per host panel | no |
+| `spotlight` | 72 h | previous day 4:00 PM ET | 1 global | no |
+| `takeover` | 7 d | **explicit, mandatory** | 1 global | **yes** by default |
+
+Default expiry: a timed anchor expires at **its end + 2 hours**; an all-day or multi-day
+anchor at **8:00 PM ET on the inclusive final day**. A multi-day event is **one span-wide
+treatment** — there is no per-day presentation mode, deliberately.
+
+**Explicit configuration always wins; defaults only fill an absent boundary.** That is the
+mechanism by which a migrated entry's timestamps stay bit-identical.
+
+Every boundary is resolved here, in the generator, to an **epoch millisecond**. The browser
+compares integers only: it parses no timezone, computes no DST offset, and makes no network
+request. All Eastern reasoning happens once, on this side, through `easternInstant()`.
+
+`staged` is the state that makes the whole design work: the treatment is embedded in the
+artifact but visibly ordinary, so the browser controller can switch at an exact instant
+with no regeneration and no fetch.
+
+### Arbitration
+
+Applied in order: exclusive groups → Takeover (and its suppression) → Spotlight → accent
+attachment → surface exclusivity → accent capacity.
+
+- **No array-order winner anywhere.** Every selection is by explicit `priority`; every
+  unresolved tie **drops the whole tied set**. Twenty shuffles of one scenario are asserted
+  to produce the same outcome.
+- Priority bands: Accent **100-199**, Spotlight **200-299**, Takeover **300-399**. A
+  duplicate `(level, surface, priority)` triple is rejected **at load**, as defence in depth
+  — so a same-band collision never reaches arbitration.
+- An Accent must attach to a resolved fact (`refIds` non-empty) before it competes.
+- An accent tier that would have to be *split* at the capacity boundary is admitted **not at
+  all**, because choosing among equals would be an array-order decision.
+- **First Day Level-3 is protected by two production mechanisms, and neither is the
+  arbiter.** `renderDashboardV2()` early-returns to the First Day renderer before
+  `renderAthletics()` runs, so a registry treatment cannot reach the page; and
+  `validateArtifact()` independently rejects any artifact carrying both a
+  `data-spotlight-id` and the first-day mode. The arbiter's `firstDayTakeoverActive`
+  option — which drops every candidate with `suppressed-by-first-day` — is an explicit
+  capability held ready for a future registry-driven page orchestrator. **No runtime
+  caller passes it today**; it is exercised only by tests. Do not cite it as the thing
+  keeping the two treatments apart.
+
+**Big Sports Saturday no longer depends on the old `MULTIPLE_IN_WINDOW` behaviour.** Two
+simultaneous entries are now resolved by priority; only a genuine tie fails closed, as
+`SPOTLIGHT_TIE`. `MULTIPLE_IN_WINDOW` is retained as an exported constant for the legacy
+selector and is **never emitted** by the arbiter — a test asserts that. With one enabled
+entry, every arbitration step is a no-op and the outcome is identical to before.
+
+### Kill switch — unchanged
+
+`FAMILY_SPOTLIGHT_ENABLED` (env) / `FamilySpotlightEnabled` (stack parameter), sourced from
+the GitHub repository variable, `Default: "0"`, **off**. Renaming it is deferred to P5 or
+later: renaming would touch the workflow, its read-back assertion, the template parameter
+and 25 tests, and would open a window where the deployed parameter and the workflow
+disagree — no payoff in a phase that activates nothing.
+
+The switch gates **every level**, evaluated before anything else: `data.familySpotlight !==
+true` returns an empty set for Accent, Spotlight and Takeover alike. Tested per level.
+Everything else about the switch — the `0|1` validation, the post-deploy read-back, the
+`paths:` filter, `test/deploy-workflow-spotlight-flag.test.js` — is untouched.
+
+### Migration state, and the four oracles
+
+`data/family-spotlight.json` was **not edited, moved, or deleted**. It is now a frozen test
+oracle, read only by tests, and is **no longer packaged** (`dataFiles` swapped it for
+`special-events.json`; count stays **10**).
+
+Four independent compatibility oracles stand until P5:
+
+1. `data/family-spotlight.json` — the pre-migration configuration, byte-unchanged
+2. `digest/familySpotlightSelector.js` — the pre-migration selector, unmodified
+3. `digest/familySpotlightSelector.test.js` — its suite, unmodified
+4. `test/artifact/family-spotlight-contract.test.js` — the artifact contract against that
+   pair, extended with three oracle-binding tests rather than repurposed
+
+Because nothing writes to any of them, they cannot drift into agreement with the code they
+check. That is the whole reason the registry is a *new* file rather than an edit of the old
+one: had it been edited in place, the equivalence test would compare the implementation
+against itself and a migration bug that changed both sides identically would pass.
+
+`test/fixtures/legacy-athletics-panels.json` is the same idea in fixture form — ten Athletics
+panels rendered by the pre-migration tree. Nothing regenerates it.
+
+**Temporary compatibility shim.** `digestData.familySpotlightConfig` is still present,
+**derived from `special-events.json`** through `digest/legacySpotlightCompat.js` — never
+loaded from the frozen file, and read by no runtime code. It projects only what a legacy
+Spotlight could have expressed (enabled, ready, `feature-slot`, `spotlight-children-v1`,
+prefix-matched timed children) and **omits rather than approximates** anything else: a
+compatibility key that lied would be worse than one that is empty. It round-trips exactly
+onto the frozen file modulo free-text notes, and feeding it to the legacy selector
+reproduces the generalized selector's view model at every lifecycle boundary.
+
+**The projection is contained twice**, in the shim and again at the `builder.js` call
+site. A compatibility-only key must never be able to fail `buildDigest`: on any failure it
+degrades to `null` and `specialEventsConfig` is untouched. `null` there means "no
+compatibility view", never "fall back to the legacy path" — nothing reads the key at
+runtime, so there is no fallback to have.
+
+### Deferred to P5 — do not do these early
+
+P5 is a **separate PR, after at least one real production cycle has run on the registry
+path**. Deleting the oracles before then removes the only thing that can prove a regression.
+
+- Delete `digest/legacySpotlightCompat.js` **and** the `familySpotlightConfig` line in
+  `digest/builder.js` together, plus its entry in `requiredBundleInputs` and the
+  `specialEventsSampleData` projection. A test asserts the bundle-input declaration exists
+  *exactly while* `builder.js` imports the shim, so a half-done removal fails rather than
+  leaving a dangling path.
+- Delete `digest/familySpotlightSelector.js`, its test, `data/family-spotlight.json`,
+  `test/artifact/family-spotlight-contract.test.js`, and
+  `test/fixtures/legacy-athletics-panels.json`.
+- Decide whether to rename the kill switch.
+- Decide whether First Day Level-3 becomes registry-driven — this should be settled before
+  any second Takeover (Christmas morning) is built, not after.
+
+### What was proved, and what CI still has to prove
+
+`scripts/verify-special-event-migration.mjs` reproduces the cross-tree proof on demand
+(create a worktree at the pre-migration commit and run it). It makes **22**
+comparisons, and the result at P3 was **22/22 identical** — ten whole-document Dashboard v2 comparisons across five lifecycle states with
+the switch on and off, ordinary Dashboard v2, the Dashboard v1 today card, and Athletics
+panel **pixels and geometry** across all four controller states plus ordinary Athletics.
+
+**✓ The package gate now runs, and now gates a pull request (Aug 29, 2026).** It has been
+executed for real twice: locally, with the SAM CLI installed into a throwaway virtualenv
+(`sam build` → Build Succeeded, then `dashboard artifact package: valid (10 data files,
+Emma parser/evaluator/builder markers present)`), and in pull-request CI, which now runs
+the same two commands. See "The package gate is a pull-request gate" below. The local
+substitutes that stood in for it while it could not run — the esbuild graph carrying all
+seven new modules and dropping `familySpotlightSelector.js`, and the built bundle
+initializing under `DASHBOARD_ASSET_DIR`, `DASHBOARD_FIRST_DAY_ASSET_DIR` and
+`DASHBOARD_DATA_DIR` — remain true and remain **not** equivalent to it, and neither are the
+markers surviving bundling.
+
+That gap is how the shim's missing bundle-input declaration was found at all, which is the
+argument for keeping the CI gate rather than waving it through.
+
+### The package gate is a pull-request gate (Aug 29, 2026)
+
+`npm run build:dashboard-artifact` (`sam build` + `prepare-dashboard-artifact-package.mjs`)
+and `npm run validate:dashboard-artifact-package` now run in `.github/workflows/ci.yml`,
+which triggers on `pull_request`. **Until this change they ran in exactly one place** —
+`deploy-dashboard-v2-artifact.yml`, on `push` to `main` — so the gate fired *after* merge,
+as the deploy job's first action. A package defect could not fail a pull request; the
+earliest it could surface was inside the workflow that also deploys.
+
+- **The deploy workflow is untouched.** It keeps its own copy of the step, still ahead of
+  `Configure AWS credentials`, so the gate is not weakened at the point it protects a real
+  deployment. Nothing was extracted into a shared script: two identical three-line steps
+  are cheaper to read than an indirection, and a test asserts they stay identical.
+- **CI gained no ability to deploy.** `aws-actions/setup-sam@v2` installs the SAM CLI and
+  nothing else — the template builds with `BuildMethod: esbuild`, so `sam build` runs
+  locally with no AWS credentials, no Docker, and no call to AWS. CI declares
+  `permissions: contents: read`, references no `secrets.`, requests no OIDC token, runs no
+  `aws` CLI command and no `sam deploy`.
+- **Ordering is asserted, not assumed.** Setup SAM precedes the build; the build precedes
+  the validator (the validator reads `.aws-sam/build/GeneratorFunction`, so a hollow build
+  would otherwise pass it); and the full suite still runs first.
+- `.aws-sam/` is gitignored — it is build output, regenerated by the build script, and both
+  CI and a local run now produce it.
+
+`test/ci-workflow-package-gate.test.js` (**13 tests**) proves all of the above against the
+shipped workflow, parsed structurally into steps rather than grepped: every assertion must
+be satisfied by a `uses:` value or an executable line of a `run:` body, with YAML comments
+skipped and shell comments stripped. Four negative controls prove that property rather than
+claiming it — commenting out the whole gate step, commenting out the validator line inside
+it, moving the command into an unrelated step, and keeping the step name with a stub body
+all fail to satisfy the gate. Verified to have teeth by running the file against the
+pre-change `ci.yml`: **9 of 13 fail**.
+
+## Event-row Accent (Dashboard v2, September 2026)
+
+The first reusable Accent, and the first thing the generalized special-event foundation
+actually renders beyond the Spotlight. It decorates a row the Next Two Weeks panel already
+drew. It is not a panel, a row, an information line, or a geometry change.
+
+**Two treatments ship, both Accents, neither promoted.**
+
+| id | owner | occurrence | visible from | expires |
+|---|---|---|---|---|
+| `ophelia-757swim-catch-em-all-1-2026-09-19` | Ophelia (purple) | one all-day Google event, Sept 19 → exclusive end Sept 21 | Fri Sept 18, 4:00 PM ET | Sun Sept 20, 8:00 PM ET |
+| `myles-flag-football-week1-2026-09-20` | Myles (red) | one all-day Google event, Sept 20 | Sat Sept 19, 4:00 PM ET | Sun Sept 20, 8:00 PM ET |
+
+Both take the framework's accent defaults in full — 48h inclusion lead, 4:00 PM ET the
+previous day, 8:00 PM ET on the inclusive final day. Neither pins a boundary; both
+`lifecycle` blocks carry only a `note`. Both sit in the accent priority band (150, 151),
+so the arbiter admits both under the two-per-host-panel cap and neither can become a
+Spotlight.
+
+**The swim meet is one occurrence, so it is one row and one accent.** Google returns a
+multi-day all-day event as a single instance with an exclusive `end.date`, and
+`upcomingEvents` is a filter, not an expansion — so the ordinary renderer draws exactly one
+row for the meet, grouped under Sept 19, and there is no Sunday copy to duplicate. The
+entry qualifies as a `calendarRange` matched on its inclusive end, which keeps the
+one-to-one explicit: a range that stopped spanning both days fails closed rather than
+accenting a changed event.
+
+**Both accents pin their calendar title with `titleMatch.mode: "literal"`, and that is
+load-bearing.** An event-row accent draws a wash that must stay clear of the text, and the
+clearance depends on the *rendered length* of the title — for the flag-football row it is
+19.7 px, about two characters. Under `prefix` matching a longer title still qualified: the
+same event with its venue spelled out extended 357 px into the wash, putting text over
+alpha ≈0.30 and quietly breaking the "contrast at least as strong" clause with no test
+failing, because the fixtures supply the title. `literal` compares the whole title byte for
+byte (after the occurrence model strips leading emoji and trims the ends), so any real edit
+— a suffix, an added venue, a changed dash, a different capitalisation, a doubled internal
+space — fails the node closed and the row renders ordinary until the treatment is
+deliberately revalidated. Moving the 46% gradient boundary rightwards was rejected as a
+fix: it only postpones the same failure for the next longer title.
+
+**The three modes, and why the schema now picks one for you.** `prefix` is a normalized,
+case-insensitive prefix match — the configured value must start the title and anything may
+follow. `exact` is a normalized *whole-title* match that ignores case and collapses internal
+whitespace. `literal` is whole cleaned-title equality that stays sensitive to case,
+punctuation and internal whitespace, tolerating only the emoji-strip and end-trim the
+occurrence model already applies to everyone.
+
+`exact` and `literal` read as synonyms in English and are not interchangeable in practice:
+`exact` accepts edits that change the title's *rendered width* — an all-caps rename, a
+doubled internal space — and `literal` does not. Measured: under `exact`, an all-caps
+flag-football title still qualifies and puts **53.5 px of text over the wash**, with every
+gate green. So `RENDERER_REQUIRED_TITLE_MATCH_MODE` in `specialEventSchema.js` requires
+`literal` for `accent-event-row-v1`, and an accent declaring `prefix` or `exact` is rejected
+at load with `title-match-too-permissive`. The rule is keyed on the **renderer**, not the
+level, and is applied to the flattened qualification leaves — so it reaches a calendar node
+at any nesting depth inside a compound qualifier and never touches `approvedDate` or
+`sportsFixture`, which carry no title at all.
+
+The Spotlight deliberately keeps `prefix` and is deliberately unconstrained: its
+presentation reads its own configured copy, so the rendered length of a calendar title is
+irrelevant to it. `literal` is a third mode alongside `prefix` and `exact`, not a
+replacement for either, and the mode is validated at load — an unrecognised value is rejected rather than silently falling through
+to `prefix`, which is the most permissive mode and so exactly the wrong default. Load-time
+validation also now *requires* a title match on every calendar-anchored node: without one a
+node binds on calendar and date alone and would accept any event sitting there.
+
+**The join is occurrence identity, not a title match.** The selector publishes
+`occurrenceRef` — the same `${raw.id}|${start}` identity `refIdentity()` and
+`nowNextSelector` already use — and `renderUpcomingEvent()` looks up each collapsed row by
+`occurrenceId(item.event)`. An accent can therefore only ever decorate a row that exists;
+it has no mechanism to introduce, duplicate, or move one. That is a structural guarantee,
+not a rule someone has to remember.
+
+**The Upcoming panel is a lookahead, so an event-row accent is an anticipation treatment.**
+`builder.js` excludes today from `upcomingEvents`, so a row leaves the panel the moment its
+own date arrives and moves to the Today panel. On Saturday the 19th the swim accent is
+still `live` and still in the artifact, but its row is gone and nothing is accented. That
+is correct and is asserted, not merely tolerated: an accent decorates rows the panel draws.
+The practical consequence is that the two accents are never *both* visible in the panel on
+a real clock — Saturday's row is gone by the time Sunday's accent turns on. Their
+coexistence is a property of one generation's arbitration, which is what the tests prove.
+
+**Approved visual contract, and why the wash is right-weighted.** The row keeps its
+existing text, detail line, semantic icon or official logo, ordering, date grouping and
+height. Added, all absolutely positioned so none of them is in the row's grid flow:
+
+- an owner-coloured brush wash (`--section-red` / `--section-purple` used as a CSS mask,
+  the same technique `.athletic-ribbon` already uses to tint that artwork);
+- one decorative activity doodle at the far-right edge — `doodle-swim-goggles.svg` and
+  `doodle-football-laces.svg`, repo-native transparent line-art SVGs, also masked so each
+  takes its owner's tone from the stylesheet rather than shipping in two colours;
+- the compact `FIRST GAME` chip, on the flag-football accent only. The 757swim row gets no
+  chip: its own title already reads as a meet at TV distance, so `MEET WEEKEND` would be
+  redundant.
+
+**The wash carries zero alpha across the text's reading area and ramps up to the right of
+it.** This is the one place the visual brief and the readability requirement pull against
+each other, and readability wins. A uniform translucent wash of either owner colour is a
+dark colour over tan paper: at 0.16 alpha it drops the title's contrast ratio from 10.8:1
+to 8.8:1 — still above AAA, but *lower*, and the contract says at least as strong. A
+gradient that starts at 46% of the row width leaves the background behind every glyph
+untouched, so contrast is unchanged by construction rather than by arithmetic. The colour
+still reads from across the room because it occupies the open right two-thirds.
+
+**The flag-football doodle is a football and laces, not a pennant.** The first
+implementation drew a field pennant, which reads "flag" as the wrong object: in flag
+football the flag is the belt flag pulled to end a play, and a pennant belongs to a
+touchline, not to this sport. The doodle key, asset, registry value, schema allowlist entry,
+CSS class and custom property are all `football-laces`; no `flag-pennant` terminology
+survives anywhere. Treatment colour, opacity, footprint, far-right placement and absolute
+positioning are unchanged, so the row geometry is bit-identical to the approved version.
+
+**No flag-football logo is invented.** Both entries declare `assets.logos: []`, and the
+flag-football row keeps the semantic sports mark the ordinary renderer gave it. There is no
+authoritative mark for that team; a doodle is decoration and never substitutes for one.
+
+**Both presentations ship in one artifact.** Each accented row is emitted with
+`data-accent-state="ordinary"` plus absolute `data-accent-activate-at` /
+`data-accent-expire-at` instants, and a bounded browser controller
+(`window.updateEventRowAccents`) switches state at those instants with no network request
+and no regeneration — the same contract the Spotlight panel already uses. All Eastern
+reasoning happens once, server-side, through `easternInstant()`; the browser compares
+integers. Without this the 4:00 PM boundary would round up to the next scheduled generation
+(4:10 PM). A failed or absent script leaves ordinary rows.
+
+**Fail-closed paths, all tested:** switch off, absent or malformed registry, missing clock,
+occurrence moved / cancelled / duplicated / retyped from all-day to timed, unknown doodle
+key, unresolved `ref`, two accents claiming one row, a throw anywhere in resolution. Each
+resolves to the ordinary row, and one invalid accent never disables the other.
+
+**Schema additions.** `ACCENT_RENDERERS = ['accent-event-row-v1']` is kept *disjoint* from
+`KNOWN_RENDERERS`: an accent decorates a row, `spotlight-children-v1` replaces a panel's
+whole contents, and a treatment admitted with a renderer that cannot fill its surface would
+fail on a television rather than at load. An accent with no renderer keeps the framework's
+original behaviour — resolved, reported, never activatable. `KNOWN_DOODLE_KEYS`,
+`MAX_ACCENT_LABEL_LENGTH` (14) and the shared `OWNER_TONE` map are validated at load, and
+`OWNER_TONE` replaced a duplicate literal that the Spotlight selector had been carrying —
+two identical maps for one concept is how the Spotlight and the Accent would eventually
+have drifted apart.
+
+**Both doodle assets are named in `requiredAssetFiles`.** Shipping inside a packaged asset
+*directory* is not enough: the renderer treats an unresolvable doodle as a reason to skip
+the accent, so a package built without them would render ordinary rows with no error
+anywhere — a correct fail-closed, and an invisible one. The per-file guard makes the real
+package validator fail by name instead. `test/artifact/required-doodle-assets.test.js`
+proves both directions by running the shipped validator against a synthetic package root.
+
+**Artifact contract.** `data-accent-id` is conditional and must never join
+`LEVEL2_REQUIRED_MARKERS`, or every ordinary day would fail validation. When present, the
+contract asserts at most `MAX_EVENT_ROW_ACCENTS` (2), one `data-accent-state="ordinary"`
+per accent (**counted**, because one row shipping already-active would light up regardless
+of the clock — and because the stylesheet's own `[data-accent-state="active"]` selector
+must not be able to satisfy the check), integer time attributes, the presence of
+the Upcoming panel's own opening tag, and that an accent never coexists with the First Day
+takeover. The panel check asserts `UPCOMING_PANEL_ELEMENT` — `<section class="paper-panel
+upcoming-panel` — not the bare token: the stylesheet names `.upcoming-panel` in every
+artifact, so `includes('upcoming-panel')` is satisfied even when the panel element is gone
+and can never fail. That is the same defect shape the Spotlight branch already avoids with
+`class="athletics-grid spotlight-ordinary`, and the negative control that proves it deletes
+the opening tag while leaving the CSS, the controller and the accented rows in place.
+
+**What was NOT touched:** NOW/NEXT, the clock, weather, alerts, the right rail, the sports
+ticker, Athletics geometry (the one-card panel still measures 1473.83 × 315.63), Dashboard
+v1, the email renderer, First Day Level-3, Pi hosting, deployment topology,
+`flag-football.json`, `sports-config.json`, season windows, and the kill switch — which
+keeps its name, its `"0"` default, and its off state. No repository variable was created or
+changed.
+
+**Two stale assertions were updated, deliberately and reportably.**
+`digest/specialEventSelector.test.js` asserted the registry declares *exactly one*
+treatment — a correct guard for the phase that shipped nothing, and wrong the moment an
+approved Accent is added. It is now an explicit enumeration of the approved set, so an
+unreviewed addition still fails. `digest/builder.test.js` compared the compatibility shim's
+projection length against the whole registry's length; the shim correctly omits accents
+(they have no legacy form), so that length proxy is replaced by a comparison against the
+legacy-expressible subset, plus a new assertion that the shim never approximates an accent
+as a spotlight. Neither change weakens a guard; both are recorded here rather than made
+quietly, because a silently relaxed assertion is how a guard stops guarding.
+
+## Holiday Theme (Dashboard v2, October 2026)
+
+A reusable **ambient presentation layer**, `holiday-theme-v1`, and its first pilot:
+Halloween 2026. It is not a treatment, a panel, a page, a host, an origin, a variant, or a
+pipeline — it is a decorative **skin** applied beneath the ordinary dashboard.
+
+**The pilot ships disabled.** `HOLIDAY_THEMES_ENABLED` defaults to `0` at every layer this
+repository controls, and no GitHub repository variable was created or changed.
+
+### The composition model
+
+```
+        ordinary Dashboard v2
+      + optional Holiday Theme  (beneath)
+      + optional Accent or Spotlight  (above)
+  Takeover suppresses the theme and owns the complete visual surface.
+```
+
+Accents and Spotlights keep their own approved treatment colours when a theme is active —
+not by convention, but because a theme **cannot express an owner tone at all** (see the
+allowlist below). `FAMILY_SPOTLIGHT_ENABLED` (now deliberately `1`) and
+`HOLIDAY_THEMES_ENABLED` are wholly independent: separate repository variables, separate
+stack parameters, separate environment variables, separate registries, separate selectors.
+Neither reads the other, and a test asserts the holiday selector never mentions
+`familySpotlight` or `specialEventsConfig`.
+
+### What a theme may change, enforced structurally rather than by rule
+
+A theme names three things: one approved palette key, one approved heading style key, and at
+most three approved doodle keys. That is the whole of its expressive power. There is no
+field in which a theme could name a colour, a filename, a CSS declaration, a selector, or a
+content string — so there is nothing a future entry could talk its way past. This is the
+same discipline `PROTECTED_REGIONS` already applies to special-event surfaces.
+
+The palette a key resolves to sets exactly these nine ambient roles, and nothing else:
+
+| token | reaches |
+|---|---|
+| `canvas` | the page ground behind every panel |
+| `surfacePanel` / `surfaceAlt` | `.paper-panel` / `.rail-card` / `.alert-card` fills |
+| `panelBorder` | structural panel borders |
+| `rule` | structural hairlines between rows |
+| `frame` | the outer dashboard frame border |
+| `brush` | decorative brush / header artwork |
+| `headingInk` | lettering **on** a decorative brush — never a content row |
+| `highlight` | the restrained decorative highlight the doodles take |
+
+**Deliberately absent, each for a stated reason:** `secondary` and every other content text
+colour; owner tones (Myles `#b93624`, Ophelia `#6c4a85`); urgency, warning, weather, status
+and countdown colours; anything naming a logo or a semantic icon. A token outside the list
+is rejected **at load** with `holiday-palette-token-unknown`. `headingInk` is the one text
+colour a theme may set, and the selector list in the renderer is what confines it to six
+decorative brush labels — asserted structurally, not by convention.
+
+### Approved heading typography — the stronger theming device
+
+`typography.heading` names one key from `HOLIDAY_HEADING_STYLES`; the concrete face, weight,
+style, tracking and shadow live in `HEADING_STYLE_SPECS` in code. **There is no field in
+which authored data could write a `font-family`, a `font-size`, or any other CSS**, and a
+test asserts the registry contains none.
+
+| key | face | note |
+|---|---|---|
+| `brush-display` | **Knewave** | the pilot's choice |
+| `condensed-display` | Barlow Semi Condensed, heavier and tracked | the styled-existing-face alternative |
+
+**An existing packaged font was used — nothing was added, downloaded or hotlinked.** Knewave
+was already in `render/assets-v2/fonts/knewave-400.woff2` (17 KB, SIL OFL 1.1, Tyler Finck),
+already carried an `@font-face` rule in every artifact, and was **used by nothing**. It is a
+rough hand-painted brush face — storybook-spooky rather than horror — so the fallback path
+the brief allowed for (styling the existing display face through weight, casing and
+tracking) was not needed; it is retained as `condensed-display` so the allowlist is a real
+choice. Every family in either stack is either a packaged `@font-face` or a system fallback,
+and a test enumerates them against the shipped `@font-face` declarations.
+
+**The treatment reaches exactly six decorative brush labels**, by selector: the green
+`.section-title` spans (NOW / NEXT, COMING UP, ATHLETICS, TONIGHT'S DINNER, TODAY),
+`.weather-label`, `.forecast-heading`, `.horizon-label` and `.next-up-label`. Body text,
+event rows, the clock, data values, sports content, ownership labels, status labels,
+countdown chips and the athletic ribbons are out of scope because they are not in that
+selector list, and red/purple section titles are excluded because those brushes are
+ownership cues. **No font-size is set**, so the type scale — and therefore the geometry of
+every fixed-height title row — is unchanged.
+
+**Two defects were found here and are worth remembering.** The first draft used
+double-quoted CSS family names; those values are emitted into the dashboard element's inline
+`style` attribute, which is delimited by double quotes, so the attribute terminated early
+and **every heading declaration after the font stack was silently discarded**. It was
+invisible in the markup and showed up only as "the headings did not change" in a screenshot.
+`isHeadingSpecSafe()` now rejects a double quote, angle bracket or semicolon in any spec
+value, at load and again at the point the value becomes attribute text. The second: changing
+the heading `font-family` starts an **asynchronous** font load, so a measurement or
+screenshot taken immediately after activation captures the *fallback* face. Every preview
+and every layout assertion now awaits `document.fonts.ready` after applying a clock, and the
+layout suite asserts `document.fonts.check('30px Knewave')` — a silent fallback would
+otherwise make every computed-style assertion pass while the screen was wrong.
+
+### The registry selects a palette; it never authors one
+
+**A theme names an approved palette *key*. It cannot write a colour at all.** `palette:
+"halloween-ambient"` resolves in `digest/holidayThemeSchema.js` to
+`HOLIDAY_PALETTE_SPECS['halloween-ambient']`, which carries the reviewed day and evening
+maps. `paletteEvening` is not an authorable field — supplying one is rejected outright, so
+the evening variant can never drift from the day variant it belongs with.
+
+**This replaced a real hole, and the hole is worth remembering, because "valid hex" looked
+like safety and was not.** Validating a colour stops `url(...)`, a custom-property
+reference and a declaration terminator — but it says nothing about a *valid* colour that is
+unsafe. Every one of these validated and rendered under the old contract: `canvas:
+"#6c4a85"` (Ophelia's ownership purple as the page ground), `canvas: "#b93624"` (Myles's
+red), `headingInk` identical to `brush` (invisible headings), `surfacePanel: "#000000"`,
+`surfacePanel: "#00000000"` (a fully transparent panel). The only thing standing against any
+of it was one Halloween-shaped test that destructured `themes[0]` — so a second registry
+entry was never examined at all. Structure, not a test, is what closes that.
+
+**`auditHolidayPaletteSpec()` audits every code-owned spec before it can reach CSS**, and
+its failure is a fail-closed rejection (`holiday-palette-spec-unsafe`), not a warning:
+
+| audited property | why |
+|---|---|
+| exactly the nine required roles, no extras | an extra role reaches a surface the skin does not own; a missing one half-applies it |
+| every value a 6- or 8-digit hex | `#rgb` still rejected — a three-digit typo lands on valid-but-wrong |
+| surface and mark roles fully opaque | only `panelBorder`, `rule` and `frame` may carry alpha; a transparent panel fill is a readability failure in a decoration costume |
+| `headingInk` on `brush` ≥ 7:1 | WCAG AAA for normal text; the shipped palette measures **15.42** (day) and **14.96** (evening) |
+| no value within RGB distance 32 of an owner tone | `#b93624` / `#6c4a85`; the shipped palette's closest approach is **44** (evening `highlight` vs Myles red), so the threshold has headroom rather than being fitted to it |
+| no value reads as purple | blue and red both clearly above green — purple is Ophelia's cue and must never become ambient decoration |
+
+**Adding a future holiday palette is deliberately a reviewed code change, and that is the
+point rather than a limitation.** A palette authorable by typing hex into JSON would be
+production-authorable, and every property in that table would then rest on whoever typed it.
+Adding `HOLIDAY_PALETTE_SPECS['thanksgiving-ambient']` is a pull request; selecting it from
+the registry afterwards is a one-line declarative choice among things already reviewed. The
+registry stays declarative in exactly the same shape as typography and doodles: it names a
+palette key, a typography key and doodle keys, and authors none of their values.
+
+`HOLIDAY_PALETTE_SPECS` and every map inside it are frozen, and a test asserts that
+assignment throws rather than silently no-oping.
+
+**The renderer re-checks every value at the point it becomes CSS text** — two independent
+gates, not one — and drops the whole theme rather than emitting a partial skin. Mutation
+tests prove both halves in both directions: a schema mutant that skips the audit and admits
+`red;position:fixed` still cannot get it past `holidayStyleVars()`, and a renderer given an
+unsafe `HEADING_STYLE_SPECS` entry (a double-quoted font stack, an injected `;`, an angle
+bracket) returns no style variables at all. Both gates are injectable *only* through a
+default parameter used by tests; no production caller passes one.
+
+### The evening palette is not over-generalization
+
+Dashboard v2 already ships a day/evening reduction, so a skin that carried only a day
+palette would silently drop the evening reduction on a television at night. Every approved
+palette spec therefore carries **both** maps, audited by the same rules, and the registry
+cannot supply either — they come from the one spec together or neither does. It is one
+second map inside a reviewed code-owned spec, not a season system, a recurrence rule, or
+arbitrary CSS.
+
+### Halloween 2026 — the pilot
+
+`data/holiday-themes.json`, one entry, `priority: 100`, `status: ready`, `enabled: true`.
+
+| | |
+|---|---|
+| timezone | `America/New_York`, declared explicitly rather than assumed |
+| activate | **Oct 24 2026, 4:00 PM ET** → `1792872000000` |
+| expire | **Nov 1 2026, 4:00 AM ET** → `1793523600000` |
+| inclusion lead | 72 h, comfortably past the largest real pull gap (8h25m overnight) |
+| palette | `halloween-ambient` — an approved key; the registry authors no colour |
+| doodles | `spiderweb-corner`, `bat-trio`, `pumpkin-outline` |
+| heading | `brush-display` (Knewave) |
+
+**The window straddles the DST transition, and that is load-bearing.** October 24 is EDT
+(UTC−4); November 1 at 4:00 AM is EST (UTC−5), because the fallback happens at 2:00 AM that
+morning. `easternInstant()` resolves each stamp with the offset in effect on **its own**
+date, so a selector applying one offset to both would be an hour wrong at one end. A
+mutation test states both instants as absolute UTC and asserts the two offsets genuinely
+differ.
+
+**Explicit 2026 dates, no annual recurrence.** A 2027 Halloween is a new entry with its own
+reviewed dates. Inventing a recurrence rule in a pilot would be exactly the kind of
+generalization this section is otherwise arguing against.
+
+### Palette, and why purple is absent
+
+Light, TV-readable paper is retained — this is emphatically not a dark-mode dashboard.
+Day: canvas `#d3bc8d` (deeper warm autumn oat), panels `#f2dfbe` (light pumpkin-cream),
+panel borders `#8a5527d6` (muted copper at higher contrast), frame `#2b1e12b8`, rule
+`#7d4c246b`, brush `#15120f` (consistently charcoal-black, and *darker* than the production
+`#0f4a36`, so cream-on-brush contrast improves rather than degrades), headingInk `#f8e8c6`
+(warm cream), highlight `#cf6412` (restrained pumpkin orange). Evening is a deeper variant
+of the same.
+
+**Revised one controlled step stronger (~25%).** Canvas and evening canvas deepened, panel
+borders and frame given noticeably more contrast, brush moved from charcoal-evergreen to
+charcoal-black, highlight strengthened. Panel interiors stay light pumpkin-cream and no
+content row, owner rail, countdown pill, weather icon, sports mark or warning state is
+tinted individually — the framing is ambient and stays subordinate to NOW/NEXT.
+
+**No token reads as purple**, and a test asserts it numerically over both palettes: purple is
+already Ophelia's ownership cue and must never become ambient decoration.
+
+### Brush recolouring — scope, and the reason for it
+
+A CSS mask clips an element's **descendants** as well as itself, so the two *empty* brush
+surfaces (`.section-title:before`, `.masthead-brush`) are masked directly, while the
+text-bearing green surfaces (`.weather-label`, `.forecast-heading`, `.horizon-label`,
+`.next-up-label`, `.sports-ticker`) get the recoloured brush on a pseudo-element **behind**
+the text, with `isolation:isolate` keeping its `z-index:-1` inside the label rather than
+dropping it behind the card. Masking those directly would have nibbled glyphs.
+`.section-title-red` and `.section-title-purple` are excluded by selector: those brushes are
+ownership cues, not decoration. Neither added declaration changes layout, which the geometry
+assertions verify rather than assume.
+
+### Decorative doodles
+
+Three transparent, code-native SVGs in `render/assets-v2/` — `doodle-holiday-web.svg`,
+`doodle-holiday-bats.svg`, `doodle-holiday-pumpkin.svg` — used as CSS masks, so each takes
+its tone from the stylesheet rather than shipping in a colour. No emoji, no photograph, no
+generated bitmap, no external request, and never a substitute for a semantic icon or an
+official sports logo. **No animation.**
+
+They live in a `.holiday-skin` overlay that is `display:none` unless the theme is active, so
+in the ordinary state it is definitively outside the grid flow and cannot affect a track, a
+panel height, a row, or a neighbour. All three are absolutely positioned, `pointer-events:
+none`, `aria-hidden`.
+
+| mark | box (px) | placement | tone |
+|---|---|---|---|
+| `spiderweb-corner` | 60 × 60 at (18, 18) | moved inward from the extreme corner; five radials and five sagging rings | highlight |
+| `pumpkin-outline` | 74 × 74 at (520, 2) | NOW/NEXT title band, right of the brush; four ribs and a thick curled stem | highlight |
+| `bat-trio` | 242 × 72 at (1540, 4) | Coming Up title band, right of the lettering | brush |
+
+**The web moved inward at the cost of size, and that trade is forced.** The "NOW / NEXT"
+glyph rectangle begins at x = 82, so a mark anchored at (18, 18) cannot exceed 64 px wide
+without touching it. Legibility was bought with *ring density* instead — five radials and
+five cross-strands rather than three and three, which is what stops it reading as stray
+diagonals. The pumpkin gained ribs, a thicker curled stem and a squatter body for the same
+reason: at TV distance the earlier two-rib outline with a thin straight stem read as an
+apple.
+
+**Placement is measured, not chosen.** A test intersects each mark's box with the **client
+rectangles of every text node**, not by element hit-testing — a section title's `<span>` box
+spans the whole brush, so hit-testing would report "over the title" for a mark sitting in
+its empty left tail and would equally miss a real collision elsewhere.
+
+**Every mark's clearance is structural, and that is why a fourth was removed.** All three
+sit in a section-title band or a frame corner, regions that are empty in every data state.
+A fourth mark — a pumpkin-and-leaf cluster anchored near the footer — was built and then
+deleted at review: nothing near the footer is structurally clear (the sports ticker's four
+slots span x 40–2207 with its own gold mark at the right, and the frame margin is 18 px), so
+it had to sit in the trailing space of an alerts card. That space is empty in the fixture
+and in typical data but is not guaranteed by the layout, and **decorative art must never
+depend on an alert slot usually being empty.** It was removed rather than relocated; the web,
+pumpkin and bats are sufficient.
+
+Together the three cover **0.719% of the screen** by bounding box (26,500 px² of 3,686,400),
+the largest single mark being the bat trio at 0.473%. The global cap is therefore back at
+its **original 1.0%** — it had been raised to 1.5% for the footer anchor, and with that mark
+gone the guard returns to where it was rather than staying loose around an obsolete
+expectation. The per-mark cap of 0.6% is retained. Bounding boxes substantially over-state
+transparent line art, which is the right direction for a guard.
+
+### Lifecycle and the browser controller
+
+`not-included → staged → active → expired`, start-inclusive at activation, end-exclusive at
+expiry. Every boundary is resolved **in the generator** to an epoch millisecond; the browser
+compares integers only — it parses no timezone, computes no DST offset, and makes no network
+request. `window.updateHolidayTheme(at)` switches `data-holiday-state` at those exact
+instants, so 4:00 PM ET is exact rather than rounded up to the next scheduled generation
+(4:10 PM), and the ordinary dashboard is restored **locally** at expiry without another
+artifact pull. The page ships in the `ordinary` state, so a failed or absent script fails
+closed.
+
+**Fail-closed paths, all tested:** switch off (anything but boolean `true`), Takeover
+active, no clock, absent/malformed registry, wrong schema version, duplicate id, duplicate
+priority, entry disabled, status not ready, invalid window, unknown palette token,
+non-hex value, unknown doodle key, duplicated doodle key, too many doodles, missing doodle
+asset, unresolved overlap tie, outside window, and a throw anywhere in resolution. Each
+renders the ordinary dashboard.
+
+**Overlap is resolved by explicit priority, never array order; an unresolved tie drops the
+whole tied set** — the same rule the special-event arbiter keeps, for the same reason.
+A duplicate-priority document is additionally rejected *at load*, as defence in depth, so an
+ambiguous registry is a named error rather than a silent drop at render time.
+
+### Kill switch — `HOLIDAY_THEMES_ENABLED`
+
+Modelled exactly on the Family Spotlight switch, and independent of it in both directions.
+Repository variable → workflow resolve step (trim, then accept **only** `0` or `1`) →
+`HolidayThemesEnabled` stack parameter (`Default: "0"`, `AllowedValues: ["0","1"]`) →
+`HOLIDAY_THEMES_ENABLED` environment variable → `holidayThemes` render flag. Absent or blank
+resolves to `0`; anything else **fails the workflow before SAM runs**. A read-back step
+re-reads the deployed parameter and fails on `None` or a mismatch.
+
+`test/deploy-workflow-holiday-flag.test.js` lifts the shipped `run:` body out of the
+workflow and executes it under `bash -e`, so it cannot keep passing after the workflow
+drifts.
+
+**The `run:` body is not the whole path, and that gap was a real one.** `stepScript` lifts a
+step's script, so the `env:` mapping *above* it was never inspected — and two one-token edits
+therefore passed every gate: repointing the mapping at `vars.FAMILY_SPOTLIGHT_ENABLED`
+(deliberately `1`) deployed `HolidayThemesEnabled=1` with CI green, because the post-deploy
+read-back compares against the same wrongly-sourced value; deleting the mapping made the
+switch permanently unreachable. Both were silent. `assertDeploymentPath()` now checks the
+whole path over the workflow *source* — the variable is referenced, only ever as the `env:`
+mapping, fed by its own repository variable and no other, resolved before SAM runs, passed
+to SAM as `HolidayThemesEnabled=$HOLIDAY_ENABLED`, read back after the deploy, and compared
+against that same resolved value — and asserts that `SourceRevision` and
+`FamilySpotlightEnabled` keep their own overrides and their own read-backs untouched. Eight
+mutations run the real gate against a damaged workflow and each must fail **for its own
+reason**: delete the mapping, repoint it at the Spotlight variable, misspell it, remove the
+SAM override while leaving the same literal elsewhere in the file, move resolution after the
+deploy, delete the read-back, reorder the read-back ahead of the deploy, and compare the
+read-back against the Spotlight value. Its injection cases carry a **filesystem canary** rather than an echo: the step
+legitimately prints the rejected value back in its error message, so "the payload appears in
+stdout" cannot distinguish a value being *echoed* from one being *executed*. A file that
+does not exist afterwards can. Three mutation controls prove the guard has teeth (widened
+allow-list, removed blank check, removed trim).
+
+**From the first merge onward, every deployment matching the workflow's `paths:` filter
+asserts this parameter**, exactly as the Family Spotlight switch already does — so the AWS
+console is not a durable source of truth for it either. See "Managing the kill switch" in
+the Family Spotlight section; the same table applies.
+
+### Artifact contract
+
+`data-holiday-id` is conditional and **must never join `LEVEL2_REQUIRED_MARKERS`**, or every
+ordinary day would fail validation. When present, the contract asserts: at most one theme;
+the `holiday-theme-v1` renderer marker; the `<div class="holiday-skin"` element's own
+opening tag (not the bare token, which the stylesheet and controller both contain in every
+themed artifact); the presence of a shipped `data-holiday-state="ordinary"`; integer time
+attributes; and that a theme never coexists with the First Day takeover.
+
+**The single-instance guarantee is two parts, not one**, and this used to be stated
+inaccurately here. `validateArtifact` asserts the *presence* of
+`data-holiday-state="ordinary"` (`html.includes`), never a count; what bounds it to one is
+the separate assertion that `data-holiday-id="` occurs at most once, and the state attribute
+rides on that same element. Both halves are needed and neither is redundant: drop the count
+and two themes could ship, drop the presence check and one could ship already-active. The
+presence check is nonetheless genuinely falsifiable — the literal
+`data-holiday-state="ordinary"` appears in exactly one place in the renderer, the dashboard
+element itself. Every theme CSS rule is scoped to `="active"`, and the controller assigns
+through `dataset.holidayState`, so neither the stylesheet nor the script contains a string
+that could satisfy the check — the same false-satisfiability trap the accent contract
+already avoids.
+
+### What was NOT touched
+
+The canonical NOW/NEXT dashboard, the production pipeline, Raspberry Pi hosting (still
+`127.0.0.1:4173`, single host, no port 4174, no split hosting, no Windows viewer), selector
+behaviour, TV readability, ownership cues, official sports logos, transparent activity
+marks, semantic icon rules, Accent/Spotlight/Takeover qualification and arbitration,
+First Day Level-3, Dashboard v1, and the email digest. `FAMILY_SPOTLIGHT_ENABLED` keeps its
+name and its current value. No new service, port, host, viewer, artifact source or network
+request was created.
+
+### What was proved
+
+- **Dashboard v1 and the email digest are byte-identical to `origin/main`** (`5048f71`),
+  verified by rendering both from the same fixture in a worktree at the merge base.
+- **An ordinary Dashboard v2 artifact grows by exactly 10,515 bytes** — the theme stylesheet
+  block, the browser controller, and one empty skin placeholder line — and removing those
+  three makes the two trees byte-identical. It renders **pixel-identically** and with
+  identical geometry (`.athletics-panel` at `1473.83 × 485.59` in the three-card fixture,
+  `1473.83 × 315.63` one-card; `.dashboard` at `0,0,2560,1440`; and the three pseudo-element
+  brush labels at `285.77 × 38`, `285.77 × 42`, `273.77 × 46`).
+- **Switch-off and a post-expiry generation are byte-identical** to each other and to a
+  render with a null or empty registry.
+- **Activating the theme changes no geometry, capacity, ordering or content**: measured
+  boxes, row/day/card/priority/centre/ticker counts, row order and `innerText` are
+  `deepEqual` across the transition.
+- **Owner, status, urgency and semantic colours are unchanged** across the transition,
+  asserted both as equality and as specific values (`rgb(185,54,36)`, `rgb(108,74,133)`).
+- **Content typography is unchanged and heading typography is not**: the six brush labels
+  all resolve to Knewave at the cream ink and at their *original* font size, while the hero,
+  clock, event rows, priorities, owner pills, countdown chips, athletic ribbons, Centers and
+  horizon copy are `deepEqual` across the transition.
+- **The Takeover proof is taken inside the Halloween window** — both the generation instant
+  and the controller instant are Sun Oct 25 2026, 12:00 noon ET — and `report.json` records
+  zero holiday attributes, zero `.holiday-skin` elements, zero `.holiday-doodle` elements,
+  zero `--holiday-*` custom properties and no holiday controller in the rendered DOM.
+
+**One confounder was found and fixed rather than tolerated.** `renderDashboardV2` seeds
+`#live-clock` and the ticker stamp from the **real wall clock** (the controller overwrites
+both moments later), so two independent renders straddling a minute boundary differ by a few
+bytes for reasons unrelated to any theme — and two screenshots straddling the page's own
+15-second `tick()` differ for the same reason. Every byte-identity assertion here normalises
+that text, and every screenshot pins it first. Without that, the identity guards would have
+been rare flakes rather than guards. The preview script goes further for the states that
+claim to share one artifact: they share one rendered **string**, so "one artifact, only the
+browser clock changes" is a fact rather than a claim.
+
+**A second confounder was found in the preview harness and fixed.** `page.setContent()` does
+not reliably reset the JavaScript context, so a controller defined by one state's artifact
+survived into the next — and the Takeover artifact, which defines no holiday controller of
+its own, was answered by the *previous* state's leaked closure over a detached DOM. The
+evidence line read `holiday=expired` and looked live. Each preview state now renders on a
+fresh page.
+
+### Files
+
+New: `data/holiday-themes.json`, `digest/holidayThemeSchema.js`,
+`digest/holidayThemeSelector.js`, three `render/assets-v2/doodle-holiday-*.svg`,
+`scripts/render-dashboard-v2-holiday-states.mjs`, and seven test files.
+Modified: `render/dashboard-v2.js` (resolver, CSS block, controller, markup),
+`render/dashboard-v2.sample-data.js` (`holidayThemeSampleData`), `digest/builder.js`
+(`holidayThemesConfig`), `dashboard-artifact/{generator,contract,package-inputs}`,
+`infrastructure/dashboard-artifact-refresh/template.json`, the deploy workflow,
+`scripts/validate-dashboard-artifact-template.mjs`, `package.json`, and one documented
+invariant in `test/artifact/package-data-files.test.js`.
+
 ## Weekly Household Operations Review
 
 ### Phase 5 — Menu Planning (~5 min)
@@ -281,10 +1867,12 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 - **`digest/builder.js`** — main digest assembly; fetches calendar events, routes them through parsers, produces `digestData`. `today` anchor changed from `new Date(); setHours(0,0,0,0)` (UTC-anchored, wrong at ≥8 PM ET) to `startOfTodayET()` (Jul 2026).
 - **`digest/dateUtils.js`** — date utilities shared across the pipeline: `midnight()`, `daysBetween()`, `toDateKey()`, `parseEventDate()`, `normalizeEvent()`, `timeToSeconds()`, `secondsToTime()`. Added `startOfTodayET(instant)` (Jul 2026) — derives midnight-of-the-ET-calendar-date as a local-midnight `Date`, used as the dashboard's 'today' anchor. `parseEventDate`'s timed-event branch also returns ET-calendar-date local-midnight, kept consistent with `startOfTodayET` so both operands of `daysBetween` share the same anchoring convention.
-- **`render/dashboard.js`** — HTML dashboard renderer; consumes `digestData` and produces the full dashboard page. Added `eventDateKeyET(start)` (Jul 2026), exported for testing — resolves an event's ET calendar-date bucket key: `start.date` passthrough for all-day events, `toLocaleDateString('en-CA', {timeZone: 'America/New_York'})` for timed events. Replaces the old `raw.slice(0,10)` UTC-slice in `renderWeekCard`, which had misbucketed any event at/after 8 PM ET into the next day.
+- **`render/dashboard.js`** — **FROZEN (2026-08-27) — do not iterate, refactor, or debug; see "Frozen surfaces" near the top of this file.** HTML dashboard renderer; consumes `digestData` and produces the full dashboard page. Added `eventDateKeyET(start)` (Jul 2026), exported for testing — resolves an event's ET calendar-date bucket key: `start.date` passthrough for all-day events, `toLocaleDateString('en-CA', {timeZone: 'America/New_York'})` for timed events. Replaces the old `raw.slice(0,10)` UTC-slice in `renderWeekCard`, which had misbucketed any event at/after 8 PM ET into the next day.
 - **`render/email.js`** — HTML email renderer; parallel to dashboard but for the digest email.
 - **`digest/aliases.js`** — maps raw calendar event titles/calendars to resolved display forms.
-- **`digest/flags.js`** — computes alert flags (gear reminders, bag-prep warnings, etc.) from resolved events.
+- **`digest/flags.js`** — computes alert flags (gear reminders, bag-prep warnings, etc.) from resolved events. Added (Aug 2026) an Emma-unavailability evaluator reading `ctx.emmaUnavailableBlocks` — no I/O, pure.
+- **`digest/emmaUnavailabilityParser.js`** — added Aug 2026. Fetches and parses Emma's UTA reserve-duty / annual-tour-duty unavailability blocks from the "House Manager" calendar (`690a345d...@group.calendar.google.com`, intentionally excluded from `FAMILY_CALENDARS`). Exports pure helpers (`extractUnavailabilityType`, `exclusiveEndToInclusive`, `buildUnavailabilityBlock`, `parseEmmaUnavailabilityBlocks`) plus the async `fetchEmmaUnavailabilityBlocks(today)` entry point, which takes the caller's already ET-anchored `today` and never constructs `new Date()` itself.
+- **`digest/routineAnchorsParser.js`** — see the Routine Anchors section above. No file I/O of its own; reads `data/routine-anchors.json` via `builder.js`'s standard `readDataFile()`. Two independent suppression checks — `isRoutineSuppressedByCalendar` (school-type, 🏫-calendar-title scan) and `isCaregiverAnchorSuppressed` (caregiver-type, checks `emmaUnavailabilityParser.js` blocks) — with the branching between them decided by `builder.js`, keyed on `anchor.caregiver` presence.
 - **`digest/generateTasks.js`** — derives today's task list from events and school strip.
 
 ## Key docs
@@ -297,13 +1885,981 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-**✓ 673 unit tests passing, 0 failing (current baseline as of August 2026 — 646 prior baseline (the July 2026 baseline below was documented as 645, but was never bumped when commit `d10b3df` landed on 2026-08-02: that commit added one new test, the "matches expected weekdays for all 9 required dates under TZ=UTC" subprocess case in `test/weeklyPrioritiesParser.test.js`, alongside its `classifyEvent` dueDay timezone double-convert fix — corrected here to 646) +27 from the Tidewater Sharks U11 soccer card: +15 `test/sharksParser.test.js`, +1 `data/sharks-soccer.json` shape check in `test/data.test.js`, +4 sharks-field coverage in `test/athleticsParser.test.js`, +7 `renderSharksCard`/`renderAthleticsCard` coverage in `render/dashboard.test.js`. Prior-increment history: 430 post ageGroup fix, +12 from fractional-points / 1-tab relay / DQ-handling fixes, +10 from FIX 1 Unicode names / FIX 2 multi-line wrap / FIX 3 relay NT, +14 from HIST EXT null-byte / EXH / non-scoring-finisher / SCR + pre-existing double-quote name fix, +1 from HIST EXT 6 X-prefix name-wrap, +2 from HIST EXT 7 NT-official EXH rows, +8 from waves-div1-simulation nearest-meet rewrite (17 new / 9 removed), +2 from HIST EXT 8 parenthetical-nickname EXH rows, +85 from waves-div1-2027-projection skill commit 868c84c, +5 from HIST EXT 9 ordinal-suffix / HIST EXT 10 tied-relay-place / HIST EXT 11 double-quoted EXH continuation, +2 from BRACKET_LEGAL_EVENTS cross-bracket event filter in waves-div1-2027-projection, +3 from v2 path tests in swimParser.test.js, +1 from SA FIX 1 Delaney U+201C nickname regression test, +1 from Case L Men/Women→Boys/Girls normalization contract test in waves-champs-qualifier, +10 from Phase 1/2 relay parser fixes — NS/DNF/SCR token handling, 1-tab fallback, and DQ-row recovery regression tests, +10 from VPSU CHAMPS EXT — year+time record-line skip, VC suffix on individual rows, VC in wrap-stitch data lines)**
+### Current baseline — measured Sept 9, 2026 on the Reviewer-gate branch
 
-Run via: `npm test` — **but see the Key Learnings entry on `npm test`'s glob bug above.** In a shell without `bash`'s `globstar` enabled (the default for the shell `npm test` itself spawns on this system), the literal `npm test` command silently skips every `test/*.test.js` file that isn't under `test/skills/`, undercounting badly (395 observed) with 0 reported failures either way. The 673 figure above was measured with `shopt -s globstar` enabled and the full glob expanded manually — that is the number that reflects actual test coverage. Uses Node's built-in `node:test` runner either way.
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test`, no browser resolvable | 2196 | 2159 | 3 | 34 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2196 | **2196** | **0** | **0** |
 
-Coder mode must keep tests at 430+. If the number changes, the Documenter should update this baseline.
+Measured on `claude/stop-hook-reviewer-4tysci`, whose merge base with `main` is
+**`2d01027`** (PR #51). **That merge base was re-measured in this session, before any
+change: 2139 / 2139 / 0 / 0 with a browser** — which matches the figure the entry
+below recorded, so the recorded delta held for a second consecutive baseline. Re-measure
+anyway. `git fetch origin main` was run *before* deriving the merge base, per the standing
+warning; this time the ref was already current at `2d01027`.
+
+This change adds **+57**, all in one new file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/hooks/reviewer-gate.test.js` (new) | — | 57 | +57 |
+
+The file is a behavioural matrix for a **standalone, unwired** Stop-hook artifact in
+`scratch/reviewer-gate/` — two hooks that make a Reviewer pass mandatory. Nothing under
+`.claude/` is touched, so no hook in this repository behaves differently because of it;
+the tests spawn the scripts by path against throwaway git repositories. It lives in
+`test/hooks/` rather than beside the scripts for the same reason
+`guard-archived-files.test.js` does: `package.json`'s globs are `test/**`, `digest/**`
+and `render/**`, so a test under `scratch/` would never run here or in CI.
+
+Companion mutation harness, **not** part of `npm test` and run on demand:
+`node scratch/reviewer-gate/mutation-check.mjs` → 25 mutations, 25/25 proven, green
+control, plus two self-test rows that inject a real syntax error to prove the harness's
+own hollowness check is live.
+
+`scratch/reviewer-gate-install/` holds the paste-ready install artifacts for that gate:
+complete post-install contents for the four destinations under `.claude/`, an install
+checklist, the adversarial-test procedure, and three on-demand scripts —
+`verify-merge.mjs` (proves the settings merge is additive; **pre-install only, refuses
+once installed**), `adversarial-test.mjs` (ten-scenario proof that the gate blocks), and
+`location-independence.mjs` (the measurement behind "the hooks need not move to work,
+only to be protected"). None runs in `npm test`. **The Stop-hook gate itself is now
+installed** — PR #53 (`1bad0fd`) added `.claude/hooks/require-review.mjs` and
+`.claude/hooks/record-review-verdict.mjs`, wired them in `.claude/settings.json` on `Stop`
+and `SubagentStop`, and appended checklist item 8 (the bare `REVIEW: PASS` / `REVIEW:
+FAIL` verdict line) to the **body** of `.claude/agents/reviewer.md`.
+**Not its frontmatter** — that still declares only the `guard-readonly.mjs` hook and is
+byte-identical across #53. The distinction is load-bearing here, not pedantry: frontmatter
+hooks are trust-gated and `settings.json` hooks are not, so miscalling this a frontmatter
+change would corrupt the audit that "Read-only role hooks live in agent frontmatter" asks
+a future reader to perform. The sentence this replaces said the gate "remains uninstalled",
+which was true only of the branch the baseline was measured on. Two consequences worth
+carrying: `verify-merge.mjs` is pre-install only and now refuses to run, and
+`scratch/reviewer-gate/` remains genuinely unwired, so the "standalone, unwired" paragraph
+two above is still accurate about its own subject. It is unwired because `settings.json`
+references only `${CLAUDE_PROJECT_DIR}/.claude/hooks/` — **not** because the installed
+copies are known to have come from `scratch/reviewer-gate-install/` rather than from it.
+That provenance cannot be established from content: both scratch copies are byte-identical
+to each other and to the installed pair.
+
+**The two hooks split recorder from gate, and the split is easy to state backwards.**
+`record-review-verdict.mjs` on `SubagentStop` is the one that reads the Reviewer's reply:
+it holds the `SENTINEL` regex, strips fenced blocks first, and writes a verdict plus the
+HEAD SHA into a record file. `require-review.mjs` on `Stop` never sees the reply at all —
+it reads that record and blocks on it. So the verdict line is read by the **SubagentStop
+recorder**, not the Stop gate, even though the Stop gate is what refuses to let the turn
+end. (`reviewer.md` item 8 says "a Stop hook reads that line", which is loose but harmless
+in an agent file; do not carry that phrasing into this one, where the hooks are named
+individually.)
+
+The no-browser row is kept for the reason the entry below gives. Its failures and
+cancellations are the standing no-browser set, unchanged by this work.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2196+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 8, 2026 on the prep-task fan-out branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test`, no browser resolvable | 2139 | 2102 | 3 | 34 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2139 | **2139** | **0** | **0** |
+
+Measured on `claude/pr-49-known-item-fix-7depq6`, whose merge base with `main` is
+**`d1ee107`** (PR #49). **That merge base was re-measured in this session, before any change:
+2135 / 2135 / 0 / 0 with a browser** — which matches the figure the entry below recorded, so
+for the first time the recorded delta held. Re-measure anyway; the run costs less than the
+correction does. `git fetch origin main` was run *before* deriving the merge base, per the
+warning in the entry below — the ref was stale again (`a604faf`), and the fetch moved it to
+`d1ee107`.
+
+The no-browser row is kept for the same reason the entry below gives: it was restored on
+Sept 7 after drifting, and dropping it one baseline later would repeat that. Its failures and
+cancellations are the standing no-browser set, unchanged by this work — all of them go to
+zero the moment a browser resolves.
+
+This change adds **+4**, all in one file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/builder.test.js` | 6 | 10 | +4 |
+
+Accounted for individually: +1 generic 26-morning cross-window sweep asserting every day of
+every 72h window against a `getRotation()`-derived oracle; +1 pinning the specific Oct 21
+2026 case the Known-open-item entry reported; +2 added after the Reviewer pass, pinning the
+two cross-day interactions the fix creates in the email (the Music-eve co-appearance, and the
+night-before strip line coexisting with the next day's own row) so that neither is incidental
+output. No test was deleted, skipped, or rewritten —
+nothing in the suite had ever asserted the old fan-out behaviour, which is precisely the gap
+the sweep closes. `digest/builder.test.js` surfaces as `node:test` suites, so its internal
+assertion count is not what moves here; all four new points are real `it()` cases.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+(Superseded — see Current baseline above; the figure is now 2196.)
+
+### Previous baseline — measured Sept 8, 2026 on the baritone-reminder branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test`, no browser resolvable | 2135 | 2098 | 3 | 34 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2135 | **2135** | **0** | **0** |
+
+Measured on `claude/baritone-reminder-myles-b38gz4`, whose merge base with `main` is
+**`eeccad2`** (PR #48). **That merge base was re-measured in the same session, before any
+change: 2127 / 2127 / 0 / 0 with a browser** — not the 2088 recorded below, which was taken
+before PRs #40–#48 landed. Re-measuring rather than trusting the recorded delta is now
+three-for-three.
+
+⚠ **Read this before re-deriving the merge base: `git merge-base HEAD origin/main` lied
+here, and a Reviewer pass caught it.** This checkout's `origin/main` ref was stale at
+`a604faf`, nine commits behind, so the merge base first recorded in this block was that SHA —
+which measures ~2052, not 2127, and would have made this table look broken to the next
+session that followed the re-measure instruction. `git fetch origin main` moved the ref to
+`eeccad2` and the merge base with it. **Fetch before trusting a merge base**, and note this
+is not the "recorded number went stale" failure this section already documents twice — it is
+a correct measurement pinned to the wrong commit, which is just as misleading and harder to
+spot.
+
+The no-browser row is included deliberately, because the Sept 7 entry restored it after it
+had drifted and dropping it one baseline later would repeat that. The 3 failures are the
+three flat tests in `render/first-day-level3-layout.test.js`; the 34 cancelled are
+`render/dashboard-v2-layout.test.js` (22) plus `render/dashboard-v2-holiday-layout.test.js`
+(12). All 37 go to zero the moment a browser resolves — the standing cause, unchanged by
+this work.
+
+This change adds **+8**, all in one file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/schoolRotation.test.js` | 63 | 71 | +8 |
+
+Accounted for individually: +1 whole-cycle Ophelia negative control; +2 net from replacing
+the single `needsRecorder === false` case with three (instrument named, non-Music days,
+one-warningText-slot); +4 adjacency cases in the `getSchoolStrip` section; +1 `INSTRUMENTS`
+drift tripwire against `data/kids-profile.json`, added after review.
+
+**Do not read this row without `npm install` first.** A fresh clone in this sandbox reports
+1808 / 1793 / 15 / 0, and every one of the 15 is `ERR_MODULE_NOT_FOUND` for a declared
+dependency (`@googleapis/calendar`, `playwright`) — the documented fresh-clone case, not a
+regression. It looks alarming and is not.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+(Superseded — see Current baseline above; the figure is now 2139.)
+
+### Previous baseline — measured Sept 7, 2026 on the enforcement-config fixes branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test`, no browser resolvable | 2088 | 2051 | 3 | 34 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2088 | **2088** | **0** | **0** |
+
+Measured on `claude/enforcement-config-fixes-nzaq1q` after merging `main` at `35fc5d8`
+(PR #42). **The merge base was re-measured in the same session, before any change: 2062 /
+2062 / 0 / 0 with a browser, on both the un-merged branch and the merged tree** — #42 changed
+a test but added none, so the previously recorded 2062 was accurate. The stale figure was
+the `624+` in CODER MODE at the top of this file, which had not moved since July. This
+change adds **+26**, every unit accounted for:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/hooks/guard-archived-files.test.js` | 74 | 94 | +20 |
+| `test/hooks/enforcement-wiring.test.js` (new) | — | 6 | +6 |
+| **total** | | | **+26** |
+
+The no-browser row is back in the table because it had drifted too: the 3 failures are
+the three flat tests in `render/first-day-level3-layout.test.js`, and the 34 cancelled are
+`render/dashboard-v2-layout.test.js` (22, three `describe` blocks) plus
+`render/dashboard-v2-holiday-layout.test.js` (12) — the holiday suite was added after the
+last time that row was recorded (22). All 37 go to zero the moment a browser resolves; the
+standing cause is unchanged.
+
+Exact invocations:
+
+```bash
+npm test
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2088+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 6, 2026 on the Centers rotation branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2062 | **2062** | **0** | **0** |
+
+Measured on `claude/myles-centers-rotation-maq472` (PR #41). The Centers rotation work
+added **+9**, and every unit is accounted for:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/schoolRotation.test.js` | 55 | 63 | +8 |
+| `digest/centersProfile.test.js` | 5 | 6 | +1 |
+| **total** | | | **+9** |
+
+**The merge base measures 2053, not the 2052 recorded below.** `3da8394` was re-measured
+directly in a worktree during this work: 2053 / 2053 / 0 / 0. 2053 + 9 = 2062, so the table
+closes against a measurement rather than against a recorded figure. The previous entry's
+2052 was taken one commit earlier, before `3da8394` (PR #40) added one test to
+`render/dashboard-v2.test.js`; it was already stale by one before this branch existed.
+**Re-measure the merge base yourself rather than trusting a recorded delta** — that lesson
+is now two-for-two.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+(Superseded — see Current baseline above; the figure is now 2088.)
+
+### Previous baseline — measured Sept 2, 2026 after the holiday-theme hardening
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2052 | **2052** | **0** | **0** |
+
+Measured on `claude/dashboard-holiday-theme-pilot-rrlqii` after the cleanup commit. The
+hardening added **+37** over the pilot's own measured 2015, and every unit is accounted for:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/holidayThemeSchema.test.js` | 60 | 86 | +26 |
+| `test/deploy-workflow-holiday-flag.test.js` | 31 | 40 | +9 |
+| `test/artifact/holiday-theme-mutations.test.js` | 14 | 16 | +2 |
+| `digest/holidayThemeSelector.test.js` | 35 | 35 | 0 |
+| `render/dashboard-v2-holiday.test.js` | 21 | 21 | 0 |
+| `render/dashboard-v2-holiday-layout.test.js` | 12 | 12 | 0 |
+| `test/artifact/holiday-theme-contract.test.js` | 22 | 22 | 0 |
+| **total** | | | **+37** |
+
+The schema suite grew where the safety moved into it: the palette-key contract and the
+code-owned spec audit. The workflow suite grew by one whole-path gate plus eight mutations
+that each have to fail for their own reason. Nothing was removed to make room — the
+Halloween-shaped purple guard was *generalized* to every approved spec rather than deleted,
+and the two palette mutation controls were retargeted at the new gates rather than dropped.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+Coder mode had to keep `npm test` at 2052+ under this baseline. (Superseded — see
+Current baseline above; the figure is now 2062, and the merge base this was taken
+against measures 2053.)
+
+### Previous baseline — measured Aug 31, 2026 on the Holiday Theme pilot
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2015 | **2015** | **0** | **0** |
+
+Measured on `claude/dashboard-holiday-theme-pilot-rrlqii`, whose merge base with `main` is
+`5048f71`. **That merge base was re-measured directly in this session, before any change:
+1820 / 1820 / 0 / 0.** The Halloween Holiday Theme pilot added **+182**, and every unit of
+it is accounted for:
+
+| File | tests |
+|---|---|
+| `digest/holidayThemeSchema.test.js` (new) | 60 |
+| `digest/holidayThemeSelector.test.js` (new) | 35 |
+| `test/deploy-workflow-holiday-flag.test.js` (new) | 31 |
+| `test/artifact/holiday-theme-contract.test.js` (new) | 22 |
+| `render/dashboard-v2-holiday.test.js` (new) | 21 |
+| `test/artifact/holiday-theme-mutations.test.js` (new) | 14 |
+| `render/dashboard-v2-holiday-layout.test.js` (new) | 12 |
+| **total** | **195** |
+
+1820 + 195 = 2015, so the table closes exactly against a measurement rather than against a
+recorded figure. The stronger revision added **+13** over the first pass's 182: nine
+typography cases in the schema suite, two typography/scope cases in the renderer suite, one
+heading-and-content typography case in the layout suite, and one decoration-out-of-layout
+case. The footer anchor briefly contributed a fourteenth (its own packaging case); removing
+that mark removed the case with it. `test/artifact/package-data-files.test.js` contributes 0: one documented
+invariant inside it moved 10 → 11 packaged data files, which is a deliberate tripwire being
+updated rather than a test being added. **Re-measure the merge base yourself rather than
+trusting a recorded delta** — that is the lesson the previous entry already teaches, applied
+again.
+
+The browser-unavailable row is deliberately absent from this measurement: only the
+browser-enabled invocation was run this session, and quoting a figure that was not taken
+would be exactly the unfalsifiable claim this section exists to prevent. The standing cause
+of a red local run remains "no browser", and it now cancels the eleven new layout children
+too. Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+(Superseded — see Current baseline above.)
+
+### Previous baseline — measured Aug 29, 2026 at the CI-gate follow-up
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test`, no browser resolvable | 1797 | 1772 | 3 | 22 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 1797 | **1797** | **0** | **0** |
+
+Measured Aug 30, 2026 on `claude/dashboard-v2-accent-92mjzx`, whose merge base with
+`main` is `54edb4f`. The first event-row Accent added **+75**, and every unit of it is
+accounted for:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/specialEventSchema.test.js` | 87 | 95 | +8 |
+| `digest/specialEventSelector.test.js` | 68 | 69 | +1 |
+| `digest/specialEventAccents.test.js` (new) | — | 31 | +31 |
+| `render/dashboard-v2-accent.test.js` (new) | — | 20 | +20 |
+| `test/artifact/event-row-accent-contract.test.js` (new) | — | 9 | +9 |
+| `render/dashboard-v2-layout.test.js` | 15 | 21 | +6 |
+
+`digest/builder.test.js` contributes 0: it uses its own harness and surfaces as six
+`node:test` points either way. Its internal assertion count moved 123 → 126 (one stale
+length proxy replaced by three accurate assertions).
+
+**Correction to the previous entry, which recorded 1688.** That number is not reproducible
+on this machine. The merge base `54edb4f` was re-measured directly — `git worktree add` at
+that commit, same Node, same Chromium, browser-enabled `npm test` — and reports
+**1693 / 1693 / 0 / 0**. 1693 + 75 = 1768, so the per-file table above closes exactly
+against a measurement rather than against the recorded figure. Whether the 1688 was taken
+on a different tree or counted differently is not established here; what is established is
+that it does not reproduce. Re-measure the merge base yourself rather than trusting a
+recorded delta — that is the same lesson the globstar entry below already teaches, applied
+to the baseline itself.
+
+The browser-unavailable `cancelled` count moved 14 → 22 because the seven new layout tests
+are children of a `describe` whose `before` hook needs Chromium — the standing cause, not a
+new one. Re-measure and update this table in the same commit as any merge that adds tests.
+
+**CI rows are deliberately absent.** The previous table carried CI figures measured on a
+different branch; restating them here would make this table look like it says something
+about this one. CI will produce its own.
+
+**The last two rows differ by design, and the difference is not this branch's.** A `push`
+event tests the branch head; a `pull_request` event tests the *merge* of the branch into
+current `main`, so it also runs whatever `main` has that the branch does not. On this branch
+that is exactly one test — `W&M conference metadata is sport-specific for 2026`
+(`test/sports-ticker.test.js`, added by `e0653c5`). Confirm a merge-ref/branch-ref gap the
+same way rather than assuming it: align the two TAP streams by test name and identify the
+extra entry. An unexplained gap is a real finding; an explained one is arithmetic.
+
+**The exact invocations, so a future claim can be checked rather than believed:**
+
+```bash
+# browser-unavailable — the 3 failures and 14 cancelled below are the standing set
+npm test
+
+# browser-enabled — the row to compare against; must be fully green
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+Any Chromium build works; that path is the one preinstalled in the development sandbox
+(`npx playwright install chromium` is the alternative). Node v22.22.2, after `npm install`.
+**Coder mode must keep `npm test` at 1797+ with no failures once a browser resolves.**
+
+**This table is the only current baseline, and it is a measurement, not a constant.**
+It was taken on a branch whose merge base with `main` is `ae7d581`, which measured **1298**
+with a browser. The foundation added **+377**: P1 +224 (five pure modules), P2 +68
+(registry, orchestrator and the legacy equivalence proof), P3 +62 (wiring, the
+compatibility shim, the second contract suite and the byte/pixel regressions), P4 +0
+(documentation), and the post-review cleanup +23 (forbidden-key scan, bounded walks, shim
+containment, and the strengthened legacy-contract binding). The CI-gate follow-up then added
+**+13** (`test/ci-workflow-package-gate.test.js`), for **1298 → 1688**.
+Any merge that adds tests moves these numbers;
+re-measure and update this table in the same commit rather than adding a second one. Dated
+changelog entries below quote the figures, and the "Chromium-environmental" label, as they
+stood when written; they are provenance for a particular change, not a second answer to
+"what should I see today."
+
+**There is now exactly one cause of a non-green local run: no browser.** Exactly two files
+launch Chromium. `render/first-day-level3-layout.test.js` holds three flat `test()` calls,
+so a thrown `before` hook surfaces them directly — those are the 3 failures.
+`render/dashboard-v2-layout.test.js` holds three `describe` blocks (`dashboard v2 2560x1440
+layout verification`, 7 children, `family spotlight 2560x1440 footprint and readability`,
+8, and `event-row accent 2560x1440 footprint and readability`, 7), so its hook failure
+cancels 22 children instead. Supply a browser — `npx
+playwright install chromium`, or point `DASHBOARD_BROWSER_PATH` at an existing build — and
+both numbers go to zero together. That is why the middle row, not the first, is the one to
+compare against.
+
+**`DASHBOARD_BROWSER_PATH` now actually works everywhere it is documented.** Until Aug 28
+`render/first-day-level3-layout.test.js` called `resolveBrowserPath()` with no argument,
+and `resolveBrowserPath` only honours an explicit one — so the escape hatch named in its
+own error message was inert for that file, and its three tests could run only where
+Playwright's bundled build happened to be installed. CI always had one, so CI was green
+and the gap was invisible there; a sandbox with a *different* Chromium build could not run
+them at all. Both suites now pass the variable through, and
+`render/dashboard-v2-png.test.js` guards the call site in both files so the two cannot
+drift apart again.
+
+**The corollary is the part worth keeping.** Those three failures sat in this file for
+weeks described as "Chromium-environmental", one section below a correction warning about
+exactly that mistake — a real defect recorded as an environment quirk. A standing set of
+"expected" failures is how the next real one gets waved through. The local run is now
+green with a browser; keep it that way rather than re-normalising a red baseline.
+
+**Correction — the previous entry was wrong on both counts, and it mattered.**
+
+1. It asserted *all four* full-glob failures were the Chromium message. Only three were.
+   The fourth was `test/pi-dashboard-pull.test.js`'s "Pi stages and validates both
+   version-pinned directions for afternoon re-entry", failing with
+   `ValueError: credentials file must be mode 0600 or stricter` — a real defect in the
+   test, not the environment. The test wrote its temp credentials file with
+   `credentials.write_text(...)` and never chmodded it, so under the default umask 0022
+   it landed at 0644 and `stage()` correctly rejected it. Fixed by adding
+   `credentials.chmod(0o600)` immediately after the write, mirroring how the real Pi
+   provisions that file. **Do not "fix" this by setting `umask` in the test script** —
+   that masks the defect and does not survive running the file individually.
+
+   The two errors compounded: because the literal `npm test` glob skipped
+   `test/pi-dashboard-pull.test.js` entirely, this failure had *never* run in CI, and the
+   full-glob number that did surface it was mis-summarized as environmental. **Order
+   matters if you ever redo this:** fixing the glob before the chmod turns CI red, because
+   GitHub runners use umask 0022 and the Pi test would finally execute.
+
+2. It called the 6 `cancelled` entries a "`node:test` parallel-subtest timing artifact."
+   They are not. All 6 are subtests of the single suite in
+   `render/dashboard-v2-layout.test.js`, whose `before` hook throws the Chromium error —
+   `failureType: 'hookFailed'` on the suite, `cancelledByParent` on each child. They are
+   a direct consequence of the missing browser and go to 0 the moment one resolves, not a
+   standing scheduling quirk to be waved through.
+
+**Any future "tests passing" claim in this repo must still name how it was produced.**
+A bare number is unfalsifiable — that was the second, more durable half of the globstar
+lesson, and fixing the glob does not retire it.
+
+On a fresh clone **before `npm install`** you will instead see `ERR_MODULE_NOT_FOUND`
+failures for declared dependencies — run `npm install` first; that is not a regression.
+
+Uses Node's built-in `node:test` runner. Plain `npm test` is now the canonical
+invocation:
+
+```bash
+npm test
+```
+
+### The glob fix (Aug 27, 2026) — what was actually wrong
+
+`package.json`'s test script was:
+
+```
+node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js
+```
+
+npm runs scripts through `sh -c`, which on this system is `dash`. Dash has no `globstar`,
+so `**` degrades to a single `*`. The failure was **asymmetric**, and that asymmetry is
+why it went unnoticed for so long:
+
+| Pattern | Dash behavior | Net effect |
+|---|---|---|
+| `test/**/*.test.js` | expands as `test/*/*.test.js` → 4 real files in `test/hooks/`, `test/skills/` | shell consumes the pattern; the 18 files directly in `test/` are silently dropped |
+| `digest/**/*.test.js` | no `digest/*/` subdirectory matches → **no match** | dash leaves the word unexpanded, Node's `--test` glob resolves it correctly |
+| `render/**/*.test.js` | `render/assets-v2/` etc. contain no `.test.js` → **no match** | same — Node resolves it correctly |
+
+So a pattern that matched *something* got hijacked by the shell and lost coverage, while
+patterns that matched *nothing* survived to Node and worked. **431 tests across 18 files
+had never run in CI.**
+
+**Fix: single-quote each pattern** so dash passes it through verbatim and Node does all
+the globbing. Verified empirically in this environment rather than assumed — the
+alternatives were tested and this one is both sufficient and the least invasive:
+
+- **Single quotes (shipped).** `/bin/sh -c "node ... 'test/**/*.test.js' ..."` → 1062
+  tests. Works because Node 22's `--test` accepts glob patterns as positional arguments
+  and recurses correctly on `**`. No JSON escaping needed, unlike double quotes.
+- **`script-shell = bash` + `shopt -s globstar`.** Would work, but needs an `.npmrc` *and*
+  a shell-option prelude in the script, and silently reverts to broken if either is lost.
+  Rejected as more machinery for the same outcome.
+- **Doing nothing and telling people to run the full glob by hand.** This is what the
+  previous baseline did, and it is how the Pi test's failure stayed invisible.
+
+The `**` in a quoted pattern is now Node's to interpret, not the shell's, so the script
+behaves identically under dash, bash, and zsh.
+
+### Historical chain (superseded)
+
+The figures below are retained for provenance. They were measured with the same full-glob
+method, so they chain directly to the 988 pre-change number above.
+
+**✓ 899 unit tests passing, 0 failing, 5 pre-existing cancelled — the baseline as of Aug 16, 2026, post-merge. Superseded: see Current baseline above.** This is a from-scratch, freshly-measured number (fresh `npm install` + `shopt -s globstar` full-glob run) on `main` after merging `claude/emma-unavailability-flag-v2-kdbzqh`. Chain from the last measured figure: the Reviewer's independent pass measured 896 (876 pre-change baseline +20 Emma Unavailability Flag tests) against `origin/main` at `47948c0`, before this branch was merged. Between that Reviewer pass and this merge, `main` advanced 3 commits (`47948c0`→`8652963`, the Dashboard v2 Phase 4B production-refresh merge), which added +1 test to `test/pi-dashboard-pull.test.js` — confirmed via isolated worktree measurement of `8652963` alone (877 passing) before the Emma merge landed. 877 + 20 (Emma flag, merge commit `1c4db14`) = 897 on merged `main`, then +2 from this session's boundary-coverage follow-up (see below) = 899. None of the deltas here reflect code regressions — each is traced to a specific, identified cause. The 5 `cancelled` entries are pre-existing `cancelledByParent` subtests in unrelated suites (a `node:test` parallel-subtest timing artifact, not a failure), unchanged through this whole chain.
+
++2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Today's prep item stopped fanning out across the 72h window (Sept 8, 2026):**
+  `digest/builder.js` computed ONE `getSchoolStrip(today)` and handed that same object
+  to `generateTasks()` for all three days of its window, while `generateTasks()` gated the
+  backpack block on `isSchoolDay(date)` — a per-day fact. The two halves disagreed about
+  which day they described. It now derives each day's strip from that day's own date;
+  `generateTasks()` is untouched, because its contract was always "emit from the strip you
+  are given" and the caller was the thing at fault. **The recorded Known-open-item entry was
+  right about the mechanism and understated the damage:** it named the stale repeated row
+  but not that the single `warningText` slot meant the stale row *displaced* the later day's
+  genuine item. Measured over all 290 mornings of the 2026-27 school year: **123 stale prep
+  rows/year on 71 mornings (24.5%), 58% of every prep row the email emitted, plus 177
+  genuinely-owed rows that never appeared on their own day.** After: 266 rows, all correct,
+  net **+54/year (+0.19 per morning)**. **What actually changes in the inbox is narrower than
+  "the digest":** only `render/email.js` renders past `days[0]` — v1's frozen dashboard, v2 and
+  NOW/NEXT read `days[0]` alone, and `days[0]` is unchanged by construction — so the whole
+  correction lands in the email's second and third day blocks. The frozen v1 surface was
+  neither touched nor at risk, and the freeze's failing-test exception was not needed.
+  Wording was deliberately not changed: the row carries two relative words (`"this morning"`
+  and `"— Music today"`), both scoped by the `dayHeader(day.date)` they sit under, and the
+  shipped email already ships `"tonight"` in future day blocks via the solo-evening row. **The general gap the entry named — nothing asserted task-list contents
+  across the window — is closed generically**, by a 26-morning sweep comparing every day of
+  every window against an oracle derived from `getRotation()` rather than by pinning the
+  baritone string; the specific Oct 21 case is pinned separately. **The fix creates two cross-day interactions in the email, found by review rather than by
+  the tests, and both are now pinned as stated properties rather than left incidental.**
+  (1) On all **25** school-day Music-eves, Myles's baritone row now appears in the same email
+  as his library-book row — the exact 25 the collision argument in `schoolRotation.js` counts.
+  That argument rejected a *Tuesday-morning* "pack the baritone tonight" nudge on Tuesday's own
+  line; what ships is Wednesday's item under Wednesday's own header in a three-day lookahead,
+  which states what a later day owes rather than adding an action to a crowded morning. The
+  `tomorrowWarnings` channel stays free of instrument warnings and a test asserts it.
+  (2) On **59** mornings a year the school strip's "pack library book tonight" line and the
+  day-1 block's own "pack library book this morning" row describe one action through two
+  channels in one email. Kept: they are different instructions at different times, and
+  suppressing the day-1 row would put back the false negative the whole change removes.
+  Neither is a regression, and they differ in shape: (1) is a substitution — pre-fix that block
+  carried *today's* row instead — while (2) is genuinely newly-visible output, because on those
+  mornings neither child owes anything on day 0 and the block was previously empty. Both were
+  unremarked, and an unremarked interaction is how a rationale and its behaviour drift apart.
+  **All four proved to have
+  teeth against two mutants**, not asserted: the pre-fix today-strip, and a today-only guard
+  that removes the stale rows while keeping all 177 false negatives — the second is the
+  tempting half-fix, and the sweep rejects it on its own assertion. No test was deleted or
+  skipped, and none needed updating: nothing had ever asserted the old behaviour. Tests
+  **2135 → 2139**, all passing.
+
+- **Music-day baritone reminder built; the dead `needsRecorder` boolean removed (Sept 8, 2026):**
+  `needsRecorder` was initialised `false`, never assigned, and returned — its only reader was
+  an unreachable `getSchoolStrip()` branch naming an instrument Myles does not play. It is now
+  `needsInstrument`, gated on a new `INSTRUMENTS` map (`myles: 'baritone'`, `ophelia: null`),
+  and Myles's Music day sets `warningText` to `⚠ Pack baritone this morning (Myles — Music
+  today)` — which `generateTasks()` converts into a real Wade task at "Before work", the
+  channel that matches when a baritone actually goes in the car. **The Media/Music adjacency
+  is resolved by warning on the day only**; the unreachable day-before push is deleted rather
+  than repointed. Scope was one module and its test file: no renderer, no data file, no
+  packaging, no flag, and **nothing in the frozen v1 surface**. Full reasoning and the two
+  rejected alternatives are in the header of `digest/schoolRotation.js`; the Known-open-item
+  entry records two claims from the prior note that measurement contradicted. **Guards proved
+  to have teeth rather than asserted:** three mutation sites, run at four values —
+  reintroducing the rejected day-before push (3 cases red), mapping Ophelia to an instrument
+  (3), and corrupting `INSTRUMENTS.myles`, tried both as "recorder" and as a silent drift to
+  "trombone" (4 each, the same four cases — one site, two values, not two independent
+  mutations) — each turns the suite red on cases that name the specific defect. Tests **2127 → 2135**, all passing; the merge base was re-measured in-session
+  rather than taken from this file. **An independent Reviewer pass returned PASS with no
+  BLOCKING findings**, and five of its findings were acted on here: the baseline's merge-base
+  SHA was wrong (a stale `origin/main` ref — `git merge-base` answered `a604faf`, nine commits
+  behind, until `git fetch` corrected it to `eeccad2`); the header overstated the
+  warningText channel by omitting a pre-existing `generateTasks` fan-out that repeats today's
+  task on every school day in the window; one adjacency case used `continue` where a failed
+  precondition would have left it asserting nothing; `INSTRUMENTS` claimed the
+  `MYLES_CENTERS` drift-tripwire precedent without honouring it; and the no-browser row had
+  been dropped one baseline after being deliberately restored.
+
+### Schoolwork preview (September 7, 2026 — local, not deployed)
+
+Dashboard v2 now extracts `[Assignment]`, `[Quiz]`, `[Test]`, and `[Project]`
+entries from the existing Myles and Ophelia calendars. The v2 adapter filters
+these entries before digest assembly and horizon selection, leaving the email
+and frozen v1 paths unchanged. `digest/schoolwork.js` retains today's work and
+the next 14 days, calendar-failure metadata, and description/link details.
+The compact Schoolwork block below Centers shows at most five dated rows and
+an overflow count. Expanded details and completion tracking remain deferred.
+
+`scripts/preview-schoolwork.mjs` renders one-item and busy local previews with
+the verified September 10 Reading — Ancient Words quiz; surrounding dashboard
+content and additional schoolwork are illustrative fixtures. Browser checks at
+2560×1440 measure 61px and 221px respectively, without dinner overlap. Run with
+`DASHBOARD_BROWSER_PATH` pointing to local Chrome when necessary.
+
+Validation: four Schoolwork tests and both preview geometry checks pass. The
+full Windows run selected 2094 tests: 2056 passed, 38 failed. Those 38 also
+reproduce against the original files (artifact Windows path handling, workflow
+shell/CRLF assumptions, and agent frontmatter CRLF). The npm script's quoted
+globs selected zero tests here; the actual suite was run by passing the files
+enumerated under test, digest, and render directly to Node. No deployment.
+
+
+- **Enforcement config fixed after review (Sept 7, 2026):** Four findings against the
+  Windows-compatible enforcement branch, all addressed. (1) **The archived-files guard is
+  back.** It had been dropped from `settings.json` and replaced with `Edit`/`Write` deny
+  rules, which silently removed the whole Bash arm. It is now `.claude/hooks/guard-archived-files.mjs`,
+  a Node port of the bash hook (no `jq`, no shell, CRLF-tolerant), wired in exec form on
+  `Edit|Write|Bash|PowerShell`; the five rule classes and the scoped-redirect approach are
+  unchanged, Windows paths and PowerShell writers are added, parity was proved 73/73 against
+  the bash script before it was retired, and the live wiring was verified in-session. (2)
+  **The frontmatter-hook question is resolved, not guessed:** the reviewer/debugger read-only
+  hook fires wherever the folder is trusted and does not fire in an untrusted headless folder —
+  a documented trust gate since 2.1.218, reproduced here in both states. The hook stays in
+  the frontmatter; the gap and a possible `agent_type` backstop are recorded. (3) **Branching
+  policy corrected**: feature branch + PR is the only route to `main`, matching Reviewer item
+  7; the stale `624+` test figure is replaced by a measured one. (4) **BOMs stripped** from
+  all five enforcement files (probed first: they were not breaking anything on 2.1.263).
+  Also: a wiring tripwire test, and a documented over-block in `block-main-push.mjs` (any
+  command text containing `git push` and `main`), hit live while making this change. Tests
+  **2062 → 2088** with a browser, all passing.
+
+- **Holiday theme configuration hardened after an independent Reviewer pass (Sept 2, 2026):**
+  A separate cleanup commit on top of the pilot; `402d762` was not amended. The approved
+  Halloween visuals are unchanged and proved so — **all 122 approval screenshots and all
+  nine rendered documents are byte-identical to `402d762`**, with identical geometry and
+  identical controller states, and Dashboard v1 and the email digest are unchanged too.
+  Still disabled: no repository variable, no deployment, no Pi contact, and
+  `FAMILY_SPOTLIGHT_ENABLED` untouched. **Two substantive findings and three minor ones.**
+  (1) **The registry can no longer author a colour.** It selects `palette:
+  "halloween-ambient"`, a key that resolves to a frozen code-owned spec in
+  `HOLIDAY_PALETTE_SPECS`, and an authored palette object — or an authored `paletteEvening`
+  — is rejected by name. The hole this closes is worth remembering: "valid hex" read as
+  safety and was not, so `canvas: "#6c4a85"` (Ophelia's ownership purple as the page
+  ground), `headingInk` equal to `brush` (invisible headings) and a fully transparent panel
+  fill all validated and rendered, guarded only by one Halloween-shaped test that inspected
+  `themes[0]` and so never saw a second entry at all. `auditHolidayPaletteSpec()` now audits
+  every approved spec — required roles both directions, opacity by role, ≥7:1 heading
+  contrast (shipped: 15.42 day / 14.96 evening), RGB distance ≥32 from either owner tone
+  (shipped closest: 44), and no value that reads as purple — and an unsafe spec fails closed
+  before emission. Adding a future palette is now deliberately a reviewed code change.
+  (2) **The kill switch's source variable is gated end to end.** `stepScript` lifts a step's
+  `run:` body, so the `env:` mapping above it was never inspected, and two one-token edits
+  passed all 31 tests: repointing the mapping at `vars.FAMILY_SPOTLIGHT_ENABLED` (which is
+  `1`) would have deployed the theme live with CI green, because the read-back compares
+  against the same wrongly-sourced value; deleting the mapping made the switch permanently
+  unreachable. `assertDeploymentPath()` checks the whole path and eight mutations each fail
+  for their own reason. (3) A mutation test now proves the renderer's own
+  `isHeadingSpecSafe` recheck fails closed against an unsafe `HEADING_STYLE_SPECS` entry —
+  previously the defence-in-depth pair had teeth on the schema half only. (4) The preview
+  script's state-9 note claimed byte-identity with state 7; it is state 8, and the two
+  differ by the 6,584-byte theme payload. (5) This file claimed the artifact contract counts
+  exactly one `data-holiday-state="ordinary"`; it asserts presence, and the single-instance
+  guarantee comes from the separate `data-holiday-id` count — both halves documented
+  accurately now. Gates: browser-enabled `npm test` **2015 → 2052**, all passing;
+  `sam build` → Build Succeeded; package valid (11 data files); deployment coverage valid
+  (43 inputs, 13 trigger paths); template valid.
+
+- **Halloween Holiday Theme revised one controlled step stronger (Aug 31, 2026, same
+  session, pre-approval):** Same architecture, lifecycle, controls, reliability work and
+  ordinary-state identity — the implementation was revised, not restarted. Full design in
+  **Holiday Theme (Dashboard v2, October 2026)** above. **Still ships disabled**; no
+  repository variable, deployment or Pi contact. Four changes. (1) **Heading typography
+  becomes the primary theming device**, through a new approved `typography.heading` token —
+  authored data names a key, never a font. **An existing packaged font was used**: Knewave
+  (SIL OFL, already in `render/assets-v2/fonts/`, already declared `@font-face`, and used by
+  nothing) reaches exactly six decorative brush labels and sets no font-size. (2) The
+  framing deepened ~25%: darker autumn-oat canvas, stronger copper borders and frame,
+  charcoal-**black** brushes, warm-cream heading ink via the new `headingInk` token — light
+  paper retained, no content row tinted. (3) Doodles refined: pumpkin gains four ribs and a
+  curled stem at 74 px, the web moved inward to (18, 18) with five radials and five rings,
+  and the bats grew to 242 × 72. A fourth mark — a pumpkin-and-leaf footer anchor — was
+  built in this revision and **removed at review**, because the only space available to it
+  near the footer was the trailing area of an alerts card, whose clearance the layout does
+  not guarantee. It was deleted outright rather than relocated, and the sparseness cap went
+  back to its original 1.0% (measured 0.719%) rather than staying at the 1.5% it had been
+  raised to.
+  (4) The Takeover proof was regenerated **inside** the Halloween window with structural DOM
+  evidence. **Three real defects were found and fixed, each worth remembering.** Double
+  quotes in a CSS font stack terminated the dashboard's inline `style` attribute and silently
+  discarded every heading declaration after it; changing the heading font-family starts an
+  *asynchronous* load, so a screenshot taken right after activation captured the fallback
+  face; and `page.setContent()` does not reset the JS context, so the previous state's leaked
+  controller answered for the Takeover artifact and made a stale evidence line look live.
+  Gates: browser-enabled `npm test` **1820 (merge base) → 2015**, all passing; `sam build` → Build
+  Succeeded; package valid (11 data files); deployment coverage valid (43 inputs, 13 trigger
+  paths); template valid. Dashboard v1 and the email digest remain byte-identical to
+  `origin/main`, and the ordinary v2 artifact remains pixel- and geometry-identical.
+  **One guard was deliberately changed and is reported rather than done quietly:** the
+  renderer suite's blanket "sets no typography" assertion, replaced by a stronger one that
+  confines every typography declaration to a named list of six heading selectors. The
+  sparseness cap ends this session unchanged at its original 1.0%, with a new per-mark cap
+  of 0.6% added alongside it.
+
+- **First Dashboard v2 Holiday Theme pilot built — Halloween 2026 (Aug 31, 2026):** A new
+  reusable ambient presentation layer, `holiday-theme-v1`, and one entry configured for it.
+  Full design in **Holiday Theme (Dashboard v2, October 2026)** above. **The pilot ships
+  disabled** — `HOLIDAY_THEMES_ENABLED` defaults to `0` at every layer this repository
+  controls, no GitHub repository variable was created or changed, nothing was deployed, and
+  the Pi was not contacted. `FAMILY_SPOTLIGHT_ENABLED` keeps its name and its current value
+  of `1`; the two switches are independent in both directions and a test asserts the holiday
+  selector never reads the other's config or flag. **Four findings shaped the work.**
+  (1) A CSS mask clips an element's *descendants*, so the text-bearing green brush surfaces
+  could not be masked directly without nibbling glyphs; they get the recoloured brush on a
+  pseudo-element behind the text instead, while the two empty brush surfaces are masked
+  directly and the red/purple ownership brushes are excluded by selector. (2) The corner
+  spiderweb was sized by measurement, not taste: at 96 px it overlapped the rendered glyph
+  box of the "NOW / NEXT" label (which begins at x = 82), so it is 76 px. The test that
+  found it intersects each mark with the **client rectangles of every text node** — element
+  hit-testing would have reported a false positive for a mark sitting in a title's empty
+  brush tail *and* could have missed a real collision. (3) The Halloween window straddles
+  the Nov 1 DST transition, so the two boundaries genuinely require different Eastern
+  offsets; a mutation test states both as absolute UTC and asserts the offsets differ.
+  (4) `renderDashboardV2` seeds the clock text from the **real wall clock**, which silently
+  confounded three byte-identity comparisons and would have made them rare flakes rather
+  than guards; every identity assertion now normalises that text and every screenshot pins
+  it. Also here: the evening palette is carried as an optional second map on the same token
+  allowlist, because a skin overriding only the day palette would have dropped Dashboard
+  v2's existing evening reduction on a television at night. **Gates run for real:**
+  browser-enabled `npm test` **1820 → 2002**, all passing (the merge base was re-measured in
+  the same session, not assumed); `sam build` → Build Succeeded; `dashboard artifact
+  package: valid (11 data files, ...)`; `dashboard artifact deployment coverage: valid (43
+  local bundle inputs, 13 trigger paths)`; `dashboard artifact refresh template: valid`.
+  Cross-tree proof against `origin/main` (`5048f71`): Dashboard v1 and the email digest
+  byte-identical; the ordinary v2 artifact **pixel-identical** and geometry-identical, its
+  only delta the 10,515 bytes of theme stylesheet, controller and one empty placeholder line.
+  One documented invariant was updated deliberately and is reported rather than changed
+  quietly: `test/artifact/package-data-files.test.js` moves 10 → 11 packaged data files.
+
+- **Accent title matching is now enforced by the schema, not by author discipline (Aug 30,
+  2026):** A second Reviewer pass found that the `literal` pinning added by the previous
+  commit was correct for the two shipped entries but held in place only by the author's
+  choice. `exact` and `literal` are English near-synonyms whose difference — case and
+  internal-whitespace sensitivity — is invisible in the name, and the schema accepted
+  `prefix`, `exact` or `literal` on an `accent-event-row-v1` treatment alike. Measured
+  consequence: an all-caps rename under `exact` still qualifies and puts 53.5 px of text
+  over the wash, reintroducing the exact defect the previous commit removed, with every gate
+  green. `RENDERER_REQUIRED_TITLE_MATCH_MODE` now pins the required mode per renderer and a
+  looser accent is rejected at load with `title-match-too-permissive` — distinct from
+  `title-match-invalid`, which stays reserved for a mode that does not exist. The rule is
+  keyed on the renderer rather than the level, is applied to the flattened qualification
+  leaves so it reaches any nesting depth, and never fires on `approvedDate` or
+  `sportsFixture`. Big Sports Saturday keeps its approved `prefix` nodes and is explicitly
+  unconstrained. Six mutations confirm the teeth, including two that check the rule is
+  neither over-broad (applied to every node type) nor mis-keyed (applied by level, which
+  would reject the Spotlight). All six approved panel crops remain byte-identical and no
+  rendered output changed. Tests **1787 → 1797**.
+
+- **Post-review cleanup on the first event-row Accent (Aug 30, 2026):** Three SHOULD FIX
+  findings from an independent Reviewer pass over `237e3b3`, addressed in one follow-up
+  commit that leaves `237e3b3` intact. **(1) Title/wash contrast drift.** The wash clears
+  the flag-football title by only 19.7 px, and `prefix` matching accepted a longer title:
+  the same event with its venue spelled out extended 357 px into the wash at alpha ≈0.30,
+  with no test failing because the fixtures supply the title. Both accents now pin their
+  title with a new `titleMatch.mode: "literal"` — byte-exact after the occurrence model's
+  own emoji-strip and trim — so any real edit fails closed to an ordinary row. Widening the
+  46% boundary was rejected: it only defers the same failure. The mode is validated at load
+  (an unknown mode is rejected rather than falling through to `prefix`), a title match is
+  now required on every calendar-anchored node, and the Spotlight keeps `prefix` because its
+  presentation does not depend on rendered title length. **(2) Unguarded doodle assets.**
+  Both SVGs are now in `requiredAssetFiles`; previously a package missing them rendered
+  ordinary rows with no error and still passed validation. **(3) A false-satisfiable
+  contract marker.** `html.includes('upcoming-panel')` was satisfied by the stylesheet — the
+  panel element could be deleted entirely and validation still passed. It now asserts the
+  element's own opening tag. Also here: the registry's cosmetic reformatting is undone, so
+  the Big Sports Saturday block is byte-identical to its parent and the diff against
+  `54edb4f` contains **zero deletions**. One correction found while writing the tests:
+  trailing/leading whitespace is *not* a title edit — `cleanTitle()` trims before matching
+  and the rendered text is unchanged — so it is deliberately tolerated, while a doubled
+  *internal* space, which does change rendered width, fails closed. The duplicated-occurrence
+  item stays documented and unfixed: production ingestion dedupes by id (`calendar.js:149`).
+  All six approved Upcoming-panel crops reproduce byte-for-byte; geometry unchanged. Tests
+  **1768 → 1787**.
+
+- **First Dashboard v2 event-row Accent implemented; two treatments added (Aug 30, 2026):**
+  The generalized special-event foundation gains its first accent renderer,
+  `accent-event-row-v1`, and two registry entries — Ophelia's Sept 19-20 757swim meet and
+  Myles's Sept 20 first fall flag-football game. Full design in **Event-row Accent** above.
+  **Nothing is enabled by this work**: the kill switch keeps its name, its `"0"` default and
+  its off state, no repository variable was created or changed, and no template, workflow or
+  Pi configuration was touched. **Three findings shaped the implementation.** (1) The swim
+  meet is a *single* Google all-day event with an exclusive `end.date`, and `upcomingEvents`
+  is a filter rather than an expansion — so the ordinary renderer already draws exactly one
+  row for it and there was never a Sunday row to duplicate. Qualifying it as a
+  `calendarRange` makes that one-to-one explicit rather than incidental. (2) The Upcoming
+  panel excludes today, so an event-row accent is inherently an *anticipation* treatment: on
+  Saturday the swim accent is still `live` but its row has moved to the Today panel and
+  there is nothing to decorate. That is asserted rather than tolerated, and it means the two
+  accents are never both visible on a real clock even though they coexist in one
+  generation's arbitration. (3) A uniform translucent wash of either owner colour *lowers*
+  title contrast (10.8:1 → 8.8:1 at 0.16 alpha) — still AAA, but the contract requires at
+  least as strong, so the wash carries zero alpha across the reading area and ramps up to
+  the right of it. Contrast is therefore unchanged by construction. **The first contrast
+  test had no teeth and was replaced**: it read computed styles via `elementsFromPoint`,
+  which skips the `pointer-events:none` wash entirely, so it passed against a deliberately
+  broken build. It is now a clipped-screenshot buffer comparison — identical pixels across
+  the reading area, different pixels in the open space right of it — and both halves were
+  proven to go red against three separate probe builds. Ordinary output is unchanged: with
+  the switch off, or outside either window, the document is byte-identical to one rendered
+  from a registry containing no accents. Also here: `OWNER_TONE` consolidates a tone map the
+  Spotlight selector had been duplicating, and two stale assertions from the
+  "nothing is activated" phase were updated (see the section above — reported, not quiet).
+  Gates run for real: browser-enabled `npm test` **1693 → 1768**, all passing; `sam build`
+  → Build Succeeded; `dashboard artifact package: valid (10 data files, ...)`;
+  `dashboard artifact deployment coverage: valid (41 local bundle inputs, 13 trigger paths)`.
+  The recorded 1688 baseline did not reproduce — the merge base re-measures at 1693; see
+  Test baseline.
+
+- **The Dashboard v2 package gate became a pull-request gate (Aug 29, 2026):** `sam build`
+  plus `validate:dashboard-artifact-package` ran in exactly one workflow —
+  `deploy-dashboard-v2-artifact.yml`, on `push` to `main` — so the check this file called a
+  "hard pre-merge gate" actually fired *after* merge, as the deploy job's first action. A
+  packaging defect could not fail a pull request. Found while reporting CI results on PR #32,
+  by reading which workflow owns the script rather than trusting the label. `ci.yml` now runs
+  the same two commands on `pull_request`, behind `aws-actions/setup-sam@v2` and nothing else:
+  the template builds with `BuildMethod: esbuild`, so the build needs no AWS credentials, no
+  Docker and no call to AWS. CI declares `permissions: contents: read`, references no
+  `secrets.`, requests no OIDC token, and runs neither the `aws` CLI nor `sam deploy`. **The
+  deploy workflow is unchanged** and keeps its own copy of the step ahead of
+  `Configure AWS credentials`; no shared script was extracted, because two identical
+  three-line steps read better than an indirection and a test now asserts they stay
+  identical. **The gate was also executed for real for the first time**, locally, with the
+  SAM CLI in a throwaway virtualenv: `sam build` → Build Succeeded, then `dashboard artifact
+  package: valid (10 data files, Emma parser/evaluator/builder markers present)` — retiring
+  the UNVERIFIED LOCALLY caveat that had stood since P1. `test/ci-workflow-package-gate.test.js`
+  (+13) parses the shipped workflow structurally into steps, so every assertion must be met
+  by a `uses:` value or an executable `run:` line; four negative controls prove a comment,
+  a stub body, or the command in an unrelated step cannot satisfy it, and the file was run
+  against the pre-change `ci.yml` to confirm it goes red (9 of 13 fail). Also here, while in
+  the same files: the obsolete "serialized qualification subtree" JSDoc above the key-only
+  walker is deleted, the changelog line claiming "the arbiter only observes" First Day
+  Level-3 now names the two real mechanisms, and `.aws-sam/` is gitignored (it is build
+  output, and both CI and a local run now produce it). The silent outer compatibility guard
+  in `digest/builder.js` is deliberately left as-is — it is a documented non-blocking
+  observability nit and changing it is not needed for this work. Tests **1675 → 1688**.
+
+- **Post-review cleanup on the special-event foundation (Aug 29, 2026):** An independent
+  Reviewer pass over `ae7d581..e90fb9d` returned five MINOR findings, all addressed here in
+  one commit. **(1)** The forbidden-qualifier scan matched `JSON.stringify(qualification)`,
+  so it rejected legitimate *values* as well as forbidden *field names* — a `titleMatch` of
+  "Active Wear Day" was refused as if it were a season flag. It now walks field names
+  recursively at any depth and never inspects values. **(2)** Both qualification walkers are
+  bounded at `MAX_QUALIFICATION_DEPTH` (128 walker levels) and fail closed past it, so a
+  malformed or cyclic structure is a diagnostic rather than a `RangeError`; a compound level
+  costs the key walker two levels, which the tests pin. **(3)** The compatibility projection
+  is now contained in the shim *and* at the `builder.js` call site: a projection failure
+  degrades `familySpotlightConfig` to `null` and cannot fail `buildDigest`, with
+  `specialEventsConfig` untouched. **(4)** The legacy artifact-contract test's binding
+  assertion covered only part of the legacy view model — mutating `eyebrowOn` in the frozen
+  selector left that file green. It now asserts both eyebrows and the logo marks against the
+  rendered HTML and the whole view model (covering `date` and `phase`, which are not
+  rendered); all three probes now turn it red. **(5)** `firstDayTakeoverActive` was described
+  as the mechanism protecting First Day Level-3; **it is not, and no runtime caller passes
+  it.** Production is protected by `renderDashboardV2()`'s early return plus the
+  artifact-contract rule forbidding coexistence. The flag is an arbiter capability held for a
+  future registry-driven page orchestrator, and is now documented as such in both the code
+  and this file — an inert parameter that reads as a gate is the exact pattern the gate
+  section of this file warns about. Also corrected: the cross-tree proof makes **22**
+  comparisons, not the 23 previously claimed here. Renderer, registry, `data/`,
+  `dashboard-artifact/`, `infrastructure/`, `.github/` and `scripts/` are untouched; the two
+  other special-event modules changed by comment only (0 non-comment lines). Cross-tree
+  proof re-run: **22/22 identical**. Tests **1652 → 1675** (+23).
+
+- **Generalized special-event foundation built; Big Sports Saturday migrated (Aug 29, 2026):**
+  Framework capability for Accent / Spotlight / Takeover treatments on Dashboard v2 — full
+  design in **Generalized special-event foundation** above. Four reviewable commits, each a
+  real rollback boundary: P1 `3252b36` (five pure modules, **zero runtime surface** —
+  nothing imported them), P2 `6a966e5` (`data/special-events.json`, the orchestrator, and
+  the legacy equivalence proof, still unwired), P3 `40b942a` (the wiring), P4 this entry.
+  **Nothing was activated.** The kill switch keeps its name, its `"0"` default and its off
+  state; no template, workflow, repository variable or Pi configuration was touched; and
+  the categorized 2026-27 future-event register stays planning information, deliberately
+  **not** added to the registry. Accents and registry-driven Takeovers have framework
+  support only — they resolve, arbitrate and report `activatable: false`, and have no
+  renderer. First Day Level-3 is unchanged and hard-wired, protected by `renderDashboardV2()`'s
+  early return and the artifact contract — not by the arbiter.
+  **Big Sports Saturday is the only live-registry entry and is behaviourally identical**:
+  a cross-tree proof against the pre-migration worktree came back **22/22 identical** —
+  ten whole-document Dashboard v2 comparisons across five lifecycle states with the switch
+  on and off, ordinary Dashboard v2, the Dashboard v1 today card, and Athletics panel
+  pixels *and* geometry across all four controller states plus ordinary Athletics
+  (1473.83 × 315.63, unmoved). `CSS`, `browserScript()`, the Spotlight markup and
+  `athleticsCardCount()` were not touched — they ship in every artifact, so editing them
+  would have changed ordinary output too. **Three findings changed the shape of the work.**
+  (1) Qualification for this entry is `any`, not `all`: the legacy selector resolved each
+  child independently, so a missing Myles occurrence produced a one-child Spotlight, not
+  ordinary Athletics — `all` would have been a silent behaviour change dressed as a
+  migration. (2) "One treatment per surface" and "two Accents per panel" are only
+  compatible if `event-row` and `athletics-card` are instance-scoped; the first arbiter
+  capped the Upcoming panel at one Accent until its own tests caught it. (3) The temporary
+  compatibility shim reached the Lambda bundle **undeclared** — found only because `sam` is
+  absent locally and the bundle graph had to be inspected by hand, which is the argument
+  for keeping CI package validation as a hard pre-merge gate rather than waving it through.
+  `digestData.familySpotlightConfig` is retained for the migration window, derived from the
+  one registry and read by no runtime code; `data/family-spotlight.json`, the legacy
+  selector, its suite and the legacy artifact-contract test are all retained **unmodified**
+  as four independent oracles until P5. Tests **1298 → 1652** (+354); see Test baseline for
+  the re-measured table and the exact invocations. **`sam build` is unverified locally and
+  is an explicit pre-merge CI gate.**
+
+- **School rotation rebuilt for the 2026-27 year (Aug 28, 2026):** `digest/schoolRotation.js` had been hard-stopped at `schoolYearEnd = new Date('2026-06-15')`, so `isSchoolDay()` returned `false` for every date since school resumed Aug 24 and **no backpack reminder fired all year**. Rather than ask Wade for values that already existed, all three constants were derived from live sources first: `SCHOOL_YEAR_START`/`SCHOOL_YEAR_END` (2026-08-24 / 2027-06-09) from the Family calendar's `🏫 First Day` / `🏫 Last Day` events; `NO_SCHOOL_DATES` (30 weekday closures) by expanding each `🏫` closure's `[start.date, end.date)` range — Google's all-day end is exclusive, so a break "ending Nov 28" really ends Nov 27; and the rotation itself from the kids' own Centers events plus `data/kids-profile.json`. **Three findings that changed the shape of the fix.** (1) Ophelia is on a **6-day** cycle, not the 7 the code had — she is grade 2 now — and both kids share one school-wide cycle: `PE1 → Art → Computer → PE2 → Media → Music`. Her anchor (2026-08-24 = Day 1) is transcribed from her own calendar entries, each captioned "Day N of 6-day rotation"; the tests assert against those ten real entries rather than against hand-computed values, so they are ground truth, not a restatement of the implementation. All 10 match, including the entry that explicitly skips the 9/4 and 9/7 closures. (2) `Media` is the 2026-27 label for what was `Library`; confirmed with Wade that it is still library-checkout day, so the reminder is preserved under the new name. (3) **Myles is deliberately left unanchored** — `ANCHORS.myles === null` — because his permanent Centers group was genuinely unassigned as of this date; `getRotation` returns a null day/centre while still answering `isSchoolDay` truthfully, so "centre unknown" never collapses into "school closed". **Three `🏫` Early Release events (2027-04-02, 06-08, 06-09) are excluded from the closure list on purpose** — early release is still a school day and the rotation advances. One source conflict was resolved by asking: the Winter Break event's `end.date` implies Dec 30 while its own description says "Dec 21-31"; Wade confirmed Dec 31 is closed. That single date mattered disproportionately — one wrong closure shifts every rotation day after it for the rest of the year. **The regression guard Wade asked for** lives in `digest/schoolRotation.test.js` and asserts against the *run date*, not a fixture date, so it goes red on its own the moment `SCHOOL_YEAR_END` lapses; proven to have teeth by rolling the constant back to the original `2026-06-15`, which turns 31 of 55 cases red with an actionable message. Two unrelated test files (`digest/builder.test.js`, `digest/generateTasks.test.js`) pinned their date fixtures to May 2026 and went red once that stopped being a school day — moved to Sep 2026, which is the same staleness in a second place and worth noting as a pattern. This change adds **+17 tests** (`digest/schoolRotation.test.js` 38 → 55). Measured on the branch before merging `main`: 1164 → 1181. After merging the family-spotlight work from #24, the combined local baseline is **1266 / 1249 passing / 3 failing / 14 cancelled** — the failures are the unchanged Chromium-environmental set, and the cancelled count rose 6 → 14 because #24 added browser-dependent layout subtests, not because of anything here. On CI, which provisions a browser, all 1266 pass.
+- **Special-event operational hardening: browser-path escape hatch and an explicit,
+  verified kill switch (Aug 28, 2026):** Two independent fixes, no production rendering
+  touched. (1) `render/first-day-level3-layout.test.js` called `resolveBrowserPath()` with
+  no argument while `render/dashboard-v2-layout.test.js` passed
+  `process.env.DASHBOARD_BROWSER_PATH`; since `resolveBrowserPath` honours only an explicit
+  argument, the documented escape hatch was inert for the First Day suite and its three
+  tests ran only where Playwright's bundled build happened to be installed. CI always had
+  one, so CI stayed green and the gap was invisible there — and the failures were recorded
+  in this file as "Chromium-environmental" for weeks, one section below a correction
+  warning about precisely that mistake. With the argument passed, all three pass and the
+  full suite is **1294 / 1294 / 0 / 0** with a browser (was 1266 / 1263 / 3 / 0).
+  `render/dashboard-v2-png.test.js` now covers `resolveBrowserPath`'s precedence and guards
+  the launch call site in *both* suites, anchored on `executablePath:` so it reads the call
+  and not the prose above it; proven to have teeth by reverting the fix, which turns it red.
+  (2) The deploy workflow now supplies `FamilySpotlightEnabled` explicitly from the
+  repository variable `FAMILY_SPOTLIGHT_ENABLED`, validates it as exactly `0` or `1` before
+  invoking SAM, and re-reads it from the deployed stack afterwards — see "Managing the kill
+  switch" in the Family Spotlight section. SAM's inheritance was never broken
+  (`merge_parameters` marks unsupplied parameters `UsePreviousValue: True`); what was
+  missing is that the intended value lived only inside AWS with nothing asserting it.
+  Template default stays `"0"`, so a recreated stack is still fail-closed.
+  `test/deploy-workflow-spotlight-flag.test.js` (+25) executes the shipped workflow step
+  itself under `bash -e` across absent, blank, `0`, `1`, padded, invalid and injection
+  inputs. **No repository variable was created and nothing was deployed by this change
+  itself** — but it is not inert. From the moment it reaches `main`, every deployment
+  matching the workflow's `paths:` filter takes authority over the parameter: with the
+  variable still absent it explicitly deploys `FamilySpotlightEnabled=0`, overwriting
+  anything set by hand. See "Managing the kill switch" for the full table.
+
+- **Dead `WJCC Schools` calendar entry removed from `FAMILY_CALENDARS` (Aug 28, 2026):** The one-line entry pointing at `o3oasbc616bhijsqn80a58jo7a40lrl2@import.calendar.google.com` — a calendar Google reports as deleted and which does not appear in the account's calendar list — is gone from `calendar.js`. It was the sole thing firing the new `calendar-fetch-failure` red flag on every digest run. Deleted rather than repointed because WJCC calendar data now reaches the digest via the **Family** calendar's `🏫` events (hand-entered 2026-08-17), leaving the entry with no consumer; the two repoint candidates diagnosed Aug 27 are documented under Known open items and remain available if a WJCC feed is ever wired back in. **Dependency sweep run before deleting, all confirmed non-breaking:** `digest/builder.js`'s `SCHOOL_ROTATION_CALENDARS` is a `_calName` display-name filter, so it could then match nothing — `'WJCC Schools'` was dropped from it as well, leaving `new Set(['Routine'])`. Wade has moved WJCC items onto the Family calendar permanently and no feed will be repointed under that display name, so keeping the member as a hedge would have left dead code that reads as live wiring. `'Routine'` still filters Centers entries out of the 72h/14d windows exactly as before; `digest/routineAnchorsParser.js`'s `SCHOOL_EXCEPTION_CALENDAR` is `'Family'` and never referenced WJCC, so 🏫 holiday suppression of the school anchor was never on this path and is unaffected; every `'WJCC Schools'` occurrence in `test/calendar.test.js`, `digest/flags.test.js`, `digest/builder.test.js`, `digest/aliases.test.js` and `digest/routineAnchorsParser.test.js` is a hardcoded fixture string exercising generic plumbing (in `routineAnchorsParser.test.js` it is deliberately the *negative* case — a non-Family calendar that must **not** suppress), none derived from `FAMILY_CALENDARS`; and `scripts/orchestrate/occ-aging.mjs` iterates the map with `Object.entries`/`Object.keys`, so it simply sees one fewer calendar (its stale present-tense comment about the feed, and a hardcoded "the eight that answered", were corrected). Test totals unchanged at **1164 / 1155 passing / 3 failing / 6 cancelled** — the 3 failures are the standing `No Chromium executable found` set in `render/dashboard-v2-layout.test.js` and `render/first-day-level3-layout.test.js`, identical before and after.
+- **Family Spotlight implemented — "Big Sports Saturday", Sept 12 2026 (Aug 27, 2026):** First
+  reusable in-panel special-event treatment for Dashboard v2. Full design and mechanics in
+  the Family Spotlight section above. New: `data/family-spotlight.json`,
+  `digest/familySpotlightSelector.js` (+43 unit tests), `test/artifact/` (2 files, 15 tests).
+  Modified: `digest/dateUtils.js` (shared `easternInstant()`), `digest/builder.js` (two
+  additive fields), `render/dashboard-v2.js` (renderer + bounded browser controller + CSS),
+  `dashboard-artifact/{contract,generator,package-inputs}`,
+  `infrastructure/dashboard-artifact-refresh/template.json` (kill switch, default off).
+  Kill switch defaults **off** at every layer. Dashboard v1 output proved byte-identical
+  with and without the new digest fields. The implementation finding worth remembering:
+  wrapping the ordinary Athletics content broke `.paper-panel>.section-title` child-combinator
+  rules and silently shrank the title 70px→48px — caught by the layout test, fixed by keeping
+  the ordinary presentation a direct child. An independent Reviewer pass then found two guards
+  that looked protective and were not — a contract marker satisfied by the controller's own
+  selector string, and a layout assertion measuring the Spotlight while it was hidden — both
+  repaired; see the Family Spotlight section. Synchronised with `main` through `a039e3c` and re-measured
+  under the fixed test glob: **+85 tests** over `main`'s own count at the time. (The
+  per-invocation figures recorded here originally have been dropped rather than
+  re-stated — see Test baseline for the one current set, and note that the three failures
+  this entry called "Chromium-environmental" were a real test defect, fixed Aug 28.)
+  The cancelled-count drop is
+  `render/dashboard-v2-layout.test.js` now passing `DASHBOARD_BROWSER_PATH` through to
+  `resolveBrowserPath()`. The Athletics panel renders byte-identical before and after that
+  merge, ordinary and Spotlight alike; the full-page delta is `main`'s Centers live-today
+  work, and the approved panel crops are pixel-identical to the ones signed off.
+- **Calendar fetch failures now surface as a red digest flag (Aug 27, 2026):** `pullCalendarEvents()` in `calendar.js` degrades to `[]` per calendar so one dead source cannot take down the digest — correct, but on its own indistinguishable from "that calendar had no events." It now records `{ calendarName, calendarId, message }` for each failure and attaches the list to the returned array via `attachFetchFailures()` (non-enumerable, so spreads / `Object.keys()` / `JSON.stringify()` of the event list are unchanged and **no existing caller needed edits** — `index.js` and `dashboard-v2-data.js` are untouched). `readFetchFailures()` merges the 72h and 14d lists, dedupes by `calendarId` (a dead calendar fails in both pulls) and sorts by name for stable output. `buildDigest()` picks it up as `calendarFetchFailures` — an injectable param on the same convention as `emmaUnavailableBlocks`, where only `undefined` falls back to reading the arrays — exposes it on `digestData`, and passes it into `computeFlags()`. A new `flags.js` evaluator emits `id: 'calendar-fetch-failure'`, **the first `red`-level flag in the repo** (all three renderers already handled `red`: `render/email.js` palette, `render/dashboard.js` `ar`/`#E24B4A`, `render/dashboard-v2.js` `.level-red`; the `computeFlags` sort already ordered `red` first). Chosen over failing the run — a household digest whose value is the other eight calendars should not go dark because one 404s — and over logging louder, which is the channel that already failed silently for weeks. +21 tests (1141 → 1162; 1132 → 1153 passing; the 3 failures and 6 cancelled are the unchanged Chromium-environmental set).
+
+- **Pi credentials-mode test defect fixed, `npm test` glob fixed, baseline corrected (Aug 27, 2026):** Three related changes, in a deliberate order. (1) `test/pi-dashboard-pull.test.js`'s "Pi stages and validates both version-pinned directions" test wrote its temp credentials file with `credentials.write_text(...)` and never chmodded it, so under the default umask 0022 it landed at 0644 and `stage()` correctly raised `credentials file must be mode 0600 or stricter`. Fixed with `credentials.chmod(0o600)` immediately after the write, mirroring the real Pi's provisioning — **not** by setting `umask` in the embedded script, which would mask the defect and not survive running the file individually. (2) `package.json`'s test globs are now single-quoted, so `sh -c` (dash, no `globstar`) passes them through verbatim and Node 22's `--test` resolver recurses correctly. The old bug was asymmetric: `test/**` matched something and was hijacked by the shell into `test/*/*`, dropping the 18 files directly in `test/`; `digest/**` and `render/**` matched nothing, so dash left them literal and Node handled them correctly. **431 tests across 18 files had never run in CI.** Approaches were compared empirically in this environment, not assumed — quoting is sufficient and needs no `.npmrc` or shell prelude. Order mattered: fixing the glob first would have turned CI red, since GitHub runners use umask 0022 and the Pi test would finally have executed. (3) Baseline corrected on two false claims: it said all four full-glob failures were `No Chromium executable found` (only three were — the fourth was the umask defect above), and it called the 6 `cancelled` entries a `node:test` parallel-subtest timing artifact (they are all subtests of `render/dashboard-v2-layout.test.js`, whose `before` hook throws the Chromium error; they go to 0 once a browser resolves). New baseline, plain `npm test`: **1062 / 1053 / 3 / 6**, up from 631 / 622 / 3 / 6. Also added `__pycache__/` and `*.pyc` to `.gitignore` — the Pi test regenerates that bytecode on every run.
+- **Push deny rule reinstated (scoped to `main`), hook matrix committed, test baseline reconciled (Aug 26, 2026):** Four follow-ups from PR #15. (1) `permissions.deny` is back in `.claude/settings.json` as four wildcard rules pinning the branch name — `Bash(git push * main)`, `Bash(git push * main *)`, `Bash(git push * *:main)`, `Bash(git push * *:main *)` — verified empirically against **Claude Code 2.1.246** with a throwaway repo, a local bare remote, and two independent signals per case (harness-recorded denial + whether the remote ref actually moved). Full match table in the gate section. Feature-branch pushes are unaffected in every tested form, which was the whole failure of the original `Bash(git push:*)`. Residual holes (bare `git push` on `main`, `+main`, `refs/heads/main`) are named in the doc rather than implied. Also corrected a claim inherited from `4a8cc52`: `Bash(git push *)` **does** match a bare `git push` on 2.1.246 — the compiler rewrites a trailing ` .*` to `( .*)?` — so the stated reason for preferring `:*` does not hold on this build. (2) The 63-case hook matrix now lives in the repo as `test/hooks/guard-archived-files.test.js` + a base64 fixture file, expanded to 73 cases (+1 integrity check = 74 tests); it spawns the real hook script and asserts real exit codes, and includes an explicit rule-(e) false-positive regression test proven to fail against the pre-fix pattern. Placed in `test/hooks/` so it runs under both invocations rather than being skipped by the globstar bug. (3) The bootstrap incident's committer-identity evidence is now quoted inline in CLAUDE.md, so the claim no longer depends on `4a8cc52` staying reachable on an undeleted branch. (4) Test baseline reconciled from a stale **899** to the measured pair: full glob **1062 / 1052 / 4 / 6**, literal `npm test` **631 / 622 / 3 / 6**. Also corrected an over-broad claim that *any* command containing an archived path literal is blocked — a bare `grep` and a `cat` heredoc are not; a listed utility must also be present.
+- **Emma unavailability flag merged to `main` + boundary test coverage closed (Aug 16, 2026):** `claude/emma-unavailability-flag-v2-kdbzqh` (see entry below) merged into `main` via commit `1c4db14` after independent Reviewer sign-off (7/7 checklist items PASS, one non-blocking test-coverage gap noted). `main` had advanced 3 unrelated commits (Dashboard v2 Phase 4B) since the branch was cut and since the Reviewer's pass; no file overlap, clean merge, no conflicts. Same-session follow-up added the two boundary test cases the Reviewer flagged as missing — a block starting *exactly* 14 days out (fires) and *exactly* 15 days out (does not fire) — to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block, per the Reviewer's own hand-verification that the underlying `flags.js`/`emmaUnavailabilityParser.js` logic was already correct at these edges. No production code changed in this follow-up. 899 passing on `main` after both steps — see Test baseline section for the full reconciliation chain.
+- **Emma unavailability flag added (Aug 16, 2026):** New `digest/emmaUnavailabilityParser.js` parses Emma's UTA reserve-duty / annual-tour-duty blocks from the "House Manager" calendar (`690a345d...@group.calendar.google.com`), wired into `digest/builder.js` on the same try/catch-default-to-`[]` pattern as `parseWeeklyPriorities`. A new pure `flags.js` evaluator reads `ctx.emmaUnavailableBlocks` and emits an amber, non-`bannerOnly` flag (`owner: []`) for any block starting within 14 days or already in progress; already-ended blocks are excluded. Live calendar verification (13 real events, all confirmed) found the title's type token includes a `(Reserve)` qualifier not anticipated by the original spec example (e.g. `Emma: UTA (Reserve) — Unavailable`, sometimes with a trailing `[Tentative FY27]` bracket) — the extractor captures the type substring verbatim rather than stripping `(Reserve)`, so flag bodies read e.g. "Emma unavailable Oct 16–19 (UTA (Reserve)) — confirm coverage." Google's all-day `end.date` is exclusive; `exclusiveEndToInclusive()` converts it to the inclusive last day shown in the message. Flag `id` is derived from block start date + type (stable dedup), computed once in the parser and reused verbatim by the evaluator. No dashboard card, no data file, no `FAMILY_CALENDARS` change — all explicitly out of scope for this pass. 896 passing after this change (up from a freshly-measured 876 baseline — see Test baseline section).
+- **Dashboard v2 Phase 3C production cutover completed (Aug 15, 2026):** The Pi now serves the generated dashboard privately on `127.0.0.1:4173` through an enabled systemd service, and LXDE-pi launches Chromium at that local URL. The AWS sports endpoint allows only the exact local origin; the temporary couch origin was removed. Startup, 2560×1440 layout, live polling, cache/ETag behavior, and a preserved DAKboard rollback were boot-tested. See `docs/dashboard-v2/phase-3c-production-cutover.md`.
 
 - **Dashboard event-bucketing timezone bug fixed (Jul 1, 2026):** Next Two Weeks panel was placing timed events at/after 8 PM ET into the next day's bucket, due to UTC-based date slicing (`raw.slice(0,10)` on a UTC dateTime string). Fixed via `eventDateKeyET()`; `parseEventDate` also corrected for consistent Today-card bucketing. 414 passing after this fix.
 - **Dashboard 'today' anchor timezone bug fixed (Jul 1, 2026):** At ≥8 PM ET (≥7 PM EST in winter), the dashboard's TODAY heading and all day-bucketing rendered tomorrow's date, because the anchor was built from `new Date()` in Lambda's UTC runtime rather than the ET calendar date. Confirmed live via screenshot (8 PM ET Jul 1 render showed TODAY = Jul 2) and fixed via `startOfTodayET()`. 419 passing after this fix. Confirmed correct via live dashboard refresh at 8 PM ET on Jul 1, 2026.
@@ -361,13 +2917,78 @@ Coder mode must keep tests at 430+. If the number changes, the Documenter should
 
 **A commit message that doesn't describe its own content defeats every drift-detection habit this project relies on.** Confirmed August 2026: `e4aa130`'s message named an unrelated editorial doc change while the same commit carried the `sharksActive`/`renderSharksCard`/sports-config `sharks` scaffolding, the `gmailParser` sharks routing entry, and (per a still-unresolved test-only string) possibly `flags.js` changes — none of it discoverable by searching commit history for anything sharks-related. Worth a standing habit: when a commit touches more than one logical concern, or when scaffolding for a future feature rides along with an unrelated change, the message should name both, not just the primary one.
 
-**`npm test`'s glob pattern silently drops every test file that sits directly in `test/` (not in a subdirectory) — a pre-existing, shell-dependent bug, not a regression.** `package.json`'s test script is `node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js`. Without `bash`'s `globstar` shell option enabled (the default in most non-interactive shells, including the one `npm test` itself spawns via `sh -c` on this system), `test/**/*.test.js` does **not** recurse — it behaves like `test/*/*.test.js`, matching only `test/skills/*.test.js` and silently excluding every file directly under `test/` (`test/data.test.js`, `test/athleticsParser.test.js`, `test/wavesParser.test.js`, `test/dateUtils.test.js`, `test/calendar.test.js`, `test/flagFootballParser.test.js`, `test/gmailParser.test.js`, `test/pdfReloadParser.test.js`, `test/swimParser.test.js`, `test/weeklyPrioritiesParser.test.js`, and now `test/sharksParser.test.js`). `digest/**/*.test.js` and `render/**/*.test.js` are unaffected because those patterns fail to pre-expand in the same broken shell and are instead handed to Node's own `--test` glob resolution, which *does* recurse correctly. Net effect: a literal `npm test` run in an affected shell reports far fewer tests than actually exist (395 passing observed in this environment vs. the documented baseline of 645+) with zero failures either way — it looks clean, not broken, which is what makes it dangerous. **To get an accurate count, run with `shopt -s globstar` enabled first**, or pass the file list explicitly. Not fixed as part of the Sharks card work (out of scope for that task) — flagging here so a future session doesn't mistake a low `npm test` count for a real regression, and doesn't mistake a passing `npm test` for full coverage.
+**✓ FIXED Aug 27, 2026 — but read this anyway; the lesson outlived the bug.** The patterns in `package.json` are now single-quoted, so the shell passes them through and Node's `--test` resolver does the globbing. Plain `npm test` runs all 1062 tests. See "The glob fix" under Test baseline for the mechanism, the three options that were empirically compared, and the asymmetry table. **What the fix does not retire:** this bug hid a genuine failing test (`test/pi-dashboard-pull.test.js`'s umask 0644 credentials defect) for as long as it existed, and the recorded baseline then mis-described that failure as environmental. A silent-skip bug and an unfalsifiable summary of the result are the same failure in two places, and only one of them was in the glob. The original description follows, for provenance.
+
+**`npm test`'s glob pattern silently drops every test file that sits directly in `test/` (not in a subdirectory) — a pre-existing, shell-dependent bug, not a regression.** `package.json`'s test script was `node --experimental-vm-modules --test test/**/*.test.js digest/**/*.test.js render/**/*.test.js`. Without `bash`'s `globstar` shell option enabled (the default in most non-interactive shells, including the one `npm test` itself spawns via `sh -c` on this system), `test/**/*.test.js` does **not** recurse — it behaves like `test/*/*.test.js`, matching only `test/skills/*.test.js` and silently excluding every file directly under `test/` (`test/data.test.js`, `test/athleticsParser.test.js`, `test/wavesParser.test.js`, `test/dateUtils.test.js`, `test/calendar.test.js`, `test/flagFootballParser.test.js`, `test/gmailParser.test.js`, `test/pdfReloadParser.test.js`, `test/swimParser.test.js`, `test/weeklyPrioritiesParser.test.js`, and now `test/sharksParser.test.js`). `digest/**/*.test.js` and `render/**/*.test.js` are unaffected because those patterns fail to pre-expand in the same broken shell and are instead handed to Node's own `--test` glob resolution, which *does* recurse correctly. Net effect: a literal `npm test` run in an affected shell reports far fewer tests than actually exist (395 passing observed in this environment vs. the documented baseline of 645+) with zero failures either way — it looks clean, not broken, which is what makes it dangerous. **To get an accurate count, run with `shopt -s globstar` enabled first**, or pass the file list explicitly. Not fixed as part of the Sharks card work (out of scope for that task) — flagging here so a future session doesn't mistake a low `npm test` count for a real regression, and doesn't mistake a passing `npm test` for full coverage. **The "395 vs. 645+" figures above are a historical observation from the session that found the bug, not current.** For the measured pair as of Aug 26, 2026 — full glob 1062 / literal `npm test` 631 — and the rule that every "tests passing" claim must name its invocation, see the Test baseline section.
 
 - **Champs/Summer Awards history migration: COMPLETE (August 2026).** Full project history: `docs/data-reload/champs-sa-migration-history.md`. Summary: 2024 Champs, 2025 Champs, and 2026 Summer Awards individual + relay results (3,844 individual + 172 relay rows) parsed and loaded into `league-results-history-v2.json`/`relay-results-history-v2.json`. Includes the wrong-file-write incident and correction that led to the current "current vs. archived" guard rail. Legacy files archived to `data/archive/` as part of this project.
 
-**Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut.
+**Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
 
 ## Known open items
+
+- **✓ RESOLVED Sept 8, 2026 — each day of the 72h window now gets its own prep item.** `digest/builder.js` derives the strip per day (`generateTasks(day.events, day.date, getSchoolStrip(day.date))`) instead of handing one today-strip to all three days. `generateTasks()` is unchanged: its contract was always "emit from the strip you are given", and it was the caller that gave it the wrong one — so its ~40 existing unit tests stand untouched rather than being rewritten to a new contract. **The entry this replaces was right about the mechanism and understated the damage in one direction.** It named the false positive (a stale row repeated on later days) but not the false negative: the same slot is single-valued, so Wednesday's stale baritone row *displaced* Friday's genuine Ophelia library-book row rather than merely joining it. Simulating all 290 mornings of the 2026-27 school year: **123 stale prep rows shipped per year** (58% of the 212 the email emitted) on **71 mornings (24.5%)**, and **177 genuinely-owed prep rows never appeared on their own day.** After the fix the year emits 266 rows, all correct — net **+54 rows/year**, about +0.19 per morning. **Blast radius is narrower than "the digest":** only `render/email.js` renders past `days[0]`; `render/dashboard.js` (frozen v1), `render/dashboard-v2.js` and `digest/nowNextSelector.js` all read `days[0]` alone, and `days[0]`'s task list is unchanged by construction — so the entire correction lands in the email's second and third day blocks and the frozen surface was neither touched nor at risk. Wording was deliberately left alone: the row reads `"⚠ Pack library book **this morning** (Ophelia — Media **today**)"` — two relative words, not one — and both are scoped by the `dayHeader(day.date)` the row sits under. The shipped email already does exactly this with the solo-evening row's `"tonight"` in future day blocks, so no new precedent is set. **The general gap the entry named — "nothing asserts task-list contents across the window" — is what the test closes**, generically: a 26-morning sweep in `digest/builder.test.js` compares every day of every window against an oracle derived straight from `getRotation()`, so it fails for any day-specific prep item on any wrong day in either direction. **Two cross-day interactions the fix creates were found by review and are now pinned rather than left incidental:** on all **25** school-day Music-eves Myles's baritone row shares an email with his library-book row (the same 25 the `schoolRotation.js` collision argument counts — but as Wednesday's item under Wednesday's header, not as the Tuesday-morning nudge that argument rejected; `tomorrowWarnings` stays free of instrument warnings and a test asserts it), and on **59** mornings a year the strip's "pack library book tonight" line coexists with the day-1 block's own "pack library book this morning" row (kept — different instructions at different times, and suppressing the day-1 row would restore the false negative). Neither is a regression, though they differ in shape: on a Music-eve the day-1 block pre-fix carried *today's* row instead, so (1) is a substitution; on an S2 morning neither child owes anything that day, so pre-fix the block carried nothing and (2) is genuinely newly-visible output on those 59 mornings. All four tests proved to have teeth against two mutants: the pre-fix today-strip (all four red) and a today-only guard, which kills the stale rows but keeps all 177 false negatives (all four red, the sweep and the Oct 21 pin failing on the false-negative assertion) — so the block discriminates between the fix and the tempting half-fix.
+
+- **✓ RESOLVED — the read-only role backstop shipped in `bf3be6f` (#46).** This entry stood
+  as "backstop not decided (Sept 7, 2026)" long after the decision was made and the code
+  merged. It is the **third stale location** left by that drift, not a third drifting
+  commit — only two commits fit the shape (`bf3be6f` and `1bad0fd`), and between them they
+  stranded the mechanism count, the read-only subsection, and this entry. (`d75488e` / #44
+  also wired hooks into `.claude/settings.json`, but updated `CLAUDE.md` by 252 lines, so it
+  is not an instance.) The entry said
+  the reviewer/debugger `PreToolUse` hook lives only in agent frontmatter, therefore does
+  not fire unless the workspace trust dialog has been accepted, therefore leaves a Reviewer
+  or Debugger spawned in this remote sandbox with an unrestricted Bash — and proposed an
+  `agent_type`-keyed `settings.json` backstop as the undecided fix. That backstop exists:
+  `.claude/settings.json` runs `guard-readonly.mjs` with **no argv role**, so it falls back
+  to the payload's `agent_type` and fires regardless of trust, while failing open for any
+  unrecognised role so Coder is untouched. Verified live, not inferred: a Reviewer subagent
+  running headless in this sandbox had `git fetch origin main` and an env-prefixed
+  `node --test` refused by the allowlist. See "The gate" → "Read-only role hooks live in
+  agent frontmatter" for the two-copy table and why both copies coexist. **Still genuinely
+  open, and much narrower:** a Reviewer cannot run the browser-enabled suite at all, because
+  both allowlist entries refuse every route to it today. That does **not** mean a fix has to
+  touch both — relaxing either one's start anchor to tolerate an environment-variable prefix
+  would open that route on its own, since the resulting command contains no shell
+  metacharacter and would clear the composition check before reaching the allowlist. Both are
+  start-anchored — `/^npm (test|run [a-z:-]+)$/` and `/^node( --[a-z-]+)* --test/` — so any
+  environment-variable prefix defeats them: `DASHBOARD_BROWSER_PATH=… npm test` and
+  `DASHBOARD_BROWSER_PATH=… node --test` are both refused. The `npm` entry is additionally
+  `$`-anchored, so no trailing argument can be appended either, and no `package.json` script
+  sets the variable internally. The Reviewer is therefore confined to the no-browser row,
+  which the Test baseline explicitly says is *not* the row to compare against — a real gap
+  in what a Reviewer can verify, and the reason three consecutive review rounds on this
+  branch reported tests as unverified.
+
+- **Special-event foundation P5 cleanup — blocked on a real production cycle, deliberately (Aug 29, 2026).** Delete `digest/legacySpotlightCompat.js` together with the `familySpotlightConfig` line in `digest/builder.js`, its `requiredBundleInputs` entry and the `specialEventsSampleData` projection; then delete the four oracles (`data/family-spotlight.json`, `digest/familySpotlightSelector.js`, its test, `test/artifact/family-spotlight-contract.test.js`) and `test/fixtures/legacy-athletics-panels.json`. **Do not do this until the registry path has run at least one real production cycle** — the oracles are the only thing that can prove a regression, and deleting them early is how a migration bug becomes undetectable. A test asserts the shim's bundle-input declaration exists *exactly while* `builder.js` imports it, so a half-done removal fails rather than leaving a dangling path. Also open at P5: whether to rename `FAMILY_SPOTLIGHT_ENABLED`, and whether First Day Level-3 becomes registry-driven — the latter should be settled **before** any second Takeover (Christmas morning) is built, not after.
+- **✓ RESOLVED Aug 29, 2026 — the package gate now runs before merge, not after it.** This bullet previously said `scripts/validate-dashboard-artifact-package.mjs` "must be green in CI before merge" — which was not true of any workflow that existed: it ran only in `deploy-dashboard-v2-artifact.yml` on `push` to `main`, so its first execution was *after* the merge, as the deploy job's first action. Two things changed. (1) The gate was finally executed for real: `sam` installed into a throwaway virtualenv locally gives `sam build` → Build Succeeded and `dashboard artifact package: valid (10 data files, Emma parser/evaluator/builder markers present)`. (2) `ci.yml` now runs the same two commands on `pull_request`, with `permissions: contents: read`, no secrets, no OIDC token, no AWS CLI and no `sam deploy` — see "The package gate is a pull-request gate" above for the full contract and its 13 tests. The deploy workflow keeps its own copy of the step ahead of `Configure AWS credentials`, so nothing is weakened where it guards a real deployment. **The general lesson outlives the fix:** a gate named in this file as pre-merge was, for as long as it was written down, post-merge only — nobody had checked *which workflow* ran it. Naming a check is not the same as knowing when it fires.
+- **The categorized 2026-27 future-event register is planning information, not configuration (Aug 29, 2026).** The approved categorization — Sept 19-20 swim and the first flag-football game as Accents, Oct 17 and Nov 7 as Spotlights, the Chesapeake Challenge Cup, Winter Champs and SE District 8&U Champs as Spotlights, the birthdays as Spotlights, Oct 31 Swim-a-Thon and Grandma's arrival as separate Accents, A Christmas Carol as a Family Spotlight, Christmas morning as a Family Takeover, Last Day of School as an Accent, and the Dec 12-13 swim meet as deliberately *not* qualifying because the Staunton trip is authoritative — **is not in `data/special-events.json` and must not be bulk-loaded into it.** Each entry needs its own scoping pass, most need facts that are still TBD, and every Accent additionally needs a Designer pass that does not exist. Adding them would activate treatments this foundation deliberately did not.
+- **Accent visual design does not exist (Aug 29, 2026).** Eleven of the register's non-Ordinary occurrences classify as Accents — the largest bucket — and there is no Accent renderer, no markup, and no approved visual. The framework resolves and arbitrates them and reports `activatable: false`; that is the whole of what exists. A Designer-mode session with a screenshot of current state is prerequisite to scoping any Accent phase.
+
+- **✓ RESOLVED Aug 28, 2026 — the dead `FAMILY_CALENDARS["WJCC Schools"]` entry was removed rather than repointed.** Wade has moved to putting WJCC calendar items directly on the **Family** calendar (the 12 `🏫`-prefixed 2026-27 academic-calendar events entered 2026-08-17), so the entry had no remaining purpose and the choice between the two repoint candidates below became moot. Removing it stops the `calendar-fetch-failure` red flag firing every run on a source nothing consumes. Dependency sweep before deletion confirmed nothing breaks: the only other code reference is `digest/builder.js`'s `SCHOOL_ROTATION_CALENDARS`, a display-name filter that could then match nothing — `'WJCC Schools'` was removed from that set too, leaving `new Set(['Routine'])`, since WJCC items are now permanently on the Family calendar and no feed will be repointed under that display name (a filter member matching nothing reads as live wiring); `routineAnchorsParser.js`'s `SCHOOL_EXCEPTION_CALENDAR` is `'Family'` and was never wired to WJCC; and every `'WJCC Schools'` string in the test suite is a hardcoded fixture label exercising the generic fetch-failure plumbing, never derived from `FAMILY_CALENDARS`. `scripts/orchestrate/occ-aging.mjs` iterates the map generically and simply sees one fewer calendar. Test count unchanged at 1164 / 1155 passing (the 3 failures and 6 cancelled are the standing Chromium-environmental set). **The diagnosis that led here is retained below, unchanged, because the repoint candidates and the unverified ICS feed are still the facts anyone would need if a WJCC calendar is ever wired back in.**
+- **[HISTORICAL — resolved above] `FAMILY_CALENDARS["WJCC Schools"]` points at a deleted calendar — diagnosed Aug 27, 2026, deliberately NOT repointed.** `o3oasbc616bhijsqn80a58jo7a40lrl2@import.calendar.google.com` returns `The requested event could not be found or has been deleted.` and does not appear in the account's calendar list at all. It was added 2026-08-02 in commit `2742410` — whose message reads "Editorial Meeting: downgrade unconfirmed relay near-record claim from MEDIUM to LOW", a second instance of the mislabeled-commit pattern already recorded in Key Learnings under `e4aa130`. Two candidates exist and **neither is obviously right**, which is why this was left for Wade rather than guessed at: `vhtjqgkt9s4oor47sujca22rfg@group.calendar.google.com` is a manually-created calendar literally named "WJCC Schools" (owner, created 2025-09-26, last updated 2026-05-12) holding hand-entered **2025-26** holidays only — nothing past Juneteenth 2026-06-19; and `n4kudi3ij2k314cup1finndhv8b9rqpc@import.calendar.google.com` is a live ICS subscription to `https://wjccschools.org/?wjcc_calendar_subscribe=1` that is **completely empty** across Jan 2026 – Jul 2027 and whose summary is still the raw URL (Google never resolved a display name from the feed). The ICS feed itself could not be verified from the session that diagnosed this — `wjccschools.org` is blocked by the sandbox network policy — so whether the feed is broken or merely not yet synced is **unestablished**, not ruled out. Until one is chosen the new `calendar-fetch-failure` flag fires every run, which is the intended behavior: the breakage is now visible daily instead of silent.
+- **Production impact of the dead WJCC calendar was near-zero, for a reason that is itself a finding.** `digest/builder.js`'s `SCHOOL_ROTATION_CALENDARS` filters `WJCC Schools` events out of both the 72-hour window and the 14-day lookahead, `getSchoolStrip()` never reads calendar events at all (pure date arithmetic), and `addNoSchoolDate()` — the only hook that could have fed closures in from a calendar — **is called by nothing outside its own test**. The 🏫 school-closure suppression in `routineAnchorsParser.js` reads `SCHOOL_EXCEPTION_CALENDAR = 'Family'`, not WJCC. The real 2026-27 academic calendar was hand-entered onto the **Family** calendar on 2026-08-17 (12 `🏫` events, each described "Source: WJCC 2026-27 Academic Calendar (adopted 3/24/26)"), so closure data does flow. The WJCC entry in `FAMILY_CALENDARS` is effectively vestigial — do not assume repointing it restores anything until a consumer is wired to it. **This finding is what justified deletion over repointing (Aug 28, 2026); it still governs any future attempt to add a WJCC calendar back — wire a consumer first, or you will have re-added a source nothing reads.**
+- **✓ RESOLVED Sept 8, 2026 — the music-day instrument reminder is built.** `needsRecorder` is gone, replaced by `needsInstrument`, which is genuinely set. It is gated on a new `INSTRUMENTS` map in `digest/schoolRotation.js` (`myles: 'baritone'`, `ophelia: null`) rather than a hardcoded name test, so Ophelia's exclusion is a stated fact and a second child joining band is a one-line edit. On Myles's Music day `warningText` becomes `⚠ Pack baritone this morning (Myles — Music today)`, which `generateTasks()` turns into a real Wade task at "Before work". **The Media/Music adjacency is resolved by warning on the day only** — no day-before instrument entry — because `warningText` is the sole channel `generateTasks()` reads, and because a day-before entry would land on the one morning already carrying his library-book task. See the header of `digest/schoolRotation.js` for the full reasoning and the two rejected alternatives. **Two claims in the superseded entry were wrong and are corrected here rather than quietly dropped.** (1) It said changing the string "turns **three v1 tests red**", one inside the frozen `render/dashboard.js` surface. It does not: those three cases build their own fixture strings and pass them straight into the renderers — they never call `getSchoolStrip()`, so they assert renderer pass-through, not rotation output. All three are green and **the frozen surface was never touched or at risk**; the freeze's failing-v1-test exception was not needed and was not used. Measured, not assumed. (2) It implied the day-before/Media collision is unconditional. Across the full 2026-27 year, 25 of Myles's 30 Music-eves are Media days but **5 are not** (four Sundays plus the Oct 12 closure), so a "suppress when today is Media" conditional would have been live code, not dead — it was rejected on cost, not on impossibility.
+
+- **Aug 24-25 2026 contradicts the rotation model for Myles, unreconciled (Sept 6, 2026).** With his anchor set, the model outputs Myles Aug 24 = `PE2` and Aug 25 = `Media` (a library-book day). Three other sources say those two days were **off-rotation whole-grade Music**: this file's Aug 28 entry, the Open House packet, and the calendar fixtures in `digest/centersProfile.test.js:24-25` (`Myles: Music (Centers)` on both dates). The new `schoolRotation.js` header retires the packet-derived *phase* reading but never says what those two days actually were. **Zero production impact** — both dates are past and `getSchoolStrip` only renders today/tomorrow — but it is the first thing anyone re-deriving the phase will hit, and it is currently unexplained. Most likely the two whole-grade Music days sat outside the cycle without advancing it, which is consistent with Aug 24 = Day 1 for numbering purposes; that has not been confirmed and should not be assumed.
+
+- **`centersGroup` now has zero code consumers (Sept 6, 2026).** `e23e698` removed the only one when `provisional` moved to `phaseConfirmed`. `myles.centersGroup` is `6` and nothing reads or validates it; it is retained deliberately as provenance (the school identifies his rotation by that number, and a future year's rotation may arrive keyed to it). Worth knowing that it is **not** the rotation offset — group 6 enters the school-wide cycle at `PE2`, position 4 — so nothing cross-checks it against anything. If a future change wants to derive a rotation from the group number, that mapping does not exist yet.
+
+- **The `sequence` drift tripwire does not cover `phaseConfirmed` (Sept 6, 2026).** `digest/schoolRotation.test.js`'s "the two maps match the sequences in data/kids-profile.json" reads the real JSON and asserts both orderings, so a sequence drifting between the two files fails. `phaseConfirmed` has no equivalent guard: deleting it from `data/kids-profile.json` flips `provisional` back to `true` on the Dashboard v2 Centers strip with a fully green suite. Same drift shape the tripwire exists to prevent. Low urgency while the file is unpackaged (see below — `provisional` is `false` in production regardless), but it should be closed alongside any packaging fix.
+
+- **✓ RESOLVED Sept 6, 2026 — Myles is anchored; the school rotation is complete for 2026-27.** PR #41 set `ANCHORS.myles` to the same school-wide anchor Ophelia already had (Aug 24 2026 = Day 1) and gave him his own `MYLES_CENTERS` map, `PE2 / Media / Music / PE1 / Art / Computer`. **The map change was the non-obvious half:** `MYLES_CENTERS` had been `{ ...CENTERS_6DAY }`, byte-identical to Ophelia's, so setting the anchor alone would have printed *her* subject under his name every day and put his library-book reminder on the wrong dates. His Media day is Day 2, not Day 5. The phase is two-source confirmed (his Music on Thu Sep 3 = school day 9; Mrs. Pitts's planner showing Ophelia's PE2 on Tue Sep 8 = school day 10), but **his subject map rests on the Sep 3 report alone** — the planner entry constrains the shared day numbering, not his mapping. Also settled: numbered Centers groups are a **Grade 5 construct**, so Ophelia will never have one and her null `centersGroup` is a permanent correct state; `provisional` in `digest/centersProfile.js` now keys off an explicit `phaseConfirmed` flag rather than `centersGroup == null`. **Still open:** the music-day instrument reminder — `needsRecorder` is dead (never set true) and names the wrong instrument for a baritone player; see the open item below. The original Aug 28 entry follows, retained for the diagnosis.
+
+- **[HISTORICAL — resolved above] ✓ MOSTLY RESOLVED Aug 28, 2026 — school rotation rebuilt for 2026-27; Myles's anchor is the one piece still open.** `SCHOOL_YEAR_START` (2026-08-24) and `SCHOOL_YEAR_END` (2027-06-09) both derived from the Family calendar's `🏫` events, `NO_SCHOOL_DATES` rebuilt as 30 weekday closures from the same source, and Ophelia anchored at 2026-08-24 = Day 1 on a **6-day** cycle (the old config had her at 7 days — she is grade 2 now). Both kids share one school-wide cycle this year: `PE1 → Art → Computer → PE2 → Media → Music`. "Media" is the 2026-27 label for what used to be "Library" and carries the same pack-a-book reminder. **Myles is deliberately left unanchored** (`ANCHORS.myles === null`): his permanent numbered Centers group had not been assigned as of Aug 28 (assigned the week of 8/31 by music selection; `kids-profile.json` still has `centersGroup: null`), his first two school days were off-rotation whole-grade Music, and his calendar entries stop at Sep 1 — so there is nothing to derive and guessing would print a wrong centre daily. `getRotation('myles', …)` returns `{ day: null, center: null, isSchoolDay: <real value> }`, keeping "centre unknown" distinguishable from "school closed"; both renderers already fall back to `—`. **To finish:** set `ANCHORS.myles` once the group is known, and decide whether his Music day still needs a recorder — he is in 5th-grade Band on baritone now, so the old 4th-grade rule may be obsolete. A stale-constant regression guard in `digest/schoolRotation.test.js` now fails on the *run date* the moment `SCHOOL_YEAR_END` lapses; verified to have teeth by reintroducing the exact original bug (31 of 55 cases go red). The original diagnosis is retained below.
+- **[HISTORICAL — resolved above] `digest/schoolRotation.js` is hard-stopped at `schoolYearEnd = new Date('2026-06-15')` — the school strip has been dead for the entire 2026-27 school year.** Found Aug 27, 2026 while diagnosing the WJCC calendar; **not fixed, out of scope for that change.** `isSchoolDay()` returns `false` for every date after 2026-06-15, so `getRotationDay()` returns `null` and `getSchoolStrip()` returns both kids as `{ day: null, center: null, isSchoolDay: false, warningText: null }` with `tomorrowWarnings: []`. Verified by direct execution: `isSchoolDay` is `true` for 2026-06-15 and `false` for 2026-06-16, 2026-08-24 (first day of school), 2026-08-27, 2026-09-08, 2026-12-01 and 2027-03-01. Consequence: **no Library/Music backpack reminders have fired since school resumed Aug 24**, and the `backpack-reminder` flag cannot fire. This is a bigger live failure than the calendar it was found next to. Fixing it needs three things that are Wade's data, not a code change: the 2026-27 `schoolYearEnd`, refreshed rotation `ANCHORS` (both currently anchored to May 1, 2026), and the year's `NO_SCHOOL_DATES` — the last of which the 12 `🏫` Family-calendar events could plausibly supply if `addNoSchoolDate()` were finally wired up.
+
+- **Dashboard v2 is in production — this bullet was stale (corrected Aug 19, 2026).** It previously said v2 was "isolated and experimental... not reachable from the Lambda path." That was true when written but has been false since the Aug 15–16 cutover: `render/dashboard-v2.js` is rendered by `dashboard-artifact/generator.js`, its own Lambda handler (separate from `index.js`, which still imports only production v1 — that boundary is unchanged), and published as versioned HTML + a manifest to S3 on an EventBridge schedule. The Pi pulls, validates, and atomically activates each release via `moore-dashboard-refresh.timer`, and Chromium kiosk-displays it at `http://127.0.0.1:4173`, self-reloading on a new release via its own 5-minute manifest poll. Phase 3C (Aug 15, 2026) completed the production cutover; Phase 4B (Aug 16, 2026, commit `8652963`) activated the automated Pi refresh timer. See `docs/dashboard-v2/phase-3c-production-cutover.md` and `docs/dashboard-v2/phase-4b-production-refresh.md` for deployment evidence — not restated here. Supporting code: `weather.js`, `dashboard-v2-data.js`, `render/dashboard-v2.sample-data.js`, `dashboard-artifact/generator.js`, `infrastructure/pi-dashboard/`. The Aug 12 screenshot refinement changed the calendar/athletics height split to 58/40, tightened the masthead, removed repeated event-time text, and lets weekly-priority rows distribute spare Today-panel height for better TV readability. ✓ Resolved — v1 and v2 now both run in production, on separate delivery paths (v1: `index.js` → email + Drive upload; v2: `dashboard-artifact/generator.js` → S3 → Pi).
+- **Dashboard artifact package initialization is now validated (Aug 28, 2026):** The bundled Lambda erased `import.meta.url`, causing `render/first-day-level3.js` to throw `ERR_INVALID_URL` at cold start even though the template already supplied `DASHBOARD_FIRST_DAY_ASSET_DIR`. The loader now honors that environment path, matching the everyday renderer, and `validate-dashboard-artifact-package.mjs` loads the built bundle with all three packaged-directory environment variables so this class of deploy-time startup failure blocks CI before SAM deploy.
+- **NOW/NEXT occurrence identity (Aug 17, 2026):** event candidates are keyed by concrete occurrence (`raw.id + start`), while `raw.recurringEventId` remains source metadata only. Competing candidate types for one occurrence are consolidated before ranking; supporting orientation excludes only the chosen occurrence so later instances of a recurring event remain eligible. Keep these identities separate in future selector changes.
+- **Dashboard Centers are calendar-driven (Aug 2026):** Dashboard v2 renders a compact Monday-Friday kid-facing Centers strip below Weekly Priorities from dated calendar events named `Myles: [Center] (Centers)` / `Ophelia: [Center] (Centers)`. `data/kids-profile.json` supplies reference metadata only (both children now carry a confirmed `centersRotation` with an explicit `phaseConfirmed: true`; Myles's `centersGroup` is 6, Ophelia's is permanently null because numbered groups are Grade 5 only); its rotation sequence must never be advanced to infer dated Centers. The strip shows the current school week Monday-Friday, then rolls to the upcoming school week on Saturday for weekend preparation. The 14-day pull includes seven days of history so the full current week remains available after Monday. Routine Centers entries are excluded from Today/NOW-NEXT and Next Two Weeks. `schoolStrip.centersWeek` supports optional date-scoped `action` cues for bring/do reminders without changing ordinary center cells.
+- **Centers do not create kid-activity conflict flags (Sept 7, 2026):** The event-list filters already kept `Myles: [Center] (Centers)` / `Ophelia: [Center] (Centers)` out of NOW/NEXT and Next Two Weeks, but `computeFlags()` intentionally receives the complete resolved calendar set. Its kid-overlap evaluator therefore compared timed Centers entries as ordinary activities, emitted the amber `activity-overlap` flag, and NOW/NEXT correctly promoted that flag as an unresolved problem. The evaluator now reuses `isRoutineCentersEvent()` to exclude Centers at the conflict boundary. This is deliberately narrower than filtering the shared `resolvedEvents` input: Centers still populate `schoolStrip.centersWeek`, v1 keeps the same shared digest contract, and genuine overlapping Myles/Ophelia activities still flag. Two regression cases in `digest/flags.test.js` cover both directions.
+- **Standing GK training uses settled coverage (Sept 7, 2026):** Weekly GK/goalkeeper training is ordinary calendar context with a known household setup, not an unresolved split-coverage problem. `digest/routineEventPolicy.js` is the shared classifier for common GK, Goalkeeper, and GK Skills Training title forms. The kid-overlap flag evaluator excludes those occurrences, and NOW/NEXT excludes their ordinary imminent/orientation candidates while continuing to surface explicit cancellation, reschedule, move, or other change language. The event stays in the calendar and Coming Up inputs; this is not a builder or renderer filter. Other practices and training remain eligible for existing conflict and NOW/NEXT behavior.
+- **Coming Up is chronological and layout-aware, not prioritized (Aug 30, 2026):** Dashboard v2 applies the established 14-day window, menu/Centers exclusions, deduplication, and consecutive-repeat collapsing, then renders occurrences in time order. The taller one-athletics-card layout targets 14 events; the shorter multi-card layout targets 10. The final visible date is always included whole, so a day's schedule is never split merely to hit the numeric target. It must not priority-rank this panel. When more eligible occurrences remain, it displays their exact count as `+N later in the two-week window`; NOW/NEXT and On the Horizon retain their separate priority selection. Current conditions come from a nearby valid National Weather Service station observation, while forecast highs/lows and precipitation come from the NWS point forecast; retain the station/time label and nearby-station fallback so modeled conditions are not presented as observations.
+- **Dashboard v2 canonical composition (Aug 2026):** NOW/NEXT and the calendar-driven Centers strip are one everyday Dashboard v2, published as the normal `index.html` by `dashboard-artifact/generator.js`. The artifact contract requires both `now-next` and `centers-block` markers, preventing the old events-oriented fallback from being published accidentally. Shadow viewers, sibling `now-next.html` artifacts, and dual-publish machinery are not part of the canonical branch. The legacy v1 Drive dashboard remains only as a rollback path until the consolidated v2 has completed a production soak.
 
 - **A fresh clone or CI runner without a prior `npm install` will show 2 failing tests** — `digest/builder.contract.test.js` and `digest/builder.test.js`, both `ERR_MODULE_NOT_FOUND: google-auth-library` (a declared `package.json` dependency that simply isn't installed yet). Confirmed present on `main` at `fb71388` — not a regression from any recent branch, just what an uninitialized `node_modules` looks like. Run `npm install` first. Flagging so a future session encountering this cold on a fresh checkout doesn't mistake it for a real break.
 - **`TZ=UTC` not yet pinned in test runner** — `dateUtils.test.js` currently validates against the ET dev machine's local timezone, not Lambda's UTC runtime. Recommended follow-up: add `TZ=UTC` to the npm test script so the suite deterministically validates production behavior.
@@ -394,3 +3015,4 @@ Coder mode must keep tests at 430+. If the number changes, the Documenter should
 - **`relay-results-v2.json` has an unmapped `"Girls 18&Under"` / `"Boys 18&Under"` relay ageGroup label — silent match failure in `waves-team-record-check` (found 2026-08-01)**: During the Championship & Season Finale editorial pass, a Championship relay row with `ageGroup: "Girls 18&Under"` was found (24 Girls + 25 Boys rows, all `meetType: "Champs"`; 4 involve WT). This label is outside the documented relay ageGroup set (`Boys/Girls 8&Under`, `9-10`, `11-12`, `13-18`, `9-18`) and is not present in `waves-team-record-check/check.js`'s `RELAY_AGEGRP_MAP` (which only maps the `9-18` → `Open` forms). Any comparison against `waves-team-records.json` for this label silently fails to match — no error, the row is just never considered as a record candidate. **Resolved 2026-08-02 (commit `3b264c4`):** `RELAY_AGEGRP_MAP` now maps `"Girls 18&Under"` → `"Women Open"` and `"Boys 18&Under"` → `"Men Open"`, confirmed correct via an empirical cross-check (WC's Emily Broughton swims the identical unrestricted relay bracket under both label sets across the season, corroborated by 183 swimmers league-wide and a 100%-clean `meetType`-based label split) and reconfirmed by a clean full-season re-run with no regressions. A same-night independent Reviewer pass re-verified all of this from raw data rather than trusting the original self-review, and reached the same conclusion. See also: this fix does not extend to `waves-record-progression`, which has its own, separate, still-open gap — see the Known Open Item below.
 - **No explicit swim-up flag in `league-results-v2.json` / `league-results-history-v2.json` schema — ambiguity resolved from memory, not data (found 2026-08-01)**: During the same editorial pass, Luke Shnowske appears with `age: 12, ageGroup: "Boys 13-14"` at a 2026-07-08 thin-roster makeup meet (PS vs WT) — a genuine swim-up, confirmed only via Wade's own recollection of the meet. Nothing in the row schema distinguishes "swimmer intentionally swam up an age bracket" from "ageGroup mislabeled at entry/parse time" — `age` and `ageGroup` alone are consistent with either explanation. This ambiguity will recur for any swimmer who competes outside their standard age group and there is currently no way to resolve it from the data alone. Consider whether the schema should eventually carry an explicit swim-up flag (e.g. `swimUp: true`) set at entry/parse time, so future occurrences don't require a human memory lookup.
 - **`waves-record-progression/check.js` cannot reconstruct any 2026 relay record progression — no `RELAY_AGEGRP_MAP` equivalent exists at all (found 2026-08-02, via an independent Reviewer pass on commit `3b264c4`)**: A separate, more specific finding than the now-resolved `waves-team-record-check` gap above (see also that entry). Confirmed by reading `waves-record-progression/check.js` directly — unlike `waves-team-record-check`, it builds relay `recordKey` straight from the raw `ageGroup` field with no bridging at all — and by running the script live: the `Women Open | 200m Medley Relay` progression output shows 2024 and 2025 steps but silently omits 2026 entirely, despite WT having swum that event both in-season (`"Girls 9-18"` label) and at the 2026 Championship (`"Girls 18&Under"` label). Any fix is not a simple port of `RELAY_AGEGRP_MAP`, because the two source files disagree on convention for the same conceptual bracket: `relay-results-history-v2.json`'s 2024/2025 Championship rows are already labeled `"Men/Women Open"` directly (no bridging needed, pass through unchanged), while `relay-results-v2.json`'s 2026 Championship rows are labeled `"Girls/Boys 18&Under"` (needs the same bridge `waves-team-record-check` now has). A correct fix has to handle all three cases: regular-season `"9-18"` → `"Open"`, current-season Champs `"18&Under"` → `"Open"`, and historical Champs `"Open"` passed through as-is. **Why this matters going forward, not just retroactively:** before commit `3b264c4`, `waves-team-record-check` and `waves-record-progression` were symmetrically blind to `"18&Under"` rows — both silently skipped them, so their outputs were at least mutually consistent. After `3b264c4`, `waves-team-record-check` correctly evaluates Championship relay rows against the record book, but `waves-record-progression` still can't parse them — a live, asymmetric gap. The next time a relay record is actually broken at a Championship meet, `waves-team-records.json` will correctly show the new holder, but `waves-record-progression`'s printed history for that record will silently skip the very meet that set it. This was surfaced specifically because a same-night independent Reviewer pass was run to double-check `3b264c4`'s same-turn self-review — the original self-review noted this script was "unaffected either way" by the fix and called it "no compound risk," which was true in isolation but missed this system-level consequence. See also: the resolved `waves-team-record-check` entry above.
+- **Routine Anchors: coverage-gap detection and cross-anchor reconciliation not built — deliberately deferred (Aug 2026)**: `digest/routineAnchorsParser.js`'s `getActiveAnchors()` evaluates each anchor independently; nothing examines the *relationship* between two anchors active (or suppressed) on the same day. Concretely, there is no logic to flag a scenario like "school let out early today and Emma isn't on duty yet" — a real gap in coverage that the current model has no way to surface, by design. Wade has explicitly deferred this as a separate, more complex initiative, distinct from Routine Anchors' current scope (matching anchors to dates and suppressing them correctly). The eventual NOW/NEXT decision engine this data layer is meant to feed does not exist yet either — see the Routine Anchors section above for the full architectural framing, what's built, and what's intentionally out of scope.

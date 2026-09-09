@@ -1,0 +1,26 @@
+#!/bin/sh
+set -eu
+candidate="${1:?candidate release directory required}"
+root=/home/pi/moore-dashboard
+case "$candidate" in "$root"/staging/*) ;; *) echo "candidate must be below $root/staging" >&2; exit 2;; esac
+test -f "$candidate/ELIGIBLE"
+test -f "$candidate/index.html"
+test -f "$candidate/release-manifest.json"
+previous="$(readlink -f "$root/current")"
+name="$(basename "$candidate")"
+release="$root/releases/$name"
+if test -e "$release"; then
+  cmp -s "$candidate/release-manifest.json" "$release/release-manifest.json"
+else
+  mv "$candidate" "$release"
+fi
+if test "$previous" = "$release"; then
+  printf '{"event":"dashboard_release_already_current","release":"%s"}\n' "$release"
+  exit 0
+fi
+record="$root/.previous-known-good-next"
+printf '%s\n' "$previous" > "$record"
+ln -s "$release" "$root/.current-next"
+mv -Tf "$root/.current-next" "$root/current"
+mv -Tf "$record" "$root/previous-known-good"
+printf '{"event":"dashboard_release_activated","release":"%s","previous":"%s"}\n' "$release" "$previous"

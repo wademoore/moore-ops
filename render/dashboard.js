@@ -280,8 +280,8 @@ function renderTodayCard(digestData) {
 
   // ── TASKS ─────────────────────────────────────────────────────────────────
   const tasks = today?.tasks || [];
-  const parentTasks  = tasks.filter(t => t.owner !== 'madison');
-  const madisonTasks = tasks.filter(t => t.owner === 'madison');
+  const parentTasks = tasks.filter(t => t.owner !== 'emma');
+  const emmaTasks   = tasks.filter(t => t.owner === 'emma');
 
   if (parentTasks.length) {
     parts.push(`<div class="section-hdr">Tasks</div>`);
@@ -296,13 +296,13 @@ function renderTodayCard(digestData) {
     });
   }
 
-  // Madison tasks — only when something differs from normal routine
-  if (madisonTasks.length) {
+  // Emma tasks — only when something differs from normal routine
+  if (emmaTasks.length) {
     parts.push(`<div class="task-div"></div>`);
-    madisonTasks.forEach(t => {
+    emmaTasks.forEach(t => {
       parts.push(`
 <div class="task-item">
-  <span class="badge ba">MADISON</span>
+  <span class="badge ba">EMMA</span>
   <div class="task-text">${t.text}</div>
 </div>`);
     });

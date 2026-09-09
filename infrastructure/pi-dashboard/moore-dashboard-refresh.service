@@ -1,0 +1,17 @@
+[Unit]
+Description=Validate and atomically activate the latest Moore Dashboard v2 artifact
+After=network-online.target moore-dashboard.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=pi
+Group=pi
+UMask=0077
+ExecStart=/home/pi/moore-dashboard/bin/pull-dashboard-candidate.py --config /home/pi/.config/moore-dashboard/pull-config.json --credentials /home/pi/.config/moore-dashboard/aws-credentials.json --staging-root /home/pi/moore-dashboard/staging --activate-helper /home/pi/moore-dashboard/bin/activate-dashboard-release
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=read-only
+ProtectSystem=strict
+ReadWritePaths=/home/pi/moore-dashboard
+

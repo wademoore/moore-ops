@@ -14,6 +14,7 @@ const FIXTURE = {
       seasonStart: '2026-04-26',
       seasonEnd:   '2026-06-14',
       myTeamAbbr:  'Cowboys',
+      teamName:    'Cowboys',
       teams: [
         { abbr: 'Cowboys', teamName: 'Cowboys' },
         { abbr: 'Chiefs',  teamName: 'Chiefs'  },
@@ -198,5 +199,46 @@ describe('parseFlagFootball', () => {
     assert.ok(result.nextFlagGame !== null, 'nextFlagGame should not be null');
     assert.equal(result.nextFlagGame.friendly, true);
     assert.equal(result.nextFlagGame.opponent, 'AllStars');  // not in teamsMap → falls back to oppAbbr
+  });
+
+  // ── teamName (season-level NFL identity) ───────────────────────────────────
+  // Distinct from teams[].teamName, which is per-opponent. Renderers branch on
+  // exactly one "unknown" value, so every absent form must collapse to null.
+
+  it('teamName is returned from season.teamName when present', () => {
+    const result = parseFlagFootball(FIXTURE, MAY_1, CONFIG);
+    assert.equal(result.teamName, 'Cowboys');
+  });
+
+  it('teamName is null when season.teamName is absent', () => {
+    const noName = { seasons: [{ ...FIXTURE.seasons[0] }] };
+    delete noName.seasons[0].teamName;
+    const result = parseFlagFootball(noName, MAY_1, CONFIG);
+    assert.equal(result.teamName, null);
+  });
+
+  it('teamName is null when season.teamName is explicitly null', () => {
+    const nullName = { seasons: [{ ...FIXTURE.seasons[0], teamName: null }] };
+    assert.equal(parseFlagFootball(nullName, MAY_1, CONFIG).teamName, null);
+  });
+
+  it('teamName is null when season.teamName is empty or whitespace-only', () => {
+    const empty = { seasons: [{ ...FIXTURE.seasons[0], teamName: '' }] };
+    assert.equal(parseFlagFootball(empty, MAY_1, CONFIG).teamName, null);
+
+    const blank = { seasons: [{ ...FIXTURE.seasons[0], teamName: '   ' }] };
+    assert.equal(parseFlagFootball(blank, MAY_1, CONFIG).teamName, null);
+  });
+
+  it('teamName is trimmed — a transcription stray space does not reach renderers', () => {
+    const padded = { seasons: [{ ...FIXTURE.seasons[0], teamName: '  Cowboys  ' }] };
+    assert.equal(parseFlagFootball(padded, MAY_1, CONFIG).teamName, 'Cowboys');
+  });
+
+  it('teams[].teamName is unaffected by the season-level field', () => {
+    // Guards the two fields against being conflated: standings still name opponents.
+    const result = parseFlagFootball(FIXTURE, MAY_1, CONFIG);
+    assert.ok(result.standings.some(r => r.team === 'Chiefs'), 'Chiefs must still appear in standings');
+    assert.equal(result.standings.find(r => r.isMe).team, 'Cowboys');
   });
 });

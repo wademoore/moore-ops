@@ -10,6 +10,7 @@
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
 import {
   renderDashboard,
@@ -45,7 +46,7 @@ function makeEvent(overrides = {}) {
   return {
     title: 'ADP Soccer Practice', subtitle: '6:45 PM · GREEN kit',
     cardType: 'standard', gearReminder: 'GREEN jersey · black shorts',
-    owner: ['madison'], isFlagGame: false, _calName: 'Myles',
+    owner: ['emma'], isFlagGame: false, _calName: 'Myles',
     raw: { start: { dateTime: '2026-05-18T18:45:00' } },
     ...overrides,
   };
@@ -244,32 +245,32 @@ describe('Today card — events, tasks, school, dinner', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Section 5: Madison tasks — divider only shown when present
+// Section 5: Emma tasks — divider only shown when present
 // ---------------------------------------------------------------------------
 
-describe('Madison tasks — divider only shown when present', () => {
-  it('Divider, madison badge, and task text shown when madison tasks present', () => {
-    const withMadisonData = makeDigestData({
+describe('Emma tasks — divider only shown when present', () => {
+  it('Divider, emma badge, and task text shown when emma tasks present', () => {
+    const withEmmaData = makeDigestData({
       days: [{
         date: d('2026-05-18'),
         events: [],
         tasks: [
-          makeTask({ owner: 'wade',    text: 'Drop Myles' }),
-          makeTask({ owner: 'madison', text: 'Pack swim bag' }),
+          makeTask({ owner: 'wade', text: 'Drop Myles' }),
+          makeTask({ owner: 'emma', text: 'Pack swim bag' }),
         ],
         menuEvent: null,
       }],
       menuEvent: null,
       tomorrowMenu: null,
     });
-    const html = renderTodayCard(withMadisonData);
+    const html = renderTodayCard(withEmmaData);
     assert.ok(html.includes('class="task-div"'));
     assert.ok(html.includes('class="badge ba"'));
     assert.ok(html.includes('Pack swim bag'));
   });
 
-  it('Divider absent when no madison tasks', () => {
-    const noMadisonData = makeDigestData({
+  it('Divider absent when no emma tasks', () => {
+    const noEmmaData = makeDigestData({
       days: [{
         date: d('2026-05-18'),
         events: [],
@@ -278,7 +279,7 @@ describe('Madison tasks — divider only shown when present', () => {
       }],
       menuEvent: null, tomorrowMenu: null,
     });
-    assert.ok(!renderTodayCard(noMadisonData).includes('class="task-div"'));
+    assert.ok(!renderTodayCard(noEmmaData).includes('class="task-div"'));
   });
 });
 
@@ -839,5 +840,38 @@ describe('renderSharksCard', () => {
     const inactiveHtml = renderAthleticsCard({ ...BASE_ATHLETICS, sharksActive: false });
     assert.ok(activeHtml.includes('Sharks Soccer'));
     assert.ok(!inactiveHtml.includes('Sharks Soccer'));
+  });
+});
+
+describe('Dashboard v1 compatibility with additive special-event digest fields', () => {
+  // v1 is frozen. These fields are additive to digestData and must reach it as
+  // inert data: the legacy Family Spotlight key, the generalized registry key
+  // that replaced it, and the shared Sharks schedule. All three are asserted
+  // together so a future field rename cannot quietly drop the coverage.
+  const spotlightFields = {
+    familySpotlightConfig: {
+      spotlights: [{
+        id: 'big-sports-saturday-2026-09-12',
+        date: '2026-09-12',
+        activateAt: '2026-09-11T16:00',
+        expireAt: '2026-09-12T17:00',
+        headline: 'BIG SPORTS SATURDAY!',
+        children: [],
+      }],
+    },
+    specialEventsConfig: JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8')),
+    familySpotlight: true,
+    sharksSoccerData: { seasons: [{ divisionSchedule: { matches: [] } }] },
+  };
+
+  it('renders byte-identical v1 output with and without the additive fields', () => {
+    const without = renderDashboard(makeDigestData());
+    const with_ = renderDashboard(makeDigestData(spotlightFields));
+    assert.equal(with_, without);
+  });
+
+  it('never emits Spotlight markup or internal vocabulary in v1', () => {
+    const html = renderDashboard(makeDigestData(spotlightFields));
+    assert.doesNotMatch(html, /data-spotlight-id|spotlight-ordinary|BIG SPORTS SATURDAY/);
   });
 });

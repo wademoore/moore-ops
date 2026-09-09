@@ -42,6 +42,9 @@
  * }
  */
 
+import { isRoutineCentersEvent } from './centersProfile.js';
+import { isStandardCoverageRoutine } from './routineEventPolicy.js';
+
 // ---------------------------------------------------------------------------
 // 1. DATE WINDOW HELPERS
 // ---------------------------------------------------------------------------
@@ -52,6 +55,13 @@
 function ld(str) {
   const [y, m, d] = str.split('-').map(Number);
   return new Date(y, m - 1, d);
+}
+
+function localDateKey(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 /**
@@ -108,7 +118,7 @@ const EVALUATORS = [
       id: 'no-menu-sunday',
       level: 'amber',
       title: '🟡 No Weekly Menu Set',
-      body: 'Walmart grocery delivery order cannot be placed without a menu. Set the menu now and place the order — Madison puts groceries away Monday afternoon.',
+      body: 'Walmart grocery delivery order cannot be placed without a menu. Set the menu now and place the order — Emma puts groceries away Monday afternoon.',
       owner: ['wade', 'robyn'],
       persist: false,
     };
@@ -133,8 +143,13 @@ const EVALUATORS = [
   // Myles and Ophelia have overlapping activities at different locations.
   // Default pattern: Wade takes Myles, Robyn takes Ophelia (Section 6 always-on rule).
   (ctx) => {
-    const mylesEvents  = ctx.resolvedEvents.filter(e => e._calName === 'Myles'   && e.cardType !== 'menu' && e.cardType !== 'info');
-    const opheliaEvents = ctx.resolvedEvents.filter(e => e._calName === 'Ophelia' && e.cardType !== 'menu' && e.cardType !== 'info');
+    const isKidActivity = (event, calendarName) => event._calName === calendarName
+      && event.cardType !== 'menu'
+      && event.cardType !== 'info'
+      && !isRoutineCentersEvent(event)
+      && !isStandardCoverageRoutine(event);
+    const mylesEvents  = ctx.resolvedEvents.filter(event => isKidActivity(event, 'Myles'));
+    const opheliaEvents = ctx.resolvedEvents.filter(event => isKidActivity(event, 'Ophelia'));
 
     // Check for same-day events that have start times (not all-day)
     const mylesTimedEvents   = mylesEvents.filter(e => e.raw?.start?.dateTime);
@@ -407,6 +422,79 @@ const EVALUATORS = [
     return flags.length > 0 ? flags : null;
   },
 
+  // ── Emma unavailability — starts within 14 days, or already in progress ──
+  // Reads ctx.emmaUnavailableBlocks (parsed by digest/emmaUnavailabilityParser.js).
+  // Pure — no I/O. Returns an array so multiple simultaneous in-window blocks
+  // (e.g. a UTA weekend rolling into an annual-tour block) all fire.
+  (ctx) => {
+    const blocks = ctx.emmaUnavailableBlocks;
+    if (!blocks || blocks.length === 0) return null;
+
+    const MONTH_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const formatShort = (date) => `${MONTH_ABBR[date.getMonth()]} ${date.getDate()}`;
+    const formatRange = (start, end) => {
+      if (start.getFullYear() !== end.getFullYear()) {
+        return `${formatShort(start)}, ${start.getFullYear()}–${formatShort(end)}, ${end.getFullYear()}`;
+      }
+      if (start.getMonth() !== end.getMonth()) {
+        return `${formatShort(start)}–${formatShort(end)}`;
+      }
+      return `${formatShort(start)}–${end.getDate()}`;
+    };
+
+    const today = midnight(ctx.today);
+    const flags = [];
+
+    for (const block of blocks) {
+      const start = ld(block.startDate);
+      const end = ld(block.endDate);
+
+      if (end < today) continue; // already ended
+
+      const inProgress = start <= today && today <= end;
+      const daysUntilStart = daysBetween(today, start);
+      if (!inProgress && (daysUntilStart < 0 || daysUntilStart > 14)) continue;
+
+      flags.push({
+        id: block.id,
+        level: 'amber',
+        title: '🟡 Emma Unavailable',
+        body: `Emma unavailable ${formatRange(start, end)} (${block.type}) — confirm coverage.`,
+        // This is useful advance-planning context, but not a NOW/NEXT problem
+        // until the day before it begins. A genuinely current coverage action
+        // belongs in Weekly Priorities instead of promoting the future condition.
+        nowNextEligibleFrom: localDateKey(new Date(start.getFullYear(), start.getMonth(), start.getDate() - 1)),
+        owner: [],
+        persist: false,
+      });
+    }
+
+    return flags.length > 0 ? flags : null;
+  },
+
+  // ── Calendar source unreadable — the digest is incomplete, not empty ─────
+  // Reads ctx.calendarFetchFailures (collected by calendar.js). Red, because
+  // every other flag describes something the digest knows; this one says the
+  // digest does not know, and an absent event is indistinguishable from a
+  // clear day. Nothing downstream can infer this — a calendar that 404s and
+  // one with nothing scheduled both arrive as an empty list.
+  (ctx) => {
+    const failures = ctx.calendarFetchFailures;
+    if (!failures || failures.length === 0) return null;
+
+    const names = failures.map(f => f.calendarName).join(', ');
+    const plural = failures.length === 1;
+
+    return {
+      id: 'calendar-fetch-failure',
+      level: 'red',
+      title: `🔴 Calendar Unreadable — ${failures.length} Source${plural ? '' : 's'} Failed to Load`,
+      body: `${names}. ${plural ? 'This calendar' : 'These calendars'} could not be read this run, so any events on ${plural ? 'it' : 'them'} are missing here — treat ${plural ? 'that source' : 'those sources'} as unknown today, not clear. Reason: ${failures[0].message}.`,
+      owner: ['wade'],
+      persist: false,
+    };
+  },
+
 ];
 
 // ---------------------------------------------------------------------------
@@ -454,7 +542,7 @@ function computeFlags(context) {
  * Filter flags for a specific owner tab.
  *
  * @param {Flag[]} flags
- * @param {'wade'|'robyn'|'madison'} owner
+ * @param {'wade'|'robyn'|'emma'} owner
  * @returns {Flag[]}
  */
 function flagsForOwner(flags, owner) {

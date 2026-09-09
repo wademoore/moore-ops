@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 108" fill="#000">
+  <!-- A restrained trio of bats, drifting at three sizes. Filled silhouettes
+       rather than strokes: at television distance a 2px outline dissolves,
+       while a solid shape still reads as a bat. Transparent ground, used as a
+       CSS mask so the trio takes the active theme's brush tone from the
+       stylesheet. Each bat is written out rather than referenced, because an
+       SVG loaded as a CSS image runs in a restricted document mode and a
+       fragment reference is not worth depending on there. Decorative only -
+       never a semantic mark, never an official logo. -->
+  <g transform="translate(150 8) scale(0.9)">
+    <path d="M53 18C44 6 30 2 14 6c8 6 6 14-2 20 14-2 22 4 28 14 2-10 7-16 13-14z"/>
+    <path d="M67 18C76 6 90 2 106 6c-8 6-6 14 2 20-14-2-22 4-28 14-2-10-7-16-13-14z"/>
+    <path d="M60 9c5 0 8 6 8 13s-3 14-8 14-8-7-8-14 3-13 8-13z"/>
+    <path d="M55 12l-1-9 6 6z"/><path d="M65 12l1-9-6 6z"/>
+  </g>
+  <g transform="translate(76 44) scale(0.66)">
+    <path d="M53 18C44 6 30 2 14 6c8 6 6 14-2 20 14-2 22 4 28 14 2-10 7-16 13-14z"/>
+    <path d="M67 18C76 6 90 2 106 6c-8 6-6 14 2 20-14-2-22 4-28 14-2-10-7-16-13-14z"/>
+    <path d="M60 9c5 0 8 6 8 13s-3 14-8 14-8-7-8-14 3-13 8-13z"/>
+    <path d="M55 12l-1-9 6 6z"/><path d="M65 12l1-9-6 6z"/>
+  </g>
+  <g transform="translate(8 72) scale(0.5)">
+    <path d="M53 18C44 6 30 2 14 6c8 6 6 14-2 20 14-2 22 4 28 14 2-10 7-16 13-14z"/>
+    <path d="M67 18C76 6 90 2 106 6c-8 6-6 14 2 20-14-2-22 4-28 14-2-10-7-16-13-14z"/>
+    <path d="M60 9c5 0 8 6 8 13s-3 14-8 14-8-7-8-14 3-13 8-13z"/>
+    <path d="M55 12l-1-9 6 6z"/><path d="M65 12l1-9-6 6z"/>
+  </g>
+</svg>

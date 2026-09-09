@@ -7,7 +7,8 @@
  */
 
 import { buildDigest, generateTasks } from './builder.js';
-import { isSchoolDay } from './schoolRotation.js';
+import { attachFetchFailures } from '../calendar.js';
+import { isSchoolDay, getRotation } from './schoolRotation.js';
 import { startOfTodayET } from './dateUtils.js';
 import { FIXTURE_CONFIG } from '../test/fixtures/sports-config.fixture.js';
 
@@ -245,6 +246,7 @@ const SPORTS_PARAMS = {
   swimResults:      [],
   wavesSeasonData:  FIXTURE_WAVES,
   vpsuRankings:     null,
+  routineAnchorsData: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -298,6 +300,79 @@ assert(Array.isArray(dig.upcomingEvents),             'upcomingEvents is array')
 assert(typeof dig.athletics === 'object',            'athletics is object');
 assert(Array.isArray(dig.activityComms),             'activityComms is array');
 assert(dig.nationalsData === null,                   'nationalsData null (set by index.js)');
+
+// Additive Dashboard v2 special-event inputs. SPORTS_PARAMS injects neither,
+// so these prove buildDigest still loads them from disk — the failure mode the
+// packaging test exists to prevent, observed from the builder's own side.
+assert(dig.specialEventsConfig && dig.specialEventsConfig.schemaVersion === 2,
+                                                     'specialEventsConfig loaded from data/special-events.json');
+assert(Array.isArray(dig.specialEventsConfig.treatments),
+                                                     'specialEventsConfig carries a treatments array');
+assert(dig.sharksSoccerData && Array.isArray(dig.sharksSoccerData.seasons),
+                                                     'sharksSoccerData surfaced for fixture joins');
+assert('familySpotlightConfig' in dig,                'familySpotlightConfig retained for the migration window');
+assert(dig.familySpotlightConfig && Array.isArray(dig.familySpotlightConfig.spotlights),
+                                                     'familySpotlightConfig carries a spotlights array');
+// The projection covers only what a legacy Family Spotlight could express —
+// enabled, ready, feature-slot, spotlight-children-v1 — and omits rather than
+// approximates anything else. Comparing against that subset rather than
+// against the whole registry is what keeps this a "one source" assertion now
+// that the registry also carries event-row accents, which have no legacy form.
+const legacyExpressible = dig.specialEventsConfig.treatments.filter(entry =>
+  entry.enabled === true && entry.status === 'ready'
+  && entry.level === 'spotlight' && entry.surface === 'feature-slot'
+  && entry.presentation?.renderer === 'spotlight-children-v1');
+assert(legacyExpressible.length > 0,                 'the registry still carries a legacy-expressible spotlight');
+assert(dig.familySpotlightConfig.spotlights.length === legacyExpressible.length,
+                                                     'the compatibility key projects the same registry, not a second source');
+assert(dig.familySpotlightConfig.spotlights.every((spotlight, index) => spotlight.id === legacyExpressible[index].id),
+                                                     'the compatibility key is derived from special-events.json');
+assert(!dig.familySpotlightConfig.spotlights.some(spotlight =>
+  dig.specialEventsConfig.treatments.some(entry => entry.id === spotlight.id && entry.level === 'accent')),
+                                                     'the compatibility key never approximates an accent as a spotlight');
+
+const digInjectedRegistry = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, banner: null,
+  ...SPORTS_PARAMS,
+  specialEventsData: { schemaVersion: 2, treatments: [] },
+});
+assert(digInjectedRegistry.specialEventsConfig.treatments.length === 0,
+                                                     'an injected registry is respected over the disk read');
+assert(digInjectedRegistry.familySpotlightConfig.spotlights.length === 0,
+                                                     'the compatibility key follows the injected registry, never the frozen oracle');
+
+const digNullRegistry = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, banner: null,
+  ...SPORTS_PARAMS,
+  specialEventsData: null,
+});
+assert(digNullRegistry.specialEventsConfig === null,  'an explicit null registry is respected as-is');
+assert(digNullRegistry.familySpotlightConfig === null, 'the compatibility key is null when there is no registry');
+
+// A projection failure must degrade the compatibility key alone. The registry
+// that parses but explodes when walked cannot come from JSON — that is the
+// point: the guard must not depend on the input path being well behaved.
+const explosiveRegistry = { schemaVersion: 2, treatments: [] };
+Object.defineProperty(explosiveRegistry, 'treatments', {
+  enumerable: true,
+  get() { throw new Error('projection blew up'); },
+});
+let digExplosive = null;
+try {
+  digExplosive = await buildDigest({
+    rawEvents: [], emails: [], docs: {}, banner: null,
+    ...SPORTS_PARAMS,
+    specialEventsData: explosiveRegistry,
+  });
+} catch (error) {
+  digExplosive = { __threw: error.message };
+}
+assert(!digExplosive.__threw,                        'a projection failure must not fail buildDigest');
+assert(digExplosive.familySpotlightConfig === null,  'a failed projection degrades the compatibility key to null');
+assert(digExplosive.specialEventsConfig === explosiveRegistry,
+                                                     'specialEventsConfig survives a projection failure untouched');
+assert(Array.isArray(digExplosive.days) && digExplosive.days.length === 3,
+                                                     'the rest of the digest is generated normally');
 assert(dig.banner === null,                          'banner null when not provided');
 
 // Day 0 (today)
@@ -336,6 +411,10 @@ assert(dig.activityComms.some(l => /dance|studio/i.test(l)), 'Dance studio line 
 // School strip
 assert(dig.schoolStrip != null,                      'schoolStrip present');
 assert(typeof dig.schoolStrip.myles === 'object',    'schoolStrip.myles is object');
+
+// Routine anchors (Phase 1) — routineAnchorsData: null in SPORTS_PARAMS, so no anchors active
+assert(Array.isArray(dig.routineAnchorsToday),       'routineAnchorsToday is array');
+assert(dig.routineAnchorsToday.length === 0,         'routineAnchorsToday empty when routineAnchorsData is null');
 
 // Tasks
 assert(day0.tasks.length > 0,                        'Tasks generated for today');
@@ -380,10 +459,14 @@ function makeResolvedEvent(overrides = {}) {
 const emptyStrip = { myles: { warningText: null }, ophelia: { warningText: null } };
 
 // Hardcoded dates that satisfy known isSchoolDay() rules
-const SUNDAY   = new Date(2026, 4, 17); // May 17 2026 — Sunday (dow 0)
-const MONDAY   = new Date(2026, 4, 18); // May 18 2026 — Monday, school day
-const TUESDAY  = new Date(2026, 4, 19); // May 19 2026 — Tuesday, school day
-const SATURDAY = new Date(2026, 4, 23); // May 23 2026 — Saturday, no school
+// Moved from May 2026 to Sep 2026 when the school year was corrected to
+// 2026-27: generateTasks() gates backpack tasks on isSchoolDay(), and May 2026
+// now falls outside the configured year, so the old dates silently stopped
+// being school days.
+const SUNDAY   = new Date(2026, 8, 13); // Sep 13 2026 — Sunday (dow 0)
+const MONDAY   = new Date(2026, 8, 14); // Sep 14 2026 — Monday, school day
+const TUESDAY  = new Date(2026, 8, 15); // Sep 15 2026 — Tuesday, school day
+const SATURDAY = new Date(2026, 8, 19); // Sep 19 2026 — Saturday, no school
 
 section('generateTasks — Sunday trash');
 assert( generateTasks([], SUNDAY,  emptyStrip).some(t => t.text === 'Put trash bins out'), 'Sunday → trash bin task');
@@ -394,16 +477,16 @@ section('generateTasks — school day vs. weekend tasks');
 assert(!generateTasks([], SATURDAY, emptyStrip).some(t => /lunches/.test(t.text)), 'Saturday → no lunch-prep task');
 
 section('generateTasks — backpack warnings');
-const mylesWarn   = '⚠ Pack library book this morning (Myles — Library today)';
-const opheliaWarn = '⚠ Pack library book this morning (Ophelia — Library today)';
+const mylesWarn   = '⚠ Pack library book this morning (Myles — Media today)';
+const opheliaWarn = '⚠ Pack library book this morning (Ophelia — Media today)';
 assert( generateTasks([], MONDAY, { myles: { warningText: mylesWarn },   ophelia: { warningText: null } }).some(t => t.text === mylesWarn),   'Myles warningText → backpack task');
 assert( generateTasks([], MONDAY, { myles: { warningText: null },        ophelia: { warningText: opheliaWarn } }).some(t => t.text === opheliaWarn), 'Ophelia warningText → backpack task');
 assert(!generateTasks([], MONDAY, emptyStrip).some(t => t.time === 'Before work'),                                                           'No warnings → no Before-work tasks');
 
-section('generateTasks — bag prep (Madison owner)');
-const madisonGearEv = makeResolvedEvent({ title: 'Dance Class', owner: ['madison'], gearReminder: 'tap shoes · jazz shoes' });
+section('generateTasks — bag prep (Emma owner)');
+const emmaGearEv = makeResolvedEvent({ title: 'Dance Class', owner: ['emma'], gearReminder: 'tap shoes · jazz shoes' });
 const wadeGearEv    = makeResolvedEvent({ title: 'Dance Class', owner: ['wade'],    gearReminder: 'tap shoes · jazz shoes' });
-assert( generateTasks([madisonGearEv], TUESDAY, emptyStrip).some(t => t.owner === 'madison' && /Pack bag/.test(t.text)), 'Madison + gearReminder → bag-prep task');
+assert( generateTasks([emmaGearEv], TUESDAY, emptyStrip).some(t => t.owner === 'emma' && /Pack bag/.test(t.text)), 'Emma + gearReminder → bag-prep task');
 assert(!generateTasks([wadeGearEv],   TUESDAY, emptyStrip).some(t => /Pack bag/.test(t.text)),                         'Wade owner + gearReminder → no bag-prep task');
 
 section('generateTasks — coaching tasks (flag game)');
@@ -468,6 +551,93 @@ const cResult   = await buildDigest({ rawEvents: [], rawEvents14d: [routineEv, r
 assert(!cResult.upcomingEvents.some(e => /PE Day/.test(e.title)),      'Routine calendar event absent from upcomingEvents');
 assert( cResult.upcomingEvents.some(e => /Team Cookout/.test(e.title)), 'Non-routine event present in upcomingEvents');
 
+section('buildDigest — routineAnchorsToday wiring (Phase 1)');
+const todayDow = startOfTodayET().getDay();
+const matchingAnchor = {
+  id: 'school-weekday', appliesTo: ['Myles', 'Ophelia'], label: 'School',
+  weekdays: [todayDow], effectiveStart: isoDate(-1), effectiveEnd: isoDate(1),
+  arrivalTime: '07:30', endTime: '15:49',
+};
+const nonMatchingAnchor = { ...matchingAnchor, id: 'wrong-weekday', weekdays: [(todayDow + 1) % 7] };
+
+const raResult = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor] },
+});
+assert(raResult.routineAnchorsToday.length === 1,               'Matching anchor appears in routineAnchorsToday');
+assert(raResult.routineAnchorsToday[0].id === 'school-weekday',  'Correct anchor id threaded through');
+
+const raNoMatch = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [nonMatchingAnchor] },
+});
+assert(raNoMatch.routineAnchorsToday.length === 0, 'Anchor for a different weekday does not appear today');
+
+section('buildDigest — routineAnchorsToday suppressed by 🏫 Family-calendar exception (Phase 2)');
+const noSchoolTodayEvent = {
+  summary: '🏫 No School — Test Holiday', calendarName: 'Family',
+  start: { date: isoDate(0) }, end: { date: isoDate(1) },
+};
+const earlyReleaseTodayEvent = {
+  summary: '🏫 Early Release — Test', calendarName: 'Family',
+  start: { date: isoDate(0) }, end: { date: isoDate(1) },
+};
+const firstDayTodayEvent = {
+  summary: '🏫 First Day of School (Myles and Ophelia)', calendarName: 'Family',
+  start: { date: isoDate(0) }, end: { date: isoDate(1) },
+};
+
+const raSuppressedNoSchool = await buildDigest({
+  rawEvents: [noSchoolTodayEvent], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor] },
+});
+assert(raSuppressedNoSchool.routineAnchorsToday.length === 0, '🏫 No School today suppresses the anchor');
+
+const raSuppressedEarlyRelease = await buildDigest({
+  rawEvents: [earlyReleaseTodayEvent], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor] },
+});
+assert(raSuppressedEarlyRelease.routineAnchorsToday.length === 0, '🏫 Early Release today suppresses the anchor');
+
+const raNotSuppressedFirstDay = await buildDigest({
+  rawEvents: [firstDayTodayEvent], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor] },
+});
+assert(raNotSuppressedFirstDay.routineAnchorsToday.length === 1, '🏫 First Day of School does NOT suppress the anchor');
+
+section('buildDigest — school and Emma anchors coexist independently (caregiver suppression)');
+const emmaAnchor = {
+  id: 'emma-weekday', appliesTo: ['Myles', 'Ophelia'], caregiver: 'Emma', label: 'Emma',
+  weekdays: [todayDow], effectiveStart: isoDate(-30), effectiveEnd: null,
+  arrivalTime: '13:00', endTime: '18:00',
+};
+const emmaUnavailableTodayBlock = { id: 'test-block', type: 'UTA (Reserve)', startDate: isoDate(0), endDate: isoDate(0) };
+
+const bothActive = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor, emmaAnchor] },
+  emmaUnavailableBlocks: [],
+});
+assert(bothActive.routineAnchorsToday.length === 2,                                       'Both school and Emma anchors appear when neither is suppressed');
+assert(bothActive.routineAnchorsToday.some(a => a.id === 'school-weekday'),               'School anchor present when both active');
+assert(bothActive.routineAnchorsToday.some(a => a.id === 'emma-weekday'),                 'Emma anchor present when both active');
+
+const emmaSuppressedOnly = await buildDigest({
+  rawEvents: [], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor, emmaAnchor] },
+  emmaUnavailableBlocks: [emmaUnavailableTodayBlock],
+});
+assert(emmaSuppressedOnly.routineAnchorsToday.length === 1,                               'Only one anchor appears when Emma is unavailable today');
+assert(emmaSuppressedOnly.routineAnchorsToday[0].id === 'school-weekday',                 'School anchor unaffected by Emma unavailability suppression');
+
+const schoolSuppressedOnly = await buildDigest({
+  rawEvents: [noSchoolTodayEvent], emails: [], docs: {}, ...SPORTS_PARAMS,
+  routineAnchorsData: { anchors: [matchingAnchor, emmaAnchor] },
+  emmaUnavailableBlocks: [],
+});
+assert(schoolSuppressedOnly.routineAnchorsToday.length === 1,                             'Only one anchor appears when school is suppressed by 🏫 No School today');
+assert(schoolSuppressedOnly.routineAnchorsToday[0].id === 'emma-weekday',                 'Emma anchor unaffected by school-calendar suppression');
+
 section('buildDigest — menu event routing (today)');
 const menuRaw14  = { summary: 'Spaghetti Bolognese', calendarName: 'Menu', start: { date: isoDate(0) } };
 const activityRaw = { summary: 'ADP Practice',       calendarName: 'Myles', start: { dateTime: isoDateTime(0, 18) } };
@@ -520,6 +690,272 @@ describe('builder.test.js date-helper regression — disagreement-window timesta
     } finally {
       mock.timers.reset();
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Calendar fetch failures — end-to-end plumbing
+//
+// calendar.js attaches the failure list to the event array it returns;
+// buildDigest has to carry that through to digestData and into computeFlags,
+// or a dead calendar goes back to looking like a quiet day.
+// ---------------------------------------------------------------------------
+
+describe('buildDigest — calendar fetch failures', () => {
+  const FAILURE = {
+    calendarName: 'WJCC Schools',
+    calendarId: 'o3oasbc616bhijsqn80a58jo7a40lrl2@import.calendar.google.com',
+    message: 'The requested event could not be found or has been deleted.',
+  };
+
+  const withFailures = (events, failures) => attachFetchFailures(events, failures);
+
+  it('defaults to an empty list when the event arrays carry nothing', async () => {
+    const result = await buildDigest({ rawEvents: [], emails: [], docs: {}, banner: null, ...SPORTS_PARAMS });
+    nodeAssert.deepEqual(result.calendarFetchFailures, []);
+    nodeAssert.equal(result.flags.find(f => f.id === 'calendar-fetch-failure'), undefined);
+  });
+
+  it('reads failures off the 72h event array and exposes them on digestData', async () => {
+    const result = await buildDigest({
+      rawEvents: withFailures([], [FAILURE]),
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+    });
+    nodeAssert.equal(result.calendarFetchFailures.length, 1);
+    nodeAssert.equal(result.calendarFetchFailures[0].calendarName, 'WJCC Schools');
+  });
+
+  it('raises the red flag so an unreadable calendar is not read as a clear day', async () => {
+    const result = await buildDigest({
+      rawEvents: withFailures([], [FAILURE]),
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+    });
+    const flag = result.flags.find(f => f.id === 'calendar-fetch-failure');
+    nodeAssert.ok(flag, 'expected the calendar-fetch-failure flag');
+    nodeAssert.equal(flag.level, 'red');
+    nodeAssert.match(flag.body, /WJCC Schools/);
+  });
+
+  it('merges and dedupes failures across the 72h and 14d pulls', async () => {
+    const other = { calendarName: 'Menu', calendarId: 'menu@group', message: 'Not Found' };
+    const result = await buildDigest({
+      rawEvents:    withFailures([], [FAILURE]),
+      rawEvents14d: withFailures([], [FAILURE, other]),
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+    });
+    nodeAssert.deepEqual(
+      result.calendarFetchFailures.map(f => f.calendarName),
+      ['Menu', 'WJCC Schools'],
+    );
+  });
+
+  it('respects an explicitly injected list over whatever the arrays carry', async () => {
+    const result = await buildDigest({
+      rawEvents: withFailures([], [FAILURE]),
+      calendarFetchFailures: [],
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+    });
+    nodeAssert.deepEqual(result.calendarFetchFailures, []);
+    nodeAssert.equal(result.flags.find(f => f.id === 'calendar-fetch-failure'), undefined);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Day-specific prep tasks belong to the day they are owed on
+//
+// This closes the general gap named by the Known-open-item entry that sent us
+// here, in its own words: "nothing asserts task-list contents across the
+// window". Nothing in this suite looked past days[0].tasks, so builder.js
+// could hand one today-strip to all three days of the 72h window and stay
+// green — which it did, shipping a stale prep row on 24.5% of school-year
+// mornings while the items those days genuinely owed never appeared.
+//
+// The sweep below is deliberately GENERIC rather than a reproduction of the
+// baritone row that exposed the defect. It compares each day's emitted prep
+// rows against an oracle derived from schoolRotation.getRotation(), so it
+// fails for ANY day-specific prep item landing on ANY wrong day, in either
+// direction — a row emitted that is not owed, or a row owed that is not
+// emitted. The specific Oct 21 instance is pinned separately below, and that
+// one IS an independent oracle: it asserts literal strings.
+//
+// Two honest limits on what the sweep proves, stated rather than implied.
+// (1) It is a DATE-THREADING oracle, not a content oracle: it calls the same
+//     getRotation()/isSchoolDay() that the code under test reaches, so a
+//     defect inside schoolRotation.js moves both sides together and passes
+//     here. That module carries its own 71-test suite; this one guards the
+//     threading of dates through builder.js, which is where the defect was.
+// (2) It asserts each day's rows are consistent with that day's `day.date`,
+//     not that `day.date` is itself the right date. A wrong window would move
+//     the oracle with it. digest/builder.contract.test.js covers the window's
+//     shape; this file does not, and should not be read as if it did.
+//
+// Only render/email.js renders days beyond days[0]; the dashboards and
+// NOW/NEXT read days[0] alone. So these assertions are the only guard over
+// the two day blocks where this defect was visible.
+// ---------------------------------------------------------------------------
+describe('buildDigest — day-specific prep tasks belong to the day they are owed on', () => {
+  const PREP_TIME = 'Before work';
+
+  // Oracle. Derived from schoolRotation directly, not from anything on the
+  // buildDigest path, so a defect that changed both sides identically cannot
+  // pass. Returns the prep rows `date` genuinely owes, sorted.
+  const owedOn = date => (
+    isSchoolDay(date)
+      ? ['myles', 'ophelia'].map(s => getRotation(s, date).warningText).filter(Boolean)
+      : []
+  ).sort();
+
+  // 'Before work' is exactly and only the backpack block's label today
+  // (digest/generateTasks.js is its sole emitter). If a third task ever adopts
+  // it, this filter silently widens and the sweep starts asserting more than it
+  // means to; if the backpack rows move to a different label, it fails loudly,
+  // which is the safe direction.
+  const emittedOn = day =>
+    (day.tasks || []).filter(t => t.time === PREP_TIME).map(t => t.text).sort();
+
+  const label = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
+  // Noon ET on the given calendar date — comfortably clear of the ≥8 PM ET
+  // rollover window startOfTodayET() exists to handle, so the anchor buildDigest
+  // resolves is unambiguously the date we intend.
+  const noonEtOn = d => new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 16, 0, 0));
+
+  // Oct 5–30 2026 covers every shape a 72h window can take: Media days for
+  // each child, Myles's Music (baritone) days, the Media→Music adjacency on
+  // Oct 20→21, both Saturdays and Sundays, and the Mon Oct 12 Student Holiday
+  // closure — so windows that open on a closed day, close on one, and straddle
+  // one are all represented, as are windows owing nothing at all.
+  // Built from calendar day-of-month rather than by adding 86400000 ms. The
+  // ANCHORS (Oct 5-30 2026) hold no DST transition, so both forms agree today.
+  // Note the days ASSERTED run one further, to Nov 1 — which is the fallback
+  // date; it is a Sunday owing nothing, so nothing turns on it, but that is one
+  // day of margin. A ms step silently drifts an hour and mislabels a day once a
+  // range crosses a transition, and date threading is the whole point here.
+  const SWEEP = [];
+  for (let dom = 5; dom <= 30; dom++) SWEEP.push(new Date(2026, 9, dom));
+
+  // buildDigest under a pinned clock. Every caller below needs the same three
+  // things — mock, build, always reset — and a missed reset leaks into the rest
+  // of the suite, so it is written once.
+  const digestOn = async anchor => {
+    mock.timers.enable({ apis: ['Date'], now: noonEtOn(anchor) });
+    try {
+      return await buildDigest({
+        rawEvents: [], rawEvents14d: [], emails: [], docs: {}, banner: null,
+        // Injected rather than left undefined: undefined triggers a live
+        // calendar read, and this block builds 29 digests (26 in the sweep
+        // plus three singles) — 29 real Google calls on any machine that
+        // happens to have credentials.json. [] is the same value the failed
+        // fetch degrades to in this sandbox.
+        emmaUnavailableBlocks: [], ...SPORTS_PARAMS,
+      });
+    } finally {
+      mock.timers.reset();
+    }
+  };
+
+  it('emits exactly the prep rows each day of the 72h window owes, across a 26-morning sweep', async () => {
+    let checkedDays = 0;
+    let daysOwingSomething = 0;
+
+    for (const anchor of SWEEP) {
+      const result = await digestOn(anchor);
+
+      nodeAssert.equal(result.days.length, 3, `${label(anchor)}: expected a 3-day window`);
+
+      for (const day of result.days) {
+        const owed = owedOn(day.date);
+        nodeAssert.deepEqual(
+          emittedOn(day),
+          owed,
+          `digest generated ${label(anchor)} — prep rows under ${label(day.date)} must be exactly what that day owes`,
+        );
+        checkedDays++;
+        if (owed.length) daysOwingSomething++;
+      }
+    }
+
+    // Guards the sweep itself: an oracle that quietly returned [] everywhere,
+    // or a window that stopped containing school days, would make every
+    // deepEqual above pass while asserting nothing.
+    nodeAssert.equal(checkedDays, SWEEP.length * 3, 'every day of every window must be checked');
+    // Measured on this range: 26 of the 78 days owe a prep row. Pinned exactly
+    // rather than as a loose floor — a floor of 10 would still pass with two
+    // thirds of the sweep gone, which is the failure mode this guard exists for.
+    nodeAssert.equal(daysOwingSomething, 26, `sweep must keep exercising real prep rows, saw ${daysOwingSomething}`);
+  });
+
+  // ── The two cross-day interactions this fix CREATES ─────────────────────
+  //
+  // Both were found by review, not by the tests, and both are consequences of
+  // days 1 and 2 finally carrying their own items. Neither is a regression and
+  // neither is wrong, but leaving them unremarked is how a documented rationale
+  // and its shipped behaviour drift apart — so they are pinned here as stated,
+  // guarded properties rather than left as incidental output.
+
+  // S1. digest/schoolRotation.js deliberately declines to warn the night before
+  // a Music day, because Myles's Media day is the school day immediately before
+  // it and a second packing item would land on the morning already carrying his
+  // library book. Per-day strips mean the baritone row now appears in the SAME
+  // EMAIL as the library-book row on all 25 of his school-day Music-eves.
+  //
+  // That is not the thing that was rejected, and the difference is the whole
+  // reason this is a test rather than a revert: what was rejected was a
+  // Tuesday-morning "pack the baritone tonight" nudge on Tuesday's own line.
+  // What ships is Wednesday's item under Wednesday's own day header, in a
+  // three-day lookahead. One adds an action to a crowded morning; the other
+  // states what a later day owes. The rejection still stands for the
+  // tomorrowWarnings channel, which remains empty of instrument warnings.
+  it('shows Myles\'s library book on his Media day and his baritone under the NEXT day, in one email', async () => {
+    const result = await digestOn(new Date(2026, 9, 20)); // Tue Oct 20 2026
+    const [tue, wed] = result.days;
+
+    nodeAssert.deepEqual(emittedOn(tue), ['⚠ Pack library book this morning (Myles — Media today)']);
+    nodeAssert.deepEqual(emittedOn(wed), ['⚠ Pack baritone this morning (Myles — Music today)']);
+
+    // The rejected channel stays rejected: no instrument warning the night before.
+    nodeAssert.equal(
+      result.schoolStrip.tomorrowWarnings.some(w => /baritone|instrument|Music/i.test(w)),
+      false,
+      'tomorrowWarnings must still carry no instrument warning',
+    );
+  });
+
+  // S2. When tomorrow is a Media day the school strip already says "pack the
+  // library book tonight", and the day-1 block now also carries that child's
+  // own "pack library book this morning" row. One action, two channels, one
+  // email — on 59 mornings a year. Kept deliberately: they are different
+  // instructions at different times (pack it tonight vs. it is needed that
+  // morning), and suppressing the day-1 row would put back the false negative
+  // this whole change removes. Pinned so the duplication is a decision.
+  it('lets the night-before strip line and the next day\'s own row coexist', async () => {
+    const result = await digestOn(new Date(2026, 9, 19)); // Mon Oct 19 2026
+
+    nodeAssert.ok(
+      result.schoolStrip.tomorrowWarnings.includes('Tomorrow: Myles has Media — pack library book tonight'),
+      'the night-before strip line must still fire',
+    );
+    nodeAssert.deepEqual(
+      emittedOn(result.days[1]),
+      ['⚠ Pack library book this morning (Myles — Media today)'],
+      'and the next day must still carry its own row',
+    );
+  });
+
+  // The specific instance recorded in the Known-open-item entry, pinned so the
+  // exact reported symptom cannot come back even if the sweep is ever narrowed.
+  it('does not repeat Wednesday\'s baritone row under Thursday and Friday (the reported Oct 21 2026 case)', async () => {
+    const result = await digestOn(new Date(2026, 9, 21));
+    const [wed, thu, fri] = result.days;
+
+    nodeAssert.deepEqual(emittedOn(wed), ['⚠ Pack baritone this morning (Myles — Music today)'],
+      'Wed Oct 21 is Myles\'s Music day and owes the baritone row');
+    nodeAssert.deepEqual(emittedOn(thu), [],
+      'Thu Oct 22 is neither a Media nor a Music day and owes nothing');
+    // The false-negative half of the same defect: Friday is Ophelia's Media
+    // day, and her row used to be displaced by Wednesday's stale baritone row.
+    nodeAssert.deepEqual(emittedOn(fri), ['⚠ Pack library book this morning (Ophelia — Media today)'],
+      'Fri Oct 23 is Ophelia\'s Media day and owes her library-book row');
   });
 });
 

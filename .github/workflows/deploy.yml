@@ -54,7 +54,10 @@ jobs:
             --exclude "test/*" \
             --exclude "logs/*" \
             --exclude "run-digest.bat" \
-            --exclude "*.log"
+            --exclude "*.log" \
+            --exclude "render/assets-first-day/*" \
+            --exclude "render/assets-v2/*" \
+            --exclude "docs/*"
 
       - name: Deploy to Lambda
         run: |

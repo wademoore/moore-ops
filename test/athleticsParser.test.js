@@ -18,6 +18,7 @@ const FIXTURE_FLAG_FOOTBALL = {
       seasonStart: '2026-04-26',
       seasonEnd:   '2026-06-14',
       myTeamAbbr:  'Cowboys',
+      teamName:    'Cowboys',
       teams: [
         { abbr: 'Cowboys', teamName: 'Cowboys' },
         { abbr: 'Chiefs',  teamName: 'Chiefs'  },
@@ -200,6 +201,22 @@ describe('parseAthleticsDoc — coordinator', () => {
   it('seasonRecord is derived from flagFootballParser', () => {
     const result = parseAthleticsDoc(IN_SEASON_FF, FIXTURE_CONFIG, FIXTURE_FLAG_FOOTBALL, {}, []);
     assert.equal(result.seasonRecord, '3-0');
+  });
+
+  it('flagTeamName flows through from flagFootballParser', () => {
+    const result = parseAthleticsDoc(IN_SEASON_FF, FIXTURE_CONFIG, FIXTURE_FLAG_FOOTBALL, {}, []);
+    assert.equal(result.flagTeamName, 'Cowboys');
+  });
+
+  it('flagTeamName is null when the season carries no NFL team name', () => {
+    const noName = { seasons: [{ ...FIXTURE_FLAG_FOOTBALL.seasons[0], teamName: null }] };
+    const result = parseAthleticsDoc(IN_SEASON_FF, FIXTURE_CONFIG, noName, {}, []);
+    assert.equal(result.flagTeamName, null);
+  });
+
+  it('buildEmptyAthletics has flagTeamName null — never a fabricated team identity', () => {
+    assert.equal(buildEmptyAthletics().flagTeamName, null);
+    assert.ok('flagTeamName' in buildEmptyAthletics(), 'key must be present, not merely undefined');
   });
 
   it('hasGameThisWeek is false (set by builder, not parser)', () => {

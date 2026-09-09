@@ -1,0 +1,30 @@
+import { cp, mkdtemp, readFile, readdir, stat, writeFile } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+const root=resolve(new URL('..',import.meta.url).pathname.replace(/^\/(?:([A-Za-z]:))/, '$1'));
+const template=JSON.parse(await readFile(join(root,'infrastructure/sports-live-refresh/template.json'),'utf8'));
+const fn=template.Resources.SportsFunction.Properties,handler=String(fn.Handler).split('.');
+if(fn.Runtime!=='nodejs22.x'||JSON.stringify(fn.Architectures)!=='["arm64"]')throw new Error('runtime/architecture mismatch');
+if(handler[0]!=='sports/lambda'||handler[1]!=='handler')throw new Error('template handler mismatch');
+if(template.Parameters.AllowedOrigins?.Type!=='String'||fn.Environment.Variables.SPORTS_ALLOWED_ORIGINS?.Ref!=='AllowedOrigins')throw new Error('exact-origin CORS parameter mismatch');
+const temp=await mkdtemp(join(tmpdir(),'sports-lambda-package-'));
+await cp(join(root,'sports'),join(temp,'sports'),{recursive:true});
+const dependency='3.1111.0';
+await cp(join(root,'package.json'),join(temp,'package.json'));
+await cp(join(root,'package-lock.json'),join(temp,'package-lock.json'));
+const npmArgs=['ci','--omit=dev','--ignore-scripts','--no-audit','--no-fund'];
+if(process.platform==='win32')execFileSync(process.env.ComSpec||'C:\\Windows\\System32\\cmd.exe',['/d','/s','/c','npm ci --omit=dev --ignore-scripts --no-audit --no-fund'],{cwd:temp,stdio:'pipe'});
+else execFileSync('npm',npmArgs,{cwd:temp,stdio:'pipe'});
+const installedSdk=JSON.parse(await readFile(join(temp,'node_modules/@aws-sdk/client-s3/package.json'),'utf8'));
+if(installedSdk.version!==dependency)throw new Error(`installed SDK ${installedSdk.version} does not match ${dependency}`);
+const files=['lambda.js','s3-store.js','live-refresh.js','index.js','model.js','providers/espn.js','providers/mlb.js'];
+for(const file of files){const text=await readFile(join(temp,'sports',file),'utf8');if(/[A-Za-z]:\\/.test(text))throw new Error(`Windows path in ${file}`);for(const match of text.matchAll(/from\s+['"]([^'"]+)['"]/g)){const spec=match[1];if(spec.startsWith('.')||spec.startsWith('node:')||spec==='@aws-sdk/client-s3')continue;throw new Error(`unexpected runtime import ${spec}`)}}
+process.env.SPORTS_CACHE_BUCKET='example-cache';process.env.SPORTS_CACHE_KEY='sports/v1/snapshot.json';process.env.SPORTS_ALLOWED_ORIGINS='https://dash.example';
+const lambda=await import(pathToFileURL(join(temp,'sports/lambda.js')));if(typeof lambda.handler!=='function')throw new Error('handler export missing');
+const options=await lambda.handler({requestContext:{http:{method:'OPTIONS'}},headers:{origin:'https://dash.example'}});if(options.statusCode!==204||options.headers['Access-Control-Allow-Origin']!=='https://dash.example')throw new Error('clean package handler execution failed');
+const {MemorySportsStore,createHttpHandler,publicResponse}=await import(pathToFileURL(join(temp,'sports/live-refresh.js')));const now=new Date('2026-08-15T16:00:00Z');const slots=['wm','tennessee','commanders','nationals'].map(organization=>({organization,label:organization,logo:organization,affinity:1,event:null,presentationState:'offseason',score:0,reasonCodes:['OFFSEASON'],dataDelayed:false,feedFailures:[],lastResult:null,record:null,records:null,conference:null,standing:null}));const snapshot=publicResponse({version:1,generatedAt:now.toISOString(),nextPollSeconds:7200,slots});const get=await createHttpHandler({store:new MemorySportsStore({schemaVersion:1,savedAt:now.toISOString(),snapshot}),now:()=>new Date(+now+1)})({requestContext:{http:{method:'GET'}},headers:{}});if(get.statusCode!==200)throw new Error('clean package GET simulation failed');
+async function bytes(path){const info=await stat(path);if(info.isFile())return info.size;let total=0;for(const name of await readdir(path))total+=await bytes(join(path,name));return total}const packageBytes=await bytes(temp);
+console.log(JSON.stringify({valid:true,tempDirectory:temp,handler:fn.Handler,runtime:fn.Runtime,architecture:fn.Architectures[0],runtimeImports:{included:files,productionDependency:{name:'@aws-sdk/client-s3',version:dependency,source:'installed package'}},optionsStatus:options.statusCode,getStatus:get.statusCode,packageBytes,packageMiB:Number((packageBytes/1048576).toFixed(2)),windowsPaths:false,developmentPaths:false,corsParameter:'AllowedOrigins:String'},null,2));
