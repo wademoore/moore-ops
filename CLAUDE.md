@@ -194,6 +194,28 @@ word is not `git`, and stay allowed. Relocating environment variables (`GIT_DIR`
 `GIT_WORK_TREE`, `GIT_CONFIG_*`) are now treated exactly as `--git-dir` is, rather than
 stripped as ordinary environment.
 
+**Named under-blocks that remain.** Two of these are *not* the "execution left the command
+string" class the hook's header describes — their text is fully visible, and the crude text
+matcher blocked them:
+
+- git subcommands that run a command of their own: `git rebase --exec '<push>' main`,
+  `git submodule foreach '<push>'`, `git bisect run <script>`. `evaluateGit` allows any
+  subcommand that is neither `push` nor a push alias, and the quoted argument is a single
+  token whose command word is not `git`, so the fallback does not reach it either.
+- `pwsh -EncodedCommand <base64>`.
+- a `git` alias defined only inside a repository the hook cannot reach (`--git-dir`,
+  `GIT_DIR`); a *command-line* alias is seen, which is the form that can be written
+  deliberately.
+
+**A decoder for the second one was written and then removed at review, and the removal is
+the more useful record.** `Buffer.from(x, 'base64')` silently drops invalid characters rather
+than throwing, so a dynamic `pwsh -EncodedCommand $ENC` decoded to garbage, tokenized to
+nothing, and **returned allow** — an unknown payload waved through by the one branch in the
+file that failed open, in direct contradiction of its own governing rule. It was also
+unrequested scope added during a fix round, uncovered by any case or mutation, and absent
+from this file. Whatever closes that hole later must fail *closed* on an argument it cannot
+read, like every other unknown in the hook.
+
 **Over-blocks that remain, deliberately.** A heredoc body line that *itself* parses as a push
 to `main` is still refused — heredocs get no special treatment, and that is what keeps
 `bash <<'EOF'` closed. Writing a file whose content quotes such a command still needs the

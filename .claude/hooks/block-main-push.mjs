@@ -47,6 +47,25 @@
 //   - `GIT=git; $GIT push origin main`      -- the command word is a variable
 //   - `bash /tmp/pusher.sh`                 -- indirection through a file
 //   - a background process that pushes later
+//
+// Three more, named here because a hole that is written down can be closed and one
+// that is merely implied cannot. The first two are NOT of the class above -- their
+// text is fully visible, so "execution left the command string" is not the excuse:
+//   - git subcommands that run a command of their own:
+//       `git rebase --exec '<push>' main`, `git submodule foreach '<push>'`,
+//       `git bisect run <script>`. evaluateGit returns allow for any subcommand
+//       that is neither push nor a push alias, and the quoted argument is a single
+//       token whose command word is not `git`, so the fallback does not see it
+//       either. The crude text matcher this file replaced did block these.
+//   - `pwsh -EncodedCommand <base64>`. A decoder for this was written and then
+//       REMOVED at review, and the removal is the more useful record: because
+//       Buffer.from(x,'base64') silently drops invalid characters instead of
+//       throwing, a dynamic `-EncodedCommand $ENC` decoded to garbage, tokenized
+//       to nothing, and RETURNED ALLOW -- an unknown payload waved through by the
+//       one branch in this file that failed open. Whatever closes this must fail
+//       closed on an argument it cannot read, like every other unknown here.
+//   - a `git` alias defined only inside a repository this hook cannot reach
+//       (see the residual note at the alias lookup).
 // `eval`, `sh -c`, `bash -c`, `pwsh -Command`, `xargs`, command substitutions, git
 // aliases (including `-c alias.x=push`) and any UNRECOGNISED command word wrapping
 // a git call are re-scanned rather than waved through.
@@ -579,13 +598,6 @@ function evaluateSimpleCommand(tokens, depth, opts = {}) {
       if (!flag) continue;
       const name = flag[1].toLowerCase();
       if ("command".startsWith(name)) return scan(rest[j + 1].text, depth + 1, next);
-      if ("encodedcommand".startsWith(name)) {
-        // -EncodedCommand carries base64 UTF-16LE. Decoding costs four lines; the
-        // alternative is a blind spot on the whole Windows arm.
-        let decoded = "";
-        try { decoded = Buffer.from(rest[j + 1].text, "base64").toString("utf16le"); } catch { decoded = ""; }
-        if (decoded.trim()) return scan(decoded, depth + 1, next);
-      }
     }
   }
   if (word === "xargs") {
