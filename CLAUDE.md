@@ -142,9 +142,19 @@ command instead of weakening the hook — a false block is recoverable.
 
 Installed in `4a8cc52`; the Bash arm and this section added in the follow-up; the
 archived-files hook ported from bash to Node on Sept 7, 2026 so it runs on Windows too (see
-"The Node port" below). Three mechanisms now live in `.claude/settings.json` — the deny
-rules, the archived-files hook and the push hook — and they are not equally strong. Read
-this before assuming any of them protects you.
+"The Node port" below). **Six mechanisms now live in `.claude/settings.json`** — the deny
+rules, the archived-files hook and the push hook (the three this section was originally
+written around), plus three added since: the settings-level read-only role backstop
+(`guard-readonly.mjs`, `bf3be6f` / #46) and the Reviewer gate's `record-review-verdict.mjs`
+on `SubagentStop` and `require-review.mjs` on `Stop` (`1bad0fd` / #53). They are not equally
+strong. Read this before assuming any of them protects you.
+
+This count has drifted twice, silently, and the mechanism is blunter than "someone forgot
+to update a cross-reference": **neither `bf3be6f` nor `1bad0fd` touched `CLAUDE.md` at
+all.** Both wired a new hook into `settings.json` and shipped with no update to this file
+whatsoever, against its own "Update CLAUDE.md after any significant change" convention. The
+count was not left behind by a documentation change that moved elsewhere; there was no
+documentation change. If you wire a seventh, correct this sentence in the same commit.
 
 ### What `permissions.deny` covers — reinstated, scoped to `main`
 
@@ -485,21 +495,33 @@ This matches the documented rule (`code.claude.com/docs/en/sub-agents`): a proje
 subagent's frontmatter hooks run only once the workspace trust dialog has been accepted for
 the folder containing the agent file; before 2.1.218 they ran from untrusted folders too,
 including non-interactive sessions. A headless run never shows the dialog, so unless trust
-was recorded earlier, the hook is simply absent. **This sandbox is exactly that case:**
-`~/.claude.json` records `hasTrustDialogAccepted: false` for this checkout, so in Claude
-Code on the web the Reviewer's and Debugger's shell is *not* restricted — `tools:` still
-limits them to Read/Grep/Glob/Bash, but Bash is unguarded.
+was recorded earlier, the hook is simply absent. **This sandbox was exactly that case** when
+the paragraph was written: `~/.claude.json` records `hasTrustDialogAccepted: false` for this
+checkout, so the frontmatter copy does not fire here, and for a period the Reviewer's and
+Debugger's Bash was genuinely unguarded in Claude Code on the web.
 
-**Recommendation, and what was deliberately not done.** The hook stays in the frontmatter.
-It is the only role-scoped location, it is documented, and it fires wherever the folder is
-trusted — moving it to `settings.json` on the strength of one untrusted headless run would
-have applied the read-only allowlist to *every* session, Coder included. Two things follow:
-(1) do not rely on the read-only guard in a headless or remote session unless trust was
-recorded for the folder; (2) the `PreToolUse` payload carries `agent_type` (observed:
-`"agent_type":"probe"` on the settings-level hook when the probe subagent ran Bash), so a
-`settings.json`-level backstop that exits 0 unless `agent_type` is `reviewer` or
-`debugger` would hold in both environments. That is a separate decision — recorded under
-Known open items — not part of this change.
+**✓ That gap is closed — the backstop was built, and this paragraph used to say it had not
+been.** `bf3be6f` (#46) added a second, settings-level `PreToolUse` entry running the same
+`guard-readonly.mjs`, and the two copies are deliberately configured differently:
+
+| copy | role source | fires when |
+|---|---|---|
+| `reviewer.md` / `debugger.md` frontmatter | explicit argv role (`"reviewer"`) | the folder is trusted |
+| `.claude/settings.json` | **no argv role** → falls back to the payload's `agent_type` | always, trust or not |
+
+That is precisely option (2) this paragraph once described as "a separate decision — not
+part of this change": the script resolves `ROLE = argvRole || fromPayload`, and
+`if (!isRole(ROLE)) process.exit(0)` makes it **fail open** for any unrecognised role. So
+the objection that a `settings.json` copy "would have applied the read-only allowlist to
+*every* session, Coder included" does not hold against the shipped design — Coder's
+`agent_type` is not a guarded role and the hook exits 0 for it.
+
+**Do not read the old warning as current.** The read-only guard *is* now enforced in an
+untrusted headless session; verified live rather than argued, in the session that corrected
+this text, where a Reviewer subagent running headless in this very sandbox had `git fetch
+origin main` and an env-prefixed `node --test` refused by the allowlist. The frontmatter
+copies stay where they are — they remain the only role-scoped location and are what fires
+on a trusted folder — so both copies coexist by design, not by oversight.
 
 **The BOMs were not the cause.** Every one of the five enforcement files arrived with a
 UTF-8 BOM (a Windows editor default). Probed: a BOM on `settings.json` and on the agent
@@ -1902,8 +1924,34 @@ checklist, the adversarial-test procedure, and three on-demand scripts —
 `verify-merge.mjs` (proves the settings merge is additive; **pre-install only, refuses
 once installed**), `adversarial-test.mjs` (ten-scenario proof that the gate blocks), and
 `location-independence.mjs` (the measurement behind "the hooks need not move to work,
-only to be protected"). None runs in `npm test`. The gate itself remains uninstalled —
-writing under `.claude/` is deliberately outside what these artifacts do.
+only to be protected"). None runs in `npm test`. **The Stop-hook gate itself is now
+installed** — PR #53 (`1bad0fd`) added `.claude/hooks/require-review.mjs` and
+`.claude/hooks/record-review-verdict.mjs`, wired them in `.claude/settings.json` on `Stop`
+and `SubagentStop`, and appended checklist item 8 (the bare `REVIEW: PASS` / `REVIEW:
+FAIL` verdict line) to the **body** of `.claude/agents/reviewer.md`.
+**Not its frontmatter** — that still declares only the `guard-readonly.mjs` hook and is
+byte-identical across #53. The distinction is load-bearing here, not pedantry: frontmatter
+hooks are trust-gated and `settings.json` hooks are not, so miscalling this a frontmatter
+change would corrupt the audit that "Read-only role hooks live in agent frontmatter" asks
+a future reader to perform. The sentence this replaces said the gate "remains uninstalled",
+which was true only of the branch the baseline was measured on. Two consequences worth
+carrying: `verify-merge.mjs` is pre-install only and now refuses to run, and
+`scratch/reviewer-gate/` remains genuinely unwired, so the "standalone, unwired" paragraph
+two above is still accurate about its own subject. It is unwired because `settings.json`
+references only `${CLAUDE_PROJECT_DIR}/.claude/hooks/` — **not** because the installed
+copies are known to have come from `scratch/reviewer-gate-install/` rather than from it.
+That provenance cannot be established from content: both scratch copies are byte-identical
+to each other and to the installed pair.
+
+**The two hooks split recorder from gate, and the split is easy to state backwards.**
+`record-review-verdict.mjs` on `SubagentStop` is the one that reads the Reviewer's reply:
+it holds the `SENTINEL` regex, strips fenced blocks first, and writes a verdict plus the
+HEAD SHA into a record file. `require-review.mjs` on `Stop` never sees the reply at all —
+it reads that record and blocks on it. So the verdict line is read by the **SubagentStop
+recorder**, not the Stop gate, even though the Stop gate is what refuses to let the turn
+end. (`reviewer.md` item 8 says "a Stop hook reads that line", which is loose but harmless
+in an agent file; do not carry that phrasing into this one, where the hooks are named
+individually.)
 
 The no-browser row is kept for the reason the entry below gives. Its failures and
 cancellations are the standing no-browser set, unchanged by this work.
@@ -2881,17 +2929,36 @@ enumerated under test, digest, and render directly to Node. No deployment.
 
 - **✓ RESOLVED Sept 8, 2026 — each day of the 72h window now gets its own prep item.** `digest/builder.js` derives the strip per day (`generateTasks(day.events, day.date, getSchoolStrip(day.date))`) instead of handing one today-strip to all three days. `generateTasks()` is unchanged: its contract was always "emit from the strip you are given", and it was the caller that gave it the wrong one — so its ~40 existing unit tests stand untouched rather than being rewritten to a new contract. **The entry this replaces was right about the mechanism and understated the damage in one direction.** It named the false positive (a stale row repeated on later days) but not the false negative: the same slot is single-valued, so Wednesday's stale baritone row *displaced* Friday's genuine Ophelia library-book row rather than merely joining it. Simulating all 290 mornings of the 2026-27 school year: **123 stale prep rows shipped per year** (58% of the 212 the email emitted) on **71 mornings (24.5%)**, and **177 genuinely-owed prep rows never appeared on their own day.** After the fix the year emits 266 rows, all correct — net **+54 rows/year**, about +0.19 per morning. **Blast radius is narrower than "the digest":** only `render/email.js` renders past `days[0]`; `render/dashboard.js` (frozen v1), `render/dashboard-v2.js` and `digest/nowNextSelector.js` all read `days[0]` alone, and `days[0]`'s task list is unchanged by construction — so the entire correction lands in the email's second and third day blocks and the frozen surface was neither touched nor at risk. Wording was deliberately left alone: the row reads `"⚠ Pack library book **this morning** (Ophelia — Media **today**)"` — two relative words, not one — and both are scoped by the `dayHeader(day.date)` the row sits under. The shipped email already does exactly this with the solo-evening row's `"tonight"` in future day blocks, so no new precedent is set. **The general gap the entry named — "nothing asserts task-list contents across the window" — is what the test closes**, generically: a 26-morning sweep in `digest/builder.test.js` compares every day of every window against an oracle derived straight from `getRotation()`, so it fails for any day-specific prep item on any wrong day in either direction. **Two cross-day interactions the fix creates were found by review and are now pinned rather than left incidental:** on all **25** school-day Music-eves Myles's baritone row shares an email with his library-book row (the same 25 the `schoolRotation.js` collision argument counts — but as Wednesday's item under Wednesday's header, not as the Tuesday-morning nudge that argument rejected; `tomorrowWarnings` stays free of instrument warnings and a test asserts it), and on **59** mornings a year the strip's "pack library book tonight" line coexists with the day-1 block's own "pack library book this morning" row (kept — different instructions at different times, and suppressing the day-1 row would restore the false negative). Neither is a regression, though they differ in shape: on a Music-eve the day-1 block pre-fix carried *today's* row instead, so (1) is a substitution; on an S2 morning neither child owes anything that day, so pre-fix the block carried nothing and (2) is genuinely newly-visible output on those 59 mornings. All four tests proved to have teeth against two mutants: the pre-fix today-strip (all four red) and a today-only guard, which kills the stale rows but keeps all 177 false negatives (all four red, the sweep and the Oct 21 pin failing on the false-negative assertion) — so the block discriminates between the fix and the tempting half-fix.
 
-- **Read-only role guard is absent in untrusted headless sessions — backstop not decided
-  (Sept 7, 2026).** The reviewer/debugger `PreToolUse` hook lives in agent frontmatter and,
-  per the documented trust gate, does not fire unless the workspace trust dialog has been
-  accepted for the folder; this remote sandbox records `hasTrustDialogAccepted: false`, so a
-  Reviewer or Debugger spawned here has an unrestricted Bash. Evidence and the full probe
-  table are in "The gate" → "Read-only role hooks live in agent frontmatter". The
-  `PreToolUse` payload carries `agent_type`, so a `settings.json`-level hook that exits 0
-  unless `agent_type` is `reviewer` or `debugger` would enforce the allowlist in both
-  environments without touching Coder. Deliberately not done in the fixes branch — it changes
-  where the guard lives, which the review said not to do on the strength of one environment.
-  Decide, then do it as its own change with its own probe.
+- **✓ RESOLVED — the read-only role backstop shipped in `bf3be6f` (#46).** This entry stood
+  as "backstop not decided (Sept 7, 2026)" long after the decision was made and the code
+  merged. It is the **third stale location** left by that drift, not a third drifting
+  commit — only two commits fit the shape (`bf3be6f` and `1bad0fd`), and between them they
+  stranded the mechanism count, the read-only subsection, and this entry. (`d75488e` / #44
+  also wired hooks into `.claude/settings.json`, but updated `CLAUDE.md` by 252 lines, so it
+  is not an instance.) The entry said
+  the reviewer/debugger `PreToolUse` hook lives only in agent frontmatter, therefore does
+  not fire unless the workspace trust dialog has been accepted, therefore leaves a Reviewer
+  or Debugger spawned in this remote sandbox with an unrestricted Bash — and proposed an
+  `agent_type`-keyed `settings.json` backstop as the undecided fix. That backstop exists:
+  `.claude/settings.json` runs `guard-readonly.mjs` with **no argv role**, so it falls back
+  to the payload's `agent_type` and fires regardless of trust, while failing open for any
+  unrecognised role so Coder is untouched. Verified live, not inferred: a Reviewer subagent
+  running headless in this sandbox had `git fetch origin main` and an env-prefixed
+  `node --test` refused by the allowlist. See "The gate" → "Read-only role hooks live in
+  agent frontmatter" for the two-copy table and why both copies coexist. **Still genuinely
+  open, and much narrower:** a Reviewer cannot run the browser-enabled suite at all, because
+  both allowlist entries refuse every route to it today. That does **not** mean a fix has to
+  touch both — relaxing either one's start anchor to tolerate an environment-variable prefix
+  would open that route on its own, since the resulting command contains no shell
+  metacharacter and would clear the composition check before reaching the allowlist. Both are
+  start-anchored — `/^npm (test|run [a-z:-]+)$/` and `/^node( --[a-z-]+)* --test/` — so any
+  environment-variable prefix defeats them: `DASHBOARD_BROWSER_PATH=… npm test` and
+  `DASHBOARD_BROWSER_PATH=… node --test` are both refused. The `npm` entry is additionally
+  `$`-anchored, so no trailing argument can be appended either, and no `package.json` script
+  sets the variable internally. The Reviewer is therefore confined to the no-browser row,
+  which the Test baseline explicitly says is *not* the row to compare against — a real gap
+  in what a Reviewer can verify, and the reason three consecutive review rounds on this
+  branch reported tests as unverified.
 
 - **Special-event foundation P5 cleanup — blocked on a real production cycle, deliberately (Aug 29, 2026).** Delete `digest/legacySpotlightCompat.js` together with the `familySpotlightConfig` line in `digest/builder.js`, its `requiredBundleInputs` entry and the `specialEventsSampleData` projection; then delete the four oracles (`data/family-spotlight.json`, `digest/familySpotlightSelector.js`, its test, `test/artifact/family-spotlight-contract.test.js`) and `test/fixtures/legacy-athletics-panels.json`. **Do not do this until the registry path has run at least one real production cycle** — the oracles are the only thing that can prove a regression, and deleting them early is how a migration bug becomes undetectable. A test asserts the shim's bundle-input declaration exists *exactly while* `builder.js` imports it, so a half-done removal fails rather than leaving a dangling path. Also open at P5: whether to rename `FAMILY_SPOTLIGHT_ENABLED`, and whether First Day Level-3 becomes registry-driven — the latter should be settled **before** any second Takeover (Christmas morning) is built, not after.
 - **✓ RESOLVED Aug 29, 2026 — the package gate now runs before merge, not after it.** This bullet previously said `scripts/validate-dashboard-artifact-package.mjs` "must be green in CI before merge" — which was not true of any workflow that existed: it ran only in `deploy-dashboard-v2-artifact.yml` on `push` to `main`, so its first execution was *after* the merge, as the deploy job's first action. Two things changed. (1) The gate was finally executed for real: `sam` installed into a throwaway virtualenv locally gives `sam build` → Build Succeeded and `dashboard artifact package: valid (10 data files, Emma parser/evaluator/builder markers present)`. (2) `ci.yml` now runs the same two commands on `pull_request`, with `permissions: contents: read`, no secrets, no OIDC token, no AWS CLI and no `sam deploy` — see "The package gate is a pull-request gate" above for the full contract and its 13 tests. The deploy workflow keeps its own copy of the step ahead of `Configure AWS credentials`, so nothing is weakened where it guards a real deployment. **The general lesson outlives the fix:** a gate named in this file as pre-merge was, for as long as it was written down, post-merge only — nobody had checked *which workflow* ran it. Naming a check is not the same as knowing when it fires.
