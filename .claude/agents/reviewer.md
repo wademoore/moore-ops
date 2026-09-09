@@ -39,3 +39,12 @@ A claim without pasted output is not a completed check.
    that a PR exists or is ready to open. Pushing to main is blocked by policy and
    by hook. A non-empty origin/main..HEAD range on a feature branch is expected,
    not a failure. Paste git status and the branch name.
+8. VERDICT LINE. The last line of your reply must be exactly `REVIEW: PASS` or
+   exactly `REVIEW: FAIL`, written bare on its own line in plain text — no
+   backticks, no code fence, no bullet, no blockquote, no heading marker, and no
+   formatting inside the line itself. A Stop hook reads that line and nothing else
+   in your reply: an inline, backticked or fenced mention does not count as a
+   verdict, and a reply carrying both forms as bare lines counts as no verdict at
+   all. If you need to quote the sentinel while discussing it, keep it inline in
+   backticks so it cannot be mistaken for your own verdict. Emit exactly one of
+   them, as the final line.

@@ -53,6 +53,36 @@
           }
         ]
       }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "reviewer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/record-review-verdict.mjs"
+            ],
+            "statusMessage": "Recording Reviewer verdict"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/hooks/require-review.mjs"
+            ],
+            "statusMessage": "Checking Reviewer coverage"
+          }
+        ]
+      }
     ]
   }
 }
