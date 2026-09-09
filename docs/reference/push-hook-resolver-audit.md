@@ -297,13 +297,17 @@ Worth stating, because it is the part that is easy to lose in a list of holes:
   `ENV_RELOCATING` names (`env-GIT_*`) and passes all five `GLOBAL_RELOCATING`
   options (`glob-*`). **All sixteen block.**
   Two qualifications, because a second review round found this bullet still looser
-  than the table it summarises. (i) Thirteen of the sixteen run a command that
-  *would* otherwise have reached `main`, because `remote.origin.push` is set to a
-  main-bound refspec in setup. The other three could not have reached
-  `refs/heads/main` in any case: `env-GIT_NAMESPACE` and `glob-namespace` retarget
-  the send at `refs/namespaces/ns/refs/heads/main`, and `--exec-path` with no value
-  makes git print a path and exit without pushing at all. Those three prove the hook
-  blocks, not that it blocked something dangerous. (ii) The regex has **fourteen**
+  than the table it summarises, and a third round found the corrected version still
+  off by one. (i) **Twelve** of the sixteen run a command that *would* otherwise have
+  reached `main`, because `remote.origin.push` is set to a main-bound refspec in
+  setup. The other **four** could not have reached `refs/heads/main` in any case:
+  `env-GIT_NAMESPACE` and `glob-namespace` retarget the send at
+  `refs/namespaces/ns/refs/heads/main`; `--exec-path` with no value makes git print a
+  path and exit without pushing at all; and `glob-bare` fatals before pushing, because
+  `--bare` sets `GIT_DIR` to the current directory and the fixture's cwd is the
+  *worktree root*, not a git directory (`fatal: not a git repository`, `exit 128`,
+  `main` unmoved). Those four prove the hook blocks, not that it blocked something
+  dangerous. (ii) The regex has **fourteen**
   alternatives, not eleven: the loop covers the eleven fixed names, and the numbered
   `GIT_CONFIG_COUNT` / `KEY_<n>` / `VALUE_<n>` family is covered separately by `d9`.
   Coverage is complete; the count in the loop is not the count in the regex.
@@ -395,7 +399,7 @@ left standing behind a passing verdict:
 
 | Finding | Disposition |
 |---|---|
-| **The stated case count was wrong** — the audit said 67 (then 66); the artifact emitted **64** | Fixed, and pointedly: this was a stated number not matching the artifact, sitting in the table row that records the fix to a finding about stated numbers not matching the artifact. The figure is now taken from counting emitted rows. |
+| **The stated case count was wrong** — the audit said **66**; the artifact emitted **64** | Fixed, and pointedly: this was a stated number not matching the artifact, sitting in the table row that records the fix to a finding about stated numbers not matching the artifact. The figure is now taken from counting emitted rows. |
 | **"each on a command that would otherwise reach `main`" was false for three of the sixteen** relocating rows | Fixed. `env-GIT_NAMESPACE` and `glob-namespace` retarget at `refs/namespaces/…`, and `--exec-path` with no value never pushes. The summary sentence was looser than the per-entry cells it summarised, which were already careful. |
 | **The `simple` arm's "refuses outright" property had no harness row** — and `simple` is the *default* mode, so it is the arm where an unmarked code reading matters most | Fixed by measurement, not by adding a marker: `b7-simple-mismatch`, `b7-current` and `b7-nothing` are new cases. `b7-simple-mismatch` confirms the hook ALLOWS while git refuses with `exit 128`. |
 | "all eleven `ENV_RELOCATING` names" described the loop, not the regex, which has fourteen alternatives | Fixed. Coverage is complete — `d9` carries the numbered `GIT_CONFIG_*` family — but the sentence conflated two counts. |
@@ -415,3 +419,31 @@ on-demand script can be run by a Reviewer at all**: evidence that takes the form
 script cannot be independently re-executed by the one role whose job is to distrust
 it. That is a real limit on how much either `REVIEW: PASS` here is worth, and it is
 recorded rather than glossed.
+
+### Third round
+
+A confirmatory pass over the second round's fixes returned **`REVIEW: PASS`** and
+verified all five: 67 is both stated and emitted, the relocating-rows claim is
+qualified, the `simple` arm is closed by three shipped cases, the loop/regex counts
+are disentangled, and E3/B12 are marked consistently. It found two more, both fixed
+here:
+
+| Finding | Disposition |
+|---|---|
+| **The corrected qualification was still off by one** — it said thirteen of the sixteen relocating rows would otherwise have reached `main`; `glob-bare` is a **fourth** exception | Fixed. Measured rather than argued: `git --bare push origin` exits 128 with `fatal: not a git repository`, because `--bare` sets `GIT_DIR` to the current directory and the fixture's cwd is the worktree root. `main` is unmoved. Twelve/four, not thirteen/three. |
+| The second-round row said the audit "said 67 (then 66)"; `eb3977c` contains exactly one count claim, **66**, and no 67 | Fixed. The parenthetical described an uncommitted draft and was unsupported by committed history — in a row about stated numbers not matching the artifact. |
+
+**The first of those is the same defect shape three times over, and that is the
+point worth keeping.** The original bullet overclaimed; the second round's fix
+narrowed it and still overclaimed; the third round narrowed it again. Each time the
+error was in a *summary sentence* that ran ahead of the per-row table beneath it,
+and each time the per-row table was already right (`glob-bare` reads `BLOCK` with no
+`/true`, exactly as `env-GIT_NAMESPACE` and `glob-namespace` do). A summary is where
+this document is least reliable, because it is the one place not pinned to a
+measurement.
+
+**The Reviewer could not measure it and said so**, flagging it SHOULD FIX with its
+reasoning and an explicit "I may be wrong". It was right, and one harness run
+settled it. That is the read-only allowlist gap doing real damage rather than
+theoretical: a finding correct on inspection had to be handed back to the author to
+verify, because the role whose job is to distrust the evidence cannot execute it.
