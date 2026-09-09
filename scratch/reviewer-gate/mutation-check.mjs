@@ -48,7 +48,7 @@ const MUTATIONS = [
   ['an unknown verdict counts as coverage', GATE,
     "    } else if (record.verdict === 'unknown') {",
     "    } else if (record.verdict === 'unknown') {\n      process.exit(0);",
-    ['verdict is "unknown"']],
+    ['verdict "unknown" from a message with no sentinel', 'verdict "unknown" from no readable message']],
 
   ['keys on whether the Reviewer ran, not on unreviewed commits', GATE,
     '} else if (record.sha === head) {', "} else if (record.verdict === 'pass') {",
@@ -80,11 +80,38 @@ const MUTATIONS = [
     ['not a git repository']],
 
   // The invariant that replaced the prose classifier: no sentinel, no pass. This is
-  // the broadest legitimate mutation here (11 cases) and that is proper -- the
-  // invariant it removes is itself broad.
-  ['recorder falls back to classifying prose', REC,
-    "return verdict ?? 'unknown';", "return verdict ?? 'pass';",
-    ['no sentinel, no pass', 'no sentinel, no release']],
+  // the broadest legitimate mutation here and that is proper -- the invariant it
+  // removes is itself broad.
+  ['recorder defaults a sentinel-less message to pass', REC,
+    "return seen.size === 1 ? [...seen][0] : 'unknown'; // none, or self-contradictory",
+    "return seen.size === 1 ? [...seen][0] : 'pass';",
+    ['no sentinel, no pass', 'no sentinel, no release', 'contradicting sentinels']],
+
+  ['sentinel matches inside prose (anchoring removed)', REC,
+    'const SENTINEL = /^[ \\t]*(?:\\*\\*)?REVIEW:[ \\t]*(PASS|FAIL)(?:\\*\\*)?[ \\t.]*$/gim;',
+    'const SENTINEL = /REVIEW:[ \\t]*(PASS|FAIL)/gi;',
+    ['embedded in prose', 'quotes the pass form']],
+
+  ['fenced examples cast a vote', REC,
+    "text.replace(FENCED, '').matchAll(SENTINEL)", 'text.matchAll(SENTINEL)',
+    ['fenced example']],
+
+  ['contradiction resolved by position (last match wins)', REC,
+    "return seen.size === 1 ? [...seen][0] : 'unknown'; // none, or self-contradictory",
+    "return seen.size >= 1 ? [...seen][seen.size - 1] : 'unknown';",
+    ['contradicting sentinels']],
+
+  ['gate follows a traversal session id', GATE,
+    "if (sessionId && /^[A-Za-z0-9._-]+$/.test(sessionId)) {", 'if (sessionId) {',
+    ['will not follow a traversal session id']],
+
+  ['recorder writes through a traversal session id', REC,
+    "if (!/^[A-Za-z0-9._-]+$/.test(sessionId)) process.exit(0);", '',
+    ['will not write through a traversal']],
+
+  ['gate asserts one cause of "unknown" for both', GATE,
+    '      recordNote = record.source\n        ? ', '      recordNote = true\n        ? ',
+    ['no readable message says THAT']],
 
   ['recorder records an undeterminable verdict as a pass', REC,
     "if (typeof text !== 'string' || !text.trim()) return 'unknown';",
@@ -144,17 +171,34 @@ function mutate(file, find, replace) {
   // wreckage, and the row would print "as expected" while proving nothing.
   //
   // `node --check` answers that question directly. It replaced a blast-radius
-  // bound, which was only ever a proxy for it and a poor one: measured here, a
-  // syntax error in the recorder fails 16 cases and one in the gate fails 31,
-  // while the broadest LEGITIMATE mutation below fails 11 -- so any threshold had
-  // to thread a two-case gap, and would have started rejecting honest mutations
-  // the moment an invariant grew another test.
+  // threshold, which was only ever a proxy for it and a poor one: the gap between
+  // a whole-file break and the broadest legitimate mutation was two cases, so the
+  // next added test would have closed it. The SELF-TEST rows above prove this
+  // check is live, on every run, rather than citing a measurement taken once by
+  // hand and quoted thereafter.
   const check = spawnSync(process.execPath, ['--check', target], { encoding: 'utf8' });
   return { dir, parses: check.status === 0, parseError: (check.stderr || '').split('\n')[0] };
 }
 
 const rows = [];
 let harnessOk = true;
+
+// Self-test, run before the table. The harness argues that a guard never seen
+// failing is not a proven guard; that argument applies to the harness's own
+// hollowness detector, so it is exercised here on every run rather than by a
+// one-off manual check whose result lived only in a commit message.
+for (const file of [REC, GATE]) {
+  const dir = mkdtempSync(join(tmpdir(), 'reviewer-gate-selftest-'));
+  temps.push(dir);
+  cpSync(HERE, dir, { recursive: true });
+  const target = join(dir, file);
+  writeFileSync(target, `${readFileSync(target, 'utf8')}\nif (true) {\n`); // unterminated
+  const check = spawnSync(process.execPath, ['--check', target], { encoding: 'utf8' });
+  const caught = check.status !== 0;
+  if (!caught) harnessOk = false;
+  rows.push([`SELF-TEST: syntax error in ${file}`, '-', '-',
+    caught ? 'caught before the suite ran' : 'NOT CAUGHT -- the hollowness check is inert']);
+}
 
 // Control. If the pristine tree is not green the rest of the table means nothing.
 const control = runSuite(HERE);

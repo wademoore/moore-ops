@@ -174,12 +174,29 @@ test('blocks: verdict is "fail"', () => {
   assert.match(stderr, /last Reviewer verdict was "fail"/);
 });
 
-test('blocks: verdict is "unknown", and names the missing sentinel', () => {
+test('blocks: verdict "unknown" from a message with no sentinel names the missing line', () => {
   const repo = makeRepo({ commits: 1 });
-  writeRecord(repo, { schema: 1, sessionId: SESSION, sha: repo.head, verdict: 'unknown' });
+  writeRecord(repo, {
+    schema: 1, sessionId: SESSION, sha: repo.head, verdict: 'unknown',
+    source: 'last_assistant_message',
+  });
   const { code, stderr } = gate(repo);
   assert.equal(code, 2);
   assert.match(stderr, /emitted no "REVIEW: PASS"/);
+});
+
+test('blocks: verdict "unknown" from no readable message says THAT, not the other thing', () => {
+  const repo = makeRepo({ commits: 1 });
+  // Same verdict, different cause, different remedy. Claiming the Reviewer "ran
+  // but forgot the line" here would be a false assertion pointing at an install
+  // step that may already be correctly applied.
+  writeRecord(repo, {
+    schema: 1, sessionId: SESSION, sha: repo.head, verdict: 'unknown', source: null,
+  });
+  const { code, stderr } = gate(repo);
+  assert.equal(code, 2);
+  assert.match(stderr, /no readable final message/);
+  assert.doesNotMatch(stderr, /emitted no "REVIEW: PASS"/);
 });
 
 test('blocks: a truthy non-pass verdict is not treated as a pass', () => {
@@ -351,19 +368,51 @@ test('releases quietly: a repo with nothing to review emits no signal', () => {
   assert.equal(stdout.trim(), '');
 });
 
-test('releases: a session id that could not name a record file is not used as a path', () => {
+test('blocks: the gate will not follow a traversal session id to a record', () => {
   const repo = makeRepo({ commits: 1 });
-  // Traversal-shaped id: no record can be read for it, so the gate still blocks
-  // on the commits themselves rather than reading somewhere it should not.
-  const { code, stderr } = gate(repo, { session_id: '../../etc/passwd' });
-  assert.equal(code, 2);
+  // A record the gate must NOT read, placed exactly where an unguarded
+  // join(gitDir, 'moore-ops-review-gate', `${sessionId}.json`) would land for
+  // sessionId "../escaped". Without the charset guard this releases the gate;
+  // the earlier version of this test asserted only that the gate blocked, which
+  // it also did with the guard removed, so it could not fail for its own reason.
+  writeFileSync(
+    join(repo.gitDir, 'escaped.json'),
+    JSON.stringify({ schema: 1, sessionId: 'x', sha: repo.head, verdict: 'pass' }),
+  );
+  const { code, stderr } = gate(repo, { session_id: '../escaped' });
+  assert.equal(code, 2, 'a traversal session id must not reach a record outside the record dir');
   assert.match(stderr, /no Reviewer verdict has been recorded/);
+});
+
+test('recorder: will not write through a traversal session id', () => {
+  const repo = makeRepo({ commits: 1 });
+  const escaped = join(repo.gitDir, 'escaped.json');
+  recorder(repo, { session_id: '../escaped', last_assistant_message: 'REVIEW: PASS' });
+  assert.equal(existsSync(escaped), false, 'the recorder must not write outside the record dir');
 });
 
 // ---------------------------------------------------------------------------
 // RECORDER. It is a recorder: it must never block, and must never record a pass
 // it did not unambiguously observe.
 // ---------------------------------------------------------------------------
+
+test('recorder: accepts the documented decorations and nothing looser', () => {
+  const accepted = ['REVIEW: PASS', '  review: pass  ', '**REVIEW: PASS**', 'REVIEW:PASS.'];
+  for (const m of accepted) {
+    const repo = makeRepo({ commits: 1 });
+    recorder(repo, { last_assistant_message: `Summary.\n${m}` });
+    assert.equal(readRecord(repo).verdict, 'pass', `should accept: ${JSON.stringify(m)}`);
+  }
+  // Aliases the first version tolerated. They are no longer verdicts: the install
+  // step names one form, and every extra spelling is another way to say it by
+  // accident.
+  const rejected = ['REVIEWER VERDICT: PASS', 'Review - Pass', 'reviewer=pass', 'REVIEW - PASS'];
+  for (const m of rejected) {
+    const repo = makeRepo({ commits: 1 });
+    recorder(repo, { last_assistant_message: `Summary.\n${m}` });
+    assert.equal(readRecord(repo).verdict, 'unknown', `should reject: ${JSON.stringify(m)}`);
+  }
+});
 
 test('recorder: records a pass from the explicit sentinel, against HEAD', () => {
   const repo = makeRepo({ commits: 2 });
@@ -378,14 +427,52 @@ test('recorder: records a pass from the explicit sentinel, against HEAD', () => 
 
 test('recorder: records a fail from the explicit sentinel', () => {
   const repo = makeRepo({ commits: 1 });
-  recorder(repo, { last_assistant_message: 'REVIEWER VERDICT: FAIL' });
+  recorder(repo, { last_assistant_message: 'Three findings.\n\nREVIEW: FAIL' });
   assert.equal(readRecord(repo).verdict, 'fail');
 });
 
-test('recorder: the last sentinel wins over an earlier one', () => {
+// B1: "last match wins" was a false-pass hole. A failing review that mentions the
+// pass literal afterwards -- while describing the remedy, or while reviewing this
+// very branch, whose subject matter IS that literal -- recorded a pass. Position is
+// no longer evidence of intent. These four are the shapes round 3 demonstrated.
+
+test('recorder: contradicting sentinels are ambiguous, never a pass', () => {
   const repo = makeRepo({ commits: 1 });
   recorder(repo, { last_assistant_message: 'REVIEW: FAIL\n...fixed...\nREVIEW: PASS' });
-  assert.equal(readRecord(repo).verdict, 'pass');
+  assert.equal(readRecord(repo).verdict, 'unknown');
+});
+
+test('recorder: a failing review that quotes the pass form still fails', () => {
+  const repo = makeRepo({ commits: 1 });
+  recorder(repo, {
+    last_assistant_message: [
+      'REVIEW: FAIL',
+      '',
+      'Three BLOCKING findings above. Once they are fixed, re-run the Reviewer;',
+      'it will emit `REVIEW: PASS` and the gate will release.',
+    ].join('\n'),
+  });
+  assert.equal(readRecord(repo).verdict, 'fail', 'an inline quotation must not cast a vote');
+});
+
+test('recorder: a fenced example of the pass line does not cast a vote', () => {
+  const repo = makeRepo({ commits: 1 });
+  // This is the README's own install step, quoted by a review of this branch.
+  recorder(repo, {
+    last_assistant_message: [
+      'The install step tells the Reviewer to emit:', '',
+      '```', 'REVIEW: PASS', '```', '',
+      'That step is missing.', '',
+      'REVIEW: FAIL',
+    ].join('\n'),
+  });
+  assert.equal(readRecord(repo).verdict, 'fail');
+});
+
+test('recorder: a sentinel embedded in prose is not a verdict', () => {
+  const repo = makeRepo({ commits: 1 });
+  recorder(repo, { last_assistant_message: 'The hook looks for REVIEW: PASS on its own line.' });
+  assert.equal(readRecord(repo).verdict, 'unknown');
 });
 
 test('recorder: no message and no readable transcript records "unknown"', () => {

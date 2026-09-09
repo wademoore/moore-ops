@@ -112,8 +112,8 @@ Chosen deliberately, and restated in a comment at the top of each script.
 | Verdict is anything other than exactly `pass` | **CLOSED** | Only an unambiguous pass counts. |
 | Recorded SHA is not an ancestor of HEAD | **CLOSED** | Rebased, amended, or from another branch — it does not cover the commits in hand. |
 | Recorded SHA is well-formed hex naming no commit here | **CLOSED** | Otherwise any invented 40-hex string releases the gate. |
-| Verdict text ambiguous (pass token *and* fail token) | **CLOSED** | Recorded as `fail`. |
-| Verdict text undeterminable | **CLOSED** | Recorded as `unknown`, which is not `pass`. |
+| Message contains both a `REVIEW: PASS` and a `REVIEW: FAIL` line | **CLOSED** | Recorded as `unknown`. Position is not evidence of intent, so a later mention does not win. |
+| Message contains no whole-line sentinel, or none outside a code fence | **CLOSED** | Recorded as `unknown`, which is not `pass`. |
 | Not a git repo, no `origin/main`, merge-base or rev-list failure, git missing | **OPEN** | None of these say anything about whether a review happened. |
 | Malformed stdin payload | **OPEN** | Matches `block-main-push.mjs` and `guard-readonly.mjs` at the same call site: never block on our own parse error. |
 
@@ -143,10 +143,32 @@ The `SubagentStop` payload carries `last_assistant_message` (the Reviewer's fina
 message text) and `agent_transcript_path` as a fallback. Both are read; the
 transcript is only parsed when the convenience field is absent.
 
-**A pass comes from the sentinel and from nothing else.** A message containing
-`REVIEW: PASS` or `REVIEW: FAIL` (last match wins) records that verdict. Every other
-message — however clean it reads — records `unknown`, which the gate treats as no
-coverage. There is no scoring of prose, no keyword list, and no tail window.
+**A pass comes from the sentinel and from nothing else**, and the sentinel has three
+properties that each close a way a pass could be produced without anyone deciding one:
+
+* **anchored** — the line must consist solely of the verdict, so an inline mention
+  (``re-run it and it will emit `REVIEW: PASS` ``) cannot match;
+* **unfenced** — fenced code blocks are stripped before scanning, so quoting the
+  install step above does not cast a vote;
+* **exclusive** — every match is collected and the verdict is taken only if they all
+  agree. A message containing both forms records `unknown`.
+
+Every other message — however clean it reads — records `unknown`, which the gate
+treats as no coverage. There is no scoring of prose, no keyword list, no tail window,
+and no position rule.
+
+**The exclusivity rule replaced "last match wins", which was itself a false pass.**
+A review could state `REVIEW: FAIL` and then mention the pass form while describing
+the remedy — or while reviewing *this branch*, whose subject matter is that literal —
+and the later mention won. Round-3 review found it and demonstrated it on its own
+report. The lesson is the one directly above, arriving a second time in a new
+substrate: the first fix removed prose scoring but kept a positional tiebreak, and a
+tiebreak is still an inference about intent. Nothing is inferred from position now.
+
+**Residual, named rather than implied:** a review that emits no verdict line of its
+own, and quotes a bare, unfenced, un-backticked `REVIEW: PASS` alone on a line, still
+records a pass. That is not a shape a Reviewer writes by accident, and this is an
+accident gate.
 
 **This replaced a token heuristic, and the reason is worth keeping.** The first
 version classified the Reviewer's free prose: pass and fail words, a 15-line tail
@@ -235,15 +257,15 @@ supersedes the previous verdict in both directions.
 
 ## Tests
 
-`test/hooks/reviewer-gate.test.js` — 51 cases, inside the normal `npm test` globs.
+`test/hooks/reviewer-gate.test.js` — 57 cases, inside the normal `npm test` globs.
 Each spawns the real script with a real hook payload against a real throwaway git
 repository and asserts the exit code, so it tests the shipped scripts rather than a
 copy of their logic.
 
-`node scratch/reviewer-gate/mutation-check.mjs` — 18 mutations. Each removes exactly
+`node scratch/reviewer-gate/mutation-check.mjs` — 24 mutations. Each removes exactly
 one deliberate decision from the hooks, runs that same test file against the damaged
-copy, and must go red **in the cases that name that decision**. Result: 18/18 proven,
-with a green control row.
+copy, and must go red **in the cases that name that decision**. Result: 24/24 proven,
+with a green control row and two self-test rows.
 
 Three properties make the table mean something rather than merely look green:
 
@@ -254,10 +276,10 @@ Three properties make the table mean something rather than merely look green:
   suite. A syntax error reddens most of the file, the expected case names appear
   among the wreckage, and the row would otherwise print "as expected" while proving
   nothing. This replaced a blast-radius threshold, which was a proxy for the same
-  question and a poor one: measured here, a syntax error in the recorder fails 16
-  cases and one in the gate fails 31, while the broadest legitimate mutation fails
-  11 — a two-case gap to thread, which the next added test would have closed.
-  Verified by deliberately introducing a dangling-`else` and observing the row
-  report `HOLLOW: mutation does not parse`;
+  question and a poor one: the gap between a whole-file break and the broadest
+  legitimate mutation was two cases, which the next added test would have closed.
+  **Two `SELF-TEST` rows exercise this check on every run**, by injecting a real
+  syntax error into each hook — so the detector is proven by the artifact rather
+  than by a measurement someone took once and quoted afterwards;
 * **at least one test must survive** — parseability is settled above, but a module
   that parses and then throws while loading would redden the file the same way.

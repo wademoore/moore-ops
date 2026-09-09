@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2139+ passing with a browser
+- Run npm test after changes — must stay at 2196+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -1863,7 +1863,51 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 8, 2026 on the prep-task fan-out branch
+### Current baseline — measured Sept 9, 2026 on the Reviewer-gate branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test`, no browser resolvable | 2196 | 2159 | 3 | 34 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2196 | **2196** | **0** | **0** |
+
+Measured on `claude/stop-hook-reviewer-4tysci`, whose merge base with `main` is
+**`2d01027`** (PR #51). **That merge base was re-measured in this session, before any
+change: 2139 / 2139 / 0 / 0 with a browser** — which matches the figure the entry
+below recorded, so the recorded delta held for a second consecutive baseline. Re-measure
+anyway. `git fetch origin main` was run *before* deriving the merge base, per the standing
+warning; this time the ref was already current at `2d01027`.
+
+This change adds **+57**, all in one new file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/hooks/reviewer-gate.test.js` (new) | — | 57 | +57 |
+
+The file is a behavioural matrix for a **standalone, unwired** Stop-hook artifact in
+`scratch/reviewer-gate/` — two hooks that make a Reviewer pass mandatory. Nothing under
+`.claude/` is touched, so no hook in this repository behaves differently because of it;
+the tests spawn the scripts by path against throwaway git repositories. It lives in
+`test/hooks/` rather than beside the scripts for the same reason
+`guard-archived-files.test.js` does: `package.json`'s globs are `test/**`, `digest/**`
+and `render/**`, so a test under `scratch/` would never run here or in CI.
+
+Companion mutation harness, **not** part of `npm test` and run on demand:
+`node scratch/reviewer-gate/mutation-check.mjs` → 24 mutations, 24/24 proven, green
+control, plus two self-test rows that inject a real syntax error to prove the harness's
+own hollowness check is live.
+
+The no-browser row is kept for the reason the entry below gives. Its failures and
+cancellations are the standing no-browser set, unchanged by this work.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2196+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 8, 2026 on the prep-task fan-out branch
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -1905,7 +1949,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2139+ with no failures once a browser resolves.**
+(Superseded — see Current baseline above; the figure is now 2196.)
 
 ### Previous baseline — measured Sept 8, 2026 on the baritone-reminder branch
 

@@ -16,10 +16,11 @@
 //                           as no coverage, so an undeterminable review blocks
 //                           exactly as an absent one does.
 //
-//   Any message without an exact "REVIEW: PASS" / "REVIEW: FAIL" sentinel
-//                        -> record "unknown". FAIL CLOSED: only an exact sentinel
-//                           produces a pass, so no wording of a review -- however
-//                           clean it reads -- can be mistaken for one.
+//   Any message without exactly one agreed "REVIEW: PASS" / "REVIEW: FAIL" line
+//                        -> record "unknown". FAIL CLOSED: a pass requires a
+//                           whole-line, unfenced sentinel with no contradicting
+//                           one anywhere, so neither the wording of a review nor a
+//                           quotation of the literal can be mistaken for a verdict.
 //
 //   Malformed stdin payload, unresolvable git dir, git command failure, or an
 //   unwritable record path
@@ -91,37 +92,42 @@ if (!gitDir || !head) process.exit(0);
 
 // --- verdict extraction -----------------------------------------------------
 //
-// One tier, not two: an exact sentinel, or "unknown". See classify() below for
-// what was there before and why it is gone.
+// One tier, not two: a whole-line sentinel that nothing else in the message
+// contradicts, or "unknown". See classify() below for what was there before, what
+// replaced "last match wins", and why.
 
-const SENTINEL = /\bREVIEW(?:ER)?(?:\s+VERDICT)?\s*[:=\u2013\u2014-]\s*\**\s*(PASS|FAIL)\b/gi;
+// Whole-line, fenced code excluded, and CONTRADICTION IS AMBIGUITY.
+//
+// Three properties, each closing a way a pass could be produced by something other
+// than a deliberate verdict:
+//
+//   anchored   The line must consist solely of the verdict. An inline mention --
+//              "re-run it and it will emit `REVIEW: PASS`" -- carries backticks and
+//              trailing prose, so it cannot match.
+//   unfenced   Fenced code blocks are removed before scanning, because the README's
+//              own install step shows the literal inside one, and quoting the
+//              instruction must not cast a vote.
+//   exclusive  Every match is collected and the verdict is taken only if all of
+//              them agree. A message containing both forms is "unknown".
+//
+// The third replaced "last match wins", which was a false-pass hole: a review could
+// state REVIEW: FAIL and then mention the pass form while describing the remedy,
+// and the later mention won. Round-3 review demonstrated it. Position is not
+// evidence of intent, so nothing is inferred from it any more; a review that
+// contradicts itself has not passed.
+//
+// Residual, named rather than implied: a review that emits no verdict line of its
+// own and quotes a bare, unfenced, unbackticked "REVIEW: PASS" on a line by itself
+// still records a pass. This is an accident gate (see README), and that shape is
+// not something a Reviewer writes by accident.
+const SENTINEL = /^[ \t]*(?:\*\*)?REVIEW:[ \t]*(PASS|FAIL)(?:\*\*)?[ \t.]*$/gim;
+const FENCED = /^[ \t]*(?:```|~~~)[\s\S]*?^[ \t]*(?:```|~~~)[ \t]*$/gm;
 
-// A pass is produced by the sentinel and by NOTHING else.
-//
-// An earlier version of this file classified the Reviewer's free prose with token
-// heuristics -- pass/fail words, a tail window, negation stripping. Review found
-// four defects in it, in both directions: an early "FAIL" laundered by a clean
-// per-item recap tail; the same shape with the checklist's own "automatic BLOCK";
-// a markdown heading whose negation sat on the next line ("## BLOCKING" / "None.")
-// recording a clean review as a failure; and the negation strip added to fix that
-// last one widening the first two.
-//
-// They are not four independent bugs. They are the standing cost of deciding a
-// gate's verdict by pattern-matching prose, and a fifth shape was always going to
-// exist. Every one of them disappears if the only thing that can produce a pass is
-// an exact string, so that is what this does. Anything else is "unknown", which the
-// gate treats as no coverage.
-//
-// The cost is real and is paid deliberately: the Reviewer MUST emit the sentinel or
-// the gate never releases except through the override. That makes the reviewer.md
-// install step in the README mandatory rather than optional -- which is the honest
-// shape of this design, and was already true before, only hidden behind a heuristic
-// that looked like it could stand in.
 function classify(text) {
   if (typeof text !== 'string' || !text.trim()) return 'unknown';
-  let verdict = null;
-  for (const m of text.matchAll(SENTINEL)) verdict = m[1].toLowerCase(); // last wins
-  return verdict ?? 'unknown';
+  const seen = new Set();
+  for (const m of text.replace(FENCED, '').matchAll(SENTINEL)) seen.add(m[1].toLowerCase());
+  return seen.size === 1 ? [...seen][0] : 'unknown'; // none, or self-contradictory
 }
 
 let text = typeof payload?.last_assistant_message === 'string' ? payload.last_assistant_message : '';
