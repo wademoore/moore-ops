@@ -1131,23 +1131,27 @@ function sportsMetadataCopy(slot) {
   return [sportsDisplayDashes(records.overall || slot.record), sportsDisplayDashes(slot.standing)].filter(Boolean).join(' · ');
 }
 
-function renderTicker(data) {
-  const slots = data.sportsSnapshot?.slots || data.sportsTicker || [];
-  const treatment = data.sportsMetadataTreatment === 'dedicated' ? 'dedicated' : 'inline';
-  const format = slot => {
+// Shared display projection for the TV ticker and mobile followed-team rows.
+// Keep provider selection and relevance in sports/model.js.
+function sportsSlotLines(slot, now = new Date(), treatment = 'inline') {
     const e = slot.event;
     const summary = sportsMetadataCopy(slot);
     const attach = line => treatment === 'inline' && summary ? `${line} · ${summary}` : line;
     if (!e && slot.lastResult) { const r = slot.lastResult, place = r.homeAway === 'home' ? 'vs' : '@', opponent = r.opponentAbbreviation || r.opponent; return [`${slot.label} ${r.result} ${r.teamScore}–${r.opponentScore}`, attach(`Last · ${place} ${opponent}`), summary]; }
     if (!e) return [slot.presentationState === 'unavailable' ? 'Data unavailable' : slot.label, attach(slot.presentationState === 'unavailable' ? 'Last credible update retained' : 'Offseason · No game in the current window'), summary];
     const team = e.rank ? `#${e.rank} ${slot.label}` : slot.label, place = e.homeAway === 'home' ? 'vs' : '@', opponent = e.opponentAbbreviation || e.opponent;
-    const when = formatSportsEventWhen(e.startTime, data.now || new Date(), { opener: ['opener','distant-opener'].includes(slot.presentationState) });
+    const when = formatSportsEventWhen(e.startTime, now, { opener: ['opener','distant-opener'].includes(slot.presentationState) });
     if (e.state === 'live') return [`${team} ${e.teamScore} · ${opponent} ${e.opponentScore}`, attach(`${e.statusText || 'Live'}${e.clock ? ` · ${e.clock}` : ''}`), summary];
     if (e.state === 'final') return [`${team} ${e.result} ${e.teamScore}–${e.opponentScore}`, attach(`Final · ${place} ${opponent}`), summary];
     const status = ['delayed','postponed','suspended','cancelled'].includes(e.state) ? (e.statusText || e.state) + ' · ' : '';
     const last = slot.lastResult ? ` · Last ${slot.lastResult.result} ${slot.lastResult.teamScore}–${slot.lastResult.opponentScore}` : '';
     return [`${team} ${place} ${opponent}`, attach(`${status}${when}${last}${slot.dataDelayed ? ' · Data delayed' : ''}`), summary];
-  };
+}
+
+function renderTicker(data) {
+  const slots = data.sportsSnapshot?.slots || data.sportsTicker || [];
+  const treatment = data.sportsMetadataTreatment === 'dedicated' ? 'dedicated' : 'inline';
+  const format = slot => sportsSlotLines(slot, data.now || new Date(), treatment);
   const rendered = slots.slice(0, 4).map(slot => { const [line1,line2,meta=''] = slot.line1 ? [slot.line1,slot.line2,slot.meta] : format(slot); return `<div class="ticker-slot ${slot.event?.state === 'live' || slot.active ? 'active' : ''}" data-sports-org="${esc(slot.organization || '')}">${logo(V2_LOGOS[slot.logo || slot.organization] || V2_LOGOS.wm, 'ticker-logo')}<div><b>${esc(line1)}</b><span>${esc(line2)}</span><small class="ticker-meta">${esc(meta)}</small></div></div>`; }).join('');
   const updated = data.sportsSnapshot?.generatedAt || new Date().toISOString();
   return `<footer class="sports-ticker metadata-${treatment}" data-sports-version="1" data-metadata-treatment="${treatment}">${rendered}<i class="ticker-doodle" aria-hidden="true"></i><small class="updated">Updated ${esc(new Date(updated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }))} ET</small></footer>`;
@@ -1659,6 +1663,12 @@ export {
   selectHorizonEvents,
   sportsDisplayDashes,
   sportsMetadataCopy,
+  sportsSlotLines,
+  formatEventTime,
+  eventSubtitleWithoutTime,
+  eventDateKey,
+  rangeDetail,
+  horizonPresentation,
   PALETTE,
   V2_LOGOS,
   HOLIDAY_DOODLES,

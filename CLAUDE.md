@@ -2404,6 +2404,21 @@ method, so they chain directly to the 988 pre-change number above.
 
 ## Current state (changelog)
 
+- **Mobile companion — local implementation (Sept 9, 2026):**
+  `render/dashboard-mobile.js` consumes the existing v2 adapter output, with six
+  swipeable/read-only sections and responsive phone/tablet/desktop navigation.
+  `scripts/render-dashboard-mobile-preview.mjs` generates labeled representative
+  states or a read-only real-data preview when existing authorization is configured;
+  its optional server binds to loopback and serves only generated HTML. No production
+  publication, auth endpoint, household refresh, sports polling, digest/data changes,
+  or TV cutover is included. Shared v2 presentation helpers are reused, with the TV's
+  server-side ticker projection extracted without changing its output. See
+  `docs/dashboard-v2/MOBILE.md` for usage and the known Windows baseline test failures,
+  and `docs/dashboard-v2/mobile-dashboard-spec.md` for the accepted mapping and the
+  separate authenticated-publishing/freshness handoff. The local checkout has no Google
+  auth files; representative previews and the injected adapter test are not evidence
+  of a live household fetch.
+
 - **Today's prep item stopped fanning out across the 72h window (Sept 8, 2026):**
   `digest/builder.js` computed ONE `getSchoolStrip(today)` and handed that same object
   to `generateTasks()` for all three days of its window, while `generateTasks()` gated the

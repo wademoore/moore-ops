@@ -2,6 +2,9 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dashboard-v2-dev-server.mjs",
+    "preview:mobile": "node scripts/render-dashboard-mobile-preview.mjs",
+    "preview:mobile:serve": "node scripts/render-dashboard-mobile-preview.mjs --serve",
+    "preview:mobile:real": "node scripts/render-dashboard-mobile-preview.mjs --real",
     "test": "node --experimental-vm-modules --test 'test/**/*.test.js' 'digest/**/*.test.js' 'render/**/*.test.js'",
     "preview:dashboard-v2": "node scripts/render-dashboard-v2-preview.mjs",
     "preview:dashboard-v2:real": "node scripts/render-dashboard-v2-real-preview.mjs",
