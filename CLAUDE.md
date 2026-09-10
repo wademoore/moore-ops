@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2196+ passing with a browser
+- Run npm test after changes — must stay at 2335+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -528,6 +528,78 @@ UTF-8 BOM (a Windows editor default). Probed: a BOM on `settings.json` and on th
 file changed nothing — both hooks still fired. They were stripped anyway: `main`'s
 versions have none, a strict `JSON.parse` refuses a BOM (the wiring test uses one), and a
 BOM is invisible in every editor and visible in every diff.
+
+### The allowlist itself — revision 2 (Sept 10, 2026), reviewed but NOT installed
+
+`guard-readonly.mjs` is deny-listed for `Edit`/`Write`, so revision 2 ships as paste-ready
+content in `scratch/reviewer-allowlist/` alongside a checklist, an adversarial script and a
+frozen copy of revision 1. **Until Wade pastes it, the installed hook is revision 1 and
+everything below describes a reviewed proposal, not live behaviour.**
+`test/hooks/reviewer-allowlist.test.js` (93 tests) drives the `scratch/` copy;
+`test/hooks/guard-readonly.test.js` keeps driving the installed one, so both are green
+either side of the paste.
+
+**What it claims, exactly: read-only BY ALLOWLIST, not read-only IN EFFECT.** Every command
+a restricted role can express is a pure read or an invocation of code already committed to
+this repository; it gains no primitive that writes a file directly. It can still cause
+writes *indirectly* by running repo code that writes — and that was already true before
+revision 2, because `npm test` and `npm run <script>` were on the allowlist and
+`npm run preview:dashboard-v2:png` writes PNGs. "The Reviewer can run what it reviews" and
+"the Reviewer cannot execute code" are the same requirement in opposite directions and
+cannot both hold; a `PreToolUse` hook sees a command string, not a filesystem, so it cannot
+sandbox. What revision 2 *does* bound is the class: no absolute path, no `..`, no `node -e`
+for the Reviewer, and nothing on the allowlist can create the file it would need to escape
+that.
+
+**Revision 1 was not read-only either, and three of its holes are closed here.** Each was
+confirmed by running it rather than by reading the regex:
+
+| revision 1 allowed | what it actually did |
+|---|---|
+| `git branch -D x` / `-m a b` / `git branch newname` | modified a branch |
+| `git diff --output=<path>` | wrote an arbitrary file — 751 bytes landed |
+| `git diff` + a newline + any command | a newline is a shell separator and was absent from `[;&\|><`]` |
+| `cat $HOME/...` | bare `$` expansion was unchecked |
+
+**The composition check became a quote-aware scanner**, which fixed the same defect in both
+directions: it missed a newline, and it fired on a metacharacter *inside quotes*, so
+`grep -E 'a|b' file` — a command a reviewer needs constantly — was refused. It now walks the
+string tracking quote state: single quotes are literal, double quotes still refuse `` ` ``,
+`$` and `\`, an unterminated quote fails closed, and `$` outside quotes is refused because
+no read this role needs depends on expansion.
+
+**The environment prefix is name-allowlisted, not denylisted.** `DASHBOARD_BROWSER_PATH=…
+npm test` was refused by revision 1's start anchor, which is the whole reason three review
+rounds on one pull request reported the suite UNVERIFIED. A denylist would have to
+anticipate every variable that redirects an interpreter (`NODE_OPTIONS`, `NODE_PATH`,
+`LD_PRELOAD`, `GIT_EXTERNAL_DIFF`, `npm_config_script_shell`, `BASH_ENV`, `PERL5OPT`…), and
+missing one turns "run repo code" into "run any code". Adding a name is a reviewed change
+to a deny-listed file, which is the point.
+
+**Short flags are scoped per binary, because their meaning is.** `grep -o` is
+only-matching and `grep -c` counts — both reads — while `sort -o` writes a file and
+`git -c` injects configuration that can name an external pager command. A global rule for
+either would have broken a read or allowed a write. `aws` is likewise exempt from the
+write-flag check, because there `--output` selects a response *format* and never names a
+file; without the exemption this change would have silently broken the Debugger's core
+command.
+
+**Network documentation is granted as `WebFetch`/`WebSearch` in the Reviewer's frontmatter,
+not as `curl`.** `curl`'s flag surface (`-o -O -D -T -K --trace`) is a file-write and upload
+primitive; the two tools are pure reads with no write verb, and the guard does not even see
+them because it matches `Bash|PowerShell`. Named rather than glossed: any egress is in
+principle an exfiltration channel — what bounds it is that composition, `$(…)`, backticks
+and newlines are all refused, so no file's contents can be interpolated into a URL.
+
+**Guards proved by mutation, not asserted:** `node scratch/reviewer-allowlist/mutation-check.mjs`
+→ **21/21 proven**, green control, plus two self-tests — a syntax error in the guard, and a
+run that emits no summary at all. The second matters on its own: a hang and a clean pass
+parse identically, so without it the harness's own "inconclusive" branch would be unproven.
+Two rows were wrong on the first run and are worth recording: one `find` string had the
+wrong indentation and silently applied zero times (the harness caught it, which is what the
+occurrence assertion is for), and one expectation named the `sed -i` case, which is refused
+by the allowlist *before* the scoped rule is reached — so that rule is defence in depth with
+nothing of its own to prove, and the test says so rather than taking credit for it.
 
 ### Editing this section is itself partly blocked — read this before trying
 
@@ -1885,7 +1957,52 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 9, 2026 on the Reviewer-gate branch
+### Current baseline — measured Sept 10, 2026 on the Reviewer-allowlist branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2335 | **2335** | **0** | **0** |
+
+Measured on `claude/reviewer-shell-allowlist-q8e57z`, whose merge base with `main` is
+**`ada361f`** (PR #57). **That merge base was re-measured in this session, after
+`npm install` and before any change: 2335 - 93 = 2242 / 2242 / 0 / 0 with a browser** —
+which is also the figure PR #58 records against the same commit, from a different session.
+Re-measure anyway; the run costs less than the correction does.
+
+This change adds **+93**, all in one new file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/hooks/reviewer-allowlist.test.js` (new) | — | 93 | +93 |
+
+The file is the behavioural matrix for **revision 2 of `guard-readonly.mjs`, which is not
+installed** — `.claude/hooks/` is deny-listed, so the guard ships as paste-ready content in
+`scratch/reviewer-allowlist/` and the matrix spawns that copy by path. Nothing under
+`.claude/` is touched, so no hook in this repository behaves differently because of it, and
+`test/hooks/guard-readonly.test.js` (26) keeps driving the installed copy unchanged.
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was run this
+session, and quoting a figure that was not taken is exactly the unfalsifiable claim this
+section exists to prevent. The new file needs no browser and contributes 0 to the standing
+no-browser failure set either way.
+
+Companion harness, **not** part of `npm test` and run on demand:
+`node scratch/reviewer-allowlist/mutation-check.mjs` → 21 mutations, 21/21 proven, green
+control, plus two self-tests (a syntax error in the guard, and a run that emits no summary
+at all — a hang and a clean pass parse identically, so the second is what makes the
+harness's own "inconclusive" branch real rather than decorative).
+`node scratch/reviewer-allowlist/adversarial-test.mjs` → 28/28, and takes `--installed` to
+drive `.claude/hooks/` after the paste.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2335+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 9, 2026 on the Reviewer-gate branch
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -2403,6 +2520,51 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Reviewer read-only allowlist widened, and three write routes in it closed (Sept 10, 2026
+  — reviewed, NOT installed):** Revision 2 of `guard-readonly.mjs`. `.claude/hooks/` is
+  deny-listed for `Edit`/`Write`, so it ships as paste-ready content in
+  `scratch/reviewer-allowlist/` with a checklist, an adversarial script that takes
+  `--installed`, and a frozen byte copy of revision 1. **The installed hook is revision 1
+  until Wade pastes**; nothing under `.claude/` was written and no deny rule was lifted or
+  worked around. Full design in "The gate" → "The allowlist itself — revision 2".
+  **The starting problem was measured, not taken from the write-up:** across three review
+  rounds on PR #58 the Reviewer could not run the evidence script under review, could not
+  fetch a cited document, could not run the browser-enabled suite, and could not ask git for
+  its own version — so it checked citations against copies the authoring session had
+  retained, which confirms an account rather than checking it. Each refusal was reproduced
+  against the shipped hook before anything was changed.
+  **The change is a widening in reach and a NARROWING in capability**, because revision 1
+  was not read-only either. Confirmed by running them: `git branch -D x` / `-m a b` /
+  `git branch newname` modified a branch; `git diff --output=<path>` wrote an arbitrary file
+  (751 bytes landed); a newline is a shell separator and was absent from the guard's
+  metacharacter set, so `git diff` plus a newline ran the second command; and bare `$`
+  expansion was unchecked. All four are closed.
+  **The honest claim is stated rather than implied: read-only BY ALLOWLIST, not read-only IN
+  EFFECT.** Running the repo's own scripts is running arbitrary code, and that capability
+  already existed via `npm run` — `npm run preview:dashboard-v2:png` writes PNGs. The two
+  properties cannot both hold and a `PreToolUse` hook cannot sandbox, so what is bounded is
+  the class: repo-relative paths only, no `..`, no `node -e` for the Reviewer, and nothing on
+  the allowlist can create the file it would need to escape that.
+  **Three findings shaped the implementation.** (1) The composition check was wrong in both
+  directions — it missed a newline *and* fired on a metacharacter inside quotes, so
+  `grep -E 'a|b' file` was refused; it is now a quote-aware scanner that fails closed on an
+  unterminated quote. (2) Short flags cannot be judged globally: `grep -o` is only-matching
+  and `grep -c` counts, while `sort -o` writes and `git -c` injects a config value that can
+  name an external pager command — a global rule either way would have broken a read or
+  allowed a write. (3) `aws --output` is a response *format*, not a file, so the write-flag
+  check exempts `aws`; without that exemption this change would have silently broken the
+  Debugger's core command. Network documentation is granted as `WebFetch`/`WebSearch` in the
+  Reviewer's frontmatter, never as `curl`, whose flag surface is a write and upload
+  primitive.
+  **Guards proved by mutation rather than asserted:** 21 mutations, **21/21 proven**, green
+  control, plus two self-tests. Two rows were wrong on the first run and are recorded rather
+  than quietly fixed: one `find` string had the wrong indentation and applied zero times (the
+  occurrence assertion caught it, which is what it is for), and one expectation named the
+  `sed -i` case — which the allowlist refuses *before* the scoped rule is reached, so that
+  rule is defence in depth with nothing of its own to prove, and the test now says so instead
+  of taking credit for it. Tests **2242 → 2335**, all passing with a browser; the merge base
+  was re-measured in-session rather than taken from this file.
 
 - **Mobile companion — local implementation (Sept 9, 2026):**
   `render/dashboard-mobile.js` consumes the existing v2 adapter output, with six
@@ -2960,20 +3122,29 @@ enumerated under test, digest, and render directly to Node. No deployment.
   unrecognised role so Coder is untouched. Verified live, not inferred: a Reviewer subagent
   running headless in this sandbox had `git fetch origin main` and an env-prefixed
   `node --test` refused by the allowlist. See "The gate" → "Read-only role hooks live in
-  agent frontmatter" for the two-copy table and why both copies coexist. **Still genuinely
-  open, and much narrower:** a Reviewer cannot run the browser-enabled suite at all, because
-  both allowlist entries refuse every route to it today. That does **not** mean a fix has to
-  touch both — relaxing either one's start anchor to tolerate an environment-variable prefix
-  would open that route on its own, since the resulting command contains no shell
-  metacharacter and would clear the composition check before reaching the allowlist. Both are
-  start-anchored — `/^npm (test|run [a-z:-]+)$/` and `/^node( --[a-z-]+)* --test/` — so any
-  environment-variable prefix defeats them: `DASHBOARD_BROWSER_PATH=… npm test` and
-  `DASHBOARD_BROWSER_PATH=… node --test` are both refused. The `npm` entry is additionally
-  `$`-anchored, so no trailing argument can be appended either, and no `package.json` script
-  sets the variable internally. The Reviewer is therefore confined to the no-browser row,
-  which the Test baseline explicitly says is *not* the row to compare against — a real gap
-  in what a Reviewer can verify, and the reason three consecutive review rounds on this
-  branch reported tests as unverified.
+  agent frontmatter" for the two-copy table and why both copies coexist.
+
+  **✓ The narrow remainder is now answered too — reviewed Sept 10, 2026, and AWAITING A
+  PASTE.** The remainder said a Reviewer cannot run the browser-enabled suite at all,
+  because both entries are start-anchored (`/^npm (test|run [a-z:-]+)$/` and
+  `/^node( --[a-z-]+)* --test/`) so any environment-variable prefix defeats them, confining
+  the Reviewer to the no-browser row that the Test baseline explicitly says is *not* the row
+  to compare against. Revision 2 of the guard fixes that with a name-allowlisted environment
+  prefix, and fixes three further refusals the same audit named: the evidence script under
+  review, network documentation, and `git --version`. It ships as paste-ready content in
+  `scratch/reviewer-allowlist/` because `.claude/hooks/` is deny-listed — **so the installed
+  hook is still revision 1 until Wade pastes, and until then this remainder is open in
+  practice even though it is closed in review.** See "The gate" → "The allowlist itself —
+  revision 2" for the claim it makes, the four holes it closes, and why network access is
+  `WebFetch` rather than `curl`.
+
+  **The remainder's own diagnosis was right about the mechanism and incomplete about the
+  stakes**, which is worth recording because it is the same shape this file keeps finding.
+  It read revision 1 as too narrow. Revision 1 was *also too wide*: `git branch -D`,
+  `git branch -m`, `git diff --output=<path>` and a newline-separated second command were all
+  ALLOWED, each confirmed by running it. A guard described for weeks as "read-only" could
+  modify a branch and write an arbitrary file. Reading an allowlist for what it refuses, and
+  never for what it permits, is how that survived.
 
 - **Special-event foundation P5 cleanup — blocked on a real production cycle, deliberately (Aug 29, 2026).** Delete `digest/legacySpotlightCompat.js` together with the `familySpotlightConfig` line in `digest/builder.js`, its `requiredBundleInputs` entry and the `specialEventsSampleData` projection; then delete the four oracles (`data/family-spotlight.json`, `digest/familySpotlightSelector.js`, its test, `test/artifact/family-spotlight-contract.test.js`) and `test/fixtures/legacy-athletics-panels.json`. **Do not do this until the registry path has run at least one real production cycle** — the oracles are the only thing that can prove a regression, and deleting them early is how a migration bug becomes undetectable. A test asserts the shim's bundle-input declaration exists *exactly while* `builder.js` imports it, so a half-done removal fails rather than leaving a dangling path. Also open at P5: whether to rename `FAMILY_SPOTLIGHT_ENABLED`, and whether First Day Level-3 becomes registry-driven — the latter should be settled **before** any second Takeover (Christmas morning) is built, not after.
 - **✓ RESOLVED Aug 29, 2026 — the package gate now runs before merge, not after it.** This bullet previously said `scripts/validate-dashboard-artifact-package.mjs` "must be green in CI before merge" — which was not true of any workflow that existed: it ran only in `deploy-dashboard-v2-artifact.yml` on `push` to `main`, so its first execution was *after* the merge, as the deploy job's first action. Two things changed. (1) The gate was finally executed for real: `sam` installed into a throwaway virtualenv locally gives `sam build` → Build Succeeded and `dashboard artifact package: valid (10 data files, Emma parser/evaluator/builder markers present)`. (2) `ci.yml` now runs the same two commands on `pull_request`, with `permissions: contents: read`, no secrets, no OIDC token, no AWS CLI and no `sam deploy` — see "The package gate is a pull-request gate" above for the full contract and its 13 tests. The deploy workflow keeps its own copy of the step ahead of `Configure AWS credentials`, so nothing is weakened where it guards a real deployment. **The general lesson outlives the fix:** a gate named in this file as pre-merge was, for as long as it was written down, post-merge only — nobody had checked *which workflow* ran it. Naming a check is not the same as knowing when it fires.
