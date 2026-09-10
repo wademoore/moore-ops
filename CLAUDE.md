@@ -68,6 +68,21 @@ the feature.
 
 ## Frozen surfaces
 
+### Flag football artwork (September 2026)
+
+Dashboard v2 and mobile use local NFL mascot artwork for the athletics header,
+next opponent, and standings. Mascot lookup selects artwork only; the digest's
+`isMe` value identifies our standings row. Never infer team identity from a logo
+or mascot. Unknown names retain text without a logo. Calendar/Now-Next logo
+association still needs authoritative event identity and is not implemented here.
+The next-game display uses `thisWeekOpponent`/nullable `thisWeekTime` when present,
+otherwise the existing `nextFlagGame` opponent, date and optional time, without borrowing a time
+from another occurrence. The single flag-card layout keeps the 1473.83 × 315.63
+panel footprint and puts six standings rows beside the record and next matchup.
+Cowboys artwork was supplied by Wade. Ravens, Bears, Broncos, Texans, and Panthers
+PNGs came from ESPN's `https://a.espncdn.com/i/teamlogos/nfl/500/` assets
+(`bal`, `chi`, `den`, `hou`, `car` respectively), downloaded September 10, 2026.
+
 ### v1 dashboard is frozen (2026-08-27)
 
 `render/dashboard.js` (v1) is frozen. Do not iterate, improve, refactor, or

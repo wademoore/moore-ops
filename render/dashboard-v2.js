@@ -107,7 +107,12 @@ const HOLIDAY_DOODLES = Object.fromEntries(
 );
 
 const V2_LOGOS = {
-  cowboys: '',
+  cowboys: optionalAssetDataUrl('logo-cowboys.png'),
+  ravens: optionalAssetDataUrl('logo-ravens.png'),
+  bears: optionalAssetDataUrl('logo-bears.png'),
+  broncos: optionalAssetDataUrl('logo-broncos.png'),
+  texans: optionalAssetDataUrl('logo-texans.png'),
+  panthers: optionalAssetDataUrl('logo-panthers.png'),
   waves: optionalAssetDataUrl('logo-waves.png'),
   sharks: optionalAssetDataUrl('logo-sharks.png'),
   swim757: optionalAssetDataUrl('logo-757swim.png'),
@@ -761,9 +766,9 @@ function renderUpcoming(data) {
   </section>`;
 }
 
-function renderStandingRows(rows, columns = ['team', 'w', 'l']) {
+function renderStandingRows(rows, columns = ['team', 'w', 'l'], flagLogos = false) {
   return (rows || []).slice(0, 6).map(row => `<tr class="${row.isMe ? 'is-me' : ''}">
-    ${columns.map((column, index) => `<td class="${index === 0 ? 'team-cell' : ''}">${esc(row[column] ?? row.mascot ?? '')}</td>`).join('')}
+    ${columns.map((column, index) => `<td class="${index === 0 ? 'team-cell' : ''}">${flagLogos && index === 0 ? flagLogoMark(row[column] ?? row.mascot) : ''}${esc(row[column] ?? row.mascot ?? '')}${flagLogos && index === 0 && row.isMe ? ' · Us' : ''}</td>`).join('')}
   </tr>`).join('');
 }
 
@@ -839,16 +844,33 @@ function flagTeamLogo(teamName) {
   return V2_LOGOS[key];
 }
 
+// Select artwork for an already-resolved mascot, never a league team identity.
+function flagLogoMark(teamName) {
+  const asset = flagTeamLogo(teamName);
+  return asset ? logo(asset, 'flag-team-mark') : '';
+}
+
+function flagNextGame(a) {
+  if (a.thisWeekOpponent) return { opponent: a.thisWeekOpponent, detail: a.thisWeekTime || '' };
+  if (a.nextFlagGame?.opponent) return {
+    opponent: a.nextFlagGame.opponent,
+    // Do not attach a calendar time to a different, data-selected fixture.
+    detail: conversationalMatchDate(a.nextFlagGame.date, a.nextFlagGame.time),
+  };
+  return null;
+}
+
 function renderFlagFootballCard(a) {
+  const next = flagNextGame(a);
   const teamName = typeof a.flagTeamName === 'string' ? a.flagTeamName.trim() : '';
   const ribbonLabel = teamName ? `NFL FLAG · ${esc(teamName)}` : 'NFL FLAG';
-  return `<article class="athletic-card tone-red">
+  return `<article class="athletic-card flag-football-card tone-red">
     <div class="athletic-ribbon">${logo(flagTeamLogo(teamName), 'athletic-logo')}<span>${ribbonLabel}</span></div>
     <div class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</div>
     <small>${esc(a.seasonLabel || 'Season')}</small>
     ${a.lastResult ? `<div class="result-line"><b>${esc(a.lastResult)}</b><span>Latest result</span></div>` : ''}
-    ${a.thisWeekOpponent ? `<div class="next-box"><b>Next game</b><span>vs. ${esc(a.thisWeekOpponent)}${a.thisWeekTime ? ` · ${esc(a.thisWeekTime)}` : ''}</span></div>` : ''}
-    <table><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${renderStandingRows(a.standings)}</tbody></table>
+    ${next ? `<div class="next-box"><b>Next game</b><span>${flagLogoMark(next.opponent)}vs. ${esc(next.opponent)}${next.detail ? ` · ${esc(next.detail)}` : ''}</span></div>` : ''}
+    <table><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${renderStandingRows(a.standings, ['team', 'w', 'l'], true)}</tbody></table>
   </article>`;
 }
 
@@ -1443,6 +1465,8 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .upcoming-event.accent-tone-red>.accent-label{background:${COLORS.red}}
 .upcoming-event.accent-tone-purple>.accent-label{background:${COLORS.purple}}
 .card-count-1 .athletics-grid{display:block}.card-count-1 .athletic-card{height:100%;padding-right:0;border-right:0;display:grid;grid-template-columns:150px minmax(0,1fr);grid-template-rows:44px auto 1fr;column-gap:22px}.card-count-1 .athletic-ribbon{grid-column:1/3}.card-count-1 .record{grid-column:1;grid-row:2/4;font-size:58px;margin-top:16px}.card-count-1 .athletic-card>small{grid-column:1;grid-row:3;margin-top:80px;font-size:18px}.card-count-1 .next-box{grid-column:2;grid-row:2/4;margin:12px 0 0;padding:12px 16px;justify-content:center}.card-count-1 .next-box b{font-size:16px}.card-count-1 .next-box span{font-size:25px;line-height:1}.card-count-1 .next-box strong{font-family:"Roboto Slab",Georgia,serif;font-size:27px;line-height:1.15;margin-top:7px}.card-count-1 .next-box small{font-size:18px;margin-top:5px}.card-count-1 .result-line,.card-count-1 .standing-line{display:none}
+.flag-team-mark{width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:5px}.next-box .flag-team-mark{width:24px;height:24px}.flag-football-card .athletic-logo{width:36px;height:36px;background:transparent;border-radius:0;padding:0}
+.card-count-1 .flag-football-card{grid-template-columns:170px minmax(0,1fr) 400px}.card-count-1 .flag-football-card .athletic-ribbon{grid-column:1/4}.card-count-1 .flag-football-card table{grid-column:3;grid-row:2/4;align-self:start;margin-top:12px;line-height:1}.card-count-1 .flag-football-card .record{grid-row:2;margin-top:16px}.card-count-1 .flag-football-card>small{margin-top:0}.card-count-1 .flag-football-card .next-box{align-self:start}.card-count-1 .flag-football-card td{padding:1px 0}
 .next-up-card{display:flex;flex-direction:column}.next-up-card:before{display:none}.next-up-label{flex:0 0 38px;width:100%}.next-up-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.next-up-item{position:relative;display:grid;grid-template-columns:58px minmax(0,1fr);gap:8px;padding:6px 2px 6px 9px;border-bottom:1px solid rgba(20,40,31,.14);min-height:0}.next-up-item:last-child{border-bottom:0}.next-up-item:before{content:"";position:absolute;left:-3px;top:7px;bottom:7px;width:5px;background:${COLORS.green}}.next-up-item.person-myles:before{background:${COLORS.red}}.next-up-item.person-ophelia:before{background:${COLORS.purple}}.next-up-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.next-up-item .next-up-date b{font-size:34px}.next-up-item .next-up-date span{font-size:11px}.next-up-item .next-up-copy strong{font-size:18px;line-height:1}.next-up-item .next-up-copy small{font-size:13px;line-height:1;margin-top:3px}
 /* TV readability tokens. Day is intentionally oatmeal; evening is a restrained warm reduction, not dark mode. */
 .dashboard{--canvas:${PALETTE.day.canvas};--surface-panel:${PALETTE.day.panel};--surface-alt:${PALETTE.day.panelAlt};--secondary:${PALETTE.day.secondary};--rule:${PALETTE.day.rule};background-color:var(--canvas);background-image:var(--paper-image),radial-gradient(circle at 10% 12%,rgba(122,95,47,.08),transparent 24%),linear-gradient(105deg,rgba(255,255,255,.07),transparent 38%)}
@@ -1548,6 +1572,8 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
    No font-size is set here. The face changes; the type scale does not, so the
    fixed-height title rows keep their geometry and nothing can reflow. */
 .dashboard[data-holiday-state="active"] .section-title:not(.section-title-red):not(.section-title-purple)>span,.dashboard[data-holiday-state="active"] .weather-label,.dashboard[data-holiday-state="active"] .forecast-heading,.dashboard[data-holiday-state="active"] .horizon-label,.dashboard[data-holiday-state="active"] .next-up-label{font-family:var(--holiday-heading-font);font-weight:var(--holiday-heading-weight);font-style:var(--holiday-heading-style);letter-spacing:var(--holiday-heading-tracking);text-transform:var(--holiday-heading-transform);color:var(--holiday-heading-ink-active);text-shadow:var(--holiday-heading-shadow)}
+
+
 `;
 
 function renderDashboardV2(digestData) {
@@ -1640,6 +1666,8 @@ ${browserScript()}
 }
 
 export {
+  flagTeamLogo,
+  flagNextGame,
   renderDashboardV2,
   renderToday,
   renderNowNext,
