@@ -634,7 +634,8 @@ reads allowed.
 
 **Two controls, both re-measured against the whole 227 rather than quoted from an earlier
 run.** Against the pre-rewrite text matcher (`261a6b2`): **106 of 227 fail.** Against the
-commit that closed the parked under-blocks (`f498020`): **45 of 227 fail, and they are
+commit *before* the parked under-blocks were closed (`f498020` — they were closed by
+`3226877`, against which nothing fails): **45 of 227 fail, and they are
 exactly the 45 new BLOCK cases** — so not one of them passes for free, and the 26 new ALLOW
 cases pass under both hooks, which is what makes them guards against *this* change
 over-blocking rather than restatements of it. An earlier revision of this section quoted "51
