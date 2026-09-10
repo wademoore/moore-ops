@@ -1,7 +1,7 @@
 import {
   cleanDisplayText, peopleForEvent, collapseUpcomingEvents, selectHorizonEvents,
   formatCalendarDate, formatEventTime, eventSubtitleWithoutTime, eventDateKey,
-  rangeDetail, horizonPresentation, conversationalMatchDate, sportsSlotLines, V2_LOGOS,
+  rangeDetail, horizonPresentation, conversationalMatchDate, sportsSlotLines, V2_LOGOS, flagTeamLogo, flagNextGame,
 } from './dashboard-v2.js';
 import { selectEventRowAccents, selectFeatureSlotSpotlight } from '../digest/specialEventSelector.js';
 import { occurrenceId } from '../digest/specialEventOccurrences.js';
@@ -20,6 +20,7 @@ const number = value => typeof value === 'number' && Number.isFinite(value);
 const seconds = value => number(value) ? `${value.toFixed(2)}s` : '—';
 const identity = event => { const person = peopleForEvent(event); return `<span class="person ${person}">${({ myles: 'Myles', ophelia: 'Ophelia', both: 'Myles + Ophelia', family: 'Family' })[person]}</span>`; };
 const logo = key => V2_LOGOS[key] ? `<img class="team-logo" src="${esc(V2_LOGOS[key])}" alt="">` : '';
+const flagMark = name => flagTeamLogo(name) ? `<img class="flag-team-mark" src="${esc(flagTeamLogo(name))}" alt="" onerror="this.style.display='none'">` : '';
 
 // Repo-native navigation marks: no remote asset request or client dependency.
 const marks = {
@@ -91,9 +92,9 @@ function upcomingPage(data) {
   return days.size ? [...days].map(([key, items]) => group(dateLabel(key), items.map(item => eventRow(item.event, rangeDetail(item), byOccurrence.get(occurrenceId(item.event)))).join(''))).join('') : note('No upcoming events listed in the next two weeks.');
 }
 
-function standings(rows) {
+function standings(rows, flagLogos = false) {
   if (!rows?.length) return '';
-  return `<details><summary>Standings</summary><table><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${rows.map(row => `<tr${row.isMe ? ' class="our-team"' : ''}><td>${esc(row.team ?? row.mascot ?? '')}${row.isMe ? ' · Our team' : ''}</td><td>${esc(row.w ?? '—')}</td><td>${esc(row.l ?? '—')}</td></tr>`).join('')}</tbody></table></details>`;
+  return `<details><summary>Standings</summary><table><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${rows.map(row => `<tr${row.isMe ? ' class="our-team"' : ''}><td>${flagLogos ? flagMark(row.team ?? row.mascot) : ''}${esc(row.team ?? row.mascot ?? '')}${row.isMe ? ' · Our team' : ''}</td><td>${esc(row.w ?? '—')}</td><td>${esc(row.l ?? '—')}</td></tr>`).join('')}</tbody></table></details>`;
 }
 
 function swimmers(name, key, rows, season, footer) {
@@ -109,7 +110,8 @@ function spotlight(data) {
 
 function athleticsPage(data) {
   const a = data.athletics || {}, parts = [];
-  if (a.flagFootballActive) parts.push(group(a.flagTeamName ? `NFL FLAG · ${a.flagTeamName}` : 'NFL FLAG', `${note(a.seasonLabel || 'Season')}<p class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</p>${a.lastResult ? note(`Latest result · ${a.lastResult}`) : ''}${a.thisWeekOpponent ? `<h3>Next game · ${esc(a.thisWeekOpponent)}</h3>${a.thisWeekTime ? note(a.thisWeekTime) : ''}` : ''}${standings(a.standings)}`));
+  const nextFlag = flagNextGame(a);
+  if (a.flagFootballActive) parts.push(group(a.flagTeamName ? `NFL FLAG · ${a.flagTeamName}` : 'NFL FLAG', `${flagMark(a.flagTeamName)}${note(a.seasonLabel || 'Season')}<p class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</p>${a.lastResult ? note(`Latest result · ${a.lastResult}`) : ''}${nextFlag ? `<h3>${flagMark(nextFlag.opponent)}Next game · ${esc(nextFlag.opponent)}</h3>${nextFlag.detail ? note(nextFlag.detail) : ''}` : ''}${standings(a.standings, true)}`));
   if (a.wavesActive) {
     parts.push(group('Wellington Waves', `${logo('waves')}${note(`${a.wavesSeasonYear || ''} season`)}<p class="record">${esc(a.wavesRecord || '0-0')}</p>${a.wavesNextMeet ? `<h3>Next meet · ${esc(a.wavesNextMeet.opponent)}</h3>${note(dateLabel(a.wavesNextMeet.date))}` : ''}${standings(a.wavesStandings)}`));
     parts.push(swimmers('Myles · Wellington Waves', 'waves', a.mylesPBRows, a.mylesSeason, a.mylesFooter));
