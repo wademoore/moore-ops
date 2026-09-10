@@ -1,9 +1,9 @@
 {
   "flagFootball": {
     "active": true,
-    "seasonStart": "2026-04-26",
-    "seasonEnd": "2026-06-07",
-    "bufferDays": 0
+    "seasonStart": "2026-09-13",
+    "seasonEnd": "2026-10-25",
+    "bufferDays": 7
   },
   "wellingtonWaves": {
     "active": true,

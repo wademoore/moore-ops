@@ -7,10 +7,16 @@
  * on the athletics object.
  */
 
+// Game types that are scheduled calendar entries but are not fixtures: they
+// have no opponent. This set is applied to nextFlagGame only — the record and
+// the standings already exclude them via their own `type === 'regular'` filter,
+// so do not read this constant as the thing keeping practices out of those.
+const NON_GAME_TYPES = new Set(['practice']);
+
 /**
  * @param {object} flagFootballData  Parsed flag-football.json
  * @param {Date}   referenceDate
- * @param {object} config            sports-config.json (for myTeamAbbr via season data)
+ * @param {object} config            sports-config.json (unused — season identity comes from season data)
  * @returns {object}
  */
 export function parseFlagFootball(flagFootballData, referenceDate, config) {
@@ -21,8 +27,21 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   let season = seasons.find(s => new Date(s.seasonEnd) >= refDate);
   if (!season) season = seasons[seasons.length - 1];
 
-  const myAbbr   = season.myTeamAbbr;
-  const teamsMap = new Map(season.teams.map(t => [t.abbr, t.teamName]));
+  // Team identity is keyed on the league's numeric team id when the season
+  // declares one, and on the legacy string abbr otherwise. A season either has
+  // ids on every team or on none, so the two never mix within one season.
+  //
+  // Why an id and not the mascot: the Fall 2026 Yorktown 5th-6th Grade Rec
+  // division contains TWO teams whose teamName is "Cowboys" — Moore - Cowboys
+  // (ours) and Watkins - Cowboys. Mascot is not a unique identifier there, so
+  // matching on it (exactly or fuzzily) is ambiguous. This is deliberately the
+  // opposite of sharksParser.js, where the mascot IS unique and only the
+  // wording of the team string varies between the schedule and the standings,
+  // which is why fuzzy matching is right there and wrong here.
+  const keyOf   = v => (v === null || v === undefined ? null : String(v));
+  const teamKey = t => keyOf(t.teamId ?? t.abbr);
+  const myKey    = keyOf(season.myTeamId ?? season.myTeamAbbr);
+  const teamsMap = new Map(season.teams.map(t => [teamKey(t), t.teamName]));
   const todayStr = refDate.toISOString().slice(0, 10);
 
   // Season-level NFL team identity, distinct from teams[].teamName (per-opponent).
@@ -32,23 +51,47 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   const seasonTeamName =
     (typeof season.teamName === 'string' ? season.teamName.trim() : '') || null;
 
-  // Base filter: final regular non-friendly games
+  // Base filter: final regular non-friendly games with two real scores.
+  //
+  // The score check is not redundant. Counting w/l/t compares the two scores,
+  // and `null > null` and `null < null` are BOTH false, so a `final` row with
+  // null scores would fall through to the tie branch and be reported as a draw.
+  // Before ties existed it fell to the loss branch and produced an obviously
+  // bogus loss; bucketing it as a plausible-looking 0-0 draw makes the same bad
+  // row quieter rather than smaller, which is worse.
+  //
+  // Unreachable in current data, but NOT because null scores only ever appear on
+  // non-final rows — spring-2026's playoff semifinal is `status: "final"` with
+  // both scores null. It is excluded by `type === 'regular'`, not by its status.
+  // So this guards the shape against a future `regular` + `final` + null row
+  // rather than fixing a live defect. (Note the asymmetry it introduces: such a
+  // row would still count toward `allFinal` in the separate `regularGames`
+  // filter below, so `seasonComplete` could go true with that game absent from
+  // the record. Omitting a scoreless game is still better than inventing a draw
+  // for it.)
+  const hasBothScores = g => typeof g.homeScore === 'number' && typeof g.awayScore === 'number';
   const eligibleGames = (season.games || []).filter(
-    g => g.type === 'regular' && g.status === 'final' && !g.friendly
+    g => g.type === 'regular' && g.status === 'final' && !g.friendly && hasBothScores(g)
   );
 
   // My team's eligible games
-  const myGames = eligibleGames.filter(g => g.home === myAbbr || g.away === myAbbr);
+  const myGames = eligibleGames.filter(g => keyOf(g.home) === myKey || keyOf(g.away) === myKey);
 
   // ── Season record ────────────────────────────────────────────────────────────
-  let wins = 0, losses = 0;
+  // W-L-T. A drawn game used to fall into the `else` branch and be counted as a
+  // loss; flag football can end level, so a tie is now counted as a tie. The
+  // three-part shape matches the sibling record on the same athletics object —
+  // athleticsParser.js already formats sharksRecord as `${wins}-${losses}-${ties}`.
+  let wins = 0, losses = 0, ties = 0;
   for (const g of myGames) {
-    const isHome = g.home === myAbbr;
+    const isHome = keyOf(g.home) === myKey;
     const myScore  = isHome ? g.homeScore : g.awayScore;
     const oppScore = isHome ? g.awayScore : g.homeScore;
-    if (myScore > oppScore) wins++; else losses++;
+    if (myScore > oppScore) wins++;
+    else if (myScore < oppScore) losses++;
+    else ties++;
   }
-  const seasonRecord = `${wins}-${losses}`;
+  const seasonRecord = `${wins}-${losses}-${ties}`;
 
   // ── Last result ──────────────────────────────────────────────────────────────
   const sortedGames = [...myGames].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -56,31 +99,39 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   let lastOpponent = null;
   if (sortedGames.length > 0) {
     const last    = sortedGames[0];
-    const isHome  = last.home === myAbbr;
+    const isHome  = keyOf(last.home) === myKey;
     const myScore  = isHome ? last.homeScore : last.awayScore;
     const oppScore = isHome ? last.awayScore : last.homeScore;
-    const oppAbbr  = isHome ? last.away : last.home;
+    const oppAbbr  = keyOf(isHome ? last.away : last.home);
     const oppName  = teamsMap.get(oppAbbr) || oppAbbr;
-    const wl       = myScore > oppScore ? 'W' : 'L';
+    const wl       = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
     lastResult   = `${wl} ${myScore}–${oppScore} vs ${oppName}`;
     lastOpponent = oppName;
   }
 
   // ── Standings ────────────────────────────────────────────────────────────────
-  const standings = season.teams.map(t => {
-    let w = 0, l = 0, pf = 0, pa = 0;
+  // Ties are counted here for the same reason they are counted in the record
+  // loop above, and this half was missed on the first pass: both branches read
+  // `if (home > away) w++; else l++`, so a drawn game would have produced a
+  // seasonRecord of e.g. 3-0-1 beside a standings row reading w:3 l:1 — the two
+  // halves of one file disagreeing about the same game. `t` is additive because
+  // every consumer reads named keys rather than enumerating them (v2 selects a
+  // `['team','w','l']` column list, mobile reads `.team/.w/.l`, frozen v1 reads
+  // `.team/.w/.l/.pf/.pa`, and the email renders no standings at all), so a new
+  // key shows up nowhere until a surface asks for it.
+  const standings = season.teams.map(team => {
+    let w = 0, l = 0, t = 0, pf = 0, pa = 0;
+    const tKey = teamKey(team);
+    const tally = (mine, theirs) => {
+      if (mine > theirs) w++; else if (mine < theirs) l++; else t++;
+      pf += mine;
+      pa += theirs;
+    };
     for (const g of eligibleGames) {
-      if (g.home === t.abbr) {
-        if (g.homeScore > g.awayScore) w++; else l++;
-        pf += g.homeScore;
-        pa += g.awayScore;
-      } else if (g.away === t.abbr) {
-        if (g.awayScore > g.homeScore) w++; else l++;
-        pf += g.awayScore;
-        pa += g.homeScore;
-      }
+      if (keyOf(g.home) === tKey) tally(g.homeScore, g.awayScore);
+      else if (keyOf(g.away) === tKey) tally(g.awayScore, g.homeScore);
     }
-    return { team: t.teamName, w, l, pf, pa, isMe: t.abbr === myAbbr };
+    return { team: team.teamName, w, l, t, pf, pa, isMe: tKey === myKey };
   }).sort((a, b) => b.w - a.w || a.l - b.l);
 
   // ── Snack family ─────────────────────────────────────────────────────────────
@@ -102,16 +153,22 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   const thisWeekOpponent = nextCaptain ? nextCaptain.opponent : null;
 
   // ── Next flag game ───────────────────────────────────────────────────────────
-  // First upcoming scheduled game involving myTeamAbbr, sorted ascending.
+  // First upcoming scheduled game involving my team, sorted ascending.
   // Friendly games are included — they are real events worth showing.
+  // Practices are NOT: a practice row has no opponent, so without this filter
+  // it would be selected and reported with `opponent: undefined`. Stated as a
+  // deny-list rather than an allow-list so that no existing type ('regular',
+  // 'playoff', 'consolation') changes behaviour.
   const scheduledGames = (season.games || [])
-    .filter(g => (g.home === myAbbr || g.away === myAbbr) && g.status === 'scheduled' && g.date >= todayStr)
+    .filter(g => (keyOf(g.home) === myKey || keyOf(g.away) === myKey)
+      && !NON_GAME_TYPES.has(g.type)
+      && g.status === 'scheduled' && g.date >= todayStr)
     .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 
   let nextFlagGame = null;
   if (scheduledGames.length > 0) {
     const nextGame   = scheduledGames[0];
-    const oppAbbr    = nextGame.home === myAbbr ? nextGame.away : nextGame.home;
+    const oppAbbr    = keyOf(keyOf(nextGame.home) === myKey ? nextGame.away : nextGame.home);
     nextFlagGame = {
       opponent: teamsMap.get(oppAbbr) || oppAbbr,
       date:     nextGame.date,
