@@ -380,6 +380,24 @@ describe('flagFootballDetails — derivation from the occurrence', () => {
     }
   });
 
+  it('an ambiguous 90-minute block yields no game time rather than a guess', () => {
+    // Between one and two hours the block could be one long session (game at
+    // the start) or practice-then-short-game (game an hour in). The readings
+    // disagree by exactly the hour this helper exists to get right.
+    const ambiguous = { ...WEEK2, end: { dateTime: '2026-09-20T12:30:00-04:00' } };
+    const d = flagFootballDetails(ambiguous);
+    assert.equal(d.gameTime, null);
+    assert.equal(d.practiceTime, null);
+    assert.equal(d.startTime, '11:00 AM', 'the start is still known');
+  });
+
+  it('a block of exactly one hour is the game itself', () => {
+    // The boundary on the other side: an hour leaves no room for an hour of
+    // practice ahead of anything, so the start is unambiguously the game.
+    const exactlyOneHour = { ...WEEK2, end: { dateTime: '2026-09-20T12:00:00-04:00' } };
+    assert.equal(flagFootballDetails(exactlyOneHour).gameTime, '11:00 AM');
+  });
+
   it('omits rather than guesses when the event carries no location', () => {
     const { venue } = flagFootballDetails({ ...WEEK2, location: undefined });
     assert.equal(venue, null);

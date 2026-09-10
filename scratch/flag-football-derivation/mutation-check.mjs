@@ -80,16 +80,33 @@ const MUTATIONS = [
   {
     name: 'a one-hour block claims a preceding practice',
     file: 'digest/aliases.js',
-    from: '  if (end.getTime() - start.getTime() < 2 * FLAG_PRACTICE_MS) {',
-    to:   '  if (end.getTime() - start.getTime() < 0) {',
+    from: '  if (durationMs <= FLAG_PRACTICE_MS) {',
+    to:   '  if (durationMs <= 0) {',
+  },
+  {
+    // The ambiguous 60-120min band: collapsing it either way re-guesses the
+    // hour. Folding it into the short case is the tempting direction.
+    name: 'ambiguous 90-minute band folded into game-only',
+    file: 'digest/aliases.js',
+    from: '  if (durationMs < 2 * FLAG_PRACTICE_MS) {',
+    to:   '  if (false && durationMs < 2 * FLAG_PRACTICE_MS) {',
+  },
+  {
+    // The DST tripwire's own boundary: lastIndexOf pulls its explanatory
+    // comment (which names isoDate(1) in prose) inside the scanned region and
+    // fires the guard on its own explanation.
+    name: 'DST tripwire boundary uses lastIndexOf',
+    file: 'digest/builder.test.js',
+    from: "  const to     = src.indexOf('// FLAG-FIXTURE-REGION-END');",
+    to:   "  const to     = src.lastIndexOf('// FLAG-FIXTURE-REGION-END');",
   },
   {
     // The distinction a reviewer caught the first time round: collapsing these
     // hands back the PRACTICE hour as the game hour, confidently.
     name: 'unknown duration collapsed into measured-short',
     file: 'digest/aliases.js',
-    from: '    return { startTime, gameTime: null, practiceTime: null, venue };\n  }\n\n  if (end.getTime()',
-    to:   '    return { startTime, gameTime: startTime, practiceTime: null, venue };\n  }\n\n  if (end.getTime()',
+    from: "    // Duration unknown, so which hour is the game is unknown. Say nothing.\n    return { startTime, gameTime: null, practiceTime: null, venue };",
+    to:   "    // Duration unknown, so which hour is the game is unknown. Say nothing.\n    return { startTime, gameTime: startTime, practiceTime: null, venue };",
   },
   {
     // The DST trap in the builder fixtures: an offset pinned against a

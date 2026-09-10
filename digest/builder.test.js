@@ -701,6 +701,8 @@ const allDayResult = await buildDigest({ rawEvents: [allDayGame], emails: [], do
 assert(allDayResult.athletics.hasGameThisWeek === true,          'All-day flag game still sets hasGameThisWeek');
 assert(allDayResult.athletics.thisWeekTime === null,             'All-day flag game → thisWeekTime null, not a guessed time');
 
+// FLAG-FIXTURE-REGION-END — do not delete; the tripwire below ends its scan here.
+//
 // Tripwire for the trap the comment above describes: an offset pinned against a
 // run-time-relative date is only correct until the next DST transition.
 //
@@ -709,15 +711,29 @@ assert(allDayResult.athletics.thisWeekTime === null,             'All-day flag g
 // twoHourBlock.start.dateTime is satisfied by the very thing it means to
 // forbid — a guard that reads as protective and cannot fail. Reading the region
 // back off disk is the only form of this check with teeth.
+//
+// The region ends on a dedicated marker rather than on `allDayGame`'s own
+// declaration, so that fixture is inside the scan too. Ending on a fixture name
+// made the boundary incidental — whichever fixture happened to be last was
+// silently unguarded.
 {
   const src = readFileSync(new URL(import.meta.url), 'utf8');
-  const from = src.indexOf('const twoHourBlock = {');
-  const to   = src.indexOf('const allDayGame = {');
+  const from   = src.indexOf('const twoHourBlock = {');
+  // indexOf, deliberately: the marker line sits immediately after the fixtures
+  // and BEFORE the explanatory comment below, so the first occurrence is the
+  // real boundary and this line's own copy of the literal is the second. Using
+  // lastIndexOf instead pulls that comment — which names `isoDate(1)` in prose —
+  // inside the region and fires the guard on its own explanation. (It did.)
+  const to     = src.indexOf('// FLAG-FIXTURE-REGION-END');
   assert(from > 0 && to > from, 'DST tripwire could not locate the flag football fixture region');
   const region = src.slice(from, to);
-  assert(!region.includes('isoDate('), 'flag football dateTime fixtures must pin a fixed calendar date, not a run-time-relative one');
-  assert(region.includes("'2026-09-20T11:00:00-04:00'"), 'twoHourBlock start fixture is a date literal');
-  assert(region.includes("'2026-09-27T13:00:00-04:00'"), 'laterBlock start fixture is a date literal');
+  // The region must actually contain the fixtures, or the two checks below are
+  // vacuous on an empty slice.
+  for (const name of ['const twoHourBlock', 'const laterBlock', 'const allDayGame']) {
+    assert(region.includes(name), `DST tripwire region is missing ${name} — boundary drifted`);
+  }
+  assert(!region.includes('isoDate('), 'flag football date fixtures must pin a fixed calendar date, not a run-time-relative one');
+  assert(!/dateTime:\s*`/.test(region), 'flag football dateTime fixtures must be string literals, not templates');
 }
 
 // ---------------------------------------------------------------------------

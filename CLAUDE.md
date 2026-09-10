@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2313+ passing with a browser
+- Run npm test after changes — must stay at 2315+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -1925,7 +1925,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2313 | **2313** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2315 | **2315** | **0** | **0** |
 
 Measured on `claude/loving-knuth-478237`, whose merge base with `main` is **`3d250aa`**
 (PR #61) — which is also this branch's branch point. **`git fetch origin main` was run before
@@ -1935,31 +1935,36 @@ and after `npm install`: **2297 / 2297 / 0 / 0 with a browser** — which matche
 entry below recorded, so the recorded baseline held for a fourth consecutive time. Re-measure
 anyway; the run costs less than the correction does.
 
-This change adds **+16**, all in one existing file:
+This change adds **+18**, all in one existing file:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `digest/aliases.test.js` | 30 | 46 | +16 |
+| `digest/aliases.test.js` | 30 | 48 | +18 |
 
 `digest/builder.test.js` contributes **0**: it gained five assertions pinning
 `athletics.thisWeekTime` plus a four-assertion source-level DST tripwire, but they run inside
 its existing flat `assert()`/`section()` harness, which surfaces as ten `node:test` points
-across three suites either way. Its internal assertion count moved 126 → 135. One existing assertion was **repaired, not deleted** — `digest/aliases.test.js`
-asserted `subtitle.includes('3:00 PM')` against an event carrying no time at all, so it was
-pinning a hardcoded literal rather than any behaviour; the surrounding case keeps its title,
-`isFlagGame`, `cardType` and `owner` assertions and the subtitle is now covered properly by
-the new section. **The line itself was removed, not rewritten** — an earlier draft of this
-entry called that "repaired, not deleted", which the diff does not support and which is
-exactly the CLAUDE.md-vs-diff drift this file treats as a first-class defect. Nothing was
-skipped, and nothing lost coverage.
+across three suites either way. Its internal assertion count moved 126 → 137.
+
+**Exactly one existing assertion was removed, and nothing was weakened or skipped.**
+`digest/aliases.test.js` asserted `subtitle.includes('3:00 PM')` against an event carrying no
+time at all, so it pinned a hardcoded literal rather than any behaviour; the line was deleted
+outright and the subtitle is now covered properly by the new section, while the surrounding
+case keeps its title, `isFlagGame`, `cardType` and `owner` assertions. The whole-range diff of
+that file is 197 insertions and **2** deletions — that line and an `import` that was replaced
+by a wider one. (Two earlier drafts of this paragraph called the deletion "repaired, not
+deleted"; the second merely appended a correction below the wrong phrase instead of replacing
+it, so the paragraph asserted and denied the same claim at once. Recorded because appending a
+correction on top of a false sentence is a *worse* failure than the original wording, not a
+partial fix.)
 
 The finding worth keeping: **nothing in the suite guarded these three literals against a real
 occurrence**, so the full suite stayed green while every flag football row on the dashboard
 named the wrong venue and the wrong time.
 
 Companion mutation evidence, committed and run on demand rather than in `npm test`:
-`node scratch/flag-football-derivation/mutation-check.mjs` → **11 mutations, 11/11 caught**,
-green 56/56 control and green 56/56 restore. The first three restore the three hardcoded
+`node scratch/flag-football-derivation/mutation-check.mjs` → **13 mutations, 13/13 caught**,
+green 58/58 control and green 58/58 restore. The first three restore the three hardcoded
 literals verbatim; the rest are the ways a correct-*looking* rewrite could still be wrong —
 reading the block start as the game time, inverting practice and game, widening the venue to
 the whole street address, fabricating a time for an all-day occurrence, dropping the
@@ -1979,8 +1984,15 @@ September and 10:00 AM ET in November. The second is subtler and is the more use
 the tripwire first written to prevent its return **could not fail**, because `isoDate(1)`
 interpolates to a string of exactly the same shape as a date literal, so any runtime check on
 the fixture value is satisfied by the very thing it forbids. It now reads the fixture region
-back off disk, which is the only form of that check with teeth — and the mutation proves it,
-having *survived* the runtime version and being caught only by the source-level one.
+back off disk, which is the only form of that check with teeth.
+
+**Do not read "the mutation proves it" into that** — the runtime tripwire no longer exists in
+the tree, so no committed artifact demonstrates it failing, and the survival was observed once
+in this session rather than being re-derivable. What *is* re-derivable is the pair of harness
+mutations that bracket it: `builder fixture date made run-time-relative` (the trap) and `DST
+tripwire boundary uses lastIndexOf` (the boundary error that pulls the guard's own explanatory
+comment inside its scanned region and fires it on the word `isoDate(`, which happened while
+writing this and is why the region ends on a dedicated marker read with `indexOf`).
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
 quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
@@ -1992,7 +2004,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2313+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2315+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 10, 2026 on the current-season athletics branch
 
@@ -2647,12 +2659,12 @@ method, so they chain directly to the 988 pre-change number above.
   section covers the subtitle properly. (This entry first said "repaired, not deleted"; the
   line was deleted outright, and the wording is corrected here rather than left to drift.)
   **Guards proved rather than claimed:** `node scratch/flag-football-derivation/mutation-check.mjs`
-  → **9 mutations, 9/9 caught**, green 53/53 control and restore. The first three restore the
+  → **13 mutations, 13/13 caught**, green 58/58 control and restore. The first three restore the
   three literals verbatim; the rest are the ways a correct-*looking* rewrite could still be
   wrong (block start read as game time, practice and game inverted, venue widened to the whole
   street address, all-day occurrence given a fabricated time, empty-segment filter dropped,
   one-hour block claiming a practice, unknown duration collapsed into measured-short, and a
-  run-time-relative builder fixture date). Tests **2297 → 2313**, all passing with a browser.
+  run-time-relative builder fixture date). Tests **2297 → 2315**, all passing with a browser.
   **An independent Reviewer pass returned FAIL and was right**, and everything it raised
   against the implementation is fixed here. (1) BLOCKING — the builder fixtures paired a
   run-time-relative date with a static UTC offset, so two assertions would have started
@@ -3413,6 +3425,19 @@ enumerated under test, digest, and render directly to Node. No deployment.
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
 
 ## Known open items
+
+- **`thisWeekTime` and `thisWeekOpponent` now come from different sources and can describe
+  different games (Sept 10, 2026).** Raised by a Reviewer pass as new-in-kind. `builder.js:351`
+  sets `thisWeekTime` from `allResolved.find(ev => ev.isFlagGame)` — a *calendar* occurrence —
+  while `thisWeekOpponent` comes from `data/flag-football.json` via `flagFootballParser`'s
+  `captainAssignments`. While `thisWeekTime` was the constant `'3:00 PM'` that coupling was
+  invisible, because a constant is true of every game; it is now occurrence-specific, so the
+  two halves of `vs. <opponent> · <time>` can in principle disagree.
+  **Mitigated, and currently unreachable**: `pullCalendarEvents` sorts by start
+  (`calendar.js:175`), so `.find` yields the *earliest* flag game rather than an arbitrary one,
+  which is the sensible choice; and `flagFootballActive` is false with no fall-2026 season, so
+  nothing renders the pair today. Worth re-examining when that season lands — see the
+  fall-2026 open item, which is the change that would make this live.
 
 - **`athletics.thisWeekTime` became nullable, and two Codex-owned renderers concatenate it
   against an unconditional separator (Sept 10, 2026). This is a handoff, not a fix.** Raised by

@@ -409,12 +409,15 @@ const FLAG_PRACTICE_MS = 60 * 60 * 1000;
 /**
  * Derives a flag football occurrence's venue and times from the event itself.
  *
- * A block long enough to hold both a practice and a game is read as
- * `practice → game`; a block measurably shorter is read as the game alone; a
- * block of unknown duration yields no game time at all. Every field is
- * independently nullable, and an undeterminable field is omitted rather than
- * guessed — a missing venue is recoverable, a confidently wrong one is the
- * defect this replaces.
+ * Four cases, by measured duration:
+ *   - unknown (no parseable end)      → no game time
+ *   - at most one hour                → the block IS the game
+ *   - between one and two hours       → ambiguous, so no game time
+ *   - two hours or more               → practice → game, an hour apart
+ *
+ * Every field is independently nullable, and an undeterminable field is
+ * omitted rather than guessed — a missing venue is recoverable, a confidently
+ * wrong one is the defect this replaces.
  *
  * @param {object} event  Google Calendar event
  * @returns {{ startTime: string|null, gameTime: string|null,
@@ -448,9 +451,21 @@ function flagFootballDetails(event) {
     return { startTime, gameTime: null, practiceTime: null, venue };
   }
 
-  if (end.getTime() - start.getTime() < 2 * FLAG_PRACTICE_MS) {
-    // Measured, and too short to hold a practice and a game — this is the game.
+  const durationMs = end.getTime() - start.getTime();
+  if (durationMs <= FLAG_PRACTICE_MS) {
+    // Measured, and with no room for an hour of practice ahead of anything —
+    // so the block is the game itself and the start IS the game time.
     return { startTime, gameTime: startTime, practiceTime: null, venue };
+  }
+  if (durationMs < 2 * FLAG_PRACTICE_MS) {
+    // Longer than an hour but too short for practice-then-game: could be one
+    // long session starting now, or a practice with a short game after it.
+    // Both readings are plausible and they disagree by an hour, so say
+    // nothing. This is the same off-by-one the two-hour case exists to avoid;
+    // picking the likelier reading here would just be the old guess with a
+    // narrower window. No Fall 2026 game week is in this range — all five are
+    // exactly two hours — so this is a guard, not a live path.
+    return { startTime, gameTime: null, practiceTime: null, venue };
   }
 
   return {
