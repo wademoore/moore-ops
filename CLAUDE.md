@@ -150,7 +150,7 @@ command form leaves remote litter no agent can clear. "A false block is recovera
 load-bearing claim, and it was false for that case.
 
 **Matching the text was also under-blocking, which is the part nobody had noticed.** The new
-behavioural matrix was run against the old hook as a control: **84 of 189 cases fail**, and
+behavioural matrix was run against the old hook as a control: **106 of 227 cases fail**, and
 many of those are forms the old hook *allowed* — `git push --all`, `--mirror`, a wildcard
 refspec, a bare `git push` under `push.default=matching` or under `push.default=upstream` on a
 branch whose upstream is `main`, a `git` alias expanding to `push`, and every unresolvable
@@ -337,7 +337,7 @@ Four more arrived with the closures above, and all are the same trade:
   that runs from one that is printed.
 
 Every one of these decisions is proved by mutation rather than asserted —
-`node scripts/verify-push-hook-mutations.mjs`, 73 mutations, each required to redden the
+`node scripts/verify-push-hook-mutations.mjs`, 69 mutations, each required to redden the
 cases that name it. See "Test matrix" below.
 
 **One mutation row was written and deliberately deleted rather than kept**, for the second
@@ -632,17 +632,17 @@ assert the exit code, in both directions: every form that resolves to `main` ref
 naming no target included), and feature-branch pushes, feature-branch **deletes** and pure
 reads allowed.
 
-**Two controls, both re-measured against the whole 189 rather than quoted from an earlier
-run.** Against the pre-rewrite text matcher (`261a6b2`): **84 of 189 fail.** Against the
-commit that closed the parked under-blocks (`81973ce`): **20 of 189 fail, and they are
-exactly the 20 new BLOCK cases** — so not one of them passes for free, and the 14 new ALLOW
+**Two controls, both re-measured against the whole 227 rather than quoted from an earlier
+run.** Against the pre-rewrite text matcher (`261a6b2`): **106 of 227 fail.** Against the
+commit that closed the parked under-blocks (`f498020`): **45 of 227 fail, and they are
+exactly the 45 new BLOCK cases** — so not one of them passes for free, and the 26 new ALLOW
 cases pass under both hooks, which is what makes them guards against *this* change
 over-blocking rather than restatements of it. An earlier revision of this section quoted "51
 of the first 118 failing"; that was accurate for the matrix as it stood and is superseded.
 
 `BLOCK_MAIN_PUSH_HOOK` exists only so `scripts/verify-push-hook-mutations.mjs` can point that
 file at a damaged copy; no production caller sets it. That harness is **not** part of
-`npm test` — it spawns the whole matrix once per mutation. It runs **73 mutations**, each
+`npm test` — it spawns the whole matrix once per mutation. It runs **69 mutations**, each
 required to redden the cases that name it *specifically*, plus a green control and two
 self-tests that prove its own hollow-mutation and syntax-error checks are live. Three of its
 rows carry an explicit note that a case which looks like proof is not: `$BRANCH`, `ma"in"` and
@@ -2137,7 +2137,8 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 Measured on `claude/push-main-hook-targets-kawlik` after rebasing it onto `main` at
 **`2f7ac47`** (PR #58), which is now this branch's merge base — it was `261a6b2` (PR #54)
-when the branch was opened, and PRs #56, #57 and #58 landed on `main` in between. **That new
+when the branch was opened, and four commits landed on `main` in between — `fe88913` (#56),
+`8a73b54` (#1), `ada361f` (#57) and `2f7ac47` (#58), the last two of which touched this file. **That new
 merge base was re-measured in this session, before any change, after `npm install`: 2284 /
 2284 / 0 / 0 with a browser** — which is exactly the figure the mobile publishing-contract
 entry below records, so that entry's number is confirmed rather than assumed. Re-measure
@@ -2166,8 +2167,9 @@ feature-branch **delete** under a wrapper, and a script file named by a variable
 **Two controls, both re-measured against the whole 227 rather than quoted from an earlier
 run.** Against the pre-rewrite text matcher (`261a6b2`, whose copy of the hook is byte-identical
 to the one on `2f7ac47`): **106 of 227 fail.** Against the commit before the parked under-blocks
-were closed (`f498020`): **45 of 227 fail** — so none of the last pass's block cases passes for
-free, and its allow cases pass under both hooks, which is what makes them guards against *this*
+were closed (`f498020`): **45 of 227 fail**, and they are *exactly* the 45 block cases that pass
+added — checked by name, not by count, with zero pre-existing cases among them — so none passes
+for free, and its 26 allow cases and 1 performance case pass under both hooks, which is what makes them guards against *this*
 change over-blocking rather than restatements of it.
 
 No existing test changed in any pass, because **no existing test asserted the push hook's
@@ -2175,8 +2177,10 @@ behaviour** — `enforcement-wiring.test.js` asserts only that it is wired, and 
 untouched and still pass. That absence is the finding, not an accident of scope.
 
 Companion mutation harness, **not** part of `npm test` and run on demand:
-`node scripts/verify-push-hook-mutations.mjs` → 69 mutations plus 2 self-test rows that prove
-the harness's own hollow-mutation and syntax-error checks are live.
+`node scripts/verify-push-hook-mutations.mjs` → **69 mutations, 2 self-tests, 0 problem(s)** —
+run to completion after the rebase, every row reddening the cases that name it, with a green
+control and the two self-test rows that prove the harness's own hollow-mutation and
+syntax-error checks are live.
 
 A third check is run on demand and is **not** committed: a differential sweep comparing this
 hook against `f498020` over 183 commands x 8 repository fixtures — **1464 comparisons, 0
@@ -2787,18 +2791,18 @@ method, so they chain directly to the 988 pre-change number above.
   a regression; and `git bisect run <script-file>` is the file-indirection class the same
   paragraph explicitly excludes, not a fully-visible one. Both were found independently by a
   Reviewer pass over the previous commit and by direct measurement here.
-  **Guards proved rather than asserted.** Tests **2351 → 2423** (+72: 45 BLOCK, 26 ALLOW, 1 performance),
-  all passing. Every one of the 20 new BLOCK cases fails against `81973ce`, so none passes for
-  free; the 14 ALLOW cases pass under both hooks, which is what makes them guards against the
+  **Guards proved rather than asserted.** Tests **2439 → 2511** (+72: 45 BLOCK, 26 ALLOW, 1 performance),
+  all passing. Every one of the 45 new BLOCK cases fails against `f498020`, so none passes for
+  free; the 26 ALLOW cases pass under both hooks, which is what makes them guards against the
   new rules becoming blanket refusals rather than restatements of them. The mutation harness
-  grew 44 → 53, each row required to redden the cases naming it — including two rows that
+  grew 44 → 69, each row required to redden the cases naming it — including two rows that
   separate the fallback's quoted and unquoted passes, because either alone looks sufficient,
   and one row proving that claiming *no* subcommand is known re-breaks the
-  read-through-a-moved-repository over-block. **A 54th row was written and deleted**: git is
+  read-through-a-moved-repository over-block. **A 70th row was written and deleted**: git is
   always available in the matrix, so inverting `isKnownGitCommand`'s git-unavailable branch
   changes no case and would have reported "ok" while proving nothing — the second time a row
   has been dropped from this file for that reason. And a differential sweep of **1464
-  comparisons** (183 commands × 8 fixtures) against `81973ce` reports **0 block-to-allow
+  comparisons** (183 commands × 8 fixtures) against `f498020` reports **0 block-to-allow
   flips**, the mechanical form of "nothing the previous hook blocked is newly allowed".
   **Accepted over-blocks, stated rather than discovered later:** a git argument that merely
   *quotes* a push to `main` is refused, so a `git commit -m` whose message quotes one blocks —
@@ -2818,7 +2822,7 @@ method, so they chain directly to the 988 pre-change number above.
   than a refused command. Found by stress-testing the new recursion, not by review or by the
   matrix, whose case for that rule had eight arguments. Fixed so only the outermost call
   sweeps, and pinned by a case that asserts linear-versus-exponential plus a mutation row.
-  **Also closed here: the previous commit `81973ce` was unreviewed when the PR stopped.** A
+  **Also closed here: the previous commit `f498020` was unreviewed when the PR stopped.** A
   Reviewer pass over that commit alone returned PASS with no BLOCKING finding — the
   `-EncodedCommand` deletion is clean, the surviving PowerShell arm is bounds-safe by its own
   loop condition rather than by the deleted branch, and all 41 of its added lines are comment
