@@ -39,7 +39,7 @@ import { spawnSync } from 'node:child_process';
     console.error('refusing to run: data/ or digest/ is not clean.\n' +
       'This harness overwrites those files in place, so it needs a committed\n' +
       'baseline to restore. Commit your changes, or stash them including\n' +
-      'untracked files (`git stash -u -- data digest`), then re-run.\n' + dirty);
+      'untracked files (`git stash push -u -- data digest`), then re-run.\n' + dirty);
     process.exit(1);
   }
 }

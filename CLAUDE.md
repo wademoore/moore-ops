@@ -3485,8 +3485,9 @@ enumerated under test, digest, and render directly to Node. No deployment.
   `renderStandingRows` will draw a `Team | W | L` table in which each of the five listed
   opponents has played exactly one game, ours, under a heading a viewer reads as a division
   table. Today every row is 0/0 so nothing is misleading. (2) **`parseFlagFootball` now emits a
-  `t` (ties) field on every standings row and no renderer displays it** — all three hardcode
-  `Team | W | L` — so a team at `3-0-1` will show `seasonRecord: "3-0-1"` directly above a
+  `t` (ties) field on every standings row and no renderer displays it** — v2 and mobile head
+  their tables `Team | W | L`, frozen v1 heads its `Team | W | L | PF | PA`, and the email
+  renders no standings at all — so a team at `3-0-1` will show `seasonRecord: "3-0-1"` above a
   standings row reading `3 / 0`: four games, three shown. Flag football ending level is the
   stated premise of the tie fix, so this is reachable rather than hypothetical.
   **Both are presentation decisions on surfaces Codex owns**, which is why neither was fixed

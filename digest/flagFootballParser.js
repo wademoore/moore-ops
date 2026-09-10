@@ -58,9 +58,17 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   // null scores would fall through to the tie branch and be reported as a draw.
   // Before ties existed it fell to the loss branch and produced an obviously
   // bogus loss; bucketing it as a plausible-looking 0-0 draw makes the same bad
-  // row quieter rather than smaller, which is worse. Unreachable in current data
-  // — every null-score row is `rescheduled` or `scheduled` — so this guards the
-  // shape rather than fixing a live defect.
+  // row quieter rather than smaller, which is worse.
+  //
+  // Unreachable in current data, but NOT because null scores only ever appear on
+  // non-final rows — spring-2026's playoff semifinal is `status: "final"` with
+  // both scores null. It is excluded by `type === 'regular'`, not by its status.
+  // So this guards the shape against a future `regular` + `final` + null row
+  // rather than fixing a live defect. (Note the asymmetry it introduces: such a
+  // row would still count toward `allFinal` in the separate `regularGames`
+  // filter below, so `seasonComplete` could go true with that game absent from
+  // the record. Omitting a scoreless game is still better than inventing a draw
+  // for it.)
   const hasBothScores = g => typeof g.homeScore === 'number' && typeof g.awayScore === 'number';
   const eligibleGames = (season.games || []).filter(
     g => g.type === 'regular' && g.status === 'final' && !g.friendly && hasBothScores(g)
