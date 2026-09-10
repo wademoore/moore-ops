@@ -200,7 +200,11 @@ describe('parseAthleticsDoc — coordinator', () => {
 
   it('seasonRecord is derived from flagFootballParser', () => {
     const result = parseAthleticsDoc(IN_SEASON_FF, FIXTURE_CONFIG, FIXTURE_FLAG_FOOTBALL, {}, []);
-    assert.equal(result.seasonRecord, '3-0');
+    // seasonRecord became W-L-T (it now counts a tie as a tie rather than a
+    // loss, matching sharksRecord on the same athletics object). This fixture
+    // has no drawn games, so the underlying arithmetic is unchanged and only
+    // the rendered shape gained `-0`. Updated, not deleted.
+    assert.equal(result.seasonRecord, '3-0-0');
   });
 
   it('flagTeamName flows through from flagFootballParser', () => {

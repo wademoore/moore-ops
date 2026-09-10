@@ -51,7 +51,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { readFetchFailures } from '../calendar.js';
-import { resolveEvent, flagFootballDetails } from './aliases.js';
+import { resolveEvent } from './aliases.js';
 import { computeFlags } from './flags.js';
 import { getSchoolStrip } from './schoolRotation.js';
 import { buildCentersWeek, isRoutineCentersEvent } from './centersProfile.js';
@@ -347,17 +347,15 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   // ── 12. Athletics data ───────────────────────────────────────────────────
   const athletics = parseAthleticsDoc(today, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData);
 
-  // Cross-reference calendar for flag game this week
+  // Cross-reference calendar for flag game this week.
+  // This sets ONLY hasGameThisWeek — "is there a flag game on the calendar in
+  // the 72h window". thisWeekOpponent and thisWeekTime are both projected from
+  // the season file by flagFootballParser and are deliberately not touched
+  // here: overwriting one of a rendered pair from a second source is exactly
+  // what let a hardcoded '3:00 PM' sit beside a real opponent.
   const flagGameEvent = allResolved.find(ev => ev.isFlagGame);
   if (flagGameEvent) {
     athletics.hasGameThisWeek = true;
-    // Derived from the occurrence itself, not a literal: the league books a
-    // one-hour practice immediately before each game, so the event start is
-    // the practice start and the game time varies week to week (12:00 PM some
-    // weeks, 2:00 PM others in Fall 2026). Null when it cannot be derived —
-    // athleticsParser already initialises this field to null.
-    athletics.thisWeekTime    = flagFootballDetails(flagGameEvent.raw).gameTime;
-    // thisWeekOpponent already set by flagFootballParser — do not overwrite
   }
 
   // ── 12.5. Weekly priorities ──────────────────────────────────────────────

@@ -62,6 +62,22 @@ function overlap(a, b) {
 }
 
 describe('dashboard v2 2560x1440 layout verification', () => {
+  it('keeps the single flag card footprint with an unknown or known game time', async () => {
+    for (const thisWeekTime of [null, '12:00 PM']) {
+      await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
+        flagFootballActive: true, flagTeamName: 'Cowboys',
+        thisWeekOpponent: 'Langston-Ravens', thisWeekTime,
+      } }), { waitUntil: 'load' });
+      const size = await page.locator('.athletics-panel').evaluate(element => {
+        const box = element.getBoundingClientRect();
+        return { width: Number(box.width.toFixed(2)), height: Number(box.height.toFixed(2)) };
+      });
+      assert.deepEqual(size, { width: 1473.83, height: 315.63 });
+      assert.equal(await page.locator('.next-box span').textContent(),
+        `vs. Langston-Ravens${thisWeekTime ? ` · ${thisWeekTime}` : ''}`);
+    }
+  });
+
   for (const [name, data] of Object.entries({
     day: { ...sampleDashboardV2Data, paletteMode: 'day' },
     evening: { ...sampleDashboardV2Data, paletteMode: 'evening' },

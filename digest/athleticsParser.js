@@ -71,8 +71,12 @@ export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootba
     currentSnackFamily: ff.currentSnackFamily,
     standings:          ff.standings,
     hasGameThisWeek:    false,              // set by builder after calendar cross-reference
-    thisWeekOpponent:   ff.thisWeekOpponent, // set by flagFootballParser via captainAssignments
-    thisWeekTime:       null,               // set by builder after calendar cross-reference
+    // Both from flagFootballParser, both projected from nextFlagGame — one row
+    // of one file, so the two halves of "Next game vs. X · <time>" cannot
+    // describe different fixtures. thisWeekTime used to be set by builder from
+    // a hardcoded literal; see the comment at its source.
+    thisWeekOpponent:   ff.thisWeekOpponent,
+    thisWeekTime:       ff.thisWeekTime,
     seasonComplete:     ff.seasonComplete,
     finalRecord:        ff.finalRecord,
     mylesCaptain:       ff.mylesCaptain,

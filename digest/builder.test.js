@@ -6,7 +6,6 @@
  * Uses dynamic dates so tests pass on any run date.
  */
 
-import { readFileSync } from 'node:fs';
 import { buildDigest, generateTasks } from './builder.js';
 import { attachFetchFailures } from '../calendar.js';
 import { isSchoolDay, getRotation } from './schoolRotation.js';
@@ -400,7 +399,9 @@ const flagGame = dig.upcomingEvents.find(e => e.isFlagGame);
 assert(flagGame != null,                             'Flag game in upcomingEvents');
 
 // Athletics
-assert(dig.athletics.seasonRecord === '3-0',         'Season record parsed: 3-0');
+// seasonRecord became W-L-T; this fixture has no draws, so it is the same
+// record with an explicit zero ties component. Updated, not deleted.
+assert(dig.athletics.seasonRecord === '3-0-0',       'Season record parsed: 3-0-0');
 assert(dig.athletics.standings.length === 4,         '4 standings teams parsed');
 assert(dig.athletics.standings[0].isMe === true,     'Cowboys row has isMe:true');
 assert(dig.athletics.lastResult.startsWith('W'),     'Last result is a win');
@@ -659,116 +660,19 @@ assert(athResult.athletics.hasGameThisWeek === true,              'Flag game in 
 assert(typeof athResult.athletics.thisWeekOpponent === 'string',  'Flag game → thisWeekOpponent is a string');
 assert(/Eagles/i.test(athResult.athletics.thisWeekOpponent),      'Flag game → thisWeekOpponent contains opponent name');
 
-// athletics.thisWeekTime is derived from the occurrence, not hardcoded.
-// It was the literal '3:00 PM' until Sept 2026 — correct for Spring 2026 and
-// wrong for every Fall 2026 game.
+// hasGameThisWeek is a CALENDAR fact — "is there a flag game in the 72h window" —
+// and is the only thing this cross-reference sets. thisWeekOpponent and
+// thisWeekTime are both projected from the season file by flagFootballParser
+// and are covered in test/flagFootballParser.test.js, where their source lives.
 //
-// These fixtures pin BOTH halves of the instant — a fixed calendar date and the
-// offset actually in effect on it — so the expected wall-clock times hold under
-// any process TZ *and* across a DST transition. Pinning only the offset is not
-// enough and is the specific trap here: paired with a run-time-relative date
-// like isoDate(1), `…T11:00:00-04:00` silently becomes 10:00 AM ET once the
-// clock falls back on Nov 1 2026, and these assertions would start failing on a
-// date certain with nothing about the change to blame. buildDigest() does not
-// date-filter the list these are read from (builder.js `allResolved`), so a
-// fixed date costs nothing.
-//
-// A league game week is a one-hour practice followed by the game, so the event
-// START is the practice start: an 11 AM block is a 12 PM game, not an 11 AM one.
-const twoHourBlock = {
-  summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles',
-  start: { dateTime: '2026-09-20T11:00:00-04:00' },
-  end:   { dateTime: '2026-09-20T13:00:00-04:00' },
-};
-const blockResult = await buildDigest({ rawEvents: [twoHourBlock], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
-assert(blockResult.athletics.thisWeekTime === '12:00 PM',        'Flag game → thisWeekTime is the game hour, not the practice hour');
-
-// A later week at a different hour must not resolve to the same time — the
-// property a single hardcoded literal cannot have.
-const laterBlock = {
-  summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles',
-  start: { dateTime: '2026-09-27T13:00:00-04:00' },
-  end:   { dateTime: '2026-09-27T15:00:00-04:00' },
-};
-const laterResult = await buildDigest({ rawEvents: [laterBlock], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
-assert(laterResult.athletics.thisWeekTime === '2:00 PM',         'Flag game → a different week yields a different thisWeekTime');
-assert(laterResult.athletics.thisWeekTime !== blockResult.athletics.thisWeekTime, 'thisWeekTime varies by occurrence');
-
-// All-day flag game: no derivable time. null, never a fabricated one —
-// athleticsParser already initialises the field to null.
+// The calendar-derived thisWeekTime assertions that used to sit here (and the
+// DST tripwire guarding their fixtures) were removed with the source change,
+// not weakened: they pinned builder deriving the time from the event, which it
+// no longer does. The occurrence-derivation itself is still covered, in
+// digest/aliases.test.js, because the event subtitle still uses it.
 const allDayGame = { summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles', start: { date: '2026-09-20' } };
 const allDayResult = await buildDigest({ rawEvents: [allDayGame], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
 assert(allDayResult.athletics.hasGameThisWeek === true,          'All-day flag game still sets hasGameThisWeek');
-assert(allDayResult.athletics.thisWeekTime === null,             'All-day flag game → thisWeekTime null, not a guessed time');
-
-// FLAG-FIXTURE-REGION-END — do not delete; the tripwire below ends its scan here.
-// Nothing between `const twoHourBlock` and this marker may contain the token
-// `isoDate(`, including in a comment — the guard scans source text, so moving
-// the explanation below up among the fixtures trips it. It fails closed, which
-// is the intent, but the message will point at the fixtures rather than at you.
-//
-// Tripwire for the trap the comment above describes: an offset pinned against a
-// run-time-relative date is only correct until the next DST transition.
-//
-// This has to inspect the SOURCE, not the values. `isoDate(1)` interpolates to
-// a string of exactly the same shape as a literal date, so any runtime check on
-// twoHourBlock.start.dateTime is satisfied by the very thing it means to
-// forbid — a guard that reads as protective and cannot fail. Reading the region
-// back off disk is the only form of this check with teeth.
-//
-// The region ends on a dedicated marker rather than on `allDayGame`'s own
-// declaration, so that fixture is inside the scan too. Ending on a fixture name
-// made the boundary incidental — whichever fixture happened to be last was
-// silently unguarded.
-{
-  const src = readFileSync(new URL(import.meta.url), 'utf8');
-  const from   = src.indexOf('const twoHourBlock = {');
-  // indexOf, deliberately: the marker line sits immediately after the fixtures
-  // and BEFORE the explanatory comment below, so the first occurrence is the
-  // real boundary and this line's own copy of the literal is the second. Using
-  // lastIndexOf instead pulls that comment — which names `isoDate(1)` in prose —
-  // inside the region and fires the guard on its own explanation. (It did.)
-  const to     = src.indexOf('// FLAG-FIXTURE-REGION-END');
-  assert(from > 0 && to > from, 'DST tripwire could not locate the flag football fixture region');
-  const region = src.slice(from, to);
-  // The region must actually contain the fixtures, or the two checks below are
-  // vacuous on an empty slice.
-  for (const name of ['const twoHourBlock', 'const laterBlock', 'const allDayGame']) {
-    assert(region.includes(name), `DST tripwire region is missing ${name} — boundary drifted`);
-  }
-  assert(!region.includes('isoDate('), 'flag football date fixtures must pin a fixed calendar date, not a run-time-relative one');
-
-  // Positive form, not just a blocklist. Two blocklist checks let a third way
-  // of writing a relative date through (`new Date(Date.now() + 864e5)`, say),
-  // so require every dateTime in the region to BE a single-quoted ISO literal
-  // with an explicit numeric offset. It pins the shape, not the date, so a
-  // legitimate re-dating still passes.
-  //
-  // It is deliberately narrower than "rejects computed values": a `Z`-suffixed
-  // literal, a double-quoted one, and fractional seconds are all refused too,
-  // even though a `Z` literal would be MORE DST-proof than the shipped form.
-  // That is an accepted over-block on this project's usual grounds — a false
-  // block here is one edit to recover, and every current fixture matches.
-  const dateTimes = (region.match(/dateTime:\s*[^,}\n]*/g) || []).map(m => m.trim());
-  // A lower bound, and largely redundant with the three name checks above —
-  // any drift that removes a fixture fails those first. It earns its place only
-  // by catching the case they miss: the fixtures surviving while their dateTime
-  // lines are renamed away, which would leave the loop below iterating nothing.
-  assert(dateTimes.length >= 4, `DST tripwire found ${dateTimes.length} dateTime fixtures, expected at least 4 — region drifted`);
-  for (const d of dateTimes) {
-    assert(
-      /^dateTime:\s*'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}'$/.test(d),
-      `flag football fixture is not a fixed ISO literal with an explicit offset: ${d}`,
-    );
-  }
-
-  // The region ends at the marker, so a fixture added BELOW it — the natural
-  // place, since the marker reads like a section end — would be unguarded by
-  // everything above. This one check is whole-file: no dateTime fixture
-  // anywhere in this file may be a template literal. Verified safe to apply
-  // file-wide, because the existing isoDateTime() fixtures are plain calls.
-  assert(!/dateTime:\s*`/.test(src), 'no dateTime fixture in this file may be a template literal');
-}
 
 // ---------------------------------------------------------------------------
 // REGRESSION — isoDate()/startOfTodayET() ET-anchor agreement

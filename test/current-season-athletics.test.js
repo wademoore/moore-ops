@@ -9,7 +9,12 @@
  *   - Her athletics visibility flag is driven by that window alone, with no
  *     dependency on a meet result existing.
  *   - Myles's current-season flag football identity resolves to "Cowboys",
- *     and the two prior seasons are untouched.
+ *     matched on the numeric league team id rather than the mascot (the Fall
+ *     2026 Yorktown 5th-6th Grade Rec division contains two Cowboys teams), and
+ *     the two prior seasons are untouched.
+ *   - Flag football evaluates as active from its season window alone, its
+ *     record reads 0-0-0, and all six Week 1-6 events are present with Week 1
+ *     typed as a practice so it cannot reach the record.
  *
  * These run against the REAL data/ files, not a fixture, because the defect
  * they exist to catch is a production data file drifting out of agreement
@@ -208,25 +213,137 @@ describe('757swim season label', () => {
 // ── Myles — flag football team identity ─────────────────────────────────────
 
 describe('flag football team identity', () => {
-  it('resolves flagTeamName to Cowboys on 2026-09-10, via the no-current-season fallback', async () => {
+  // These three assertions previously pinned the ABSENCE of a current season:
+  // seasonLabel was expected to be 'Spring 2026' and no season was expected to
+  // cover today, because parseFlagFootball fell back to seasons[last]. That was
+  // a correct guard for the phase in which no fall-2026 season existed, and it
+  // was written with an explicit instruction to re-examine it once one did.
+  // A fall-2026 season now exists, so the guard is inverted rather than removed:
+  // it asserts the fallback is NOT being taken, which is the property that
+  // actually matters and which the old assertions could not express.
+  it('resolves flagTeamName to Cowboys on 2026-09-10, from the real current season', async () => {
     const cfg = await readJson('data/sports-config.json');
     const data = await readJson('data/flag-football.json');
     const athletics = parseAthleticsDoc(TODAY, cfg, data, {}, [], null);
 
     assert.equal(athletics.flagTeamName, 'Cowboys');
-
-    // State the path honestly rather than letting the name imply more than it
-    // proves. parseFlagFootball picks the first season with seasonEnd >= today
-    // and otherwise falls back to seasons[last]; on 2026-09-10 no season
-    // qualifies, so this resolves through spring-2026 — a PRIOR season. The
-    // assertion has prospective teeth (a fall-2026 season named anything else
-    // would fail it) but today it is not evidence about a current season.
-    assert.equal(athletics.seasonLabel, 'Spring 2026',
-      'if this ever stops being Spring 2026, a real current season exists and this test should be re-examined');
+    assert.equal(athletics.seasonLabel, 'Fall 2026',
+      'must resolve through the current season, not the seasons[last] fallback');
     assert.equal(
-      data.seasons.some(s => new Date(s.seasonEnd) >= TODAY), false,
-      'no season covers today — the fallback path is what is being exercised',
+      data.seasons.some(s => new Date(s.seasonEnd) >= TODAY), true,
+      'a season covers today — the fallback path is no longer what is being exercised',
     );
+    // The stale values the fallback used to surface alongside a correct team
+    // name. Pinned so a regression to the fallback path fails loudly here.
+    assert.notEqual(athletics.seasonRecord, '5-0-0', 'must not be spring-2026\u2019s record');
+  });
+
+  it('resolves the current team by numeric league id, never by mascot', async () => {
+    const data = await readJson('data/flag-football.json');
+    const fall = data.seasons.find(s => s.seasonId === 'fall-2026');
+    assert.ok(fall, 'fall-2026 season must exist');
+
+    assert.equal(fall.myTeamId, 8009182, 'identity is the league team id');
+    assert.equal(fall.leagueTeamName, 'Moore \u2013 Cowboys', 'coach-qualified league string is stored');
+    assert.equal(fall.teamName, 'Cowboys', 'display name is the mascot alone');
+    assert.equal(fall.leagueProgramId, 5025209);
+
+    // Every fixture side is an id present in teams[]. If a game ever referred to
+    // a team by mascot or abbr, the id join would silently drop it from the
+    // record and the standings, which is exactly the failure this pins.
+    const ids = new Set(fall.teams.map(t => t.teamId));
+    assert.equal(ids.size, fall.teams.length, 'team ids are unique');
+    for (const g of fall.games) {
+      for (const side of [g.home, g.away]) {
+        if (side === null) continue;
+        assert.equal(typeof side, 'number', `game side must be a numeric id, got ${JSON.stringify(side)}`);
+        assert.ok(ids.has(side), `game side ${side} must be a known team id`);
+      }
+    }
+
+    // Mascot is deliberately NOT unique in this division, which is why the id
+    // is the key. This is the opposite of the sharks-soccer.json case, where the
+    // mascot is unique and only the wording varies, so fuzzy matching is right
+    // there and wrong here.
+    assert.ok(/Cowboys/.test(fall.note) && /sharks-soccer/.test(fall.note),
+      'the note must record why an id is used here and why Sharks-style fuzzy matching is not');
+    assert.equal(fall.divisionTeamCount, 8);
+    assert.equal(fall.teams.length, 6,
+      'only the 6 of 8 division teams whose league ids are published are listed; the rest are not invented');
+  });
+
+  it('evaluates flag football as active today from the window alone, with no results present', async () => {
+    const cfg = await readJson('data/sports-config.json');
+    const data = await readJson('data/flag-football.json');
+
+    // Strip every score in the file. isSeasonActive reads `active` and the date
+    // window and nothing else, so visibility must survive this. If a results
+    // gate is ever introduced, this fails rather than the card silently hiding.
+    const noResults = { ...data, seasons: data.seasons.map(s => ({
+      ...s, games: (s.games || []).map(g => ({ ...g, homeScore: null, awayScore: null, status: 'scheduled' })),
+    })) };
+
+    assert.equal(parseAthleticsDoc(TODAY, cfg, data, {}, [], null).flagFootballActive, true);
+    assert.equal(parseAthleticsDoc(TODAY, cfg, noResults, {}, [], null).flagFootballActive, true,
+      'visibility must not depend on any game result');
+  });
+
+  it('season record is 0-0-0 with no games played', async () => {
+    const cfg = await readJson('data/sports-config.json');
+    const data = await readJson('data/flag-football.json');
+    const athletics = parseAthleticsDoc(TODAY, cfg, data, {}, [], null);
+
+    assert.equal(athletics.seasonRecord, '0-0-0');
+    assert.equal(athletics.seasonComplete, false);
+    assert.equal(athletics.finalRecord, null);
+    assert.equal(athletics.lastResult, '', 'no game has been played, so there is no last result');
+  });
+
+  it('carries all six scheduled events, with Week 1 typed so it cannot affect the record', async () => {
+    const data = await readJson('data/flag-football.json');
+    const fall = data.seasons.find(s => s.seasonId === 'fall-2026');
+    const MY = 8009182;
+
+    const rows = fall.games.map(g => ({
+      week: g.week, date: g.date, time: g.time, type: g.type, field: g.field,
+      homeAway: g.home === MY ? 'H' : g.away === MY ? 'A' : null,
+      opponent: g.home === MY ? g.away : g.home,
+    }));
+
+    assert.deepEqual(rows, [
+      { week: 1, date: '2026-09-13', time: null,    type: 'practice', field: '4D', homeAway: 'H', opponent: null    },
+      { week: 2, date: '2026-09-20', time: '12:00', type: 'regular',  field: '4B', homeAway: 'H', opponent: 8070749 },
+      { week: 3, date: '2026-09-27', time: '14:00', type: 'regular',  field: '4A', homeAway: 'A', opponent: 8113277 },
+      { week: 4, date: '2026-10-04', time: '14:00', type: 'regular',  field: '3B', homeAway: 'H', opponent: 8069066 },
+      { week: 5, date: '2026-10-11', time: '12:00', type: 'regular',  field: '3A', homeAway: 'A', opponent: 8108154 },
+      { week: 6, date: '2026-10-18', time: '14:00', type: 'regular',  field: '3B', homeAway: 'H', opponent: 8088488 },
+    ]);
+
+    // Week 1 is a practice, not a game. Typed so it is excluded structurally
+    // rather than by having no score: a `regular` row with null scores would
+    // still be a fixture, and a future score entry would silently count it.
+    const wk1 = fall.games.find(g => g.week === 1);
+    assert.equal(wk1.type, 'practice');
+    assert.equal(wk1.away, null, 'a practice has no opponent');
+    assert.equal(fall.games.filter(g => g.type === 'regular').length, 5,
+      'exactly five of the six events are fixtures');
+
+    // Every event is at the one complex, so home/away is a label only.
+    assert.equal(fall.location, 'McReynolds Athletic Complex, 412 Sportsway, Yorktown VA');
+    assert.ok(fall.games.every(g => !('location' in g)),
+      'no per-game location: every fixture is at the season location, so home/away is nominal');
+  });
+
+  it('nextFlagGame is the Week 2 fixture, never the Week 1 practice', async () => {
+    const cfg = await readJson('data/sports-config.json');
+    const data = await readJson('data/flag-football.json');
+    const next = parseAthleticsDoc(TODAY, cfg, data, {}, [], null).nextFlagGame;
+
+    // On 2026-09-10 the practice (Sep 13) is chronologically first. Selecting it
+    // would report `opponent: undefined`, which is the defect being pinned.
+    assert.equal(next.date, '2026-09-20');
+    assert.equal(next.opponent, 'Ravens');
+    assert.equal(next.time, '12:00');
   });
 
   it('leaves both prior seasons\' identities and results untouched', async () => {
@@ -250,12 +367,90 @@ describe('flag football team identity', () => {
     assert.equal(spring.outcome,    'Champions');
     assert.equal(spring.regularRecord, '7-0');
     assert.equal(spring.games.length, 13, 'spring-2026 schedule must be preserved');
+
+    // The season-level teamName above is OUR team only. The teams[] rosters were
+    // unguarded until a mutation renaming spring-2026's MPC entry from Cowboys to
+    // Chiefs passed every assertion in this file. Pinned in full now, including
+    // fall-2025's two same-mascot entries (FLI and WAT are both Cowboys) — the
+    // historical precedent for why the current season keys on an id.
+    assert.deepEqual(fall.teams, [
+      { abbr: 'FLI', coach: 'Flintroy',                  teamName: 'Cowboys'    },
+      { abbr: 'RUL', coach: 'Rule',                      teamName: 'Browns'     },
+      { abbr: 'SCH', coach: 'Schmidt/Ruttledge/Johnson', teamName: 'Vikings'    },
+      { abbr: 'GAR', coach: 'Garrett/Riggins',           teamName: 'Vikings'    },
+      { abbr: 'WAT', coach: 'Watkins',                   teamName: 'Cowboys'    },
+      { abbr: 'LEO', coach: 'Leonard',                   teamName: 'Commanders' },
+      { abbr: 'BAK', coach: 'Baker/Pfauth',              teamName: 'Seahawks'   },
+      { abbr: 'HER', coach: 'Herring',                   teamName: 'Panthers'   },
+    ]);
+    assert.deepEqual(spring.teams, [
+      { abbr: 'MPC', coach: 'Moore/Parker', teamName: 'Cowboys' },
+      { abbr: 'BAR', coach: 'Barber',       teamName: 'Chiefs'  },
+      { abbr: 'SLZ', coach: 'Slentz',       teamName: 'Ravens'  },
+      { abbr: 'LAW', coach: 'Law',          teamName: 'Raiders' },
+    ]);
+
+    // Adding the current season must not renumber or reorder the prior ones.
+    assert.deepEqual(data.seasons.map(s => s.seasonId), ['fall-2025', 'spring-2026', 'fall-2026']);
   });
 
-  it('leaves the flag football season window alone — this update is 757swim-only', async () => {
+  it('every season keys its teams on ids or on abbrs, never a mix of both', async () => {
+    // parseFlagFootball resolves `teamId ?? abbr`, so a season declaring
+    // myTeamId while its teams[] carry only abbr would match NOTHING and
+    // degrade to 0-0-0 with no isMe row — indistinguishable from a season that
+    // has not started. This enforces the DATA invariant, which lived only in a
+    // code comment. It does not enforce the parser's side of the contract: a
+    // change dropping the id path is caught by the mutation harness, not here.
+    const data = await readJson('data/flag-football.json');
+    for (const s of data.seasons) {
+      const byId   = s.teams.every(t => t.teamId != null);
+      const byAbbr = s.teams.every(t => t.abbr   != null);
+      assert.ok(byId !== byAbbr, `${s.seasonId}: teams must be uniformly id-keyed or abbr-keyed`);
+      assert.equal(s.myTeamId != null, byId, `${s.seasonId}: myTeamId must be present iff teams are id-keyed`);
+      assert.equal(s.myTeamAbbr != null, byAbbr, `${s.seasonId}: myTeamAbbr must be present iff teams are abbr-keyed`);
+      const key = t => (t.teamId ?? t.abbr);
+      assert.ok(s.teams.some(t => key(t) === (s.myTeamId ?? s.myTeamAbbr)),
+        `${s.seasonId}: my own key must resolve to a listed team`);
+    }
+  });
+
+  // This assertion previously pinned the SPRING window (2026-04-26 -> 2026-06-07,
+  // bufferDays 0) under the title 'this update is 757swim-only'. That was
+  // accurate for the change it was written for, and it is exactly the tripwire
+  // CLAUDE.md predicted would go red once a real fall season landed. It is
+  // repointed at the fall window rather than deleted, so the window still
+  // cannot drift silently.
+  it('pins the fall 2026 flag football season window', async () => {
     const cfg = await readJson('data/sports-config.json');
     assert.deepEqual(cfg.flagFootball, {
-      active: true, seasonStart: '2026-04-26', seasonEnd: '2026-06-07', bufferDays: 0,
+      active: true, seasonStart: '2026-09-13', seasonEnd: '2026-10-25', bufferDays: 7,
     });
+
+    // seasonEnd is the league's announced end date, NOT the last published week
+    // (Oct 18). Pinned so that a later 'correction' to the last posted game
+    // would fail here and have to be argued for.
+    const data = await readJson('data/flag-football.json');
+    const fall = data.seasons.find(s => s.seasonId === 'fall-2026');
+    assert.equal(fall.seasonEnd, cfg.flagFootball.seasonEnd,
+      'the schedule file and the visibility window must name the same end date');
+    const lastGame = fall.games.map(g => g.date).sort().at(-1);
+    assert.equal(lastGame, '2026-10-18');
+    assert.ok(cfg.flagFootball.seasonEnd > lastGame,
+      'the window deliberately outlives the last published week');
+  });
+
+  it('the buffered window covers today and both of its edges', async () => {
+    const cfg = await readJson('data/sports-config.json');
+    const data = await readJson('data/flag-football.json');
+    const activeAt = date => parseAthleticsDoc(date, cfg, data, {}, [], null).flagFootballActive;
+
+    // bufferDays 7: chosen because spring-2026's own rainDate (2026-06-14) sits
+    // exactly seven days after its seasonEnd (2026-06-07) — one game-week of
+    // slack is this league's demonstrated unit for a slipped fixture.
+    assert.equal(activeAt(new Date('2026-09-05T00:00:00')), false, 'day before the buffered window opens');
+    assert.equal(activeAt(new Date('2026-09-06T00:00:00')), true,  'first buffered day');
+    assert.equal(activeAt(TODAY), true, 'today, three days ahead of the first event');
+    assert.equal(activeAt(new Date('2026-11-01T00:00:00')), true,  'last buffered day');
+    assert.equal(activeAt(new Date('2026-11-02T00:00:00')), false, 'day after the buffered window closes');
   });
 });

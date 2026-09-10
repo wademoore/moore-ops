@@ -23,7 +23,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const TEST_FILES = ['digest/aliases.test.js', 'digest/builder.test.js'];
+const TEST_FILES = ['digest/aliases.test.js', 'test/flagFootballParser.test.js'];
 
 const MUTATIONS = [
   // ── The three literals this change removed ──────────────────────────────
@@ -38,12 +38,6 @@ const MUTATIONS = [
     file: 'digest/aliases.js',
     from: "      subtitle: joinSubtitle(startTime, venue, 'Myles + Coach Wade'),",
     to:   "      subtitle: '2:00 PM · Williamsburg Christian Academy · Myles + Coach Wade',",
-  },
-  {
-    name: 'hardcoded thisWeekTime restored',
-    file: 'digest/builder.js',
-    from: 'athletics.thisWeekTime    = flagFootballDetails(flagGameEvent.raw).gameTime;',
-    to:   "athletics.thisWeekTime    = '3:00 PM';",
   },
 
   // ── Ways a derivation could still be wrong ──────────────────────────────
@@ -92,24 +86,6 @@ const MUTATIONS = [
     to:   '  if (false && durationMs < 2 * FLAG_PRACTICE_MS) {',
   },
   {
-    // A relative date written a THIRD way, defeating both blocklist checks
-    // (no `isoDate(`, no template literal) — which is why the tripwire also
-    // requires every dateTime to positively BE a quoted ISO literal.
-    name: 'fixture date computed rather than written',
-    file: 'digest/builder.test.js',
-    from: "  start: { dateTime: '2026-09-27T13:00:00-04:00' },",
-    to:   "  start: { dateTime: new Date(Date.now() + 864e5).toISOString() },",
-  },
-  {
-    // The DST tripwire's own boundary: lastIndexOf pulls its explanatory
-    // comment (which names isoDate(1) in prose) inside the scanned region and
-    // fires the guard on its own explanation.
-    name: 'DST tripwire boundary uses lastIndexOf',
-    file: 'digest/builder.test.js',
-    from: "  const to     = src.indexOf('// FLAG-FIXTURE-REGION-END');",
-    to:   "  const to     = src.lastIndexOf('// FLAG-FIXTURE-REGION-END');",
-  },
-  {
     // The distinction a reviewer caught the first time round: collapsing these
     // hands back the PRACTICE hour as the game hour, confidently.
     name: 'unknown duration collapsed into measured-short',
@@ -118,12 +94,38 @@ const MUTATIONS = [
     to:   "    // Duration unknown, so which hour is the game is unknown. Say nothing.\n    return { startTime, gameTime: startTime, practiceTime: null, venue };",
   },
   {
-    // The DST trap in the builder fixtures: an offset pinned against a
-    // run-time-relative date is correct only until the next transition.
-    name: 'builder fixture date made run-time-relative',
-    file: 'digest/builder.test.js',
-    from: "  start: { dateTime: '2026-09-20T11:00:00-04:00' },\n  end:   { dateTime: '2026-09-20T13:00:00-04:00' },",
-    to:   "  start: { dateTime: `${isoDate(1)}T11:00:00-04:00` },\n  end:   { dateTime: `${isoDate(1)}T13:00:00-04:00` },",
+    // The pair split back apart: opponent from the schedule, time from a
+    // literal. Exactly the shape the sourcing change removes.
+    name: 'thisWeekTime unpaired from thisWeekOpponent',
+    file: 'digest/flagFootballParser.js',
+    from: '  const thisWeekTime     = nextFlagGame ? formatClockTime(nextFlagGame.time) : null;',
+    to:   "  const thisWeekTime     = nextFlagGame ? '3:00 PM' : null;",
+  },
+  {
+    name: 'opponent taken from captains while time comes from the schedule',
+    file: 'digest/flagFootballParser.js',
+    from: '  const thisWeekOpponent = nextFlagGame ? nextFlagGame.opponent : captainOpponent;',
+    to:   '  const thisWeekOpponent = captainOpponent;',
+  },
+  {
+    // A malformed or absent time must yield no time, never a guessed one.
+    name: 'malformed clock time guessed rather than dropped',
+    file: 'digest/flagFootballParser.js',
+    from: '  if (!m) return null;',
+    to:   "  if (!m) return '12:00 PM';",
+  },
+  {
+    name: '24-hour hour rendered without 12-hour conversion',
+    file: 'digest/flagFootballParser.js',
+    from: '  const h12 = h % 12 === 0 ? 12 : h % 12;',
+    to:   '  const h12 = h;',
+  },
+  {
+    // A practice week carries no opponent; selecting it reports `undefined`.
+    name: 'practice week eligible as the next game',
+    file: 'digest/flagFootballParser.js',
+    from: '      && !NON_GAME_TYPES.has(g.type)',
+    to:   '      && true',
   },
 ];
 

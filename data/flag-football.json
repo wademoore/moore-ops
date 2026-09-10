@@ -648,6 +648,151 @@
                                           "status":  "final"
                                       }
                                   ]
+                    },
+                    {
+                        "seasonId":  "fall-2026",
+                        "label":  "Fall 2026",
+                        "organization":  "NFL FLAG",
+                        "league":  "Yorktown",
+                        "gradeGroup":  "5th-6th Grade Rec",
+                        "teamName":  "Cowboys",
+                        "leagueTeamName":  "Moore – Cowboys",
+                        "myTeamId":  8009182,
+                        "leagueProgramId":  5025209,
+                        "coaches":  [
+                                     "Moore"
+                                     ],
+                        "location":  "McReynolds Athletic Complex, 412 Sportsway, Yorktown VA",
+                        "seasonEnd":  "2026-10-25",
+                        "divisionTeamCount":  8,
+                        "rainDate":  null,
+                        "pictureDay":  null,
+                        "note":  "Identity is matched on the numeric league team id (myTeamId / teams[].teamId), never on teamName. This division contains two teams whose mascot is Cowboys — mine (Moore – Cowboys, 8009182) and Watkins – Cowboys — so the mascot is not a unique identifier here and a mascot or fuzzy match would be ambiguous. This is the opposite of the sharks-soccer.json case, where the mascot is unique and only the wording of the team string varies, so fuzzy matching is correct there and wrong here. leagueName carries the coach-qualified league string for human readability; teamName is the display name. NOTE: the season-level field is leagueTeamName; leagueName is the per-team field. teams lists the 6 of 8 division teams whose league ids are known from the published schedule — Watkins – Cowboys and the eighth team are known to exist but their ids are not published in the weeks posted so far, and are deliberately not invented here. games holds only OUR six fixtures, unlike fall-2025 which carries the whole division schedule: the league publishes only our team's weeks. The consequence is that standings for this season are NOT a real division table — once results are entered each listed opponent will show a single game, ours. Treat the standings output as our own results until the full division schedule is available. Week 1 is type \"practice\" so it can never reach the record, the standings, or nextFlagGame. Home/away is nominal: every fixture is at the same complex. seasonEnd is the league's announced end date (Aug 17 announcement email), not the last published week — Oct 18 is the last posted week and Oct 25 has not been posted yet.",
+                        "snackSchedule":  [
+
+                                          ],
+                        "captainAssignments":  [
+
+                                          ],
+                        "teams":  [
+                                      {
+                                          "teamId":  8009182,
+                                          "leagueName":  "Moore – Cowboys",
+                                          "coach":  "Moore",
+                                          "teamName":  "Cowboys"
+                                      },
+                                      {
+                                          "teamId":  8070749,
+                                          "leagueName":  "Langston - Ravens",
+                                          "coach":  "Langston",
+                                          "teamName":  "Ravens"
+                                      },
+                                      {
+                                          "teamId":  8113277,
+                                          "leagueName":  "Henze/Pfauth - Bears",
+                                          "coach":  "Henze/Pfauth",
+                                          "teamName":  "Bears"
+                                      },
+                                      {
+                                          "teamId":  8069066,
+                                          "leagueName":  "Schmidt - Broncos",
+                                          "coach":  "Schmidt",
+                                          "teamName":  "Broncos"
+                                      },
+                                      {
+                                          "teamId":  8108154,
+                                          "leagueName":  "Baker/In - Texans",
+                                          "coach":  "Baker/In",
+                                          "teamName":  "Texans"
+                                      },
+                                      {
+                                          "teamId":  8088488,
+                                          "leagueName":  "Herring - Panthers",
+                                          "coach":  "Herring",
+                                          "teamName":  "Panthers"
+                                      }
+                                  ],
+                        "games":  [
+                                      {
+                                          "week":  1,
+                                          "date":  "2026-09-13",
+                                          "practiceTime":  "11:00",
+                                          "time":  null,
+                                          "away":  null,
+                                          "awayScore":  null,
+                                          "home":  8009182,
+                                          "homeScore":  null,
+                                          "type":  "practice",
+                                          "label":  "Meet & Greet",
+                                          "field":  "4D",
+                                          "status":  "scheduled"
+                                      },
+                                      {
+                                          "week":  2,
+                                          "date":  "2026-09-20",
+                                          "practiceTime":  "11:00",
+                                          "time":  "12:00",
+                                          "away":  8070749,
+                                          "awayScore":  null,
+                                          "home":  8009182,
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "field":  "4B",
+                                          "status":  "scheduled"
+                                      },
+                                      {
+                                          "week":  3,
+                                          "date":  "2026-09-27",
+                                          "practiceTime":  "13:00",
+                                          "time":  "14:00",
+                                          "away":  8009182,
+                                          "awayScore":  null,
+                                          "home":  8113277,
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "field":  "4A",
+                                          "status":  "scheduled"
+                                      },
+                                      {
+                                          "week":  4,
+                                          "date":  "2026-10-04",
+                                          "practiceTime":  "13:00",
+                                          "time":  "14:00",
+                                          "away":  8069066,
+                                          "awayScore":  null,
+                                          "home":  8009182,
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "field":  "3B",
+                                          "status":  "scheduled"
+                                      },
+                                      {
+                                          "week":  5,
+                                          "date":  "2026-10-11",
+                                          "practiceTime":  "11:00",
+                                          "time":  "12:00",
+                                          "away":  8009182,
+                                          "awayScore":  null,
+                                          "home":  8108154,
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "field":  "3A",
+                                          "status":  "scheduled"
+                                      },
+                                      {
+                                          "week":  6,
+                                          "date":  "2026-10-18",
+                                          "practiceTime":  "13:00",
+                                          "time":  "14:00",
+                                          "away":  8088488,
+                                          "awayScore":  null,
+                                          "home":  8009182,
+                                          "homeScore":  null,
+                                          "type":  "regular",
+                                          "field":  "3B",
+                                          "status":  "scheduled"
+                                      }
+                                  ]
                     }
                 ]
 }
