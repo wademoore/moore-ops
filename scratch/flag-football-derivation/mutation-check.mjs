@@ -80,8 +80,24 @@ const MUTATIONS = [
   {
     name: 'a one-hour block claims a preceding practice',
     file: 'digest/aliases.js',
-    from: '    end.getTime() - start.getTime() >= 2 * FLAG_PRACTICE_MS;',
-    to:   '    end.getTime() - start.getTime() >= 0;',
+    from: '  if (end.getTime() - start.getTime() < 2 * FLAG_PRACTICE_MS) {',
+    to:   '  if (end.getTime() - start.getTime() < 0) {',
+  },
+  {
+    // The distinction a reviewer caught the first time round: collapsing these
+    // hands back the PRACTICE hour as the game hour, confidently.
+    name: 'unknown duration collapsed into measured-short',
+    file: 'digest/aliases.js',
+    from: '    return { startTime, gameTime: null, practiceTime: null, venue };\n  }\n\n  if (end.getTime()',
+    to:   '    return { startTime, gameTime: startTime, practiceTime: null, venue };\n  }\n\n  if (end.getTime()',
+  },
+  {
+    // The DST trap in the builder fixtures: an offset pinned against a
+    // run-time-relative date is correct only until the next transition.
+    name: 'builder fixture date made run-time-relative',
+    file: 'digest/builder.test.js',
+    from: "  start: { dateTime: '2026-09-20T11:00:00-04:00' },\n  end:   { dateTime: '2026-09-20T13:00:00-04:00' },",
+    to:   "  start: { dateTime: `${isoDate(1)}T11:00:00-04:00` },\n  end:   { dateTime: `${isoDate(1)}T13:00:00-04:00` },",
   },
 ];
 

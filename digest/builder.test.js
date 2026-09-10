@@ -6,6 +6,7 @@
  * Uses dynamic dates so tests pass on any run date.
  */
 
+import { readFileSync } from 'node:fs';
 import { buildDigest, generateTasks } from './builder.js';
 import { attachFetchFailures } from '../calendar.js';
 import { isSchoolDay, getRotation } from './schoolRotation.js';
@@ -660,15 +661,24 @@ assert(/Eagles/i.test(athResult.athletics.thisWeekOpponent),      'Flag game →
 
 // athletics.thisWeekTime is derived from the occurrence, not hardcoded.
 // It was the literal '3:00 PM' until Sept 2026 — correct for Spring 2026 and
-// wrong for every Fall 2026 game. These fixtures pin explicit UTC offsets so
-// the expected wall-clock times hold under any TZ the suite runs in.
+// wrong for every Fall 2026 game.
+//
+// These fixtures pin BOTH halves of the instant — a fixed calendar date and the
+// offset actually in effect on it — so the expected wall-clock times hold under
+// any process TZ *and* across a DST transition. Pinning only the offset is not
+// enough and is the specific trap here: paired with a run-time-relative date
+// like isoDate(1), `…T11:00:00-04:00` silently becomes 10:00 AM ET once the
+// clock falls back on Nov 1 2026, and these assertions would start failing on a
+// date certain with nothing about the change to blame. buildDigest() does not
+// date-filter the list these are read from (builder.js `allResolved`), so a
+// fixed date costs nothing.
 //
 // A league game week is a one-hour practice followed by the game, so the event
 // START is the practice start: an 11 AM block is a 12 PM game, not an 11 AM one.
 const twoHourBlock = {
   summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles',
-  start: { dateTime: `${isoDate(1)}T11:00:00-04:00` },
-  end:   { dateTime: `${isoDate(1)}T13:00:00-04:00` },
+  start: { dateTime: '2026-09-20T11:00:00-04:00' },
+  end:   { dateTime: '2026-09-20T13:00:00-04:00' },
 };
 const blockResult = await buildDigest({ rawEvents: [twoHourBlock], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
 assert(blockResult.athletics.thisWeekTime === '12:00 PM',        'Flag game → thisWeekTime is the game hour, not the practice hour');
@@ -677,8 +687,8 @@ assert(blockResult.athletics.thisWeekTime === '12:00 PM',        'Flag game → 
 // property a single hardcoded literal cannot have.
 const laterBlock = {
   summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles',
-  start: { dateTime: `${isoDate(1)}T13:00:00-04:00` },
-  end:   { dateTime: `${isoDate(1)}T15:00:00-04:00` },
+  start: { dateTime: '2026-09-27T13:00:00-04:00' },
+  end:   { dateTime: '2026-09-27T15:00:00-04:00' },
 };
 const laterResult = await buildDigest({ rawEvents: [laterBlock], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
 assert(laterResult.athletics.thisWeekTime === '2:00 PM',         'Flag game → a different week yields a different thisWeekTime');
@@ -686,10 +696,29 @@ assert(laterResult.athletics.thisWeekTime !== blockResult.athletics.thisWeekTime
 
 // All-day flag game: no derivable time. null, never a fabricated one —
 // athleticsParser already initialises the field to null.
-const allDayGame = { summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles', start: { date: isoDate(1) } };
+const allDayGame = { summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles', start: { date: '2026-09-20' } };
 const allDayResult = await buildDigest({ rawEvents: [allDayGame], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
 assert(allDayResult.athletics.hasGameThisWeek === true,          'All-day flag game still sets hasGameThisWeek');
 assert(allDayResult.athletics.thisWeekTime === null,             'All-day flag game → thisWeekTime null, not a guessed time');
+
+// Tripwire for the trap the comment above describes: an offset pinned against a
+// run-time-relative date is only correct until the next DST transition.
+//
+// This has to inspect the SOURCE, not the values. `isoDate(1)` interpolates to
+// a string of exactly the same shape as a literal date, so any runtime check on
+// twoHourBlock.start.dateTime is satisfied by the very thing it means to
+// forbid — a guard that reads as protective and cannot fail. Reading the region
+// back off disk is the only form of this check with teeth.
+{
+  const src = readFileSync(new URL(import.meta.url), 'utf8');
+  const from = src.indexOf('const twoHourBlock = {');
+  const to   = src.indexOf('const allDayGame = {');
+  assert(from > 0 && to > from, 'DST tripwire could not locate the flag football fixture region');
+  const region = src.slice(from, to);
+  assert(!region.includes('isoDate('), 'flag football dateTime fixtures must pin a fixed calendar date, not a run-time-relative one');
+  assert(region.includes("'2026-09-20T11:00:00-04:00'"), 'twoHourBlock start fixture is a date literal');
+  assert(region.includes("'2026-09-27T13:00:00-04:00'"), 'laterBlock start fixture is a date literal');
+}
 
 // ---------------------------------------------------------------------------
 // REGRESSION — isoDate()/startOfTodayET() ET-anchor agreement

@@ -410,10 +410,11 @@ const FLAG_PRACTICE_MS = 60 * 60 * 1000;
  * Derives a flag football occurrence's venue and times from the event itself.
  *
  * A block long enough to hold both a practice and a game is read as
- * `practice → game`; anything shorter is read as a single session with no
- * preceding practice. Every field is independently nullable, and an
- * undeterminable field is omitted rather than guessed — a missing venue is
- * recoverable, a confidently wrong one is the defect this replaces.
+ * `practice → game`; a block measurably shorter is read as the game alone; a
+ * block of unknown duration yields no game time at all. Every field is
+ * independently nullable, and an undeterminable field is omitted rather than
+ * guessed — a missing venue is recoverable, a confidently wrong one is the
+ * defect this replaces.
  *
  * @param {object} event  Google Calendar event
  * @returns {{ startTime: string|null, gameTime: string|null,
@@ -435,15 +436,20 @@ function flagFootballDetails(event) {
   }
   const startTime = formatETTime(start);
 
+  // Three cases, and the distinction between the last two matters: a block we
+  // can measure and find short is EVIDENCE the block is the game itself; a
+  // block with no end is merely absence of evidence. Collapsing them would
+  // return the practice hour as the game hour — the exact off-by-one this
+  // helper exists to prevent — and would do it confidently.
   const rawEnd = event?.end?.dateTime;
   const end = rawEnd ? new Date(rawEnd) : null;
-  const hasPractice =
-    end !== null &&
-    !Number.isNaN(end.getTime()) &&
-    end.getTime() - start.getTime() >= 2 * FLAG_PRACTICE_MS;
+  if (end === null || Number.isNaN(end.getTime())) {
+    // Duration unknown, so which hour is the game is unknown. Say nothing.
+    return { startTime, gameTime: null, practiceTime: null, venue };
+  }
 
-  if (!hasPractice) {
-    // Too short to hold a practice and a game — the block is the game itself.
+  if (end.getTime() - start.getTime() < 2 * FLAG_PRACTICE_MS) {
+    // Measured, and too short to hold a practice and a game — this is the game.
     return { startTime, gameTime: startTime, practiceTime: null, venue };
   }
 

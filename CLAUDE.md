@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2310+ passing with a browser
+- Run npm test after changes — must stay at 2313+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -1925,7 +1925,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2310 | **2310** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2313 | **2313** | **0** | **0** |
 
 Measured on `claude/loving-knuth-478237`, whose merge base with `main` is **`3d250aa`**
 (PR #61) — which is also this branch's branch point. **`git fetch origin main` was run before
@@ -1935,34 +1935,52 @@ and after `npm install`: **2297 / 2297 / 0 / 0 with a browser** — which matche
 entry below recorded, so the recorded baseline held for a fourth consecutive time. Re-measure
 anyway; the run costs less than the correction does.
 
-This change adds **+13**, all in one existing file:
+This change adds **+16**, all in one existing file:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `digest/aliases.test.js` | 30 | 43 | +13 |
+| `digest/aliases.test.js` | 30 | 46 | +16 |
 
 `digest/builder.test.js` contributes **0**: it gained five assertions pinning
-`athletics.thisWeekTime`, but they run inside its existing flat `assert()`/`section()`
-harness, which surfaces as ten `node:test` points across three suites either way. Its
-internal assertion count moved 126 → 131. One existing assertion was **repaired, not deleted** — `digest/aliases.test.js`
+`athletics.thisWeekTime` plus a four-assertion source-level DST tripwire, but they run inside
+its existing flat `assert()`/`section()` harness, which surfaces as ten `node:test` points
+across three suites either way. Its internal assertion count moved 126 → 135. One existing assertion was **repaired, not deleted** — `digest/aliases.test.js`
 asserted `subtitle.includes('3:00 PM')` against an event carrying no time at all, so it was
 pinning a hardcoded literal rather than any behaviour; the surrounding case keeps its title,
 `isFlagGame`, `cardType` and `owner` assertions and the subtitle is now covered properly by
-the new section. Nothing was deleted or skipped.
+the new section. **The line itself was removed, not rewritten** — an earlier draft of this
+entry called that "repaired, not deleted", which the diff does not support and which is
+exactly the CLAUDE.md-vs-diff drift this file treats as a first-class defect. Nothing was
+skipped, and nothing lost coverage.
 
 The finding worth keeping: **nothing in the suite guarded these three literals against a real
 occurrence**, so the full suite stayed green while every flag football row on the dashboard
 named the wrong venue and the wrong time.
 
 Companion mutation evidence, committed and run on demand rather than in `npm test`:
-`node scratch/flag-football-derivation/mutation-check.mjs` → **9 mutations, 9/9 caught**,
-green 53/53 control and green 53/53 restore. The first three restore the three hardcoded
+`node scratch/flag-football-derivation/mutation-check.mjs` → **11 mutations, 11/11 caught**,
+green 56/56 control and green 56/56 restore. The first three restore the three hardcoded
 literals verbatim; the rest are the ways a correct-*looking* rewrite could still be wrong —
 reading the block start as the game time, inverting practice and game, widening the venue to
 the whole street address, fabricating a time for an all-day occurrence, dropping the
-empty-segment filter, and letting a one-hour block claim a preceding practice. It is
-committed for the same reason `scratch/current-season-athletics/mutation-check.mjs` is: a
-mutation count nobody can re-derive is not evidence.
+empty-segment filter, letting a one-hour block claim a preceding practice, collapsing an
+unknown duration into a measured-short one, and re-introducing the run-time-relative fixture
+date a Reviewer pass caught here. It is committed for the same reason
+`scratch/current-season-athletics/mutation-check.mjs` is: a mutation count nobody can
+re-derive is not evidence.
+
+**Two of those eleven exist because a Reviewer pass failed this branch**, and both are worth
+carrying. The first version of the builder fixtures paired a *run-time-relative* date
+(`isoDate(1)`) with a *static* `-04:00` offset, under a comment claiming the times "hold under
+any TZ the suite runs in" — true of process TZ, false across DST, so two assertions would
+have started failing on **Nov 1 2026** with nothing about this change to blame. Confirmed by
+running the arithmetic rather than reasoning about it: the same fixture reads 11:00 AM ET in
+September and 10:00 AM ET in November. The second is subtler and is the more useful lesson:
+the tripwire first written to prevent its return **could not fail**, because `isoDate(1)`
+interpolates to a string of exactly the same shape as a date literal, so any runtime check on
+the fixture value is satisfied by the very thing it forbids. It now reads the fixture region
+back off disk, which is the only form of that check with teeth — and the mutation proves it,
+having *survived* the runtime version and being caught only by the source-level one.
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
 quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
@@ -1974,7 +1992,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2310+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2313+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 10, 2026 on the current-season athletics branch
 
@@ -2018,7 +2036,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2297+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2310.)
+Current baseline above; the figure is now 2313.)
 
 ### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
@@ -2622,16 +2640,32 @@ method, so they chain directly to the 988 pre-change number above.
   freeze's failing-test exception was therefore not needed and was not used. The consequence
   is recorded as a Known open item rather than fixed quietly: v1 will now print a derived
   time beside a stale venue.
-  **One existing assertion was repaired, not deleted, and is reported rather than done
+  **One existing assertion was removed and re-covered, and is reported rather than done
   quietly:** `digest/aliases.test.js` asserted `subtitle.includes('3:00 PM')` against an event
   carrying no time at all, so it pinned a hardcoded literal rather than any behaviour. The
-  surrounding case keeps its title/`isFlagGame`/`cardType`/`owner` assertions.
+  surrounding case keeps its title/`isFlagGame`/`cardType`/`owner` assertions, and the new
+  section covers the subtitle properly. (This entry first said "repaired, not deleted"; the
+  line was deleted outright, and the wording is corrected here rather than left to drift.)
   **Guards proved rather than claimed:** `node scratch/flag-football-derivation/mutation-check.mjs`
   → **9 mutations, 9/9 caught**, green 53/53 control and restore. The first three restore the
   three literals verbatim; the rest are the ways a correct-*looking* rewrite could still be
   wrong (block start read as game time, practice and game inverted, venue widened to the whole
   street address, all-day occurrence given a fabricated time, empty-segment filter dropped,
-  one-hour block claiming a practice). Tests **2297 → 2310**, all passing with a browser.
+  one-hour block claiming a practice, unknown duration collapsed into measured-short, and a
+  run-time-relative builder fixture date). Tests **2297 → 2313**, all passing with a browser.
+  **An independent Reviewer pass returned FAIL and was right**, and everything it raised
+  against the implementation is fixed here. (1) BLOCKING — the builder fixtures paired a
+  run-time-relative date with a static UTC offset, so two assertions would have started
+  failing on Nov 1 2026; and the tripwire first written to prevent that could not fail, for
+  the same reason the fixture was wrong. (2) SHOULD FIX — `flagFootballDetails` treated a
+  *missing* `end` the same as a *measured-short* block, handing back the practice hour as the
+  game hour, confidently, in the one branch the header says exists to prevent exactly that.
+  Absence of evidence is now distinguished from evidence of absence: unknown duration yields
+  `gameTime: null`, which also makes `builder.js`'s "Null when it cannot be derived" comment
+  true rather than aspirational. Three MINOR findings were also taken: a venue assertion that
+  stayed true under the very mutation it was meant to catch, an unpinned resolved title, and
+  the CLAUDE.md wording above. One SHOULD FIX is recorded as an open item rather than fixed,
+  because it lands on a Codex-owned surface — see the `thisWeekTime` nullability item.
 
 - **Current-season athletics updated for both kids (Sept 10, 2026):** Ophelia's 757swim
   2026-27 season is enabled in `data/sports-config.json` with the window documented in
@@ -3379,6 +3413,30 @@ enumerated under test, digest, and render directly to Node. No deployment.
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
 
 ## Known open items
+
+- **`athletics.thisWeekTime` became nullable, and two Codex-owned renderers concatenate it
+  against an unconditional separator (Sept 10, 2026). This is a handoff, not a fix.** Raised by
+  an independent Reviewer pass on the flag football derivation branch. Before that change
+  `thisWeekTime` was the literal `'3:00 PM'` whenever `hasGameThisWeek` was true; it is now
+  `null` for an all-day occurrence, or one whose duration cannot be measured.
+  `render/dashboard-v2.js:850` renders
+  `` `vs. ${esc(a.thisWeekOpponent)} · ${esc(a.thisWeekTime || '')}` ``, so a null now produces
+  `vs. Eagles · ` with a trailing separator on the television;
+  `render/dashboard-mobile.js:112` has the milder `note(a.thisWeekTime || '')`, an empty note
+  element. **This is the same dangling-separator failure `joinSubtitle()` was added to prevent
+  inside `aliases.js`** — the discipline simply stops at the module boundary, which is worth
+  noticing as a pattern rather than as one bug.
+  **Deliberately not fixed here.** Both files are presentation surfaces, and the Surface
+  boundaries section is explicit that Codex owns those and that the loop must not reach across
+  to fix its own blockers there — the request goes to Wade's coordinating chat, gets scoped,
+  and Codex builds it. That is what this entry is. The digest side is already correct: `null`
+  is the honest value for "no derivable game time", and making it non-null again to spare the
+  renderer would put back the guessing the change removed.
+  **Reachability today is low but not zero:** every real Google *timed* event carries an `end`,
+  so the null path needs an all-day flag game — which the Fall 2026 calendar does contain
+  (`"Flag Football: Week 6 — Practice + Game / Playoffs (Yorktown)"` on Oct 25 and the Nov 1
+  rain-date entry are both all-day). Neither matches the ` vs ` pattern today, so neither sets
+  `isFlagGame`; a future all-day title that does would surface it.
 
 - **The approved Sept 20 flag football accent can no longer bind to any event on the calendar
   (Sept 10, 2026).** Found while fixing the flag football subtitle, verified rather than

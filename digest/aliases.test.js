@@ -349,9 +349,13 @@ describe('flagFootballDetails — derivation from the occurrence', () => {
       `venue ${JSON.stringify(venue)} must be a prefix of the authoritative location`,
     );
     assert.ok(venue.includes('4B'), 'field number is the useful half — keep it');
+    // The two assertions above both stay true if the venue is NOT shortened at
+    // all, so on their own they do not test shortening. These do.
+    assert.ok(!venue.includes(','), 'the leading segment only — no street address');
+    assert.ok(venue.length < WEEK2.location.length, 'must actually be shorter');
   });
 
-  it('a block too short to hold a practice reports no practice', () => {
+  it('a block measurably too short to hold a practice reports no practice', () => {
     const gameOnly = {
       ...WEEK2,
       end: { dateTime: '2026-09-20T12:00:00-04:00' },  // 1h
@@ -359,6 +363,21 @@ describe('flagFootballDetails — derivation from the occurrence', () => {
     const d = flagFootballDetails(gameOnly);
     assert.equal(d.practiceTime, null);
     assert.equal(d.gameTime, '11:00 AM', 'the block is the game itself');
+  });
+
+  it('a block of UNKNOWN duration yields no game time — not the practice hour', () => {
+    // Absence of an end is absence of evidence, not evidence of a short block.
+    // Returning startTime here would hand back the practice hour as the game
+    // hour, confidently, which is the exact off-by-one this helper prevents.
+    for (const noEnd of [{ ...WEEK2, end: undefined },
+                         { ...WEEK2, end: { date: '2026-09-20' } },
+                         { ...WEEK2, end: { dateTime: 'not-a-date' } }]) {
+      const d = flagFootballDetails(noEnd);
+      assert.equal(d.gameTime, null, 'game hour is underivable without a duration');
+      assert.equal(d.practiceTime, null);
+      assert.equal(d.startTime, '11:00 AM', 'the start is still known and still reported');
+      assert.equal(d.venue, 'McReynolds Athletic Complex (4B)', 'venue is independent of the times');
+    }
   });
 
   it('omits rather than guesses when the event carries no location', () => {
@@ -388,6 +407,25 @@ describe('Flag game subtitle — per-occurrence, not a season constant', () => {
       r.subtitle,
       '12:00 PM (follows 11:00 AM practice) · McReynolds Athletic Complex (4B)',
     );
+  });
+
+  it('pins the resolved title too — the opponent capture keeps the (Home)/(Away) tag', () => {
+    // Pre-existing behaviour of the PATTERN_MATCHERS regex, not introduced here:
+    // the capture group is greedy to end-of-summary, so the league's home/away
+    // designation rides along into the title. Pinned so it is visible rather
+    // than incidental — a reader of these fixtures would otherwise not notice.
+    assert.equal(resolveEvent(WEEK2).title, 'Cowboys Flag Football — vs. Langston-Ravens (Home)');
+    assert.equal(resolveEvent(WEEK3).title, 'Cowboys Flag Football — vs. Henze/Pfauth-Bears (Away)');
+  });
+
+  it('a title with no "vs" is not a flag game at all', () => {
+    // "Flag Football: Week 1 — Meet & Greet" (the real Sept 13 event) matches
+    // neither the pattern matcher nor the 'Flag Practice' alias key, so it
+    // falls to passthrough: no coaching card, no venue, no coaching tasks.
+    const meetGreet = { ...WEEK2, summary: 'Flag Football: Week 1 — Meet & Greet' };
+    const r = resolveEvent(meetGreet);
+    assert.equal(r.isFlagGame, false);
+    assert.equal(r.title, 'Flag Football: Week 1 — Meet & Greet');
   });
 
   it('Week 3 differs from Week 2 — a single hardcoded string cannot serve both', () => {
