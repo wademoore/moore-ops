@@ -62,6 +62,26 @@ function overlap(a, b) {
 }
 
 describe('dashboard v2 2560x1440 layout verification', () => {
+  it('keeps all six flag-logo standings rows inside single and multiple card panels', async () => {
+    for (const swim757Active of [false, true]) {
+    await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
+      flagFootballActive: true, flagTeamName: 'Cowboys', swim757Active,
+      nextFlagGame: { opponent: 'Ravens', date: '2026-09-20' },
+      standings: ['Cowboys', 'Ravens', 'Bears', 'Broncos', 'Texans', 'Panthers'].map((team, i) => ({team, w:0, l:0, isMe:i === 0})),
+    } }), { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+    const layout = await page.locator('.flag-football-card').evaluate(card => {
+      const bounds = card.getBoundingClientRect();
+      const rows = [...card.querySelectorAll('tbody tr')];
+      return { count: rows.length, contained: rows.every(row => {
+        const box = row.getBoundingClientRect();
+        return box.bottom <= bounds.bottom && box.right <= bounds.right;
+      }), logos: [...card.querySelectorAll('img')].every(img => img.complete && img.naturalWidth > 0) };
+    });
+    assert.deepEqual(layout, { count: 6, contained: true, logos: true });
+    }
+  });
+
   it('keeps the single flag card footprint with an unknown or known game time', async () => {
     for (const thisWeekTime of [null, '12:00 PM']) {
       await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
