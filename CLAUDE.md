@@ -2129,47 +2129,57 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 9, 2026 on the push-hook-target branch
+### Current baseline — measured Sept 10, 2026 on the push-hook-target branch, after rebase
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2423 | **2423** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2511 | **2511** | **0** | **0** |
 
-Measured on `claude/push-main-hook-targets-kawlik`, whose merge base with `main` is
-**`261a6b2`** (PR #54). **That merge base was re-measured before any change: 2196 / 2196 /
-0 / 0 with a browser** — which matches the figure the entry below recorded, so the recorded
-delta has now held for a third consecutive baseline. Re-measure anyway. `git fetch origin
-main` was run *before* deriving the merge base, per the standing warning; the ref was stale
-at `2d01027` and the fetch moved it to `261a6b2`.
+Measured on `claude/push-main-hook-targets-kawlik` after rebasing it onto `main` at
+**`2f7ac47`** (PR #58), which is now this branch's merge base — it was `261a6b2` (PR #54)
+when the branch was opened, and PRs #56, #57 and #58 landed on `main` in between. **That new
+merge base was re-measured in this session, before any change, after `npm install`: 2284 /
+2284 / 0 / 0 with a browser** — which is exactly the figure the mobile publishing-contract
+entry below records, so that entry's number is confirmed rather than assumed. Re-measure
+anyway. `git fetch origin` was run *before* deriving the merge base, per the standing warning;
+the ref was stale at `2d01027` and the fetch moved it to `2f7ac47`.
 
-This change adds **+227**, all in one new file, in four passes:
+This change adds **+227**, all in one new file. 2284 + 227 = 2511, so the table closes against
+two measurements rather than against a recorded delta. The per-commit counts below were each
+measured by running that file alone at that commit, not carried forward:
 
-| File | before | after | delta |
-|---|---|---|---|
-| `test/hooks/block-main-push.test.js` (new) | — | 155 | +155 |
-| closing the parked under-blocks | 155 | 189 | +34 |
-| closing what an independent Reviewer found in those closures | 189 | 215 | +26 |
-| closing what a second Reviewer pass found in *those* | 215 | 227 | +12 |
+| Commit | `test/hooks/block-main-push.test.js` | delta |
+|---|---|---|
+| `6cc1efb` the rewrite | 118 | +118 |
+| `0f85523` four under-blocks found by review | 141 | +23 |
+| `a99054c` the same root cause in the two arms round 1 missed | 155 | +14 |
+| `f498020` remove the `-EncodedCommand` branch | 155 | +0 |
+| `3226877` close twelve parked under-blocks | 227 | +72 |
 
-**35 BLOCK cases and 24 ALLOW cases across the last two passes, and the split is the point.**
-The BLOCK cases pin the closed under-blocks, and every one of them fails against `81973ce`.
-The ALLOW cases pin that closing them did not turn the rules into blanket refusals, and they
-pass under both hooks. A rule that only ever blocked would satisfy every BLOCK case and fail
-the ALLOW ones — which is not hypothetical here: two of the ALLOW cases went red during this
-work and caught real over-blocks (a feature-branch **delete** under a wrapper, and a script
-file named by a variable).
+**The matrix is 134 block-direction cases, 86 allow-direction cases, and 7 payload/performance
+cases, and the split is the point.** The block cases pin the closed under-blocks; the allow
+cases pin that closing them did not turn the rules into blanket refusals. A rule that only ever
+blocked would satisfy every block case and fail the allow ones — which is not hypothetical
+here: two of the allow cases went red during this work and caught real over-blocks (a
+feature-branch **delete** under a wrapper, and a script file named by a variable).
 
-No existing test changed in either pass, because **no existing test asserted the push hook's
+**Two controls, both re-measured against the whole 227 rather than quoted from an earlier
+run.** Against the pre-rewrite text matcher (`261a6b2`, whose copy of the hook is byte-identical
+to the one on `2f7ac47`): **106 of 227 fail.** Against the commit before the parked under-blocks
+were closed (`f498020`): **45 of 227 fail** — so none of the last pass's block cases passes for
+free, and its allow cases pass under both hooks, which is what makes them guards against *this*
+change over-blocking rather than restatements of it.
+
+No existing test changed in any pass, because **no existing test asserted the push hook's
 behaviour** — `enforcement-wiring.test.js` asserts only that it is wired, and its 7 cases are
 untouched and still pass. That absence is the finding, not an accident of scope.
 
 Companion mutation harness, **not** part of `npm test` and run on demand:
-`node scripts/verify-push-hook-mutations.mjs` → 53 mutations, 53/53 proven, green control,
-plus two self-test rows that prove the harness's own hollow-mutation and syntax-error checks
-are live.
+`node scripts/verify-push-hook-mutations.mjs` → 69 mutations plus 2 self-test rows that prove
+the harness's own hollow-mutation and syntax-error checks are live.
 
 A third check is run on demand and is **not** committed: a differential sweep comparing this
-hook against `81973ce` over 183 commands x 8 repository fixtures — **1464 comparisons, 0
+hook against `f498020` over 183 commands x 8 repository fixtures — **1464 comparisons, 0
 block-to-allow flips**, 87 tightened. That is the mechanical form of "no form the previous
 hook blocked is newly allowed", and it is the one guard the case matrix cannot give, since a
 matrix only covers the cases someone thought to write down.
@@ -2184,7 +2194,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2423+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2511+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
@@ -2220,7 +2230,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 Coder mode had to keep `npm test` at 2284+ under this baseline. (Superseded — see
-Current baseline above; the figure is now 2351.)
+Current baseline above; the figure is now 2511.)
 
 Companion mutation harness, **committed** and run on demand — `node
 scratch/mobile-publishing-contract/mutation-check.mjs` → 23 mutations, 23/23 proven, green
@@ -2307,7 +2317,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2196+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2351.)
+Current baseline above; the figure is now 2511.)
 
 ### Previous baseline — measured Sept 8, 2026 on the prep-task fan-out branch
 
@@ -2863,7 +2873,8 @@ method, so they chain directly to the 988 pre-change number above.
   more against the round-1 fix. The Reviewer also caught this file contradicting itself on the
   mutation count **in the commit that added the count** — the same drift the gate section
   names as a recurring failure — now corrected in all four places.
-  Tests **2196 → 2351**, all passing.
+  Tests **2284 → 2439**, all passing — re-measured after the rebase onto `2f7ac47`;
+  the pre-rebase figures were 2196 → 2351 against the old merge base `261a6b2`.
 
 - **Mobile publishing contract defined and encoded (Sept 9, 2026):** The handoff item
   `docs/dashboard-v2/mobile-dashboard-spec.md` listed as number 3 — "define successful-generation
