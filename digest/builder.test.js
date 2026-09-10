@@ -661,6 +661,31 @@ assert(athResult.athletics.hasGameThisWeek === true,              'Flag game in 
 assert(typeof athResult.athletics.thisWeekOpponent === 'string',  'Flag game → thisWeekOpponent is a string');
 assert(/Eagles/i.test(athResult.athletics.thisWeekOpponent),      'Flag game → thisWeekOpponent contains opponent name');
 
+// hasGameThisWeek is a CALENDAR fact — "is there a flag game in the 72h window" —
+// and is the only thing this cross-reference sets. thisWeekOpponent and
+// thisWeekTime are both projected from the season file by flagFootballParser
+// and are covered in test/flagFootballParser.test.js, where their source lives.
+//
+// An earlier commit ON THIS BRANCH added calendar-derived thisWeekTime
+// assertions here, plus a DST tripwire guarding their fixtures, and the
+// sourcing change then removed both. Do not go looking for them in the diff
+// against main: main never had them, so that diff is purely additive and shows
+// only this comment and the all-day case below it. They were removed with the source
+// they pinned, not weakened — builder no longer derives the time from the
+// event. The occurrence-derivation itself is still covered, in
+// digest/aliases.test.js, because the event subtitle still uses it.
+//
+// This comment deliberately does NOT quote its own diff size. It used to, and
+// the commit that rewrote it changed that size — a derived number embedded in
+// prose, invalidated by the very edit that touched it, which is the exact
+// defect that repeated review rounds on this branch were spent removing from
+// CLAUDE.md. Every later edit to this block moves the figure again, which is
+// why no replacement number appears here: run `git diff --numstat` when you
+// need it, and do not write the answer down.
+const allDayGame = { summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles', start: { date: '2026-09-20' } };
+const allDayResult = await buildDigest({ rawEvents: [allDayGame], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
+assert(allDayResult.athletics.hasGameThisWeek === true,          'All-day flag game still sets hasGameThisWeek');
+
 // ---------------------------------------------------------------------------
 // REGRESSION — isoDate()/startOfTodayET() ET-anchor agreement
 // ---------------------------------------------------------------------------
