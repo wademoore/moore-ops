@@ -98,14 +98,19 @@ const ALIAS_TABLE = {
   },
 
   // ── Flag football practice ───────────────────────────────────────────────
-  'Flag Practice': {
-    title: 'Cowboys Flag Football Practice',
-    subtitle: '2:00 PM · Williamsburg Christian Academy · Myles + Coach Wade',
-    owner: ['wade'],               // Wade is head coach; his responsibility entirely
-    cardType: 'coaching',
-    gearReminder: GEAR.flagCoaching,
-    isFlagGame: false,
-    isSoloEvening: false,
+  // Time and venue come from the event (see flagFootballDetails) rather than a
+  // literal, so a league or season move is a calendar edit, not a code change.
+  'Flag Practice': (event) => {
+    const { startTime, venue } = flagFootballDetails(event);
+    return {
+      title: 'Cowboys Flag Football Practice',
+      subtitle: joinSubtitle(startTime, venue, 'Myles + Coach Wade'),
+      owner: ['wade'],             // Wade is head coach; his responsibility entirely
+      cardType: 'coaching',
+      gearReminder: GEAR.flagCoaching,
+      isFlagGame: false,
+      isSoloEvening: false,
+    };
   },
 
   // ── Swim practice ────────────────────────────────────────────────────────
@@ -155,9 +160,13 @@ const PATTERN_MATCHERS = [
     re: /^flag\s+.+?\s+vs\.?\s+(.+)$/i,
     resolve: (event, match) => {
       const opponent = match[1].trim();
+      const { gameTime, practiceTime, venue } = flagFootballDetails(event);
+      const when = practiceTime
+        ? `${gameTime} (follows ${practiceTime} practice)`
+        : gameTime;
       return {
         title: `Cowboys Flag Football — vs. ${opponent}`,
-        subtitle: '3:00 PM (follows 2:00 PM practice) · Williamsburg Christian Academy',
+        subtitle: joinSubtitle(when, venue),
         owner: ['wade'],
         cardType: 'coaching',
         gearReminder: GEAR.flagCoaching,
@@ -350,6 +359,21 @@ function getLocalDow(event) {
 }
 
 /**
+ * Formats a Date as an Eastern wall-clock time (e.g. "12:00 PM").
+ *
+ * @param {Date} date
+ * @returns {string}
+ */
+function formatETTime(date) {
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'America/New_York',
+  });
+}
+
+/**
  * Extracts a human-readable time string from an event.
  * Returns '' for all-day events.
  *
@@ -359,13 +383,87 @@ function getLocalDow(event) {
 function formatEventTime(event) {
   const raw = event.start?.dateTime;
   if (!raw) return '';           // all-day event
-  const date = new Date(raw);
-  return date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: 'America/New_York',
-  });
+  return formatETTime(new Date(raw));
+}
+
+// ── Flag football occurrence details ──────────────────────────────────────
+//
+// Flag football's venue and times are per-occurrence facts that change from
+// week to week and from season to season: in Fall 2026 the game is at 12:00 PM
+// on some weeks and 2:00 PM on others, on a different numbered field each time.
+// A season-level constant cannot express that, and a hardcoded one goes stale
+// the moment the league changes — which is exactly what happened to the three
+// Spring 2026 literals this helper replaces.
+//
+// So these are derived from the calendar event the row is already drawn from.
+// That makes the subtitle structurally incapable of disagreeing with its own
+// row, and makes next season's move a calendar edit rather than a code change.
+//
+// The league books one combined block per game week: a one-hour practice
+// followed immediately by the game. The event start is therefore the PRACTICE
+// start, not the game start — reading it as the game time is off by an hour.
+
+/** A league flag football practice runs exactly one hour before its game. */
+const FLAG_PRACTICE_MS = 60 * 60 * 1000;
+
+/**
+ * Derives a flag football occurrence's venue and times from the event itself.
+ *
+ * A block long enough to hold both a practice and a game is read as
+ * `practice → game`; anything shorter is read as a single session with no
+ * preceding practice. Every field is independently nullable, and an
+ * undeterminable field is omitted rather than guessed — a missing venue is
+ * recoverable, a confidently wrong one is the defect this replaces.
+ *
+ * @param {object} event  Google Calendar event
+ * @returns {{ startTime: string|null, gameTime: string|null,
+ *             practiceTime: string|null, venue: string|null }}
+ */
+function flagFootballDetails(event) {
+  // Venue: the event location's leading segment, which is the venue name and
+  // field number ("McReynolds Athletic Complex (4B)") ahead of the street
+  // address. A shortening may shorten; it may never say something untrue.
+  const rawLocation = (event?.location || '').trim();
+  const venue = rawLocation ? rawLocation.split(',')[0].trim() || null : null;
+
+  const rawStart = event?.start?.dateTime;
+  if (!rawStart) return { startTime: null, gameTime: null, practiceTime: null, venue };
+
+  const start = new Date(rawStart);
+  if (Number.isNaN(start.getTime())) {
+    return { startTime: null, gameTime: null, practiceTime: null, venue };
+  }
+  const startTime = formatETTime(start);
+
+  const rawEnd = event?.end?.dateTime;
+  const end = rawEnd ? new Date(rawEnd) : null;
+  const hasPractice =
+    end !== null &&
+    !Number.isNaN(end.getTime()) &&
+    end.getTime() - start.getTime() >= 2 * FLAG_PRACTICE_MS;
+
+  if (!hasPractice) {
+    // Too short to hold a practice and a game — the block is the game itself.
+    return { startTime, gameTime: startTime, practiceTime: null, venue };
+  }
+
+  return {
+    startTime,
+    gameTime: formatETTime(new Date(start.getTime() + FLAG_PRACTICE_MS)),
+    practiceTime: startTime,
+    venue,
+  };
+}
+
+/**
+ * Joins subtitle segments with the project's separator, dropping empty ones so
+ * an underivable field leaves no dangling punctuation behind.
+ *
+ * @param {...(string|null|undefined)} parts
+ * @returns {string}
+ */
+function joinSubtitle(...parts) {
+  return parts.filter(Boolean).join(' · ');
 }
 
 // ---------------------------------------------------------------------------
@@ -435,4 +533,4 @@ function resolveEvent(event) {
 // ---------------------------------------------------------------------------
 // EXPORTS
 // ---------------------------------------------------------------------------
-export { resolveEvent, GEAR, formatEventTime, getLocalDow };
+export { resolveEvent, GEAR, formatEventTime, getLocalDow, flagFootballDetails };

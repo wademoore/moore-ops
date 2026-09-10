@@ -658,6 +658,39 @@ assert(athResult.athletics.hasGameThisWeek === true,              'Flag game in 
 assert(typeof athResult.athletics.thisWeekOpponent === 'string',  'Flag game → thisWeekOpponent is a string');
 assert(/Eagles/i.test(athResult.athletics.thisWeekOpponent),      'Flag game → thisWeekOpponent contains opponent name');
 
+// athletics.thisWeekTime is derived from the occurrence, not hardcoded.
+// It was the literal '3:00 PM' until Sept 2026 — correct for Spring 2026 and
+// wrong for every Fall 2026 game. These fixtures pin explicit UTC offsets so
+// the expected wall-clock times hold under any TZ the suite runs in.
+//
+// A league game week is a one-hour practice followed by the game, so the event
+// START is the practice start: an 11 AM block is a 12 PM game, not an 11 AM one.
+const twoHourBlock = {
+  summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles',
+  start: { dateTime: `${isoDate(1)}T11:00:00-04:00` },
+  end:   { dateTime: `${isoDate(1)}T13:00:00-04:00` },
+};
+const blockResult = await buildDigest({ rawEvents: [twoHourBlock], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
+assert(blockResult.athletics.thisWeekTime === '12:00 PM',        'Flag game → thisWeekTime is the game hour, not the practice hour');
+
+// A later week at a different hour must not resolve to the same time — the
+// property a single hardcoded literal cannot have.
+const laterBlock = {
+  summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles',
+  start: { dateTime: `${isoDate(1)}T13:00:00-04:00` },
+  end:   { dateTime: `${isoDate(1)}T15:00:00-04:00` },
+};
+const laterResult = await buildDigest({ rawEvents: [laterBlock], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
+assert(laterResult.athletics.thisWeekTime === '2:00 PM',         'Flag game → a different week yields a different thisWeekTime');
+assert(laterResult.athletics.thisWeekTime !== blockResult.athletics.thisWeekTime, 'thisWeekTime varies by occurrence');
+
+// All-day flag game: no derivable time. null, never a fabricated one —
+// athleticsParser already initialises the field to null.
+const allDayGame = { summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles', start: { date: isoDate(1) } };
+const allDayResult = await buildDigest({ rawEvents: [allDayGame], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
+assert(allDayResult.athletics.hasGameThisWeek === true,          'All-day flag game still sets hasGameThisWeek');
+assert(allDayResult.athletics.thisWeekTime === null,             'All-day flag game → thisWeekTime null, not a guessed time');
+
 // ---------------------------------------------------------------------------
 // REGRESSION — isoDate()/startOfTodayET() ET-anchor agreement
 // ---------------------------------------------------------------------------
