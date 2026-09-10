@@ -124,7 +124,17 @@ show('node_modules is inside the repo but is NOT committed, and ships CLIs that 
   'node node_modules/playwright/cli.js screenshot https://x /tmp/pwned.png');
 show('A Windows UNC path is not a relative path.', 'BLOCKS', "node '\\\\server\\share\\evil.js'");
 
-console.log('--- F. ordinary write attempts, refused before and after --------------------\n');
+console.log('--- F. the hole THIS CHANGE introduced, found in round three ----------------\n');
+
+show('npm config reaches the module loader. Run for real: it wrote its file.', 'BLOCKS',
+  'npm test --node-options=--require=/tmp/evil.js');
+show('And the shell.', 'BLOCKS', 'npm test --script-shell=/tmp/evil.sh');
+show('nopt expands abbreviations, so a rule matching --prefix missed --prefi.', 'BLOCKS',
+  'npm test --prefi /elsewhere');
+show('So npm now takes no flags at all — only paths after a passthrough.', 'ALLOWS',
+  'npm test -- test/hooks/reviewer-allowlist.test.js');
+
+console.log('--- G. ordinary write attempts, refused before and after --------------------\n');
 
 show('Delete files.', 'BLOCKS', 'rm -rf render');
 show('Redirect into a file.', 'BLOCKS', 'printf x > CLAUDE.md');
@@ -138,7 +148,7 @@ show('Change configuration.', 'BLOCKS', 'git config user.email attacker@example.
 show('Install a dependency.', 'BLOCKS', 'npm install left-pad');
 show('Execute a string.', 'BLOCKS', 'node -e "require(\'fs\').writeFileSync(\'/tmp/pwned\',\'x\')"');
 
-console.log('--- G. the two roles stay distinct, and the main thread stays unrestricted --\n');
+console.log('--- H. the two roles stay distinct, and the main thread stays unrestricted --\n');
 
 show('The Debugger keeps node -e; that is its documented core capability.', 'ALLOWS',
   'node -e 1', 'debugger');

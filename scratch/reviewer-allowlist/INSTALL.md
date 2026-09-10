@@ -37,6 +37,7 @@ confirmed by running it, not by reading the regex:
 | `git branch -D x`, `git branch -m a b`, `git branch newname` | modified a branch |
 | `git diff --output=/path` | wrote an arbitrary file — 751 bytes landed when I ran it |
 | `git diff` + a newline + any command | a newline is a shell separator and was not in the guard's metacharacter set |
+| `cat $HOME/...` | bare `$` expansion was unchecked — the read escape |
 
 So the net effect is **wider reach and narrower capability**.
 
@@ -112,10 +113,19 @@ requirement pointed in opposite directions; they cannot both hold, and a
 `PreToolUse` hook sees a command string rather than a filesystem, so it cannot
 sandbox anything.
 
-What revision 2 *does* bound is the class: execution is confined to repo-relative
-paths — no absolute path, no `..`, no `node -e` for the Reviewer — so the code
-that runs is itself version-controlled and reviewable, and nothing on the
-allowlist can create the file it would need to escape that.
+What revision 2 *does* bound is the class: on the `node` routes, execution is
+confined to **committed** paths inside the repository — no absolute path, no `..`,
+no `node_modules`, no `node -e` for the Reviewer.
+
+**That paragraph is deliberately narrower than the one it replaces**, which said
+"repo-relative … version-controlled … and nothing on the allowlist can create the
+file it would need to escape that". Review falsified both halves. `node_modules`
+is repo-relative and gitignored, so "repo-relative" did not imply
+"version-controlled" — that gap is now closed in the check itself. And the second
+half is simply untrue of `npm run`: `node scripts/render-dashboard-v2-states.mjs
+/tmp/anywhere` is allowed and writes outside the repository, because the script
+takes its output directory as an argument. The bound applies to *which code runs*,
+not to where that code may write.
 
 ---
 
@@ -140,7 +150,7 @@ node --test test/hooks/reviewer-allowlist.test.js
 node scratch/reviewer-allowlist/adversarial-test.mjs
 ```
 
-Expect `# pass 105 / # fail 0` and `49/49 steps behaved as expected.`
+Expect `# pass 107 / # fail 0` and `53/53 steps behaved as expected.`
 
 Optionally, the harness that proves the matrix has teeth (about six minutes):
 
@@ -148,7 +158,7 @@ Optionally, the harness that proves the matrix has teeth (about six minutes):
 node scratch/reviewer-allowlist/mutation-check.mjs
 ```
 
-Expect `29/29 mutations proven`.
+Expect `32/32 mutations proven`.
 
 ---
 
@@ -182,9 +192,9 @@ node scratch/reviewer-allowlist/adversarial-test.mjs --installed
 | what to expect | why |
 |---|---|
 | `guard-readonly.test.js` — 26 pass, unchanged | it drives the **installed** copy. Revision 2 was designed so that not one of its cases changes verdict, and the parity section of the new matrix restates every one of them and asserts exactly that against revision 2 — so this is a confirmation, not a hope. If it goes red, the paste is wrong |
-| `reviewer-allowlist.test.js` — 105 pass | its last case is dormant until install and then asserts the installed hook is **byte-identical** to the reviewed copy, so a stray edit during the paste cannot drift them apart silently |
+| `reviewer-allowlist.test.js` — 107 pass | its last case is dormant until install and then asserts the installed hook is **byte-identical** to the reviewed copy, so a stray edit during the paste cannot drift them apart silently |
 | `enforcement-wiring.test.js` — 7 pass | no BOM, hooks still wired, frontmatter still declares the role argument |
-| `adversarial-test.mjs --installed` — 49/49 | the `--installed` flag is the whole point: before the paste it drives `scratch/`, after it drives `.claude/hooks/` |
+| `adversarial-test.mjs --installed` — 53/53 | the `--installed` flag is the whole point: before the paste it drives `scratch/`, after it drives `.claude/hooks/` |
 
 Then the full suite:
 
@@ -192,7 +202,7 @@ Then the full suite:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-Expect `# pass 2347 / # fail 0` (2242 at the merge base, +105 from the new matrix).
+Expect `# pass 2349 / # fail 0` (2242 at the merge base, +107 from the new matrix).
 
 ---
 

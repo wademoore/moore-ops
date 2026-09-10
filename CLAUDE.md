@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2347+ passing with a browser
+- Run npm test after changes — must stay at 2349+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -414,7 +414,7 @@ file runs unchanged on Windows) with a real PreToolUse payload on stdin and asse
 exit code (2 = blocked, 0 = allowed), so it tests the shipped script, not a copy of its
 logic.
 
-`test/hooks/enforcement-wiring.test.js` (**6 tests**) is the companion tripwire: it reads
+`test/hooks/enforcement-wiring.test.js` (**7 tests**) is the companion tripwire: it reads
 the shipped `settings.json` and agent files and asserts the guard is actually *wired* —
 matcher reaching `Edit`, `Write`, `Bash` and `PowerShell`, exec form, no BOM on any
 enforcement file, the reviewer/debugger frontmatter hooks present with the right role
@@ -535,7 +535,7 @@ BOM is invisible in every editor and visible in every diff.
 content in `scratch/reviewer-allowlist/` alongside a checklist, an adversarial script and a
 frozen copy of revision 1. **Until Wade pastes it, the installed hook is revision 1 and
 everything below describes a reviewed proposal, not live behaviour.**
-`test/hooks/reviewer-allowlist.test.js` (93 tests) drives the `scratch/` copy;
+`test/hooks/reviewer-allowlist.test.js` (107 tests) drives the `scratch/` copy;
 `test/hooks/guard-readonly.test.js` keeps driving the installed one, so both are green
 either side of the paste.
 
@@ -547,9 +547,14 @@ revision 2, because `npm test` and `npm run <script>` were on the allowlist and
 `npm run preview:dashboard-v2:png` writes PNGs. "The Reviewer can run what it reviews" and
 "the Reviewer cannot execute code" are the same requirement in opposite directions and
 cannot both hold; a `PreToolUse` hook sees a command string, not a filesystem, so it cannot
-sandbox. What revision 2 *does* bound is the class: no absolute path, no `..`, no `node -e`
-for the Reviewer, and nothing on the allowlist can create the file it would need to escape
-that.
+sandbox. What revision 2 *does* bound is the class: on the `node` routes, execution is
+confined to **committed** paths inside the repository — no absolute path, no `..`, no
+`node_modules`, no `node -e` for the Reviewer — and `npm` takes no flags at all.
+**That sentence is narrower than the one it replaces, deliberately.** It used to end "…and
+nothing on the allowlist can create the file it would need to escape that", which review
+falsified: `node scripts/render-dashboard-v2-states.mjs /tmp/anywhere` is allowed and writes
+outside the repository, because that script takes its output directory as an argument. The
+bound is on *which code runs*, never on where that code may write.
 
 **Revision 1 was not read-only either, and four of its holes are closed here** — three write
 routes and one read escape. Each was
@@ -629,6 +634,22 @@ drive-lettered nor `..`-bearing and passed — harmless on Linux, an absolute es
 machine this repository's hooks were ported for; and `sort --compress-program` and
 `file -C` are two more flag-reachable launchers. All fixed, each with a paired case.
 
+**A third round found one more, and it was the first that this change INTRODUCED rather
+than inherited.** `npm`'s arguments were bounded by a list of seven flag spellings, which is
+a spelling list rather than a bound — npm has a whole config surface behind those spellings.
+`npm test --node-options=--require=/tmp/evil.js` loads any module (run for real: it wrote
+its file), `--script-shell=` replaces the shell, and `nopt` expands unambiguous
+abbreviations so `--prefi` walked past a rule matching `--prefix`. The first also defeated
+the round-2 `node_modules` fix **without creating a file**. Revision 1's `$` anchor refused
+all of it; bounding the arguments removed that anchor, and restating the bound as seven
+literals restated the wrong thing. `npm` now takes **no flags at all**, and only
+repo-relative paths after a `--` passthrough.
+
+The mechanism generalises past npm and is the part worth carrying: `WRITE_FLAGS` was
+anchored on whitespace or start-of-string, so a flag joined by `=` inside another flag's
+value never matched it. The anchor now accepts `=` too. **Three rounds each found a live
+route on an entry that had already been reasoned about carefully — on a different axis.**
+
 **Two blanket sentences were deleted rather than softened**, because both were false as
 written: the reader list's "every binary here is a reporter: none of them writes without a
 redirect" (`rg --pre` was on that list), and the adversarial document's "no command on the
@@ -648,7 +669,7 @@ time, because `gh pr merge`, `gh pr comment` and `gh pr create` share that names
 `gh api` left out entirely.
 
 **Guards proved by mutation, not asserted:** `node scratch/reviewer-allowlist/mutation-check.mjs`
-→ **29/29 proven**, green control, plus two self-tests — a syntax error in the guard, and a
+→ **32/32 proven**, green control, plus two self-tests — a syntax error in the guard, and a
 run that emits no summary at all. The second matters on its own: a hang and a clean pass
 parse identically, so without it the harness's own "inconclusive" branch would be unproven.
 Four harness rows were wrong across the three runs and are worth recording, because all four
@@ -2025,7 +2046,8 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2347 | **2347** | **0** | **0** |
+| `npm test`, no browser resolvable | 2349 | 2299 | 3 | 47 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2349 | **2349** | **0** | **0** |
 
 Measured on `claude/reviewer-shell-allowlist-q8e57z`, whose merge base with `main` is
 **`ada361f`** (PR #57). **That merge base was re-measured in this session, after
@@ -2033,11 +2055,11 @@ Measured on `claude/reviewer-shell-allowlist-q8e57z`, whose merge base with `mai
 which is also the figure PR #58 records against the same commit, from a different session.
 Re-measure anyway; the run costs less than the correction does.
 
-This change adds **+105**, all in one new file:
+This change adds **+107**, all in one new file:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `test/hooks/reviewer-allowlist.test.js` (new) | — | 105 | +105 |
+| `test/hooks/reviewer-allowlist.test.js` (new) | — | 107 | +107 |
 
 The file is the behavioural matrix for **revision 2 of `guard-readonly.mjs`, which is not
 installed** — `.claude/hooks/` is deny-listed, so the guard ships as paste-ready content in
@@ -2045,17 +2067,22 @@ installed** — `.claude/hooks/` is deny-listed, so the guard ships as paste-rea
 `.claude/` is touched, so no hook in this repository behaves differently because of it, and
 `test/hooks/guard-readonly.test.js` (26) keeps driving the installed copy unchanged.
 
-The no-browser row is deliberately absent: only the browser-enabled invocation was run this
-session, and quoting a figure that was not taken is exactly the unfalsifiable claim this
-section exists to prevent. The new file needs no browser and contributes 0 to the standing
-no-browser failure set either way.
+**The no-browser row is present, and its restoration is itself a finding.** It was dropped
+from the first draft of this table on the usual reasoning — only the browser-enabled
+invocation had been run, and quoting an untaken figure is the unfalsifiable claim this
+section exists to prevent. Review pointed out that this is the **third** time that row has
+been dropped one baseline after being deliberately restored, and that it has a concrete
+cost: the standing no-browser set has moved from 3 fail / 34 cancelled to **3 fail / 47
+cancelled** since `ada361f` added the mobile suite, so a session reading the previous
+baseline's numbers as current would be wrong. The row above was measured. The new file
+needs no browser and contributes 0 to that set.
 
 Companion harness, **not** part of `npm test` and run on demand:
-`node scratch/reviewer-allowlist/mutation-check.mjs` → 29 mutations, 29/29 proven, green
+`node scratch/reviewer-allowlist/mutation-check.mjs` → 32 mutations, 32/32 proven, green
 control, plus two self-tests (a syntax error in the guard, and a run that emits no summary
 at all — a hang and a clean pass parse identically, so the second is what makes the
 harness's own "inconclusive" branch real rather than decorative).
-`node scratch/reviewer-allowlist/adversarial-test.mjs` → 49/49, and takes `--installed` to
+`node scratch/reviewer-allowlist/adversarial-test.mjs` → 53/53, and takes `--installed` to
 drive `.claude/hooks/` after the paste.
 
 Exact invocation:
@@ -2064,7 +2091,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2347+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2349+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 9, 2026 on the Reviewer-gate branch
 
@@ -2621,13 +2648,13 @@ method, so they chain directly to the 988 pre-change number above.
   Debugger's core command. Network documentation is granted — on install — as `WebFetch`/`WebSearch` in the
   Reviewer's frontmatter, never as `curl`, whose flag surface is a write and upload
   primitive.
-  **Guards proved by mutation rather than asserted:** 29 mutations, **29/29 proven**, green
+  **Guards proved by mutation rather than asserted:** 32 mutations, **32/32 proven**, green
   control, plus two self-tests. Harness rows were wrong on three separate occasions and are recorded rather
   than quietly fixed: one `find` string had the wrong indentation and applied zero times (the
   occurrence assertion caught it, which is what it is for), and one expectation named the
   `sed -i` case — which the allowlist refuses *before* the scoped rule is reached, so that
   rule is defence in depth with nothing of its own to prove, and the test now says so instead
-  of taking credit for it. Tests **2242 → 2347**, all passing with a browser; the merge base
+  of taking credit for it. Tests **2242 → 2349**, all passing with a browser; the merge base
   was re-measured in-session rather than taken from this file.
 
 - **Mobile companion — local implementation (Sept 9, 2026):**

@@ -408,8 +408,40 @@ test('npm cannot be redirected to another package root', () => {
   assert.ok(blocked(next('npm run build:dashboard-artifact --workspaces')), '--workspaces, the plural form');
   // Bounded to the text before a `--` passthrough: after it, -C/-g/-w belong to
   // the called script, and blocking those would be a false block.
-  assert.ok(allowed(next('npm test -- test/hooks/reviewer-allowlist.test.js -C')),
-    'a passthrough argument that merely looks like an npm flag is not npm’s');
+});
+
+// FOUND IN REVIEW ROUND 3, and it was a hole this change INTRODUCED. Revision 1's
+// `$` anchor refused every npm argument; bounding the arguments removed that
+// anchor, and the bound was restated as seven flag literals — which is a spelling
+// list, not a bound. npm has a config surface behind those spellings:
+//
+//   --node-options=--require=/tmp/evil.js   loads any module   (run: it wrote its file)
+//   --script-shell=/tmp/evil.sh             replaces the shell
+//   --prefi /elsewhere                      nopt expands unambiguous abbreviations
+//
+// The first also defeated the round-2 node_modules fix without creating a file.
+// So npm now takes NO flags at all, and only repo-relative paths after `--`.
+test('npm takes no flags at all, only repo-relative paths after a passthrough', () => {
+  assert.ok(allowed(next('npm test')), 'the ordinary invocation');
+  assert.ok(allowed(next('npm run build:dashboard-artifact')), 'a named script');
+  assert.ok(allowed(next('npm test -- test/hooks/reviewer-allowlist.test.js')), 'one test file');
+  assert.ok(blocked(next('npm test --node-options=--require=/tmp/evil.js')), 'the module loader, via npm config');
+  assert.ok(blocked(next('npm test --script-shell=/tmp/evil.sh')), 'the shell, via npm config');
+  assert.ok(blocked(next('npm test --prefi /elsewhere')), 'an unambiguous abbreviation of --prefix');
+  assert.ok(blocked(next('npm test --prefix /elsewhere')), 'and the full spelling');
+  assert.ok(blocked(next('npm test --silent')), 'even a harmless npm flag: no flags means none');
+  assert.ok(blocked(next('npm test -- --experimental-loader=/tmp/evil.mjs')),
+    'a flag-shaped token after -- reaches node’s own argument parser');
+  assert.ok(blocked(next('npm test -- /tmp/outside.test.js')), 'a path outside the repository');
+  assert.ok(blocked(next('npm test -- node_modules/x.test.js')), 'a gitignored path');
+});
+
+// The mechanism behind that finding generalises past npm: WRITE_FLAGS was anchored
+// on whitespace or start-of-string, so a flag joined by `=` inside another flag's
+// value slipped past it. The anchor now accepts `=` as well.
+test('a write flag joined by = does not escape the write-flag check', () => {
+  assert.ok(blocked(next('git log --grep=--output=/tmp/pwned')), 'an = -joined --output');
+  assert.ok(blocked(next('git diff --output=/tmp/pwned')), 'the ordinary form still blocked');
 });
 
 // A short flag's meaning depends on the binary, so these cannot be global:

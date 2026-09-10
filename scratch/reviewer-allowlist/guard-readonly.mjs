@@ -159,7 +159,7 @@ function compositionFault(cmd) {
 // table) and never names a file; the aws entries are separately pinned to
 // read-only verbs, so exempting them widens nothing.
 const WRITE_FLAGS = new RegExp(
-  '(?:^|\\s)--(?:' + [
+  '(?:^|[\\s=])--(?:' + [
     'output', 'output-file', 'out-file', 'outfile',
     'test-reporter-destination', 'redirect-warnings',
     'report-filename', 'report-directory', 'report-dir', 'diagnostic-dir',
@@ -265,6 +265,35 @@ function isRepoScriptRun(cmd) {
 // which contradicted the repo-relative bound the route beside it enforces. The
 // bound is a property of the whole `node` surface, so it has to hold on both
 // routes or it holds on neither.
+// npm's ARGUMENTS are bounded the same way, and for a reason found the hard way.
+// The first draft accepted any trailing token and denied seven flag literals.
+// That was not a bound, it was a spelling list, and npm has a whole config
+// surface behind it:
+//
+//   npm test --node-options=--require=/tmp/evil.js   loads any module
+//   npm test --script-shell=/tmp/evil.sh             replaces the shell
+//   npm test --prefi /elsewhere                      nopt expands abbreviations
+//
+// The first was run and wrote its file. Revision 1's `$` anchor refused all of
+// this; bounding the arguments removed that anchor, and restating the bound as
+// seven literals restated the wrong thing.
+//
+// So: NO npm flags at all. Optionally `--` followed by repo-relative paths, which
+// is the single case the widening existed for (running one test file). Flag-shaped
+// tokens after `--` are refused too, because `npm test -- --experimental-loader=x`
+// hands that straight to node's own argument parser.
+const NPM_RE = new RegExp(String.raw`^npm (?:test|run [A-Za-z0-9:._-]+)((?:\s+${TOKEN})*)$`);
+
+function isNpmRun(cmd) {
+  const m = NPM_RE.exec(cmd);
+  if (!m) return false;
+  const rest = (m[1] ?? '').trim();
+  if (!rest) return true;
+  const tokens = rest.split(/\s+/);
+  if (tokens[0] !== '--') return false;
+  return tokens.slice(1).every(isRepoRelativePath);
+}
+
 const NODE_TEST_RE = new RegExp(String.raw`^node${NODE_FLAGS}\s+--test((?:\s+${TOKEN})*)$`);
 const NODE_FLAG_ONLY = new RegExp(`^${NODE_FLAG}$`);
 
@@ -298,7 +327,7 @@ const SHARED = [
   // Test suite and repo scripts. Both were reachable before revision 2 via
   // `npm run`; the widening here is the digit-bearing script names the old
   // charset excluded, and trailing arguments so a single test file can be run.
-  re(String.raw`npm (?:test|run [A-Za-z0-9:._-]+)(?:\s+--)?${ARGS}`),
+  { test: isNpmRun },
   { test: isRepoTestRun },
   { test: isRepoScriptRun },
 

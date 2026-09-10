@@ -89,8 +89,10 @@ const MUTATIONS = [
   ['the scoped short-flag denials removed',
     'for (const [pattern, why] of SCOPED_FLAG_DENY) {',
     'for (const [pattern, why] of []) {',
-    ['short flags are scoped per binary', `${REFUSED}sorting output for comparison`,
-      'npm cannot be redirected to another package root']],
+    // 'npm cannot be redirected...' is deliberately NOT expected here any more:
+    // isNpmRun refuses every npm flag, so that case is double-guarded and scoring
+    // this mutation on it would credit a rule that no longer owns it.
+    ['short flags are scoped per binary', `${REFUSED}sorting output for comparison`]],
 
   ['git branch back to revision 1’s prefix rule',
     "  re(String.raw`git branch(?:\\s+(?:${BRANCH_READ_FLAGS}))*`),",
@@ -162,8 +164,15 @@ const MUTATIONS = [
     '',
     ['ripgrep cannot be handed an external program']],
 
-  ['sort --compress-program and file -C re-admitted',
+  ['sort --compress-program re-admitted',
     "  [/^sort\\b[\\s\\S]*(?:^|\\s)--compress-program(?:[=\\s]|$)/, 'sort --compress-program runs an external program on its temp files'],",
+    '',
+    ['remaining reader-list binaries cannot be turned into writers']],
+
+  // Split out from the row above, which was named for both rules and patched only
+  // one - so `file -C` was carried by a row whose name claimed to prove it.
+  ['file -C re-admitted',
+    "  [/^file\\b[\\s\\S]*(?:^|\\s)(?:-C|--compile)(?:[=\\s]|$)/, 'file -C writes a compiled magic file'],",
     '',
     ['remaining reader-list binaries cannot be turned into writers']],
 
@@ -188,9 +197,21 @@ const MUTATIONS = [
     '  reviewer: [/^node -e /],',
     ['the debugger keeps node -e']],
 
+  // Round 3's BLOCKING finding: npm's arguments were bounded by a list of seven
+  // flag spellings, and npm has a config surface behind them.
+  ['npm arguments unbounded again',
+    '  { test: isNpmRun },',
+    '  re(String.raw`npm (?:test|run [A-Za-z0-9:._-]+)(?:\\s+--)?${ARGS}`),',
+    ['npm takes no flags at all']],
+
+  ['the write-flag anchor back to whitespace only',
+    "'(?:^|[\\\\s=])--(?:' + [",
+    "'(?:^|\\\\s)--(?:' + [",
+    ['a write flag joined by = does not escape']],
+
   ['npm widened past test and run',
-    'npm (?:test|run [A-Za-z0-9:._-]+)',
-    'npm (?:[a-z]+)',
+    '^npm (?:test|run [A-Za-z0-9:._-]+)',
+    '^npm (?:[a-z]+)',
     [`${REFUSED}a single test file through npm`]],
 
   ['the composition check skipped entirely',
