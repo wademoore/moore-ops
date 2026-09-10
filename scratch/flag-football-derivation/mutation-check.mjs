@@ -32,7 +32,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const TEST_FILES = ['digest/aliases.test.js', 'test/flagFootballParser.test.js'];
 
 const MUTATIONS = [
-  // ── The three literals this change removed ──────────────────────────────
+  // ── Two of the three retired literals (the third is in the parser) ──────
   {
     name: 'hardcoded game subtitle restored',
     file: 'digest/aliases.js',

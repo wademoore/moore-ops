@@ -2783,15 +2783,19 @@ method, so they chain directly to the 988 pre-change number above.
     `Ravens`/`12:00 PM`. Pass 6 also found the timezone pin in `formatETTime` had no mutation at
     all, protected only incidentally by the fixtures' explicit offsets disagreeing with a UTC
     host; there is one now.
-  - **Documentation drift failed five consecutive rounds** — a figure the tree did not
-    support, four times introduced by the very commit sweeping that section for that defect.
+  - **Documentation drift failed five of the seven rounds — 2, 3, 4, 6 and 7, which is not
+    the same as five consecutive ones.** This bullet said "consecutive" for three commits
+    running, incremented mechanically each round, while the paragraph 38 lines above it says
+    pass 5 returned PASS; the two could not both be true. Four of the five were introduced by
+    the very commit sweeping that section for that defect.
     Removing derived counts from the prose was not enough on its own: pass 6 found the
     changelog still carrying a mutation count, a control total and a test delta from before the
     rebase, all four false, plus a present-tense description of `data/flag-football.json` that
     three greps refute. **Pass 7 then found that the commit fixing all of that had introduced
     the same defect one level down**, in a code comment rather than in this file: a note in
-    `digest/builder.test.js` quoted its own diff size as `+14/-0`, and rewriting that note took
-    the real figure to `+17/-0`. Two things came out of it. The narrow fix is that the comment
+    `digest/builder.test.js` quoted its own diff size as `+14/-0` — true at `317a6f4` — and
+    rewriting that note took it to `+17/-0` at `6ddcbf3`. Both are historical; the figure has
+    moved again since, which is the whole point. Two things came out of it. The narrow fix is that the comment
     no longer states a number at all — updating it to 17 would only have reset the clock, which
     is the move this very paragraph exists to warn against. The general one is that "derived
     counts do not belong in prose" was being applied to `CLAUDE.md` alone, while the same

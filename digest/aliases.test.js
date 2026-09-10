@@ -286,7 +286,7 @@ describe('ResolvedEvent shape — all fields present on every code path', () => 
 });
 
 // ---------------------------------------------------------------------------
-// Section 8: Flag football venue and times are derived, never hardcoded
+// Section 7: Flag football venue and times are derived, never hardcoded
 // ---------------------------------------------------------------------------
 //
 // Until Sept 2026 the flag game subtitle, the 'Flag Practice' subtitle and

@@ -669,7 +669,7 @@ assert(/Eagles/i.test(athResult.athletics.thisWeekOpponent),      'Flag game →
 // assertions here, plus a DST tripwire guarding their fixtures, and the
 // sourcing change then removed both. Do not go looking for them in the diff
 // against main: main never had them, so that diff is purely additive and shows
-// only this comment and the assertion below. They were removed with the source
+// only this comment and the all-day case below it. They were removed with the source
 // they pinned, not weakened — builder no longer derives the time from the
 // event. The occurrence-derivation itself is still covered, in
 // digest/aliases.test.js, because the event subtitle still uses it.
@@ -677,7 +677,7 @@ assert(/Eagles/i.test(athResult.athletics.thisWeekOpponent),      'Flag game →
 // This comment deliberately does NOT quote its own diff size. It used to, and
 // the commit that rewrote it changed that size — a derived number embedded in
 // prose, invalidated by the very edit that touched it, which is the exact
-// defect three review rounds on this branch were spent removing from
+// defect that repeated review rounds on this branch were spent removing from
 // CLAUDE.md. Every later edit to this block moves the figure again, which is
 // why no replacement number appears here: run `git diff --numstat` when you
 // need it, and do not write the answer down.
