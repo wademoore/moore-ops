@@ -847,7 +847,7 @@ function renderFlagFootballCard(a) {
     <div class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</div>
     <small>${esc(a.seasonLabel || 'Season')}</small>
     ${a.lastResult ? `<div class="result-line"><b>${esc(a.lastResult)}</b><span>Latest result</span></div>` : ''}
-    ${a.thisWeekOpponent ? `<div class="next-box"><b>Next game</b><span>vs. ${esc(a.thisWeekOpponent)} · ${esc(a.thisWeekTime || '')}</span></div>` : ''}
+    ${a.thisWeekOpponent ? `<div class="next-box"><b>Next game</b><span>vs. ${esc(a.thisWeekOpponent)}${a.thisWeekTime ? ` · ${esc(a.thisWeekTime)}` : ''}</span></div>` : ''}
     <table><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${renderStandingRows(a.standings)}</tbody></table>
   </article>`;
 }

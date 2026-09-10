@@ -109,7 +109,7 @@ function spotlight(data) {
 
 function athleticsPage(data) {
   const a = data.athletics || {}, parts = [];
-  if (a.flagFootballActive) parts.push(group(a.flagTeamName ? `NFL FLAG · ${a.flagTeamName}` : 'NFL FLAG', `${note(a.seasonLabel || 'Season')}<p class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</p>${a.lastResult ? note(`Latest result · ${a.lastResult}`) : ''}${a.thisWeekOpponent ? `<h3>Next game · ${esc(a.thisWeekOpponent)}</h3>${note(a.thisWeekTime || '')}` : ''}${standings(a.standings)}`));
+  if (a.flagFootballActive) parts.push(group(a.flagTeamName ? `NFL FLAG · ${a.flagTeamName}` : 'NFL FLAG', `${note(a.seasonLabel || 'Season')}<p class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</p>${a.lastResult ? note(`Latest result · ${a.lastResult}`) : ''}${a.thisWeekOpponent ? `<h3>Next game · ${esc(a.thisWeekOpponent)}</h3>${a.thisWeekTime ? note(a.thisWeekTime) : ''}` : ''}${standings(a.standings)}`));
   if (a.wavesActive) {
     parts.push(group('Wellington Waves', `${logo('waves')}${note(`${a.wavesSeasonYear || ''} season`)}<p class="record">${esc(a.wavesRecord || '0-0')}</p>${a.wavesNextMeet ? `<h3>Next meet · ${esc(a.wavesNextMeet.opponent)}</h3>${note(dateLabel(a.wavesNextMeet.date))}` : ''}${standings(a.wavesStandings)}`));
     parts.push(swimmers('Myles · Wellington Waves', 'waves', a.mylesPBRows, a.mylesSeason, a.mylesFooter));
