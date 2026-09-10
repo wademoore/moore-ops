@@ -22,6 +22,8 @@
  *     on array order.
  */
 
+import { SEASON_MILESTONES } from './flagFootballParser.js';
+
 // ── Enums ────────────────────────────────────────────────────────────────
 
 const LEVELS = Object.freeze(['accent', 'spotlight', 'takeover']);
@@ -157,11 +159,31 @@ const OWNER_TONE = Object.freeze({ Myles: 'red', Ophelia: 'purple' });
 const MAX_ACCENT_LABEL_LENGTH = 14;
 
 const QUALIFIER_NODE_TYPES = Object.freeze([
-  'calendarOccurrence', 'calendarRange', 'sportsFixture', 'approvedDate',
+  'calendarOccurrence', 'calendarRange', 'sportsFixture', 'approvedDate', 'seasonMilestone',
 ]);
 
-/** Node types that resolve against a named calendar and therefore need a title. */
+/**
+ * Node types that resolve against a named calendar and therefore need a title.
+ *
+ * `seasonMilestone` also names a calendar and is deliberately NOT in this list:
+ * it identifies its occurrence from the season schedule — date, and the clock
+ * that schedule declares — so requiring a title would reintroduce exactly the
+ * dependency it exists to remove. See SEASON_MILESTONE_SOURCES below.
+ */
 const TITLE_MATCHED_NODE_TYPES = Object.freeze(['calendarOccurrence', 'calendarRange']);
+
+/**
+ * Sports whose season data a `seasonMilestone` node may be resolved against.
+ *
+ * One entry, deliberately. Flag football's `games[]` rows carry the three
+ * columns this node type needs — a league `week` number, a `type` that
+ * separates practices from fixtures, and a per-row clock — and no other season
+ * file in `data/` carries all three: `sharks-soccer.json` has no `week` and no
+ * `type` (every row is a match), and `waves-season.json` describes meets, not
+ * fixtures. A second source is therefore a named addition with its own
+ * accessor, not a generalisation this list can absorb for free.
+ */
+const SEASON_MILESTONE_SOURCES = Object.freeze(['flagFootball']);
 
 /**
  * Title-match modes, most permissive first. The full matching semantics live
@@ -237,6 +259,8 @@ const REASON = Object.freeze({
   MISSING_QUALIFICATION: 'missing-qualification',
   TITLE_MATCH_INVALID: 'title-match-invalid',
   TITLE_MATCH_TOO_PERMISSIVE: 'title-match-too-permissive',
+  SEASON_MILESTONE_INVALID: 'season-milestone-invalid',
+  UNKNOWN_MILESTONE_SOURCE: 'unknown-milestone-source',
   UNKNOWN_NODE_TYPE: 'unknown-node-type',
   DUPLICATE_NODE_ID: 'duplicate-node-id',
   MISSING_RENDERER: 'missing-renderer',
@@ -255,6 +279,10 @@ const REASON = Object.freeze({
   FIXTURE_NOT_FOUND: 'fixture-not-found',
   FIXTURE_MISMATCH: 'fixture-mismatch',
   FIXTURE_BINDING_MISMATCH: 'fixture-binding-mismatch',
+  MILESTONE_SEASON_NOT_FOUND: 'milestone-season-not-found',
+  MILESTONE_NOT_FOUND: 'milestone-not-found',
+  MILESTONE_AMBIGUOUS: 'milestone-ambiguous',
+  MILESTONE_MISMATCH: 'milestone-mismatch',
   OVERRIDE_REJECTED: 'override-rejected',
   FIELD_MISSING: 'field-missing',
   DETAIL_MISSING: 'detail-missing',
@@ -482,6 +510,22 @@ function validateEntry(raw, { availableAssets } = {}) {
         }
       }
 
+      if (node.type === 'seasonMilestone') {
+        // Validated here so a typo is a load-time diagnostic rather than a
+        // treatment that silently never resolves. `milestone` is checked
+        // against the sport module's own exported list, so the two cannot
+        // drift; every other field is a shape check.
+        if (!SEASON_MILESTONE_SOURCES.includes(node.source)) fail(REASON.UNKNOWN_MILESTONE_SOURCE);
+        if (!SEASON_MILESTONES.includes(node.milestone)) fail(REASON.SEASON_MILESTONE_INVALID);
+        if (typeof node.seasonId !== 'string' || !node.seasonId.trim()) fail(REASON.SEASON_MILESTONE_INVALID);
+        if (typeof node.calendar !== 'string' || !node.calendar.trim()) fail(REASON.SEASON_MILESTONE_INVALID);
+        // The league week number is a cross-check, not a selector: the
+        // milestone is resolved from the schedule and must then land on the
+        // week the treatment was approved for. A renumbered or inserted week
+        // fails closed rather than decorating a different fixture.
+        if (!Number.isInteger(node.expectedWeek) || node.expectedWeek < 1) fail(REASON.SEASON_MILESTONE_INVALID);
+      }
+
       if (node.type === 'approvedDate') {
         if (!isDateKey(node.date)) fail(REASON.APPROVED_DATE_INVALID);
         const provenance = node.provenance;
@@ -653,6 +697,8 @@ export {
   PROTECTED_REGIONS,
   QUALIFIER_NODE_TYPES,
   RENDERER_REQUIRED_TITLE_MATCH_MODE,
+  SEASON_MILESTONES,
+  SEASON_MILESTONE_SOURCES,
   REASON,
   SCHEMA_VERSION,
   STATUSES,

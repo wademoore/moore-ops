@@ -8,10 +8,15 @@
  */
 
 // Game types that are scheduled calendar entries but are not fixtures: they
-// have no opponent. This set is applied to nextFlagGame only — the record and
-// the standings already exclude them via their own `type === 'regular'` filter,
-// so do not read this constant as the thing keeping practices out of those.
-const NON_GAME_TYPES = new Set(['practice']);
+// have no opponent. Two consumers read it: nextFlagGame below, and the
+// `first-game` branch of selectSeasonMilestone(). The record and the standings
+// exclude practices via their own `type === 'regular'` filter, so do not read
+// this constant as the thing keeping practices out of those.
+//
+// Stated as a deny-list rather than an allow-list so that no existing type
+// ('regular', 'playoff', 'consolation') changes behaviour when a new one is
+// added — the same reasoning nextFlagGame was written with.
+export const NON_GAME_TYPES = new Set(['practice']);
 
 /**
  * @param {object} flagFootballData  Parsed flag-football.json
@@ -243,4 +248,90 @@ export function formatClockTime(hhmm) {
   if (h > 23 || min > 59) return null;
   const h12 = h % 12 === 0 ? 12 : h % 12;
   return `${h12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`;
+}
+
+// ── Season milestones ────────────────────────────────────────────────────────
+
+/** Milestones selectSeasonMilestone() knows how to resolve. */
+export const SEASON_MILESTONES = Object.freeze(['season-opener', 'first-game']);
+
+/**
+ * The only columns a season milestone exposes from a `games[]` row.
+ *
+ * Everything here is fixed when the league publishes the fixture. `status`,
+ * `homeScore`, `awayScore`, `home` and `away` are deliberately absent: a
+ * treatment anchored on a milestone must resolve identically before, during
+ * and after the game is played, which is the same rule the special-event
+ * framework's `sportsFixture` node already follows.
+ *
+ * This list is applied, not merely documented: selectSeasonMilestone() returns
+ * a projection limited to these fields, so a caller CANNOT read a mutable
+ * column even by accident. An earlier version exported the list with a comment
+ * saying a test asserted the rule; no such test existed, and the only one that
+ * mentioned the constant compared it against its own literal. Structure is the
+ * guard now, and the behavioural test beside it is what proves the structure.
+ */
+export const MILESTONE_FIXTURE_FIELDS = Object.freeze(['date', 'week', 'type', 'practiceTime', 'time']);
+
+const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
+const CLOCK = /^\d{2}:\d{2}$/;
+
+/**
+ * Resolves a named season milestone from flag-football season data.
+ *
+ * Pure, and deliberately free of any dependence on a calendar event's title:
+ * this exists so a treatment can be anchored on what the *schedule* says
+ * rather than on a string a human retypes whenever the league reschedules.
+ *
+ *   season-opener  the season's first scheduled event of any kind, which for
+ *                  a season that opens with a practice IS the practice
+ *   first-game     the season's first competitive fixture — the first row
+ *                  whose `type` is not in NON_GAME_TYPES
+ *
+ * The two coincide for a season that opens with a game. That is a legitimate
+ * configuration and is not rejected here; two treatments configured against
+ * one occurrence are resolved (and dropped as a tie) by the arbiter, which is
+ * where surface-occupancy decisions belong.
+ *
+ * Fails closed rather than guessing: an unknown milestone, a missing or
+ * duplicated season, no qualifying row, or two rows tied on the earliest date
+ * all return `{ ok: false, reason }`.
+ *
+ * @param {object} flagFootballData  parsed data/flag-football.json
+ * @param {string} seasonId
+ * @param {string} milestone         one of SEASON_MILESTONES
+ * @returns {{ok: true, row: object, startsAtEt: string|null}
+ *          |{ok: false, reason: 'season-not-found'|'milestone-unknown'
+ *                             |'milestone-not-found'|'milestone-ambiguous'}}
+ */
+export function selectSeasonMilestone(flagFootballData, seasonId, milestone) {
+  if (!SEASON_MILESTONES.includes(milestone)) return { ok: false, reason: 'milestone-unknown' };
+
+  const seasons = Array.isArray(flagFootballData?.seasons) ? flagFootballData.seasons : [];
+  const matching = seasons.filter(season => season?.seasonId === seasonId);
+  // Zero and two are the same failure: the caller named a season this data
+  // cannot identify. Picking the first of two would be an array-order decision.
+  if (matching.length !== 1) return { ok: false, reason: 'season-not-found' };
+
+  const rows = (matching[0].games || []).filter(row => DATE_KEY.test(String(row?.date ?? '')));
+  const eligible = milestone === 'first-game'
+    ? rows.filter(row => !NON_GAME_TYPES.has(row.type))
+    : rows;
+  if (!eligible.length) return { ok: false, reason: 'milestone-not-found' };
+
+  const earliest = eligible.reduce((best, row) => (row.date < best ? row.date : best), eligible[0].date);
+  const winners = eligible.filter(row => row.date === earliest);
+  if (winners.length !== 1) return { ok: false, reason: 'milestone-ambiguous' };
+
+  const source = winners[0];
+  // The calendar event covers the whole session, so it starts at the practice
+  // when there is one and at the game otherwise. A row with neither carries no
+  // clock, which the caller reads as "expect an all-day occurrence".
+  const clock = [source.practiceTime, source.time].find(value => CLOCK.test(String(value ?? ''))) ?? null;
+  // Projected, not passed through: the returned row carries only the immutable
+  // columns, so no consumer can reach `status` or a score even by mistake.
+  const row = Object.freeze(Object.fromEntries(
+    MILESTONE_FIXTURE_FIELDS.map(field => [field, source[field] ?? null]),
+  ));
+  return { ok: true, row, startsAtEt: clock };
 }

@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2510+ passing with a browser
+- Run npm test after changes — must stay at 2591+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row)
 - Confirm file changes before moving to next file
@@ -590,6 +590,8 @@ W&M football is a Patriot League associate member beginning with the 2026 season
 ### Local JSON files (`data/` folder — committed to repo)
 
 > **Guard rail — before writing to any `data/*.json` file:** confirm the filename appears in the "Current, authoritative files" list below, not in "Archived." Files ending in `-v2` or the newest suffix are current; plain/legacy names (without a version suffix) are archived at `data/archive/` and must not be written to. When in doubt, check here first.
+>
+> ⚠ **This rail reads as if it covers every `data/*.json`, and it does not.** Four live files are documented elsewhere in this document and are absent from the list below: `special-events.json` and `holiday-themes.json` (the Dashboard v2 registries), `routine-anchors.json`, and `kids-profile.json`. All four are current and authoritative; the list below is the *sports-data* inventory, not the whole of `data/`. Recorded rather than fixed here — merging the two lists is its own change — but a rail that silently omits a live file is exactly the shape of defect this section exists to prevent.
 
 #### Current, authoritative files
 
@@ -1289,18 +1291,27 @@ The first reusable Accent, and the first thing the generalized special-event fou
 actually renders beyond the Spotlight. It decorates a row the Next Two Weeks panel already
 drew. It is not a panel, a row, an information line, or a geometry change.
 
-**Two treatments ship, both Accents, neither promoted.**
+**Three treatments ship, all Accents, none promoted.** The flag-football pair replaced a
+single title-matched entry on Sept 10, 2026 — see **Season-derived treatments** below,
+which is the current source of truth for how they qualify.
 
 | id | owner | occurrence | visible from | expires |
 |---|---|---|---|---|
 | `ophelia-757swim-catch-em-all-1-2026-09-19` | Ophelia (purple) | one all-day Google event, Sept 19 → exclusive end Sept 21 | Fri Sept 18, 4:00 PM ET | Sun Sept 20, 8:00 PM ET |
-| `myles-flag-football-week1-2026-09-20` | Myles (red) | one all-day Google event, Sept 20 | Sat Sept 19, 4:00 PM ET | Sun Sept 20, 8:00 PM ET |
+| `myles-flag-football-week-1-season-opener-2026-09-13` | Myles (red) | one timed Google event, Sept 13 11:00–12:30 ET | Sat Sept 12, 4:00 PM ET | Sun Sept 13, 2:30 PM ET |
+| `myles-flag-football-week-2-first-game-2026-09-20` | Myles (red) | one timed Google event, Sept 20 11:00–13:00 ET | Sat Sept 19, 4:00 PM ET | Sun Sept 20, 3:00 PM ET |
 
-Both take the framework's accent defaults in full — 48h inclusion lead, 4:00 PM ET the
-previous day, 8:00 PM ET on the inclusive final day. Neither pins a boundary; both
-`lifecycle` blocks carry only a `note`. Both sit in the accent priority band (150, 151),
-so the arbiter admits both under the two-per-host-panel cap and neither can become a
-Spotlight.
+All three take the framework's accent defaults in full — 48h inclusion lead, 4:00 PM ET
+the previous day, and the level's own default expiry. None pins a boundary; every
+`lifecycle` block carries only a `note`. The two flag-football occurrences are **timed**,
+so they take the timed default (the occurrence's own end plus two hours) where the
+all-day swim meet takes 8:00 PM ET on its inclusive final day. All three sit in the accent
+priority band (150, 151, 152), so the arbiter admits them under the two-per-host-panel cap
+and none can become a Spotlight. **No instant carries all three** — the opener expires
+Sept 13 at 2:30 PM ET, and the earliest of the other two is not included until Sept 16 at
+4:00 PM ET (the swim accent's 48h lead) — which an hourly sweep over the whole September
+window asserts rather than leaves to arithmetic. *(This sentence first said Sept 17, which
+was wrong by a day; the conclusion held, the supporting figure did not.)*
 
 **The swim meet is one occurrence, so it is one row and one accent.** Google returns a
 multi-day all-day event as a single instance with an exclusive `end.date`, and
@@ -1310,8 +1321,11 @@ entry qualifies as a `calendarRange` matched on its inclusive end, which keeps t
 one-to-one explicit: a range that stopped spanning both days fails closed rather than
 accenting a changed event.
 
-**Both accents pin their calendar title with `titleMatch.mode: "literal"`, and that is
-load-bearing.** An event-row accent draws a wash that must stay clear of the text, and the
+**The swim accent pins its calendar title with `titleMatch.mode: "literal"`, and that is
+load-bearing for it.** ⚠ This paragraph said "both accents" until Sept 10, 2026; the
+flag-football accents no longer match a title at all. The reasoning below still governs
+every treatment that *does* name a title, and the reason the flag-football pair is exempt
+— along with what replaced the guarantee — is in **Season-derived treatments** below. An event-row accent draws a wash that must stay clear of the text, and the
 clearance depends on the *rendered length* of the title — for the flag-football row it is
 19.7 px, about two characters. Under `prefix` matching a longer title still qualified: the
 same event with its venue spelled out extended 357 px into the wash, putting text over
@@ -1338,8 +1352,8 @@ gate green. So `RENDERER_REQUIRED_TITLE_MATCH_MODE` in `specialEventSchema.js` r
 `literal` for `accent-event-row-v1`, and an accent declaring `prefix` or `exact` is rejected
 at load with `title-match-too-permissive`. The rule is keyed on the **renderer**, not the
 level, and is applied to the flattened qualification leaves — so it reaches a calendar node
-at any nesting depth inside a compound qualifier and never touches `approvedDate` or
-`sportsFixture`, which carry no title at all.
+at any nesting depth inside a compound qualifier and never touches `approvedDate`,
+`sportsFixture` or `seasonMilestone`, none of which carries a title at all.
 
 The Spotlight deliberately keeps `prefix` and is deliberately unconstrained: its
 presentation reads its own configured copy, so the rendered length of a calendar title is
@@ -1361,7 +1375,7 @@ not a rule someone has to remember.
 own date arrives and moves to the Today panel. On Saturday the 19th the swim accent is
 still `live` and still in the artifact, but its row is gone and nothing is accented. That
 is correct and is asserted, not merely tolerated: an accent decorates rows the panel draws.
-The practical consequence is that the two accents are never *both* visible in the panel on
+The practical consequence is that no two of the three accents are ever simultaneously visible in the panel on
 a real clock — Saturday's row is gone by the time Sunday's accent turns on. Their
 coexistence is a property of one generation's arbitration, which is what the tests prove.
 
@@ -1461,6 +1475,197 @@ projection length against the whole registry's length; the shim correctly omits 
 legacy-expressible subset, plus a new assertion that the shim never approximates an accent
 as a spotlight. Neither change weakens a guard; both are recorded here rather than made
 quietly, because a silently relaxed assertion is how a guard stops guarding.
+
+## Season-derived treatments (`seasonMilestone`, September 2026)
+
+The first qualification node type that resolves a treatment from **season data** rather
+than from a calendar event's title, and the reason it exists.
+
+**The failure it removes.** `myles-flag-football-week1-2026-09-20` matched
+`titleMatch: { mode: "literal", value: "Flag Football: Week 1 — Practice + Game (Yorktown)" }`
+on an `all-day` occurrence. Read live from the Myles calendar on Sept 10, 2026, Sept 20
+carries a **timed** event (11:00–13:00 ET) titled `Flag Football: Week 2 — vs
+Langston-Ravens (Home)`. So it had stopped resolving on **two independent counts**, and
+neither was a change to the fixture: the title had been retyped by hand, and the event had
+been re-entered with times. The league reschedules and Wade edits these events himself, so
+any title-matched treatment breaks the same way on the next edit — and it breaks
+*silently*, because failing closed to an ordinary row is indistinguishable from a day with
+no treatment configured.
+
+**The node type.** `seasonMilestone`, one source (`flagFootball`), two milestones.
+
+```json
+{ "type": "seasonMilestone", "id": "flag-football-first-game", "source": "flagFootball",
+  "seasonId": "fall-2026", "milestone": "first-game", "expectedWeek": 2, "calendar": "Myles" }
+```
+
+`digest/flagFootballParser.js` owns the season-shape knowledge and exports
+`selectSeasonMilestone()`, `SEASON_MILESTONES` and `MILESTONE_FIXTURE_FIELDS`; the schema
+re-exports the milestone list rather than keeping a private copy, so the validator and the
+resolver cannot disagree about which milestones exist. `digest/specialEventQualify.js`
+does the calendar join, dispatching on `source` through a table so a second sport is a
+named addition rather than a branch.
+
+- **`season-opener`** — the season's earliest-dated row of any type. For fall-2026 that is
+  the Week 1 Meet & Greet **practice**, which is the point: the season starts before the
+  first game does.
+- **`first-game`** — the earliest-dated row whose `type` is not in `NON_GAME_TYPES`. That
+  set is `flagFootballParser`'s own, imported rather than re-derived, so the
+  practice/game distinction has exactly one definition in the codebase. It was already a
+  deliberate one-element deny-list; it now has two consumers and its comment says so.
+- The two **coincide** on a season that opens with a game. That is not rejected here — the
+  arbiter already drops two accents claiming one row as a tie, which is where
+  surface-occupancy decisions belong.
+
+**Only immutable columns are read** — `date`, `week`, `type`, `practiceTime`, `time`.
+Never `status`, `homeScore`, `awayScore`, `home` or `away`, so a treatment stays valid
+mid-event; the same rule `sportsFixture` already follows for the Sharks schedule. A test
+mutates every result-bearing column and asserts both milestones resolve identically.
+
+**The calendar join, and why it is not looser than a title match.** The resolved row
+supplies the date and a start clock (`practiceTime ?? time` — the calendar event covers
+the whole session, so it opens with the practice when there is one). The occurrence is
+then located by **calendar + date + kind + clock**, with exactly one live candidate
+required. Zero, cancelled, or two or more all fail closed; there is no "pick the first"
+anywhere.
+
+⚠ **The ordering inside that join is load-bearing and was got wrong first time round.**
+Candidates must be narrowed by the clock *before* ambiguity is judged. Checking the clock
+only afterwards meant any second event on the day killed the treatment regardless of when
+it was — a worse property than the title matching it replaces. Caught by a test, and the
+mutation that reverts it is in the harness.
+
+**What it fails closed on.** Absent or unrecognisable season data; a missing or duplicated
+`seasonId`; a renumbered league week (`expectedWeek`); a fixture rescheduled off the
+entry's own `date`; a schedule/calendar disagreement about the clock or the event kind; a
+missing, cancelled or genuinely ambiguous row. Every one is a real disagreement between the
+schedule, the calendar and the approved entry — as opposed to a rename, which is a change
+to a *description* of the fixture and now changes nothing.
+
+### Dropping `literal` here cost 2.8 points of contrast, and it crossed the AAA threshold
+
+`RENDERER_REQUIRED_TITLE_MATCH_MODE` requires `literal` for `accent-event-row-v1` because
+the wash carries zero alpha across the left **46%** of the row and ramps rightwards, so a
+title long enough to cross that boundary sits over tinted paper. Pinning the exact approved
+title pinned its rendered width. A `seasonMilestone` node names no title, so that guarantee
+had to be replaced or given up deliberately — not dropped quietly.
+
+**A character cap is not a substitute, and that is measured rather than argued.** Rendered
+width is not proportional to character count: in this very layout a title of repeated
+`"il "` clears the boundary at **101** characters while one of repeated `"Wm "` fails at
+**41**, a 2.5× spread. Any cap safe for the wide case would reject both real titles (36 and
+49 characters).
+
+So the *consequence* was measured instead, by sampling the composited background under the
+text and computing WCAG contrast against the row's own ink
+(`scratch/flag-football-season-markers/measure-contrast.mjs`):
+
+| title | contrast |
+|---|---|
+| ordinary row, no accent | 9.23:1 |
+| live Week 1 opener (36ch), clear of the boundary | 9.23:1 |
+| live Week 2 (49ch), clear of the boundary | 9.23:1 |
+| live Week 3 (52ch), +12.4px over | 9.00:1 |
+| all-caps Week 2, +53.4px over | 8.64:1 |
+| **worst measured, ~109ch** | **6.41:1** |
+| plateau once the title wraps (120ch+) | 6.52:1 |
+
+⚠ **Every figure in this table was wrong until Sept 11, 2026, and the correction matters
+because it changes the conclusion rather than decorating it.** The table recorded 10.80 /
+10.54 / 10.05 / **7.32**, and closed with "still above WCAG AAA (7:1), with 0.32 of margin."
+Re-running the shipped script — `scratch/flag-football-season-markers/measure-contrast.mjs`,
+unmodified — produces the figures above instead, and **6.41:1 is below AAA, not above it.**
+The gap is not a rebase artifact: the identical script at the pre-rebase commit `3eee432`
+reports the same 6.41:1 at 109 characters, so the prose contradicted its own script on its
+own tree, in the commit that shipped both. It is the same-commit-drift failure this file's
+Test-baseline section exists to catch, in the one subsection whose entire purpose is that a
+number be checkable. **Do not restate a figure here without re-running the script.** The first correction pass
+missed a **fourth** copy of the retracted figures, in `render/dashboard-v2-accent.test.js` —
+newly written by the same commit, on the test that encodes this change's central trade, and
+stating the retracted conclusion in full. A Reviewer round found it. Four sites, none of them
+assertable: **no test anywhere asserts a contrast ratio**, which is precisely why one wrong
+number propagated to four places without a single suite going red.
+
+An earlier round had already corrected this table once — from 7.58:1 at 88 characters, which
+was the longest case *tried* rather than the worst case *reachable*. That correction was
+right in method and is retained: the sampling had looked only at the text's right-hand end,
+but the wash is masked by the brush artwork, so alpha is **not monotonic in x** and the worst
+point is middle-right rather than at the edge; and `.upcoming-event strong` has no `nowrap`
+and no ellipsis, so past a certain length the title **wraps** instead of extending. The
+script now grows a realistic title one word at a time and records the lowest contrast
+anywhere along the run, sampling each glyph line's own midpoint rather than the union box's
+(which after wrapping falls in the gap *between* lines). What that round did not do was
+carry its own output into this table.
+
+The minimum is **bounded rather than open-ended**: it falls to **6.41:1 near 109 characters
+and then plateaus at 6.52:1** out to 174 characters, because beyond ~114 the title wraps to a
+second line and stops extending. A wrapping title does grow the row (42px → 67px), but it
+grows identically with and without the accent, because every decoration is absolutely
+positioned; the layout suite asserts that by comparing an over-long accented row against the
+same row unaccented.
+
+So the honest statement is: **the worst reachable contrast is 6.41:1 — above WCAG AA (4.5:1)
+for normal text, and below AAA (7:1).** That is weaker than what this section claimed before
+the figures were re-derived, and it is stated here rather than softened. Three things bound
+what it costs in practice. Both real titles — 36 and 49 characters — measure **9.23:1,
+identical to an unaccented row**, and **both are now actually run by the script**: the
+36-character opener was asserted in three places while only the 49-character title had been
+measured, which a Reviewer round caught. An unmeasured contrast figure stated as measured is
+the precise defect this subsection exists to prevent, so it is measured — at the shipped titles the accent costs nothing at all,
+because the wash carries zero alpha across the reading area. Reaching 6.41:1 needs a title
+roughly twice the length of the longest the league has ever written. And the degradation is
+bounded, not open-ended. **Whether 6.41:1 at a hypothetical 109-character title is an
+acceptable price for a treatment that cannot be killed by a rename is Wade's call, not this
+document's** — the prior text foreclosed it by asserting AAA. **What `literal` was protecting
+is the AAA threshold itself, not merely headroom above it** — this sentence said "headroom,
+not legibility" until Sept 11, 2026, survived the correction that rewrote the heading four
+paragraphs above it, and was caught by a third Reviewer round. At 9.23 → 6.41 the worst
+reachable title crosses the bar rather than eating into slack, and what `literal` cost in
+exchange was a treatment silently dead on every rename. The swim accent keeps `literal` and keeps its fail-closed behaviour, because its
+calendar entry *is* the authoritative record: there is no season file behind it.
+
+**Generalisation stops here, deliberately.** `SEASON_MILESTONE_SOURCES` has one entry.
+Flag football's rows carry a league `week`, a practice/fixture `type` and a per-row clock
+together; `sharks-soccer.json` has none of the three (no week, no type — every row is a
+match), and `waves-season.json` describes meets rather than fixtures. A second sport needs
+its own accessor and its own scoping pass.
+
+**Identifiers follow the league's week numbering.** September 13 is Week 1 and September 20
+is Week 2, which is what Wade and the other parents use; the predecessor entry called
+September 20 "week1". A test asserts each id names the week its `expectedWeek` pins and
+that `data/flag-football.json` puts that week on that date, so the three cannot drift.
+
+**Distinguishing the two markers.** Both are Myles red with the `football-laces` doodle;
+the chip is what differs — `SEASON OPENER` against `FIRST GAME` — which is the device this
+renderer already uses to say why an occurrence is significant. A second doodle would need a
+new SVG, CSS class and custom property, which is presentation and Codex's. They are never
+on screen together in any case: each is visible only on the evening before its own date, and
+an hourly sweep asserts that rather than assuming it.
+
+**What the trade costs, stated rather than implied.** Two things, both narrower than the
+failure removed but neither zero:
+
+1. **A clock-staleness obligation replaces a title-staleness one.** The join requires the
+   calendar's start time to equal `practiceTime ?? time` in `data/flag-football.json`. A
+   league time change entered on the calendar but not in that file silently kills the
+   accent — the mirror image of the defect being removed. It is a *better* trade (the JSON
+   is Updater-managed and reviewed, where a calendar title is retyped ad hoc), and it fails
+   closed to an ordinary row, but it is a standing maintenance obligation and is recorded
+   in Known open items rather than only here.
+2. **Resolution is title-free; *visibility* is not, by one presentation-layer path.**
+   `collapseUpcomingEvents()` in `render/dashboard-v2.js` keys consecutive-day collapsing on
+   `cleanDisplayText(title) + formatEventTime(event)`. A rename that made a flag-football
+   event's title *and* time identical to one on the immediately preceding day would collapse
+   the two into one row keyed on the earlier occurrence, leaving the accent with no row.
+   Contrived, pre-existing, and on a surface Codex owns — but "no path by which a title
+   affects these treatments" would be too strong a claim, so: none for resolution, one for
+   visibility.
+
+**No presentation change.** `render/dashboard-v2.js` is untouched: the accents reuse
+`accent-event-row-v1` and the existing `occurrenceRef` / `label` / `doodle` / `tone` hook.
+The one line of plumbing is `builder.js` surfacing `flagFootballData` on `digestData`, on
+exactly the same terms as `sharksSoccerData` — already loaded, already packaged, additive,
+and ignored by the v1 renderers and `index.js`.
 
 ## Holiday Theme (Dashboard v2, October 2026)
 
@@ -2134,7 +2339,116 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 10, 2026 on the mobile Worker branch, rebased onto #69
+### Current baseline — measured Sept 11, 2026 on the season-markers branch, rebased onto #71
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2591 | **2591** | **0** | **0** |
+
+Measured on `claude/flag-football-season-markers-hz06bg` **after rebasing onto `origin/main`
+at `1ec87fc` (PR #71)**. The branch was opened against `1616101` (PR #62), and **nine** commits
+— #63, #64, #66, #67, #68, #69, #59, #70 and #71 — landed on `main` while it sat in review, so
+**both** ends were re-measured on the rebased tree rather than carried forward.
+
+**The recorded baseline did not hold, and this time it failed in the quietest possible way.**
+The entry below records **2510**, and the previous revision of *this* entry recorded 2510 for
+`46dd843` — both correct for the commits they name. `1ec87fc` measures **2511 / 2511 / 0 / 0**,
+re-measured directly in a `git worktree` in this session: #71 added one layout test and updated
+`render/dashboard-v2.test.js` in place, so `main`'s head is one above every figure written down
+for it. **The rebase produced no conflict in either overlapping file** — `CLAUDE.md` and
+`render/dashboard-v2-layout.test.js` both merged automatically — so there was no marker
+anywhere to prompt a re-measure. A clean merge is not evidence that the numbers in the merged
+text still describe the tree.
+
+This change adds **+80**: **+78 the change as first written**, **+1** a geometry case added in
+Reviewer round 2, and **+1** a scanner discovering the rebase-verification script (below). The
++78 is the delta that has now survived two rebases unchanged.
+
+| File | before (`1ec87fc`) | after | delta |
+|---|---|---|---|
+| `digest/specialEventAccents.test.js` | 34 | 79 | +45 |
+| `digest/specialEventSchema.test.js` | 110 | 121 | +11 |
+| `test/flagFootballParser.test.js` | 38 | 48 | +10 |
+| `test/accent-fixture-callers.test.js` (new) | — | 11 | +11 |
+| `render/dashboard-v2-accent.test.js` | 21 | 23 | +2 |
+| `render/dashboard-v2-layout.test.js` | 27 | 28 | +1 |
+
+`digest/specialEventSelector.test.js` (69), `digest/builder.test.js` (21),
+`render/dashboard-v2-holiday.test.js` (21), `render/dashboard-v2.test.js` (93) and
+`test/artifact/event-row-accent-contract.test.js` (11) contribute **0** — assertions and
+comments changed inside them, none added or removed at the `it()` level. `dashboard-v2.test.js`
+is listed because #70 rewrote four of its assertions without moving its count, which is the
+kind of change that looks like it should have.
+
+**The total is 2591, not 2511 + 78, and the extra test is worth naming rather than
+rounding away.** `test/accent-fixture-callers.test.js` is a *scanner*: it walks the repository
+for callers of `eventRowAccentSampleData` and emits one test per call site, requiring each to
+supply `flagFootballData`. The rebase-verification script added below,
+`scratch/rebase-verify/logo-geometry.mjs`, is such a caller — so the scanner discovered it and
+the file went **10 → 11**. Measured both ways: hiding that one script takes the file back to 10
+and the suite to 2590.
+
+So the arithmetic is 2511 + 78 (the change as first written) + 1 (round 2's geometry case for
+the `SEASON OPENER` chip) + 1 (the scanner finding the verification script) = **2591**, which
+is the measured figure in the table above — **measured on the rebased
+tree, not obtained by adding a recorded delta to a recorded base.** The +78 agreeing with the
+pre-rebase delta is reassuring and is not itself evidence. The stray +1 is left in rather than
+engineered away: it is the guard behaving exactly as designed, and deleting the script to
+tidy the total would delete the evidence for a claim this entry makes.
+
+**Four per-file before-figures have gone stale across the two rebases, and none of them by one
+PR's doing.** Against `1616101` this table recorded `test/flagFootballParser.test.js` at 30,
+`digest/builder.test.js` at 10 and `render/dashboard-v2-layout.test.js` at 22; on `1ec87fc`
+they measure **38**, **21** and **27**. #67 added 8 to the first and #68 added 11 to the
+second. The third is the one worth spelling out: `render/dashboard-v2-layout.test.js` went
+22 → 27 across **four** merges — #64 +1, #66 +1, #69 +2, #71 +1, each confirmed by
+`git show <sha> -- <file>` — and it was the only per-file figure this second rebase moved. An
+earlier draft once credited all of that to #69, which is the same misattribution a Reviewer
+round had just blocked on one section away. Every before-figure above was measured in a
+`git worktree` at `1ec87fc`, not copied to a temp path — a copied test file loses its relative
+imports and reports `# tests 1`.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2591+ with no failures once a browser resolves.**
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
+quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
+prevent.
+
+Companion mutation harness, **committed** and run on demand — `node
+scratch/flag-football-season-markers/mutation-check.mjs` → **21 mutations, 21/21
+proven**, **21 distinct mutated trees**, **control and restore both 432 passing / 0 failing**.
+**The 21/21 was proven on the tree rebased onto `46dd843` and was deliberately not re-run when
+the branch was rebased again onto `1ec87fc`**: no guard, source file or mutation changed across
+that rebase, and a run costs ~13 minutes. The **control**, however, did move — 431 → 432 — and
+is re-derived here from a single measured run of the harness's ten files together rather than
+carried forward. That figure is worth a sentence: the same harness reported **429**, **430**
+and **431** earlier, and none was wrong at the time — `scratch/rebase-verify/logo-geometry.mjs`
+added a caller that `test/accent-fixture-callers.test.js` counts (429 → 430), round 2's
+geometry case added one to `render/dashboard-v2-layout.test.js` (430 → 431), and #71 added one
+more to that same file (431 → 432). Both files are in the harness's own `FILES` list, which is
+why a merge touching neither this branch's code nor its guards still moves its control.
+Re-derive it rather than quoting any of the four. Its anchors were
+checked against the rebase rather than assumed: mutation anchors rot against the code they
+attack, and this harness scores an inapplicable mutation as a survivor rather than skipping it
+silently, which is what makes a rotted anchor visible.
+
+Behaviour was additionally re-derived after the rebase, independently of the suite —
+`node scratch/rebase-verify/rederive.mjs`, 10 checks, all passing. It drives the
+production path (`resolveEvent` → #68's `attachFlagFootballIdentity` → `selectEventRowAccents`)
+against the live `data/` files and asserts both markers resolve with their own chips, that
+renaming or **swapping** titles changes nothing, that a Sep+Oct sweep at five instants a day
+accents exactly two occurrences, and that a clock drift fails closed without disturbing the
+other marker. Its first version returned an empty set for every case and its title-independence
+comparison passed **vacuously on two empty sets** — the harness was mis-shaping a call, not the
+code failing. Every case now carries a positive control for that reason.
+
+### Previous baseline — measured Sept 10, 2026 on the mobile Worker branch, rebased onto #69
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -2196,7 +2510,9 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2510+ with no failures once a browser resolves.**
+**Coder mode had to keep `npm test` at 2510+ under this baseline.** (Superseded — see
+Current baseline above; the figure is now 2591. Note that 2510 never described `main`'s
+head for long: #70 and #71 landed on Sept 11, and `1ec87fc` measures 2511.)
 
 Companion mutation harness, **committed** and run on demand — `node
 scratch/mobile-worker/mutation-check.mjs` → **46 mutations, 46/46 proven, all distinct (46
@@ -3110,6 +3426,165 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Flag football's two season markers derived from season data, not calendar titles
+  (Sept 10, 2026):** Sept 13 (the Meet & Greet that opens the season) and Sept 20 (the first
+  actual game) now each get an event-row Accent, distinguished by chip — `SEASON OPENER`
+  against `FIRST GAME`. Full design in **Season-derived treatments** above. The single
+  predecessor entry, `myles-flag-football-week1-2026-09-20`, is **deleted rather than
+  disabled**: a dormant title-matched entry beside a data-derived one is two answers to the
+  same question.
+
+  **The point is the failure class, not the string.** That entry matched a literal calendar
+  title and stopped firing when the event was renamed by hand — the schedule never changed,
+  only the description of it did. Read live on Sept 10 it had in fact failed on **two**
+  independent counts: the title was different *and* the event had become timed where the
+  entry expected all-day. Both are edits to a description of the fixture. A new
+  qualification node type, `seasonMilestone`, resolves the fixture from
+  `data/flag-football.json` — which already knows which event is first, which game is first,
+  and which rows are practices — and then locates the calendar row by date, kind and the
+  clock the schedule declares. **Proved rather than asserted:** eleven rename variants per
+  accent, including an emoji-prefixed rewrite, an emptied title, and a case that *swaps the
+  two events' titles*, all leave both treatments resolving on their own rows.
+
+  **The practice/game distinction is imported, not re-derived.** `first-game` filters on
+  `flagFootballParser`'s own `NON_GAME_TYPES`, which is now exported and has two consumers;
+  `season-opener` filters on nothing, so the season opens with the practice. Only immutable
+  columns are read (`date`, `week`, `type`, `practiceTime`, `time`), so a recorded result
+  cannot invalidate a treatment mid-event — a test mutates every score and status field and
+  asserts both milestones are unmoved.
+
+  **Identifiers now follow the league's week numbering**, as asked: Sept 13 is Week 1 and
+  Sept 20 is Week 2, where the predecessor id called Sept 20 "week1".
+
+  **Dropping `literal` for these two was measured, not waved through — and the measurement
+  was re-derived on the rebased tree, which corrected it downwards.** That mode was required
+  for this renderer because the accent's wash is transparent only across the left 46% of the
+  row, so a longer title sits over tinted paper. A character cap cannot stand in for it —
+  measured, the same layout crosses that boundary at 41 characters of `"Wm "` and 101 of
+  `"il "` — so the consequence was measured directly instead. Contrast bottoms out at
+  **6.41:1 near 109 characters and then plateaus** (6.52:1 out to 174, because past ~114 the
+  title wraps rather than extending), against **9.23:1** for an ordinary row and a WCAG AAA
+  floor of 7:1 — so **the worst reachable title is below AAA, above AA**, and at both real
+  titles (36 and 49 characters) the accented row measures 9.23:1, identical to an unaccented
+  one. The swim accent keeps `literal` and keeps failing closed, because its calendar entry
+  *is* the authoritative record. The layout suite's `literal` guard is replaced by that
+  measurement rather than deleted. *(This paragraph has now been wrong twice, and the second
+  time was worse than the first. It first quoted 7.58:1 at 88 characters — the longest case
+  tried, not the worst reachable — which a review round caught. The replacement figures,
+  7.32:1 and 10.80:1, were then carried in prose without re-running the script, and the
+  shipped script reports 6.41:1 and 9.23:1 on the shipped tree, pre-rebase commit `3eee432`
+  included. A corrected number that is still not the script's output is the same defect with
+  a fresh date on it; see the Season-derived treatments section for the full correction.)*
+
+  **One real defect in the new code was caught by a test rather than shipped:** candidates
+  must be narrowed by the schedule's clock *before* ambiguity is judged, or any second event
+  on the day kills the treatment regardless of its time — a worse property than the title
+  matching being replaced.
+
+  **Scope held to digest logic.** `render/dashboard-v2.js` is untouched; the accents reuse
+  the existing `accent-event-row-v1` hook. The only plumbing is `builder.js` surfacing
+  `flagFootballData` on `digestData`, on the same terms as `sharksSoccerData` — already
+  loaded, already packaged. No kill switch, template, workflow or repository variable was
+  touched, and `FAMILY_SPOTLIGHT_ENABLED` keeps its name and value.
+
+  **21 mutations, 21/21 proven** (`node
+  scratch/flag-football-season-markers/mutation-check.mjs`), green control and restore.
+  **Two survived the first run and both were genuine coverage gaps** — a test that passed for
+  the wrong reason, and an entirely unasserted builder key; both closed. Tests
+  **2511 → 2591**, all passing with a browser, **both ends re-measured on the
+  rebased tree** rather than carried from an earlier entry.
+
+  **Rebased twice. Now on `1ec87fc` (PR #71); opened against `1616101` (PR #62).** Nine
+  commits — #63, #64, #66, #67, #68, #69, #59, #70 and #71 — landed while it sat in review.
+  **The second rebase, onto #70/#71, produced no conflict at all**: `CLAUDE.md` and
+  `render/dashboard-v2-layout.test.js` were touched by both sides and both merged
+  automatically, which is the quiet case — every recorded figure in the merged text was
+  measured against `46dd843` and #71 had moved the base by one. Base **2510 → 2511**, branch
+  **2590 → 2591**, mutation control **431 → 432**, and one per-file before-figure
+  (`render/dashboard-v2-layout.test.js`, 26 → 27); the **+80 delta and the 21/21 mutation
+  result are unchanged**, and the harness was not re-run because no guard, source file or
+  mutation moved. The contrast figures, `rederive.mjs` (10/10), the logo-geometry equality and
+  both deployment validators (51 inputs, 13 trigger paths) were all re-derived on the new base
+  and are unchanged.
+
+  **The first rebase, onto `46dd843` (PR #59), is where the conflicts were.** The original
+  figures (base 2309, branch 2387) described a tree three merges gone. Three
+  files conflicted: `CLAUDE.md`, and **both halves of the flag-football parser**
+  (`digest/flagFootballParser.js` and its test), where #67 and this change had each appended
+  at end of file. Both parser conflicts were resolved as **unions** — #67's `formatClockTime`
+  and this change's season-milestone block are independent additions that shared one closing
+  brace — and `digest/builder.js`, the file the merge-order open item worried about, merged
+  automatically.
+
+  **The behaviour was re-derived after the rebase rather than inferred from a green suite**
+  (`scratch/rebase-verify/rederive.mjs`): through the production path, including #68's
+  `attachFlagFootballIdentity`, both markers resolve to their own occurrences with the right
+  chips; renaming every title — including **swapping** Week 1's and Week 2's, and restoring the
+  predecessor's exact literal — changes nothing; a sweep of September and October at five
+  instants a day accents **exactly two** occurrences; and moving Week 1's calendar clock off the
+  schedule's fails it closed without touching Week 2. #68's date-alone identity and this
+  change's (date, kind, clock) join coexist on the same rows, which is the divergence the
+  merge-order item asked to see preserved.
+
+  **One pre-existing figure did not survive re-derivation, and it weakens a stated
+  conclusion.** The contrast table claimed a worst reachable 7.32:1 "above WCAG AAA (7:1),
+  with 0.32 of margin". The shipped measurement script reports **6.41:1** — below AAA, above
+  AA — and reports the same 6.41:1 at the pre-rebase commit `3eee432`, so the prose
+  contradicted its own script in the commit that shipped both. Corrected in **four** places —
+  this entry, **Season-derived treatments**, `render/dashboard-v2-layout.test.js`'s comment,
+  and `render/dashboard-v2-accent.test.js`'s. The fourth was missed on the first pass and found
+  by a Reviewer round, and it was the one that mattered: it sits on the test encoding this
+  change's central design trade and drew the retracted conclusion in full — "what `literal` was
+  protecting is contrast headroom, not legibility". At 6.41:1 `literal` was protecting the
+  **threshold**, not headroom. **Nothing asserts a contrast ratio anywhere**, so no test could
+  go red on any of the four; that is why the number has to be re-derived from a run. The
+  decision it bears on is flagged for Wade rather than restated.
+
+  **An independent Reviewer round on the rebased commit returned FAIL, and both blockers were
+  real.** The first was the fourth contrast site above — found because the Reviewer read the
+  diff rather than a summary of it, and it was the copy that mattered. The second was
+  delivery: the reviewed commit was unpushed while `origin` still carried the pre-rebase
+  `3eee432`. Four further findings were taken. The new clock-validator open item **pointed the
+  next session at the wrong fix** — it framed `CLOCK`'s strictness as the defect, when
+  `startsAtEt` is always zero-padded `HH:MM` (an `Intl` `hour: '2-digit'` / `h23` format), so
+  loosening `CLOCK` would turn a clean reject into a value that silently matches nothing, with
+  **no mutation covering it**; the item now says so and points at validating the season file
+  instead. Its stated failure mechanism was wrong too: with a non-padded `practiceTime` the
+  resolver **falls through to `time`** rather than expecting an all-day occurrence — only two
+  non-padded clocks produce that. A comment on the fixture-caller scanner claimed it proved
+  `flagFootballData` non-empty when it catches two literals; narrowed to what it checks.
+  `digest/flagFootballParser.js` is now declared in `requiredBundleInputs`, following the
+  convention #68 established for its sibling — proven to have teeth by pointing it at a bogus
+  path and watching the validator refuse it by name.
+
+  **A second Reviewer round returned PASS with no BLOCKING findings, and its two SHOULD FIX
+  items were both real.** (1) **The widest chip this registry can produce had no geometry
+  coverage.** `SEASON OPENER` is 13 characters against `FIRST GAME`'s 10, under a cap of 14 —
+  and every layout fixture used a `now` on or after Sept 18, while `eventRowAccentSampleData`
+  partitions occurrences into `=== todayKey` and `> todayKey`, so the Sept 13 opener row was
+  absent from both buckets in all of them. The clearance assertions therefore ran only against
+  the narrower chip and could not fail for the new one. A case now renders it at Sept 12, 4:00
+  PM ET and applies the same guards; **both directions were probed rather than assumed** —
+  pointed at the old instant it fails as "the season-opener row must be accented at this
+  instant, or the case proves nothing", and against a renderer with the chip shifted 900px left
+  it fails as "the widest chip overlaps the title". (2) **A misattributed PR delta in the
+  Test-baseline section**, corrected above: `render/dashboard-v2-layout.test.js` went 22 → 26
+  across three merges, not one. Four MINOR items were also taken: the 36-character opener title
+  is now measured rather than asserted; the "cost 2.8 points of contrast **headroom**" heading
+  kept the framing the section four paragraphs below retracts; a Known open item's headline said
+  "MOSTLY RESOLVED … still open" above a paragraph saying the same half was resolved; and a
+  fixture comment still said "the two accents" when there are three.
+
+  **The mutation harness gained the two properties its sibling learned the hard way.** It now
+  scores `# cancelled` and a non-zero runner exit as red — a mutant that makes a test *hang*
+  drains the runner and prints `# fail 0` beside `# cancelled N`, so scored on `# fail` alone
+  the loudest catch in a set reads as a survivor — and it fingerprints each mutated tree and
+  refuses a duplicate outright, because two mutations producing byte-identical trees are one
+  property scored twice while whatever the duplicate stood in for is covered by nothing. Both
+  are recorded in this file as defects found in `scratch/mobile-publishing-contract/`; neither
+  was live here (all 21 trees are distinct), and they are enforced now rather than left to be
+  rediscovered. The run prints the distinct-tree count beside the proven count.
 
 - **Cloudflare Worker serving the mobile dashboard document (Sept 10, 2026):** The
   publishing contract merged in #58 ends by naming what it deliberately did not decide —
@@ -4433,6 +4908,120 @@ enumerated under test, digest, and render directly to Node. No deployment.
 
 ## Known open items
 
+- **The Reviewer gate's verdict records live inside `.git/` and are keyed by session id, so a
+  cloud session can never verify a review that happened in another checkout (Sept 11, 2026).**
+  `record-review-verdict.mjs` writes to `join(gitDir, 'moore-ops-review-gate',
+  '<session_id>.json')`, where `gitDir` is `git rev-parse --absolute-git-dir`. That path is
+  inside the git directory, so it is **never committed and never cloned** — and
+  `require-review.mjs`'s own header states the second half deliberately: "Records are keyed by
+  session id, so a new session never inherits an older session's pass." A **third** mechanism
+  compounds both: a recorded SHA that is not an ancestor of HEAD fails closed, so a rebase or
+  an amend invalidates a verdict even within the one session that earned it.
+
+  **Observed, not theorised.** Rebasing #65 onto `1ec87fc` in a fresh cloud checkout,
+  `ls .git/moore-ops-review-gate/` reported **no such directory** — the branch's three Reviewer
+  rounds had happened in an earlier session on another machine, and nothing about them was
+  reachable. The gate blocked the whole range `1ec87fc..a0e3bb9` with "no Reviewer verdict has
+  been recorded for this session". That is correct behaviour for what it can see, and it is the
+  point of the entry: **"reviewed elsewhere" and "never reviewed" are indistinguishable to the
+  gate, and the only evidence available to the operator is the PR body — testimony, not a
+  record.** The override was the right call there, but it was made on a diff proof constructed
+  by hand, not on anything the gate could check.
+
+  **Deliberately not fixed.** Two directions exist and neither is obviously right, which is why
+  this is recorded rather than resolved. A record committed to the repository and keyed on
+  commit SHA would survive a clone — but it would be **self-attested**: the same session that
+  wants to pass could write its own pass, which is a weaker gate than the one that exists. The
+  durable, non-self-attested place is the GitHub side (an actual review or a check on the pull
+  request), which survives a clone and cannot be written by the session it gates — but that is a
+  different design from a local Stop hook, not an adjustment to this one. Until one is chosen,
+  **expect a cloud session to find no record and expect the override to be the only route**, and
+  read that as the gate working rather than as evidence a review was skipped.
+
+- **The season-markers mutation harness's two new scoring properties are present and
+  unproven, and its fingerprint guard has three narrow gaps (found Sept 11, 2026 by a third
+  Reviewer round; recorded rather than fixed, because the session's review budget was spent
+  and changing the harness again would ship unreviewed edits to the thing that supplies the
+  evidence).** `scratch/flag-football-season-markers/mutation-check.mjs` now scores
+  `# cancelled` and a non-zero runner exit as red, and refuses duplicate mutated trees. None
+  of the five items below is live against the current 21 mutations — all of which patch
+  tracked files in place, and all of which produce distinct trees — but each is a guard that
+  reads stronger than it is:
+
+  1. **Neither new scoring property has a self-test.** Nothing injects a hang or a
+     green-summary-with-non-zero-exit, so "cancellations count as red" is implemented and
+     unproven. `scratch/mobile-worker/mutation-check.mjs` carries a self-test row for exactly
+     this reason; this one should too.
+  2. **`fingerprints.size` is not independent evidence.** A duplicate aborts the run, so any
+     run reaching the summary has `fingerprints.size === MUTATIONS.length` by construction.
+     The printed "21 distinct mutated trees" restates 21. The *guard* is the abort; the
+     number is not a second measurement, and quoting it as one would be the same category of
+     error this file keeps recording.
+  3. **The control tree's fingerprint is never registered.** A mutation whose replacement
+     equals its anchor produces the unmutated tree and is scored `SURVIVED` — a harness bug
+     presented as a coverage gap. Registering the control fingerprint before the loop would
+     make it an explicit abort.
+  4. **`git ls-files -s` contributes nothing to the hash.** It reads the index, which no
+     mutation touches, so that input is invariant.
+  5. **A mutation that *created* a file would be invisible to the fingerprint**, because
+     `git diff --name-only` does not list untracked files.
+  6. **The printed per-mutation failure count is no longer `# fail`.** `red = fail +
+     cancelled + exitRed` is returned as `fail` and printed as "N failing", so an ordinary
+     kill prints one more than the runner reported. `rawFail`, `cancelled` and `exitStatus`
+     are computed and never read. This project cites per-mutation failure counts as evidence
+     that two mutants are different programs, so a label that does not match the runner's own
+     number undermines exactly that use.
+
+- **`digest/flagFootballParser.js` now holds two clock validators that disagree, and the
+  strict one is the correct one — do not "fix" it by loosening it (found Sept 11, 2026, while
+  rebasing #65 onto #67; reported rather than resolved).** An earlier draft of this item read
+  the disagreement the other way round and pointed the next session at a change that would
+  have made things silently worse; a Reviewer pass caught that, and the correction is the
+  point of the entry.
+
+  **The two validators.** `formatClockTime()` (#67, renders `thisWeekTime`) matches
+  `/^(\d{1,2}):(\d{2})$/` with range checks and trims. `selectSeasonMilestone()` (#65, locates
+  the calendar row) matches `CLOCK = /^\d{2}:\d{2}$/`, with no range check and no trim. They
+  disagree in **both** directions, measured against the shipped exports:
+
+  | value | `formatClockTime` | `CLOCK` |
+  |---|---|---|
+  | `"9:30"` | `"9:30 AM"` | rejected |
+  | `"25:00"` / `"99:99"` / `"12:60"` | `null` | accepted |
+
+  **`CLOCK`'s strictness is load-bearing, not an oversight.** The value it is compared against
+  is `occurrence.startsAtEt`, produced by `specialEventOccurrences.js`'s `TIME_KEY_FORMAT` —
+  an `Intl.DateTimeFormat` with `hour: '2-digit'` and `hourCycle: 'h23'` — so it is **always**
+  zero-padded `HH:MM` (verified: `09:30`, `11:00`, `13:05`). A non-padded season clock could
+  therefore never equal it. Widening `CLOCK` to `\d{1,2}` would convert a clean reject into a
+  value that silently matches nothing, and **no mutation covers it**: none of the 21 in
+  `mutation-check.mjs` touches `CLOCK`, and every `fall-2026` clock is already padded, so the
+  change would leave the whole suite green. Accepting `"25:00"` is harmless for the same
+  reason — it matches no occurrence and fails closed.
+
+  **The real exposure is narrower than the first draft claimed, and its mechanism is
+  different.** With `practiceTime: "9:30"` and `time: "12:00"`, `CLOCK` does not give up — it
+  **skips to `time`** and the node expects a timed occurrence at 12:00, which the 9:30 calendar
+  event fails as `NODE_TIME_MISMATCH`. Only when *both* clocks are non-padded does it fall
+  through to `null` and expect an all-day occurrence. Either way it fails closed, and either
+  way `formatClockTime` happily renders `"9:30 AM"` on the athletics card — so one hand-typed
+  non-padded clock still shows a game time while the accent disappears. Measured, not reasoned:
+  `("11:00","12:00") → 11:00`, `("9:30","12:00") → 12:00`, `("9:30","9:45") → all-day`.
+
+  **The shared assumption, separately.** Both modules encode "the calendar block starts at the
+  practice", pointing opposite ways: #67's `flagFootballDetails()` **infers** the practice/game
+  split from the occurrence's duration; #65 **predicts** the occurrence's start from
+  `practiceTime ?? time`. They agree, and are separately documented as agreeing — but one drift
+  between `flag-football.json` and the calendar now produces three different behaviours: the
+  subtitle keeps showing the calendar's real time (correct), `thisWeekTime` keeps showing the
+  season file's game time (possibly wrong), and the accent silently disappears.
+
+  **The right fix is to make the season file's clocks provably padded, not to loosen the
+  matcher** — a load-time validation on `flag-football.json`, or normalising through
+  `formatClockTime`'s parse before comparing. Deliberately not done here: it is a behaviour
+  change to #67's shipped rendering path, which is outside a rebase's remit, and it needs a
+  mutation covering `CLOCK` before anyone touches it.
+
 - **`render/dashboard-v2.test.js`'s full-document byte-identity test is a latent
   flake, ~0.1% per suite run, and it is not this change's (measured Sept 10, 2026).**
   Observed once while running the suite for the flag-football identity work:
@@ -4460,20 +5049,23 @@ enumerated under test, digest, and render directly to Node. No deployment.
   the same confounder class the Holiday Theme work documents having found and
   normalised for its own assertions; this particular test was not covered by that.
 
-- **PR #65 and this change both touch `digest/builder.js`; merge order matters a
-  little, and neither blocks the other (Sept 10, 2026).** #65 (`seasonMilestone`,
-  open, `mergeable_state: behind`) adds one line surfacing `flagFootballData` on
-  `digestData`; this change adds an import, two attachment lines and a gap
-  computation to the same file. They are additive in different places and neither
-  imports the other's module, so a conflict is textual at worst. **Two follow-ups
-  become available once #65 lands, and neither should be done before it:**
-  (1) `dashboard-v2-data.js` builds `horizonEvents` by calling `resolveEvent()`
-  directly, outside `buildDigest`, so those events carry no `flagFootball` key —
-  attaching it there needs exactly the `flagFootballData` surfacing #65 adds;
-  (2) the two modules independently answer "which season row is this occurrence?",
-  by different rules and on purpose, and whether they should share a resolver is a
-  question worth asking **only after** both are on `main` and the divergence in
-  strictness has been preserved deliberately rather than merged away by accident.
+- **✓ RESOLVED Sept 11, 2026 — #65 was rebased onto this change and both are now on one
+  tree.** The item asked which order the two `digest/builder.js` edits landed in and warned
+  that a conflict was "textual at worst". That held: rebasing #65 onto `46dd843` produced
+  three conflicts (`CLAUDE.md`, `digest/flagFootballParser.js`,
+  `test/flagFootballParser.test.js`) and **`digest/builder.js` merged automatically** — the
+  two edits are in different hunks of the same file and neither imports the other's module.
+  **The two follow-ups it named are now unblocked, and both are still open:**
+  (1) `dashboard-v2-data.js` still builds `horizonEvents` by calling `resolveEvent()` outside
+  `buildDigest`, so those events carry no `flagFootball` key; `digestData.flagFootballData`
+  now exists, so attaching it there is a scoped change rather than a blocked one.
+  (2) The two modules still answer "which season row is this occurrence?" by different rules
+  — `flagFootballIdentity.js` by ET date alone, `selectSeasonMilestone()` plus the
+  `seasonMilestone` node by (season row, week, date, start clock). **That divergence was
+  preserved through the rebase deliberately and verified after it**, not merged away: the
+  asymmetry is that a misfiring logo is invisible while a misfiring accent paints an approved
+  decoration onto the wrong row, so the strict one stays strict. Whether they should share a
+  resolver is now askable, and the answer is not obviously yes.
 
 - **✓ RESOLVED Sept 10, 2026 — `thisWeekTime` and `thisWeekOpponent` now come from one row.**
   This item was opened by a Reviewer pass against an earlier version of this same branch, which
@@ -4531,32 +5123,26 @@ enumerated under test, digest, and render directly to Node. No deployment.
   sets `isFlagGame`. Net: treat `vs. <opponent> · ` with a trailing separator as a state Codex
   should expect to render, not an exotic one.
 
-- **The approved Sept 20 flag football accent can no longer bind to any event on the calendar
-  (Sept 10, 2026).** Found while fixing the flag football subtitle, verified rather than
-  inferred, and **deliberately not fixed** — the entry is approved with dated provenance and
-  changing it needs Wade. `data/special-events.json`'s
-  `myles-flag-football-week1-2026-09-20` qualifies on a `calendarOccurrence` that is
-  `kind: "all-day"` with `titleMatch.mode: "literal"`, value
-  `"Flag Football: Week 1 — Practice + Game (Yorktown)"`, provenance "read live 2026-08-30".
-  The Myles calendar has since been rebuilt for the Williamsburg→Yorktown league merger
-  (Perfect Performance NOVA email, 8/17/26; the events' own `updated` stamps are 2026-09-10).
-  On 2026-09-20 it now carries a **timed** event (11:00–13:00) titled
-  `"Flag Football: Week 2 — vs Langston-Ravens (Home)"`; the Week 1 event moved to **Sept 13**
-  and is titled `"Flag Football: Week 1 — Meet & Greet"`. Measured against the shipped
-  predicate with a green control — `titleMatches(live, spec)` and `titleMatches(week1, spec)`
-  are both **false**, `titleMatches(spec.value, spec)` is **true** — so the node fails on the
-  title alone, and separately on `all-day` vs timed.
-  **This is the fail-closed design working, not a breakage**: the row renders ordinary, which
-  is exactly what "a range that stopped spanning both days fails closed rather than accenting a
-  changed event" promises. The open part is that an *approved, `enabled: true`* treatment is now
-  inert and nothing says so — and the same league merger moved the season, so the entry's
-  premise ("the first fall game", `label: "FIRST GAME"`) now points at Sept 13's Meet & Greet
-  or Sept 20's Week 2, not at what it was written against. Re-scoping it is a registry change
-  plus, per the Event-row Accent section, a fresh wash-clearance check: the `FIRST GAME` chip's
-  clearance depends on rendered title length, and both candidate titles differ in length from
-  the approved one. **Do that before Sept 19, 4:00 PM ET** if the accent is meant to be visible.
-  Note this is a *different* failure from the Known open item below, which is about the season
-  data being absent; both touch the same date and neither fixes the other.
+- **✓ RESOLVED Sept 11, 2026 — the dead Sept 20 accent is deleted and replaced by two
+  season-derived ones.** This item recorded that `myles-flag-football-week1-2026-09-20` was
+  approved, `enabled: true`, and **inert**: it qualified on an `all-day` `calendarOccurrence`
+  with `titleMatch.mode: "literal"` against `"Flag Football: Week 1 — Practice + Game
+  (Yorktown)"`, and the Myles calendar had since been rebuilt for the Williamsburg→Yorktown
+  merger so that Sept 20 carries a **timed** 11:00–13:00 event titled `"Flag Football: Week 2
+  — vs Langston-Ravens (Home)"`. It failed on two independent counts, the title and the kind.
+  The item said re-scoping it "needs Wade" and flagged **Sept 19, 4:00 PM ET** as the
+  deadline. That re-scoping is what shipped: the entry is **deleted rather than disabled**,
+  and two `seasonMilestone` entries replace it —
+  `myles-flag-football-week-1-season-opener-2026-09-13` (`SEASON OPENER`) and
+  `myles-flag-football-week-2-first-game-2026-09-20` (`FIRST GAME`) — both resolved from
+  `data/flag-football.json` and neither reading a calendar title. The item's own observation
+  that the entry's premise had moved is answered directly: the league numbers Sept 13 as
+  Week 1 and Sept 20 as Week 2, and the identifiers now say so.
+  **The fresh wash-clearance check the item required was done, and it did not come out where
+  the change first claimed** — see "Dropping `literal` here cost 2.8 points of contrast" above. Re-derived
+  on the rebased tree: both real titles measure 9.23:1, identical to an unaccented row; the
+  worst reachable title measures 6.41:1, which is **below** the WCAG AAA 7:1 this change
+  originally asserted it cleared.
 
 - **Frozen v1 now prints a derived flag football time beside a stale venue (Sept 10, 2026).**
   `render/dashboard.js:589` renders `${thisWeekTime || '3:00 PM'} · Williamsburg Christian
@@ -4570,6 +5156,54 @@ enumerated under test, digest, and render directly to Node. No deployment.
   available as `flagFootballDetails(event).venue`. Worth knowing that this is exactly the
   failure mode the Frozen surfaces section describes: a surface nobody reads produces no signal
   when it goes wrong.
+
+- **The flag-football season markers now depend on `data/flag-football.json`'s per-game clock
+  staying in step with the calendar (Sept 10, 2026).** The `seasonMilestone` join locates the
+  row to decorate by date *and* by the start time the schedule declares
+  (`practiceTime ?? time`). A league time change entered on Myles's calendar but not in the
+  JSON — or the reverse — silently drops both treatments to ordinary rows. That is the
+  deliberate mirror of the title-staleness this change removed, and it is the better side of
+  the trade (the JSON is Updater-managed and reviewed, where a calendar title gets retyped ad
+  hoc), but it is a **new standing obligation**: when the league moves a game time, update
+  `flag-football.json`, not just the calendar. Both directions fail closed to an ordinary row,
+  so the failure is silent. Worth revisiting if a third season-derived treatment lands and the
+  coupling starts costing more than it saves.
+
+- **Title-matched behaviour is a repo-wide failure class, and this change removed exactly one
+  instance of it (Sept 10, 2026).** Surveyed while replacing the flag-football accent, and
+  parked rather than fixed — each item needs its own scoping pass. The shape is always the
+  same: behaviour keyed on a calendar event's summary string, where a plausible human rename
+  silently changes what the dashboard does, and the failure is indistinguishable from "nothing
+  was configured". The six worth scoping first, in rough order of consequence:
+
+  1. **`render/first-day-level3.js:23`** — an exact string equality on
+     `'First Day of School (Myles and Ophelia)'` gates *an entire alternate dashboard page*.
+     No data file, no event id, no registry entry behind it. `dashboard-artifact/contract.js`
+     validates the artifact **given** the mode, so a takeover that fails to trigger passes
+     every check. The single most brittle site found.
+  2. **`digest/emmaUnavailabilityParser.js:24`** — a case-sensitive, em-dash-dependent regex
+     that is the sole source of Emma's unavailability blocks, which drive the amber coverage
+     flag and caregiver routine-anchor suppression. A hyphen instead of an em-dash yields zero
+     blocks, which reads exactly like "Emma is available".
+  3. **`digest/aliases.js:136` → `digest/flags.js` → `render/email.js:489`** — the
+     `'Robyn Maj'` exact key sets `isSoloEvening` (an amber flag), and the `/emma off/i`
+     matcher at `:244` sets a title literal that `email.js` then string-compares to render a
+     red alert box. Two hops of literal-string coupling for alert-level output.
+  4. **`digest/centersProfile.js:52`** — a fully-anchored two-capture regex extracts both the
+     child and the centre from `Myles: Art (Centers)`. `data/kids-profile.json` already carries
+     `centersRotation.sequence`, so a structured replacement exists. A miss shows empty days,
+     which is indistinguishable from a break week.
+  5. **`digest/routineEventPolicy.js:6-9`** — one GK-training regex suppresses an event from
+     the overlap flag and five NOW/NEXT candidate types. No data file behind it.
+  6. **`scripts/orchestrate/occ-aging.mjs:157`** — a normalized title is the cross-week
+     identity key, so a reworded OCC item silently resets its age and escapes a DEAD verdict.
+     The file documents this itself.
+
+  `digest/aliases.js` as a whole is title-keyed by construction (18 sites), and
+  `analyzeEventSemantics()` in `render/dashboard-v2.js` runs ~25 title regexes — but that block
+  degrades gracefully (a miss demotes a score rather than dropping a card) and is a different,
+  lower-priority problem. **Note the two counter-examples worth copying:** `calendar.js:164`
+  keys on a calendar id, and `aliases.js:302` gates the menu card on a calendar *name*.
 
 
 - **Fall 2026 flag football standings are not a division table, and the new tie column is
@@ -4636,8 +5270,8 @@ enumerated under test, digest, and render directly to Node. No deployment.
   on the same defect. Whether the derivation lands in `digest/` or is handed to the presentation
   side is a scoping call for the coordinating chat.
 
-- **✓ MOSTLY RESOLVED Sept 10, 2026 — the fall-2026 season exists; the accent half is still open,
-  and for a different reason than this item gave.** `data/flag-football.json` now carries
+- **✓ RESOLVED — the fall-2026 season exists (Sept 10, 2026) and the accent half followed a day
+  later, for a different reason than this item gave.** `data/flag-football.json` now carries
   `fall-2026` and `sports-config.json` names the fall window, so `flagFootballActive` is **true**,
   `seasonLabel` is `Fall 2026`, the record is `0-0-0`, and the `parseFlagFootball` fallback to
   `seasons[last]` — with its stale `Spring 2026` / `5-0` values — is no longer taken. The three
@@ -4645,17 +5279,16 @@ enumerated under test, digest, and render directly to Node. No deployment.
   deleted**: they now pin the current season and the fall window. See the changelog entry at the
   top of this file. **The item's ordering trap held true and was avoided:** the season entry and
   the window moved in the same commit, so the fallback's stale record was never surfaced.
-  **What is still open is the accent, and this item mis-stated why.** It implied the accent would
-  start working once a season existed. It will not, and the season was never the reason: the
-  approved accent `myles-flag-football-week1-2026-09-20` matches
-  `titleMatch.mode: "literal"` on `"Flag Football: Week 1 — Practice + Game (Yorktown)"` at date
-  2026-09-20, and **no such calendar event exists**. Read live from the Myles calendar on
-  2026-09-10, Sept 20 carries `"Flag Football: Week 2 — vs Langston-Ravens (Home)"`, and Week 1 is
-  Sept 13, titled `"Flag Football: Week 1 — Meet & Greet"`. So the accent **fails closed** to an
-  ordinary row — which is the designed behaviour and causes no breakage, but means the approved
-  FIRST GAME treatment will simply not appear. Fixing it is a `data/special-events.json` change to
-  an approved treatment (retarget the date and the literal title, or retire it), which is a
-  scoping decision for the coordinating chat, not a data update. The superseded item follows.
+  **✓ The accent half is now resolved too (Sept 11, 2026).** This item correctly
+  identified that `myles-flag-football-week1-2026-09-20` was matching a literal title that no
+  longer existed, and that the accent therefore failed closed to an ordinary row. It proposed
+  retargeting the date and the literal title. **That fix was declined in favour of removing the
+  dependency**: retargeting a literal would have reset the clock on the same defect, and the
+  titles will change again — the league reschedules and Wade edits these events himself. The
+  entry was replaced by two `seasonMilestone` treatments resolved from
+  `data/flag-football.json`, one for the season opener (Sept 13) and one for the first game
+  (Sept 20), neither of which reads a calendar title at all. See **Season-derived treatments**
+  and the changelog entry at the top of this file. The superseded item follows.
 
 - **[HISTORICAL — see above] Myles has no fall-2026 flag football season, so an approved Sept 20 accent fires against an
   inactive sport (Sept 10, 2026).** Surfaced by an independent Reviewer pass, not by the change

@@ -26,6 +26,10 @@ mkdirSync(outDir, { recursive: true });
 const readJson = name => JSON.parse(readFileSync(new URL(`../data/${name}`, import.meta.url), 'utf8'));
 const REGISTRY = readJson('special-events.json');
 const SHARKS = readJson('sharks-soccer.json');
+// The two flag-football accents resolve from the season schedule, so a run that
+// omits this renders them as ordinary rows — pictures that look like the feature
+// is broken.
+const FLAG_SEASON = JSON.parse(readFileSync(new URL('../data/flag-football.json', import.meta.url), 'utf8'));
 
 // Generation instants. FRIDAY_GEN is the 12:10 PM ET generation on Friday the
 // 18th: both accented rows are in the two-week lookahead there, so the states
@@ -88,6 +92,7 @@ for (const state of STATES) {
     now: state.generatedAt,
     specialEventsConfig: REGISTRY,
     sharksSoccerData: SHARKS,
+    flagFootballData: FLAG_SEASON,
     familySpotlight: state.familySpotlight ?? true,
   });
   await page.setContent(renderDashboardV2(data), { waitUntil: 'load' });

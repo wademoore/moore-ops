@@ -18,12 +18,17 @@ const SPORTS = 'https://example.lambda-url.us-east-2.on.aws/';
 const readJson = name => JSON.parse(readFileSync(new URL(`../../data/${name}`, import.meta.url), 'utf8'));
 const REGISTRY = readJson('special-events.json');
 const SHARKS = readJson('sharks-soccer.json');
+const FLAG_SEASON = readJson('flag-football.json');
 
 const BOTH_ROWS = Date.parse('2026-09-18T20:00:00Z');   // Fri 4:00 PM ET
-const AFTER_ALL = Date.parse('2026-09-21T01:00:00Z');   // past the 8:00 PM ET expiry
+// Past every expiry in play: the swim accent's all-day 8:00 PM ET one, and
+// the two timed flag-football ones (3:00 PM and 2:30 PM ET on their own days).
+const AFTER_ALL = Date.parse('2026-09-21T01:00:00Z');
 
 const accentData = (now, overrides = {}) => ({
-  ...eventRowAccentSampleData({ now, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS, ...overrides }),
+  ...eventRowAccentSampleData({
+    now, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS, flagFootballData: FLAG_SEASON, ...overrides,
+  }),
   sportsFeedUrl: SPORTS,
 });
 

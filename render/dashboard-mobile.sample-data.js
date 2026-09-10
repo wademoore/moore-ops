@@ -34,7 +34,13 @@ export function mobilePreviewStates() {
   const special = specialEventsSampleData({ now: '2026-09-12T10:00:00-04:00', specialEventsConfig, sharksSoccerData });
   special.householdGeneratedAt = special.now.toISOString();
   special.nowNext = selectNowNext(special, { now: special.now });
-  const accented = eventRowAccentSampleData({ now: '2026-09-18T17:00:00-04:00', specialEventsConfig });
+  // Both season files, not just the new one: this fixture had been passing
+  // neither, so its `event-accents` preview carried whatever the selector could
+  // resolve without them. flagFootballData is what the two flag-football
+  // accents qualify from; sharksSoccerData is added alongside it so the preview
+  // exercises the same inputs production does rather than a subset.
+  const flagFootballData = JSON.parse(readFileSync(new URL('../data/flag-football.json', import.meta.url), 'utf8'));
+  const accented = eventRowAccentSampleData({ now: '2026-09-18T17:00:00-04:00', specialEventsConfig, sharksSoccerData, flagFootballData });
   accented.householdGeneratedAt = accented.now.toISOString();
   accented.nowNext = selectNowNext(accented, { now: accented.now });
   return {

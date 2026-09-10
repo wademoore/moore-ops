@@ -1,7 +1,16 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseFlagFootball, formatClockTime } from '../digest/flagFootballParser.js';
+import { readFileSync } from 'node:fs';
+
+import {
+  MILESTONE_FIXTURE_FIELDS,
+  NON_GAME_TYPES,
+  SEASON_MILESTONES,
+  formatClockTime,
+  parseFlagFootball,
+  selectSeasonMilestone,
+} from '../digest/flagFootballParser.js';
 
 // ── Fixture ───────────────────────────────────────────────────────────────────
 // Spring 2026 season shape. Cowboys are myTeamAbbr.
@@ -448,5 +457,150 @@ describe('thisWeekOpponent / thisWeekTime — one fixture, never two', () => {
     const r = parseFlagFootball(legacy, new Date(2026, 8, 10));
     assert.equal(r.thisWeekOpponent, 'Eagles');
     assert.equal(r.thisWeekTime, null);
+  });
+});
+
+// ── Season milestones ────────────────────────────────────────────────────────
+
+describe('selectSeasonMilestone', () => {
+  const REAL = JSON.parse(readFileSync(new URL('../data/flag-football.json', import.meta.url), 'utf8'));
+
+  /** A minimal two-season file; `games` rows carry only the fields read. */
+  const seasonFile = (games, seasonId = 's') => ({
+    seasons: [
+      { seasonId: 'other', games: [{ week: 1, date: '2020-01-01', type: 'regular', time: '09:00' }] },
+      { seasonId, games },
+    ],
+  });
+
+  it('exposes the milestone vocabulary, and returns a row projected to the immutable columns', () => {
+    assert.deepEqual(SEASON_MILESTONES, ['season-opener', 'first-game']);
+    assert.deepEqual(MILESTONE_FIXTURE_FIELDS, ['date', 'week', 'type', 'practiceTime', 'time']);
+    // The list is applied, not merely declared: a caller cannot reach `status`,
+    // a score, or either team id, because they are not on the returned object.
+    const { row } = selectSeasonMilestone(REAL, 'fall-2026', 'first-game');
+    assert.deepEqual(Object.keys(row).sort(), [...MILESTONE_FIXTURE_FIELDS].sort());
+    for (const mutable of ['status', 'homeScore', 'awayScore', 'home', 'away', 'field', 'label']) {
+      assert.ok(!(mutable in row), `${mutable} must not be reachable from a milestone row`);
+    }
+    // And the source row really does carry them, so this is not vacuous.
+    const source = REAL.seasons.find(s => s.seasonId === 'fall-2026').games.find(g => g.week === 2);
+    for (const mutable of ['status', 'homeScore', 'awayScore', 'home', 'away']) {
+      assert.ok(mutable in source, `the fixture must carry ${mutable} for the projection to be meaningful`);
+    }
+  });
+
+  it('resolves the season opener as the first event of any type', () => {
+    const result = selectSeasonMilestone(REAL, 'fall-2026', 'season-opener');
+    assert.equal(result.ok, true);
+    assert.equal(result.row.week, 1);
+    assert.equal(result.row.date, '2026-09-13');
+    assert.equal(result.row.type, 'practice', 'the opener is the Meet & Greet practice, and that is the point');
+    assert.equal(result.startsAtEt, '11:00');
+  });
+
+  it('resolves the first game as the first non-practice fixture', () => {
+    const result = selectSeasonMilestone(REAL, 'fall-2026', 'first-game');
+    assert.equal(result.ok, true);
+    assert.equal(result.row.week, 2);
+    assert.equal(result.row.date, '2026-09-20');
+    assert.equal(result.row.type, 'regular');
+    assert.equal(result.startsAtEt, '11:00', 'the calendar event opens with the practice hour');
+  });
+
+  it('separates the two milestones using the type column already in the data', () => {
+    // Not a re-derivation from the label, the opponent, or a null score: the
+    // practice/game distinction has one definition, NON_GAME_TYPES, and this
+    // proves the resolver is keyed on it. Flip the opener's type to a fixture
+    // type and `first-game` moves to it.
+    assert.deepEqual([...NON_GAME_TYPES], ['practice']);
+    const games = [
+      { week: 1, date: '2026-09-13', type: 'practice', practiceTime: '11:00' },
+      { week: 2, date: '2026-09-20', type: 'regular', practiceTime: '11:00', time: '12:00' },
+    ];
+    assert.equal(selectSeasonMilestone(seasonFile(games), 's', 'first-game').row.week, 2);
+
+    const promoted = [{ ...games[0], type: 'regular' }, games[1]];
+    assert.equal(selectSeasonMilestone(seasonFile(promoted), 's', 'first-game').row.week, 1);
+  });
+
+  it('reads only immutable fixture columns, so a played game resolves identically', () => {
+    // The treatment must stay valid mid-event. Mutating every result-bearing
+    // column must not move either milestone — the same rule sportsFixture
+    // already follows for the Sharks schedule.
+    const played = JSON.parse(JSON.stringify(REAL));
+    for (const season of played.seasons) {
+      for (const game of season.games || []) {
+        Object.assign(game, { status: 'final', homeScore: 21, awayScore: 7, home: 1, away: 2, field: 'X', label: 'changed' });
+      }
+    }
+    for (const milestone of SEASON_MILESTONES) {
+      assert.deepEqual(
+        selectSeasonMilestone(played, 'fall-2026', milestone).row.week,
+        selectSeasonMilestone(REAL, 'fall-2026', milestone).row.week,
+        milestone,
+      );
+    }
+  });
+
+  it('derives the clock from the practice when there is one and the game otherwise', () => {
+    const withPractice = [{ week: 1, date: '2026-09-13', type: 'regular', practiceTime: '11:00', time: '12:00' }];
+    assert.equal(selectSeasonMilestone(seasonFile(withPractice), 's', 'first-game').startsAtEt, '11:00');
+
+    const gameOnly = [{ week: 1, date: '2026-09-13', type: 'regular', practiceTime: null, time: '12:00' }];
+    assert.equal(selectSeasonMilestone(seasonFile(gameOnly), 's', 'first-game').startsAtEt, '12:00');
+
+    const allDay = [{ week: 1, date: '2026-09-13', type: 'regular', practiceTime: null, time: null }];
+    assert.equal(selectSeasonMilestone(seasonFile(allDay), 's', 'first-game').startsAtEt, null,
+      'no clock means the caller should expect an all-day occurrence');
+  });
+
+  it('coincides on a season that opens with a game, rather than inventing a difference', () => {
+    const games = [{ week: 1, date: '2026-09-13', type: 'regular', time: '12:00' }];
+    const opener = selectSeasonMilestone(seasonFile(games), 's', 'season-opener');
+    const first = selectSeasonMilestone(seasonFile(games), 's', 'first-game');
+    assert.equal(opener.ok && first.ok, true);
+    assert.equal(opener.row.week, first.row.week);
+  });
+
+  it('fails closed rather than guessing', () => {
+    const cases = [
+      ['milestone-unknown', selectSeasonMilestone(REAL, 'fall-2026', 'last-game')],
+      ['season-not-found', selectSeasonMilestone(REAL, 'no-such-season', 'first-game')],
+      ['season-not-found', selectSeasonMilestone(null, 'fall-2026', 'first-game')],
+      ['season-not-found', selectSeasonMilestone({}, 'fall-2026', 'first-game')],
+      ['season-not-found', selectSeasonMilestone({ seasons: [{ seasonId: 'd' }, { seasonId: 'd' }] }, 'd', 'first-game')],
+      ['milestone-not-found', selectSeasonMilestone(seasonFile([]), 's', 'season-opener')],
+      ['milestone-not-found', selectSeasonMilestone(
+        seasonFile([{ week: 1, date: '2026-09-13', type: 'practice' }]), 's', 'first-game')],
+      ['milestone-not-found', selectSeasonMilestone(
+        seasonFile([{ week: 1, date: 'not-a-date', type: 'regular' }]), 's', 'season-opener')],
+      ['milestone-ambiguous', selectSeasonMilestone(seasonFile([
+        { week: 1, date: '2026-09-13', type: 'regular', time: '09:00' },
+        { week: 2, date: '2026-09-13', type: 'regular', time: '12:00' },
+      ]), 's', 'first-game')],
+    ];
+    for (const [reason, result] of cases) {
+      assert.equal(result.ok, false, reason);
+      assert.equal(result.reason, reason);
+    }
+  });
+
+  it('is order-independent within the season', () => {
+    const games = [
+      { week: 3, date: '2026-09-27', type: 'regular', time: '14:00' },
+      { week: 1, date: '2026-09-13', type: 'practice', practiceTime: '11:00' },
+      { week: 2, date: '2026-09-20', type: 'regular', practiceTime: '11:00', time: '12:00' },
+    ];
+    assert.equal(selectSeasonMilestone(seasonFile(games), 's', 'season-opener').row.week, 1);
+    assert.equal(selectSeasonMilestone(seasonFile(games), 's', 'first-game').row.week, 2);
+  });
+
+  it('never selects a later week of the shipped season', () => {
+    const weeks = REAL.seasons.find(s => s.seasonId === 'fall-2026').games.map(g => g.week);
+    assert.deepEqual(weeks, [1, 2, 3, 4, 5, 6]);
+    const selected = SEASON_MILESTONES.map(m => selectSeasonMilestone(REAL, 'fall-2026', m).row.week);
+    assert.deepEqual(selected, [1, 2]);
+    for (const week of [3, 4, 5, 6]) assert.ok(!selected.includes(week), `week ${week} must never be a milestone`);
   });
 });

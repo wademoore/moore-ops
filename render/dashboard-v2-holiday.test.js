@@ -19,6 +19,7 @@ const readJson = name => JSON.parse(readFileSync(new URL(`../data/${name}`, impo
 const HOLIDAY_REGISTRY = readJson('holiday-themes.json');
 const SPECIAL_EVENTS = readJson('special-events.json');
 const SHARKS = readJson('sharks-soccer.json');
+const FLAG_SEASON = JSON.parse(readFileSync(new URL('../data/flag-football.json', import.meta.url), 'utf8'));
 
 const ACTIVATE = Date.parse('2026-10-24T20:00:00Z');
 const EXPIRE = Date.parse('2026-11-01T09:00:00Z');
@@ -393,8 +394,15 @@ describe('holiday theme — composition with the treatment layers', () => {
       now: Date.parse('2026-09-18T16:10:00Z'),
       specialEventsConfig: SPECIAL_EVENTS,
       sharksSoccerData: SHARKS,
+      flagFootballData: FLAG_SEASON,
     });
     const withoutTheme = renderDashboardV2({ ...base, paletteMode: 'day' });
+    // Pin the accent COUNT, not just "> 0". This fixture silently narrowed from
+    // two accented rows to one when eventRowAccentSampleData gained a
+    // flagFootballData parameter this file did not pass — and a `> 0` assertion
+    // stayed green through it. Two is the real coexistence case.
+    assert.equal((withoutTheme.match(/data-accent-id="/g) || []).length, 2,
+      'the coexistence case needs both accents present to be worth asserting');
     const withTheme = renderDashboardV2({
       ...base,
       paletteMode: 'day',

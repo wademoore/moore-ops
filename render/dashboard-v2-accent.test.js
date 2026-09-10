@@ -19,22 +19,33 @@ const REGISTRY = readJson('special-events.json');
 const SHARKS = readJson('sharks-soccer.json');
 
 const SWIM_ID = 'ophelia-757swim-catch-em-all-1-2026-09-19';
-const FLAG_ID = 'myles-flag-football-week1-2026-09-20';
+const OPENER_ID = 'myles-flag-football-week-1-season-opener-2026-09-13';
+const GAME_ID = 'myles-flag-football-week-2-first-game-2026-09-20';
 
 const BOTH_STAGED = Date.parse('2026-09-18T12:00:00Z');   // Fri 8:00 AM ET
 const SWIM_VISIBLE = Date.parse('2026-09-18T20:00:00Z');  // Fri 4:00 PM ET
-const FLAG_VISIBLE = Date.parse('2026-09-19T20:00:00Z');  // Sat 4:00 PM ET
-const BEFORE_ALL = Date.parse('2026-09-10T12:00:00Z');    // outside both inclusion windows
-const AFTER_ALL = Date.parse('2026-09-21T01:00:00Z');     // after the shared 8:00 PM ET expiry
+const GAME_VISIBLE = Date.parse('2026-09-19T20:00:00Z');  // Sat 4:00 PM ET
+const OPENER_VISIBLE = Date.parse('2026-09-12T20:00:00Z'); // Sat 4:00 PM ET, a week earlier
+// Before EVERY inclusion window: the season opener's 48h lead opens on
+// 2026-09-10T20:00Z, so a Sept 11 probe would already carry it staged.
+const BEFORE_ALL = Date.parse('2026-09-08T12:00:00Z');
+const AFTER_ALL = Date.parse('2026-09-21T01:00:00Z');     // after the last expiry
 
-/** Registry with the two accents removed — i.e. the registry before this work. */
+// The two timed flag-football expiries are the occurrence's own end plus two
+// hours; the swim meet is all-day and expires at 8:00 PM ET on its final day.
+const SWIM_EXPIRE = Date.parse('2026-09-21T00:00:00Z');
+const GAME_EXPIRE = Date.parse('2026-09-20T19:00:00Z');
+
+/** Registry with all three accents removed — i.e. the Spotlight-only registry. */
 const REGISTRY_WITHOUT_ACCENTS = {
   ...REGISTRY,
   treatments: REGISTRY.treatments.filter(t => t.level !== 'accent'),
 };
 
+const FLAG_SEASON = readJson('flag-football.json');
+
 const dataAt = (now, overrides = {}) => eventRowAccentSampleData({
-  now, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS, ...overrides,
+  now, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS, flagFootballData: FLAG_SEASON, ...overrides,
 });
 
 const documentAt = (now, overrides) => renderDashboardV2(dataAt(now, overrides));
@@ -54,8 +65,8 @@ function markupRegion(html) {
 
 describe('event-row accent — ordinary output is unchanged when no accent resolves', () => {
   for (const [label, now] of [
-    ['before either accent is included', BEFORE_ALL],
-    ['after both accents have expired', AFTER_ALL],
+    ['before any accent is included', BEFORE_ALL],
+    ['after every accent has expired', AFTER_ALL],
   ]) {
     it(`renders byte-identically to a registry with no accents ${label}`, () => {
       assert.equal(
@@ -67,13 +78,13 @@ describe('event-row accent — ordinary output is unchanged when no accent resol
 
   it('renders byte-identically with the kill switch off, on a date both accents would cover', () => {
     assert.equal(
-      documentAt(FLAG_VISIBLE, { familySpotlight: false }),
-      documentAt(FLAG_VISIBLE, { familySpotlight: false, specialEventsConfig: REGISTRY_WITHOUT_ACCENTS }),
+      documentAt(GAME_VISIBLE, { familySpotlight: false }),
+      documentAt(GAME_VISIBLE, { familySpotlight: false, specialEventsConfig: REGISTRY_WITHOUT_ACCENTS }),
     );
   });
 
   it('emits no accent element when the switch is off, even while both would otherwise qualify', () => {
-    const { text } = markupRegion(documentAt(FLAG_VISIBLE, { familySpotlight: false }));
+    const { text } = markupRegion(documentAt(GAME_VISIBLE, { familySpotlight: false }));
     for (const marker of ['data-accent-id', 'has-accent', 'accent-wash', 'accent-doodle', 'accent-label', 'FIRST GAME']) {
       assert.ok(!text.includes(marker), `switch-off output leaked ${marker}`);
     }
@@ -104,7 +115,7 @@ describe('event-row accent — decorated rows', () => {
     const html = documentAt(SWIM_VISIBLE);
     assert.equal((html.match(/data-accent-id="/g) || []).length, 2);
     assert.ok(html.includes(`data-accent-id="${SWIM_ID}"`));
-    assert.ok(html.includes(`data-accent-id="${FLAG_ID}"`));
+    assert.ok(html.includes(`data-accent-id="${GAME_ID}"`));
     // One accented row per accent, and the same number of Upcoming rows as the
     // ordinary render produces.
     const ordinary = documentAt(SWIM_VISIBLE, { specialEventsConfig: REGISTRY_WITHOUT_ACCENTS });
@@ -119,9 +130,9 @@ describe('event-row accent — decorated rows', () => {
     // so its row is gone and only the flag-football row remains to accent —
     // even though the swim accent is still `live` and still in the artifact.
     // An accent decorates rows that exist; it never re-creates a departed one.
-    const html = documentAt(FLAG_VISIBLE);
+    const html = documentAt(GAME_VISIBLE);
     assert.equal((html.match(/data-accent-id="/g) || []).length, 1);
-    assert.ok(html.includes(`data-accent-id="${FLAG_ID}"`));
+    assert.ok(html.includes(`data-accent-id="${GAME_ID}"`));
     assert.ok(!html.includes(`data-accent-id="${SWIM_ID}"`));
     assert.ok(!html.includes('Catch &#39;Em All Series'), 'the meet is today, so it is not in the lookahead');
   });
@@ -133,16 +144,16 @@ describe('event-row accent — decorated rows', () => {
     // Sunday copy — Sunday's group carries the flag-football row only.
     assert.equal((html.match(/Catch &#39;Em All Series/g) || []).length, 1);
     const sunday = html.slice(html.indexOf('<b>20</b>'), html.indexOf('<b>21</b>'));
-    assert.ok(sunday.includes('Flag Football: Week 1'));
+    assert.ok(sunday.includes('Flag Football: Week 2'));
     assert.ok(!sunday.includes('Catch &#39;Em All Series'));
     assert.equal((html.match(/data-accent-id="ophelia-757swim[^"]*"/g) || []).length, 1);
   });
 
   it('keeps the row text, detail line and semantic mark exactly as ordinary', () => {
     const html = renderUpcoming(dataAt(SWIM_VISIBLE));
-    const row = html.slice(html.indexOf(`data-accent-id="${FLAG_ID}"`));
-    assert.ok(row.includes('<strong>Flag Football: Week 1 — Practice + Game (Yorktown)</strong>'));
-    assert.ok(row.includes('<span>All day</span>'));
+    const row = html.slice(html.indexOf(`data-accent-id="${GAME_ID}"`));
+    assert.ok(row.includes('<strong>Flag Football: Week 2 — vs Langston-Ravens (Home)</strong>'));
+    assert.ok(row.includes('<span>11:00 AM</span>'));
     // The doodle is decoration; the row keeps the semantic sports mark the
     // ordinary renderer gave it, and gains no logo.
     assert.ok(row.includes('class="upcoming-logo semantic-icon category-sports"'));
@@ -153,7 +164,7 @@ describe('event-row accent — decorated rows', () => {
     assert.ok(html.includes(`data-accent-id="${SWIM_ID}"`));
     const rowClass = id => new RegExp(`class="upcoming-event has-accent accent-tone-(\\w+)" data-accent-id="${id}"`).exec(html)?.[1];
     assert.equal(rowClass(SWIM_ID), 'purple');
-    assert.equal(rowClass(FLAG_ID), 'red');
+    assert.equal(rowClass(GAME_ID), 'red');
     // The v1 champs-banner lineage must not appear in accent markup.
     assert.doesNotMatch(html, /#7F77DD|#E24B4A/i);
   });
@@ -163,6 +174,7 @@ describe('event-row accent — decorated rows', () => {
     assert.equal((html.match(/<b class="accent-label">/g) || []).length, 1);
     assert.ok(html.includes('<b class="accent-label">FIRST GAME</b>'));
     assert.ok(!html.includes('MEET WEEKEND'));
+    assert.ok(!html.includes('SEASON OPENER'), 'the opener is a week earlier and is not in this artifact');
     // No celebration vocabulary, animation, or flashing anywhere in the CSS or
     // markup this feature added.
     for (const banned of ['confetti', '@keyframes accent', 'animation:accent', 'blink']) {
@@ -178,9 +190,28 @@ describe('event-row accent — decorated rows', () => {
 
   it('emits the absolute instants the controller compares, and nothing timezone-shaped', () => {
     const html = documentAt(SWIM_VISIBLE);
-    assert.ok(html.includes(`data-accent-activate-at="${Date.parse('2026-09-18T20:00:00Z')}"`));
-    assert.ok(html.includes(`data-accent-activate-at="${Date.parse('2026-09-19T20:00:00Z')}"`));
-    assert.equal((html.match(new RegExp(`data-accent-expire-at="${Date.parse('2026-09-21T00:00:00Z')}"`, 'g')) || []).length, 2);
+    assert.ok(html.includes(`data-accent-activate-at="${SWIM_VISIBLE}"`));
+    assert.ok(html.includes(`data-accent-activate-at="${GAME_VISIBLE}"`));
+    // UPDATED (2026-09-10): the two accents no longer share one expiry. The
+    // flag-football occurrence is timed on the live calendar, so its treatment
+    // takes the framework's timed expiry (its own end plus two hours) where
+    // its all-day predecessor took the 8:00 PM ET one. Both are still emitted
+    // as bare integers, which is the property this case exists for.
+    assert.ok(html.includes(`data-accent-expire-at="${SWIM_EXPIRE}"`));
+    assert.ok(html.includes(`data-accent-expire-at="${GAME_EXPIRE}"`));
+    assert.doesNotMatch(html, /data-accent-(activate|expire)-at="[^"]*[^0-9"][^"]*"/,
+      'every instant must be a bare integer, with no timezone text');
+  });
+
+  it('renders the season opener a week earlier, distinguishable by its chip', () => {
+    // The two flag-football treatments never appear in the same artifact, so
+    // the chip is what tells a reader which moment is being marked.
+    const html = documentAt(OPENER_VISIBLE);
+    assert.equal((html.match(/data-accent-id="/g) || []).length, 1);
+    assert.ok(html.includes(`data-accent-id="${OPENER_ID}"`));
+    assert.ok(html.includes('<b class="accent-label">SEASON OPENER</b>'));
+    assert.ok(!html.includes('FIRST GAME'));
+    assert.ok(html.includes('accent-doodle accent-doodle-football-laces'));
   });
 
   it('stages both accents in one artifact well before either becomes visible', () => {
@@ -239,49 +270,89 @@ describe('event-row accent — containment and fail-closed', () => {
   it('falls back to an ordinary row when the selector throws', () => {
     // A getter that throws stands in for any unexpected failure inside
     // resolution. The panel must still render, unaccented.
-    const data = dataAt(FLAG_VISIBLE);
+    const data = dataAt(GAME_VISIBLE);
     Object.defineProperty(data, 'specialEventsConfig', {
       get() { throw new Error('registry exploded'); },
       configurable: true,
     });
     const html = renderUpcoming(data);
-    assert.ok(html.includes('Flag Football: Week 1'));
+    assert.ok(html.includes('Flag Football: Week 2'));
     assert.ok(!html.includes('data-accent-id'));
   });
 
   it('falls back to an ordinary row when the doodle artwork is unknown', () => {
     const badDoodle = {
       ...REGISTRY,
-      treatments: REGISTRY.treatments.map(t => (t.id === FLAG_ID
+      treatments: REGISTRY.treatments.map(t => (t.id === GAME_ID
         ? { ...t, presentation: { ...t.presentation, doodle: 'nonexistent-doodle' } }
         : t)),
     };
     const html = renderUpcoming(dataAt(SWIM_VISIBLE, { specialEventsConfig: badDoodle }));
-    assert.ok(html.includes('Flag Football: Week 1'));
-    assert.ok(!html.includes(`data-accent-id="${FLAG_ID}"`));
+    assert.ok(html.includes('Flag Football: Week 2'));
+    assert.ok(!html.includes(`data-accent-id="${GAME_ID}"`));
     assert.ok(html.includes(`data-accent-id="${SWIM_ID}"`), 'one invalid accent must not disable the other');
   });
 
-  it('falls back to an ordinary row when the title grows past the approved one', () => {
-    // The exact probe from the review: the same event, still on the same
-    // calendar and date, with the venue spelled out. Under `prefix` matching
-    // this still qualified and drew text over the wash; under `literal` it
-    // fails closed and the row renders ordinary until someone revalidates the
-    // treatment against the new title.
+  it('falls back to an ordinary row when the SWIM title grows past the approved one', () => {
+    // UPDATED (2026-09-10): retargeted from the flag-football accent to the
+    // swim accent, which is the one still anchored on a calendar title. The
+    // probe is unchanged in kind — the same event, still on the same calendar
+    // and date, with the venue spelled out — and `literal` still fails it
+    // closed. The sibling case below is the deliberate opposite for the
+    // flag-football accents, and says why.
     const longer = {
-      ...ACCENT_OCCURRENCES.flagFootball,
-      title: 'Flag Football: Week 1 — Practice + Game (Yorktown, McReynolds Athletic Complex, Field 3)',
+      ...ACCENT_OCCURRENCES.swim,
+      title: "757swim: Catch 'Em All Series #1 - 200 Back (Christiansburg Aquatic Center, Session 2)",
+    };
+    const html = renderUpcoming(dataAt(SWIM_VISIBLE, { occurrences: [longer, ACCENT_OCCURRENCES.flagFootballFirstGame] }));
+    assert.ok(html.includes('Christiansburg Aquatic Center'), 'the ordinary row must still be drawn');
+    assert.ok(!html.includes(`data-accent-id="${SWIM_ID}"`), 'the longer title must not be accented');
+    assert.ok(html.includes(`data-accent-id="${GAME_ID}"`), 'the unrelated accent is unaffected');
+  });
+
+  it('still accents a flag-football row whose title grew, and that is the trade', () => {
+    // The deliberate inverse of the case above, recorded as a test rather than
+    // as a caveat. `literal` matching bought a rendered-width guarantee at the
+    // cost of a treatment that died on every rename; the season-derived nodes
+    // take the opposite side of that trade.
+    //
+    // The cost was measured rather than argued
+    // (scratch/flag-football-season-markers/measure-contrast.mjs): the wash is
+    // fully transparent across the left 46% of the row and ramps rightwards, so
+    // a title reaching past that boundary sits over tinted paper. The sweep
+    // grows a title a word at a time and records the lowest contrast anywhere
+    // along it; the minimum is BOUNDED rather than open-ended, bottoming out at
+    // 6.41:1 near 109 characters and plateauing at 6.52:1 (beyond ~114 the
+    // title wraps instead of extending). Ordinary is 9.23:1 and WCAG AAA for
+    // normal text is 7:1 — so the worst REACHABLE title is BELOW AAA and above
+    // AA (4.5:1). The realistic cases measure 9.00:1 and 8.64:1, and both real
+    // titles (36 and 49 characters) measure 9.23:1, identical to an unaccented
+    // row: at the shipped titles the accent costs nothing at all.
+    //
+    // Read that carefully, because an earlier version of this very comment drew
+    // the opposite conclusion. It said "what `literal` was protecting is
+    // contrast headroom, not legibility", on figures of 7.32:1 and 10.80:1 that
+    // the shipped script has never produced — on this tree or on the pre-rebase
+    // commit 3eee432. At 6.41:1 the worst reachable title crosses the AAA bar
+    // the project asserted it cleared, so `literal` was protecting the
+    // THRESHOLD, not merely headroom. Whether that is an acceptable price for a
+    // treatment a rename cannot kill is Wade's call; this comment must not
+    // foreclose it again. Nothing here asserts a contrast ratio, so no test can
+    // go red on a wrong number — which is exactly why it has to be re-derived
+    // from a run rather than carried forward.
+    const longer = {
+      ...ACCENT_OCCURRENCES.flagFootballFirstGame,
+      title: 'Flag Football: Week 2 — Practice + Game (Yorktown, McReynolds Athletic Complex, Field 3)',
     };
     const html = renderUpcoming(dataAt(SWIM_VISIBLE, { occurrences: [ACCENT_OCCURRENCES.swim, longer] }));
-    assert.ok(html.includes('McReynolds Athletic Complex'), 'the ordinary row must still be drawn');
-    assert.ok(!html.includes(`data-accent-id="${FLAG_ID}"`), 'the longer title must not be accented');
-    assert.ok(!html.includes('FIRST GAME'));
-    assert.ok(html.includes(`data-accent-id="${SWIM_ID}"`), 'the unrelated accent is unaffected');
+    assert.ok(html.includes('McReynolds Athletic Complex'), 'the ordinary row text is untouched');
+    assert.ok(html.includes(`data-accent-id="${GAME_ID}"`), 'the renamed row is still accented');
+    assert.ok(html.includes('FIRST GAME'));
   });
 
   it('falls back to an ordinary row when the occurrence is simply absent', () => {
     const html = renderUpcoming(dataAt(SWIM_VISIBLE, { occurrences: [ACCENT_OCCURRENCES.swim] }));
-    assert.ok(!html.includes(`data-accent-id="${FLAG_ID}"`));
+    assert.ok(!html.includes(`data-accent-id="${GAME_ID}"`));
     assert.ok(html.includes(`data-accent-id="${SWIM_ID}"`));
   });
 });
