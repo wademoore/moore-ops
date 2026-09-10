@@ -553,11 +553,14 @@ test('the mobile path\'s default duration bound fits inside the deployed invocat
   const invocation = template.Resources.GeneratorFunction.Properties.Timeout * 1000;
   assert.ok(bound > 0 && bound < invocation, `mobile bound ${bound}ms must be inside the ${invocation}ms invocation`);
   // The constant must be the DEFAULT, not merely a constant that happens to
-  // exist. That is a property of the signature, and only the signature: an
-  // explicit `mobileTimeoutMs` argument always beats a destructuring default,
-  // so no call this test could make would observe the default at all. The
-  // 66ms case above already proves the bound is applied; this proves the
-  // applied bound is the constant. Asserted on the signature rather than the
+  // exist. A call that OMITS mobileTimeoutMs does observe the default — that
+  // is precisely the call shape a destructuring default is visible to — so the
+  // reason this is a source assertion is cost, not impossibility. Observing it
+  // means waiting out the whole bound: measured at 60,065 ms, in a file whose
+  // other tests together run in under five seconds, and the mutation harness
+  // runs this file 26 times. The hanging-mobile case above already carries the
+  // behavioural half by proving the bound is applied at all; this pins the
+  // applied bound to the constant. Asserted on the signature rather than the
   // call site's line breaks, so a one-line call — behaviourally identical —
   // does not fail it.
   assert.match(source, /mobileTimeoutMs\s*=\s*MOBILE_PUBLISH_TIMEOUT_MS/);

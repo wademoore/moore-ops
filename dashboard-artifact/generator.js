@@ -171,8 +171,14 @@ async function publishAll({
   let shared;
   const shareData = () => {
     if (!shared) {
-      // Wrapped so a SYNCHRONOUS throw from fetchData becomes a rejection the
-      // calling path's own try can catch, rather than escaping both of them.
+      // Defensive only, and deliberately not claimed to be more. shareData is
+      // never called here — it is passed as fetchData and invoked inside each
+      // path's own try (generateAndPublish's `await fetchData()` and the mobile
+      // path's), so a SYNCHRONOUS throw is already caught there and escapes
+      // neither. Measured: wrapped and unwrapped produce the identical
+      // rejection, with both paths logging their own generation_failed and
+      // neither writing an object. Kept so shareData's contract stays "returns
+      // a promise" whatever a future caller passes as fetchData.
       shared = (async () => fetchData())();
       shared.catch(() => {});
     }
