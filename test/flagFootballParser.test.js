@@ -61,23 +61,26 @@ const CONFIG = {};
 
 describe('parseFlagFootball', () => {
 
-  it('season record is 3-0 from three final regular games', () => {
+  // seasonRecord became W-L-T. Updated rather than deleted: the arithmetic
+  // these cases assert (three final regular wins, nothing else counted) is
+  // unchanged — only the rendered shape gained a ties component, and this
+  // fixture has no drawn games, so the value is the same record with `-0`.
+  it('season record is 3-0-0 from three final regular games', () => {
     const result = parseFlagFootball(FIXTURE, MAY_1, CONFIG);
-    assert.equal(result.seasonRecord, '3-0');
+    assert.equal(result.seasonRecord, '3-0-0');
   });
 
   it('rescheduled game is excluded from record', () => {
-    // If rescheduled were counted, record would include a non-final game → still 3-0
+    // If rescheduled were counted, record would include a non-final game → still 3-0-0.
     // The rescheduled game has no score, so including it would cause issues.
-    // Verify record is still clean 3-0 without counting rescheduled.
     const result = parseFlagFootball(FIXTURE, MAY_1, CONFIG);
-    assert.equal(result.seasonRecord, '3-0');
+    assert.equal(result.seasonRecord, '3-0-0');
   });
 
   it('friendly game is excluded from record and does not inflate wins', () => {
     // Friendly vs AllStars (40-0) must not appear in record
     const result = parseFlagFootball(FIXTURE, MAY_1, CONFIG);
-    assert.equal(result.seasonRecord, '3-0', 'friendly should not count toward record');
+    assert.equal(result.seasonRecord, '3-0-0', 'friendly should not count toward record');
   });
 
   it('friendly game is excluded from standings', () => {
@@ -160,7 +163,81 @@ describe('parseFlagFootball', () => {
     };
     const result = parseFlagFootball(completedFixture, AFTER_FF, CONFIG);
     assert.equal(result.seasonComplete, true);
-    assert.equal(result.finalRecord, '4-0');  // 4 wins: Apr 26, May 3, May 10, May 31
+    assert.equal(result.finalRecord, '4-0-0');  // 4 wins: Apr 26, May 3, May 10, May 31
+  });
+
+  // ── Ties ───────────────────────────────────────────────────────────────────
+  // A drawn game used to fall into the record loop's `else` branch and be
+  // counted as a LOSS. Flag football can end level, so this pins the fix.
+  it('a drawn game counts as a tie, not a loss', () => {
+    const tied = { seasons: [{ ...FIXTURE.seasons[0], games: [
+      ...FIXTURE.seasons[0].games,
+      { type: 'regular', status: 'final', date: '2026-05-24', home: 'Cowboys', away: 'Chiefs', homeScore: 14, awayScore: 14 },
+    ] }] };
+    const result = parseFlagFootball(tied, MAY_1, CONFIG);
+    assert.equal(result.seasonRecord, '3-0-1', 'a 14-14 draw is a tie; before the fix this read 3-1');
+    assert.equal(result.lastResult, 'T 14\u201314 vs Chiefs', 'a drawn last result is prefixed T, not L');
+  });
+
+  // ── Numeric league team ids ────────────────────────────────────────────────
+  // A season that declares myTeamId is matched on the id. The fixture below is
+  // deliberately adversarial: TWO teams share the teamName "Cowboys" and only
+  // the id distinguishes them, which is the real Fall 2026 Yorktown situation.
+  const ID_FIXTURE = {
+    seasons: [{
+      label: 'Fall 2026', seasonEnd: '2026-10-25',
+      myTeamId: 8009182, teamName: 'Cowboys',
+      teams: [
+        { teamId: 8009182, leagueName: 'Moore - Cowboys',   teamName: 'Cowboys' },
+        { teamId: 8888888, leagueName: 'Watkins - Cowboys', teamName: 'Cowboys' },
+        { teamId: 8070749, leagueName: 'Langston - Ravens', teamName: 'Ravens'  },
+      ],
+      games: [
+        { type: 'regular', status: 'final', date: '2026-09-20', home: 8009182, away: 8070749, homeScore: 20, awayScore: 6 },
+        // The OTHER Cowboys lose. A mascot match would fold this into our record.
+        { type: 'regular', status: 'final', date: '2026-09-20', home: 8070749, away: 8888888, homeScore: 30, awayScore: 0 },
+        { type: 'regular', status: 'scheduled', date: '2026-10-04', home: 8009182, away: 8070749, homeScore: null, awayScore: null, time: '14:00' },
+      ],
+    }],
+  };
+  const SEP_21 = new Date('2026-09-21T12:00:00');
+
+  it('matches my team by numeric league team id, not by mascot', () => {
+    const result = parseFlagFootball(ID_FIXTURE, SEP_21, CONFIG);
+    assert.equal(result.seasonRecord, '1-0-0',
+      'only OUR Cowboys game counts; the other Cowboys team\u2019s loss must not be folded in');
+    assert.equal(result.lastResult, 'W 20\u20136 vs Ravens');
+    const mine = result.standings.filter(s => s.isMe);
+    assert.equal(mine.length, 1, 'exactly one standings row is mine even though two are named Cowboys');
+    assert.equal(result.standings.find(s => s.isMe).w, 1);
+  });
+
+  it('id matching is not defeated by a string/number mismatch in the data', () => {
+    const stringy = { seasons: [{ ...ID_FIXTURE.seasons[0],
+      games: ID_FIXTURE.seasons[0].games.map(g => ({ ...g, home: String(g.home), away: String(g.away) })) }] };
+    assert.equal(parseFlagFootball(stringy, SEP_21, CONFIG).seasonRecord, '1-0-0');
+  });
+
+  it('legacy abbr seasons still match on abbr when no ids are present', () => {
+    // The regression guard for the id change: FIXTURE declares no ids at all.
+    assert.equal(parseFlagFootball(FIXTURE, MAY_1, CONFIG).seasonRecord, '3-0-0');
+  });
+
+  // ── Practices ──────────────────────────────────────────────────────────────
+  it('a practice never reaches the record, the standings, or nextFlagGame', () => {
+    const withPractice = { seasons: [{ ...ID_FIXTURE.seasons[0], games: [
+      // Sits BEFORE the Oct 4 game, so without the type filter it would win the sort.
+      { type: 'practice', status: 'scheduled', date: '2026-09-27', home: 8009182, away: null,
+        homeScore: null, awayScore: null, label: 'Meet & Greet' },
+      ...ID_FIXTURE.seasons[0].games,
+    ] }] };
+    const result = parseFlagFootball(withPractice, SEP_21, CONFIG);
+    assert.equal(result.seasonRecord, '1-0-0', 'practice must not move the record');
+    assert.equal(result.standings.find(s => s.isMe).w, 1, 'practice must not move the standings');
+    assert.equal(result.nextFlagGame.date, '2026-10-04',
+      'nextFlagGame skips the earlier practice and selects the next real fixture');
+    assert.equal(result.nextFlagGame.opponent, 'Ravens',
+      'without the type filter this would be the practice, reported as opponent: undefined');
   });
 
   it('nextFlagGame is null when no scheduled games remain (past season)', () => {

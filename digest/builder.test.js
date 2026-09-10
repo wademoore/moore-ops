@@ -399,7 +399,9 @@ const flagGame = dig.upcomingEvents.find(e => e.isFlagGame);
 assert(flagGame != null,                             'Flag game in upcomingEvents');
 
 // Athletics
-assert(dig.athletics.seasonRecord === '3-0',         'Season record parsed: 3-0');
+// seasonRecord became W-L-T; this fixture has no draws, so it is the same
+// record with an explicit zero ties component. Updated, not deleted.
+assert(dig.athletics.seasonRecord === '3-0-0',       'Season record parsed: 3-0-0');
 assert(dig.athletics.standings.length === 4,         '4 standings teams parsed');
 assert(dig.athletics.standings[0].isMe === true,     'Cowboys row has isMe:true');
 assert(dig.athletics.lastResult.startsWith('W'),     'Last result is a win');

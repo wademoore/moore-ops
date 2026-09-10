@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2297+ passing with a browser
+- Run npm test after changes — must stay at 2308+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -625,9 +625,20 @@ The `league-results-history.json` and `relay-results-history.json` files contain
 | Sport | seasonStart | seasonEnd | bufferDays | Effective window |
 |-------|-------------|-----------|------------|-----------------|
 | Wellington Waves | 2026-06-08 | 2026-08-02 | 3 | Jun 8 – Aug 5 |
-| Flag Football | 2026-04-26 | 2026-06-07 | 0 | Apr 26 – Jun 7 |
+| Flag Football (Fall 2026) | 2026-09-13 | 2026-10-25 | 7 | Sep 6 – Nov 1 |
 | Tidewater Sharks | 2026-08-05 | 2026-11-07 | 14 | Jul 22 – Nov 21 |
 | 757swim (2026-27) | 2026-09-12 | 2027-04-25 | 7 | Sep 5, 2026 – May 2, 2027 |
+
+**Flag football window note (Sept 10, 2026):** the Fall 2026 Yorktown NFL FLAG season replaced
+the spring window, which had lapsed on Jun 7 and left `flagFootballActive` false. `seasonEnd` is
+the league's **announced** end date from its Aug 17 announcement email (Oct 25), deliberately
+**not** the last published week (Oct 18) — Wade's stated preference is that the card stay live
+through a week that gets added rather than go dark. `bufferDays: 7` is derived rather than
+picked: spring-2026's own `rainDate` (2026-06-14) sits exactly seven days after its `seasonEnd`
+(2026-06-07), so one game-week is this league's demonstrated unit of slack for a slipped fixture.
+It also opens the window on Sep 6, a week ahead of the Sep 13 first event.
+`test/current-season-athletics.test.js` pins both edges of the buffered window and asserts that
+`sports-config.json` and `flag-football.json` name the same `seasonEnd`, so the two cannot drift.
 
 **Waves window note:** `seasonEnd` is set to the Waves end-of-year banquet date (Aug 2). The 3-day `bufferDays` extends the visible window through Aug 5, giving time to enter banquet award results without the card disappearing mid-window. VPSU Champs is Aug 1. If either event shifts in future years, update `seasonEnd` and `bufferDays` in `data/sports-config.json` accordingly.
 
@@ -1921,7 +1932,66 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 10, 2026 on the current-season athletics branch
+### Current baseline — measured Sept 10, 2026 on the Yorktown NFL FLAG season branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2308 | **2308** | **0** | **0** |
+
+Measured on `claude/yorktown-nfl-flag-season-rjqg2e`, whose merge base with `main` is
+**`3d250aa`** (PR #61) — which is also this branch's branch point. **`git fetch origin main`
+was run before deriving it, per the standing warning, and it mattered a fifth consecutive
+time: the ref was stale at `2d01027` and the fetch moved it to `3d250aa`.** That merge base
+was re-measured in this session, before any change and after `npm install`: **2297 / 2297 /
+0 / 0 with a browser** — which matches the figure the entry below recorded, so the recorded
+baseline held for a fourth consecutive time. Re-measure anyway; the run costs less than the
+correction does.
+
+This change adds **+11**, in two existing files:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/current-season-athletics.test.js` | 13 | 19 | +6 |
+| `test/flagFootballParser.test.js` | 25 | 30 | +5 |
+
+`test/athleticsParser.test.js` (27) and `digest/builder.test.js` (10) contribute **0**: one
+assertion changed inside each, none added or removed. Both before-figures were measured in a
+`git worktree` at `3d250aa`, not copied to a temp path — a copied test file loses its relative
+imports and reports `# tests 1`, which is exactly how a plausible-looking wrong number gets
+recorded here.
+
+Five existing assertions were **updated, not deleted or skipped**, and each is annotated in
+place with the reason: four record strings gained a ties component when `seasonRecord` became
+`W-L-T` (no historical season contains a draw, so every one is the same record with `-0`), and
+the three flag football tripwires in `test/current-season-athletics.test.js` — which pinned the
+*absence* of a current season and the spring window — are inverted to pin the current season
+and the fall window. Those three going red was predicted by the Known open item this change
+closes; they were written with an explicit instruction to re-examine them when a real season
+landed, which is what happened.
+
+Companion mutation evidence, committed and run on demand rather than in `npm test`:
+`node scratch/yorktown-flag-season/mutation-check.mjs` → **14 mutations, 14/14 proven**, green
+control and green restore. Two survived the first run and both were acted on rather than
+explained away: one exposed a genuine gap (the prior-season guard pinned the season-level
+`teamName` but never the `teams[]` rosters, so renaming spring-2026's MPC entry from Cowboys to
+Chiefs passed everything — both prior rosters are now pinned in full), and one was a **bad
+mutation of my own**, swapping the operands of `t.teamId ?? t.abbr`, which is a no-op because
+the left side is undefined in exactly the seasons carrying the other field. It was replaced
+with two that really remove the id path.
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
+quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
+prevent.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2308+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 10, 2026 on the current-season athletics branch
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -1962,7 +2032,8 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2297+ with no failures once a browser resolves.**
+**Coder mode had to keep `npm test` at 2297+ under this baseline.** (Superseded — see
+Current baseline above; the figure is now 2308.)
 
 ### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
@@ -2526,6 +2597,78 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Myles's Fall 2026 Yorktown NFL FLAG season created; team identity keyed on the league's
+  numeric team id (Sept 10, 2026):** Closes the Known open item opened one entry below, which
+  recorded that an approved Sept 20 accent fires while `flagFootballActive` is false and that
+  `parseFlagFootball` was falling back to `seasons[last]` — surfacing a correct `flagTeamName`
+  of `"Cowboys"` alongside a stale `seasonLabel: "Spring 2026"` and `seasonRecord: "5-0"`. That
+  item said the fix needed the real schedule; the schedule now exists, so it was done rather
+  than parked. `data/flag-football.json` gains a third season `fall-2026` — Yorktown NFL FLAG,
+  5th-6th Grade Rec, six events, `0-0-0` — and `data/sports-config.json`'s `flagFootball` window
+  moves to `2026-09-13 → 2026-10-25`, `bufferDays: 7`. **The two prior seasons are byte-untouched:
+  the diff against `3d250aa` contains 145 insertions and zero deletions in that file.**
+
+  **Identity is the numeric league team id, never the mascot, and that is the whole point of
+  this change.** The division contains two teams whose mascot is Cowboys — Moore – Cowboys
+  (8009182, ours) and Watkins – Cowboys — so a mascot match is ambiguous by construction. The
+  season declares `myTeamId`, every team carries a unique `teamId`, and every `games[].home` /
+  `games[].away` is that id; `leagueTeamName` holds the coach-qualified league string for human
+  readability and `teamName` stays the display mascot. **This is deliberately the opposite of the
+  `sharks-soccer.json` precedent, where the mascot IS unique and only the wording of the team
+  string varies between the schedule and the standings — which is exactly why fuzzy matching is
+  correct there and wrong here.** The reasoning is recorded three times on purpose (a `note` in
+  the season record, a comment above the matcher, and a test asserting the note says both
+  things), because the failure mode is a future session pattern-matching this to Sharks and
+  reaching for a fuzzy match. **The repo already contained the evidence that mascots collide:**
+  fall-2025 lists `FLI`/Cowboys *and* `WAT`/Cowboys, and had done so unremarked since 2025.
+
+  **Three parser changes, each the minimum needed for the data to take effect.** (1) `teamKey`
+  resolves `t.teamId ?? t.abbr`, so a season either keys on ids or on legacy abbrs and the two
+  never mix; `myAbbr` was renamed `myKey` because it no longer holds an abbr. (2) `seasonRecord`
+  became `W-L-T`. This was forced by the acceptance criterion "0-0-0" and it fixed a real latent
+  bug on the way: the record loop was `if (my > opp) wins++; else losses++`, so **a drawn game
+  was counted as a loss**. The three-part shape matches `sharksRecord` on the same athletics
+  object. Blast radius was measured before committing to it — neither historical season contains
+  a draw, so every existing derived string simply gained `-0` (fall-2025 `1-4` → `1-4-0`,
+  spring-2026 `5-0` → `5-0-0`). `buildEmptyAthletics()`'s `?-?` sentinel is deliberately left
+  alone: it is a hardcoded "no data at all" marker, not a product of the record derivation.
+  (3) `nextFlagGame` now excludes `type: "practice"`. Without it the Sep 13 Meet & Greet — which
+  is chronologically first and has no opponent — is selected and reported as
+  `opponent: undefined`. Stated as a one-element deny-list rather than an allow-list so that no
+  existing type (`regular`, `playoff`, `consolation`) changes behaviour.
+
+  **Week 1 is typed, not merely score-less.** `type: "practice"` with `away: null` excludes it
+  structurally from the record, the standings and `seasonComplete`. A `regular` row with null
+  scores would still be a fixture, and a later score entry would silently count it.
+
+  **The calendar/data double-listing question was measured, not assumed, and the answer is that
+  the precedent double-lists.** Running the real `buildDigest` over the actual Myles calendar
+  events shows `Sharks vs VIP United (Home)` appearing **both** as an Upcoming-panel row and as
+  `athletics.sharksNextGame` — the same Sept 12 fixture, twice. `builder.js`'s only event
+  exclusions are the `Routine` calendar and `isRoutineCentersEvent`; there is no sport-level
+  de-duplication anywhere. Flag football now behaves identically, so this follows the existing
+  convention rather than inventing one. **It is reported rather than silently matched**: if
+  double-listing is ever judged wrong it is one decision for both sports, not a flag-football
+  special case.
+
+  **Blast radius was bounded by measurement, not by argument.** The same builder run was
+  executed against a stashed tree at `3d250aa` and the Upcoming-panel rows are byte-identical
+  before and after — including the stale
+  `"3:00 PM (follows 2:00 PM practice) · Williamsburg Christian Academy"` subtitle that
+  `aliases.js` still attaches to every flag game. That subtitle is wrong for this season (games
+  are 12:00/14:00 at McReynolds in Yorktown) but it is **pre-existing**, is caused by the
+  calendar events rather than by this data, and lives on a surface Codex owns — so it is parked,
+  not fixed here. Nothing in `render/`, `dashboard-artifact/`, `data/special-events.json` or the
+  athletics card was touched.
+
+  **14 mutations prove the guards have teeth** — `node scratch/yorktown-flag-season/mutation-check.mjs`,
+  14/14, green control and restore. Two survived the first run and both were acted on: one was a
+  genuine coverage gap (prior-season `teams[]` rosters were unguarded, so renaming spring-2026's
+  MPC entry to Chiefs passed everything), and one was a **defective mutation of my own** that
+  swapped the operands of `t.teamId ?? t.abbr` — a no-op, because the left side is undefined in
+  exactly the seasons that carry the other field. Tests **2297 → 2308**, all passing with a
+  browser; the merge base was re-measured in-session rather than taken from this file.
 
 - **Current-season athletics updated for both kids (Sept 10, 2026):** Ophelia's 757swim
   2026-27 season is enabled in `data/sports-config.json` with the window documented in
@@ -3274,7 +3417,28 @@ enumerated under test, digest, and render directly to Node. No deployment.
 
 ## Known open items
 
-- **Myles has no fall-2026 flag football season, so an approved Sept 20 accent fires against an
+- **✓ MOSTLY RESOLVED Sept 10, 2026 — the fall-2026 season exists; the accent half is still open,
+  and for a different reason than this item gave.** `data/flag-football.json` now carries
+  `fall-2026` and `sports-config.json` names the fall window, so `flagFootballActive` is **true**,
+  `seasonLabel` is `Fall 2026`, the record is `0-0-0`, and the `parseFlagFootball` fallback to
+  `seasons[last]` — with its stale `Spring 2026` / `5-0` values — is no longer taken. The three
+  tripwire assertions this item predicted would go red did go red, and were **inverted rather than
+  deleted**: they now pin the current season and the fall window. See the changelog entry at the
+  top of this file. **The item's ordering trap held true and was avoided:** the season entry and
+  the window moved in the same commit, so the fallback's stale record was never surfaced.
+  **What is still open is the accent, and this item mis-stated why.** It implied the accent would
+  start working once a season existed. It will not, and the season was never the reason: the
+  approved accent `myles-flag-football-week1-2026-09-20` matches
+  `titleMatch.mode: "literal"` on `"Flag Football: Week 1 — Practice + Game (Yorktown)"` at date
+  2026-09-20, and **no such calendar event exists**. Read live from the Myles calendar on
+  2026-09-10, Sept 20 carries `"Flag Football: Week 2 — vs Langston-Ravens (Home)"`, and Week 1 is
+  Sept 13, titled `"Flag Football: Week 1 — Meet & Greet"`. So the accent **fails closed** to an
+  ordinary row — which is the designed behaviour and causes no breakage, but means the approved
+  FIRST GAME treatment will simply not appear. Fixing it is a `data/special-events.json` change to
+  an approved treatment (retarget the date and the literal title, or retire it), which is a
+  scoping decision for the coordinating chat, not a data update. The superseded item follows.
+
+- **[HISTORICAL — see above] Myles has no fall-2026 flag football season, so an approved Sept 20 accent fires against an
   inactive sport (Sept 10, 2026).** Surfaced by an independent Reviewer pass, not by the change
   that prompted it. `data/special-events.json` carries the approved, `enabled: true` accent
   `myles-flag-football-week1-2026-09-20` for the first fall game; `data/flag-football.json` holds
