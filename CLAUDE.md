@@ -2745,8 +2745,8 @@ method, so they chain directly to the 988 pre-change number above.
   named neither endpoint of this change (2316 is the base; 2297 predates PR #62). They are
   recorded here rather than silently corrected, because this is the entry whose own subject is
   figures that go stale, and it went stale in the commit that swept it.
-  **Six independent Reviewer passes ran on this branch: passes 1-4 and 6 returned FAIL, pass 5
-  PASS.** An earlier version of this paragraph said four passes with the first three failing,
+  **Seven independent Reviewer passes ran on this branch: passes 1-4, 6 and 7 returned FAIL,
+  pass 5 PASS.** An earlier version of this paragraph said four passes with the first three failing,
   and claimed "the implementation passed every pass from the first" against a "ratio" of one
   code defect to three rounds of documentation drift. **All four of those claims were wrong**,
   and they are corrected here rather than left, because a paragraph about review accuracy being
@@ -2772,6 +2772,10 @@ method, so they chain directly to the 988 pre-change number above.
     tripwire written to prevent its return, which could not fail; that tripwire's region
     boundary, and its two blocklist checks with no positive assertion; a venue assertion that
     stayed true under the very mutation it was meant to catch; and an unpinned resolved title.
+  - **Two same-commit contradictions, found in pass 7.** Besides the diff figure above, the
+    `flagFootballDetails` JSDoc was updated to "Five cases" while a cross-reference 31 lines
+    below it — pointing at that very table — still read "Four bands". One edit, two sites,
+    one updated. Both are now consistent.
   - **A guard that read as protective and was not, found in pass 6.** The practice-exclusion
     test carried a practice-only fixture, whose null opponent and null time are what a correct
     parser returns anyway — so deleting the type filter left both assertions true. It now pairs
@@ -2779,16 +2783,25 @@ method, so they chain directly to the 988 pre-change number above.
     `Ravens`/`12:00 PM`. Pass 6 also found the timezone pin in `formatETTime` had no mutation at
     all, protected only incidentally by the fixtures' explicit offsets disagreeing with a UTC
     host; there is one now.
-  - **Documentation drift failed four consecutive rounds** — a figure the tree did not
-    support, three times introduced by the very commit sweeping that section for that defect.
+  - **Documentation drift failed five consecutive rounds** — a figure the tree did not
+    support, four times introduced by the very commit sweeping that section for that defect.
     Removing derived counts from the prose was not enough on its own: pass 6 found the
     changelog still carrying a mutation count, a control total and a test delta from before the
     rebase, all four false, plus a present-tense description of `data/flag-football.json` that
-    three greps refute. That is the single largest category on this branch, in a repository
-    whose stated policy treats it as first-class. **The durable lesson is narrower than "check
-    your numbers":** the stale figures all described the *pre-rebase* branch, and the rebase
-    changed the implementation without anyone re-reading the paragraph that described it. A
-    merge that changes behaviour is a documentation change too.
+    three greps refute. **Pass 7 then found that the commit fixing all of that had introduced
+    the same defect one level down**, in a code comment rather than in this file: a note in
+    `digest/builder.test.js` quoted its own diff size as `+14/-0`, and rewriting that note took
+    the real figure to `+17/-0`. Two things came out of it. The narrow fix is that the comment
+    no longer states a number at all — updating it to 17 would only have reset the clock, which
+    is the move this very paragraph exists to warn against. The general one is that "derived
+    counts do not belong in prose" was being applied to `CLAUDE.md` alone, while the same
+    figures sat unexamined in comments; a rule scoped to one file is not scoped to the defect,
+    which is the lesson the gate section of this file already teaches about deny rules.
+    That is the single largest category on this branch, in a repository
+    whose stated policy treats it as first-class. **The other durable lesson is narrower than
+    "check your numbers":** the stale figures all described the *pre-rebase* branch, and the
+    rebase changed the implementation without anyone re-reading the paragraph that described
+    it. A merge that changes behaviour is a documentation change too.
 
   Which finding came from which pass is deliberately stated above rather than presented as one
   undifferentiated list, because an earlier draft's flat "(1) … (2) … three MINOR" read as a

@@ -440,7 +440,7 @@ function flagFootballDetails(event) {
   }
   const startTime = formatETTime(start);
 
-  // Four bands (see the JSDoc above for the full table). The distinction that
+  // Five bands (see the JSDoc above for the full table). The distinction that
   // matters most is between "measured and short" and "not measured at all": a
   // block we can measure and find short is EVIDENCE the block is the game
   // itself; a block with no end is merely absence of evidence. Collapsing them
