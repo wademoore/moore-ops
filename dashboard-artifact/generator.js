@@ -3,6 +3,7 @@ import { fetchDashboardV2Data } from '../dashboard-v2-data.js';
 import { renderDashboardV2 } from '../render/dashboard-v2.js';
 import { hasFirstDayMilestone, timeline as firstDayTimeline } from '../render/first-day-level3.js';
 import { createManifest, validateArtifact } from './contract.js';
+import { publishMobileArtifact } from './mobile-generator.js';
 
 const s3 = new S3Client({});
 
@@ -104,8 +105,112 @@ async function generateAndPublish({
   }
 }
 
-async function handler() {
-  return generateAndPublish();
+/**
+ * Two independent publish paths from ONE household data build.
+ *
+ * The wall display and the phone are separate consumers with separate failure
+ * modes, and neither failing may prevent the other from publishing. That is
+ * why each path has its own try, its own validator, its own key prefix and its
+ * own artifact identity. generateAndPublish() itself is unchanged by the
+ * mobile work; the isolation lives here and in mobile-generator.js.
+ *
+ * The data build is resolved exactly ONCE, lazily, and the same promise is
+ * injected into both paths. fetchDashboardV2Data() reads three calendar
+ * windows, Gmail, Drive, the nationals feed, sports and weather, so fetching
+ * twice would double that cost and could hand the two surfaces two different
+ * snapshots of the same morning. Sharing it also means the phone consumes the
+ * display's own selection output rather than any second derivation of it.
+ *
+ * They run in sequence rather than concurrently, display first. The display is
+ * the production surface, so it gets the invocation's time budget first, and a
+ * sequential run removes any question of two renderers reading one object at
+ * once.
+ *
+ * Failure semantics are deliberately asymmetric, and the asymmetry is the
+ * point rather than an oversight. A display failure still rejects, exactly as
+ * it did before this change, so EventBridge retries and existing alarms behave
+ * identically. A mobile failure does NOT reject: making it do so would let a
+ * phone-only defect force repeated republishing of a perfectly good display
+ * artifact. It surfaces instead as the structured
+ * dashboard_mobile_generation_failed record the mobile path already emits, and
+ * in this function's return value.
+ */
+/**
+ * Ceiling on the mobile path's share of one invocation.
+ *
+ * publishAll catches a mobile *throw*, but a throw is not the only way a path
+ * can spend the invocation. The function runs inside a 180 s Lambda with two
+ * configured retries, so a mobile path that HANGS — rather than failing —
+ * would time the invocation out after the display pointer had already been
+ * written, and EventBridge would retry and republish a display artifact that
+ * was already good. That is precisely the outcome the asymmetric failure
+ * handling below exists to prevent, so duration is bounded as well as
+ * rejection. A timeout is reported exactly like any other mobile failure.
+ */
+const MOBILE_PUBLISH_TIMEOUT_MS = 60_000;
+
+function withTimeout(promise, ms, label) {
+  let timer;
+  const guard = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label} exceeded ${ms}ms`)), ms);
+  });
+  return Promise.race([promise, guard]).finally(() => clearTimeout(timer));
 }
 
-export { generateAndPublish, handler };
+async function publishAll({
+  fetchData = fetchDashboardV2Data,
+  display = {},
+  mobile = {},
+  mobileTimeoutMs = MOBILE_PUBLISH_TIMEOUT_MS,
+} = {}) {
+  // Resolved lazily and memoised, so the build starts on the first AWAIT
+  // rather than at call time. generateAndPublish validates its environment
+  // before it awaits, and starting the build eagerly would mean a misconfigured
+  // Lambda called Google, Gmail, Drive, sports and weather before discovering
+  // it had nowhere to publish. Memoising is what makes it one shared build.
+  let shared;
+  const shareData = () => {
+    if (!shared) {
+      // Defensive only, and deliberately not claimed to be more. shareData is
+      // never called here — it is passed as fetchData and invoked inside each
+      // path's own try (generateAndPublish's `await fetchData()` and the mobile
+      // path's), so a SYNCHRONOUS throw is already caught there and escapes
+      // neither. Measured: wrapped and unwrapped produce the identical
+      // rejection, with both paths logging their own generation_failed and
+      // neither writing an object. Kept so shareData's contract stays "returns
+      // a promise" whatever a future caller passes as fetchData.
+      shared = (async () => fetchData())();
+      shared.catch(() => {});
+    }
+    return shared;
+  };
+
+  let displayResult = null;
+  let displayError = null;
+  try {
+    displayResult = await generateAndPublish({ ...display, fetchData: shareData });
+  } catch (error) {
+    displayError = error;
+  }
+
+  let mobileResult = null;
+  let mobileError = null;
+  try {
+    mobileResult = await withTimeout(
+      publishMobileArtifact({ ...mobile, fetchData: shareData }),
+      mobileTimeoutMs,
+      'mobile publish',
+    );
+  } catch (error) {
+    mobileError = error;
+  }
+
+  if (displayError) throw displayError;
+  return { display: displayResult, mobile: mobileResult, mobileError: mobileError ? mobileError.message : null };
+}
+
+async function handler() {
+  return publishAll();
+}
+
+export { generateAndPublish, handler, publishAll };

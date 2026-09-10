@@ -154,8 +154,13 @@ describe('deploy workflow — Holiday Themes kill-switch resolution', () => {
     //    Checked first, so a repointed mapping reports the repoint rather than
     //    the absence it also produces.
     const resolveAt = at('Resolve Holiday Themes kill switch');
-    const checkoutAt = text.indexOf('- name: Checkout', resolveAt);
-    const stepEnv = text.slice(resolveAt, checkoutAt === -1 ? undefined : checkoutAt);
+    // Bounded by the NEXT step rather than by Checkout. The Checkout boundary
+    // held only while this was the last resolve step, and a later resolve step
+    // inserted before Checkout silently widened this slice to cover it too —
+    // which would let clause 3 below be satisfied by a mapping that lives in a
+    // neighbouring step. The step boundary is what these clauses mean.
+    const nextStepAt = text.indexOf('\n      - name: ', resolveAt);
+    const stepEnv = text.slice(resolveAt, nextStepAt === -1 ? undefined : nextStepAt);
     assert.ok(
       !/HOLIDAY_THEMES_ENABLED: \$\{\{ vars\.(?!HOLIDAY_THEMES_ENABLED\b)/.test(stepEnv),
       'the holiday environment variable must not be fed from another repository variable',
@@ -269,7 +274,9 @@ describe('deploy workflow — Holiday Themes kill-switch resolution', () => {
         'move resolution after the deploy',
         text => {
           const start = text.indexOf('      - name: Resolve Holiday Themes kill switch');
-          const end = text.indexOf('      - name: Checkout');
+          // The next step, not Checkout: this mutation must move THIS step and
+          // nothing else, or it stops being the surgical mutation it claims.
+          const end = text.indexOf('\n      - name: ', start + 1) + 1;
           const moved = text.slice(start, end);
           const rest = text.slice(0, start) + text.slice(end);
           const anchor = rest.indexOf('      - name: Verify deployed source revision');

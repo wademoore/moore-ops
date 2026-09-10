@@ -33,7 +33,9 @@ Dates and times stay anchored to the household’s Eastern timezone. The header 
 
 The local renderer intentionally makes no household refresh, sports polling, or authentication requests. It shows the supplied sports snapshot with its own timestamp. A reload cannot fetch a newer household generation unless an external publisher has made one available. The existing TV artifact contract is unchanged.
 
-The loop must scope authenticated remote hosting, a mobile artifact/refresh contract, and sports access for the new origin. It must also decide whether to retain the checked-in five-times-daily generation schedule or provide fresher Now / Next evaluation. No endpoint or identity provider was invented for this implementation. Once that contract is merged, Codex can add the corresponding browser integration.
+The publishing contract is now defined and encoded — see [mobile-publishing-contract.md](mobile-publishing-contract.md). It fixes the mobile artifact identity (`dashboard-mobile`) and its own schema version, the successful-generation timestamp and where a consumer reads it, last-good behavior when a generation attempt fails, the same-origin `release-manifest.json` discovery route, and the rule that separates "this document is old" from "you are signed out". It retains the checked-in five-times-daily cadence and publishes that schedule as manifest data rather than leaving it to be inferred; fresher Now / Next evaluation remains separately scoped work and is not promised anywhere in the contract. The two publish paths are independent, and the wall display's artifact and contract are unchanged.
+
+Still deployment decisions, and still not invented here: the authenticated origin and its host, the identity provider and session length, and sports access for the new origin. Nothing is activated — `MOBILE_ARTIFACT_ENABLED` defaults to `0` at every layer and no repository variable was created. Codex can now add the corresponding browser integration against the contract document.
 
 ## Verification
 

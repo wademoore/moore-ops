@@ -196,8 +196,17 @@ describe('holiday theme kill switch — HOLIDAY_THEMES_ENABLED', () => {
     // A repository variable is editable text, and `${{ }}` inside a run block
     // is substituted before bash sees it. The same discipline the Family
     // Spotlight step already keeps.
+    // Bounded by the NEXT step, not by `- name: Checkout`. Terminating at
+    // Checkout was only ever correct while this happened to be the last step
+    // before it, which is not a property this case means to assert: inserting
+    // any further resolve step ahead of Checkout pulled that step's own `env:`
+    // mapping into the slice and failed this assertion for the wrong reason.
+    // The step boundary is what "this step's run body" actually means, and it
+    // is strictly stronger — a GitHub expression moved into this body is still
+    // caught, and one belonging to a neighbouring step no longer is.
     const step = WORKFLOW.slice(WORKFLOW.indexOf('- name: Resolve Holiday Themes kill switch'));
-    const body = step.slice(step.indexOf('run: |'), step.indexOf('- name: Checkout'));
+    const nextStep = step.indexOf('\n      - name: ', 1);
+    const body = step.slice(step.indexOf('run: |'), nextStep === -1 ? undefined : nextStep);
     assert.ok(!body.includes('${{'), 'the run body must not carry a GitHub expression');
     assert.ok(body.includes('"${HOLIDAY_THEMES_ENABLED:-}"'), 'the value must be read from the environment');
   });
