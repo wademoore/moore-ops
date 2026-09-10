@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2335+ passing with a browser
+- Run npm test after changes — must stay at 2344+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -551,7 +551,8 @@ sandbox. What revision 2 *does* bound is the class: no absolute path, no `..`, n
 for the Reviewer, and nothing on the allowlist can create the file it would need to escape
 that.
 
-**Revision 1 was not read-only either, and three of its holes are closed here.** Each was
+**Revision 1 was not read-only either, and four of its holes are closed here** — three write
+routes and one read escape. Each was
 confirmed by running it rather than by reading the regex:
 
 | revision 1 allowed | what it actually did |
@@ -584,22 +585,54 @@ write-flag check, because there `--output` selects a response *format* and never
 file; without the exemption this change would have silently broken the Debugger's core
 command.
 
-**Network documentation is granted as `WebFetch`/`WebSearch` in the Reviewer's frontmatter,
-not as `curl`.** `curl`'s flag surface (`-o -O -D -T -K --trace`) is a file-write and upload
+**Network documentation is granted — once the paste happens — as `WebFetch`/`WebSearch` in
+the Reviewer's frontmatter, not as `curl`.** `curl`'s flag surface (`-o -O -D -T -K --trace`) is a file-write and upload
 primitive; the two tools are pure reads with no write verb, and the guard does not even see
 them because it matches `Bash|PowerShell`. Named rather than glossed: any egress is in
 principle an exfiltration channel — what bounds it is that composition, `$(…)`, backticks
 and newlines are all refused, so no file's contents can be interpolated into a URL.
 
+**The first Reviewer round returned FAIL over its own widening, and it was right.** Two
+BLOCKING findings, both of the same shape and both confirmed by running them rather than by
+reading the regex. (1) The first draft's reader list carried `uniq`, `xxd` and `tree`, and
+every one of them writes a file — `uniq INPUT OUTPUT` through a bare **positional** operand,
+which no flag rule can ever catch, and `tree -o` through a short flag the `sort -o` scoping
+did not reach. `uniq CLAUDE.md package.json` was run and overwrote the target. (2) `date`
+was on the same list, and `date --set=` sets the **system clock** — the probe moved this
+container to 2020 and broke TLS until the time was recovered from a file mtime written
+seconds earlier. All four binaries are now absent, which is the only available defence
+against a positional writer, and two tests assert their absence in the bare-operand form.
+The lesson generalises past this file: `uniq` sat one token away from `sort`, whose `-o`
+hazard the code comment beside it had already reasoned about correctly. **Reading an
+allowlist for what it refuses, and never for what its entries can do, is how a "read-only"
+list acquires a writer.**
+
+Three SHOULD FIX items from the same round were taken. The repo-relative bound was enforced
+on the `node <script>` route and **not** on `node --test`, so `node --test /tmp/x.test.js`
+was allowed while the change claimed "repo-relative paths only" — a widening whose paired
+refusal tested a different property than the one being claimed. `npm --prefix` redirects the
+package root, which revision 1's `$` anchor had prevented incidentally and bounding the
+arguments removed. And the Reviewer still could not complete its **own** checklist item 7
+("confirm a PR exists"), so a short list of `gh` read verbs is enumerated — verbs one at a
+time, because `gh pr merge`, `gh pr comment` and `gh pr create` share that namespace, and
+`gh api` left out entirely.
+
 **Guards proved by mutation, not asserted:** `node scratch/reviewer-allowlist/mutation-check.mjs`
-→ **21/21 proven**, green control, plus two self-tests — a syntax error in the guard, and a
+→ **24/24 proven**, green control, plus two self-tests — a syntax error in the guard, and a
 run that emits no summary at all. The second matters on its own: a hang and a clean pass
 parse identically, so without it the harness's own "inconclusive" branch would be unproven.
-Two rows were wrong on the first run and are worth recording: one `find` string had the
-wrong indentation and silently applied zero times (the harness caught it, which is what the
-occurrence assertion is for), and one expectation named the `sed -i` case, which is refused
-by the allowlist *before* the scoped rule is reached — so that rule is defence in depth with
-nothing of its own to prove, and the test says so rather than taking credit for it.
+Three rows were wrong across the two runs and are worth recording, because all three are the
+same error. One `find` string had the wrong indentation and silently applied zero times (the
+harness caught it, which is what the occurrence assertion is for). One expectation named the
+`sed -i` case, which the allowlist refuses *before* the scoped rule is reached. And after the
+`node --test` bound was added, the write-flag expectation named
+`--test-reporter-destination`, which that bound now refuses on its own — so the mutation was
+being scored on a case another rule owns. **An expectation that names a double-guarded case
+scores the wrong rule and reads as proof.** Each is now attributed to the rule that actually
+refuses it, and the tests say which is which rather than taking credit. A fourth
+review finding hardened the scoring itself: every widening produces two case names sharing a
+suffix (`widened: X` and `still refused alongside it: X`), so bare-`X` expectations could be
+satisfied by the wrong half; they are prefix-qualified now.
 
 ### Editing this section is itself partly blocked — read this before trying
 
@@ -1961,19 +1994,19 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2335 | **2335** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2344 | **2344** | **0** | **0** |
 
 Measured on `claude/reviewer-shell-allowlist-q8e57z`, whose merge base with `main` is
 **`ada361f`** (PR #57). **That merge base was re-measured in this session, after
-`npm install` and before any change: 2335 - 93 = 2242 / 2242 / 0 / 0 with a browser** —
+`npm install` and before any change: 2242 / 2242 / 0 / 0 with a browser** —
 which is also the figure PR #58 records against the same commit, from a different session.
 Re-measure anyway; the run costs less than the correction does.
 
-This change adds **+93**, all in one new file:
+This change adds **+102**, all in one new file:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `test/hooks/reviewer-allowlist.test.js` (new) | — | 93 | +93 |
+| `test/hooks/reviewer-allowlist.test.js` (new) | — | 102 | +102 |
 
 The file is the behavioural matrix for **revision 2 of `guard-readonly.mjs`, which is not
 installed** — `.claude/hooks/` is deny-listed, so the guard ships as paste-ready content in
@@ -1987,11 +2020,11 @@ section exists to prevent. The new file needs no browser and contributes 0 to th
 no-browser failure set either way.
 
 Companion harness, **not** part of `npm test` and run on demand:
-`node scratch/reviewer-allowlist/mutation-check.mjs` → 21 mutations, 21/21 proven, green
+`node scratch/reviewer-allowlist/mutation-check.mjs` → 24 mutations, 24/24 proven, green
 control, plus two self-tests (a syntax error in the guard, and a run that emits no summary
 at all — a hang and a clean pass parse identically, so the second is what makes the
 harness's own "inconclusive" branch real rather than decorative).
-`node scratch/reviewer-allowlist/adversarial-test.mjs` → 28/28, and takes `--installed` to
+`node scratch/reviewer-allowlist/adversarial-test.mjs` → 39/39, and takes `--installed` to
 drive `.claude/hooks/` after the paste.
 
 Exact invocation:
@@ -2000,7 +2033,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2335+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2344+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 9, 2026 on the Reviewer-gate branch
 
@@ -2554,16 +2587,16 @@ method, so they chain directly to the 988 pre-change number above.
   name an external pager command — a global rule either way would have broken a read or
   allowed a write. (3) `aws --output` is a response *format*, not a file, so the write-flag
   check exempts `aws`; without that exemption this change would have silently broken the
-  Debugger's core command. Network documentation is granted as `WebFetch`/`WebSearch` in the
+  Debugger's core command. Network documentation is granted — on install — as `WebFetch`/`WebSearch` in the
   Reviewer's frontmatter, never as `curl`, whose flag surface is a write and upload
   primitive.
-  **Guards proved by mutation rather than asserted:** 21 mutations, **21/21 proven**, green
+  **Guards proved by mutation rather than asserted:** 24 mutations, **24/24 proven**, green
   control, plus two self-tests. Two rows were wrong on the first run and are recorded rather
   than quietly fixed: one `find` string had the wrong indentation and applied zero times (the
   occurrence assertion caught it, which is what it is for), and one expectation named the
   `sed -i` case — which the allowlist refuses *before* the scoped rule is reached, so that
   rule is defence in depth with nothing of its own to prove, and the test now says so instead
-  of taking credit for it. Tests **2242 → 2335**, all passing with a browser; the merge base
+  of taking credit for it. Tests **2242 → 2344**, all passing with a browser; the merge base
   was re-measured in-session rather than taken from this file.
 
 - **Mobile companion — local implementation (Sept 9, 2026):**

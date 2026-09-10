@@ -29,7 +29,7 @@ cited document, could not run the browser-enabled test suite, and could not ask
 git for its own version — so it verified citations against copies the authoring
 session had retained, which confirms an account rather than checking it.
 
-**And three routes by which it could previously WRITE are closed.** Each was
+**And four routes it left open are closed** — three writes and one read escape. Each was
 confirmed by running it, not by reading the regex:
 
 | revision 1 allowed | what it did |
@@ -39,6 +39,37 @@ confirmed by running it, not by reading the regex:
 | `git diff` + a newline + any command | a newline is a shell separator and was not in the guard's metacharacter set |
 
 So the net effect is **wider reach and narrower capability**.
+
+---
+
+## The first draft of this change failed its own review — read this before trusting it
+
+The Reviewer was run over this change and returned **FAIL** with two BLOCKING
+findings, both correct, both confirmed by running them:
+
+* **`uniq`, `xxd` and `tree` were on the reader list, and all three write files.**
+  `uniq INPUT OUTPUT` writes through a bare **positional** operand, so no flag rule
+  could ever have caught it. Run for real: `uniq CLAUDE.md package.json` overwrote
+  the target. `tree -o` writes through a short flag that the `sort -o` scoping did
+  not reach.
+* **`date` was on the same list, and `date --set=` sets the system clock.** Probing
+  it moved this container to 2020 and broke TLS until the time was recovered from a
+  file mtime written seconds earlier.
+
+All four are now absent — absence is the only defence against a positional writer —
+and the matrix asserts it in the bare-operand form, which is the form no flag rule
+can see.
+
+Three SHOULD FIX items were also taken: `node --test` accepted unbounded paths
+while the script route beside it was bounded; `npm --prefix` could redirect the
+package root; and the Reviewer still could not complete its **own** checklist item
+7, so a short list of `gh` read verbs is enumerated (verbs one at a time, because
+`gh pr merge` and `gh pr create` share that namespace; `gh api` is left out).
+
+**The transferable part:** `uniq` sat one token away from `sort` in the same
+alternation, whose `-o` hazard the comment beside it had already reasoned about
+correctly. Reading an allowlist for what it refuses, and never for what its entries
+can *do*, is how a "read-only" list acquires a writer.
 
 ---
 
@@ -86,7 +117,7 @@ node --test test/hooks/reviewer-allowlist.test.js
 node scratch/reviewer-allowlist/adversarial-test.mjs
 ```
 
-Expect `# pass 93 / # fail 0` and `28/28 steps behaved as expected.`
+Expect `# pass 102 / # fail 0` and `39/39 steps behaved as expected.`
 
 Optionally, the harness that proves the matrix has teeth (about six minutes):
 
@@ -94,7 +125,7 @@ Optionally, the harness that proves the matrix has teeth (about six minutes):
 node scratch/reviewer-allowlist/mutation-check.mjs
 ```
 
-Expect `21/21 mutations proven`.
+Expect `24/24 mutations proven`.
 
 ---
 
@@ -128,9 +159,9 @@ node scratch/reviewer-allowlist/adversarial-test.mjs --installed
 | what to expect | why |
 |---|---|
 | `guard-readonly.test.js` — 26 pass, unchanged | it drives the **installed** copy. Revision 2 was designed so that not one of its cases changes verdict, and the parity section of the new matrix restates every one of them and asserts exactly that against revision 2 — so this is a confirmation, not a hope. If it goes red, the paste is wrong |
-| `reviewer-allowlist.test.js` — 93 pass | its last case is dormant until install and then asserts the installed hook is **byte-identical** to the reviewed copy, so a stray edit during the paste cannot drift them apart silently |
+| `reviewer-allowlist.test.js` — 102 pass | its last case is dormant until install and then asserts the installed hook is **byte-identical** to the reviewed copy, so a stray edit during the paste cannot drift them apart silently |
 | `enforcement-wiring.test.js` — 7 pass | no BOM, hooks still wired, frontmatter still declares the role argument |
-| `adversarial-test.mjs --installed` — 28/28 | the `--installed` flag is the whole point: before the paste it drives `scratch/`, after it drives `.claude/hooks/` |
+| `adversarial-test.mjs --installed` — 39/39 | the `--installed` flag is the whole point: before the paste it drives `scratch/`, after it drives `.claude/hooks/` |
 
 Then the full suite:
 
@@ -138,7 +169,7 @@ Then the full suite:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-Expect `# pass 2335 / # fail 0` (2242 at the merge base, +93 from the new matrix).
+Expect `# pass 2344 / # fail 0` (2242 at the merge base, +102 from the new matrix).
 
 ---
 

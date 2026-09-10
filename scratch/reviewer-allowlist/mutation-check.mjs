@@ -13,6 +13,20 @@
 // A run that produces no test summary at all is reported as INCONCLUSIVE rather
 // than scored as a survival -- a hang and a pass parse identically otherwise.
 //
+// EXPECTATIONS ARE PREFIX-QUALIFIED ON PURPOSE. Every widening contributes two
+// case names that share a suffix -- `widened: X` and `still refused alongside
+// it: X` -- so an expectation of bare `X` would be satisfied by whichever of the
+// two happened to be red. Review caught that; each expectation below names the
+// half it means.
+//
+// THIS HARNESS WRITES TO THE FILE UNDER REVIEW. It patches guard-readonly.mjs in
+// place and restores it in a `finally`, so an exception cannot leave the reviewed
+// guard mutated on disk; a SIGKILL still can, and the file is git-tracked
+// precisely so `git checkout` recovers it. A Reviewer running this under revision
+// 2 is performing a repository write through an allowed command -- which is the
+// "read-only by allowlist, not in effect" caveat in concrete form rather than an
+// exception to it.
+//
 // Not part of `npm test`. Run on demand:
 //   node scratch/reviewer-allowlist/mutation-check.mjs
 import { spawnSync } from 'node:child_process';
@@ -25,88 +39,120 @@ const REPO = join(HERE, '..', '..');
 const GUARD = join(HERE, 'guard-readonly.mjs');
 const TEST = join(REPO, 'test', 'hooks', 'reviewer-allowlist.test.js');
 
+const REFUSED = 'still refused alongside it: ';
+const TIGHT = 'tightened: revision 2 refuses ';
+
 /** [name, find, replace, substrings that must appear among the failing case names] */
 const MUTATIONS = [
   ['newline dropped from the composition scanner',
     "if (ch === '\\n' || ch === '\\r') return 'a newline (a shell command separator)';",
     '',
-    ['a newline as a command separator', 'a newline is refused even when the second line']],
+    [`${TIGHT}a newline as a command separator`, 'a newline is refused even when the second line']],
 
   ['bare $ allowed outside quotes',
     "const OUTSIDE_QUOTES_FORBIDDEN = new Set([';', '&', '|', '<', '>', '(', ')', '`', '$', '\\\\']);",
     "const OUTSIDE_QUOTES_FORBIDDEN = new Set([';', '&', '|', '<', '>', '(', ')', '`', '\\\\']);",
-    ['bare variable expansion']],
+    [`${TIGHT}bare variable expansion`]],
 
   ['pipe allowed outside quotes',
     "const OUTSIDE_QUOTES_FORBIDDEN = new Set([';', '&', '|', '<', '>', '(', ')', '`', '$', '\\\\']);",
     "const OUTSIDE_QUOTES_FORBIDDEN = new Set([';', '&', '<', '>', '(', ')', '`', '$', '\\\\']);",
-    ['an alternation pattern']],
+    [`${REFUSED}an alternation pattern`]],
 
   ['expansion allowed inside double quotes',
     "      if (ch === '`' || ch === '$' || ch === '\\\\') return `${ch} inside double quotes`;",
     '',
-    ['expansion inside double quotes']],
+    ['expansion inside double quotes is refused']],
 
   ['an unterminated quote is guessed at rather than refused',
     "  return quote ? 'an unterminated quote' : null;",
     '  return null;',
-    ['unterminated quote']],
+    ['fails closed on an unterminated quote']],
 
   ['the write-flag check removed',
     "if (!/^aws\\b/.test(cmd) && WRITE_FLAGS.test(cmd)) {",
     'if (false) {',
-    ['writing a file through git diff', 'writing a file through git log', 'a hash, for a byte-identity claim',
-      'structured reading of a data file', 'node --test with an explicit reporter']],
+    // `node --test --test-reporter-destination=...` is deliberately NOT expected
+    // here. Bounding the --test route to repo-relative operands (the S1 fix) made
+    // that case double-guarded: the operand starts with `-` and is not a known
+    // node flag, so the route refuses it whether or not WRITE_FLAGS exists.
+    // Listing it would have scored this mutation on a case another rule owns --
+    // the same error the `sed -i` expectation made, one round earlier.
+    [`${TIGHT}writing a file through git diff`, `${TIGHT}writing a file through git log`,
+      `${REFUSED}a hash, for a byte-identity claim`, `${REFUSED}structured reading of a data file`]],
 
   ['the aws exemption widened to every command',
     "if (!/^aws\\b/.test(cmd) && WRITE_FLAGS.test(cmd)) {",
     "if (/^never-matches\\b/.test(cmd) && WRITE_FLAGS.test(cmd)) {",
-    ['writing a file through git diff']],
+    [`${TIGHT}writing a file through git diff`]],
 
   ['the scoped short-flag denials removed',
     'for (const [pattern, why] of SCOPED_FLAG_DENY) {',
     'for (const [pattern, why] of []) {',
-    ['short flags are scoped per binary', 'sorting output for comparison']],
+    ['short flags are scoped per binary', `${REFUSED}sorting output for comparison`,
+      'npm cannot be redirected to another package root']],
 
   ['git branch back to revision 1’s prefix rule',
     "  re(String.raw`git branch(?:\\s+(?:${BRANCH_READ_FLAGS}))*`),",
     '  /^git branch\\b/,',
-    ['deleting a branch', 'renaming a branch', 'creating a branch']],
+    [`${TIGHT}deleting a branch`, `${TIGHT}renaming a branch`, `${TIGHT}creating a branch`]],
 
   ['git remote back to a prefix rule',
     "  re(String.raw`git remote(?:\\s+(?:-v|--verbose))?`),",
     '  /^git remote\\b/,',
-    ['the configured remote']],
+    [`${REFUSED}the configured remote`]],
 
   ['git config back to a prefix rule',
     "  re(String.raw`git config(?:\\s+--(?:global|local|system|worktree))?\\s+(?:--get|--get-all|--get-regexp|--list|-l)${ARGS}`),",
     '  /^git config\\b/,',
-    ['a config value']],
+    [`${REFUSED}a config value`]],
 
   ['git tag back to a prefix rule',
     '  re(String.raw`git tag`),',
     '  /^git tag\\b/,',
-    ['git reporting its own version']],
+    [`${REFUSED}git reporting its own version`]],
 
   ['git stash back to a prefix rule',
     "  re(String.raw`git (?:stash (?:list|show)|worktree list)${ARGS}`),",
     '  /^git stash\\b/,',
-    ['stash inspection']],
+    [`${REFUSED}stash inspection`]],
 
   ['the environment-name allowlist ignored',
     '  if (!ENV_NAMES.has(name)) {',
     '  if (false) {',
-    ['the browser-enabled test suite']],
+    [`${REFUSED}the browser-enabled test suite`]],
 
   ['absolute script paths accepted',
     "  if (t.startsWith('/') || t.startsWith('~') || /^[A-Za-z]:/.test(t)) return false;",
     '',
-    ['the evidence script under review']],
+    [`${REFUSED}the evidence script under review`, 'both node routes are bounded']],
 
   ['.. escapes accepted in a script path',
-    "  if (segments.includes('..')) return false;",
-    '',
-    ['a committed skill script']],
+    "  return !t.replace(/\\\\/g, '/').split('/').includes('..');",
+    '  return true;',
+    [`${REFUSED}a committed skill script`, 'both node routes are bounded']],
+
+  // The defect this row pins was found in review: the repo-relative bound was
+  // enforced on the script route and NOT on --test, so `node --test /tmp/x` was
+  // allowed while the change claimed "repo-relative paths only".
+  ['node --test back to an unbounded path rule',
+    '  { test: isRepoTestRun },',
+    '  re(String.raw`node${NODE_FLAGS}\\s+--test${ARGS}`),',
+    ['both node routes are bounded']],
+
+  // Likewise found in review: `uniq INPUT OUTPUT`, `xxd infile outfile` and
+  // `tree -o` all write, and `date -s` sets the system clock. No flag rule can
+  // catch a positional output operand, so the only defence is absence.
+  ['positional-output writers re-admitted to the reader list',
+    'diff|cmp|od|stat|file|basename',
+    'diff|cmp|od|xxd|uniq|tree|date|stat|file|basename',
+    ['positional operand are not on the allowlist', 'write the system clock are not on the allowlist']],
+
+  ['gh widened to a prefix rule',
+    "  re(String.raw`gh (?:pr (?:list|view|status|checks|diff)|run (?:list|view)|issue (?:list|view)|repo view)${ARGS}`),",
+    '  /^gh\\b/,',
+    ['gh read verbs are admitted one at a time',
+      `${REFUSED}confirming a pull request exists`, `${REFUSED}pull request checks`]],
 
   ['the reviewer given node -e',
     '  reviewer: [],',
@@ -116,22 +162,23 @@ const MUTATIONS = [
   ['npm widened past test and run',
     'npm (?:test|run [A-Za-z0-9:._-]+)',
     'npm (?:[a-z]+)',
-    ['a single test file through npm']],
+    [`${REFUSED}a single test file through npm`]],
 
   ['the composition check skipped entirely',
     'if (fault !== null) {',
     'if (false) {',
-    ['a newline as a command separator', 'bare variable expansion', 'expansion inside double quotes']],
+    [`${TIGHT}a newline as a command separator`, `${TIGHT}bare variable expansion`,
+      'expansion inside double quotes is refused']],
 
   ['the allowlist match made unconditional',
     'if (allowed.some((rule) => rule.test(cmd))) process.exit(0);',
     'process.exit(0);',
-    ['still refused alongside it', 'tightened: revision 2 refuses']],
+    [REFUSED, TIGHT]],
 
   ['the role check made to fail open for every role',
     'if (!isRole(ROLE)) process.exit(0);',
     'process.exit(0);',
-    ['still refused alongside it', 'parity with revision 1']],
+    [REFUSED, 'parity with revision 1']],
 ];
 
 const pristine = readFileSync(GUARD, 'utf8');
@@ -147,6 +194,16 @@ function runMatrix(testPath = TEST) {
   if (!total || !fail) return { inconclusive: true, out };
   const failing = [...out.matchAll(/^not ok \d+ - (.+)$/gm)].map((m) => m[1].trim());
   return { tests: Number(total[1]), fail: Number(fail[1]), failing, out };
+}
+
+/** Patch, measure, and ALWAYS put the file back. */
+function withMutation(content) {
+  writeFileSync(GUARD, content);
+  try {
+    return runMatrix();
+  } finally {
+    restore();
+  }
 }
 
 let proven = 0;
@@ -170,9 +227,7 @@ for (const [name, find, replace, expect] of MUTATIONS) {
     broken++;
     continue;
   }
-  writeFileSync(GUARD, pristine.replace(find, replace));
-  const r = runMatrix();
-  restore();
+  const r = withMutation(pristine.replace(find, replace));
 
   if (r.inconclusive) {
     console.log(`  INCONCLUSIVE ${name} - the run produced no summary (hang, crash, or syntax error)`);
@@ -199,9 +254,7 @@ for (const [name, find, replace, expect] of MUTATIONS) {
 //     NOT produce a summary-less run: node still exits non-zero per spawn, every
 //     case sees a code that is neither 0 nor 2, and the matrix goes red. So this
 //     row proves "a broken guard is red", not "the hollowness check works".
-writeFileSync(GUARD, `${pristine}\nthis is not javascript(((\n`);
-const broke = runMatrix();
-restore();
+const broke = withMutation(`${pristine}\nthis is not javascript(((\n`);
 const brokeOk = broke.inconclusive || broke.fail > 0;
 console.log(`self-test A: a syntax error in the guard is reported as ${broke.inconclusive ? 'INCONCLUSIVE' : `${broke.fail} red`} - scored as evidence: ${brokeOk ? 'yes' : 'NO'}`);
 

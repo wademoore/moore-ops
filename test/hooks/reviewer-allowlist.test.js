@@ -85,6 +85,11 @@ const WIDENINGS = [
     'node .claude/skills/waves-standings/standings.js 2026',
     'node ../outside-the-repo/evil.mjs'],
 
+  // Double-guarded since the --test route was bounded to repo-relative operands:
+  // the destination token starts with `-` and is not a known node flag, so the
+  // route refuses it even with the write-flag check removed. The mutation harness
+  // therefore does NOT score the write-flag check on this case - it is proved on
+  // the git and hash cases instead.
   ['node --test with an explicit reporter',
     'node --experimental-vm-modules --test test/hooks/guard-readonly.test.js',
     'node --test --test-reporter-destination=/tmp/pwned test/'],
@@ -144,6 +149,14 @@ const WIDENINGS = [
   ['stash inspection',
     'git stash list',
     'git stash push'],
+
+  ['confirming a pull request exists, which is checklist item 7',
+    'gh pr view 58',
+    'gh pr merge 58'],
+
+  ['pull request checks',
+    'gh pr checks --json name,state',
+    'gh pr comment 58 --body approved'],
 ];
 
 for (const [label, allow, refuse] of WIDENINGS) {
@@ -289,6 +302,55 @@ test('an explicit role argument outranks agent_type and an unknown role fails cl
   assert.match(typo.stderr, /unknown role/);
 });
 
+// A binary that writes through a bare POSITIONAL operand cannot be caught by any
+// flag rule, because there is no flag. Three such binaries were on the first
+// draft's reader list and a review found them; `uniq in.txt victim.txt` was run
+// and really did overwrite victim.txt. `date -s` is the same class one step over:
+// it writes no file, it writes the system clock, and probing it moved this
+// container's clock to 2020.
+//
+// These assert the binaries are ABSENT from the allowlist, not that some rule
+// refuses them - which is why each also names a form with no flag at all.
+test('binaries that write through a positional operand are not on the allowlist', () => {
+  assert.ok(blocked(next('uniq CLAUDE.md package.json')), 'uniq INPUT OUTPUT overwrites OUTPUT');
+  assert.ok(blocked(next('uniq CLAUDE.md')), 'uniq is absent entirely, not merely restricted');
+  assert.ok(blocked(next('xxd package.json out.bin')), 'xxd infile outfile writes outfile');
+  assert.ok(blocked(next('xxd package.json')), 'xxd is absent entirely');
+  assert.ok(blocked(next('tree -o /tmp/pwned')), 'tree -o writes a file');
+  assert.ok(blocked(next('tree')), 'tree is absent entirely');
+});
+
+test('binaries that write the system clock are not on the allowlist', () => {
+  assert.ok(blocked(next('date --set=2020-01-01')), 'date --set moves the system clock');
+  assert.ok(blocked(next('date -s 2020-01-01')), 'the short form too');
+  assert.ok(blocked(next('date')), 'date is absent entirely, because the write is a flag away');
+});
+
+// The repo-relative bound is a property of the whole `node` surface. It was
+// enforced on the script route and NOT on the --test route, so `node --test
+// /tmp/x.test.js` was allowed - a widening whose paired refusal tested a
+// different property than the one the change claimed.
+test('both node routes are bounded to paths inside the repository', () => {
+  assert.ok(allowed(next('node --test test/hooks/reviewer-allowlist.test.js')), 'a repo path');
+  assert.ok(allowed(next('node --test test/hooks/')), 'a repo directory');
+  assert.ok(allowed(next('node --test')), 'no operand at all');
+  assert.ok(blocked(next('node --test /tmp/evil.test.js')), 'an absolute path');
+  assert.ok(blocked(next('node --test ../outside-the-repo')), 'a .. escape');
+  assert.ok(blocked(next('node --test test/ /tmp/evil.test.js')), 'one bad operand among good ones');
+  assert.ok(blocked(next('node /tmp/evil.mjs')), 'the same bound on the script route');
+});
+
+// npm --prefix runs the script against a DIFFERENT package root, so `npm test
+// --prefix /elsewhere` is not this repository's suite. Revision 1's `$` anchor
+// prevented this incidentally; bounding the arguments removed that anchor, so
+// the bound is restated deliberately.
+test('npm cannot be redirected to another package root', () => {
+  assert.ok(allowed(next('npm test')), 'the ordinary invocation');
+  assert.ok(blocked(next('npm test --prefix /elsewhere')), '--prefix');
+  assert.ok(blocked(next('npm run build:dashboard-artifact -C /elsewhere')), '-C');
+  assert.ok(blocked(next('npm test --global')), '--global');
+});
+
 // A short flag's meaning depends on the binary, so these cannot be global:
 // `grep -o` is only-matching and `grep -c` counts, both reads, while `sort -o`
 // writes a file and `git -c` injects configuration - which can hand git an
@@ -307,6 +369,20 @@ test('short flags are scoped per binary: the reading form survives, the writing 
   assert.ok(blocked(next('git grep -O touch artifactVersion')), 'git grep -O runs an external pager');
   assert.ok(blocked(next('node --test -r /tmp/evil.js test/')), 'node -r loads a module from any path');
   assert.ok(blocked(next('sed -i s/a/b/ CLAUDE.md')), 'sed -i is refused by the allowlist, before the scoped rule is reached');
+});
+
+// gh's read and write verbs share one namespace, so the allowlist enumerates the
+// read ones rather than prefix-matching `gh pr`. The write FLAGS are refused
+// separately, because a read endpoint plus -X POST is a write.
+test('gh read verbs are admitted one at a time; the write verbs and flags are not', () => {
+  assert.ok(allowed(next('gh pr list --state open')), 'pr list');
+  assert.ok(allowed(next('gh run view 123 --log')), 'run view');
+  assert.ok(allowed(next('gh repo view --json name')), 'repo view');
+  assert.ok(blocked(next('gh pr create --title x --body y')), 'pr create');
+  assert.ok(blocked(next('gh pr close 58')), 'pr close');
+  assert.ok(blocked(next('gh pr review 58 --approve')), 'pr review');
+  assert.ok(blocked(next('gh api repos/wademoore/moore-ops/pulls -X POST')), 'gh api is absent entirely');
+  assert.ok(blocked(next('gh pr view 58 -X POST')), 'a write flag on a read verb');
 });
 
 // The scanner tracks quote state, so it has two failure modes revision 1 could

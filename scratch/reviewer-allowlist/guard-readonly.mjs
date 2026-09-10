@@ -170,6 +170,16 @@ const SCOPED_FLAG_DENY = [
   [/^sed\b[\s\S]*(?:^|\s)-i(?:[=\s]|$)/, 'sed -i edits a file in place'],
   [/^sort\b[\s\S]*(?:^|\s)-o(?:[=\s]|$)/, 'sort -o writes its output to a file'],
   [/^(?:node|npm|npx)\b[\s\S]*(?:^|\s)-r(?:[=\s]|$)/, 'node -r loads a module from any path'],
+  // npm --prefix / -C / --global run the script against a DIFFERENT package root,
+  // so `npm test --prefix /elsewhere` is not this repository's test suite at all.
+  // Revision 1's `$` anchor prevented this incidentally; bounding the arguments
+  // removed that anchor, so the bound has to be restated deliberately.
+  [/^(?:npm|npx)\b[\s\S]*(?:^|\s)(?:--prefix|--cwd|-C|--global|-g|--workspace|-w)(?:[=\s]|$)/,
+    'npm --prefix / -C / --global redirects the package root away from this repository'],
+  // gh has write verbs and write flags. The allowlist admits only read verbs;
+  // this refuses the flags that turn a read endpoint into a write request.
+  [/^gh\b[\s\S]*(?:^|\s)(?:-X|--method|-f|--field|-F|--raw-field|--input)(?:[=\s]|$)/,
+    'gh -X / --field issues a write request'],
 ];
 
 // ---------------------------------------------------------------------------
@@ -181,13 +191,19 @@ const SCOPED_FLAG_DENY = [
 // execution to committed paths means the code that runs is itself reviewable.
 const SCRIPT_EXT = /\.(?:mjs|cjs|js)$/;
 
-function isRepoRelativeScript(tokenRaw) {
-  const t = tokenRaw.replace(/^['"]|['"]$/g, '');
+const unquote = (t) => t.replace(/^['"]|['"]$/g, '');
+
+/** A path inside the repository: not absolute, not home-relative, no `..` escape. */
+function isRepoRelativePath(tokenRaw) {
+  const t = unquote(tokenRaw);
   if (!t || t.startsWith('-')) return false;
   if (t.startsWith('/') || t.startsWith('~') || /^[A-Za-z]:/.test(t)) return false;
-  const segments = t.replace(/\\/g, '/').split('/');
-  if (segments.includes('..')) return false;
-  return SCRIPT_EXT.test(t);
+  return !t.replace(/\\/g, '/').split('/').includes('..');
+}
+
+/** The same, and an executable module rather than a directory or a data file. */
+function isRepoRelativeScript(tokenRaw) {
+  return isRepoRelativePath(tokenRaw) && SCRIPT_EXT.test(unquote(tokenRaw));
 }
 
 // Node flags permitted before a script or before --test. Named rather than
@@ -202,6 +218,22 @@ const NODE_SCRIPT_RE = new RegExp(String.raw`^node${NODE_FLAGS}\s+(${TOKEN})${AR
 function isRepoScriptRun(cmd) {
   const m = NODE_SCRIPT_RE.exec(cmd);
   return m ? isRepoRelativeScript(m[1]) : false;
+}
+
+// `node --test` takes PATHS, and they were unbounded when this rule was a bare
+// regex: `node --test /tmp/x.test.js` and `node --test ../outside` both matched,
+// which contradicted the repo-relative bound the route beside it enforces. The
+// bound is a property of the whole `node` surface, so it has to hold on both
+// routes or it holds on neither.
+const NODE_TEST_RE = new RegExp(String.raw`^node${NODE_FLAGS}\s+--test((?:\s+${TOKEN})*)$`);
+const NODE_FLAG_ONLY = new RegExp(`^${NODE_FLAG}$`);
+
+function isRepoTestRun(cmd) {
+  const m = NODE_TEST_RE.exec(cmd);
+  if (!m) return false;
+  const operands = (m[1] ?? '').trim();
+  if (!operands) return true;
+  return operands.split(/\s+/).every((t) => NODE_FLAG_ONLY.test(t) || isRepoRelativePath(t));
 }
 
 // ---------------------------------------------------------------------------
@@ -227,7 +259,7 @@ const SHARED = [
   // `npm run`; the widening here is the digit-bearing script names the old
   // charset excluded, and trailing arguments so a single test file can be run.
   re(String.raw`npm (?:test|run [A-Za-z0-9:._-]+)(?:\s+--)?${ARGS}`),
-  re(String.raw`node${NODE_FLAGS}\s+--test${ARGS}`),
+  { test: isRepoTestRun },
   { test: isRepoScriptRun },
 
   // "could not even ask git for its own version"
@@ -247,7 +279,37 @@ const SHARED = [
 
   // Reading and summarising files. Every binary here is a reporter: none of them
   // writes without a redirect, and redirects are refused by the scanner above.
-  re(String.raw`(?:grep|rg|findstr|cat|head|tail|wc|ls|dir|nl|cut|tr|uniq|sort|comm|diff|cmp|od|xxd|stat|file|basename|dirname|realpath|readlink|du|jq|sha256sum|sha1sum|md5sum|cksum|pwd|date|which|column|tree)${ARGS}`),
+  //
+  // FOUR BINARIES ARE DELIBERATELY ABSENT, and the reason is the sharpest lesson
+  // in this file. A review of the first draft found that `uniq`, `xxd` and `tree`
+  // were on this list and every one of them writes a file:
+  //
+  //   uniq INPUT OUTPUT    - the second POSITIONAL operand is an output file
+  //   xxd  infile outfile  - likewise
+  //   tree -o PATH         - a short flag, so SCOPED_FLAG_DENY's `sort -o` rule
+  //                          did not reach it
+  //
+  // Confirmed by running it: `uniq in.txt victim.txt` overwrote victim.txt. No
+  // flag check could ever have caught `uniq`, because it needs no flag - and it
+  // sat one token away from `sort`, whose -o hazard the comment above had already
+  // reasoned about correctly. Reading an allowlist for what it refuses, and never
+  // for what its entries can do, is how a "read-only" list acquires a writer.
+  //
+  // `date` is absent for the same class of reason: `date -s` / `--set=` sets the
+  // SYSTEM CLOCK. That is not theoretical either - probing it moved this
+  // container's clock to 2020 and broke TLS until it was put back.
+  //
+  // Before adding a binary here, ask what it does with a bare positional operand
+  // and whether any short flag makes it write. Not whether it "is a read tool".
+  re(String.raw`(?:grep|rg|findstr|cat|head|tail|wc|ls|dir|nl|cut|tr|sort|comm|diff|cmp|od|stat|file|basename|dirname|realpath|readlink|du|jq|sha256sum|sha1sum|md5sum|cksum|pwd|which|column)${ARGS}`),
+
+  // Read-only GitHub verbs, so the Reviewer can complete its own checklist item 7
+  // ("confirm a PR exists"), which no revision of this guard previously allowed.
+  // Verbs are enumerated rather than prefix-matched, because `gh pr merge`,
+  // `gh pr comment` and `gh pr create` sit in the same namespace; the write FLAGS
+  // are refused separately in SCOPED_FLAG_DENY. `gh api` is deliberately absent:
+  // its endpoint argument alone decides nothing, and the method is a flag.
+  re(String.raw`gh (?:pr (?:list|view|status|checks|diff)|run (?:list|view)|issue (?:list|view)|repo view)${ARGS}`),
   // sed only in its printing form; -i is additionally refused above.
   re(String.raw`sed\s+-n${ARGS}`),
 

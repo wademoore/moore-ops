@@ -85,7 +85,29 @@ show('Smuggle a second command behind a newline. Revision 1 ALLOWED this.', 'BLO
 show('Read outside the repo by expansion. Revision 1 ALLOWED this.', 'BLOCKS',
   'cat $HOME/.aws/credentials');
 
-console.log('--- D. ordinary write attempts, refused before and after --------------------\n');
+console.log('--- D. writers the FIRST DRAFT of this change let in, found in review -------\n');
+
+show('uniq writes through a bare positional operand. No flag rule can catch it.', 'BLOCKS',
+  'uniq CLAUDE.md package.json');
+show('The same binary in its innocent form: absent entirely, not merely restricted.', 'BLOCKS',
+  'uniq CLAUDE.md');
+show('xxd, same shape.', 'BLOCKS', 'xxd package.json out.bin');
+show('tree writes through a SHORT flag, which the sort -o scoping did not reach.', 'BLOCKS',
+  'tree -o /tmp/pwned');
+show('date sets the system clock. Probing this really did move it to 2020.', 'BLOCKS',
+  'date --set=2020-01-01');
+show('node --test took unbounded PATHS while the script route was bounded.', 'BLOCKS',
+  'node --test /tmp/evil.test.js');
+show('The same route, with a repo path: still allowed.', 'ALLOWS',
+  'node --test test/hooks/reviewer-allowlist.test.js');
+show('npm --prefix runs a DIFFERENT package root, so it is not this suite at all.', 'BLOCKS',
+  'npm test --prefix /elsewhere');
+show('Confirming a pull request exists — checklist item 7, which no revision allowed.', 'ALLOWS',
+  'gh pr view 58');
+show('The write verb one token away in the same namespace.', 'BLOCKS', 'gh pr merge 58');
+show('A read verb carrying a write flag.', 'BLOCKS', 'gh pr view 58 -X POST');
+
+console.log('--- E. ordinary write attempts, refused before and after --------------------\n');
 
 show('Delete files.', 'BLOCKS', 'rm -rf render');
 show('Redirect into a file.', 'BLOCKS', 'printf x > CLAUDE.md');
@@ -98,7 +120,7 @@ show('Change configuration.', 'BLOCKS', 'git config user.email attacker@example.
 show('Install a dependency.', 'BLOCKS', 'npm install left-pad');
 show('Execute a string.', 'BLOCKS', 'node -e "require(\'fs\').writeFileSync(\'/tmp/pwned\',\'x\')"');
 
-console.log('--- E. the two roles stay distinct, and the main thread stays unrestricted --\n');
+console.log('--- F. the two roles stay distinct, and the main thread stays unrestricted --\n');
 
 show('The Debugger keeps node -e; that is its documented core capability.', 'ALLOWS',
   'node -e 1', 'debugger');
