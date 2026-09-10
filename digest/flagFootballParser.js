@@ -51,9 +51,19 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   const seasonTeamName =
     (typeof season.teamName === 'string' ? season.teamName.trim() : '') || null;
 
-  // Base filter: final regular non-friendly games
+  // Base filter: final regular non-friendly games with two real scores.
+  //
+  // The score check is not redundant. Counting w/l/t compares the two scores,
+  // and `null > null` and `null < null` are BOTH false, so a `final` row with
+  // null scores would fall through to the tie branch and be reported as a draw.
+  // Before ties existed it fell to the loss branch and produced an obviously
+  // bogus loss; bucketing it as a plausible-looking 0-0 draw makes the same bad
+  // row quieter rather than smaller, which is worse. Unreachable in current data
+  // — every null-score row is `rescheduled` or `scheduled` — so this guards the
+  // shape rather than fixing a live defect.
+  const hasBothScores = g => typeof g.homeScore === 'number' && typeof g.awayScore === 'number';
   const eligibleGames = (season.games || []).filter(
-    g => g.type === 'regular' && g.status === 'final' && !g.friendly
+    g => g.type === 'regular' && g.status === 'final' && !g.friendly && hasBothScores(g)
   );
 
   // My team's eligible games
@@ -96,9 +106,11 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   // loop above, and this half was missed on the first pass: both branches read
   // `if (home > away) w++; else l++`, so a drawn game would have produced a
   // seasonRecord of e.g. 3-0-1 beside a standings row reading w:3 l:1 — the two
-  // halves of one file disagreeing about the same game. `t` is additive: every
-  // renderer selects named columns (`['team','w','l']`), so nothing shows it
-  // until a surface asks for it.
+  // halves of one file disagreeing about the same game. `t` is additive because
+  // every consumer reads named keys rather than enumerating them (v2 selects a
+  // `['team','w','l']` column list, mobile reads `.team/.w/.l`, frozen v1 reads
+  // `.team/.w/.l/.pf/.pa`, and the email renders no standings at all), so a new
+  // key shows up nowhere until a surface asks for it.
   const standings = season.teams.map(team => {
     let w = 0, l = 0, t = 0, pf = 0, pa = 0;
     const tKey = teamKey(team);

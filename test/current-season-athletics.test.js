@@ -398,8 +398,9 @@ describe('flag football team identity', () => {
     // parseFlagFootball resolves `teamId ?? abbr`, so a season declaring
     // myTeamId while its teams[] carry only abbr would match NOTHING and
     // degrade to 0-0-0 with no isMe row — indistinguishable from a season that
-    // has not started. That invariant lived only in a code comment; this is the
-    // thing that actually enforces it.
+    // has not started. This enforces the DATA invariant, which lived only in a
+    // code comment. It does not enforce the parser's side of the contract: a
+    // change dropping the id path is caught by the mutation harness, not here.
     const data = await readJson('data/flag-football.json');
     for (const s of data.seasons) {
       const byId   = s.teams.every(t => t.teamId != null);

@@ -19,11 +19,27 @@ import { spawnSync } from 'node:child_process';
 // tree: that way `git checkout -- data digest` is always a complete recovery,
 // and a genuine uncommitted change can never be mistaken for a leftover mutant.
 {
-  const dirty = spawnSync('git', ['status', '--porcelain', '--', 'data', 'digest'],
-    { encoding: 'utf8' }).stdout?.trim();
+  const r = spawnSync('git', ['status', '--porcelain', '--', 'data', 'digest'],
+    { encoding: 'utf8' });
+  // Fail CLOSED when git itself fails. `.stdout?.trim()` is undefined when git
+  // is missing, the cwd is not a repo, or the command errors — falsy, so a
+  // status-blind guard would sail past its own broken tooling and overwrite
+  // tracked files. That is the failure shape CLAUDE.md's gate section warns
+  // about, in miniature.
+  if (r.error || r.status !== 0) {
+    console.error('refusing to run: could not determine git status.\n' +
+      String(r.error || r.stderr || `git exited ${r.status}`));
+    process.exit(1);
+  }
+  const dirty = r.stdout.trim();
   if (dirty) {
-    console.error('refusing to run: data/ or digest/ has uncommitted changes.\n' +
-      'Commit or stash them first — this harness overwrites those files.\n' + dirty);
+    // `git status --porcelain` reports untracked paths as `??`, and plain
+    // `git stash` does NOT stash those — so name the remedy that actually
+    // clears each case rather than one that leaves the refusal in place.
+    console.error('refusing to run: data/ or digest/ is not clean.\n' +
+      'This harness overwrites those files in place, so it needs a committed\n' +
+      'baseline to restore. Commit your changes, or stash them including\n' +
+      'untracked files (`git stash -u -- data digest`), then re-run.\n' + dirty);
     process.exit(1);
   }
 }

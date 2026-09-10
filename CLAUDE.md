@@ -2044,7 +2044,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2297+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2308.)
+Current baseline above; the figure is now 2309.)
 
 ### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
@@ -2694,15 +2694,38 @@ method, so they chain directly to the 988 pre-change number above.
   table. That consequence is now recorded in the season `note`; previously only the two missing
   team *ids* were. (3) The updated-assertion count in this file said "five" and broke down as
   "four plus three"; it is nine, enumerated above. (4) The stale flag-game subtitle is
-  **digest-layer, not Codex's** — `digest/aliases.js` and `digest/builder.js` are the loop's under
-  Surface boundaries — so declining to fix it on scope grounds is defensible but leaving it
-  unrecorded was not. It is now a Known open item. Three MINOR items were also taken: an
-  invariant test that no season mixes id-keyed and abbr-keyed teams (the parser relies on it and
-  only a comment stated it), a corrected `NON_GAME_TYPES` comment that had overstated what the
-  set does, and the harness's clean-tree guard. The remaining MINOR items — the season `note`
-  naming `leagueName` where the season field is `leagueTeamName` (fixed) and derived `W-L-T`
-  coexisting with the stored historical `regularRecord: "7-0"` (left; different fields) — are in
-  the pull request's Parked section.
+  **digest-layer, not Codex's** — Surface boundaries assign `digest/` to the loop, and both
+  hardcoded sites live there — so declining to fix it on scope grounds is defensible but leaving
+  it unrecorded was not. It is now a Known open item. Four MINOR items were also taken: the
+  season `note` said `leagueName` where the season-level field is `leagueTeamName`; an invariant
+  test that no season mixes id-keyed and abbr-keyed teams (the parser relies on it and only a
+  comment stated it); a corrected `NON_GAME_TYPES` comment that had overstated what the set does;
+  and the harness's clean-tree guard. One MINOR item was **parked**, and it is the only one:
+  derived `W-L-T` now coexists with the stored historical `regularRecord: "7-0"`. Those are
+  different fields and neither reads the other, so there is nothing to reconcile — but a reader
+  comparing them will see two conventions in one file.
+
+  **A round-2 Reviewer pass over the fix commit also returned PASS with no BLOCKING findings, and
+  its findings are worth recording because three of them were created by the fix itself.** (1) The
+  fix updated `2308 → 2309` in three places and **missed a fourth**, leaving "the figure is now
+  2308" in the superseded-baseline note — the exact same-commit drift the gate section demands be
+  corrected, one section below where it says so. (2) The my-team-only `games` array and the new,
+  undisplayed `t` column both become *visible output* on Sept 20 and were written down only in a
+  JSON `note` that nothing reads; both are now Known open items. (3) `render/dashboard.js`'s
+  `StandingsRow` JSDoc was invalidated by the added `t` field, on a **frozen** surface — recorded
+  as a Known open item rather than edited, because the freeze permits only a failing-v1-test fix
+  and v1's tests are green. (4) A real behaviour sharpening: because `null > null` and
+  `null < null` are both false, a `final` row with null scores would have fallen into the new tie
+  branch and been reported as a plausible-looking 0-0 **draw**, where before ties existed it
+  produced an obviously bogus loss. Unreachable in current data, but the failure got quieter
+  rather than smaller, so `eligibleGames` now requires two numeric scores. (5) The harness's
+  clean-tree guard **failed open** if git itself failed (`.stdout?.trim()` is undefined on error,
+  which is falsy) and its remedy text was wrong for untracked files (plain `git stash` does not
+  stash them) — both fixed, and the guard verified to refuse a dirty tree and pass a clean one.
+  Two claims of mine were also stronger than the code and are narrowed: "every renderer selects
+  `['team','w','l']`" describes only v2's default (frozen v1 selects `pf`/`pa` too, and the email
+  renders no standings at all), and the invariant test enforces the *data* invariant while
+  mutation #10 is what covers the parser contract.
 
 - **Current-season athletics updated for both kids (Sept 10, 2026):** Ophelia's 757swim
   2026-27 season is enabled in `data/sports-config.json` with the window documented in
@@ -3450,6 +3473,38 @@ enumerated under test, digest, and render directly to Node. No deployment.
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
 
 ## Known open items
+
+- **Fall 2026 flag football standings are not a division table, and the new tie column is
+  produced but displayed nowhere (Sept 10, 2026).** Both raised by a round-2 Reviewer pass, and
+  both are consequences of the season that was just added rather than pre-existing defects.
+  Recorded here because each becomes *visible output* on Sept 20, the first game day, and the
+  only place either was written down was a JSON `note` that no code reads.
+  (1) **`data/flag-football.json`'s `fall-2026.games` holds only our six fixtures**, because the
+  league publishes only our team's weeks — unlike `fall-2025`, which carries the whole division
+  schedule and whose standings are therefore genuinely computable. Once results are entered,
+  `renderStandingRows` will draw a `Team | W | L` table in which each of the five listed
+  opponents has played exactly one game, ours, under a heading a viewer reads as a division
+  table. Today every row is 0/0 so nothing is misleading. (2) **`parseFlagFootball` now emits a
+  `t` (ties) field on every standings row and no renderer displays it** — all three hardcode
+  `Team | W | L` — so a team at `3-0-1` will show `seasonRecord: "3-0-1"` directly above a
+  standings row reading `3 / 0`: four games, three shown. Flag football ending level is the
+  stated premise of the tie fix, so this is reachable rather than hypothetical.
+  **Both are presentation decisions on surfaces Codex owns**, which is why neither was fixed
+  here; the options are a tie column, a caption distinguishing our-results-only from a division
+  table, or suppressing the table for a season whose `games` are my-team-only. Getting the full
+  division schedule would resolve (1) at the data layer instead, and is an Updater task if the
+  league ever publishes it.
+
+- **The frozen v1 dashboard's `StandingsRow` JSDoc is now wrong, deliberately unfixed
+  (Sept 10, 2026).** `render/dashboard.js:89` documents `StandingsRow { team, w, l, pf, pa, isMe }`
+  and line 47 documents `seasonRecord: string   e.g. "3-0"`. The shipped shape is now
+  `{ team, w, l, t, pf, pa, isMe }` and the record is `W-L-T`. `render/dashboard.js` is **frozen**
+  — "do not iterate, improve, refactor, or debug it unless Wade explicitly asks" — and the only
+  sanctioned exception is a failing v1 test, which this is not: v1's 81 tests are green because
+  they build their own fixtures and never call the parser. So the comment is knowingly stale and
+  left that way. It is recorded rather than quietly tolerated because the freeze section's own
+  argument is that silent rot on a frozen surface is the failure mode; a stale doc nobody wrote
+  down is exactly that. Fix it whenever the freeze is next lifted, or when v1 is retired.
 
 - **The flag-game event subtitle and `thisWeekTime` still name the SPRING season's venue and
   time, and the fall season being live now makes that visible (Sept 10, 2026).** Raised by an
