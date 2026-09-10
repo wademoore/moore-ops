@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2349+ passing with a browser
+- Run npm test after changes — must stay at 2391+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -2042,18 +2042,23 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 10, 2026 on the Reviewer-allowlist branch
+### Current baseline — measured Sept 10, 2026 on the Reviewer-allowlist branch, after merging #58
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test`, no browser resolvable | 2349 | 2299 | 3 | 47 |
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2349 | **2349** | **0** | **0** |
+| `npm test`, no browser resolvable | 2391 | 2341 | 3 | 47 |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2391 | **2391** | **0** | **0** |
 
-Measured on `claude/reviewer-shell-allowlist-q8e57z`, whose merge base with `main` is
-**`ada361f`** (PR #57). **That merge base was re-measured in this session, after
-`npm install` and before any change: 2242 / 2242 / 0 / 0 with a browser** —
-which is also the figure PR #58 records against the same commit, from a different session.
-Re-measure anyway; the run costs less than the correction does.
+Measured on `claude/reviewer-shell-allowlist-q8e57z` **after merging `origin/main` at
+`2f7ac47`** (PR #58, which landed while this branch was in review). Its merge base with
+`main` was **`ada361f`** (PR #57), and **that merge base was re-measured in this session,
+after `npm install` and before any change: 2242 / 2242 / 0 / 0 with a browser** — the same
+figure PR #58 records against the same commit, from a different session. Re-measure anyway;
+the run costs less than the correction does.
+
+The arithmetic closes exactly, which is the point of recording all three: 2242 at the merge
+base, **+42** from #58, **+107** from this change, **= 2391**. Both rows above were measured
+after the merge, not carried forward from the pre-merge run (which was 2349).
 
 This change adds **+107**, all in one new file:
 
@@ -2091,7 +2096,51 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2349+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2391+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2284 | **2284** | **0** | **0** |
+
+Measured on `claude/mobile-dashboard-contract-59kk82`, whose merge base with `main` is
+**`ada361f`** (PR #57). **That merge base was re-measured in this session, before any change,
+after `npm install`: 2242 / 2242 / 0 / 0 with a browser** — and `git fetch origin main` was run
+before deriving it, per the standing warning; the ref was stale at `2d01027` and the fetch moved
+it to `ada361f`, which is also this branch's head, so the merge base is the branch point.
+
+This change adds **+42**, in two new files:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/artifact/mobile-publishing-contract.test.js` (new) | — | 36 | +36 |
+| `test/deploy-workflow-mobile-flag.test.js` (new) | — | 6 | +6 |
+
+`test/artifact/holiday-theme-contract.test.js` and `test/deploy-workflow-holiday-flag.test.js`
+contribute **0**: three slices inside them were repaired, none added or removed. See the changelog
+entry for why that repair was necessary and why it is strictly stronger than what it replaced.
+
+The no-browser row is deliberately absent from this measurement: only the browser-enabled
+invocation was run, and quoting a figure that was not taken is exactly the unfalsifiable claim
+this section exists to prevent.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2284+ with no failures once a browser resolves.**
+
+Companion mutation harness, **committed** and run on demand — `node
+scratch/mobile-publishing-contract/mutation-check.mjs` → 23 mutations, 23/23 proven, green
+control, green restore, plus a self-test row that injects a real syntax error and requires the
+harness's own hollowness check to catch it (2 tests versus a control of 43). It lives in the repository rather than a session scratchpad precisely
+because a mutation count nobody can re-derive is not evidence; `package.json`'s globs are
+`test/**`, `digest/**` and `render/**`, so nothing under `scratch/` runs in `npm test`.
+
+(Superseded — see Current baseline above; the figure is now 2391.)
 
 ### Previous baseline — measured Sept 9, 2026 on the Reviewer-gate branch
 
@@ -2170,7 +2219,8 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2196+ with no failures once a browser resolves.**
+**Coder mode had to keep `npm test` at 2196+ under this baseline.** (Superseded — see
+Current baseline above; the figure is now 2284.)
 
 ### Previous baseline — measured Sept 8, 2026 on the prep-task fan-out branch
 
@@ -2654,8 +2704,158 @@ method, so they chain directly to the 988 pre-change number above.
   occurrence assertion caught it, which is what it is for), and one expectation named the
   `sed -i` case — which the allowlist refuses *before* the scoped rule is reached, so that
   rule is defence in depth with nothing of its own to prove, and the test now says so instead
-  of taking credit for it. Tests **2242 → 2349**, all passing with a browser; the merge base
-  was re-measured in-session rather than taken from this file.
+  of taking credit for it. Tests **2242 → 2349** on the branch, and **2391** after merging
+  `origin/main` at `2f7ac47` (PR #58, +42) to resolve a conflict that arose during review —
+  all passing with a browser. The merge base was re-measured in-session rather than taken
+  from this file.
+
+- **Mobile publishing contract defined and encoded (Sept 9, 2026):** The handoff item
+  `docs/dashboard-v2/mobile-dashboard-spec.md` listed as number 3 — "define successful-generation
+  timestamp, schema/version identity, last-good behavior, same-origin refresh/discovery
+  endpoint, and authentication-expiry response" — now exists as
+  `dashboard-artifact/mobile-contract.js` plus `dashboard-artifact/mobile-generator.js`, and is
+  written up for a consumer in `docs/dashboard-v2/mobile-publishing-contract.md`. **Nothing is
+  activated**: `MOBILE_ARTIFACT_ENABLED` defaults to `0` at every layer this repository controls,
+  no GitHub repository variable was created, nothing was deployed, and the merged mobile
+  interface's markup, layout and styling are untouched. **The wall display's artifact and contract
+  are byte-identical to the merge base**, demonstrated rather than asserted: rendering and driving
+  the real publish path in a worktree at `ada361f` and again on the branch, under a frozen clock,
+  produces identical contract constants, identical rendered bytes (5,867,306) and sha256, and
+  identical put keys, bodies, metadata and manifests for both the ordinary day and the first-day
+  takeover. `generateAndPublish()` was not modified.
+
+  **How the display obtains its document is what constrained the design, and it is a pull.** The Pi
+  reads one configured manifest key with an IAM user scoped to `s3:GetObject`/`s3:GetObjectVersion`
+  on `dashboard-v2/*` **only**, and `pull-dashboard-candidate.py` refuses any manifest whose
+  `artifactVersion` is not exactly `dashboard-v2`. So mobile publishes under `dashboard-mobile/*`
+  with `artifactVersion: 'dashboard-mobile'` and its own `schemaVersion`: the Pi's credentials
+  cannot read the prefix, and a Pi misconfigured to point at the mobile manifest fails closed
+  rather than putting a phone document on the television. Both protections are structural. The
+  generator gained a **separate** `s3:PutObject` statement for the new prefix rather than a widened
+  one, so the two grants are revocable independently — a test asserts they are two statements and
+  that `PiReader` is untouched.
+
+  **The contract's four elements.** Identity as above. `generatedAt` is stamped only by a run that
+  rendered, validated and uploaded, so it is evidence of the last *success*, never the last
+  *attempt*; the same instant is readable directly from the document as
+  `data-household-generated-at`, which the shipped renderer already emitted — no markup change was
+  needed or made. Last-good is the display's own ordering reused: immutable release, then the
+  discovery route beside it, then the pointer, so any earlier failure leaves the previous document
+  and manifest byte-unchanged. Discovery is same-origin `release-manifest.json` adjacent to the
+  document — the arrangement `activate-dashboard-release` already produces for the display — so an
+  origin serving the current release directory publishes the route for free.
+
+  **"Old document" versus "signed out" is separated by construction, not by convention.** Expiry
+  surfaces as a redirect to an external sign-in host, so it is a transport fact. `isMobileManifest()`
+  is the single exported predicate a consumer applies before reading any timestamp: JSON, schema 1,
+  `artifactVersion === 'dashboard-mobile'`, and a parseable `generatedAt`. Age is computed only from
+  a body that already proved it came from us, so an HTML sign-in page, an opaque cross-origin
+  response or a provider error can never be reported as staleness. The five-times-daily cadence is
+  published as manifest *data* (`refresh.cadence: 'scheduled'` plus the schedule and a
+  `maxScheduledGapMinutes` **derived** from it, 505) so a consumer never has to infer a live
+  refresh — and a test expands the template's own cron rules and compares them against that list, so
+  the two cannot drift.
+
+  **Isolation is proved by mutation in both directions.** One household data build is resolved once
+  and shared, so the phone consumes the display's own selection output rather than a second
+  derivation of it — `render/dashboard-mobile.js` already imports `specialEventSelector`,
+  `collapseUpcomingEvents` and `selectHorizonEvents`, and a test asserts the mobile publish path
+  imports nothing from `digest/` at all. Break the mobile render and the display still publishes its
+  two objects; break the display render and the mobile still publishes its three, while the
+  invocation still rejects exactly as it did before. That asymmetry is deliberate: a mobile failure
+  must not force repeated republishing of a good display artifact.
+
+  **Sizes are measured, not chosen.** Every shipped mobile state renders below the display
+  contract's 1 MB floor (17,917 empty · 155,380 quiet · 922,208 everyday · 932,020 crowded), which
+  is the measured reason a mobile document cannot be substituted into the display contract. The
+  floor of 14,000 sits above a document that lost its stylesheet (10,365) or its client script
+  (12,305) and below the emptiest valid render.
+
+  **One existing test asserted the old behavior and was repaired, not deleted or skipped.**
+  `test/artifact/holiday-theme-contract.test.js` sliced the Holiday resolve step "up to `- name:
+  Checkout`" to assert its `run:` body carries no GitHub expression. That boundary was only correct
+  while Holiday happened to be the last step before Checkout; inserting the mobile resolve step
+  pulled the mobile step's own `env:` mapping into the slice and failed the assertion for the wrong
+  reason. It — and two slices in `test/deploy-workflow-holiday-flag.test.js` that silently *widened*
+  the same way — now bound on the next step boundary, which is what "this step's run body" means and
+  is strictly stronger. All three were re-proved to have teeth: putting a `${{ }}` into the Holiday
+  run body, repointing its env mapping at the mobile variable, and deleting that mapping each turn
+  the pair red (22, 11 and 11 failing).
+
+  **Guards proved rather than claimed:** 18 mutations against the shipped implementation and the
+  template — reusing the display's artifact version or key prefix, claiming a live cadence, drifting
+  the schedule, dropping either half of the discovery predicate, dropping the timestamp or size or
+  secret checks, writing the pointer first, advancing the pointer on a failed render, deleting the
+  discovery route, defaulting either kill switch on, merging the two publish paths into one try,
+  fetching the data build twice, widening the Pi reader to the whole bucket, and merging the two
+  write grants — each turns the suite red for its own reason, with a green control and a green
+  restore. Tests **2242 → 2284**, all passing with a browser.
+
+  **An independent Reviewer pass returned PASS with no BLOCKING findings**, and every SHOULD FIX
+  it raised was acted on here — two of them in the failure family this file already documents.
+  (1) A comment claimed a test enforced that `MOBILE_SCHEMA_VERSION` is declared rather than
+  re-exported; no such test existed, and the `typeof` pair standing in for it could not fail. Both
+  constants are `1`, so no value assertion can express independence — the test now reads the module
+  and asserts the declaration plus that `contract.js` contributes only `FORBIDDEN_PATTERNS`.
+  (2) The last-good test ended in a tautology whose comment named the wrong dangerous case: it
+  filtered both sides down to the pointer key, which the preceding assertion had already
+  established, and the release-upload failure it warned about is the one shape that *cannot* leave a
+  key — the discovery-upload failure genuinely can. It now asserts the whole key set and names the
+  orphan explicitly. (3) A mobile *hang*, as opposed to a throw, could still time the shared
+  invocation out after the display had published and trigger the retry-and-republish the design
+  exists to prevent; the mobile path is now bounded in duration as well as caught on rejection.
+  (4) The contract document's "no partial publish and no torn state" was stronger than the code, and
+  left the base ambiguous for its relative discovery paths; both are now stated precisely, along
+  with `generatedAt` being the start-of-run instant stamped per surface. (5) The mutation harness is
+  committed rather than left in a scratchpad. Four MINOR findings were also taken: the shared data
+  build is now lazy (a misconfigured Lambda no longer calls Google before discovering it has nowhere
+  to publish) and tolerates a synchronous throw from the fetcher; the pointer key's environment
+  override is refused unless it is under the mobile prefix; the object metadata derives its schema
+  number instead of hardcoding it; and two guards satisfiable by the wrong thing were replaced —
+  absence of the v2 dashboard's two specific strings became absence of any network-request
+  capability, and a regex over the generator source became a parsed import list.
+
+  **Two of those fixes were themselves caught by the harness rather than by inspection**, which is
+  the argument for keeping it: the duration bound shipped with no test at all until the mutation
+  survived, and the first version of that test hung instead of failing — which the harness had been
+  scoring as a survival, because a run that produces no summary parses the same as a run with no
+  failures. The harness now reports an inconclusive run as its own outcome.
+
+  **A third Reviewer round over that fix commit returned FAIL, and it was right.** Two of the
+  fixes were themselves defective. (1) The new "default duration bound" case observed the bound
+  behaviourally by waiting on an upload that never settles — **60.05 seconds** in a file whose
+  other 36 tests sum to under two, and the mutation harness runs that file 26 times, so a harness
+  run went from about a minute to about half an hour. I added it and read past the full-suite
+  duration going 44s to 86s. It also proved nothing: an explicit `mobileTimeoutMs` argument always
+  beats a destructuring default, so no call can observe what the default is, and the 66ms case
+  beside it already proved the bound is applied. Worse, the same commit added a harness comment
+  reading "the whole suite runs in a few seconds", which that block made false on arrival. The
+  block is removed, the signature assertion (the only thing that can see a changed default) stays,
+  and 23/23 mutations still hold without it — the mutation that removes `withTimeout` is caught by
+  the 66ms case. (2) The new synchronous-throw case could not fail: `publishAll` is `async`, so a
+  synchronous throw from the fetcher becomes a rejection carrying the same message under every
+  candidate form — lazy or eager, wrapped or not — with identical zero puts. It is deleted rather
+  than patched; the wrapper stays as defence in depth, but nothing claims a test proves it.
+  **That is the third consecutive round in which a guard of this change read as protective and was
+  not**, each one level down from the last — the strongest argument in this file for why the
+  mutation harness is committed, and for why "it passes" is never the same as "it would fail".
+
+  **A second Reviewer round over the fix commit returned PASS with no BLOCKING findings**, and its
+  three SHOULD FIX items were taken. Two were the same shape one level down. (1) The laziness was claimed in a
+  comment and in this file but guarded by nothing: reverting to the eager form left every test
+  green, because a fetch-count assertion cannot tell laziness from memoisation — both fetch exactly
+  once. One case now pins it, asserting **zero** fetches when neither path can publish. (2) The mutation written to prove the new
+  network-capability guard injected into the renderer's own template literal, where `${…}`
+  *evaluates* rather than emitting, so the token never reached the document and the guard was never
+  exercised; it now injects into the client function, whose source really is serialized into the
+  page. (3) The branch was not pushed. Four MINOR items were also taken: the default duration bound
+  is pinned on the parameter's signature, which is the only place a changed default is
+  observable — an explicit argument always beats a destructuring default, so no call can see it;
+  the harness gained a `spawnSync` timeout, without which its own "inconclusive" claim could not
+  cover a hang; and the network-capability list gained `WebSocket` and an honest comment that it is
+  a sample rather than a proof. The remaining MINOR items — the bound being measured from mobile start, the
+  prefix guard throwing before the structured log, orphan release directories having no stated
+  lifecycle — are recorded in the pull request's Parked section rather than fixed.
 
 - **Mobile companion — local implementation (Sept 9, 2026):**
   `render/dashboard-mobile.js` consumes the existing v2 adapter output, with six
