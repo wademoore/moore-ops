@@ -25,6 +25,17 @@
  *   schoolStrip:     object
  *   routineAnchorsToday: object[]  Active routine anchors for `today`; each anchor is independently suppressed by the source appropriate to its type — school-type anchors by a 🏫 Family-calendar exception, caregiver-type anchors (a `caregiver` field) by emmaUnavailabilityParser.js blocks (see digest/routineAnchorsParser.js)
  *   upcomingEvents:  ResolvedEvent[] 14-day lookahead for dashboard
+ *
+ *   Every ResolvedEvent in days[].events and in upcomingEvents carries an
+ *   additive `flagFootball` key — the league team identity for an occurrence
+ *   matched to data/flag-football.json, and null for everything else. It is
+ *   display identity only: it never reclassifies a fixture and never reaches
+ *   the record, the standings or next-game selection, all of which read
+ *   digest/flagFootballParser.js, untouched by this. See
+ *   digest/flagFootballIdentity.js for the shape and for why the join is by
+ *   date alone. An occurrence that presents as flag football and matches no
+ *   season row is reported as the amber `flag-football-schedule-gap` flag
+ *   rather than resolving silently.
  *   athletics:       AthleticsData
  *   menuEvent:       ResolvedEvent|null   today's dinner
  *   tomorrowMenu:    ResolvedEvent|null   tomorrow's dinner
@@ -64,6 +75,7 @@ import { parseWeeklyPriorities } from './weeklyPrioritiesParser.js';
 import { toLegacyFamilySpotlightConfig } from './legacySpotlightCompat.js';
 import { fetchEmmaUnavailabilityBlocks } from './emmaUnavailabilityParser.js';
 import { generateTasks } from './generateTasks.js';
+import { attachFlagFootballIdentity, collectFlagFootballGaps } from './flagFootballIdentity.js';
 
 // Re-export so existing callers (e.g. builder.test.js) continue to work.
 export { generateTasks };
@@ -251,8 +263,14 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     : normalized;
 
   // ── 3. Resolve all events through aliases ───────────────────────────────
-  const allResolved   = normalized.map(resolveEvent);
-  const allResolved14d = normalized14d.map(resolveEvent);
+  // Flag football display identity is attached here, before the 72h/14d split,
+  // so every consumer downstream of these two arrays sees it: days[].events,
+  // upcomingEvents, and the resolvedEvents handed to computeFlags. It is
+  // additive — one extra `flagFootball` key, null on everything that is not an
+  // associated flag football occurrence — and it changes no existing field.
+  // See digest/flagFootballIdentity.js for why the join is by date alone.
+  const allResolved   = attachFlagFootballIdentity(normalized.map(resolveEvent), flagFootballData);
+  const allResolved14d = attachFlagFootballIdentity(normalized14d.map(resolveEvent), flagFootballData);
 
   // ── 4. Split into 72-hour window (days[]) and 14-day lookahead ──────────
   const todayMid   = midnight(today);
@@ -397,6 +415,19 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   ];
 
   // ── 14. Compute flags ───────────────────────────────────────────────────
+  // Flag football occurrences the season data does not describe. Computed here
+  // rather than inside flags.js for the same reason calendarFetchFailures is:
+  // flags.js is pure over resolved events and knows nothing about season data,
+  // so the condition is derived where the data lives and passed in as context.
+  // Both windows are swept because a gap can sit anywhere in the 14-day
+  // lookahead rather than only in the next 72 hours. The sweep's reach is
+  // therefore the calendar pull's own reach — 72 hours from getCalendarEvents()
+  // and 14 days ahead plus 7 days of history from pull14Days() — and NOT an
+  // independent window. The live 2026-10-25 orphan is 42 days after the
+  // season's first fixture, so it is outside BOTH pulls today and starts
+  // raising the flag on 2026-10-11, when it enters the 14-day one.
+  const flagFootballGaps = collectFlagFootballGaps([allResolved, allResolved14d], flagFootballData);
+
   const menuEvents = allResolved.filter(ev => ev.cardType === 'menu');
   const flags = computeFlags({
     today,
@@ -410,6 +441,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     champsTargets: config.champsTargets || {},
     emmaUnavailableBlocks,
     calendarFetchFailures,
+    flagFootballGaps,
   });
 
   // ── 15. Assemble and return ──────────────────────────────────────────────

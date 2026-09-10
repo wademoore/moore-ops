@@ -39,11 +39,23 @@
  *   menuEvents:     ResolvedEvent[]   Subset: cardType === 'menu'
  *   gmailHits:      object            { dance, swim, flagFootball, sharks, legacy, newsletter }
  *                                     Each value is the most recent matching thread or null
+ *   flagFootballGaps: object[]        Flag football calendar occurrences that matched no
+ *                                     season row, collected in builder.js by
+ *                                     digest/flagFootballIdentity.js. Same convention as
+ *                                     calendarFetchFailures: the condition is derived where
+ *                                     the season data lives and passed in, because this
+ *                                     module is pure over resolved events and has no season
+ *                                     data of its own.
  * }
  */
 
 import { isRoutineCentersEvent } from './centersProfile.js';
 import { isStandardCoverageRoutine } from './routineEventPolicy.js';
+// Imported rather than re-typed. Re-typing the literal here would let a rename
+// in flagFootballIdentity.js leave this file green while the ambiguous case
+// silently reverted to the wrong sentence — the drift shape this project's
+// tripwire convention exists to prevent. Constant only; no I/O, no season data.
+import { GAP_REASON } from './flagFootballIdentity.js';
 
 // ---------------------------------------------------------------------------
 // 1. DATE WINDOW HELPERS
@@ -490,6 +502,102 @@ const EVALUATORS = [
       level: 'red',
       title: `🔴 Calendar Unreadable — ${failures.length} Source${plural ? '' : 's'} Failed to Load`,
       body: `${names}. ${plural ? 'This calendar' : 'These calendars'} could not be read this run, so any events on ${plural ? 'it' : 'them'} are missing here — treat ${plural ? 'that source' : 'those sources'} as unknown today, not clear. Reason: ${failures[0].message}.`,
+      owner: ['wade'],
+      persist: false,
+    };
+  },
+
+  // ── Flag football calendar/season drift — the join broke, visibly ────────
+  // Reads ctx.flagFootballGaps (collected in builder.js by
+  // digest/flagFootballIdentity.js, which is where the season data lives).
+  //
+  // Why this exists at all: two features now hang off the calendar-to-season
+  // join — the event-row team identity this flag ships alongside, and the
+  // athletics card's own schedule. When a reschedule is entered on the
+  // calendar but never written to data/flag-football.json, the occurrence
+  // resolves to no identity and simply renders undecorated. That is a correct
+  // fail-closed and an INVISIBLE one: a missing logo is indistinguishable
+  // from a Sunday with no fixture, so the only way Wade would learn the join
+  // had broken is by noticing something absent.
+  //
+  // Amber rather than red, deliberately. The red calendar-fetch-failure flag
+  // means the digest does not know what is on the calendar at all. Here the
+  // digest knows the occurrence exists and still shows it in Today and Coming
+  // Up; what it cannot say is which fixture it is. That is partial knowledge,
+  // not blindness, and amber is where this taxonomy puts it. It is not
+  // bannerOnly, so nowNextSelector.js promotes it as an unresolved problem.
+  (ctx) => {
+    const gaps = ctx.flagFootballGaps;
+    if (!Array.isArray(gaps) || gaps.length === 0) return null;
+
+    const one = gaps.length === 1;
+    const detail = gaps
+      .map(gap => `${gap.date || 'undated'} “${gap.title}”`)
+      .join('; ');
+    // Cause, consequence and remedy are chosen TOGETHER, from one decision,
+    // as a per-reason triple. They were previously picked by independent
+    // checks, which let a mixed set pair the ambiguous cause with the roster
+    // remedy, and — worse — let ONE consequence clause stand for all three
+    // reasons when it is only true of one of them.
+    //
+    // The consequence differs per reason because the three conditions have
+    // genuinely different blast radii in digest/flagFootballParser.js:
+    //   NO_FIXTURE      — the row does not exist, so nothing downstream sees
+    //                     the fixture at all.
+    //   AMBIGUOUS_DATE  — both rows DO exist and are keyed on our team id, so
+    //                     the parser still reads them. Which consumer sees
+    //                     them depends on `status`, and the two filters are
+    //                     DISJOINT: eligibleGames requires status 'final'
+    //                     with both scores, scheduledGames requires status
+    //                     'scheduled' and a future date. So while the rows are
+    //                     scheduled, next-game selection picks one of the two
+    //                     by sort order and the record is untouched; once they
+    //                     are final, both count toward the record and the
+    //                     standings and next-game no longer sees them. An
+    //                     earlier version asserted both halves conjunctively,
+    //                     which is never true at once — and the live shape is
+    //                     the all-'scheduled' one, so it was the false half
+    //                     that would have shown.
+    //   TEAM_UNRESOLVED — the fixture rows are fine (record and nextFlagGame
+    //                     key on season.games), but `standings` maps over
+    //                     season.teams, so it is OUR STANDINGS ROW that goes
+    //                     missing, not the fixture.
+    // Verified against flagFootballParser.js rather than assumed.
+    const reasons = new Set(gaps.map(gap => gap.reason));
+    const onlyReason = reasons.size === 1 ? [...reasons][0] : null;
+
+    // Subject-verb agreement follows `one` in every clause. A mixed set always
+    // has at least two gaps, so `one` is false whenever `onlyReason` is null.
+    const carries = one ? 'it carries' : 'they carry';
+    const WORDING = {
+      [GAP_REASON.NO_FIXTURE]: {
+        cause: 'not in',
+        consequence: `so ${carries} no team identity and ${one ? 'is' : 'are'} absent from the record, the standings and next-game selection`,
+        remedy: `Add ${one ? 'the fixture' : 'the fixtures'} to the season data, or remove the calendar ${one ? 'entry' : 'entries'}`,
+      },
+      [GAP_REASON.AMBIGUOUS_DATE]: {
+        cause: 'cannot be matched to a single row in',
+        consequence: `so ${carries} no team identity — and because the duplicate rows are themselves valid, the parser still reads them: while they are scheduled, next-game selection picks one of the two arbitrarily, and once they are final, both count toward the record and the standings`,
+        remedy: `Remove the duplicate ${one ? 'row' : 'rows'}, or give the fixtures distinct dates`,
+      },
+      [GAP_REASON.TEAM_UNRESOLVED]: {
+        cause: `${one ? 'names' : 'name'} a team missing from the roster in`,
+        consequence: `so ${carries} no team identity, and our own standings row is missing because the standings are built from the teams list rather than the fixtures`,
+        remedy: 'Check the season\u2019s teams list',
+      },
+    };
+    const MIXED = {
+      cause: 'not matched to a single row in',
+      consequence: `so ${carries} no team identity`,
+      remedy: 'Reconcile the calendar with the season data',
+    };
+    const { cause, consequence, remedy } = WORDING[onlyReason] || MIXED;
+
+    return {
+      id: 'flag-football-schedule-gap',
+      level: 'amber',
+      title: `🟠 Flag Football Schedule Gap — ${gaps.length} Calendar ${one ? 'Event Has' : 'Events Have'} No Season Entry`,
+      body: `${detail}. ${one ? 'This occurrence is' : 'These occurrences are'} on the calendar but ${cause} data/flag-football.json, ${consequence}. ${remedy}.`,
       owner: ['wade'],
       persist: false,
     };

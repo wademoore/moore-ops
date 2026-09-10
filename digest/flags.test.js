@@ -12,6 +12,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { computeFlags } from './flags.js';
+import { GAP_REASON } from './flagFootballIdentity.js';
 
 // ---------------------------------------------------------------------------
 // Module-level helpers
@@ -419,3 +420,156 @@ describe('evaluateCalendarFetchFailure', () => {
     assert.equal(flags[0].id, 'calendar-fetch-failure');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Flag football schedule gap
+//
+// The condition is derived in builder.js (digest/flagFootballIdentity.js owns
+// the season data); this module only formats it, exactly as it does for
+// calendarFetchFailures. These cases therefore drive the evaluator on the
+// context key rather than through the join.
+// ---------------------------------------------------------------------------
+describe('computeFlags — flag football schedule gap', () => {
+  const gap = (over = {}) => ({
+    date: '2026-10-25',
+    title: 'Flag Football: Week 6 — Practice + Game / Playoffs (Yorktown)',
+    calendar: 'Myles',
+    reason: GAP_REASON.NO_FIXTURE,
+    ...over,
+  });
+
+  const find = flags => flags.find(f => f.id === 'flag-football-schedule-gap');
+
+  it('does not fire when every occurrence matched', () => {
+    assert.equal(find(computeFlags(ctx({ flagFootballGaps: [] }))), undefined);
+  });
+
+  it('does not fire when the context omits the field entirely', () => {
+    assert.equal(find(computeFlags(ctx())), undefined);
+  });
+
+  it('fires amber when an occurrence has no season entry', () => {
+    const flag = find(computeFlags(ctx({ flagFootballGaps: [gap()] })));
+    assert.ok(flag, 'expected flag-football-schedule-gap to fire');
+    assert.equal(flag.level, 'amber');
+    assert.deepEqual(flag.owner, ['wade']);
+    assert.match(flag.title, /1 Calendar Event Has/);
+  });
+
+  it('names the date and the title, so the offending occurrence is identifiable', () => {
+    const flag = find(computeFlags(ctx({ flagFootballGaps: [gap()] })));
+    assert.match(flag.body, /2026-10-25/);
+    assert.match(flag.body, /Week 6/);
+  });
+
+  it('names the file to edit, so the flag says what to do about it', () => {
+    const flag = find(computeFlags(ctx({ flagFootballGaps: [gap()] })));
+    assert.match(flag.body, /data\/flag-football\.json/);
+  });
+
+  it('is not bannerOnly, so nowNextSelector can promote it as an unresolved problem', () => {
+    // This is the "somewhere I will actually see it" half of the contract: a
+    // non-bannerOnly amber flag becomes a NOW_NEXT_UNRESOLVED_PROBLEM
+    // candidate at priority 700, the top of the ranking.
+    const flag = find(computeFlags(ctx({ flagFootballGaps: [gap()] })));
+    assert.notEqual(flag.bannerOnly, true);
+  });
+
+  it('pluralizes and lists every unmatched occurrence', () => {
+    const flag = find(computeFlags(ctx({
+      flagFootballGaps: [gap(), gap({ date: '2026-11-01', title: 'Flag Football: Week 8' })],
+    })));
+    assert.match(flag.title, /2 Calendar Events Have/);
+    assert.match(flag.body, /2026-10-25/);
+    assert.match(flag.body, /2026-11-01/);
+  });
+
+  it('words each gap reason differently, so the flag names the right remedy', () => {
+    const body = reason => find(computeFlags(ctx({ flagFootballGaps: [gap({ reason })] }))).body;
+    assert.match(body(GAP_REASON.NO_FIXTURE), /not in data/);
+    assert.match(body(GAP_REASON.AMBIGUOUS_DATE), /cannot be matched to a single row/);
+    assert.match(body(GAP_REASON.TEAM_UNRESOLVED), /missing from the roster/);
+    // A roster gap points at the teams list, not at the schedule.
+    assert.match(body(GAP_REASON.TEAM_UNRESOLVED), /teams list/);
+    assert.doesNotMatch(body(GAP_REASON.TEAM_UNRESOLVED), /Add the fixture/);
+  });
+
+  it('states a consequence that is true of the reason, not one borrowed from another', () => {
+    // A single consequence clause used to stand for all three reasons, and it
+    // was only true of NO_FIXTURE. Verified against digest/flagFootballParser.js:
+    // a duplicate row is still keyed on our team id, so the parser reads it and
+    // it is not "absent" — which consumer sees it depends on status, pinned
+    // precisely below; and a roster gap loses only our standings row, because
+    // standings map over season.teams while the record and next-game read
+    // season.games.
+    const body = reason => find(computeFlags(ctx({ flagFootballGaps: [gap({ reason })] }))).body;
+
+    assert.match(body(GAP_REASON.NO_FIXTURE), /absent from the record, the standings and next-game selection/);
+
+    const ambiguous = body(GAP_REASON.AMBIGUOUS_DATE);
+    assert.doesNotMatch(ambiguous, /absent from the record/,
+      'duplicate rows are valid rows — claiming they are absent is false');
+    // eligibleGames (status 'final') and scheduledGames (status 'scheduled')
+    // are DISJOINT, so the two effects are never true at once. The clause must
+    // say which applies when rather than asserting both conjunctively — the
+    // live shape is all-'scheduled', so a conjunctive claim shows its false
+    // half first.
+    assert.match(ambiguous, /while they are scheduled, next-game selection picks one of the two/);
+    assert.match(ambiguous, /once they are final, both count toward the record/);
+    assert.doesNotMatch(ambiguous, /they still count toward the record and the standings, and next-game/,
+      'the two effects must not be asserted together');
+
+    const roster = body(GAP_REASON.TEAM_UNRESOLVED);
+    assert.doesNotMatch(roster, /absent from the record/,
+      'the fixture rows are fine; only our standings row is missing');
+    assert.match(roster, /standings row is missing/);
+  });
+
+  it('gives the ambiguous case a remedy that addresses too MANY rows, not too few', () => {
+    const ambiguous = find(computeFlags(ctx({ flagFootballGaps: [gap({ reason: GAP_REASON.AMBIGUOUS_DATE })] }))).body;
+    assert.match(ambiguous, /Remove the duplicate row/);
+    assert.doesNotMatch(ambiguous, /Add the fixture/,
+      'adding a fixture is the remedy for a MISSING row and makes a duplicate worse');
+  });
+
+  it('does not pair one reason\u2019s cause with another\u2019s remedy when reasons are mixed', () => {
+    // Choosing the cause clause and the remedy clause from two independent
+    // some() checks let a mixed set say "cannot be matched to a single row ...
+    // Check the teams list" — a cause and a remedy that do not go together.
+    const mixed = find(computeFlags(ctx({
+      flagFootballGaps: [gap({ reason: GAP_REASON.AMBIGUOUS_DATE }), gap({ date: '2026-11-01', reason: GAP_REASON.TEAM_UNRESOLVED })],
+    }))).body;
+    assert.doesNotMatch(mixed, /teams list/, 'a mixed set must not claim a roster-only remedy');
+    assert.doesNotMatch(mixed, /Remove the duplicate/, 'nor an ambiguity-only remedy');
+    assert.match(mixed, /not matched to a single row/, 'a mixed set gets the neutral cause');
+    assert.match(mixed, /Reconcile the calendar with the season data/, 'and the neutral remedy');
+  });
+
+  it('agrees subject and verb in both clauses, singular and plural', () => {
+    const one = find(computeFlags(ctx({ flagFootballGaps: [gap({ reason: GAP_REASON.TEAM_UNRESOLVED })] }))).body;
+    const two = find(computeFlags(ctx({
+      flagFootballGaps: [gap({ reason: GAP_REASON.TEAM_UNRESOLVED }), gap({ date: '2026-11-01', reason: GAP_REASON.TEAM_UNRESOLVED })],
+    }))).body;
+    assert.match(one, /This occurrence is on the calendar but names a team/);
+    assert.match(two, /These occurrences are on the calendar but name a team/);
+  });
+
+  it('pins the set of reason codes, so a new one cannot be added unnoticed', () => {
+    // This asserts the exported KEY SET only, so a fourth reason cannot be
+    // added without a deliberate decision here. It deliberately does not claim
+    // to catch a value rename: that is handled structurally, by flags.js
+    // importing GAP_REASON rather than re-typing the literals, so a renamed
+    // value moves both sides together and there is nothing to drift.
+    assert.deepEqual(
+      Object.keys(GAP_REASON).sort(),
+      ['AMBIGUOUS_DATE', 'NO_FIXTURE', 'TEAM_UNRESOLVED'],
+    );
+  });
+
+  it('tolerates an undated occurrence rather than printing undefined', () => {
+    const flag = find(computeFlags(ctx({ flagFootballGaps: [gap({ date: null })] })));
+    assert.match(flag.body, /undated/);
+    assert.doesNotMatch(flag.body, /undefined|null/);
+  });
+});
+

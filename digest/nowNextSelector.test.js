@@ -262,3 +262,111 @@ describe('deterministic NOW/NEXT selection', () => {
     assert.equal(tuesdayMorning.supporting[0].lines[0], 'Both kids — 4-H Camp');
   });
 });
+
+// ---------------------------------------------------------------------------
+// Flag football identity carried through selection
+//
+// The featured block and each supporting block are PROJECTIONS of a candidate,
+// not the candidate itself. A field carried only on the candidate therefore
+// never reaches a renderer, which is why both projections list flagFootball
+// explicitly and why these cases assert the projections rather than the
+// candidate list.
+// ---------------------------------------------------------------------------
+describe('NOW/NEXT carries flag football identity', () => {
+  const IDENTITY = {
+    seasonId: 'fall-2026', seasonLabel: 'Fall 2026', week: 2, fixtureType: 'regular',
+    team: { teamId: 8009182, teamName: 'Cowboys', leagueName: 'Moore – Cowboys' },
+    opponent: { teamId: 8070749, teamName: 'Ravens', leagueName: 'Langston - Ravens' },
+  };
+
+  it('puts identity on the featured block', () => {
+    const selected = selectNowNext(data({
+      days: [{ events: [event('Cowboys Flag Football — vs. Ravens', '2026-08-17T18:00:00-04:00', { flagFootball: IDENTITY })], tasks: [] }],
+    }));
+    // Assert the flag football event is the one featured, not which reason code
+    // it earned: that is the imminence classifier's business, not this
+    // contract's, and coupling to it would make this case fail for an
+    // unrelated reason. (It is IMMINENT_ACTION rather than IMMINENT_DEPARTURE
+    // here because the real title carries none of the departure keywords.)
+    assert.match(selected.subject, /Flag Football/);
+    assert.deepEqual(selected.flagFootball, IDENTITY);
+  });
+
+  // supportFrom() builds TWO independent blocks — 'Tonight' (a PREP_TONIGHT
+  // candidate) and a later one — from separate object literals. Covering only
+  // one of them leaves the other free to drop the field silently, which is
+  // exactly what the mutation harness caught on its first run.
+  it('puts identity on the later supporting block', () => {
+    const selected = selectNowNext(data({
+      days: [{ events: [event('Call the vet', '2026-08-17T18:00:00-04:00')], tasks: [] }],
+      upcomingEvents: [event('Cowboys Flag Football — vs. Ravens', '2026-08-18T09:00:00-04:00', { flagFootball: IDENTITY })],
+    }));
+    const supporting = selected.supporting.find(block => block.lines[0].includes('Flag Football'));
+    assert.ok(supporting, 'expected the flag football event to appear as a supporting block');
+    assert.notEqual(supporting.label, 'Tonight', 'this case must exercise the later branch');
+    assert.deepEqual(supporting.flagFootball, IDENTITY);
+  });
+
+  it('puts identity on the Tonight supporting block', () => {
+    // A flag football occurrence really does carry a gearReminder — the
+    // coaching kit, via digest/aliases.js — so tomorrow morning's fixture
+    // produces a PREP_TONIGHT candidate, which outranks TOMORROW_MORNING for
+    // the same occurrence and lands in the 'Tonight' block.
+    const selected = selectNowNext(data({
+      days: [{ events: [event('Call the vet', '2026-08-17T18:00:00-04:00')], tasks: [] }],
+      upcomingEvents: [event('Cowboys Flag Football — vs. Ravens', '2026-08-18T09:00:00-04:00', {
+        flagFootball: IDENTITY,
+        gearReminder: 'Clipboard · roster · cones · 2 footballs · whistle',
+      })],
+    }));
+    const tonight = selected.supporting.find(block => block.label === 'Tonight');
+    assert.ok(tonight, 'expected a Tonight block');
+    assert.match(tonight.lines[0], /Flag Football/);
+    assert.deepEqual(tonight.flagFootball, IDENTITY);
+  });
+
+  it('is null on the featured block when the event carries no identity', () => {
+    const selected = selectNowNext(data({
+      days: [{ events: [event('Myles — Sharks Practice', '2026-08-17T18:00:00-04:00')], tasks: [] }],
+    }));
+    assert.equal(selected.flagFootball, null);
+  });
+
+  it('is null on every supporting block when no event carries identity', () => {
+    const selected = selectNowNext(data({
+      days: [{ events: [event('Call the vet', '2026-08-17T18:00:00-04:00')], tasks: [] }],
+      upcomingEvents: [
+        event('Robyn — Dentist', '2026-08-18T09:30:00-04:00', { gearReminder: 'Bring insurance card' }),
+        event('School orientation', '2026-08-18T10:30:00-04:00'),
+      ],
+    }));
+    assert.deepEqual(selected.supporting.map(block => block.label), ['Tonight', 'Tomorrow morning'],
+      'fixture must produce BOTH supporting branches, or this asserts less than it claims');
+    for (const block of selected.supporting) assert.equal(block.flagFootball, null);
+  });
+
+  it('is null — never undefined — for flag-, task- and all-clear-sourced selections', () => {
+    const problem = selectNowNext(data({ flags: [{ id: 'coverage', level: 'red', title: 'Pickup needs coverage', body: 'Both kids' }] }));
+    assert.equal(problem.flagFootball, null);
+    const task = selectNowNext(data({ days: [{ events: [], tasks: [{ text: 'Pack lunches', time: 'Tonight' }] }] }));
+    assert.equal(task.flagFootball, null);
+    const clear = selectNowNext(data({}));
+    assert.equal(clear.flagFootball, null);
+  });
+
+  it('does not let identity influence which candidate wins', () => {
+    // Display identity must be inert to selection. The same two events, with
+    // and without identity on one of them, must rank identically.
+    const events = decorated => [
+      event('Cowboys Flag Football — vs. Ravens', '2026-08-17T18:00:00-04:00', decorated ? { flagFootball: IDENTITY } : {}),
+      event('Call the vet', '2026-08-17T18:20:00-04:00'),
+    ];
+    const strip = result => ({ ...result, flagFootball: undefined, supporting: result.supporting.map(b => ({ ...b, flagFootball: undefined })) });
+    const withIdentity = selectNowNext(data({ days: [{ events: events(true), tasks: [] }] }));
+    const without = selectNowNext(data({ days: [{ events: events(false), tasks: [] }] }));
+    assert.deepEqual(strip(withIdentity), strip(without));
+    assert.deepEqual(withIdentity.flagFootball, IDENTITY);
+    assert.equal(without.flagFootball, null);
+  });
+});
+

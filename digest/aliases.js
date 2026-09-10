@@ -32,6 +32,28 @@
  *   raw:          object    Original Google Calendar event (pass-through)
  *   _calName:     string    Source calendar name (pass-through)
  * }
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * flagFootball — attached downstream, NOT by this module
+ * ─────────────────────────────────────────────────────────────────────────
+ * digest/builder.js attaches one further key to every event it delivers:
+ *
+ *   flagFootball: {
+ *     seasonId, seasonLabel, week,
+ *     fixtureType,                              the season row's own `type`, verbatim
+ *     team:     { teamId, teamName, leagueName },
+ *     opponent: { teamId, teamName, leagueName } | null,
+ *   } | null
+ *
+ * It is NOT set here, and deliberately so: resolveEvent() is a pure function
+ * of one event, while that identity is a join against data/flag-football.json.
+ * Giving this module season data would turn a per-event resolver into a
+ * pipeline stage. See digest/flagFootballIdentity.js.
+ *
+ * Consequence worth knowing: an event resolved by calling resolveEvent()
+ * directly, outside buildDigest — dashboard-v2-data.js does this for
+ * horizonEvents — has no `flagFootball` key at all. Both absent and null are
+ * falsy, so `if (event.flagFootball)` is correct either way.
  */
 
 // ---------------------------------------------------------------------------

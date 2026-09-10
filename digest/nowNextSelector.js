@@ -131,6 +131,14 @@ function eventIdentity(event, when) {
   return {
     occurrenceId: `${calendarId}@${rawStart}`,
     sourceId: event?.raw?.recurringEventId || calendarId,
+    // Display identity carried straight through from the resolved event, so a
+    // renderer can decorate the featured block or any supporting block without
+    // re-deriving it — and without reaching back to the event, which selection
+    // does not hand it. Null on every event that is not an associated flag
+    // football occurrence; see digest/flagFootballIdentity.js. This rides on
+    // the identity object because every event candidate already spreads it, so
+    // no candidate can be built that carries occurrenceId and omits this.
+    flagFootball: event?.flagFootball ?? null,
   };
 }
 
@@ -291,9 +299,13 @@ function supportFrom(candidates, selected, now) {
   const later = secondary
     .filter(item => [REASON.THIS_MORNING, REASON.TOMORROW_MORNING, REASON.THEN_LATER, REASON.MEANINGFUL_CHANGE].includes(item.reasonCode))
     .sort((a, b) => a.sortTime - b.sortTime || compareCandidates(a, b))[0];
+  // Both blocks are PROJECTIONS, not the candidate itself, so a field carried
+  // only on the candidate never reaches a renderer. flagFootball is listed
+  // explicitly here for that reason. Null for a flag- or task-sourced block,
+  // which have no event behind them to identify.
   return [
-    tonight && { label: 'Tonight', reasonCode: tonight.reasonCode, lines: [tonight.subject, ...(tonight.context || []).slice(0, 1)] },
-    later && { label: supportLabel(later, now), reasonCode: later.reasonCode, lines: [later.subject, ...(later.context || []).slice(0, 1)] },
+    tonight && { label: 'Tonight', reasonCode: tonight.reasonCode, lines: [tonight.subject, ...(tonight.context || []).slice(0, 1)], flagFootball: tonight.flagFootball ?? null },
+    later && { label: supportLabel(later, now), reasonCode: later.reasonCode, lines: [later.subject, ...(later.context || []).slice(0, 1)], flagFootball: later.flagFootball ?? null },
   ].filter(Boolean);
 }
 
@@ -313,6 +325,11 @@ function selectNowNext(data, { now = data.now || new Date(), travelMinutesForEve
     subject: selected.subject,
     qualifier: selected.qualifier || '',
     context: selected.context || [],
+    // Display identity for the featured block, same shape and same null
+    // convention as on a resolved event and on each supporting block. The
+    // ALL_CLEAR fallback and every flag- or task-sourced selection resolve to
+    // null: there is no event behind them to identify.
+    flagFootball: selected.flagFootball ?? null,
     supporting,
     reasonCodes: [selected.reasonCode, ...supporting.map(block => block.reasonCode)],
     diagnostics: {

@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2309+ passing with a browser
+- Run npm test after changes — must stay at 2397+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -1860,6 +1860,182 @@ Modified: `render/dashboard-v2.js` (resolver, CSS block, controller, markup),
 `scripts/validate-dashboard-artifact-template.mjs`, `package.json`, and one documented
 invariant in `test/artifact/package-data-files.test.js`.
 
+## Flag football event identity (digest, September 2026)
+
+The link that lets a calendar surface name the league team an occurrence belongs
+to. Athletics cards already had this — `parseFlagFootball()` hands the renderer a
+resolved mascot, which is what #66's local NFL artwork keys on. A **calendar
+event carried nothing**, so `activityLogo()` in `render/dashboard-v2.js` had no
+way to select flag football artwork for a row in Today, NOW/NEXT or the two-week
+Coming Up panel. This is the digest-side contract those surfaces read.
+
+**Presentation is Codex's.** Nothing in `render/` was touched.
+
+### The association is by date alone — do not "fix" this
+
+`digest/flagFootballIdentity.js` matches a calendar occurrence to a row in
+`data/flag-football.json` on its **ET calendar date, and nothing else**. Not the
+title, not the declared clock, and never the team id typed into the description.
+
+The date key comes from `toDateKey(parseEventDate(ev.raw))` — the same function
+`builder.js` uses to bucket days — so identity lands on the day the event is
+rendered on *by construction* rather than by a second, agreeing derivation.
+
+**Deliberate divergence from PR #65.** #65's `seasonMilestone` node matches on
+(date, kind, declared clock). This matches on date alone. That is not an
+inconsistency to be tidied away **in either direction**: a milestone accent that
+misfires paints an approved decoration onto the wrong row, while a team logo that
+misfires merely fails to appear. Different costs justify different strictness.
+Wade decided this explicitly. Do not tighten this one and do not loosen that one.
+
+The reasoning for date-alone, recorded because the next session will be tempted:
+Wade edits these events by hand and the league reschedules, so the clock is the
+most volatile field on the row — and the failure modes are asymmetric. A logo
+missing from a game whose time shifted is invisible; a missing logo on a Sunday
+morning is the thing he would actually see. The permissive match is correct.
+
+**The description does contain the id** — `league team id 8009182` appears
+verbatim on all six live events. It is there because Wade typed it, on six
+events, by hand. A note is not a source of truth, and reading it would create an
+obligation to maintain it forever. Confirmed present; deliberately not read.
+
+### Recognition is a separate, required step — measured, not assumed
+
+"Match by date alone" is how an occurrence finds its *row*. It is not a licence
+to claim every occurrence sharing that date, and the difference is not academic:
+**every Fall 2026 fixture falls on a Sunday, and the Family calendar's recurring
+"2nd Sundays (optional drop-in)" lands on two of them** (2026-09-13 and
+2026-10-11). Date alone with no sport predicate would put Cowboys artwork on an
+art festival. Both cases are pinned by test.
+
+Recognition is deliberately permissive and reads two signals: the sport token
+declared by the data file itself (`flagFootballData.sport`) appearing in the
+resolved title, subtitle or raw summary; **or** the pre-existing `isFlagGame`
+marker, which covers the older `Flag Cowboys vs. Raiders` convention that
+contains no "flag football" at all. Taking the token from the data rather than
+hardcoding it keeps the recognition vocabulary in the file the Updater already
+maintains.
+
+**The limit, stated rather than glossed — this text used to claim the two signals
+were independent, and they are not.** Both are ultimately functions of the
+calendar summary: `isFlagGame` is set by one title regex in `aliases.js`, so a
+single title edit turns off both. The live Oct 25 orphan does not match that
+regex at all, so its gap report rests entirely on the words "Flag Football"
+surviving in the title; rename it and it resolves to no identity **and** raises no
+gap. `isFlagGame` is also strictly *redundant* in production — when that matcher
+fires it rewrites the title to contain the token — so only a hand-built fixture
+exercises that path. So the gap detector can itself be silenced by a rename.
+That is an accepted limit, not a guarantee. **Association** is what must not
+depend on a title, and does not. **Recognition** has no more durable non-title
+signal available: the obvious candidate, the season's `location` (all seven live
+occurrences carry "McReynolds Athletic Complex"), was rejected deliberately —
+a public athletic complex is shared infrastructure, so recognising on it would
+re-open the exact over-match hole the "2nd Sundays" measurement closed, and the
+location field is hand-typed too, so it is broader without being more durable.
+
+### The gap is visible — the part this change exists for
+
+A reschedule entered on the calendar but never written to the season data leaves
+an occurrence with no match. Failing closed to "no identity" is correct **and
+invisible**: a missing logo is indistinguishable from a Sunday with no fixture.
+
+So an occurrence that is **recognisably flag football and unmatched** raises the
+amber `flag-football-schedule-gap` flag. Chosen over inventing a channel because
+this system already has one, and the route is the `calendarFetchFailures`
+precedent exactly: the condition is derived in `builder.js` (where the season
+data is) and passed into `digest/flags.js` as context, because that module is
+pure over resolved events and holds no season data. Flags reach the alerts panel,
+the email, and — because a non-`bannerOnly` amber flag becomes a
+`NOW_NEXT_UNRESOLVED_PROBLEM` candidate at priority 700 — the top of NOW/NEXT.
+
+**The prominence has a cost, and it is deliberate.** `UNRESOLVED_PROBLEM` is
+priority 700, above `IMMINENT_DEPARTURE` at 600, so for as long as a gap stands
+the top NOW/NEXT slot is a data-entry chore rather than the next thing to leave
+for. That follows the existing precedent for every amber non-`bannerOnly` flag
+and is the price of the flag being unmissable, which is what was asked for — but
+it means an unfixed gap degrades the panel's usefulness until the row is entered.
+
+**Amber, not red.** The red `calendar-fetch-failure` flag means the digest does
+not know what is on the calendar at all. Here the digest knows the occurrence
+exists and still renders it; what it cannot say is which fixture it is. That is
+partial knowledge, not blindness.
+
+**This is not hypothetical — it fires in production.** The Myles calendar carries
+**seven** flag football occurrences and `fall-2026` holds **six** rows. The
+seventh, `2026-10-25` "Flag Football: Week 6 — Practice + Game / Playoffs
+(Yorktown)", has no season row, because Oct 18 is the last week the league has
+posted. The gap sweep's reach is the calendar pull's own reach — `getCalendarEvents()`
+is 72 hours and `pull14Days()` is 14 days ahead **plus seven days of history** —
+so that occurrence starts raising the flag on **2026-10-11** and keeps raising it
+until the row is entered or the calendar entry removed.
+
+Three reasons are reported, each pointing at a different remedy: `no-fixture-on-date`,
+`multiple-fixtures-on-date` (a real doubleheader — no season has one today, and
+picking one would be an array-order decision), and `team-not-in-season-roster`
+(the schedule is fine, the roster is wrong). `digest/flags.js` imports
+`GAP_REASON` rather than re-typing the literals, and a test pins its key set, so
+a rename cannot silently revert the flag body to the wrong sentence.
+
+**Candidates are narrowed to fixtures our team plays in BEFORE ambiguity is
+judged**, and the ordering is load-bearing in both directions. Without the
+narrowing, a row on our date between two *other* teams returned a full identity
+naming our team with `opponent: null` — indistinguishable from the legitimate
+Sept 13 practice shape, so `opponent === null` could not be used to detect it.
+Judging ambiguity first would break the same case the other way: a full division
+schedule puts several rows on every date, so every occurrence would fail closed
+on a crowd even though exactly one row is ours. Both are unreachable while
+`fall-2026.games` holds only our six fixtures — but `fall-2025` in the same file
+already stores the whole division schedule, and a Known open item contemplates
+loading one for this season.
+
+### The field
+
+One additive key on every `ResolvedEvent` `builder.js` delivers, `null` when
+unassociated, and the identical shape on the NOW/NEXT featured block and on each
+supporting block:
+
+```
+flagFootball: {
+  seasonId, seasonLabel, week,
+  fixtureType,                                  the row's own `type`, VERBATIM
+  team:     { teamId, teamName, leagueName },
+  opponent: { teamId, teamName, leagueName } | null,
+} | null
+```
+
+**Identity is `teamId`. `teamName` is for artwork selection only.** The division
+contains two teams whose mascot is Cowboys — Moore – Cowboys (8009182, ours) and
+Watkins – Cowboys — so a mascot match, exact or fuzzy, is ambiguous. This is
+deliberately the **opposite** of `sharksParser.js`, where the mascot IS unique
+and only the wording varies; copying that approach here would be a bug. A test
+renames our mascot in a fixture and asserts the id resolves identically.
+
+**Only immutable columns are reachable.** `status`, `homeScore` and `awayScore`
+are not projected, so identity cannot move when a score is entered — the rule
+`sportsFixture` already follows, enforced structurally. **`home`/`away` are
+absent by design**: home/away is nominal in this league (every fixture is at the
+same complex) and must never be rendered or reasoned about as a travel cue.
+There is no field in which a renderer could find it, and a test asserts the home
+and away fixtures project the identical key set so the side is not recoverable
+from the shape either.
+
+`fixtureType` is the row's own `type` passed through unchanged — it **reports**
+the classification the data already carries and never computes one. Nothing here
+can reclassify a practice as a game: the record, the standings and
+`nextFlagGame` all read `digest/flagFootballParser.js`, which this change does
+not touch and does not import.
+
+### What is NOT covered
+
+`dashboard-v2-data.js` builds `horizonEvents` by calling `resolveEvent()`
+**directly, outside `buildDigest`**, so those events carry no `flagFootball` key
+at all. Both absent and null are falsy, so `if (event.flagFootball)` is correct
+either way. Attaching it there would need `flagFootballData` surfaced on
+`digestData` — which is exactly the one line PR #65 adds — so it is deliberately
+left until that merges. Also untouched: `render/` in its entirety, Dashboard v1,
+the email renderer, `data/flag-football.json`, `data/sports-config.json`,
+`data/special-events.json`, and every kill switch.
+
 ## Weekly Household Operations Review
 
 ### Phase 5 — Menu Planning (~5 min)
@@ -1947,7 +2123,118 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 10, 2026 on the Yorktown NFL FLAG season branch
+### Current baseline — measured Sept 10, 2026 on the flag football event identity branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2397 | **2397** | **0** | **0** |
+
+Measured on `claude/amazing-franklin-7l2hue`, whose merge base with `main` is
+**`975fbc2`** (PR #66) — also this branch's branch point, and also `origin/main`'s
+head. **`git fetch origin main` was run before deriving it, per the standing
+warning, and it mattered a sixth consecutive time: the ref was stale at `2d01027`
+and the fetch moved it to `975fbc2`.**
+
+**The recorded baseline did NOT hold this time, and that is the point of
+re-measuring.** The entry below records **2309** as its own branch *head*, on a
+branch whose merge base `3d250aa` measured 2297. This branch's merge base is a
+different commit — `975fbc2`, which is `3d250aa` plus PRs #62, #63, #64 and #66
+(four, not the three an earlier draft of this very sentence listed) — and
+it re-measures at **2320 / 2320 / 0 / 0** with a browser, after `npm install`.
+So the number to carry forward was never 2309, and treating a previous entry's
+head figure as this entry's base would have been wrong by eleven. Re-measure,
+and check *which commit* a recorded figure belongs to; the run costs less than
+the correction. (Both halves of that sentence are here because a Reviewer pass
+caught this entry making the second mistake while warning about the first.)
+
+This change adds **+77**, and every unit is accounted for. Each before-figure was
+measured in a `git worktree` at `975fbc2`, not a copy to a temp path — a copied
+test file loses its relative imports and reports `# tests 1`, which is exactly how
+a plausible-looking wrong number gets recorded here.
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/flagFootballIdentity.test.js` (new) | — | 45 | +45 |
+| `digest/flags.test.js` | 38 | 52 | +14 |
+| `digest/builder.test.js` | 10 | 21 | +11 |
+| `digest/nowNextSelector.test.js` | 17 | 24 | +7 |
+
+2320 + 77 = 2397, so the table closes against a measurement rather than against a
+recorded figure. **The figures moved after every review round that changed code**
+(2388 → 2393 → 2395 → 2397); the rounds after that were documentation-only, which
+is why 2397 has not moved since. The table above is the re-measured end state
+rather than an arithmetic projection from any intermediate. Round 1's four SHOULD
+FIX items added five cases; round 2's added three and removed one duplicate;
+round 3's added two, pinning the per-reason consequence and remedy wording.
+
+**No existing assertion was updated, deleted or skipped — and that is a finding
+rather than a convenience.** `git diff --numstat` reports **zero deletions** on
+all three existing test files: pure appends. The exact insertion counts are
+deliberately not quoted — they moved on every review round and were wrong twice,
+while the load-bearing claim is the zero, which a reader can check in one
+command. Nothing in the suite had
+ever asserted that a calendar event carries team identity, because it never did;
+there was no prior behaviour to update. The corollary is the uncomfortable half —
+the whole join could have been wired wrongly and the suite would have stayed
+green, which is why the mutation harness below exists rather than a test count.
+
+Companion mutation evidence, committed and run on demand rather than in
+`npm test`: `node scratch/flag-football-event-identity/mutation-check.mjs` →
+**25 mutations, 25/25 proven**, green control (142) and green restore. It refuses
+to start from a dirty `digest/` tree, because it overwrites tracked files in place
+and restores them at both ends — so `git checkout -- digest` is always a complete
+recovery from an interrupted run.
+
+**Two mutations survived, on two different runs, and they were different kinds
+of finding.** The first was a real coverage gap; the second was a stale anchor —
+after the Reviewer's foreign-fixture fix rewrote `findFixtureByDate`, the clock
+mutation's anchor no longer existed, and the harness correctly scored "could not
+apply" as a survivor rather than as a silent pass. Both are worth knowing: a
+mutation harness rots against the code it attacks, and one that quietly skips an
+inapplicable mutation is worse than no harness.
+
+**The genuine coverage gap.**
+`supportFrom()` builds **two** supporting blocks — `Tonight` and a later one —
+from two separate object literals, and the test covered only the later branch, so
+dropping the field from the `Tonight` literal changed nothing. A renderer
+decorating the Tonight block would have received nothing, silently. Both branches
+are now covered and the harness scores them as two independent mutations.
+
+**A second defect was in the harness itself**, found by reading the diff rather
+than by any test: it stashed half-edited text into the restore map under a
+synthetic `file::tmp` key, and since `restore()` writes every key in that map as a
+path, it created a real `digest/flagFootballIdentity.js::tmp` file — which was
+committed before the diff review caught it. Edits are now composed in memory and
+written once, so the possibility is removed rather than cleaned up after.
+
+Cross-tree proof, also committed and run on demand:
+`node scratch/flag-football-event-identity/verify-unchanged.mjs` compares two full
+`digestData` dumps built from identical inputs — one from a worktree at `975fbc2`,
+one from the branch — strips exactly the keys this change adds, and asserts the
+remainder is byte-identical: **55,355 bytes, identical**, with 2 identities
+attached, 9 explicit nulls and 1 gap flag raised — each of the three now behind
+its own non-vacuity assertion, because the gap half of that claim previously
+rested on nothing and would have printed `0` and passed. The script also asserts
+the base tree carries no pre-existing `flagFootball` key, which is what makes its
+blunt strip-by-name safe rather than merely convenient. That
+single assertion is what proves `athletics.seasonRecord`, `standings`,
+`nextFlagGame`, `seasonComplete`, `days[].events`, `days[].tasks`,
+`upcomingEvents`, `schoolStrip` and the pre-existing flags are unmoved, rather
+than a per-field assertion someone has to remember to write.
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was
+run, and quoting a figure that was not taken is exactly the unfalsifiable claim
+this section exists to prevent.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2397+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 10, 2026 on the Yorktown NFL FLAG season branch
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -2015,7 +2302,9 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2309+ with no failures once a browser resolves.**
+**Coder mode had to keep `npm test` at 2309+ under this baseline.** (Superseded — see
+Current baseline above. That entry's own merge base `3d250aa` measures 2297; the
+current entry is a different branch off `975fbc2`, which measures 2320.)
 
 ### Previous baseline — measured Sept 10, 2026 on the current-season athletics branch
 
@@ -2623,6 +2912,166 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Flag football calendar occurrences now carry league team identity, and an
+  unmatched one is visible (Sept 10, 2026):** #66 gave the athletics cards local
+  NFL artwork by keying on the mascot `parseFlagFootball()` resolves. Calendar
+  surfaces — Today, NOW/NEXT, the two-week Coming Up panel — receive
+  `ResolvedEvent`s, and nothing on one said which league team it belonged to, so
+  `activityLogo()` had no flag football branch to write. New pure module
+  `digest/flagFootballIdentity.js` supplies that join; full contract in **Flag
+  football event identity** above. **Presentation is Codex's and `render/` is
+  untouched in its entirety.**
+
+  **Two measurements decided the design, rather than reasoning.** (1) The Myles
+  calendar carries **seven** flag football occurrences and `fall-2026` holds
+  **six** rows — `2026-10-25` "Week 6 — Practice + Game / Playoffs" has no season
+  row, because Oct 18 is the last week the league has posted. **The data
+  discrepancy is real today; the flag is not yet raised, and the difference
+  matters.** The sweep's reach is the calendar pull's own reach, so the orphan is
+  outside both pulls until **2026-10-11**, when it enters the 14-day one. (An
+  earlier draft of this entry and of the commit message said the gap was "live in
+  production today", which was false and contradicted the accurate statement in
+  the section above it — caught by a Reviewer pass, and recorded here rather than
+  quietly corrected, because an unfalsifiable-sounding claim is exactly what this
+  file's Test-baseline discipline exists to prevent.) (2) Every
+  fixture falls on a **Sunday**, and the Family calendar's recurring "2nd Sundays
+  (optional drop-in)" lands on two of them (Sept 13 and Oct 11) — so date alone,
+  with no sport predicate, would have put Cowboys artwork on an art festival.
+  That is why recognition is a separate required step from association, and both
+  cases are pinned by test.
+
+  **The association is by date alone, and diverges from PR #65 deliberately.**
+  #65's `seasonMilestone` matches on (date, kind, declared clock); this matches on
+  date alone, because a misfiring milestone accent and a missing team logo have
+  different costs. Not to be reconciled in either direction. **#65 is open, not
+  merged** — `seasonMilestone` does not exist on `main` — so this branches from
+  `origin/main` per the Surface boundaries base discipline. Their only file
+  overlap is `digest/builder.js`, where #65 adds one line to the returned object;
+  see Known open items for the merge-order note.
+
+  **Identity is the numeric `teamId`, never the mascot** — the division contains
+  two Cowboys — and only immutable columns are reachable: `status` and both scores
+  are unprojected so identity cannot move mid-event, and `home`/`away` are absent
+  by design because home/away is nominal here and must never read as a travel cue.
+  A test asserts the home and away fixtures project the identical key set, so the
+  side is not recoverable from the shape either.
+
+  **The gap surfaces through an existing channel rather than a new one**: the
+  amber `flag-football-schedule-gap` flag, derived in `builder.js` and passed into
+  `flags.js` as context — the `calendarFetchFailures` route exactly. Non-`bannerOnly`
+  amber flags are promoted by NOW/NEXT at priority 700, so it reaches the top of
+  the panel as well as the alerts list and the email.
+
+  **Proved unchanged rather than asserted:** a cross-tree comparison of two full
+  `digestData` dumps from identical inputs — one from a worktree at `975fbc2` —
+  strips exactly the added keys and finds the remainder **byte-identical at 55,355
+  bytes**, which covers the record, standings, next-game selection, practice/game
+  classification, tasks and every pre-existing flag in one assertion. **25
+  mutations, 25/25 proven.** One survived the first run and was a real coverage
+  gap: `supportFrom()` builds two supporting blocks from separate literals and only
+  the later branch was covered, so a renderer decorating the Tonight block would
+  have silently received nothing. A second defect was in the harness itself — it
+  wrote a stray `…js::tmp` file into the repo, committed before the diff review
+  caught it. Tests **2320 → 2397**, all passing with a browser; the merge base is
+  `975fbc2` and was re-measured in-session rather than taken from this file.
+
+  **Every independent Reviewer round returned PASS, and not one produced a
+  BLOCKING finding.** Behaviour converged at round 1; every SHOULD FIX after it
+  was documentation or operator-wording accuracy. The count is deliberately not
+  written down here, because it cannot be: the Stop-hook gate requires a verdict
+  recorded against HEAD, so any amend correcting a stated round count creates a
+  new HEAD needing a fresh round, which makes the count stale again. A Reviewer
+  pass identified that regress and recommended not chasing it — so this entry
+  describes the rounds by what they found instead of by how many there were.
+
+  **Round 4** raised **2 SHOULD FIX**, and the first is the more interesting of
+  the two because it is the *same defect one level down, for the third time*.
+  Round 3 had split the flag body into a per-reason cause/consequence/remedy
+  triple; round 4 found the replacement `AMBIGUOUS_DATE` consequence **still
+  half-false**. It asserted that duplicate rows "still count toward the record
+  and the standings, **and** next-game selection picks one of them arbitrarily"
+  — but `eligibleGames` requires `status === 'final'` with both scores and
+  `scheduledGames` requires `status === 'scheduled'`, so the two sets are
+  **disjoint** and at most one clause can hold. Worse, every live `fall-2026`
+  row is `scheduled`, so it was the false half that would actually have shown.
+  Now stated per status: while the rows are scheduled next-game picks one of
+  them, and once they are final both count toward the record and the standings.
+  Pinned positively *and* negatively — a test asserts the old conjunctive
+  phrasing is absent. Round 4's second item was a miscount in the sentence
+  round 3 added to fix a miscount: `975fbc2` is `3d250aa` plus **four** PRs
+  (#62, #63, #64, #66), not three.
+
+  **Round 5** verified all four round-4 items
+  against source rather than description, confirmed the Test-baseline section
+  had stopped drifting (all ten checkable figures matched its own
+  measurements), and raised two documentation items — this entry still said
+  an understated round count, and still asserted the conjunctive claim round 4
+  had falsified, in the present tense. Both are corrected above and here. That
+  is **every round so far finding this file's own prose lagging the code it
+  describes**, which is worth more than the individual corrections: the
+  behaviour was right from round 1 and the documentation was the thing that
+  kept being wrong.
+
+  **Round 3** raised **3 SHOULD FIX and 3 MINOR**, and one of them was the only
+  operator-facing correctness defect in the whole change: **the flag body's
+  consequence clause was true of one reason out of three.** It told Wade the
+  occurrence was "absent from the record, the standings and next-game selection"
+  regardless of why identity failed — but a duplicate row is a valid row keyed on
+  our team id, so it is read by the parser and is *not* absent (round 3's own
+  replacement then overstated *which* consumers see it, and round 4 corrected
+  that to the status-gated form described above), and a roster gap loses only our
+  standings row, because `standings` maps over `season.teams` while the record and
+  `nextFlagGame` read `season.games`. Verified against `flagFootballParser.js` rather than reasoned
+  about. Cause, consequence and remedy are now one per-reason triple, so a
+  mismatched pairing is not expressible; round 2 had fixed the cause/remedy half
+  of exactly this and left the consequence standing. Round 3 also caught the
+  ambiguous case recommending "add the fixtures" — the remedy for too *few* rows,
+  offered for too *many* — and two commit-figure misattributions in the
+  Test-baseline section, which is the third consecutive round in which that
+  section drifted.
+
+  **Round 2** raised **2 SHOULD FIX and 8 MINOR**, both SHOULD FIX being
+  evidence-accuracy defects rather than behaviour: a stale numstat trio in the
+  Test-baseline section — same-commit drift, in the one section whose purpose is
+  that its figures be checkable, and one entry below where this file already
+  records itself making that exact mistake — and **two of the five mutations
+  added in round 1 were behaviourally identical**, so the quoted 23 contained a
+  duplicate and the *ordering* property one of them was named for was not
+  actually attacked. Rewritten to keep the filter and move the ambiguity check
+  ahead of it; the two now kill with different failure counts (3 and 1), which is
+  the evidence they are different programs. A duplicate mutation still gets
+  killed and still scores, so only review catches that — not the harness.
+  Round 2's MINORs also produced two real code changes: a **self-fixture guard**,
+  the one place the module could have failed *open* (a malformed row naming us on
+  both sides would have handed back our own team as the opponent), and
+  `digest/flagFootballIdentity.js` **declared in `requiredBundleInputs`**, which
+  this repo's convention exists for — proven to have teeth by pointing it at a
+  bogus path and watching the validator exit 1 by name.
+
+  **Mutation anchors rot against the code they attack, twice over.** Both the
+  round-1 foreign-fixture fix and the round-2 dead-ternary collapse invalidated a
+  mutation's anchor, and in each case the harness reported "could not apply" as a
+  survivor rather than silently scoring a pass. That behaviour is the reason the
+  rot was visible at all; keep it.
+
+  **Round 1 returned PASS with no BLOCKING findings, and all four of its SHOULD
+  FIX items were acted on.** Three were "the claim is stronger than
+  the code" — the production-reach overstatement above; a "two independent
+  signals" guarantee that one rename actually defeats (see the section above,
+  now stated as a limit rather than a guarantee); and a `GAP_REASON` literal
+  re-typed in `flags.js` and again in its test with no tripwire binding them,
+  since fixed by importing the constant and asserting its key set. The fourth was
+  a **genuine latent bug**: a fixture on our date between two *other* teams
+  returned a full identity naming our team with `opponent: null` —
+  indistinguishable from the legitimate Sept 13 practice shape. Unreachable while
+  `games` holds only our six fixtures, but `fall-2025` in the same file already
+  stores a whole division schedule and a Known open item contemplates loading one.
+  Candidates are now narrowed to fixtures we play in **before** ambiguity is
+  judged, which fixes that case and makes the full-division-schedule shape resolve
+  correctly instead of failing closed on a crowd. Five mutations were added for
+  the gaps the Reviewer named (18 → 23), including two the harness had no anchor
+  for at all.
 
 - **Myles's Fall 2026 Yorktown NFL FLAG season created; team identity keyed on the league's
   numeric team id (Sept 10, 2026):** Closes the Known open item opened one entry below, which
@@ -3488,6 +3937,47 @@ enumerated under test, digest, and render directly to Node. No deployment.
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
 
 ## Known open items
+
+- **`render/dashboard-v2.test.js`'s full-document byte-identity test is a latent
+  flake, ~0.1% per suite run, and it is not this change's (measured Sept 10, 2026).**
+  Observed once while running the suite for the flag-football identity work:
+  *"renders a byte-identical ordinary Dashboard v2 whether or not a registry is
+  present"* failed, and the same file then passed 93/93 in isolation and the full
+  suite passed 2397/2397 on re-run. **Diagnosed rather than dismissed as a flake.**
+  `render/dashboard-v2.js:1105` seeds `<time id="live-clock">` from
+  `new Date()` — the real wall clock — ignoring the `now` the test pins, and the
+  sports-ticker `Updated` stamp does the same. The test makes two independent
+  `renderDashboardV2()` calls ~67 ms apart, so the pair differs whenever it
+  straddles a **minute** boundary: ≈67/60000 ≈ 0.11% per run.
+  **Proved deterministically**, not by frequency: stubbing `Date` so the second
+  render lands 200 ms later in the *next* minute makes the documents differ, and
+  the only differing content is `5:30 AM` → `5:31 AM` in `live-clock` plus the
+  same minute in the ticker stamp — everything else is byte-identical. A tight
+  4000-pair loop produces 0 differences, which is exactly what a minute-boundary
+  race predicts and is why this reads as a random flake.
+  **Not fixed here, deliberately:** `render/` is a presentation surface Codex
+  owns, and the session that found this was scoped "no renderer changes" — its
+  diff touches zero files under `render/`. The fix is to pin the seeded clock
+  text from the `now` the caller already passes, which is a one-line renderer
+  change plus the same treatment for the ticker stamp. Worth doing before it
+  turns CI red on an unrelated pull request, which it eventually will. This is
+  the same confounder class the Holiday Theme work documents having found and
+  normalised for its own assertions; this particular test was not covered by that.
+
+- **PR #65 and this change both touch `digest/builder.js`; merge order matters a
+  little, and neither blocks the other (Sept 10, 2026).** #65 (`seasonMilestone`,
+  open, `mergeable_state: behind`) adds one line surfacing `flagFootballData` on
+  `digestData`; this change adds an import, two attachment lines and a gap
+  computation to the same file. They are additive in different places and neither
+  imports the other's module, so a conflict is textual at worst. **Two follow-ups
+  become available once #65 lands, and neither should be done before it:**
+  (1) `dashboard-v2-data.js` builds `horizonEvents` by calling `resolveEvent()`
+  directly, outside `buildDigest`, so those events carry no `flagFootball` key —
+  attaching it there needs exactly the `flagFootballData` surfacing #65 adds;
+  (2) the two modules independently answer "which season row is this occurrence?",
+  by different rules and on purpose, and whether they should share a resolver is a
+  question worth asking **only after** both are on `main` and the divergence in
+  strictness has been preserved deliberately rather than merged away by accident.
 
 - **Fall 2026 flag football standings are not a division table, and the new tie column is
   produced but displayed nowhere (Sept 10, 2026).** Both raised by a round-2 Reviewer pass, and

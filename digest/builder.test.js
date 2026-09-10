@@ -10,6 +10,7 @@ import { buildDigest, generateTasks } from './builder.js';
 import { attachFetchFailures } from '../calendar.js';
 import { isSchoolDay, getRotation } from './schoolRotation.js';
 import { startOfTodayET } from './dateUtils.js';
+import { selectNowNext } from './nowNextSelector.js';
 import { FIXTURE_CONFIG } from '../test/fixtures/sports-config.fixture.js';
 
 // Separate from this file's own home-grown assert()/section() harness below —
@@ -958,6 +959,197 @@ describe('buildDigest — day-specific prep tasks belong to the day they are owe
     // day, and her row used to be displaced by Wednesday's stale baritone row.
     nodeAssert.deepEqual(emittedOn(fri), ['⚠ Pack library book this morning (Ophelia — Media today)'],
       'Fri Oct 23 is Ophelia\'s Media day and owes her library-book row');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Flag football event identity — the calendar-to-season join
+//
+// Athletics cards already had team identity: parseFlagFootball() hands the
+// renderer a resolved mascot. A calendar event carried nothing, so Today,
+// NOW/NEXT and the two-week Coming Up panel had no way to name the league team
+// a row belongs to. These cases guard the join end-to-end through buildDigest,
+// where the identity is actually attached.
+//
+// Dates are dynamic (isoDate) for the reason the file header gives, so the
+// fixture season is rebuilt around whatever "today" is at run time. Two
+// deliberate properties of the fixture: it contains a SECOND team whose mascot
+// is "Cowboys", because a duplicate mascot is the condition identity has to
+// survive, and its week 1 row is a `practice` with a null opponent, because
+// the Sept 13 Meet & Greet must carry identity too.
+// ---------------------------------------------------------------------------
+describe('buildDigest — flag football event identity', () => {
+  const MOORE = 8009182;
+  const WATKINS = 8009183;   // the other Cowboys
+  const RAVENS = 8070749;
+
+  // Offsets sit inside the 14-day lookahead so the events reach upcomingEvents,
+  // and +1 sits inside the 72-hour window so one also reaches days[].
+  const PRACTICE_IN = 1;
+  const GAME_IN = 5;
+  const ORPHAN_IN = 9;
+
+  const flagFootballData = () => ({
+    athlete: 'Myles',
+    sport: 'Flag Football',
+    seasons: [{
+      seasonId: 'fall-2026', label: 'Fall 2026', teamName: 'Cowboys',
+      leagueTeamName: 'Moore – Cowboys', myTeamId: MOORE,
+      seasonEnd: isoDate(60),
+      teams: [
+        { teamId: MOORE, leagueName: 'Moore – Cowboys', coach: 'Moore', teamName: 'Cowboys' },
+        { teamId: WATKINS, leagueName: 'Watkins – Cowboys', coach: 'Watkins', teamName: 'Cowboys' },
+        { teamId: RAVENS, leagueName: 'Langston - Ravens', coach: 'Langston', teamName: 'Ravens' },
+      ],
+      games: [
+        { week: 1, date: isoDate(PRACTICE_IN), practiceTime: '11:00', time: null, away: null, awayScore: null, home: MOORE, homeScore: null, type: 'practice', label: 'Meet & Greet', field: '4D', status: 'scheduled' },
+        { week: 2, date: isoDate(GAME_IN), practiceTime: '11:00', time: '12:00', away: RAVENS, awayScore: null, home: MOORE, homeScore: null, type: 'regular', field: '4B', status: 'scheduled' },
+      ],
+      snackSchedule: [], captainAssignments: [],
+    }],
+  });
+
+  const events = () => ([
+    { id: 'ff-practice', summary: 'Flag Football: Week 1 — Meet & Greet', calendarName: 'Myles', start: { dateTime: `${isoDate(PRACTICE_IN)}T11:00:00Z` } },
+    { id: 'ff-game', summary: 'Flag Football: Week 2 — vs Langston-Ravens (Home)', calendarName: 'Myles', start: { dateTime: `${isoDate(GAME_IN)}T11:00:00Z` } },
+    // Deliberately on the SAME DATE as the game. Date alone would claim it;
+    // this is the measured "2nd Sundays" case, which really does land on two
+    // Fall 2026 fixture dates on the live Family calendar.
+    { id: 'unrelated', summary: '2nd Sundays (optional drop-in)', calendarName: 'Family', start: { dateTime: `${isoDate(GAME_IN)}T15:00:00Z` } },
+  ]);
+
+  // extraEvents go into the 14-DAY pull only, never the 72-hour one. That
+  // asymmetry is deliberate and load-bearing: it mirrors production, where
+  // getCalendarEvents() is 72 hours and pull14Days() reaches further, and it
+  // makes the choice to sweep BOTH arrays observable. With the same array in
+  // both slots, dropping either one from collectFlagFootballGaps would fail
+  // nothing — the mutation harness proves the difference.
+  const run = (extraEvents = [], data = flagFootballData()) => buildDigest({
+    rawEvents: [...events()],
+    rawEvents14d: [...events(), ...extraEvents],
+    emails: [], docs: {}, banner: null,
+    ...SPORTS_PARAMS,
+    flagFootballData: data,
+  });
+
+  const findUpcoming = (result, id) => result.upcomingEvents.find(ev => ev.raw.id === id);
+
+  it('resolves identity for a game, on events as delivered to the two-week view', async () => {
+    const identity = findUpcoming(await run(), 'ff-game').flagFootball;
+    nodeAssert.ok(identity, 'expected the game to carry identity');
+    nodeAssert.equal(identity.team.teamId, MOORE);
+    nodeAssert.equal(identity.team.leagueName, 'Moore – Cowboys');
+    nodeAssert.equal(identity.opponent.teamId, RAVENS);
+    nodeAssert.equal(identity.week, 2);
+  });
+
+  it('resolves identity for a practice, opponent null — the Sept 13 Meet & Greet case', async () => {
+    const identity = findUpcoming(await run(), 'ff-practice').flagFootball;
+    nodeAssert.ok(identity, 'expected the practice to carry identity');
+    nodeAssert.equal(identity.team.teamId, MOORE);
+    nodeAssert.equal(identity.opponent, null);
+    nodeAssert.equal(identity.fixtureType, 'practice');
+  });
+
+  it('puts identity on events delivered to Today as well as to the lookahead', async () => {
+    const result = await run();
+    const todayWindow = result.days.flatMap(day => day.events);
+    const practice = todayWindow.find(ev => ev.raw.id === 'ff-practice');
+    nodeAssert.ok(practice, 'the practice should be inside the 72-hour window');
+    nodeAssert.equal(practice.flagFootball.team.teamId, MOORE);
+  });
+
+  it('gives an unrelated event on a fixture date no identity', async () => {
+    const unrelated = findUpcoming(await run(), 'unrelated');
+    nodeAssert.equal(unrelated.flagFootball, null);
+  });
+
+  it('gives every unrelated event the key explicitly, so consumers have one shape', async () => {
+    const result = await run();
+    // Without this the loop below asserts nothing if the fixture ever stops
+    // producing upcoming events — the vacuous-guard shape this repo has been
+    // burned by before.
+    nodeAssert.equal(result.upcomingEvents.length, 3, 'fixture must deliver all three events');
+    for (const ev of result.upcomingEvents) {
+      nodeAssert.equal(Object.hasOwn(ev, 'flagFootball'), true, `${ev.raw?.id} is missing the key entirely`);
+    }
+  });
+
+  it('resolves our Cowboys and never the other one, even when they are the opponent', async () => {
+    const data = flagFootballData();
+    data.seasons[0].games[1] = { ...data.seasons[0].games[1], away: WATKINS };
+    const identity = findUpcoming(await run([], data), 'ff-game').flagFootball;
+    nodeAssert.equal(identity.team.teamId, MOORE);
+    nodeAssert.equal(identity.opponent.teamId, WATKINS);
+    // Both mascots read "Cowboys"; only the ids separate them.
+    nodeAssert.equal(identity.team.teamName, identity.opponent.teamName);
+    nodeAssert.notEqual(identity.team.teamId, identity.opponent.teamId);
+  });
+
+  it('raises the amber gap flag for a flag football occurrence with no season row', async () => {
+    const orphan = { id: 'ff-orphan', summary: 'Flag Football: Week 6 — Practice + Game / Playoffs (Yorktown)', calendarName: 'Myles', start: { date: isoDate(ORPHAN_IN) } };
+    const result = await run([orphan]);
+    const flag = result.flags.find(f => f.id === 'flag-football-schedule-gap');
+    nodeAssert.ok(flag, 'expected the gap to surface as a flag');
+    nodeAssert.equal(flag.level, 'amber');
+    nodeAssert.equal(flag.bannerOnly, undefined, 'must not be bannerOnly, or NOW/NEXT cannot promote it');
+    nodeAssert.match(flag.body, /Week 6/);
+    nodeAssert.match(flag.body, new RegExp(isoDate(ORPHAN_IN)));
+    nodeAssert.equal(findUpcoming(result, 'ff-orphan').flagFootball, null);
+  });
+
+  it('surfaces the gap when a season entry is REMOVED — the drift this exists to catch', async () => {
+    // A reschedule entered on the calendar but never written to the season
+    // data is indistinguishable, from the digest's side, from the row simply
+    // being gone. Delete week 2 and the game that resolved a moment ago must
+    // stop resolving AND start reporting.
+    const before = await run();
+    nodeAssert.ok(findUpcoming(before, 'ff-game').flagFootball, 'control: the game resolves while its row exists');
+    nodeAssert.equal(before.flags.find(f => f.id === 'flag-football-schedule-gap'), undefined,
+      'control: no gap while every occurrence matches');
+
+    const data = flagFootballData();
+    data.seasons[0].games = data.seasons[0].games.filter(g => g.week !== 2);
+    const after = await run([], data);
+
+    nodeAssert.equal(findUpcoming(after, 'ff-game').flagFootball, null, 'identity is gone');
+    const flag = after.flags.find(f => f.id === 'flag-football-schedule-gap');
+    nodeAssert.ok(flag, 'and its absence is REPORTED rather than silent');
+    nodeAssert.match(flag.body, /Langston-Ravens/);
+    // The unrelated event shares that date and must not be dragged in.
+    nodeAssert.doesNotMatch(flag.body, /2nd Sundays/);
+  });
+
+  it('does not raise the flag when every occurrence matches', async () => {
+    const result = await run();
+    nodeAssert.equal(result.flags.find(f => f.id === 'flag-football-schedule-gap'), undefined);
+  });
+
+  it('leaves the record, standings and next-game selection untouched', async () => {
+    // parseFlagFootball is not imported by the identity module and is not
+    // touched by this change; this asserts the through-line rather than the
+    // file. The cross-tree proof in scratch/flag-football-event-identity/
+    // covers the whole digest byte-for-byte.
+    const withEvents = await run();
+    const withoutEvents = await buildDigest({
+      rawEvents: [], rawEvents14d: [], emails: [], docs: {}, banner: null,
+      ...SPORTS_PARAMS, flagFootballData: flagFootballData(),
+    });
+    for (const key of ['seasonRecord', 'standings', 'nextFlagGame', 'seasonComplete', 'finalRecord']) {
+      nodeAssert.deepEqual(withEvents.athletics[key], withoutEvents.athletics[key],
+        `athletics.${key} must not depend on calendar identity`);
+    }
+    // And specifically: the week 1 practice is still not a game.
+    nodeAssert.equal(withEvents.athletics.nextFlagGame.opponent, 'Ravens');
+    nodeAssert.equal(withEvents.athletics.seasonRecord, '0-0-0');
+  });
+
+  it('carries identity through NOW/NEXT onto the featured block', async () => {
+    const result = await run();
+    // 60 minutes before the practice, which puts it inside the imminent window.
+    const nowNext = selectNowNext(result, { now: new Date(`${isoDate(PRACTICE_IN)}T10:00:00Z`) });
+    nodeAssert.ok(nowNext.flagFootball, 'expected the featured block to carry identity');
+    nodeAssert.equal(nowNext.flagFootball.team.teamId, MOORE);
   });
 });
 
