@@ -2783,11 +2783,15 @@ method, so they chain directly to the 988 pre-change number above.
     `Ravens`/`12:00 PM`. Pass 6 also found the timezone pin in `formatETTime` had no mutation at
     all, protected only incidentally by the fixtures' explicit offsets disagreeing with a UTC
     host; there is one now.
-  - **Documentation drift failed five of the seven rounds — 2, 3, 4, 6 and 7, which is not
-    the same as five consecutive ones.** This bullet said "consecutive" for three commits
-    running, incremented mechanically each round, while the paragraph 38 lines above it says
-    pass 5 returned PASS; the two could not both be true. Four of the five were introduced by
-    the very commit sweeping that section for that defect.
+  - **Documentation drift was found in every round except 1 and 5** — so rounds 2, 3, 4, 6, 7
+    and 8, though only 2-4, 6 and 7 *failed* on it; round 8's was a SHOULD FIX on a PASS.
+    Four of them were introduced by the very commit sweeping that section for that defect.
+    **This bullet has now drifted twice about drift.** It said "consecutive" for three commits
+    running, incremented mechanically each round, while the paragraph 38 lines above says pass
+    5 returned PASS — the two could not both be true; and the count that replaced it ("five of
+    the seven rounds") was stale within one round, because round 8 found drift too. It is
+    stated as an exception list rather than a total for that reason: a total has to be
+    recomputed every round and nobody does, which is the whole subject of the bullet.
     Removing derived counts from the prose was not enough on its own: pass 6 found the
     changelog still carrying a mutation count, a control total and a test delta from before the
     rebase, all four false, plus a present-tense description of `data/flag-football.json` that
