@@ -273,6 +273,12 @@ async function serveDocument(config, deps, method) {
   // the size, the checksum and the timestamp, so transferring most of a
   // megabyte to answer a question the pointer already answers would be waste,
   // not thoroughness.
+  //
+  // The consequence, stated rather than glossed: on this path the size is
+  // reported on the manifest's authority alone. A GET cross-checks it
+  // against the body below; a HEAD cannot, because it reads no body. That
+  // is inherent to answering HEAD from the pointer and is the price of not
+  // moving a megabyte to serve a headers-only request.
   if (method === 'HEAD') return new Response(null, { status: 200, headers });
 
   const bytes = await readObject(config, deps, artifactKey, manifest.artifact.versionId);
@@ -281,12 +287,18 @@ async function serveDocument(config, deps, method) {
   // generation's timestamp, which is the one thing this contract exists to
   // make impossible.
   //
-  // One comparison, not two. A byte-length check was written alongside this
-  // and then deleted: no damage changes the length without also changing the
-  // digest, so no mutation could make the length check fail on its own. A
-  // guard that cannot fire is not defence in depth, it is decoration — and
-  // measured at 1.45 ms for the largest shipped state, the digest is not a
-  // cost worth guarding against either.
+  // TWO comparisons, and the second one was briefly deleted on a bad
+  // argument worth recording. It was removed as unfalsifiable, on the
+  // reasoning that "no damage changes the length without changing the
+  // digest" — which is true of damage to the DOCUMENT and says nothing
+  // about the manifest. `artifact.size` is a separate field, checked
+  // nowhere else (`resolvePointer` only requires a non-negative integer),
+  // and it is what `content-length` is set from below. A manifest carrying
+  // a correct digest and a wrong size would otherwise be served with a
+  // content-length that disagrees with the body. So the length check is
+  // falsifiable after all — by mutating the manifest rather than the
+  // document — and it is back, with a test that does exactly that.
+  if (bytes.byteLength !== manifest.artifact.size) throw new ServeFailure('artifact-malformed');
   if (await sha256Hex(bytes) !== manifest.artifact.sha256) throw new ServeFailure('artifact-malformed');
   return new Response(bytes, { status: 200, headers });
 }

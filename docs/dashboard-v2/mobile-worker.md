@@ -27,7 +27,7 @@ name; narrowing it is a separate change and is parked, not done here.
 
 | route | answers with | reads |
 |---|---|---|
-| `GET`/`HEAD` `/`, `/index.html` | the current release document | pointer, then the version-pinned document |
+| `GET` `/`, `/index.html` | the current release document | pointer, then the version-pinned document |
 | `HEAD` `/`, `/index.html` | headers only — size, checksum and `generatedAt` | pointer only |
 | `GET`/`HEAD` `/release-manifest.json` | the discovery manifest, verbatim | pointer only |
 | anything else | `404 route-unknown` | nothing |
@@ -99,16 +99,25 @@ exists to prevent.
 
 ## Integrity
 
-The document is checked against the manifest it was published with — one
-SHA-256 comparison — before it is served. A mismatch is `artifact-malformed`.
+The document is checked against the manifest it was published with — exact
+byte length and exact SHA-256 — before it is served. A mismatch is `artifact-malformed`.
 Measured cost on the largest shipped state (932,020 bytes): **1.45 ms**,
 against a transfer of the same 900 KB, so this is not a trade-off so much as
 a rounding error.
 
-**One comparison, not two.** A byte-length check was written beside it and
-then deleted: no damage changes the length without also changing the digest,
-so no mutation could make it fail on its own. A guard that cannot fire is
-decoration, not defence in depth.
+**Two comparisons — length and digest — and the length one was briefly
+deleted on a bad argument.** It was removed as unfalsifiable, reasoning that
+no damage changes a document's length without changing its digest. True of
+the document, and beside the point: `artifact.size` is a separate manifest
+field, checked nowhere else, and it is what `content-length` is set from. A
+manifest with a correct digest and a wrong size would have been served with a
+header disagreeing with its body. The guard is falsifiable by mutating the
+manifest, and a test does exactly that.
+
+**A `HEAD` reports the size on the manifest's authority alone**, because it
+reads no body to check it against. That is inherent to answering `HEAD` from
+the pointer, and it is the price of not moving a megabyte to serve a
+headers-only request.
 
 ## Signing
 

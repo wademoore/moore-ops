@@ -28,9 +28,20 @@
  * is written against. The raw `pathname` and `search` are now fed straight
  * in as the canonical URI and query string.
  *
- * What it still cannot catch is a header that was SENT but not signed: the
- * recomputation is driven by the `SignedHeaders=` list, so an unsigned extra
- * header is invisible to it. That is stated here rather than claimed away.
+ * WHERE IT DIVERGES FROM REAL S3, NAMED RATHER THAN CLAIMED AWAY
+ *
+ * - A header that was SENT but not signed is invisible: the recomputation is
+ *   driven by the `SignedHeaders=` list, so it never looks at the rest.
+ * - It insists the payload hash is exactly UNSIGNED-PAYLOAD. Real S3 also
+ *   accepts a body-less GET signed with the empty-body digest, so this is
+ *   STRICTER than S3, not a restatement of an S3 rule. It is deliberate —
+ *   taking the hash from the request unchecked would let a mutant sign an
+ *   arbitrary digest and still be served — but a legitimate future change
+ *   to the payload hash would turn this suite red, and should be read as
+ *   this store being narrow rather than as a real rejection.
+ * - The canonical query string is taken in the order it arrived, while S3
+ *   sorts. Exact for the single `versionId` parameter this Worker sends;
+ *   a second parameter emitted out of order would be a false 403.
  */
 import { UNSIGNED_PAYLOAD, signCanonicalRequest } from '../../worker/mobile-dashboard/sigv4.js';
 
@@ -97,10 +108,10 @@ function createFakeObjectStore({ objects = {}, credentials, bucket, region, inte
 
     const amzDate = signedHeaders['x-amz-date'];
     const instant = Date.parse(`${amzDate.slice(0, 4)}-${amzDate.slice(4, 6)}-${amzDate.slice(6, 8)}T${amzDate.slice(9, 11)}:${amzDate.slice(11, 13)}:${amzDate.slice(13, 15)}Z`);
-    // Real S3 rejects a body-bearing hash it did not receive; nothing here
-    // sends a body, so the only value that may be signed is the unsigned
-    // sentinel. Taking it from the request unchecked would let a mutant sign
-    // an arbitrary digest and still be served.
+    // Stricter than S3 on purpose — see the header. Taking the hash from
+    // the request unchecked would let a mutant sign an arbitrary digest and
+    // still be served, so the one value this Worker is supposed to send is
+    // the only one accepted.
     if (signedHeaders['x-amz-content-sha256'] !== UNSIGNED_PAYLOAD) return xml(403, ACCESS_DENIED);
     const { authorization: expected } = await signCanonicalRequest({
       canonicalUri: parsed.pathname,

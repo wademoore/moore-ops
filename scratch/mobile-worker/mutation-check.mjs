@@ -107,8 +107,13 @@ const MUTATIONS = [
     s => s.replace('{\n  "Version"', '{\n  "_comment": "apply with put-user-policy",\n  "Version"')],
 
   // --- last-good and integrity --------------------------------------------
+  ['the manifest-declared size is no longer cross-checked against the body', WORKER,
+    s => s.replace("  if (bytes.byteLength !== manifest.artifact.size) throw new ServeFailure('artifact-malformed');\n", '')],
+  ['the served content-length is taken from a size nothing checked', WORKER,
+    s => s.replace("  if (bytes.byteLength !== manifest.artifact.size) throw new ServeFailure('artifact-malformed');\n  if (await sha256Hex(bytes) !== manifest.artifact.sha256) throw new ServeFailure('artifact-malformed');",
+      "  if (await sha256Hex(bytes) !== manifest.artifact.sha256) throw new ServeFailure('artifact-malformed');")],
   ['the document is served without checking it against its manifest', WORKER,
-    s => s.replace("  if (await sha256Hex(bytes) !== manifest.artifact.sha256) throw new ServeFailure('artifact-malformed');", '')],
+    s => s.replace("  if (bytes.byteLength !== manifest.artifact.size) throw new ServeFailure('artifact-malformed');\n  if (await sha256Hex(bytes) !== manifest.artifact.sha256) throw new ServeFailure('artifact-malformed');", '')],
   ['the contract predicate is dropped from pointer resolution', WORKER,
     s => s.replace("  if (!isMobileManifest(manifest)) throw new ServeFailure('artifact-malformed');", '')],
   ['the document read stops pinning the object version', WORKER,

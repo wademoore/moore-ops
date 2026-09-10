@@ -153,7 +153,11 @@ describe('the reader identity is scoped to the mobile prefix alone', () => {
     assert.ok(Array.isArray(POLICY.Statement));
     for (const statement of POLICY.Statement) {
       for (const key of Object.keys(statement)) {
-        assert.ok(['Sid', 'Effect', 'Action', 'Resource', 'Condition', 'Principal', 'NotAction', 'NotResource'].includes(key), `IAM rejects the statement key ${key}`);
+        // `Principal` is deliberately absent: this is an IDENTITY-based
+        // policy applied with put-user-policy, where IAM refuses it. Listing
+        // it would have made a test named "a document IAM would actually
+        // accept" accept a document IAM rejects.
+        assert.ok(['Sid', 'Effect', 'Action', 'Resource', 'Condition', 'NotAction', 'NotResource'].includes(key), `IAM rejects the statement key ${key} in an identity-based policy`);
       }
     }
   });
@@ -215,14 +219,25 @@ function assertDeploymentPath(source) {
 
   // The verify step reads $CONFIG, so the mapping that supplies it is part
   // of the path and must name the file the deploy actually ships.
-  const verifyBlock = verifyAt === -1 ? '' : source.slice(verifyAt, deployAt === -1 ? undefined : deployAt);
+  // Scoped to the verify step's OWN block — from its name to the next step
+  // — not to "everything between verify and deploy". The verify step
+  // happens to sit immediately before Deploy today, so the looser slice was
+  // exact by accident; a step inserted between them could have supplied
+  // CONFIG: and satisfied this while the verify step had no mapping at all.
+  const afterVerify = verifyAt === -1 ? '' : source.slice(verifyAt + 1);
+  const nextStepAt = afterVerify.search(/\n {6}- name: /);
+  const verifyBlock = verifyAt === -1 ? '' : afterVerify.slice(0, nextStepAt === -1 ? undefined : nextStepAt);
   const mapping = /\n\s+CONFIG: (\S+)\n/.exec(verifyBlock);
   if (!mapping) failures.push('the verify step has no CONFIG env mapping');
   else if (mapping[1] !== CONFIG_PATH) failures.push(`the verify step checks ${mapping[1]}, not ${CONFIG_PATH}`);
   if ((verifyBlock.match(/\n\s+CONFIG:/g) || []).length > 1) failures.push('the verify step maps CONFIG more than once');
 
   // And the deploy must ship the file that was verified, not another one.
-  const deployBlock = deployAt === -1 ? '' : source.slice(deployAt);
+  // Likewise bounded to the Deploy step, so `--config` cannot be satisfied
+  // by a later step's flag.
+  const afterDeploy = deployAt === -1 ? '' : source.slice(deployAt + 1);
+  const afterDeployNext = afterDeploy.search(/\n {6}- name: /);
+  const deployBlock = deployAt === -1 ? '' : afterDeploy.slice(0, afterDeployNext === -1 ? undefined : afterDeployNext);
   const deployed = /--config (\S+)/.exec(deployBlock);
   if (!deployed) failures.push('the deploy step names no configuration file');
   else if (deployed[1] !== CONFIG_PATH) failures.push(`the deploy step ships ${deployed[1]}, not the verified ${CONFIG_PATH}`);
@@ -247,6 +262,18 @@ describe('the deploy workflow does not deploy on merge', () => {
         return `${WORKFLOW.replace(step, '')}\n${step}`;
       })(), /verified after the deploy/],
       ['deploy step removed', WORKFLOW.replace('      - name: Deploy\n', '      - name: Nothing\n'), /never deploys/],
+      // The scoping mutant: the mapping moves off the verify step onto an
+      // interposed step. Under the looser "everything between the two
+      // steps" slice this passed.
+      ['mapping moved onto an interposed step', WORKFLOW
+        .replace('        env:\n          CONFIG: worker/mobile-dashboard/wrangler.toml\n', '')
+        .replace('      - name: Deploy\n', '      - name: Interposed\n        env:\n          CONFIG: worker/mobile-dashboard/wrangler.toml\n        run: echo hi\n\n      - name: Deploy\n'),
+        /no CONFIG env mapping/],
+      // And the symmetric one for the deploy slice.
+      ['--config satisfied by a later step', WORKFLOW
+        .replace('        run: npx --yes wrangler@4 deploy --config worker/mobile-dashboard/wrangler.toml', '        run: npx --yes wrangler@4 deploy')
+        + '\n      - name: Later\n        run: echo --config worker/mobile-dashboard/wrangler.toml\n',
+        /names no configuration file/],
     ];
     for (const [label, mutated, expected] of mutants) {
       const failures = assertDeploymentPath(mutated);

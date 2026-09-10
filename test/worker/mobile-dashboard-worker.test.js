@@ -209,12 +209,41 @@ describe('document route', () => {
     assert.equal(await response.text(), '');
   });
 
+  it('refuses a manifest whose declared size disagrees with the document', async () => {
+    // The counterexample that put the byte-length check back. `artifact.size`
+    // is checked nowhere else — `resolvePointer` only requires a
+    // non-negative integer — and it is what `content-length` is set from, so
+    // a manifest with a correct digest and a wrong size would be served with
+    // a header that disagrees with the body. Mutating the MANIFEST, not the
+    // document, is what makes that guard falsifiable.
+    for (const wrong of [1, 999_999_999, 0]) {
+      const { call } = await scenario({
+        mutate: (objects, published) => ({
+          ...objects,
+          [MOBILE_MANIFEST_KEY]: {
+            ...objects[MOBILE_MANIFEST_KEY],
+            body: objects[MOBILE_MANIFEST_KEY].body.replace(`"size": ${published.manifest.artifact.size},`, `"size": ${wrong},`),
+          },
+        }),
+      });
+      const response = await call('/');
+      assert.equal(response.headers.get(REASON_HEADER), 'artifact-malformed', `size ${wrong}`);
+      assert.equal(response.status, 502, `size ${wrong}`);
+    }
+  });
+
+  it('serves a content-length that agrees with the body it sends', async () => {
+    const { call } = await scenario();
+    const response = await call('/');
+    const body = await response.text();
+    assert.equal(Number(response.headers.get('content-length')), new TextEncoder().encode(body).length);
+  });
+
   it('refuses a document whose bytes do not match the manifest it was published with', async () => {
     // A truncated or replaced object would otherwise reach a phone wearing
-    // the current generation's timestamp. One SHA-256 comparison covers
-    // every one of these: a separate byte-length check was written first and
-    // then removed, because no damage exists that changes the length without
-    // changing the digest, so it was a guard that could never fire.
+    // the current generation's timestamp. The SHA-256 comparison covers
+    // every one of these; the length comparison beside it covers the
+    // manifest-side case in the test above, which is the one that kept it.
     for (const damage of [
       body => body.slice(0, body.length - 200),
       body => `${body}<!-- appended -->`,
@@ -516,16 +545,17 @@ describe('isolation from the wall display', () => {
     // path were a no-op, which is a sanity check that sanity-checks nothing.
     for (const path of legitimate) await call(path);
     assert.ok(store.requestedKeys.length > 0, 'the harness cannot reach storage at all');
-    const reachedByLegitimate = store.requestedKeys.length;
 
     for (const path of adversarial) for (const method of ['GET', 'HEAD']) await call(path, { method });
     for (const key of store.requestedKeys) {
       assert.ok(key.startsWith(`${MOBILE_KEY_PREFIX}/`), `the Worker read ${key}`);
     }
-    // Whether an adversarial path reaches storage at all is not the property
-    // — being refused before a request is built is the better outcome — so
-    // this only records that the two groups were driven separately.
-    assert.ok(store.requestedKeys.length >= reachedByLegitimate);
+    // A `requestedKeys.length >= reachedByLegitimate` line stood here and was
+    // deleted: `requestedKeys` is append-only, so it could never go red — an
+    // unfalsifiable assertion added in the very commit that removed another
+    // one. Whether an adversarial path reaches storage at all is not the
+    // property anyway; being refused before a request is built is the better
+    // outcome. The prefix assertion above is the whole guard.
   });
 
   it('the Worker’s own code names no display key', async () => {
@@ -586,10 +616,16 @@ describe('last-good behaviour', () => {
     // serves from, and the map is snapshotted byte-for-byte across the
     // attempt. A publisher that wrote anything before failing — a release, a
     // discovery route, or the pointer — changes that snapshot and fails
-    // here. Two failure shapes are driven, because they stop at different
-    // points: a renderer that throws never reaches a write at all, while a
-    // renderer that returns an invalid document gets as far as the contract
-    // validator, which is where an ordering regression would show.
+    // here. Two failure shapes are driven because they stop at different
+    // points: a renderer that throws never reaches the validator, while one
+    // that returns an invalid document does.
+    //
+    // Precisely what this proves, since the obvious reading is wrong:
+    // NEITHER shape reaches a PUT, so this asserts "validation precedes the
+    // first write", not "the pointer is written last". The ordering AMONG
+    // the three PUTs is a different property and is covered where it
+    // belongs, against the publisher, in
+    // test/artifact/mobile-publishing-contract.test.js.
     for (const [shape, render] of [
       ['the renderer throws', () => { throw new Error('renderer blew up'); }],
       ['the renderer returns a document the contract refuses', () => '<!doctype html><p>too small to be a dashboard</p>'],
