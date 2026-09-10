@@ -2141,7 +2141,12 @@ figures are both true and must not be confused:
 This change adds **+77** to either. 2349 + 77 = **2426**, which is the measured
 figure in the table above — **measured on the merged tree, not obtained by adding
 the two branches' deltas together**, because that arithmetic would have been a
-projection and #67 touched two of the same files. **`git fetch origin main` was run before deriving it, per the standing
+projection and the two changes overlap in **three** source files
+(`digest/aliases.js`, `digest/builder.js`, `digest/builder.test.js`), four counting
+this one. An earlier draft said two; corrected in place rather than quietly,
+because this is the section whose whole purpose is that its figures be checkable.
+The sum happens to agree with the measurement, which is reassuring and is not
+evidence. **`git fetch origin main` was run before deriving it, per the standing
 warning, and it mattered a sixth consecutive time: the ref was stale at `2d01027`
 and the fetch moved it to `975fbc2`.**
 
