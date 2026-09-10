@@ -394,6 +394,25 @@ describe('flag football team identity', () => {
     assert.deepEqual(data.seasons.map(s => s.seasonId), ['fall-2025', 'spring-2026', 'fall-2026']);
   });
 
+  it('every season keys its teams on ids or on abbrs, never a mix of both', async () => {
+    // parseFlagFootball resolves `teamId ?? abbr`, so a season declaring
+    // myTeamId while its teams[] carry only abbr would match NOTHING and
+    // degrade to 0-0-0 with no isMe row — indistinguishable from a season that
+    // has not started. That invariant lived only in a code comment; this is the
+    // thing that actually enforces it.
+    const data = await readJson('data/flag-football.json');
+    for (const s of data.seasons) {
+      const byId   = s.teams.every(t => t.teamId != null);
+      const byAbbr = s.teams.every(t => t.abbr   != null);
+      assert.ok(byId !== byAbbr, `${s.seasonId}: teams must be uniformly id-keyed or abbr-keyed`);
+      assert.equal(s.myTeamId != null, byId, `${s.seasonId}: myTeamId must be present iff teams are id-keyed`);
+      assert.equal(s.myTeamAbbr != null, byAbbr, `${s.seasonId}: myTeamAbbr must be present iff teams are abbr-keyed`);
+      const key = t => (t.teamId ?? t.abbr);
+      assert.ok(s.teams.some(t => key(t) === (s.myTeamId ?? s.myTeamAbbr)),
+        `${s.seasonId}: my own key must resolve to a listed team`);
+    }
+  });
+
   // This assertion previously pinned the SPRING window (2026-04-26 -> 2026-06-07,
   // bufferDays 0) under the title 'this update is 757swim-only'. That was
   // accurate for the change it was written for, and it is exactly the tripwire

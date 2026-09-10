@@ -177,6 +177,17 @@ describe('parseFlagFootball', () => {
     const result = parseFlagFootball(tied, MAY_1, CONFIG);
     assert.equal(result.seasonRecord, '3-0-1', 'a 14-14 draw is a tie; before the fix this read 3-1');
     assert.equal(result.lastResult, 'T 14\u201314 vs Chiefs', 'a drawn last result is prefixed T, not L');
+
+    // The standings loop carried the SAME tie-as-loss shape and was missed on
+    // the first pass, so a draw produced seasonRecord 3-0-1 next to a standings
+    // row reading w:3 l:1. Both sides of the drawn game are asserted.
+    const mine = result.standings.find(r => r.isMe);
+    assert.deepEqual({ w: mine.w, l: mine.l, t: mine.t }, { w: 3, l: 0, t: 1 },
+      'the drawn game must not appear as a loss in my standings row');
+    const chiefs = result.standings.find(r => r.team === 'Chiefs');
+    assert.deepEqual({ w: chiefs.w, l: chiefs.l, t: chiefs.t }, { w: 0, l: 1, t: 1 },
+      'and must not appear as a loss for the opponent either');
+    assert.equal(mine.w + mine.l + mine.t, 4, 'every counted game lands in exactly one bucket');
   });
 
   // ── Numeric league team ids ────────────────────────────────────────────────

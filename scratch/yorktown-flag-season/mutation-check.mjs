@@ -13,6 +13,21 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 
+// This harness mutates TRACKED files under data/ and digest/ in place and
+// restores them at the start and end of the run. An interrupt between those two
+// points leaves production data files modified, so refuse to start from a dirty
+// tree: that way `git checkout -- data digest` is always a complete recovery,
+// and a genuine uncommitted change can never be mistaken for a leftover mutant.
+{
+  const dirty = spawnSync('git', ['status', '--porcelain', '--', 'data', 'digest'],
+    { encoding: 'utf8' }).stdout?.trim();
+  if (dirty) {
+    console.error('refusing to run: data/ or digest/ has uncommitted changes.\n' +
+      'Commit or stash them first — this harness overwrites those files.\n' + dirty);
+    process.exit(1);
+  }
+}
+
 const SUITES = ['test/current-season-athletics.test.js', 'test/flagFootballParser.test.js'];
 const FILES = ['data/flag-football.json', 'data/sports-config.json', 'digest/flagFootballParser.js'];
 const original = Object.fromEntries(FILES.map(f => [f, readFileSync(f, 'utf8')]));
@@ -62,8 +77,13 @@ const MUTATIONS = [
   ['flagFootballParser.js', 'match on mascot instead of id — the explicitly wrong shape',
     f => f['digest/flagFootballParser.js'].replace('const teamKey = t => keyOf(t.teamId ?? t.abbr);', 'const teamKey = t => keyOf(t.teamName ?? t.abbr);')
                                           .replace('keyOf(season.myTeamId ?? season.myTeamAbbr)', 'keyOf(season.teamName ?? season.myTeamAbbr)')],
-  ['flagFootballParser.js', 'restore tie-counted-as-loss',
+  ['flagFootballParser.js', 'restore tie-counted-as-loss in the RECORD loop',
     f => f['digest/flagFootballParser.js'].replace('    else if (myScore < oppScore) losses++;\n    else ties++;', '    else losses++;')],
+  // The standings loop carried the same shape and was missed on the first pass;
+  // no mutation covered it, which is why nothing failed. This is that mutation.
+  ['flagFootballParser.js', 'restore tie-counted-as-loss in the STANDINGS loop',
+    f => f['digest/flagFootballParser.js'].replace('      if (mine > theirs) w++; else if (mine < theirs) l++; else t++;',
+      '      if (mine > theirs) w++; else l++;')],
   ['flagFootballParser.js', 'drop the practice filter from nextFlagGame',
     f => f['digest/flagFootballParser.js'].replace('      && !NON_GAME_TYPES.has(g.type)\n', '')],
   ['flagFootballParser.js', 'gate visibility on a result existing',

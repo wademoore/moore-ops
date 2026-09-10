@@ -7,8 +7,10 @@
  * on the athletics object.
  */
 
-// Game types that are scheduled entries on the calendar but are not fixtures:
-// they have no opponent and can never contribute to a record or a standing.
+// Game types that are scheduled calendar entries but are not fixtures: they
+// have no opponent. This set is applied to nextFlagGame only — the record and
+// the standings already exclude them via their own `type === 'regular'` filter,
+// so do not read this constant as the thing keeping practices out of those.
 const NON_GAME_TYPES = new Set(['practice']);
 
 /**
@@ -90,21 +92,26 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   }
 
   // ── Standings ────────────────────────────────────────────────────────────────
-  const standings = season.teams.map(t => {
-    let w = 0, l = 0, pf = 0, pa = 0;
-    const tKey = teamKey(t);
+  // Ties are counted here for the same reason they are counted in the record
+  // loop above, and this half was missed on the first pass: both branches read
+  // `if (home > away) w++; else l++`, so a drawn game would have produced a
+  // seasonRecord of e.g. 3-0-1 beside a standings row reading w:3 l:1 — the two
+  // halves of one file disagreeing about the same game. `t` is additive: every
+  // renderer selects named columns (`['team','w','l']`), so nothing shows it
+  // until a surface asks for it.
+  const standings = season.teams.map(team => {
+    let w = 0, l = 0, t = 0, pf = 0, pa = 0;
+    const tKey = teamKey(team);
+    const tally = (mine, theirs) => {
+      if (mine > theirs) w++; else if (mine < theirs) l++; else t++;
+      pf += mine;
+      pa += theirs;
+    };
     for (const g of eligibleGames) {
-      if (keyOf(g.home) === tKey) {
-        if (g.homeScore > g.awayScore) w++; else l++;
-        pf += g.homeScore;
-        pa += g.awayScore;
-      } else if (keyOf(g.away) === tKey) {
-        if (g.awayScore > g.homeScore) w++; else l++;
-        pf += g.awayScore;
-        pa += g.homeScore;
-      }
+      if (keyOf(g.home) === tKey) tally(g.homeScore, g.awayScore);
+      else if (keyOf(g.away) === tKey) tally(g.awayScore, g.homeScore);
     }
-    return { team: t.teamName, w, l, pf, pa, isMe: tKey === myKey };
+    return { team: team.teamName, w, l, t, pf, pa, isMe: tKey === myKey };
   }).sort((a, b) => b.w - a.w || a.l - b.l);
 
   // ── Snack family ─────────────────────────────────────────────────────────────

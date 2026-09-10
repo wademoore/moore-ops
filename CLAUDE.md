@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2308+ passing with a browser
+- Run npm test after changes — must stay at 2309+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -1936,7 +1936,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2308 | **2308** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2309 | **2309** | **0** | **0** |
 
 Measured on `claude/yorktown-nfl-flag-season-rjqg2e`, whose merge base with `main` is
 **`3d250aa`** (PR #61) — which is also this branch's branch point. **`git fetch origin main`
@@ -1947,11 +1947,11 @@ was re-measured in this session, before any change and after `npm install`: **22
 baseline held for a fourth consecutive time. Re-measure anyway; the run costs less than the
 correction does.
 
-This change adds **+11**, in two existing files:
+This change adds **+12**, in two existing files:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `test/current-season-athletics.test.js` | 13 | 19 | +6 |
+| `test/current-season-athletics.test.js` | 13 | 20 | +7 |
 | `test/flagFootballParser.test.js` | 25 | 30 | +5 |
 
 `test/athleticsParser.test.js` (27) and `digest/builder.test.js` (10) contribute **0**: one
@@ -1960,24 +1960,35 @@ assertion changed inside each, none added or removed. Both before-figures were m
 imports and reports `# tests 1`, which is exactly how a plausible-looking wrong number gets
 recorded here.
 
-Five existing assertions were **updated, not deleted or skipped**, and each is annotated in
-place with the reason: four record strings gained a ties component when `seasonRecord` became
-`W-L-T` (no historical season contains a draw, so every one is the same record with `-0`), and
-the three flag football tripwires in `test/current-season-athletics.test.js` — which pinned the
-*absence* of a current season and the spring window — are inverted to pin the current season
-and the fall window. Those three going red was predicted by the Known open item this change
+**Nine** existing assertions were **updated, not deleted or skipped**, and each is annotated in
+place with the reason: six record strings gained a ties component when `seasonRecord` became
+`W-L-T` (four in `test/flagFootballParser.test.js` — three `3-0` → `3-0-0` plus `4-0` → `4-0-0`
+— and one each in `digest/builder.test.js` and `test/athleticsParser.test.js`; no historical
+season contains a draw, so every one is the same record with `-0`), and the three flag football
+tripwires in `test/current-season-athletics.test.js` — which pinned the *absence* of a current
+season and the spring window — are inverted to pin the current season and the fall window.
+**This sentence first said "five", then broke down as "four plus three".** A Reviewer pass
+caught the arithmetic; it is recorded here rather than quietly corrected, because this is the
+section whose whole purpose is that its figures be checkable. Those three going red was predicted by the Known open item this change
 closes; they were written with an explicit instruction to re-examine them when a real season
 landed, which is what happened.
 
 Companion mutation evidence, committed and run on demand rather than in `npm test`:
-`node scratch/yorktown-flag-season/mutation-check.mjs` → **14 mutations, 14/14 proven**, green
-control and green restore. Two survived the first run and both were acted on rather than
-explained away: one exposed a genuine gap (the prior-season guard pinned the season-level
-`teamName` but never the `teams[]` rosters, so renaming spring-2026's MPC entry from Cowboys to
-Chiefs passed everything — both prior rosters are now pinned in full), and one was a **bad
-mutation of my own**, swapping the operands of `t.teamId ?? t.abbr`, which is a no-op because
-the left side is undefined in exactly the seasons carrying the other field. It was replaced
-with two that really remove the id path.
+`node scratch/yorktown-flag-season/mutation-check.mjs` → **15 mutations, 15/15 proven**, green
+control and green restore. It refuses to start from a dirty `data/` or `digest/` tree, because
+it overwrites tracked files in place and restores them at both ends — so `git checkout -- data
+digest` is always a complete recovery from an interrupted run.
+
+**Three mutations were missing or wrong across two rounds, and each one is the argument for
+running the harness at all.** Two survived the first run: one exposed a genuine coverage gap
+(the prior-season guard pinned the season-level `teamName` but never the `teams[]` rosters, so
+renaming spring-2026's MPC entry from Cowboys to Chiefs passed everything — both prior rosters
+are now pinned in full), and one was a **bad mutation of my own**, swapping the operands of
+`t.teamId ?? t.abbr`, which is a no-op because the left side is undefined in exactly the seasons
+carrying the other field; it was replaced with two that really remove the id path. The third was
+found by the Reviewer, not by the harness: **there was no mutation for the standings loop**, so
+nothing detected that the tie-as-loss fix had been applied to the record loop and not to the
+identical shape 30 lines below it. A harness only proves the guards you thought to attack.
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
 quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
@@ -1989,7 +2000,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2308+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2309+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 10, 2026 on the current-season athletics branch
 
@@ -2662,13 +2673,36 @@ method, so they chain directly to the 988 pre-change number above.
   not fixed here. Nothing in `render/`, `dashboard-artifact/`, `data/special-events.json` or the
   athletics card was touched.
 
-  **14 mutations prove the guards have teeth** — `node scratch/yorktown-flag-season/mutation-check.mjs`,
-  14/14, green control and restore. Two survived the first run and both were acted on: one was a
+  **15 mutations prove the guards have teeth** — `node scratch/yorktown-flag-season/mutation-check.mjs`,
+  15/15, green control and restore. Two survived the first run and both were acted on: one was a
   genuine coverage gap (prior-season `teams[]` rosters were unguarded, so renaming spring-2026's
   MPC entry to Chiefs passed everything), and one was a **defective mutation of my own** that
   swapped the operands of `t.teamId ?? t.abbr` — a no-op, because the left side is undefined in
-  exactly the seasons that carry the other field. Tests **2297 → 2308**, all passing with a
+  exactly the seasons that carry the other field. Tests **2297 → 2309**, all passing with a
   browser; the merge base was re-measured in-session rather than taken from this file.
+
+  **An independent Reviewer pass returned PASS with no BLOCKING findings, and all four of its
+  SHOULD FIX items were acted on here.** (1) **The tie fix was half-applied.** The record loop
+  stopped counting a draw as a loss; the standings loop 30 lines below it still read
+  `if (home > away) w++; else l++`, so a drawn game would have produced `seasonRecord: "3-0-1"`
+  beside a standings row reading `w:3, l:1` — one file disagreeing with itself about one game.
+  Fixed, with a `t` field added to the standings row (additive: every renderer selects the named
+  columns `['team','w','l']`), both sides of the drawn game asserted, and a fifteenth mutation
+  added, because **no mutation had covered that loop**, which is precisely why nothing failed. (2) **`games` holds only our six fixtures**, unlike fall-2025 which carries the
+  whole division schedule, because the league publishes only our weeks — so once results are
+  entered the standings will show each opponent with a single game and are *not* a division
+  table. That consequence is now recorded in the season `note`; previously only the two missing
+  team *ids* were. (3) The updated-assertion count in this file said "five" and broke down as
+  "four plus three"; it is nine, enumerated above. (4) The stale flag-game subtitle is
+  **digest-layer, not Codex's** — `digest/aliases.js` and `digest/builder.js` are the loop's under
+  Surface boundaries — so declining to fix it on scope grounds is defensible but leaving it
+  unrecorded was not. It is now a Known open item. Three MINOR items were also taken: an
+  invariant test that no season mixes id-keyed and abbr-keyed teams (the parser relies on it and
+  only a comment stated it), a corrected `NON_GAME_TYPES` comment that had overstated what the
+  set does, and the harness's clean-tree guard. The remaining MINOR items — the season `note`
+  naming `leagueName` where the season field is `leagueTeamName` (fixed) and derived `W-L-T`
+  coexisting with the stored historical `regularRecord: "7-0"` (left; different fields) — are in
+  the pull request's Parked section.
 
 - **Current-season athletics updated for both kids (Sept 10, 2026):** Ophelia's 757swim
   2026-27 season is enabled in `data/sports-config.json` with the window documented in
@@ -3416,6 +3450,28 @@ enumerated under test, digest, and render directly to Node. No deployment.
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
 
 ## Known open items
+
+- **The flag-game event subtitle and `thisWeekTime` still name the SPRING season's venue and
+  time, and the fall season being live now makes that visible (Sept 10, 2026).** Raised by an
+  independent Reviewer pass against the claim that this belonged to Codex. **It does not — it is
+  digest-layer, which Surface boundaries assign to the loop.** Two hardcoded sites:
+  `digest/aliases.js`'s flag-game `PATTERN_MATCHERS` entry emits
+  `subtitle: '3:00 PM (follows 2:00 PM practice) · Williamsburg Christian Academy'`, and
+  `digest/builder.js`'s `isFlagGame` cross-reference sets `athletics.thisWeekTime = '3:00 PM'`
+  unconditionally. (`digest/aliases.js`'s `'Flag Practice'` alias carries the same venue;
+  `render/dashboard.js` does too, but that is the **frozen** v1 surface — leave it.)
+  Both were correct for Spring 2026 at Williamsburg Christian Academy. Fall 2026 games are
+  **12:00 or 2:00 PM at McReynolds Athletic Complex, Yorktown** — so `thisWeekTime` now
+  contradicts the schedule `data/flag-football.json` itself encodes.
+  **It is genuinely pre-existing and was measured as such**: the same `buildDigest` run against
+  `3d250aa` produces byte-identical Upcoming-panel rows and subtitles, because the alias fires
+  off the calendar event title and never consults season config. So the season change neither
+  caused nor worsened it — but it did make it reachable, since the card was previously hidden.
+  **The fix should derive from `data/flag-football.json`** rather than swap one hardcoded string
+  for another: the season now carries per-game `time`, `practiceTime` and `field`, plus a
+  season-level `location`. Replacing a stale literal with a fresh literal just resets the clock
+  on the same defect. Whether the derivation lands in `digest/` or is handed to the presentation
+  side is a scoping call for the coordinating chat.
 
 - **✓ MOSTLY RESOLVED Sept 10, 2026 — the fall-2026 season exists; the accent half is still open,
   and for a different reason than this item gave.** `data/flag-football.json` now carries
