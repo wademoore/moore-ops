@@ -702,6 +702,10 @@ assert(allDayResult.athletics.hasGameThisWeek === true,          'All-day flag g
 assert(allDayResult.athletics.thisWeekTime === null,             'All-day flag game → thisWeekTime null, not a guessed time');
 
 // FLAG-FIXTURE-REGION-END — do not delete; the tripwire below ends its scan here.
+// Nothing between `const twoHourBlock` and this marker may contain the token
+// `isoDate(`, including in a comment — the guard scans source text, so moving
+// the explanation below up among the fixtures trips it. It fails closed, which
+// is the intent, but the message will point at the fixtures rather than at you.
 //
 // Tripwire for the trap the comment above describes: an offset pinned against a
 // run-time-relative date is only correct until the next DST transition.
@@ -733,7 +737,27 @@ assert(allDayResult.athletics.thisWeekTime === null,             'All-day flag g
     assert(region.includes(name), `DST tripwire region is missing ${name} — boundary drifted`);
   }
   assert(!region.includes('isoDate('), 'flag football date fixtures must pin a fixed calendar date, not a run-time-relative one');
-  assert(!/dateTime:\s*`/.test(region), 'flag football dateTime fixtures must be string literals, not templates');
+
+  // Positive form, not just a blocklist. Two blocklist checks let a third way
+  // of writing a relative date through (`new Date(Date.now() + 864e5)`, say),
+  // so require every dateTime in the region to BE a quoted ISO literal with an
+  // explicit offset. This still allows a legitimate re-dating — it pins the
+  // shape, not the date — while rejecting any computed value.
+  const dateTimes = (region.match(/dateTime:\s*[^,}\n]*/g) || []).map(m => m.trim());
+  assert(dateTimes.length >= 4, `DST tripwire found ${dateTimes.length} dateTime fixtures, expected at least 4 — region drifted`);
+  for (const d of dateTimes) {
+    assert(
+      /^dateTime:\s*'\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[+-]\d{2}:\d{2}'$/.test(d),
+      `flag football fixture is not a fixed ISO literal with an explicit offset: ${d}`,
+    );
+  }
+
+  // The region ends at the marker, so a fixture added BELOW it — the natural
+  // place, since the marker reads like a section end — would be unguarded by
+  // everything above. This one check is whole-file: no dateTime fixture
+  // anywhere in this file may be a template literal. Verified safe to apply
+  // file-wide, because the existing isoDateTime() fixtures are plain calls.
+  assert(!/dateTime:\s*`/.test(src), 'no dateTime fixture in this file may be a template literal');
 }
 
 // ---------------------------------------------------------------------------

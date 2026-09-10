@@ -439,10 +439,11 @@ function flagFootballDetails(event) {
   }
   const startTime = formatETTime(start);
 
-  // Three cases, and the distinction between the last two matters: a block we
-  // can measure and find short is EVIDENCE the block is the game itself; a
-  // block with no end is merely absence of evidence. Collapsing them would
-  // return the practice hour as the game hour — the exact off-by-one this
+  // Four bands (see the JSDoc above for the full table). The distinction that
+  // matters most is between "measured and short" and "not measured at all": a
+  // block we can measure and find short is EVIDENCE the block is the game
+  // itself; a block with no end is merely absence of evidence. Collapsing them
+  // would return the practice hour as the game hour — the exact off-by-one this
   // helper exists to prevent — and would do it confidently.
   const rawEnd = event?.end?.dateTime;
   const end = rawEnd ? new Date(rawEnd) : null;

@@ -92,6 +92,15 @@ const MUTATIONS = [
     to:   '  if (false && durationMs < 2 * FLAG_PRACTICE_MS) {',
   },
   {
+    // A relative date written a THIRD way, defeating both blocklist checks
+    // (no `isoDate(`, no template literal) — which is why the tripwire also
+    // requires every dateTime to positively BE a quoted ISO literal.
+    name: 'fixture date computed rather than written',
+    file: 'digest/builder.test.js',
+    from: "  start: { dateTime: '2026-09-27T13:00:00-04:00' },",
+    to:   "  start: { dateTime: new Date(Date.now() + 864e5).toISOString() },",
+  },
+  {
     // The DST tripwire's own boundary: lastIndexOf pulls its explanatory
     // comment (which names isoDate(1) in prose) inside the scanned region and
     // fires the guard on its own explanation.

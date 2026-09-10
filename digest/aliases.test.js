@@ -465,6 +465,16 @@ describe('Flag game subtitle — per-occurrence, not a season constant', () => {
     }
   });
 
+  it('an ambiguous 90-minute block renders the venue with no time at all', () => {
+    // The rendered consequence of the ambiguous band, pinned rather than left
+    // implicit: `when` is null, so joinSubtitle drops it and the subtitle is
+    // the venue alone. Deliberate — a venue with no time is recoverable, a
+    // confident wrong hour is the defect this whole section exists to remove.
+    const r = resolveEvent({ ...WEEK2, end: { dateTime: '2026-09-20T12:30:00-04:00' } });
+    assert.equal(r.subtitle, 'McReynolds Athletic Complex (4B)');
+    assert.equal(r.isFlagGame, true);
+  });
+
   it('leaves no dangling separator when the venue is underivable', () => {
     const r = resolveEvent({ ...WEEK2, location: undefined });
     assert.equal(r.subtitle, '12:00 PM (follows 11:00 AM practice)');
