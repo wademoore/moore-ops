@@ -1,0 +1,81 @@
+name: Deploy mobile dashboard Worker
+
+# MANUAL ONLY, DELIBERATELY. There is no `push` and no `pull_request`
+# trigger, so merging this change deploys nothing. The mobile artifact itself
+# is still unpublished (MOBILE_ARTIFACT_ENABLED defaults to 0), so an origin
+# that deployed on merge would serve a 404 to anyone who found it, and the
+# authenticated origin in front of it is a deployment decision that has not
+# been made in this repository. Deployment is a person's decision this round.
+on:
+  workflow_dispatch:
+
+# Read-only. This workflow reaches Cloudflare and nothing else: it holds no
+# AWS credential, sets no Worker secret, and cannot touch the wall display's
+# stack, its bucket or its Pi.
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-mobile-worker
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Verify the Worker configuration is deployable
+        env:
+          CONFIG: worker/mobile-dashboard/wrangler.toml
+        run: |
+          set -eu
+          if [ ! -f "$CONFIG" ]; then
+            echo "::error::$CONFIG is missing - refusing to deploy"
+            exit 1
+          fi
+          # Every S3 key this Worker is configured with must live under the
+          # mobile prefix. The Worker refuses anything else at runtime too;
+          # this refuses it before a deployment exists.
+          KEY="$(sed -n 's/^MOBILE_MANIFEST_KEY *= *"\(.*\)"$/\1/p' "$CONFIG")"
+          case "$KEY" in
+            dashboard-mobile/*) ;;
+            *)
+              echo "::error::MOBILE_MANIFEST_KEY must live under dashboard-mobile/, got '$KEY' - refusing to deploy"
+              exit 1
+              ;;
+          esac
+          # nodejs_compat is what lets the Worker import the publishing
+          # contract rather than restate it. Without it the deploy succeeds
+          # and the Worker throws on its first request.
+          if ! grep -q 'nodejs_compat' "$CONFIG"; then
+            echo "::error::$CONFIG does not enable nodejs_compat - refusing to deploy"
+            exit 1
+          fi
+          # A pasted credential must never reach a deployment.
+          if grep -Eq 'AKIA[0-9A-Z]{16}|aws_secret_access_key|AWS_SECRET_ACCESS_KEY *=' "$CONFIG"; then
+            echo "::error::$CONFIG appears to contain a credential - refusing to deploy"
+            exit 1
+          fi
+          echo "Worker configuration verified: pointer $KEY"
+
+      - name: Deploy
+        # Pinned major, invoked through npx so no npm dependency is added to
+        # this repository for a tool only this workflow runs.
+        run: npx --yes wrangler@4 deploy --config worker/mobile-dashboard/wrangler.toml
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

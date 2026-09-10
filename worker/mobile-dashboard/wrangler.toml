@@ -1,0 +1,42 @@
+# Cloudflare Worker that serves the mobile dashboard document.
+#
+# NOTHING CREDENTIAL-SHAPED IS IN THIS FILE, AND NOTHING IS READ FROM A LOCAL
+# ENVIRONMENT AT BUILD TIME. The two AWS values the Worker signs with arrive
+# as Worker secrets, set once by hand:
+#
+#   npx wrangler secret put AWS_ACCESS_KEY_ID
+#   npx wrangler secret put AWS_SECRET_ACCESS_KEY
+#
+# The deploy workflow does not set them and cannot: it holds no AWS
+# credential of any kind. test/worker/mobile-worker-config.test.js scans this
+# file with the publishing contract's own FORBIDDEN_PATTERNS plus an AWS
+# access-key shape, so a pasted secret fails the suite rather than the review.
+#
+# ACCESS CONTROL IS NOT HERE EITHER. Authentication sits in front of the
+# Worker on the platform (Cloudflare Access or equivalent). The Worker
+# implements no login, no session and no token check, and expiry surfaces as
+# a redirect to an external sign-in host issued before a request ever reaches
+# it. See the Worker's own header comment for why that means it must never
+# emit 401, 403 or a redirect of its own.
+
+name = "moore-ops-mobile-dashboard"
+main = "worker.js"
+compatibility_date = "2026-09-09"
+
+# The Worker imports dashboard-artifact/mobile-contract.js so the origin and
+# the publisher cannot drift about artifact identity or the manifest
+# predicate. That module hashes with node:crypto, which needs this flag.
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+[vars]
+# Configuration, not secrets. Every one of these is safe to read.
+ARTIFACT_BUCKET = "moore-ops-dashboard-v2-artifacts-0803"
+AWS_REGION = "us-east-2"
+# The pointer. The Worker refuses any value outside the mobile prefix before
+# it builds a request, so a typo here fails closed rather than reaching the
+# wall display's objects.
+MOBILE_MANIFEST_KEY = "dashboard-mobile/current/manifest.json"
+UPSTREAM_TIMEOUT_MS = "10000"
