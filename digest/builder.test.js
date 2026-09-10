@@ -740,10 +740,20 @@ assert(allDayResult.athletics.thisWeekTime === null,             'All-day flag g
 
   // Positive form, not just a blocklist. Two blocklist checks let a third way
   // of writing a relative date through (`new Date(Date.now() + 864e5)`, say),
-  // so require every dateTime in the region to BE a quoted ISO literal with an
-  // explicit offset. This still allows a legitimate re-dating — it pins the
-  // shape, not the date — while rejecting any computed value.
+  // so require every dateTime in the region to BE a single-quoted ISO literal
+  // with an explicit numeric offset. It pins the shape, not the date, so a
+  // legitimate re-dating still passes.
+  //
+  // It is deliberately narrower than "rejects computed values": a `Z`-suffixed
+  // literal, a double-quoted one, and fractional seconds are all refused too,
+  // even though a `Z` literal would be MORE DST-proof than the shipped form.
+  // That is an accepted over-block on this project's usual grounds — a false
+  // block here is one edit to recover, and every current fixture matches.
   const dateTimes = (region.match(/dateTime:\s*[^,}\n]*/g) || []).map(m => m.trim());
+  // A lower bound, and largely redundant with the three name checks above —
+  // any drift that removes a fixture fails those first. It earns its place only
+  // by catching the case they miss: the fixtures surviving while their dateTime
+  // lines are renamed away, which would leave the loop below iterating nothing.
   assert(dateTimes.length >= 4, `DST tripwire found ${dateTimes.length} dateTime fixtures, expected at least 4 — region drifted`);
   for (const d of dateTimes) {
     assert(

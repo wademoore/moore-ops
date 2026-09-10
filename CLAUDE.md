@@ -1941,18 +1941,27 @@ This change adds **+19**, all in one existing file:
 |---|---|---|---|
 | `digest/aliases.test.js` | 30 | 49 | +19 |
 
-`digest/builder.test.js` contributes **0**: it gained five assertions pinning
-`athletics.thisWeekTime` plus a four-assertion source-level DST tripwire, but they run inside
-its existing flat `assert()`/`section()` harness, which surfaces as ten `node:test` points
-across three suites either way. Its internal assertion count moved 126 → 142.
+`digest/builder.test.js` contributes **0**: it gained assertions pinning
+`athletics.thisWeekTime` and `hasGameThisWeek`, plus a source-level DST tripwire, but they run
+inside its existing flat `assert()`/`section()` harness, which surfaces as ten `node:test`
+points across three suites either way. Its internal assertion count moved 126 → 142.
 
-**Take these three numbers from a run, never from a grep, and this is why.** Every figure in
-this entry that turned out wrong was wrong because it was counted by pattern: `grep -c
-'^assert('` misses the indented and multi-line calls (it reports 137 against a true 142), and
-`grep -c "name: '"` misses the one mutation whose name contains an apostrophe and is therefore
-double-quoted (13 against a true 14). Both undercounts read as plausible. The authoritative
-commands are `node digest/builder.test.js` → `Results: N passed`, `node --test
+**Take these numbers from a run, never from a grep.** Measured at this commit:
+`grep -c '^assert(' digest/builder.test.js` reports **131** against a true **142**, because it
+misses the indented and multi-line calls; `grep -c "name: '"` on the mutation harness reports
+**13** against a true **14**, because one mutation's name contains an apostrophe and is
+therefore double-quoted. Both undercounts read as plausible, which is why they survived. The
+authoritative commands are `node digest/builder.test.js` → `Results: N passed`, `node --test
 digest/aliases.test.js` → `# tests N`, and the harness's own `N/N mutations caught` line.
+
+**An earlier draft of this paragraph cited 137 for that first grep, and that was wrong in a
+way worth recording.** 137 was the output of a *different*, three-alternative grep, and it is
+also — by coincidence — the true runtime count one commit earlier, so the paragraph written to
+cure wrong figures presented a correct measurement as a fabricated bad one. It was caught by a
+Reviewer running the command. The general claim that draft made — that *every* wrong figure
+here was a grep artifact — was also false: `2313`, `2315` and `141` were ordinary
+copy-forwards, and the miscount corrected below was an arithmetic slip. Pattern-counting is
+one cause among several, not the cause.
 
 **Exactly one existing assertion was removed, and nothing was weakened or skipped.**
 `digest/aliases.test.js` asserted `subtitle.includes('3:00 PM')` against an event carrying no
@@ -1976,22 +1985,25 @@ named the wrong venue and the wrong time.
 Companion mutation evidence, committed and run on demand rather than in `npm test`:
 `node scratch/flag-football-derivation/mutation-check.mjs` → **14 mutations, 14/14 caught**,
 green 59/59 control and green 59/59 restore. The first three restore the three hardcoded
-literals verbatim; the rest are the ways a correct-*looking* rewrite could still be wrong —
-reading the block start as the game time, inverting practice and game, widening the venue to
-the whole street address, fabricating a time for an all-day occurrence, dropping the
-empty-segment filter, letting a one-hour block claim a preceding practice, collapsing an
-unknown duration into a measured-short one, and re-introducing the run-time-relative fixture
-date a Reviewer pass caught here. It is committed for the same reason
+literals verbatim; the rest are the ways a correct-*looking* rewrite could still be wrong.
+**They are deliberately not enumerated here.** Three successive drafts enumerated them, and
+each time a later round added a mutation and left the prose listing the old set under the new
+count — the same drift, three times, in the paragraph about drift. The harness prints every
+mutation's name when it runs and the `MUTATIONS` array names them in one place; read them
+there, where they cannot fall out of step. It is committed for the same reason
 `scratch/current-season-athletics/mutation-check.mjs` is: a mutation count nobody can
 re-derive is not evidence.
 
-**Four of those fourteen exist because a Reviewer pass failed this branch**, and both are worth
-carrying. The first version of the builder fixtures paired a *run-time-relative* date
+**Five of those fourteen exist because a Reviewer pass failed this branch** — two added after
+the first pass, two after the second, one after the third; 14 − 9 against the branch's own
+first commit. Two of the five are worth carrying here, and this is a selection, not an
+enumeration. The first version of the builder fixtures paired a *run-time-relative* date
 (`isoDate(1)`) with a *static* `-04:00` offset, under a comment claiming the times "hold under
 any TZ the suite runs in" — true of process TZ, false across DST, so two assertions would
 have started failing on **Nov 1 2026** with nothing about this change to blame. Confirmed by
 running the arithmetic rather than reasoning about it: the same fixture reads 11:00 AM ET in
-September and 10:00 AM ET in November. The second is subtler and is the more useful lesson:
+September and 10:00 AM ET in November. The second of the two is subtler and is the more useful
+lesson:
 the tripwire first written to prevent its return **could not fail**, because `isoDate(1)`
 interpolates to a string of exactly the same shape as a date literal, so any runtime check on
 the fixture value is satisfied by the very thing it forbids. It now reads the fixture region
@@ -2672,12 +2684,16 @@ method, so they chain directly to the 988 pre-change number above.
   **Guards proved rather than claimed:** `node scratch/flag-football-derivation/mutation-check.mjs`
   → **14 mutations, 14/14 caught**, green 59/59 control and restore. The first three restore the
   three literals verbatim; the rest are the ways a correct-*looking* rewrite could still be
-  wrong (block start read as game time, practice and game inverted, venue widened to the whole
-  street address, all-day occurrence given a fabricated time, empty-segment filter dropped,
-  one-hour block claiming a practice, unknown duration collapsed into measured-short, and a
-  run-time-relative builder fixture date). Tests **2297 → 2316**, all passing with a browser.
-  **An independent Reviewer pass returned FAIL and was right**, and everything it raised
-  against the implementation is fixed here. (1) BLOCKING — the builder fixtures paired a
+  wrong. Not enumerated here — the harness names each one when it runs, and three drafts of
+  this entry listed a set that a later round had already grown.
+  Tests **2297 → 2316**, all passing with a browser.
+  **Four independent Reviewer passes ran on this branch; the first three returned FAIL and each
+  was right.** The implementation passed every pass from the first; what failed, three times
+  running, was this file — a figure the tree did not support, usually introduced by the very
+  commit sweeping that section for that defect. That is recorded because the ratio is the
+  finding: one real code defect (below) against three rounds of documentation drift, in a
+  repository whose stated policy treats the second as first-class. Everything raised against
+  the implementation is fixed here. (1) BLOCKING — the builder fixtures paired a
   run-time-relative date with a static UTC offset, so two assertions would have started
   failing on Nov 1 2026; and the tripwire first written to prevent that could not fail, for
   the same reason the fixture was wrong. (2) SHOULD FIX — `flagFootballDetails` treated a
