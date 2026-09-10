@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2397+ passing with a browser
+- Run npm test after changes — must stay at 2426+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -2123,15 +2123,25 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 10, 2026 on the flag football event identity branch
+### Current baseline — measured Sept 10, 2026 on the flag football event identity branch, after merging #67
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2397 | **2397** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2426 | **2426** | **0** | **0** |
 
-Measured on `claude/amazing-franklin-7l2hue`, whose merge base with `main` is
-**`975fbc2`** (PR #66) — also this branch's branch point, and also `origin/main`'s
-head. **`git fetch origin main` was run before deriving it, per the standing
+Measured on `claude/amazing-franklin-7l2hue` **after merging `origin/main` at
+`6174ff7` (PR #67)**, which landed while this branch was in review. Two base
+figures are both true and must not be confused:
+
+| commit | what it is | measures |
+|---|---|---|
+| `975fbc2` (#66) | this branch's **branch point**, and `origin/main`'s head when work started | **2320** |
+| `6174ff7` (#67) | `origin/main` at the time of the merge, i.e. the base this now sits on | **2349** |
+
+This change adds **+77** to either. 2349 + 77 = **2426**, which is the measured
+figure in the table above — **measured on the merged tree, not obtained by adding
+the two branches' deltas together**, because that arithmetic would have been a
+projection and #67 touched two of the same files. **`git fetch origin main` was run before deriving it, per the standing
 warning, and it mattered a sixth consecutive time: the ref was stale at `2d01027`
 and the fetch moved it to `975fbc2`.**
 
@@ -2159,10 +2169,11 @@ a plausible-looking wrong number gets recorded here.
 | `digest/builder.test.js` | 10 | 21 | +11 |
 | `digest/nowNextSelector.test.js` | 17 | 24 | +7 |
 
-2320 + 77 = 2397, so the table closes against a measurement rather than against a
-recorded figure. **The figures moved after every review round that changed code**
-(2388 → 2393 → 2395 → 2397); the rounds after that were documentation-only, which
-is why 2397 has not moved since. The table above is the re-measured end state
+2320 + 77 = 2397 was the figure before the #67 merge; 2349 + 77 = 2426 after it.
+Either way the table closes against a measurement rather than a recorded figure. **The figures moved after every review round that changed code**
+(2388 → 2393 → 2395 → 2397, then → 2426 when #67 was merged in); the review
+rounds after the third were documentation-only, which is why the figure moved
+only for the merge. The table above is the re-measured end state
 rather than an arithmetic projection from any intermediate. Round 1's four SHOULD
 FIX items added five cases; round 2's added three and removed one duplicate;
 round 3's added two, pinning the per-reason consequence and remedy wording.
@@ -2209,9 +2220,12 @@ written once, so the possibility is removed rather than cleaned up after.
 
 Cross-tree proof, also committed and run on demand:
 `node scratch/flag-football-event-identity/verify-unchanged.mjs` compares two full
-`digestData` dumps built from identical inputs — one from a worktree at `975fbc2`,
+`digestData` dumps built from identical inputs — one from a worktree at the base,
 one from the branch — strips exactly the keys this change adds, and asserts the
-remainder is byte-identical: **55,355 bytes, identical**, with 2 identities
+remainder is byte-identical. Re-run against **both** bases this branch has had:
+**55,355 bytes** against the branch point `975fbc2`, and **55,364** against
+`6174ff7` after merging #67 — the nine-byte shift is #67's own subtitle
+derivation, which is present on both sides of each comparison. With 2 identities
 attached, 9 explicit nulls and 1 gap flag raised — each of the three now behind
 its own non-vacuity assertion, because the gap half of that claim previously
 rested on nothing and would have printed `0` and passed. The script also asserts
@@ -2232,7 +2246,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2397+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2426+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 10, 2026 on the flag football derivation branch
 
@@ -3033,15 +3047,16 @@ method, so they chain directly to the 988 pre-change number above.
 
   **Proved unchanged rather than asserted:** a cross-tree comparison of two full
   `digestData` dumps from identical inputs — one from a worktree at `975fbc2` —
-  strips exactly the added keys and finds the remainder **byte-identical at 55,355
-  bytes**, which covers the record, standings, next-game selection, practice/game
+  strips exactly the added keys and finds the remainder **byte-identical** — 55,355
+  bytes against the branch point, 55,364 after merging #67 — which covers the record, standings, next-game selection, practice/game
   classification, tasks and every pre-existing flag in one assertion. **25
   mutations, 25/25 proven.** One survived the first run and was a real coverage
   gap: `supportFrom()` builds two supporting blocks from separate literals and only
   the later branch was covered, so a renderer decorating the Tonight block would
   have silently received nothing. A second defect was in the harness itself — it
   wrote a stray `…js::tmp` file into the repo, committed before the diff review
-  caught it. Tests **2320 → 2397**, all passing with a browser; the merge base is
+  caught it. Tests **2320 → 2397** on the branch point, **2349 → 2426** after
+  merging #67, all passing with a browser; the branch point is
   `975fbc2` and was re-measured in-session rather than taken from this file.
 
   **Every independent Reviewer round returned PASS, and not one produced a
@@ -4165,7 +4180,8 @@ enumerated under test, digest, and render directly to Node. No deployment.
   Observed once while running the suite for the flag-football identity work:
   *"renders a byte-identical ordinary Dashboard v2 whether or not a registry is
   present"* failed, and the same file then passed 93/93 in isolation and the full
-  suite passed 2397/2397 on re-run. **Diagnosed rather than dismissed as a flake.**
+  suite passed fully on re-run (2397/2397 at the time; 2426/2426 after the #67
+  merge). **Diagnosed rather than dismissed as a flake.**
   `render/dashboard-v2.js:1105` seeds `<time id="live-clock">` from
   `new Date()` — the real wall clock — ignoring the `now` the test pins, and the
   sports-ticker `Updated` stamp does the same. The test makes two independent
