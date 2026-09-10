@@ -72,6 +72,32 @@ function findLeagueRank(swimmerName, configEventName, rankings) {
   return match ? match.place : null;
 }
 
+// 757swim season label — derived from the configured window, never hardcoded.
+// The label this replaced was the string literal '2025–26 757 Season', which stayed
+// behind when the 2026-27 season was configured and would have named the wrong
+// season on every surface that reads opheliaSeason. Deriving it from the same
+// config fields that decide whether the season is active at all means the label
+// cannot disagree with the window it describes.
+//
+// A season spanning two calendar years renders as "2026–27"; one contained in a
+// single calendar year renders as that year alone, rather than "2026–26".
+//
+// The year test matches four leading digits rather than coercing with Number():
+// `Number(String(undefined ?? '').slice(0, 4))` is 0, and `Number.isInteger(0)`
+// is true, so a coercion guard would let a missing seasonStart through and
+// render "0–27 757 Season". Unreachable today because isSeasonActive() gates
+// the call, but a guard that does not guard is worse than none.
+function swim757SeasonLabel(sport) {
+  const year = value => (/^(\d{4})/.exec(String(value ?? '')) || [])[1];
+  const startYear = year(sport?.seasonStart);
+  const endYear   = year(sport?.seasonEnd);
+  if (!startYear || !endYear) return '757 Season';
+  const span = Number(endYear) > Number(startYear)
+    ? `${startYear}\u2013${endYear.slice(-2)}`
+    : `${startYear}`;
+  return `${span} 757 Season`;
+}
+
 // Event name mapping — sports-config uses abbreviated names; swim-results.json uses full names.
 // Falls back to the config name as-is if no mapping is defined.
 const EVENT_NAME_MAP = {
@@ -332,7 +358,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
 
   const opheliaSeason = wavesActive
     ? '2026 Waves Season'
-    : swim757Active ? '2025–26 757 Season' : 'Off-Season';
+    : swim757Active ? swim757SeasonLabel(config.swim757) : 'Off-Season';
 
   return {
     mylesPBRows,

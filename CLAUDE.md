@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2196+ passing with a browser
+- Run npm test after changes — must stay at 2297+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -627,10 +627,27 @@ The `league-results-history.json` and `relay-results-history.json` files contain
 | Wellington Waves | 2026-06-08 | 2026-08-02 | 3 | Jun 8 – Aug 5 |
 | Flag Football | 2026-04-26 | 2026-06-07 | 0 | Apr 26 – Jun 7 |
 | Tidewater Sharks | 2026-08-05 | 2026-11-07 | 14 | Jul 22 – Nov 21 |
+| 757swim (2026-27) | 2026-09-12 | 2027-04-25 | 7 | Sep 5, 2026 – May 2, 2027 |
 
 **Waves window note:** `seasonEnd` is set to the Waves end-of-year banquet date (Aug 2). The 3-day `bufferDays` extends the visible window through Aug 5, giving time to enter banquet award results without the card disappearing mid-window. VPSU Champs is Aug 1. If either event shifts in future years, update `seasonEnd` and `bufferDays` in `data/sports-config.json` accordingly.
 
 **Sharks window note:** the original `seasonStart: "2026-09-01"` / `bufferDays: 7` values (set when the data pipeline was first scaffolded) were placeholders that didn't correspond to anything real — they postdated the season's actual start entirely. Corrected 2026-08-10 via **direct Google Calendar inspection**, not carried over from the original (unreviewed, mislabeled-commit-origin — see `e4aa130` in Key Learnings) placeholder: `seasonStart` is now the Mini Camp start date (Aug 5–7, 2026, the first real club activity — regular recurring practices, Mon Warhill Turf 4 / Wed Warhill Grass 8, began Aug 10), and `seasonEnd` is the last confirmed game (Nov 7, 2026). `bufferDays: 14` (vs. Waves' 3 and Flag Football's 0) is deliberately wide: it covers the tentative "Chesapeake Challenge Cup" tournament (Nov 21–22, calendar-placeheld but not yet confirmed/detailed) without hardcoding an unconfirmed date, and gives lead-in before Aug 5 for the card to surface ahead of the season. If the tournament is later confirmed or the schedule extends past Nov 21, revisit `seasonEnd`/`bufferDays` directly rather than relying on the buffer to keep covering it indefinitely.
+
+**757swim window note (Sept 10, 2026):** the 2026-27 season was enabled and repointed from
+last season's `active: false` / `2025-09-01 – 2026-05-31` values. Both dates come from
+`docs/data-reload/757swim-2026-27-schedule.md` — the first documented meet (Season KickOff,
+9/12/26) and the last day of the last documented meet (Catch 'Em All #7, 4/24–4/25/27) —
+**not** inferred from the first meet date by mirroring last season's shape. `bufferDays: 7`
+is unchanged. `test/current-season-athletics.test.js` re-derives the span from that doc's
+own table and fails if the config and the doc disagree in either direction, so the doc is
+the source of truth rather than a description of it.
+
+**The derivation convention changed, and that is worth stating.** Last season's window was
+month-bounded (`2025-09-01` → `2026-05-31`) and did not actually cover its own last meets — VA
+LC Senior Champs ran Jul 9–12 2026, outside it. The new window is exactly meet-bounded. That is
+an improvement in honesty but it removes slack: the card now disappears on **May 3, 2027**, and
+any meet added after 4/25/27 needs a config edit rather than being absorbed. The doc-derived
+test is what makes that edit hard to forget.
 
 `isSeasonActive()` in `digest/sportsConfig.js` computes the effective display window as `[seasonStart − bufferDays, seasonEnd + bufferDays]` inclusive. Changing these values in `data/sports-config.json` is the only thing needed to show or hide a sport's card on the dashboard.
 
@@ -776,10 +793,29 @@ September 12, 2026.
 
 **Footprint is preserved by not touching what determines it.** `athleticsCardCount()` is
 deliberately unmodified, so `.athletics-one` / `.athletics-multi` and the 26% / 40% panel
-heights resolve exactly as they would with no Spotlight. On Sept 12 only the Sharks season
-is active, so the real state is one-card: measured **1473.83 × 315.63 px**, identical in
-every Spotlight state (proved numerically in `render/dashboard-v2-layout.test.js`).
-`.upcoming-panel` is untouched; Next Two Weeks loses no space.
+heights resolve exactly as they would with no Spotlight. The measured one-card footprint is
+**1473.83 × 315.63 px**, identical in every Spotlight state (proved numerically in
+`render/dashboard-v2-layout.test.js`).
+
+⚠ **The "on Sept 12 the real state is one-card" claim this paragraph used to make is no
+longer true, and the correction is the point rather than a footnote.** It rested on only
+the Sharks season being active in September. Enabling Ophelia's 757swim 2026-27 season on
+Sept 10, 2026 makes `swim757Active` true from Sept 5 onward, so `athleticsCardCount()`
+returns **2** on Sept 12 and the panel resolves `.athletics-multi` at 40%, not
+`.athletics-one` at 26%. Nothing about the Spotlight broke — it adapts to whatever the card
+count is, which is exactly what "not touching what determines it" buys — **and that is now
+measured rather than asserted**: `scratch/current-season-athletics/measure-spotlight-cardcount.mjs`
+renders the real Sept 12 Spotlight in both card counts and, using this repo's own containment
+check (every visible `.spotlight *` against the panel's padding-inset content box in all four
+directions), reports `escaping: []`, `horizontallyClipped: []` and the same **24** elements in
+each. But the *measured number* above describes the one-card state only, and Big Sports Saturday
+will not render in it. The layout suite still measures 1473.83 × 315.63 because its fixture pins
+`swim757Active: false` deliberately; that fixture is a controlled one-card case, not an
+observation of Sept 12. Re-measure before quoting this figure for a live date.
+`.upcoming-panel` is untouched **by the Spotlight**; the Spotlight itself costs Next Two Weeks no
+space. The *card count* does: enabling Ophelia's 757swim season on Sept 10 2026 takes Sept 12 to
+two cards, and the Upcoming panel measures **874.08 → 704.11** as a result. Do not read this
+sentence as "Next Two Weeks is 874.08 on Sept 12".
 
 **The ordinary title and grid must stay direct children of `.paper-panel`.** Several
 shipped rules use the child combinator — `.paper-panel>.section-title` sets its height,
@@ -1885,7 +1921,50 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
+### Current baseline — measured Sept 10, 2026 on the current-season athletics branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2297 | **2297** | **0** | **0** |
+
+Measured on `claude/athletics-cowboys-757swim-fgtpu6`, whose merge base with `main` is
+**`2f7ac47`** (PR #58) — which is also this branch's branch point. **`git fetch origin main`
+was run before deriving it, per the standing warning, and it mattered again: the ref was
+stale at `2d01027` and the fetch moved it to `2f7ac47`.** That merge base was re-measured in
+this session, before any change and after `npm install`: **2284 / 2284 / 0 / 0 with a
+browser** — which matches the figure the entry below recorded, so the recorded baseline held
+for a third consecutive time. Re-measure anyway; the run costs less than the correction does.
+
+This change adds **+13**, all in one new file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/current-season-athletics.test.js` (new) | — | 13 | +13 |
+
+No existing test asserted the old behaviour, so none needed updating — which is itself the
+finding: nothing in the suite guarded the disabled 757swim season or the hardcoded
+`'2025–26 757 Season'` label, and the full suite stayed green through both changes before
+these guards were added. Nothing was deleted or skipped.
+
+Companion mutation evidence, run on demand rather than in `npm test`: four mutations against
+the shipped tree — reintroducing a results gate on `swim757Active` (11/2), reverting the
+config to last season's window (6/7), restoring the hardcoded label (11/2), and renaming a
+prior season's team (12/1) — each failing for its own reason, with a green 13/13 control and
+a green 13/13 restore.
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
+quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
+prevent.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2297+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -1918,7 +1997,8 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2284+ with no failures once a browser resolves.**
+**Coder mode had to keep `npm test` at 2284+ under this baseline.** (Superseded — see
+Current baseline above; the figure is now 2297.)
 
 Companion mutation harness, **committed** and run on demand — `node
 scratch/mobile-publishing-contract/mutation-check.mjs` → 23 mutations, 23/23 proven, green
@@ -2446,6 +2526,67 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Current-season athletics updated for both kids (Sept 10, 2026):** Ophelia's 757swim
+  2026-27 season is enabled in `data/sports-config.json` with the window documented in
+  `docs/data-reload/757swim-2026-27-schedule.md` — **2026-09-12 → 2027-04-25**, `bufferDays: 7`
+  unchanged — so the surfaced range is Sep 5 2026 – May 2 2027 and her card is visible now,
+  two days ahead of the Sept 12 first meet. **Her visibility flag needed no logic change:**
+  `swim757Active` is `isSeasonActive(config.swim757, date)`, which reads `active` and the date
+  window and nothing else, and downstream card visibility is `wavesActive || swim757Active`.
+  That was measured, not assumed, and is now asserted with a test that supplies empty
+  `pbRecords`/`swimResults`, establishes that every configured event has `lastSwim: null`, and
+  requires the flag to still be true — so reintroducing a results gate fails rather than
+  silently hiding the card.
+  **One digest change was genuinely necessary to make the data take effect:** `opheliaSeason`
+  in `digest/swimParser.js` was the string literal `'2025–26 757 Season'`, so enabling the new
+  season would have named the wrong one on every surface reading that field. It now derives the
+  span from the same config fields that decide whether the season is active at all. The
+  derivation reproduces the old literal **byte-for-byte** against the pinned
+  `test/fixtures/sports-config.fixture.js` (still 2025-09-01 → 2026-05-31), which is what makes
+  it a change of the label's *source* rather than of the label.
+  **The flag football half is a verification, and the premise was already satisfied.**
+  `data/flag-football.json` holds exactly two seasons, `fall-2025` and `spring-2026`, and both
+  already carry `teamName: "Cowboys"`, so nothing was renamed and nothing was fabricated.
+  **A first draft of this entry said "there is no fall-2026 season anywhere in the repo", which
+  is wrong and is corrected here rather than quietly dropped:** `data/special-events.json`
+  carries the approved accent `myles-flag-football-week1-2026-09-20`, whose `titleMatch.value`
+  is `"Flag Football: Week 1 — Practice + Game (Yorktown)"`. A fall-2026 season is documented in
+  the repo; what is absent is a season entry in `flag-football.json` and a schedule to build one
+  from. The narrower claim is the true one, and the difference matters — see the new Known open
+  item, because that accent fires on Sept 20 while `flagFootballActive` is false. Current-season
+  identity resolving to `"Cowboys"` and both prior seasons' identities, abbreviations, outcomes and
+  game counts are now pinned by test. Worth knowing: with no season whose `seasonEnd >= today`,
+  `parseFlagFootball` falls back to `seasons[last]`, so today's `flagTeamName` is correct but
+  arrives alongside a stale `seasonLabel: "Spring 2026"` / `seasonRecord: "5-0"`. That is
+  invisible while `flagFootballActive` is false and is parked, not fixed.
+  **Blast radius, measured:** `athleticsCardCount()` counts `!wavesActive && swim757Active`, so
+  Sept 12 goes from **1 card to 2** — `.athletics-multi` at 40% rather than `.athletics-one` at
+  26%, and the Coming Up target from 14 to 10. Big Sports Saturday is Sept 12, so the Spotlight
+  now renders in the two-card panel. **That it still fits is measured, not asserted** —
+  `scratch/current-season-athletics/measure-spotlight-cardcount.mjs` renders the real Sept 12
+  Spotlight in both card counts: one-card **1473.83 × 315.63**, two-card **1473.83 × 485.59**,
+  and in both the Spotlight is visible, measures the same **24** elements, and reports
+  `escaping: []` and `horizontallyClipped: []`. Containment is this repo's own check, not a
+  weaker stand-in: every visible `.spotlight *` descendant against the panel's **padding-inset
+  content box in all four directions**, mirroring `render/dashboard-v2-layout.test.js`. A first
+  version compared only the outer `.spotlight` bottom against the panel's *border* box — looser
+  by `paddingBottom`, silent about the other three sides and about every descendant — which is
+  precisely how two checks drift apart. The Upcoming panel goes
+  **874.08 → 704.11**. The 1473.83 × 315.63 figure quoted in the Family Spotlight section
+  describes the one-card state only and has been corrected there. Presentation was not touched —
+  Codex owns the athletics card and the supplied logo.
+  **Two harness defects were found while taking that measurement, and either would have made it
+  lie:** passing a phase name where `updateFamilySpotlight` takes an epoch millisecond leaves
+  every Spotlight node in a `display:none` subtree measuring 0×0, and a `scrollHeight`-based clip
+  check fires on every Spotlight label in every geometry because `line-height:1` text reports a
+  line box a few px taller than its client box. The shipped layout suite documents exactly that
+  and compares widths; this harness now does too.
+  **Five** mutations prove the new guards have teeth — results gate reintroduced, config reverted,
+  hardcoded label restored, buffer widened 7→14, prior season renamed — each failing for its own
+  reason, with a green control and a green restore. The count is re-derivable rather than quoted:
+  run `node scratch/current-season-athletics/mutation-check.mjs`. It is committed for the same
+  reason `scratch/mobile-publishing-contract/mutation-check.mjs` is, one entry above. Tests **2284 → 2297**, all passing with a browser.
 
 - **Mobile publishing contract defined and encoded (Sept 9, 2026):** The handoff item
   `docs/dashboard-v2/mobile-dashboard-spec.md` listed as number 3 — "define successful-generation
@@ -3132,6 +3273,32 @@ enumerated under test, digest, and render directly to Node. No deployment.
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
 
 ## Known open items
+
+- **Myles has no fall-2026 flag football season, so an approved Sept 20 accent fires against an
+  inactive sport (Sept 10, 2026).** Surfaced by an independent Reviewer pass, not by the change
+  that prompted it. `data/special-events.json` carries the approved, `enabled: true` accent
+  `myles-flag-football-week1-2026-09-20` for the first fall game; `data/flag-football.json` holds
+  only `fall-2025` and `spring-2026`; and `data/sports-config.json` still says flag football ran
+  `2026-04-26 → 2026-06-07` with `bufferDays: 0`. Measured consequence on 2026-09-10:
+  `flagFootballActive` is **false**, so Myles gets no flag football athletics card at all, while
+  `flagTeamName` still resolves to `"Cowboys"` — correctly, but through
+  `parseFlagFootball`'s no-current-season fallback to `seasons[last]`, which also carries
+  `seasonLabel: "Spring 2026"` and `seasonRecord: "5-0"` along with it. Those stale values are
+  invisible only because the card is hidden; enabling the season without adding the season entry
+  would surface last spring's record as if it were current.
+  **This was deliberately not fixed** in the session that found it: there is no fall-2026
+  schedule, roster, opponent list, or `myTeamAbbr` anywhere in the repo or the docs, and
+  inventing them would be fabricating household data — the exact failure the Updater guard rails
+  exist to prevent. What it needs is the real schedule (Wade or the league), after which it is a
+  routine Updater task: add the season to `flag-football.json` with `teamName: "Cowboys"`, then
+  repoint the `flagFootball` window in `sports-config.json`. **Expect three assertions in
+  `test/current-season-athletics.test.js` to go red when you do, by design, not by accident** —
+  the two that pin today's no-current-season fallback (`seasonLabel === 'Spring 2026'` and "no
+  season covers today") and the one pinning the current flag football window. They are tripwires
+  saying "a current season now exists, re-examine what these tests assert", and updating them is
+  part of that task rather than a sign it went wrong. **Do that before Sept 20** if the
+  card is meant to be live for the first game. Note the ordering trap: repointing the window
+  without adding the season entry makes the fallback's stale Spring 2026 record visible.
 
 - **✓ RESOLVED Sept 8, 2026 — each day of the 72h window now gets its own prep item.** `digest/builder.js` derives the strip per day (`generateTasks(day.events, day.date, getSchoolStrip(day.date))`) instead of handing one today-strip to all three days. `generateTasks()` is unchanged: its contract was always "emit from the strip you are given", and it was the caller that gave it the wrong one — so its ~40 existing unit tests stand untouched rather than being rewritten to a new contract. **The entry this replaces was right about the mechanism and understated the damage in one direction.** It named the false positive (a stale row repeated on later days) but not the false negative: the same slot is single-valued, so Wednesday's stale baritone row *displaced* Friday's genuine Ophelia library-book row rather than merely joining it. Simulating all 290 mornings of the 2026-27 school year: **123 stale prep rows shipped per year** (58% of the 212 the email emitted) on **71 mornings (24.5%)**, and **177 genuinely-owed prep rows never appeared on their own day.** After the fix the year emits 266 rows, all correct — net **+54 rows/year**, about +0.19 per morning. **Blast radius is narrower than "the digest":** only `render/email.js` renders past `days[0]`; `render/dashboard.js` (frozen v1), `render/dashboard-v2.js` and `digest/nowNextSelector.js` all read `days[0]` alone, and `days[0]`'s task list is unchanged by construction — so the entire correction lands in the email's second and third day blocks and the frozen surface was neither touched nor at risk. Wording was deliberately left alone: the row reads `"⚠ Pack library book **this morning** (Ophelia — Media **today**)"` — two relative words, not one — and both are scoped by the `dayHeader(day.date)` the row sits under. The shipped email already does exactly this with the solo-evening row's `"tonight"` in future day blocks, so no new precedent is set. **The general gap the entry named — "nothing asserts task-list contents across the window" — is what the test closes**, generically: a 26-morning sweep in `digest/builder.test.js` compares every day of every window against an oracle derived straight from `getRotation()`, so it fails for any day-specific prep item on any wrong day in either direction. **Two cross-day interactions the fix creates were found by review and are now pinned rather than left incidental:** on all **25** school-day Music-eves Myles's baritone row shares an email with his library-book row (the same 25 the `schoolRotation.js` collision argument counts — but as Wednesday's item under Wednesday's header, not as the Tuesday-morning nudge that argument rejected; `tomorrowWarnings` stays free of instrument warnings and a test asserts it), and on **59** mornings a year the strip's "pack library book tonight" line coexists with the day-1 block's own "pack library book this morning" row (kept — different instructions at different times, and suppressing the day-1 row would restore the false negative). Neither is a regression, though they differ in shape: on a Music-eve the day-1 block pre-fix carried *today's* row instead, so (1) is a substitution; on an S2 morning neither child owes anything that day, so pre-fix the block carried nothing and (2) is genuinely newly-visible output on those 59 mornings. All four tests proved to have teeth against two mutants: the pre-fix today-strip (all four red) and a today-only guard, which kills the stale rows but keeps all 177 false negatives (all four red, the sweep and the Oct 21 pin failing on the false-negative assertion) — so the block discriminates between the fix and the tempting half-fix.
 
