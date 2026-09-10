@@ -7,11 +7,17 @@
  * scratchpad because a mutation count nobody can re-derive is not evidence —
  * the same standard scratch/current-season-athletics/mutation-check.mjs sets.
  *
- * The first three mutations are literally the pre-fix code: if a future change
- * reintroduces any of the three hardcoded Spring 2026 literals, this says so.
- * The rest are the plausible ways a correct-looking rewrite could still be
- * wrong — reading the block start as the game time, widening the venue, or
- * fabricating a time for an occurrence that does not have one.
+ * Three mutations restore the three hardcoded Spring 2026 literals this change
+ * removed, and they are NOT the first three: the two subtitle literals are
+ * mutations 1 and 2, while the third — builder.js's '3:00 PM' — now lives in
+ * the parser and is restored by 'thisWeekTime unpaired from thisWeekOpponent'.
+ * (An earlier version of this comment said "the first three", which was true
+ * before the sourcing change moved thisWeekTime; it is recorded as wrong here
+ * rather than quietly corrected, because a header that miscounts its own list
+ * is the same drift the counts exist to catch.) The rest are the plausible
+ * ways a correct-looking rewrite could still be wrong — reading the block
+ * start as the game time, widening the venue, or fabricating a time for an
+ * occurrence that does not have one.
  *
  * Not part of `npm test`: package.json's globs are test/, digest/, render/.
  * Run from the repo root:  node scratch/flag-football-derivation/mutation-check.mjs
@@ -121,11 +127,29 @@ const MUTATIONS = [
     to:   '  const h12 = h;',
   },
   {
-    // A practice week carries no opponent; selecting it reports `undefined`.
+    // A practice week carries no opponent, so selecting it reports a null
+    // opponent beside a null time — a hidden box on a real game week.
     name: 'practice week eligible as the next game',
     file: 'digest/flagFootballParser.js',
     from: '      && !NON_GAME_TYPES.has(g.type)',
     to:   '      && true',
+  },
+  {
+    // A malformed pair (end at or before start) must not reach the branch that
+    // reads a SHORT duration as evidence the block is the game itself.
+    name: 'zero/negative duration folded into measured-short',
+    file: 'digest/aliases.js',
+    from: '  if (durationMs <= 0) {',
+    to:   '  if (false) {',
+  },
+  {
+    // The Eastern pin in formatETTime. Repointing it fails on every host;
+    // DELETING it is only caught where the host is not already ET, which is
+    // the standing TZ=UTC open item rather than something this harness closes.
+    name: 'formatETTime repointed off Eastern',
+    file: 'digest/aliases.js',
+    from: "    timeZone: 'America/New_York',",
+    to:   "    timeZone: 'America/Los_Angeles',",
   },
 ];
 

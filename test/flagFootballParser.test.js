@@ -248,7 +248,7 @@ describe('parseFlagFootball', () => {
     assert.equal(result.nextFlagGame.date, '2026-10-04',
       'nextFlagGame skips the earlier practice and selects the next real fixture');
     assert.equal(result.nextFlagGame.opponent, 'Ravens',
-      'without the type filter this would be the practice, reported as opponent: undefined');
+      'without the type filter this would be the practice, reported as a null opponent');
   });
 
   it('nextFlagGame is null when no scheduled games remain (past season)', () => {
@@ -411,15 +411,25 @@ describe('thisWeekOpponent / thisWeekTime — one fixture, never two', () => {
     assert.equal(r.thisWeekTime, null);
   });
 
-  it('a practice week is not a game, so neither half is drawn from it', () => {
-    // Week 1 is the Meet & Greet: type 'practice', no opponent. Selecting it
-    // would report `opponent: undefined` beside a practice hour.
+  it('a practice week is skipped and the pair comes from the real game', () => {
+    // Week 1 is the Meet & Greet: type 'practice', no opponent, no game time.
+    // It is chronologically FIRST, so without the type filter it wins the
+    // selection and both halves come back null — a hidden box on a week that
+    // really does have a game two days later.
+    //
+    // The fixture deliberately carries BOTH rows. A practice-only fixture
+    // cannot fail: its own null opponent and null time are what a correct
+    // parser returns anyway, so the assertions would hold with the filter
+    // removed. Pairing it with a real game is what makes null distinguishable
+    // from Ravens/12:00 PM.
     const r = parseFlagFootball(PAIR_SEASON([
       { week: 1, date: '2026-09-13', time: null, practiceTime: '11:00',
         away: null, home: 8009182, type: 'practice', status: 'scheduled' },
+      { week: 2, date: '2026-09-20', time: '12:00', practiceTime: '11:00',
+        away: 8070749, home: 8009182, type: 'regular', status: 'scheduled' },
     ]), new Date(2026, 8, 10));
-    assert.equal(r.thisWeekOpponent, null);
-    assert.equal(r.thisWeekTime, null);
+    assert.equal(r.thisWeekOpponent, 'Ravens');
+    assert.equal(r.thisWeekTime, '12:00 PM');
   });
 
   it('with no scheduled game the time is absent rather than borrowed', () => {

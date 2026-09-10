@@ -156,7 +156,11 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   // First upcoming scheduled game involving my team, sorted ascending.
   // Friendly games are included — they are real events worth showing.
   // Practices are NOT: a practice row has no opponent, so without this filter
-  // it would be selected and reported with `opponent: undefined`. Stated as a
+  // it would be selected and reported with a null opponent and a null time —
+  // keyOf(null) is null, so the `teamsMap.get(oppAbbr) || oppAbbr` fallback
+  // resolves to null rather than to `undefined`, which is what an earlier
+  // version of this comment said. The visible effect is a hidden next-game box
+  // on a week that really does have a game. Stated as a
   // deny-list rather than an allow-list so that no existing type ('regular',
   // 'playoff', 'consolation') changes behaviour.
   const scheduledGames = (season.games || [])

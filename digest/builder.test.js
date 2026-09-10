@@ -665,11 +665,14 @@ assert(/Eagles/i.test(athResult.athletics.thisWeekOpponent),      'Flag game →
 // thisWeekTime are both projected from the season file by flagFootballParser
 // and are covered in test/flagFootballParser.test.js, where their source lives.
 //
-// The calendar-derived thisWeekTime assertions that used to sit here (and the
-// DST tripwire guarding their fixtures) were removed with the source change,
-// not weakened: they pinned builder deriving the time from the event, which it
-// no longer does. The occurrence-derivation itself is still covered, in
-// digest/aliases.test.js, because the event subtitle still uses it.
+// An earlier commit ON THIS BRANCH added calendar-derived thisWeekTime
+// assertions here, plus a DST tripwire guarding their fixtures, and the
+// sourcing change then removed both. Do not go looking for them in the diff
+// against main: main never had them, so that diff is +14/-0 and shows only
+// this comment and the assertion below. They were removed with the source they
+// pinned, not weakened — builder no longer derives the time from the event.
+// The occurrence-derivation itself is still covered, in digest/aliases.test.js,
+// because the event subtitle still uses it.
 const allDayGame = { summary: 'Flag Cowboys vs. Eagles', calendarName: 'Myles', start: { date: '2026-09-20' } };
 const allDayResult = await buildDigest({ rawEvents: [allDayGame], emails: [], docs: {}, ...SPORTS_PARAMS, flagFootballData: FIXTURE_FF_WITH_EAGLES });
 assert(allDayResult.athletics.hasGameThisWeek === true,          'All-day flag game still sets hasGameThisWeek');

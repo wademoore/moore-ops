@@ -409,9 +409,10 @@ const FLAG_PRACTICE_MS = 60 * 60 * 1000;
 /**
  * Derives a flag football occurrence's venue and times from the event itself.
  *
- * Four cases, by measured duration:
+ * Five cases, by measured duration:
  *   - unknown (no parseable end)      → no game time
- *   - at most one hour                → the block IS the game
+ *   - zero or negative                → malformed, so no game time
+ *   - positive, at most one hour      → the block IS the game
  *   - between one and two hours       → ambiguous, so no game time
  *   - two hours or more               → practice → game, an hour apart
  *
@@ -453,9 +454,19 @@ function flagFootballDetails(event) {
   }
 
   const durationMs = end.getTime() - start.getTime();
+  if (durationMs <= 0) {
+    // An end at or before its own start is not a short block, it is a
+    // malformed one: the same absence of evidence as no end at all, arriving
+    // by a different route. The branch below reads a short duration as
+    // EVIDENCE that the block is the game, and a self-contradicting pair is
+    // not evidence of anything — so it must not reach it, or a corrupt event
+    // would confidently name the practice hour as the game hour.
+    return { startTime, gameTime: null, practiceTime: null, venue };
+  }
   if (durationMs <= FLAG_PRACTICE_MS) {
-    // Measured, and with no room for an hour of practice ahead of anything —
-    // so the block is the game itself and the start IS the game time.
+    // Measured, positive, and with no room for an hour of practice ahead of
+    // anything — so the block is the game itself and the start IS the game
+    // time.
     return { startTime, gameTime: startTime, practiceTime: null, venue };
   }
   if (durationMs < 2 * FLAG_PRACTICE_MS) {

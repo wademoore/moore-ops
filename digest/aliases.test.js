@@ -398,6 +398,28 @@ describe('flagFootballDetails — derivation from the occurrence', () => {
     assert.equal(flagFootballDetails(exactlyOneHour).gameTime, '11:00 AM');
   });
 
+  it('a zero-length block is malformed, not short — no game time', () => {
+    // The branch above reads a SHORT duration as evidence the block is the
+    // game. An end equal to its own start is not short, it is contradictory,
+    // and treating it as evidence would name the practice hour as the game
+    // hour with full confidence — the exact defect this helper replaces.
+    const zeroLength = { ...WEEK2, end: { dateTime: WEEK2.start.dateTime } };
+    const d = flagFootballDetails(zeroLength);
+    assert.equal(d.gameTime, null);
+    assert.equal(d.practiceTime, null);
+    // The start is still a fact the event states directly, so it survives.
+    assert.equal(d.startTime, '11:00 AM');
+    assert.equal(d.venue, 'McReynolds Athletic Complex (4B)');
+  });
+
+  it('an end BEFORE its own start is malformed too — no game time', () => {
+    const backwards = { ...WEEK2, end: { dateTime: '2026-09-20T10:00:00-04:00' } };
+    const d = flagFootballDetails(backwards);
+    assert.equal(d.gameTime, null);
+    assert.equal(d.practiceTime, null);
+    assert.equal(d.startTime, '11:00 AM');
+  });
+
   it('omits rather than guesses when the event carries no location', () => {
     const { venue } = flagFootballDetails({ ...WEEK2, location: undefined });
     assert.equal(venue, null);
