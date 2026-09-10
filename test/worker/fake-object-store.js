@@ -14,11 +14,25 @@
  * the arithmetic is established separately, against published vectors, in
  * sigv4-known-answer.test.js. What this catches is the other half, which no
  * known-answer vector can reach — a Worker that signs one key and fetches
- * another, signs a versionId it then drops, or sends a header it did not
- * sign. Those are request-construction faults, and they are invisible to a
- * store that merely checks that some Authorization header is present.
+ * another, signs a versionId it then drops, or encodes the path one way for
+ * the signature and another way for the URL.
+ *
+ * IT CANONICALISES THE BYTES THAT ARRIVED, NOT A ROUND-TRIP OF THEM
+ *
+ * The first version decoded the pathname and re-encoded it with the signer's
+ * own encoder before recomputing. That made the encoder-mismatch case
+ * invisible: whatever the Worker put on the wire, the store normalised it
+ * back to the same canonical form and the signatures agreed. It passed
+ * against a build that signed with one encoder and fetched with another,
+ * which is the exact "guard that reads as protective and is not" this suite
+ * is written against. The raw `pathname` and `search` are now fed straight
+ * in as the canonical URI and query string.
+ *
+ * What it still cannot catch is a header that was SENT but not signed: the
+ * recomputation is driven by the `SignedHeaders=` list, so an unsigned extra
+ * header is invisible to it. That is stated here rather than claimed away.
  */
-import { signCanonicalRequest } from '../../worker/mobile-dashboard/sigv4.js';
+import { UNSIGNED_PAYLOAD, signCanonicalRequest } from '../../worker/mobile-dashboard/sigv4.js';
 
 const ACCESS_DENIED = '<?xml version="1.0" encoding="UTF-8"?><Error><Code>AccessDenied</Code><Message>Access Denied</Message></Error>';
 const NO_SUCH_KEY = '<?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message></Error>';
@@ -83,10 +97,15 @@ function createFakeObjectStore({ objects = {}, credentials, bucket, region, inte
 
     const amzDate = signedHeaders['x-amz-date'];
     const instant = Date.parse(`${amzDate.slice(0, 4)}-${amzDate.slice(4, 6)}-${amzDate.slice(6, 8)}T${amzDate.slice(9, 11)}:${amzDate.slice(11, 13)}:${amzDate.slice(13, 15)}Z`);
+    // Real S3 rejects a body-bearing hash it did not receive; nothing here
+    // sends a body, so the only value that may be signed is the unsigned
+    // sentinel. Taking it from the request unchecked would let a mutant sign
+    // an arbitrary digest and still be served.
+    if (signedHeaders['x-amz-content-sha256'] !== UNSIGNED_PAYLOAD) return xml(403, ACCESS_DENIED);
     const { authorization: expected } = await signCanonicalRequest({
+      canonicalUri: parsed.pathname,
+      canonicalQueryString: parsed.search.replace(/^\?/, ''),
       method: init.method || 'GET',
-      path: key,
-      query: versionId ? { versionId } : {},
       headers: signedHeaders,
       payloadHash: signedHeaders['x-amz-content-sha256'],
       region,

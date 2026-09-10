@@ -8,9 +8,20 @@ origin half of it. **The contract itself is unchanged**: the Worker imports
 `dashboard-artifact/mobile-contract.js` rather than restating any of it, so
 the origin and the publisher cannot drift.
 
-**Nothing is deployed.** The deploy workflow is `workflow_dispatch` only, so
-merging this changes nothing that runs. `MOBILE_ARTIFACT_ENABLED` is still
-`0`, so there is no published document for an origin to serve yet either.
+**Nothing here is deployed.** The Worker's deploy workflow is
+`workflow_dispatch` only, so merging never deploys the Worker, and the
+display's own workflow has a `paths:` filter that excludes every path this
+adds — both asserted in `test/worker/mobile-worker-config.test.js` rather
+than assumed. `MOBILE_ARTIFACT_ENABLED` is still `0`, so there is no
+published document for an origin to serve yet either.
+
+To be exact about the third workflow: `.github/workflows/deploy.yml`, which
+ships the **v1 email digest** Lambda, triggers on every push to `main` with
+no `paths:` filter, so merging runs it as it does for every merge. It is
+untouched by this change, and its zip excludes neither `worker/` nor
+`infrastructure/` — so these trees ride along as inert files in that package.
+That is pre-existing behaviour for every directory the exclude list does not
+name; narrowing it is a separate change and is parked, not done here.
 
 ## What it serves
 
@@ -54,12 +65,14 @@ failure, so a consumer never has to infer which condition it hit.
 | the pointer or the release object is absent | `404` | `artifact-missing` | a short "not published yet" page |
 | a body is not ours, or the document does not match its manifest | `502` | `artifact-malformed` | a short error page |
 | the store could not be reached, answered `5xx`, or never answered | `504` | `storage-unreachable` | a short error page |
-| the store refused the signature, or no secret is configured | `500` | `credentials-rejected` | a short "this origin is misconfigured" page |
+| the store refused the signature, or the origin's own configuration is incomplete | `500` | `credentials-rejected` | a short "this origin is misconfigured" page |
 
 `credentials-rejected` is a `500` rather than a `502` because it is a fault in
 *this* origin's configuration, not a bad answer from a working upstream — and
 the page says so, because the person reading it will otherwise try signing in
-again.
+again. A missing bucket name or region lands in the same class for the same
+reason: from a consumer's side all of them mean "this origin cannot read its
+own store", and none of them is anything the reader can fix by signing in.
 
 **No failure body can be read as document age.** None of them carries
 `artifactVersion` or `generatedAt`, so a consumer applying the contract's own
@@ -86,11 +99,16 @@ exists to prevent.
 
 ## Integrity
 
-The document is checked against the manifest it was published with — exact
-byte length and exact SHA-256 — before it is served. A mismatch is
-`artifact-malformed`. Measured cost on the largest shipped state (932,020
-bytes): **1.45 ms**, against a transfer of the same 900 KB, so this is not a
-trade-off so much as a rounding error.
+The document is checked against the manifest it was published with — one
+SHA-256 comparison — before it is served. A mismatch is `artifact-malformed`.
+Measured cost on the largest shipped state (932,020 bytes): **1.45 ms**,
+against a transfer of the same 900 KB, so this is not a trade-off so much as
+a rounding error.
+
+**One comparison, not two.** A byte-length check was written beside it and
+then deleted: no damage changes the length without also changing the digest,
+so no mutation could make it fail on its own. A guard that cannot fire is
+decoration, not defence in depth.
 
 ## Signing
 

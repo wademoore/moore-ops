@@ -91,6 +91,21 @@ const MUTATIONS = [
   ['the reader identity gains the listing that reaches an orphan', POLICY,
     s => s.replace('"s3:GetObjectVersion"', '"s3:GetObjectVersion",\n        "s3:ListBucket"')],
 
+  // --- gaps a Reviewer pass found: each of these was unmutated ------------
+  ['the URL is built with a different encoder than the signature', WORKER,
+    s => s.replace('uriEncode(safeKey, false)', "safeKey.split('/').map(encodeURIComponent).join('/')")],
+  ['the successful-generation timestamp is dropped from the response', WORKER,
+    s => s.replace("    'x-mobile-dashboard-generated-at': manifest.generatedAt,\n    'x-mobile-dashboard-artifact-version': manifest.artifactVersion,\n    'x-mobile-dashboard-sha256': manifest.artifact.sha256,\n", '')],
+  ['a failed validation no longer stops the publish, so a bad run advances the pointer', 'dashboard-artifact/mobile-generator.js',
+    s => s.replace('    const { bytes, sha256 } = validateMobileArtifact(html);',
+      '    let bytes = 0, sha256 = "x"; try { ({ bytes, sha256 } = validateMobileArtifact(html)); } catch { bytes = 1; }')],
+  ['the workflow verifies one configuration file and deploys another', WORKFLOW,
+    s => s.replace('          CONFIG: worker/mobile-dashboard/wrangler.toml', '          CONFIG: package.json')],
+  ['the workflow loses the CONFIG mapping entirely', WORKFLOW,
+    s => s.replace('        env:\n          CONFIG: worker/mobile-dashboard/wrangler.toml\n', '')],
+  ['the reader policy regains a top-level key IAM would refuse', POLICY,
+    s => s.replace('{\n  "Version"', '{\n  "_comment": "apply with put-user-policy",\n  "Version"')],
+
   // --- last-good and integrity --------------------------------------------
   ['the document is served without checking it against its manifest', WORKER,
     s => s.replace("  if (await sha256Hex(bytes) !== manifest.artifact.sha256) throw new ServeFailure('artifact-malformed');", '')],

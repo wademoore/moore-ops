@@ -53,7 +53,7 @@ import {
   MOBILE_MANIFEST_KEY,
   isMobileManifest,
 } from '../../dashboard-artifact/mobile-contract.js';
-import { UNSIGNED_PAYLOAD, sha256Hex, signRequest } from './sigv4.js';
+import { UNSIGNED_PAYLOAD, sha256Hex, signRequest, uriEncode } from './sigv4.js';
 
 /** Header every response carries, success and failure alike. */
 const REASON_HEADER = 'x-mobile-dashboard-reason';
@@ -151,8 +151,16 @@ async function readObject(config, deps, key, versionId) {
     instant: deps.now(),
     payloadHash: UNSIGNED_PAYLOAD,
   });
-  const search = versionId ? `?versionId=${encodeURIComponent(versionId)}` : '';
-  const url = `https://${host}/${safeKey.split('/').map(encodeURIComponent).join('/')}${search}`;
+  // The URL is built with the SAME encoder the signature was computed over.
+  // It was `encodeURIComponent` here and `uriEncode` there, which agree on
+  // every key this Worker sees today and disagree on `!'()*`. A key holding
+  // one of those would have been signed one way and fetched another, S3
+  // would answer SignatureDoesNotMatch, and this Worker would report
+  // `credentials-rejected` — sending whoever debugged it to rotate a
+  // perfectly good secret. Exactly the trap `uriEncode`'s own comment warns
+  // about, two files away.
+  const search = versionId ? `?versionId=${uriEncode(versionId)}` : '';
+  const url = `https://${host}/${uriEncode(safeKey, false)}${search}`;
 
   let response;
   const controller = new AbortController();

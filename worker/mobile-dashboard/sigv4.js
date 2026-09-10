@@ -111,14 +111,23 @@ async function signCanonicalRequest({
   service = 's3',
   credentials,
   instant,
+  // Pre-encoded overrides. The signer normally derives both from `path` and
+  // `query`, which is what a caller wants. A VERIFIER wants the opposite:
+  // to canonicalise exactly the bytes that arrived, so that a request signed
+  // with one encoder and sent with another does not silently agree with
+  // itself. test/worker/fake-object-store.js passes the raw pathname and
+  // query string for precisely that reason.
+  canonicalUri: canonicalUriOverride,
+  canonicalQueryString: canonicalQueryOverride,
 }) {
   const { amzDate, dateStamp } = amzDates(instant);
-  const canonicalUri = `/${String(path).replace(/^\//, '')}`.split('/').map(segment => uriEncode(segment)).join('/');
+  const canonicalUri = canonicalUriOverride
+    ?? `/${String(path).replace(/^\//, '')}`.split('/').map(segment => uriEncode(segment)).join('/');
   const signedHeaders = Object.keys(headers).sort();
   const canonicalHeaders = signedHeaders.map(name => `${name}:${String(headers[name]).trim()}\n`).join('');
   const signedHeaderList = signedHeaders.join(';');
 
-  const canonicalRequest = [method, canonicalUri, canonicalQuery(query), canonicalHeaders, signedHeaderList, payloadHash].join('\n');
+  const canonicalRequest = [method, canonicalUri, canonicalQueryOverride ?? canonicalQuery(query), canonicalHeaders, signedHeaderList, payloadHash].join('\n');
   const scope = `${dateStamp}/${region}/${service}/aws4_request`;
   const stringToSign = [ALGORITHM, amzDate, scope, await sha256Hex(canonicalRequest)].join('\n');
   const key = await signingKey({ secretAccessKey: credentials.secretAccessKey, dateStamp, region, service });

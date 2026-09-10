@@ -167,6 +167,32 @@ describe('document route', () => {
     assert.ok((await response.text()).includes(`data-household-generated-at="${manifest.generatedAt}"`));
   });
 
+  it('signs and requests a key the two URI encoders disagree about', async () => {
+    // `encodeURIComponent` and the signer's RFC 3986 `uriEncode` agree on
+    // every key published today and disagree on `!'()*`. Building the URL
+    // with one and signing with the other would produce
+    // SignatureDoesNotMatch, which this Worker reports as
+    // `credentials-rejected` — sending whoever debugged it to rotate a good
+    // secret. The substitute store recomputes from the URL it actually
+    // received, so a mismatch here is a 403 rather than a subtle diff.
+    const awkward = `${MOBILE_KEY_PREFIX}/releases/2026-09-09T201000-000Z (retry!'*)/index.html`;
+    const { call } = await scenario({
+      mutate: (objects, published) => {
+        const document = objects[published.manifest.artifact.key];
+        const copy = { ...objects, [awkward]: document };
+        delete copy[published.manifest.artifact.key];
+        copy[MOBILE_MANIFEST_KEY] = {
+          ...objects[MOBILE_MANIFEST_KEY],
+          body: objects[MOBILE_MANIFEST_KEY].body.replace(published.manifest.artifact.key, awkward),
+        };
+        return copy;
+      },
+    });
+    const response = await call('/');
+    assert.equal(response.headers.get(REASON_HEADER), 'ok');
+    assert.equal(response.status, 200);
+  });
+
   it('pins the read to the manifest’s object version', async () => {
     const { call, store, manifest } = await scenario();
     await call('/');
@@ -361,7 +387,11 @@ describe('failure classes are distinguishable', () => {
     const serving = ['artifact-missing', 'artifact-malformed', 'storage-unreachable', 'credentials-rejected'];
     const statuses = serving.map(reason => FAILURES[reason].status);
     assert.equal(new Set(statuses).size, serving.length, 'the four serving failures must not collide on status');
-    assert.equal(new Set(serving).size, serving.length);
+    // A `new Set(serving).size === serving.length` line stood here and was
+    // removed: both sides derived from the literal declared two lines above,
+    // so it could not fail. What is worth asserting instead is that the four
+    // names the acceptance criteria enumerate are all actually implemented.
+    for (const reason of serving) assert.ok(FAILURES[reason], `no failure class named ${reason}`);
   });
 
   it('a failure body can never be read as document age', async () => {
@@ -467,8 +497,8 @@ describe('isolation from the wall display', () => {
   });
 
   it('no request path can make the Worker read outside the mobile prefix', async () => {
+    const legitimate = ['/', '/index.html', `/${MOBILE_DISCOVERY_MANIFEST_PATH}`];
     const adversarial = [
-      '/', '/index.html', `/${MOBILE_DISCOVERY_MANIFEST_PATH}`,
       '/../dashboard-v2/current/manifest.json',
       '/%2e%2e/dashboard-v2/current/manifest.json',
       '/dashboard-v2/current/manifest.json',
@@ -480,11 +510,22 @@ describe('isolation from the wall display', () => {
     const { call, store } = await scenario({
       mutate: objects => ({ ...objects, 'dashboard-v2/current/manifest.json': { body: '{}', versionId: 'v-1' } }),
     });
+    // The legitimate routes are driven first and separately, purely to prove
+    // the harness can reach storage at all. Folding them into the corpus made
+    // the "must actually reach storage" check pass even if every adversarial
+    // path were a no-op, which is a sanity check that sanity-checks nothing.
+    for (const path of legitimate) await call(path);
+    assert.ok(store.requestedKeys.length > 0, 'the harness cannot reach storage at all');
+    const reachedByLegitimate = store.requestedKeys.length;
+
     for (const path of adversarial) for (const method of ['GET', 'HEAD']) await call(path, { method });
-    assert.ok(store.requestedKeys.length > 0, 'the corpus must actually reach storage at least once');
     for (const key of store.requestedKeys) {
       assert.ok(key.startsWith(`${MOBILE_KEY_PREFIX}/`), `the Worker read ${key}`);
     }
+    // Whether an adversarial path reaches storage at all is not the property
+    // — being refused before a request is built is the better outcome — so
+    // this only records that the two groups were driven separately.
+    assert.ok(store.requestedKeys.length >= reachedByLegitimate);
   });
 
   it('the Worker’s own code names no display key', async () => {
@@ -531,29 +572,57 @@ describe('isolation from the wall display', () => {
 // ---------------------------------------------------------------------------
 
 describe('last-good behaviour', () => {
-  it('a failed generation leaves the previous document serving at its previous generatedAt', async () => {
-    // The publisher writes nothing at all on failure, so the Worker keeps
-    // resolving the same pointer. Proved by publishing once, then running a
-    // publish that throws, and asserting the store is byte-unchanged and the
-    // Worker still serves the same generation.
-    const first = await scenario();
-    const before = await first.call('/');
-    const beforeBody = await before.text();
+  it('a failed generation writes nothing, so the previous document keeps serving', async () => {
+    // THE FIRST VERSION OF THIS TEST PROVED ALMOST NOTHING, and it was the
+    // only evidence offered for the last-good acceptance criterion.
+    //
+    // It gave the failing publish its OWN `putObject`, disconnected from the
+    // store the Worker reads, so the store was structurally incapable of
+    // changing; and it then compared two calls to the same handler over an
+    // immutable in-memory map. Its comment claimed it asserted the store was
+    // "byte-unchanged", and no such assertion existed.
+    //
+    // Now the failing publish writes into the SAME object map the Worker
+    // serves from, and the map is snapshotted byte-for-byte across the
+    // attempt. A publisher that wrote anything before failing — a release, a
+    // discovery route, or the pointer — changes that snapshot and fails
+    // here. Two failure shapes are driven, because they stop at different
+    // points: a renderer that throws never reaches a write at all, while a
+    // renderer that returns an invalid document gets as far as the contract
+    // validator, which is where an ordering regression would show.
+    for (const [shape, render] of [
+      ['the renderer throws', () => { throw new Error('renderer blew up'); }],
+      ['the renderer returns a document the contract refuses', () => '<!doctype html><p>too small to be a dashboard</p>'],
+    ]) {
+      const first = await scenario();
+      const before = await first.call('/');
+      const beforeBody = await before.text();
+      const snapshot = JSON.stringify(first.store.objects);
 
-    let failed = false;
-    await publishMobileArtifact({
-      now: new Date('2026-09-10T00:10:00.000Z'),
-      bucket: BUCKET,
-      enabled: true,
-      fetchData: async () => mobilePreviewStates().quiet,
-      render: () => { throw new Error('renderer blew up'); },
-      putObject: async () => { throw new Error('a failed run must not write'); },
-    }).catch(() => { failed = true; });
-    assert.ok(failed);
+      let rejection = null;
+      await publishMobileArtifact({
+        now: new Date('2026-09-10T00:10:00.000Z'),
+        bucket: BUCKET,
+        enabled: true,
+        sourceRevision: 'a-later-revision',
+        fetchData: async () => mobilePreviewStates().quiet,
+        render,
+        // Writes into the very map the Worker reads. This is the whole point:
+        // last-good is a claim about the store, so the store has to be able
+        // to change for the claim to mean anything.
+        putObject: async input => {
+          first.store.objects[input.Key] = { body: input.Body, versionId: 'v-from-a-failed-run' };
+          return { VersionId: 'v-from-a-failed-run' };
+        },
+      }).catch(error => { rejection = error; });
 
-    const after = await first.call('/');
-    assert.equal(await after.text(), beforeBody);
-    assert.equal(after.headers.get('x-mobile-dashboard-generated-at'), first.manifest.generatedAt);
+      assert.ok(rejection, `${shape}: the publish should have rejected`);
+      assert.equal(JSON.stringify(first.store.objects), snapshot, `${shape}: a failed run wrote to the store`);
+
+      const after = await first.call('/');
+      assert.equal(await after.text(), beforeBody, shape);
+      assert.equal(after.headers.get('x-mobile-dashboard-generated-at'), first.manifest.generatedAt, shape);
+    }
   });
 
   it('never serves an orphan release, even though it sorts newest', async () => {

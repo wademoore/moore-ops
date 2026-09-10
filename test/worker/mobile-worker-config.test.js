@@ -141,6 +141,23 @@ describe('the Worker configuration commits nothing credential-shaped', () => {
 });
 
 describe('the reader identity is scoped to the mobile prefix alone', () => {
+  it('is a document IAM would actually accept', () => {
+    // A first version carried a top-level `_comment`. IAM's grammar allows
+    // only Version, Id and Statement there, so `put-user-policy` would have
+    // answered MalformedPolicyDocument — a comment that broke the command it
+    // was documenting. The guidance moved to the sibling README.
+    for (const key of Object.keys(POLICY)) {
+      assert.ok(['Version', 'Id', 'Statement'].includes(key), `IAM rejects the top-level key ${key}`);
+    }
+    assert.equal(POLICY.Version, '2012-10-17');
+    assert.ok(Array.isArray(POLICY.Statement));
+    for (const statement of POLICY.Statement) {
+      for (const key of Object.keys(statement)) {
+        assert.ok(['Sid', 'Effect', 'Action', 'Resource', 'Condition', 'Principal', 'NotAction', 'NotResource'].includes(key), `IAM rejects the statement key ${key}`);
+      }
+    }
+  });
+
   it('grants read-only access to nothing but the mobile prefix', () => {
     assert.equal(POLICY.Statement.length, 1);
     const [statement] = POLICY.Statement;
@@ -175,7 +192,69 @@ describe('the reader identity is scoped to the mobile prefix alone', () => {
   });
 });
 
+/**
+ * The whole path over the workflow SOURCE, not one lifted script.
+ *
+ * `stepScript` lifts a step's `run:` body, which leaves the `env:` mapping
+ * ABOVE it uninspected — and CLAUDE.md already records that exact hole for
+ * the holiday flag, where repointing or deleting a mapping passed every
+ * test. It had regressed here: the verify step reads `$CONFIG`, the test
+ * supplied `CONFIG` itself, and the Deploy step hardcodes its own path, so
+ * repointing the mapping would have left the workflow verifying one file and
+ * deploying another with the suite green.
+ */
+function assertDeploymentPath(source) {
+  const failures = [];
+  const CONFIG_PATH = 'worker/mobile-dashboard/wrangler.toml';
+  const verifyAt = source.indexOf(`- name: ${VERIFY_STEP}`);
+  const deployAt = source.indexOf('- name: Deploy\n');
+
+  if (verifyAt === -1) failures.push('the Worker configuration is never verified');
+  if (deployAt === -1) failures.push('the workflow never deploys');
+  if (verifyAt !== -1 && deployAt !== -1 && verifyAt > deployAt) failures.push('the configuration is verified after the deploy');
+
+  // The verify step reads $CONFIG, so the mapping that supplies it is part
+  // of the path and must name the file the deploy actually ships.
+  const verifyBlock = verifyAt === -1 ? '' : source.slice(verifyAt, deployAt === -1 ? undefined : deployAt);
+  const mapping = /\n\s+CONFIG: (\S+)\n/.exec(verifyBlock);
+  if (!mapping) failures.push('the verify step has no CONFIG env mapping');
+  else if (mapping[1] !== CONFIG_PATH) failures.push(`the verify step checks ${mapping[1]}, not ${CONFIG_PATH}`);
+  if ((verifyBlock.match(/\n\s+CONFIG:/g) || []).length > 1) failures.push('the verify step maps CONFIG more than once');
+
+  // And the deploy must ship the file that was verified, not another one.
+  const deployBlock = deployAt === -1 ? '' : source.slice(deployAt);
+  const deployed = /--config (\S+)/.exec(deployBlock);
+  if (!deployed) failures.push('the deploy step names no configuration file');
+  else if (deployed[1] !== CONFIG_PATH) failures.push(`the deploy step ships ${deployed[1]}, not the verified ${CONFIG_PATH}`);
+
+  return failures;
+}
+
 describe('the deploy workflow does not deploy on merge', () => {
+  it('verifies the same configuration file it deploys', () => {
+    assert.deepEqual(assertDeploymentPath(WORKFLOW), []);
+  });
+
+  it('that whole-path check has teeth in each direction', () => {
+    // Five one-token edits that the lifted-script test cannot see. Each must
+    // fail for its own reason, or the check is decoration.
+    const mutants = [
+      ['mapping deleted', WORKFLOW.replace(/\n\s+CONFIG: worker\/mobile-dashboard\/wrangler\.toml\n/, '\n'), /no CONFIG env mapping/],
+      ['mapping repointed', WORKFLOW.replace('CONFIG: worker/mobile-dashboard/wrangler.toml', 'CONFIG: package.json'), /checks package\.json/],
+      ['deploy ships another file', WORKFLOW.replace('--config worker/mobile-dashboard/wrangler.toml', '--config other/wrangler.toml'), /ships other\/wrangler\.toml/],
+      ['verify moved after the deploy', (() => {
+        const step = WORKFLOW.slice(WORKFLOW.indexOf(`      - name: ${VERIFY_STEP}`), WORKFLOW.indexOf('      - name: Deploy\n'));
+        return `${WORKFLOW.replace(step, '')}\n${step}`;
+      })(), /verified after the deploy/],
+      ['deploy step removed', WORKFLOW.replace('      - name: Deploy\n', '      - name: Nothing\n'), /never deploys/],
+    ];
+    for (const [label, mutated, expected] of mutants) {
+      const failures = assertDeploymentPath(mutated);
+      assert.ok(failures.length > 0, `${label} was not caught`);
+      assert.ok(failures.some(failure => expected.test(failure)), `${label} was caught for the wrong reason: ${failures.join('; ')}`);
+    }
+  });
+
   it('is triggered only by hand', () => {
     // Parsed, not grepped: the file's own header comment contains both
     // `push` and `pull_request` as prose, and a grep would be satisfied by
@@ -193,10 +272,15 @@ describe('the deploy workflow does not deploy on merge', () => {
     const pathsBlock = /\n\s{4}paths:\s*\n((?:\s{6}-[^\n]+\n)+)/.exec(DISPLAY_WORKFLOW)?.[1] || '';
     const triggers = [...pathsBlock.matchAll(/-\s+['"]?([^'"\r\n]+)['"]?/g)].map(match => match[1].trim());
     assert.ok(triggers.length > 0, 'the display workflow has no paths filter to check');
+    // Fails CLOSED on a pattern shape it does not model. The first version
+    // returned false for anything unrecognised, so a future `**/*.js` or
+    // `worker/*` in the display workflow would have been reported as
+    // not-covered and this test would have passed while the truth inverted.
     const covered = path => triggers.some(pattern => {
       if (pattern === path) return true;
       if (pattern === '*.js') return !path.includes('/') && path.endsWith('.js');
-      if (pattern.endsWith('/**')) return path.startsWith(pattern.slice(0, -3));
+      if (pattern.endsWith('/**') && !pattern.slice(0, -3).includes('*')) return path.startsWith(pattern.slice(0, -3));
+      if (pattern.includes('*')) throw new Error(`the display workflow uses an unmodelled glob shape: ${pattern}`);
       return false;
     });
     for (const path of [

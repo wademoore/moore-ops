@@ -16,10 +16,13 @@
  *   - two cases from the AWS SigV4 test suite: `get-vanilla` and
  *     `get-vanilla-query-order-key-case`
  *
- * All five were additionally confirmed against an independent implementation
- * in a different language (Python's hmac/hashlib) before being written down
- * here, so a misremembered constant would have shown up as a disagreement
- * rather than as a passing test.
+ * Each was additionally confirmed against an independent implementation in a
+ * different language, so a misremembered constant would have shown up as a
+ * disagreement rather than as a passing test. That confirmation is in the
+ * repository and re-runnable rather than asserted here —
+ * `python3 scratch/mobile-worker/verify-sigv4-vectors.py` — because a claim
+ * a future reader cannot check is exactly what this file's whole existence
+ * argues against.
  */
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';

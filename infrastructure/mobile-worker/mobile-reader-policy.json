@@ -1,5 +1,4 @@
 {
-  "_comment": "Least-privilege identity for the Cloudflare Worker that serves the mobile dashboard document. Attach to a dedicated IAM user whose access key is set as a Worker secret; nothing here is applied by the SAM stack, deliberately. Adding it to infrastructure/dashboard-artifact-refresh/template.json would put a change to the wall display's own stack in the path of a phone-only feature, and this repository has no reason to accept that risk for an identity that is created once by hand. Apply with: aws iam put-user-policy --user-name moore-ops-dashboard-mobile-worker-reader --policy-name ReadMobileDashboardArtifacts --policy-document file://infrastructure/mobile-worker/mobile-reader-policy.json",
   "Version": "2012-10-17",
   "Statement": [
     {
