@@ -57,8 +57,18 @@ function scheduleSpanFromDoc(markdown) {
     if (!m) continue;
     const [, sM, sD, eM, eD, yy] = m;
     const year = 2000 + Number(yy);
-    days.push(`${year}-${String(Number(sM)).padStart(2, '0')}-${String(Number(sD)).padStart(2, '0')}`);
-    if (eM) days.push(`${year}-${String(Number(eM)).padStart(2, '0')}-${String(Number(eD)).padStart(2, '0')}`);
+    const day = (mm, dd) => `${year}-${String(Number(mm)).padStart(2, '0')}-${String(Number(dd)).padStart(2, '0')}`;
+    const start = day(sM, sD);
+    days.push(start);
+    if (eM) {
+      const end = day(eM, eD);
+      // The two-digit year is written once and applied to both ends, which holds
+      // for every row in this schedule. A New Year-crossing range (12/30-1/2/27)
+      // would violate it and silently produce a start AFTER its own end, which
+      // could then become the season's `last`. Refuse rather than mis-date.
+      if (end < start) throw new Error(`schedule row spans a year boundary, unsupported: ${cell}`);
+      days.push(end);
+    }
   }
   days.sort();
   return { first: days[0], last: days[days.length - 1], count: days.length };
@@ -195,12 +205,25 @@ describe('757swim season label', () => {
 // ── Myles — flag football team identity ─────────────────────────────────────
 
 describe('flag football team identity', () => {
-  it('resolves the current-season team name to Cowboys on 2026-09-10', async () => {
+  it('resolves flagTeamName to Cowboys on 2026-09-10, via the no-current-season fallback', async () => {
     const cfg = await readJson('data/sports-config.json');
-    const athletics = parseAthleticsDoc(
-      TODAY, cfg, await readJson('data/flag-football.json'), {}, [], null,
-    );
+    const data = await readJson('data/flag-football.json');
+    const athletics = parseAthleticsDoc(TODAY, cfg, data, {}, [], null);
+
     assert.equal(athletics.flagTeamName, 'Cowboys');
+
+    // State the path honestly rather than letting the name imply more than it
+    // proves. parseFlagFootball picks the first season with seasonEnd >= today
+    // and otherwise falls back to seasons[last]; on 2026-09-10 no season
+    // qualifies, so this resolves through spring-2026 — a PRIOR season. The
+    // assertion has prospective teeth (a fall-2026 season named anything else
+    // would fail it) but today it is not evidence about a current season.
+    assert.equal(athletics.seasonLabel, 'Spring 2026',
+      'if this ever stops being Spring 2026, a real current season exists and this test should be re-examined');
+    assert.equal(
+      data.seasons.some(s => new Date(s.seasonEnd) >= TODAY), false,
+      'no season covers today — the fallback path is what is being exercised',
+    );
   });
 
   it('leaves both prior seasons\' identities and results untouched', async () => {
