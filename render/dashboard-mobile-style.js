@@ -10,5 +10,6 @@ nav{display:grid;grid-template-columns:repeat(6,minmax(44px,1fr));padding:8px ma
 @media(max-width:22rem){nav{grid-template-columns:repeat(3,minmax(44px,1fr))}nav a{flex-direction:row;gap:5px;min-height:44px}nav a[aria-current=page]:before{display:none}nav a[aria-current=page]{background:var(--wash);border-radius:6px}.event-row{grid-template-columns:4.3rem minmax(0,1fr);gap:9px}}
 @media(min-width:48rem){.mobile-dashboard.enhanced{grid-template-columns:160px minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}.app-header{grid-column:2;grid-row:1;padding-left:32px;padding-right:32px}.enhanced main{grid-column:2;grid-row:2}.page{padding-left:32px;padding-right:32px;max-width:900px}nav{grid-column:1;grid-row:1/3;display:flex;flex-direction:column;border-top:0;border-right:1px solid var(--rule);padding:24px 10px;gap:8px}nav a{flex-direction:row;justify-content:flex-start;gap:10px;padding:10px;font-size:.85rem}nav a[aria-current=page]{background:var(--wash);border-radius:8px}nav a[aria-current=page]:before{display:none}}
 .flag-team-mark{width:22px;height:22px;object-fit:contain;vertical-align:middle;margin-right:7px}.group>.flag-team-mark{width:40px;height:40px;margin-bottom:8px}
+.flag-event-mark{width:1.3em;height:1.3em;object-fit:contain;vertical-align:-.25em;margin-right:.3em}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
 `;

@@ -1,7 +1,7 @@
 import {
   cleanDisplayText, peopleForEvent, collapseUpcomingEvents, selectHorizonEvents,
   formatCalendarDate, formatEventTime, eventSubtitleWithoutTime, eventDateKey,
-  rangeDetail, horizonPresentation, conversationalMatchDate, sportsSlotLines, V2_LOGOS, flagTeamLogo, flagNextGame,
+  rangeDetail, horizonPresentation, conversationalMatchDate, sportsSlotLines, V2_LOGOS, flagTeamLogo, flagNextGame, flagEventMark,
 } from './dashboard-v2.js';
 import { selectEventRowAccents, selectFeatureSlotSpotlight } from '../digest/specialEventSelector.js';
 import { occurrenceId } from '../digest/specialEventOccurrences.js';
@@ -35,14 +35,14 @@ const icon = key => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 
 function nowPage(data) {
   const nn = data.nowNext;
-  const focus = nn ? `<section class="focus tone-${tone(nn.tone)}"><p class="eyebrow">${text(nn.signal)}</p>${nn.subject ? `<h2>${text(nn.subject)}</h2>` : ''}${nn.qualifier ? `<p class="qualifier">${esc(nn.qualifier)}</p>` : ''}${list(nn.context).filter(Boolean).map(line => `<p class="context">${esc(line)}</p>`).join('')}</section>${list(nn.supporting).map(block => group(block.label, list(block.lines).map(line => `<p>${text(line)}</p>`).join(''))).join('')}` : note('No operational summary available in this update. Check Today and the notices below.');
+  const focus = nn ? `<section class="focus tone-${tone(nn.tone)}"><p class="eyebrow">${text(nn.signal)}</p>${nn.subject ? `<h2>${flagEventMark(nn)}${text(nn.subject)}</h2>` : ''}${nn.qualifier ? `<p class="qualifier">${esc(nn.qualifier)}</p>` : ''}${list(nn.context).filter(Boolean).map(line => `<p class="context">${esc(line)}</p>`).join('')}</section>${list(nn.supporting).map(block => group(block.label, list(block.lines).map((line, index) => `<p>${index === 0 ? flagEventMark(block) : ''}${text(line)}</p>`).join(''))).join('')}` : note('No operational summary available in this update. Check Today and the notices below.');
   const flags = list(data.flags).filter(flag => !flag.bannerOnly);
   return focus + group('Operational notices', flags.length ? flags.map(flag => `<article class="notice tone-${tone(flag.level)}"><h3>${text(flag.title || 'Family note')}</h3><p>${text(flag.body || flag.message)}</p></article>`).join('') : note(data.calendarFetchFailures?.length ? 'Calendar information is incomplete in this update.' : 'No operational notices listed in this update.'));
 }
 
 function eventRow(event, detail = eventSubtitleWithoutTime(event), accent = null) {
   const bounds = accent ? ` data-activate-at="${Number(accent.activateAt)}" data-expire-at="${Number(accent.expireAt)}"` : '';
-  return `<article class="event-row"><time>${esc(formatEventTime(event))}</time><div><h3>${text(event.title)}</h3>${detail ? `<p class="secondary">${esc(detail)}</p>` : ''}${identity(event)}${accent ? `<span class="event-accent tone-${tone(accent.tone)}"${bounds} hidden>${esc(accent.label || 'Special event')}</span>` : ''}</div></article>`;
+  return `<article class="event-row"><time>${esc(formatEventTime(event))}</time><div><h3>${flagEventMark(event)}${text(event.title)}</h3>${detail ? `<p class="secondary">${esc(detail)}</p>` : ''}${identity(event)}${accent ? `<span class="event-accent tone-${tone(accent.tone)}"${bounds} hidden>${esc(accent.label || 'Special event')}</span>` : ''}</div></article>`;
 }
 
 function centers(week) {

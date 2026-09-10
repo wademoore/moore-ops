@@ -73,8 +73,11 @@ the feature.
 Dashboard v2 and mobile use local NFL mascot artwork for the athletics header,
 next opponent, and standings. Mascot lookup selects artwork only; the digest's
 `isMe` value identifies our standings row. Never infer team identity from a logo
-or mascot. Unknown names retain text without a logo. Calendar/Now-Next logo
-association still needs authoritative event identity and is not implemented here.
+or mascot. Unknown names retain text without a logo. Calendar rows and featured/
+supporting Now/Next blocks on wall and mobile use the digest's `flagFootball`
+association to select the team artwork. Null/absent identity stays ordinary;
+titles and opponents never establish the team identity. This covers practices
+and games without changing their classification or schedule-gap behavior.
 The next-game display uses `thisWeekOpponent`/nullable `thisWeekTime` when present,
 otherwise the existing `nextFlagGame` opponent, date and optional time, without borrowing a time
 from another occurrence. The single flag-card layout keeps the 1473.83 × 315.63

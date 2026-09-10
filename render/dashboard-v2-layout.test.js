@@ -62,6 +62,34 @@ function overlap(a, b) {
 }
 
 describe('dashboard v2 2560x1440 layout verification', () => {
+  it('shows the transparent calendar star alone and restores its fallback on image failure', async () => {
+    const event = { title: 'Flag Football: Week 1 — Meet & Greet', subtitle: 'Myles', owner: [],
+      raw: { id: 'flag-practice', start: { dateTime: '2026-09-13T11:00:00-04:00' } },
+      flagFootball: { team: { teamId: 8009182, teamName: 'Cowboys' }, fixtureType: 'practice', opponent: null } };
+    await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data,
+      today: new Date('2026-09-12T12:00:00-04:00'), upcomingEvents: [event],
+    }), { waitUntil: 'load' });
+    const mark = page.locator('.upcoming-panel .flag-activity-visual');
+    assert.equal(await mark.count(), 1);
+    assert.equal(await mark.locator('svg').evaluate(node => getComputedStyle(node).visibility), 'hidden');
+    assert.ok(await mark.locator('img').evaluate(node => node.complete && node.naturalWidth > 0));
+    await mark.locator('img').evaluate(node => node.dispatchEvent(new Event('error')));
+    assert.equal(await mark.locator('svg').evaluate(node => getComputedStyle(node).visibility), 'visible');
+  });
+
+  it('fits associated flag logos in featured and supporting Now/Next copy', async () => {
+    const flagFootball = { team: { teamId: 8009182, teamName: 'Cowboys' }, fixtureType: 'regular' };
+    await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, nowNext: {
+      signal: 'Leave in 60 min', subject: 'Cowboys Flag Football — vs. Langston-Ravens (Home)', flagFootball,
+      supporting: [{ label: 'Next', lines: ['Flag Football: Week 1 — Meet & Greet', 'Sunday · 11 AM'], flagFootball }],
+    } }), { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+    assert.equal(await page.locator('.now-next .flag-event-mark').count(), 2);
+    assert.ok(await page.locator('.now-next').evaluate(root =>
+      [...root.querySelectorAll('.now-next-hero,.now-next-support-block')].every(node =>
+        node.scrollWidth <= node.clientWidth + 1 && node.scrollHeight <= node.clientHeight + 1)));
+  });
+
   it('keeps all six flag-logo standings rows inside single and multiple card panels', async () => {
     for (const swim757Active of [false, true]) {
     await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {

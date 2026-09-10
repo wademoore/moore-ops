@@ -222,6 +222,7 @@ function peopleForEvent(event) {
 }
 
 function activityLogo(event) {
+  if (event?.flagFootball) return flagTeamLogo(event.flagFootball.team?.teamName);
   const text = `${event?.title || ''} ${event?.subtitle || ''}`.toLowerCase();
   const mylesGoalkeeping = peopleForEvent(event) === 'myles'
     && /\b(?:goal\s*keeping|gk)\s+training\b/.test(text);
@@ -354,7 +355,7 @@ function activityVisual(event, className) {
   const url = activityLogo(event);
   const category = activityCategory(event);
   const fallback = categorySvg(category);
-  if (url) return `<span class="${className} semantic-icon activity-visual category-${category}" aria-label="${esc(category)}">${fallback}<img src="${esc(url)}" alt="" onerror="this.remove()"></span>`;
+  if (url) return `<span class="${className} semantic-icon activity-visual category-${category}${event?.flagFootball ? ' flag-activity-visual' : ''}" aria-label="${esc(category)}">${fallback}<img src="${esc(url)}" alt="" onerror="this.remove()"></span>`;
   return `<span class="${className} semantic-icon category-${category}" aria-label="${esc(category)}">${fallback}</span>`;
 }
 
@@ -413,13 +414,13 @@ function renderNowNext(nowNext) {
     ${renderSectionTitle('Now / Next', 'green', 'star')}
     <div class="now-next-hero">
       <h2>${esc(nowNext.signal || '')}</h2>
-      ${nowNext.subject ? `<h3>${esc(cleanDisplayText(nowNext.subject))}</h3>` : ''}
+      ${nowNext.subject ? `<h3>${flagEventMark(nowNext)}${esc(cleanDisplayText(nowNext.subject))}</h3>` : ''}
       ${nowNext.qualifier ? `<div class="now-next-qualifier">${esc(nowNext.qualifier)}</div>` : ''}
       ${context.length ? `<div class="now-next-context">${context.map(esc).join('<span aria-hidden="true">·</span>')}</div>` : ''}
     </div>
     ${supporting.length ? `<div class="now-next-support">${supporting.map(item => `<div class="now-next-support-block">
       <div class="now-next-support-label">${esc(item.label)}</div>
-      <div class="now-next-support-copy">${item.lines.map((line, index) => `<div>${esc(index === 0 ? cleanDisplayText(line) : line)}</div>`).join('')}</div>
+      <div class="now-next-support-copy">${item.lines.map((line, index) => `<div>${index === 0 ? flagEventMark(item) : ''}${esc(index === 0 ? cleanDisplayText(line) : line)}</div>`).join('')}</div>
     </div>`).join('')}</div>` : ''}
   </div>`;
 }
@@ -842,6 +843,13 @@ function flagTeamLogo(teamName) {
   const key = typeof teamName === 'string' ? teamName.trim().toLowerCase() : '';
   if (!key || !Object.hasOwn(V2_LOGOS, key)) return '';
   return V2_LOGOS[key];
+}
+
+// Association comes exclusively from the digest; titles never establish identity.
+function flagEventMark(event) {
+  if (!event?.flagFootball) return '';
+  const asset = flagTeamLogo(event.flagFootball.team?.teamName);
+  return asset ? logo(asset, 'flag-event-mark') : '';
 }
 
 // Select artwork for an already-resolved mascot, never a league team identity.
@@ -1466,6 +1474,8 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .upcoming-event.accent-tone-purple>.accent-label{background:${COLORS.purple}}
 .card-count-1 .athletics-grid{display:block}.card-count-1 .athletic-card{height:100%;padding-right:0;border-right:0;display:grid;grid-template-columns:150px minmax(0,1fr);grid-template-rows:44px auto 1fr;column-gap:22px}.card-count-1 .athletic-ribbon{grid-column:1/3}.card-count-1 .record{grid-column:1;grid-row:2/4;font-size:58px;margin-top:16px}.card-count-1 .athletic-card>small{grid-column:1;grid-row:3;margin-top:80px;font-size:18px}.card-count-1 .next-box{grid-column:2;grid-row:2/4;margin:12px 0 0;padding:12px 16px;justify-content:center}.card-count-1 .next-box b{font-size:16px}.card-count-1 .next-box span{font-size:25px;line-height:1}.card-count-1 .next-box strong{font-family:"Roboto Slab",Georgia,serif;font-size:27px;line-height:1.15;margin-top:7px}.card-count-1 .next-box small{font-size:18px;margin-top:5px}.card-count-1 .result-line,.card-count-1 .standing-line{display:none}
 .flag-team-mark{width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:5px}.next-box .flag-team-mark{width:24px;height:24px}.flag-football-card .athletic-logo{width:36px;height:36px;background:transparent;border-radius:0;padding:0}
+.flag-event-mark{width:1em;height:1em;object-fit:contain;vertical-align:-.12em;margin-right:.25em}
+.flag-activity-visual:has(img)>svg{visibility:hidden}
 .card-count-1 .flag-football-card{grid-template-columns:170px minmax(0,1fr) 400px}.card-count-1 .flag-football-card .athletic-ribbon{grid-column:1/4}.card-count-1 .flag-football-card table{grid-column:3;grid-row:2/4;align-self:start;margin-top:12px;line-height:1}.card-count-1 .flag-football-card .record{grid-row:2;margin-top:16px}.card-count-1 .flag-football-card>small{margin-top:0}.card-count-1 .flag-football-card .next-box{align-self:start}.card-count-1 .flag-football-card td{padding:1px 0}
 .next-up-card{display:flex;flex-direction:column}.next-up-card:before{display:none}.next-up-label{flex:0 0 38px;width:100%}.next-up-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.next-up-item{position:relative;display:grid;grid-template-columns:58px minmax(0,1fr);gap:8px;padding:6px 2px 6px 9px;border-bottom:1px solid rgba(20,40,31,.14);min-height:0}.next-up-item:last-child{border-bottom:0}.next-up-item:before{content:"";position:absolute;left:-3px;top:7px;bottom:7px;width:5px;background:${COLORS.green}}.next-up-item.person-myles:before{background:${COLORS.red}}.next-up-item.person-ophelia:before{background:${COLORS.purple}}.next-up-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.next-up-item .next-up-date b{font-size:34px}.next-up-item .next-up-date span{font-size:11px}.next-up-item .next-up-copy strong{font-size:18px;line-height:1}.next-up-item .next-up-copy small{font-size:13px;line-height:1;margin-top:3px}
 /* TV readability tokens. Day is intentionally oatmeal; evening is a restrained warm reduction, not dark mode. */
@@ -1666,6 +1676,7 @@ ${browserScript()}
 }
 
 export {
+  flagEventMark,
   flagTeamLogo,
   flagNextGame,
   renderDashboardV2,

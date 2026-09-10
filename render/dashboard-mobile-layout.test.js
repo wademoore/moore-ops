@@ -27,6 +27,20 @@ const choose = async (page, id) => {
   await page.clock.runFor(180);
 };
 
+it('keeps associated flag titles readable at 200% text on narrow mobile', async () => {
+  const data = structuredClone(states.everyday);
+  const flagFootball = { team: { teamId: 8009182, teamName: 'Cowboys' }, fixtureType: 'practice', opponent: null };
+  data.nowNext = { signal: 'Tomorrow morning', subject: 'Flag Football: Week 1 — Meet & Greet', flagFootball,
+    supporting: [{ label: 'Next', lines: ['Cowboys Flag Football — vs. Langston-Ravens (Home)'], flagFootball }] };
+  await withPage(data, async page => {
+    await page.addStyleTag({ content: ':root{font-size:200%}' });
+    await choose(page, 'now');
+    assert.equal(await page.locator('#now .flag-event-mark').count(), 2);
+    assert.ok(await page.locator('#now').evaluate(node => node.scrollWidth <= node.clientWidth + 1));
+    assert.ok(await page.locator('#now .flag-event-mark').first().evaluate(node => node.complete && node.naturalWidth > 0));
+  }, { viewport: { width: 320, height: 844 } });
+});
+
 describe('mobile dashboard browser behavior', () => {
   for (const width of [320, 390, 430, 768, 1440]) it(`fits every section at ${width}px and retains reachable navigation`, async () => {
     await withPage(states.crowded, async page => {
