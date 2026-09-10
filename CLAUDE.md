@@ -642,6 +642,13 @@ is unchanged. `test/current-season-athletics.test.js` re-derives the span from t
 own table and fails if the config and the doc disagree in either direction, so the doc is
 the source of truth rather than a description of it.
 
+**The derivation convention changed, and that is worth stating.** Last season's window was
+month-bounded (`2025-09-01` → `2026-05-31`) and did not actually cover its own last meets — VA
+LC Senior Champs ran Jul 9–12 2026, outside it. The new window is exactly meet-bounded. That is
+an improvement in honesty but it removes slack: the card now disappears on **May 3, 2027**, and
+any meet added after 4/25/27 needs a config edit rather than being absorbed. The doc-derived
+test is what makes that edit hard to forget.
+
 `isSeasonActive()` in `digest/sportsConfig.js` computes the effective display window as `[seasonStart − bufferDays, seasonEnd + bufferDays]` inclusive. Changing these values in `data/sports-config.json` is the only thing needed to show or hide a sport's card on the dashboard.
 
 ### Parser modules
@@ -2533,8 +2540,14 @@ method, so they chain directly to the 988 pre-change number above.
   it a change of the label's *source* rather than of the label.
   **The flag football half is a verification, and the premise was already satisfied.**
   `data/flag-football.json` holds exactly two seasons, `fall-2025` and `spring-2026`, and both
-  already carry `teamName: "Cowboys"`; there is no fall-2026 season anywhere in the repo and no
-  documented fall-2026 schedule, so nothing was renamed and nothing was fabricated. Current-season
+  already carry `teamName: "Cowboys"`, so nothing was renamed and nothing was fabricated.
+  **A first draft of this entry said "there is no fall-2026 season anywhere in the repo", which
+  is wrong and is corrected here rather than quietly dropped:** `data/special-events.json`
+  carries the approved accent `myles-flag-football-week1-2026-09-20`, whose `titleMatch.value`
+  is `"Flag Football: Week 1 — Practice + Game (Yorktown)"`. A fall-2026 season is documented in
+  the repo; what is absent is a season entry in `flag-football.json` and a schedule to build one
+  from. The narrower claim is the true one, and the difference matters — see the new Known open
+  item, because that accent fires on Sept 20 while `flagFootballActive` is false. Current-season
   identity resolving to `"Cowboys"` and both prior seasons' identities, abbreviations, outcomes and
   game counts are now pinned by test. Worth knowing: with no season whose `seasonEnd >= today`,
   `parseFlagFootball` falls back to `seasons[last]`, so today's `flagTeamName` is correct but
@@ -2543,9 +2556,20 @@ method, so they chain directly to the 988 pre-change number above.
   **Blast radius, measured:** `athleticsCardCount()` counts `!wavesActive && swim757Active`, so
   Sept 12 goes from **1 card to 2** — `.athletics-multi` at 40% rather than `.athletics-one` at
   26%, and the Coming Up target from 14 to 10. Big Sports Saturday is Sept 12, so the Spotlight
-  now renders in the two-card panel; it adapts correctly, but the **1473.83 × 315.63** figure
-  quoted in the Family Spotlight section describes the one-card state only and has been corrected
-  there. Presentation was not touched — Codex owns the athletics card and the supplied logo.
+  now renders in the two-card panel. **That it still fits is measured, not asserted** —
+  `scratch/current-season-athletics/measure-spotlight-cardcount.mjs` renders the real Sept 12
+  Spotlight in both card counts: one-card **1473.83 × 315.63**, two-card **1473.83 × 485.59**,
+  and in both the Spotlight is visible, measures the same **11** elements, sits **17 px inside**
+  the panel's bottom edge, and has **zero** horizontally clipped nodes. The Upcoming panel goes
+  **874.08 → 704.11**. The 1473.83 × 315.63 figure quoted in the Family Spotlight section
+  describes the one-card state only and has been corrected there. Presentation was not touched —
+  Codex owns the athletics card and the supplied logo.
+  **Two harness defects were found while taking that measurement, and either would have made it
+  lie:** passing a phase name where `updateFamilySpotlight` takes an epoch millisecond leaves
+  every Spotlight node in a `display:none` subtree measuring 0×0, and a `scrollHeight`-based clip
+  check fires on every Spotlight label in every geometry because `line-height:1` text reports a
+  line box a few px taller than its client box. The shipped layout suite documents exactly that
+  and compares widths; this harness now does too.
   Four mutations prove the new guards have teeth (results gate reintroduced, config reverted,
   hardcoded label restored, prior season renamed), each failing for its own reason with a green
   control and green restore. Tests **2284 → 2297**, all passing with a browser.
@@ -3235,6 +3259,27 @@ enumerated under test, digest, and render directly to Node. No deployment.
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
 
 ## Known open items
+
+- **Myles has no fall-2026 flag football season, so an approved Sept 20 accent fires against an
+  inactive sport (Sept 10, 2026).** Surfaced by an independent Reviewer pass, not by the change
+  that prompted it. `data/special-events.json` carries the approved, `enabled: true` accent
+  `myles-flag-football-week1-2026-09-20` for the first fall game; `data/flag-football.json` holds
+  only `fall-2025` and `spring-2026`; and `data/sports-config.json` still says flag football ran
+  `2026-04-26 → 2026-06-07` with `bufferDays: 0`. Measured consequence on 2026-09-10:
+  `flagFootballActive` is **false**, so Myles gets no flag football athletics card at all, while
+  `flagTeamName` still resolves to `"Cowboys"` — correctly, but through
+  `parseFlagFootball`'s no-current-season fallback to `seasons[last]`, which also carries
+  `seasonLabel: "Spring 2026"` and `seasonRecord: "5-0"` along with it. Those stale values are
+  invisible only because the card is hidden; enabling the season without adding the season entry
+  would surface last spring's record as if it were current.
+  **This was deliberately not fixed** in the session that found it: there is no fall-2026
+  schedule, roster, opponent list, or `myTeamAbbr` anywhere in the repo or the docs, and
+  inventing them would be fabricating household data — the exact failure the Updater guard rails
+  exist to prevent. What it needs is the real schedule (Wade or the league), after which it is a
+  routine Updater task: add the season to `flag-football.json` with `teamName: "Cowboys"`, then
+  repoint the `flagFootball` window in `sports-config.json`. **Do that before Sept 20** if the
+  card is meant to be live for the first game. Note the ordering trap: repointing the window
+  without adding the season entry makes the fallback's stale Spring 2026 record visible.
 
 - **✓ RESOLVED Sept 8, 2026 — each day of the 72h window now gets its own prep item.** `digest/builder.js` derives the strip per day (`generateTasks(day.events, day.date, getSchoolStrip(day.date))`) instead of handing one today-strip to all three days. `generateTasks()` is unchanged: its contract was always "emit from the strip you are given", and it was the caller that gave it the wrong one — so its ~40 existing unit tests stand untouched rather than being rewritten to a new contract. **The entry this replaces was right about the mechanism and understated the damage in one direction.** It named the false positive (a stale row repeated on later days) but not the false negative: the same slot is single-valued, so Wednesday's stale baritone row *displaced* Friday's genuine Ophelia library-book row rather than merely joining it. Simulating all 290 mornings of the 2026-27 school year: **123 stale prep rows shipped per year** (58% of the 212 the email emitted) on **71 mornings (24.5%)**, and **177 genuinely-owed prep rows never appeared on their own day.** After the fix the year emits 266 rows, all correct — net **+54 rows/year**, about +0.19 per morning. **Blast radius is narrower than "the digest":** only `render/email.js` renders past `days[0]`; `render/dashboard.js` (frozen v1), `render/dashboard-v2.js` and `digest/nowNextSelector.js` all read `days[0]` alone, and `days[0]`'s task list is unchanged by construction — so the entire correction lands in the email's second and third day blocks and the frozen surface was neither touched nor at risk. Wording was deliberately left alone: the row reads `"⚠ Pack library book **this morning** (Ophelia — Media **today**)"` — two relative words, not one — and both are scoped by the `dayHeader(day.date)` the row sits under. The shipped email already does exactly this with the solo-evening row's `"tonight"` in future day blocks, so no new precedent is set. **The general gap the entry named — "nothing asserts task-list contents across the window" — is what the test closes**, generically: a 26-morning sweep in `digest/builder.test.js` compares every day of every window against an oracle derived straight from `getRotation()`, so it fails for any day-specific prep item on any wrong day in either direction. **Two cross-day interactions the fix creates were found by review and are now pinned rather than left incidental:** on all **25** school-day Music-eves Myles's baritone row shares an email with his library-book row (the same 25 the `schoolRotation.js` collision argument counts — but as Wednesday's item under Wednesday's header, not as the Tuesday-morning nudge that argument rejected; `tomorrowWarnings` stays free of instrument warnings and a test asserts it), and on **59** mornings a year the strip's "pack library book tonight" line coexists with the day-1 block's own "pack library book this morning" row (kept — different instructions at different times, and suppressing the day-1 row would restore the false negative). Neither is a regression, though they differ in shape: on a Music-eve the day-1 block pre-fix carried *today's* row instead, so (1) is a substitution; on an S2 morning neither child owes anything that day, so pre-fix the block carried nothing and (2) is genuinely newly-visible output on those 59 mornings. All four tests proved to have teeth against two mutants: the pre-fix today-strip (all four red) and a today-only guard, which kills the stale rows but keeps all 177 false negatives (all four red, the sweep and the Oct 21 pin failing on the false-negative assertion) — so the block discriminates between the fix and the tempting half-fix.
 
