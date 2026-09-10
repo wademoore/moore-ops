@@ -1,0 +1,716 @@
+{
+ "events": [
+  {
+   "id": "3pmtu8era4eu5ur8shcbfij94k",
+   "summary": "Flag Football: Week 1 — Meet & Greet",
+   "description": "Yorktown NFL FLAG Fall 2026 — Week 1: Meet & Greet (practice, no game).\n\n11:00 AM – 12:30 PM\nField: McReynolds Athletic Complex 4D\n\nMyles's team: Moore – Cowboys (league team id 8009182, program 5025209).\n\nWilliamsburg league merged into Yorktown league (Perfect Performance NOVA email, 8/17/26). All games and practices at McReynolds Athletic Complex. Season runs Sept 13 – Oct 25.\n\nWeek numbering follows the league site.\n\nWade is coaching the 5th/6th division.",
+   "location": "McReynolds Athletic Complex (4D), 412 Sportsway, Yorktown, VA 23692",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-13T11:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-13T12:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "h9mgk0rmsuogqrj904qk0g6f0k_20260913T150000Z",
+   "summary": "2nd Sundays (optional drop-in)",
+   "description": "Optional drop-in — never takes priority over a planned activity.",
+   "location": "Colonial Williamsburg",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-13T15:00:00Z",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-13T20:00:00Z",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Family"
+  },
+  {
+   "id": "9codo6mlfe41jikmvuaofk1570",
+   "summary": "🎺 Band — practice assignments start being recorded in book",
+   "description": "Mr. Lantz (Band Director) says practice assignments start being recorded in the band book the week of 9/14. Myles's Music/band day that week is Tue 9/15.\n\nFrom this point forward, every band class needs: baritone, band book, and 2 pencils. Music stand stays home for practice.\n\nAssembly rule: twist only — never push, pull, hit, or tap, and no tools. If he's forcing it, check the assembly videos:\nhttps://youtube.com/playlist?list=PLaZYWFoeHvWYx4RF2NVs9XJ_kHLx-RuWj\n\nEverything needs his first and last name on it — suitcase tag on the case, name inside the front cover of the band book.\n\nContact: Jamie Lantz, Band Director (Stonehouse, Norge, DJ Montague, Matoaka). Include Myles's full name, school, and teacher in any email.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "date": "2026-09-14"
+   },
+   "end": {
+    "date": "2026-09-15"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "0i9gqdc7uiihl0f0hpq926t1jg",
+   "summary": "Myles: Media (Centers)",
+   "description": "Day 2 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Library book day. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-14T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-14T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "iiodcd46673bopbka14l4bvo7s_20260914T220000Z",
+   "summary": "Myles: Sharks Practice - Warhill Turf 4",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-14T18:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-14T19:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "hja7ljuhuevnme53ddkpifvjj4",
+   "summary": "Myles: Music (Centers)",
+   "description": "Day 3 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Baritone needed. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-15T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-15T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "e93k85970bonq2dinv5pg49s4c",
+   "summary": "Myles: GK Training (primary day)",
+   "description": "Sharks Goalkeeper Training Program - Fall 2026. U9-U12 Boys group, Coach James Flynn.\n\nTuesday designated as Myles's main GK day per his team coach's recommendation. Same site as Ophelia's 757swim practice (5-6 PM, JCC Rec) - one parent can cover both.\n\nProgram runs Sept 8 - Nov 19. Attendance expectations email sent to Coach Flynn (protectthenet.50@gmail.com); awaiting reply. Cost included in club dues.",
+   "location": "JCC Rec Center, Field 1",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-15T17:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-15T18:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "7fq9tko38vs1j6uut4hrt0vu3s",
+   "summary": "Myles: PE1 (Centers)",
+   "description": "Day 4 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-16T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-16T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "o1ph1qd4dduq0l8ou6nrmcusog_20260916T214500Z",
+   "summary": "Myles: Sharks Practice - Warhill Grass 8",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-16T17:45:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-16T19:15:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "uh0r5f06q54rhfttt854auh61c",
+   "summary": "Myles: Art (Centers)",
+   "description": "Day 5 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-17T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-17T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "9177t1mk684k1qualm8javcmss",
+   "summary": "Myles: GK Training (optional drop-in)",
+   "description": "Sharks Goalkeeper Training Program - Fall 2026. U9-U12 Boys group, Coach James Flynn.\n\nOPTIONAL - attend only if coverage allows. Overlaps Ophelia's 757swim practice (5-6 PM, JCC Rec) at a different site, so this one requires splitting parents.\n\nProgram runs Sept 8 - Nov 19. Attendance expectations email sent to Coach Flynn (protectthenet.50@gmail.com); awaiting reply - if sessions turn out to be all-or-nothing rather than drop-in, revisit.",
+   "location": "Warhill Grass 13",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-17T17:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-17T18:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "9j0kp64t9l132hufrsvnp1cei4",
+   "summary": "Myles: Computer (Centers)",
+   "description": "Day 6 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-18T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-18T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "u30oachp7rlm2tjor1adn9vo6g",
+   "summary": "Sharks @ Beach FC Anderson Waves (Away)",
+   "description": "Match #644 — U11 Boys Sky Division\nBeach FC Anderson Waves (Home) vs Tidewater Sharks Premier White (Away)\nField: Hampton Roads Soccer Complex - HRSC #1\nAddress: 2276 Recreation Dr, Virginia Beach, VA 23456\nNote: Also a W&M Football home game day (vs Fordham) — check family calendar for conflicts.",
+   "location": "Hampton Roads Soccer Complex - HRSC #1, 2276 Recreation Dr, Virginia Beach, VA 23456",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-19T14:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-19T15:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "togv7r767h546spap4tt9ava3c",
+   "summary": "Flag Football: Week 2 — vs Langston-Ravens (Home)",
+   "description": "Yorktown NFL FLAG Fall 2026 — Week 2.\n\nPractice 11:00 AM – 12:00 PM, game 12:00 – 1:00 PM.\nOpponent: Langston - Ravens (league team id 8070749) — home designation\nField: McReynolds Athletic Complex 4B\n\nMyles's team: Moore – Cowboys (league team id 8009182, program 5025209).\n\nWilliamsburg league merged into Yorktown league (Perfect Performance NOVA email, 8/17/26). All games and practices at McReynolds Athletic Complex, so home/away is nominal — same drive either way. Season runs Sept 13 – Oct 25.\n\nWeek numbering follows the league site. League-listed time is the game start; practice is the hour before.\n\nWade is coaching the 5th/6th division.",
+   "location": "McReynolds Athletic Complex (4B), 412 Sportsway, Yorktown, VA 23692",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-20T11:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-20T13:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "utir1an6u4n88rup32jjms843o",
+   "summary": "Myles: PE2 (Centers)",
+   "description": "Day 1 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-21T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-21T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "iiodcd46673bopbka14l4bvo7s_20260921T220000Z",
+   "summary": "Myles: Sharks Practice - Warhill Turf 4",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-21T18:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-21T19:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "vhe3hjadfnspieoofi206p438k",
+   "summary": "Myles: Media (Centers)",
+   "description": "Day 2 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Library book day. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-22T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-22T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "vl6fvs90s51umh0f9o1ts3ds4o",
+   "summary": "Myles: Music (Centers)",
+   "description": "Day 3 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Baritone needed. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-23T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-23T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "o1ph1qd4dduq0l8ou6nrmcusog_20260923T214500Z",
+   "summary": "Myles: Sharks Practice - Warhill Grass 8",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-23T17:45:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-23T19:15:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "872bvt6prubom1mkv0j06u57a8",
+   "summary": "Myles: PE1 (Centers)",
+   "description": "Day 4 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Next school day is Mon Sep 28 — Fri Sep 25 is a PK-5 student holiday, so the cycle does not advance over it. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-24T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-24T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "2qb7jb5v30bppsstiqv44si39o",
+   "summary": "Sharks vs Carolina United (Home)",
+   "description": "Match #652 — U11 Boys Sky Division\nTidewater Sharks Premier White (Home) vs Carolina United (CUSA) Lightning - U11 B (Daniels)\nField: Blayton Elem School - BLAY 3\nAddress: 800 Jolly Pond Rd, Williamsburg, VA 23188",
+   "location": "Blayton Elem School - BLAY 3, 800 Jolly Pond Rd, Williamsburg, VA 23188",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-26T11:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-26T12:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "3cu8btp8ufvr0jlmhggsf58kvg",
+   "summary": "Flag Football: Week 3 — vs Henze/Pfauth-Bears (Away)",
+   "description": "Yorktown NFL FLAG Fall 2026 — Week 3.\n\nPractice 1:00 – 2:00 PM, game 2:00 – 3:00 PM.\nOpponent: Henze/Pfauth - Bears (league team id 8113277) — away designation\nField: McReynolds Athletic Complex 4A\n\nMyles's team: Moore – Cowboys (league team id 8009182, program 5025209).\n\nWilliamsburg league merged into Yorktown league (Perfect Performance NOVA email, 8/17/26). All games and practices at McReynolds Athletic Complex, so home/away is nominal — same drive either way. Season runs Sept 13 – Oct 25.\n\nWeek numbering follows the league site. League-listed time is the game start; practice is the hour before.\n\nWade is coaching the 5th/6th division.",
+   "location": "McReynolds Athletic Complex (4A), 412 Sportsway, Yorktown, VA 23692",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-27T13:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-27T15:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "a3prra91m3a09lsvonvdcmqkuk",
+   "summary": "Myles: Art (Centers)",
+   "description": "Day 5 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-28T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-28T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "iiodcd46673bopbka14l4bvo7s_20260928T220000Z",
+   "summary": "Myles: Sharks Practice - Warhill Turf 4",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-28T18:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-28T19:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "dlig18hctutikns8ock1d2sndk",
+   "summary": "Myles: Computer (Centers)",
+   "description": "Day 6 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-29T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-29T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "kdlv9hj6ma6lttsd0f8eg2q1to",
+   "summary": "Myles: PE2 (Centers)",
+   "description": "Day 1 of 6-day rotation. Anchor Aug 24, 2026 = Day 1. Last entered day — extend from Oct 1. Time slot is a placeholder.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-30T11:05:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-30T11:50:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "o1ph1qd4dduq0l8ou6nrmcusog_20260930T214500Z",
+   "summary": "Myles: Sharks Practice - Warhill Grass 8",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-09-30T17:45:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-09-30T19:15:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "pnfu8iicdaokqfr4eehjrogdcc",
+   "summary": "[Assignment] Reading — Finish Passport #1 novel",
+   "description": "Internal family milestone (not a school due date) — book finished by Oct 1 to leave two weeks for the Passport #1 write-up, due Oct 16.\n\nBook must be 5th grade reading level or above. No graphic novels.\n\nOpen item: confirm the book already ordered meets the grade-level threshold — verify with Mrs. Kline (KayDee.Kline@wjccschools.org) if unsure.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "date": "2026-10-01"
+   },
+   "end": {
+    "date": "2026-10-02"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "p0dcimauj0fbv2626vb0tb6nhc",
+   "summary": "Flag Football: Week 4 — vs Schmidt-Broncos (Home)",
+   "description": "Yorktown NFL FLAG Fall 2026 — Week 4.\n\nPractice 1:00 – 2:00 PM, game 2:00 – 3:00 PM.\nOpponent: Schmidt - Broncos (league team id 8069066) — home designation\nField: McReynolds Athletic Complex 3B\n\nMyles's team: Moore – Cowboys (league team id 8009182, program 5025209).\n\nWilliamsburg league merged into Yorktown league (Perfect Performance NOVA email, 8/17/26). All games and practices at McReynolds Athletic Complex, so home/away is nominal — same drive either way. Season runs Sept 13 – Oct 25.\n\nWeek numbering follows the league site. League-listed time is the game start; practice is the hour before.\n\nWade is coaching the 5th/6th division.",
+   "location": "McReynolds Athletic Complex (3B), 412 Sportsway, Yorktown, VA 23692",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-04T13:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-04T15:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "iiodcd46673bopbka14l4bvo7s_20261005T220000Z",
+   "summary": "Myles: Sharks Practice - Warhill Turf 4",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-05T18:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-05T19:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "o1ph1qd4dduq0l8ou6nrmcusog_20261007T214500Z",
+   "summary": "Myles: Sharks Practice - Warhill Grass 8",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-07T17:45:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-07T19:15:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "0l15jtbmplss92pdsd897tlopc",
+   "summary": "Flag Football: Week 5 — vs Baker/In-Texans (Away)",
+   "description": "Yorktown NFL FLAG Fall 2026 — Week 5.\n\nPractice 11:00 AM – 12:00 PM, game 12:00 – 1:00 PM.\nOpponent: Baker/In - Texans (league team id 8108154) — away designation\nField: McReynolds Athletic Complex 3A\n\nMyles's team: Moore – Cowboys (league team id 8009182, program 5025209).\n\nWilliamsburg league merged into Yorktown league (Perfect Performance NOVA email, 8/17/26). All games and practices at McReynolds Athletic Complex, so home/away is nominal — same drive either way. Season runs Sept 13 – Oct 25.\n\nWeek numbering follows the league site. League-listed time is the game start; practice is the hour before.\n\nWade is coaching the 5th/6th division.",
+   "location": "McReynolds Athletic Complex (3A), 412 Sportsway, Yorktown, VA 23692",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-11T11:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-11T13:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "h9mgk0rmsuogqrj904qk0g6f0k_20261011T150000Z",
+   "summary": "2nd Sundays (optional drop-in)",
+   "description": "Optional drop-in — never takes priority over a planned activity.",
+   "location": "Colonial Williamsburg",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-11T15:00:00Z",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-11T20:00:00Z",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Family"
+  },
+  {
+   "id": "iiodcd46673bopbka14l4bvo7s_20261012T220000Z",
+   "summary": "Myles: Sharks Practice - Warhill Turf 4",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-12T18:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-12T19:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "o1ph1qd4dduq0l8ou6nrmcusog_20261014T214500Z",
+   "summary": "Myles: Sharks Practice - Warhill Grass 8",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-14T17:45:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-14T19:15:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "lt81cslj20hm160jgfn6oqrfck",
+   "summary": "[Project] Reading — Passport #1 (Mrs. Kline)",
+   "description": "First Reading Passport entry due — Gifted Language Arts (Mrs. Kline).\n\nThe Reading Passport replaces the weekly reading log: it's a yearlong plan, student picks their own novels, completed AT HOME. Should be coming home often.\n\nRequirements:\n- Novel must be 5th grade reading level or above (advanced LA class)\n- Graphic novels NOT allowed for this assignment\n- Directions and all due dates live in a separate Canvas module\n\nNote: no elementary laptops come home under the new WJCC policy — Myles can log into Canvas/Office 365 from a home computer to show his work.\n\nSource: Kay Dee Kline email, \"Gifted 5th Grade Update,\" Sept 3 2026.",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "date": "2026-10-16"
+   },
+   "end": {
+    "date": "2026-10-17"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "tbs6lb7ra8lss8v17k7nffem2k",
+   "summary": "Sharks vs VA Rush (Home)",
+   "description": "Match #658 — U11 Boys Sky Division\nTidewater Sharks Premier White (Home) vs VA Rush Soccer Club U11B Coastal Strikers\nField: Blayton Elem School - BLAY 3\nAddress: 800 Jolly Pond Rd, Williamsburg, VA 23188\nNote: Double-header day — second game at 1:30 PM, same field.",
+   "location": "Blayton Elem School - BLAY 3, 800 Jolly Pond Rd, Williamsburg, VA 23188",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-17T10:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-17T11:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "o7n53qbgq2frckjf5hfdfmghqc",
+   "summary": "Sharks vs Chesapeake SC Galaxy Gold (Home)",
+   "description": "Match #635 — U11 Boys Sky Division\nTidewater Sharks Premier White (Home) vs Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)\nField: Blayton Elem School - BLAY 3\nAddress: 800 Jolly Pond Rd, Williamsburg, VA 23188\nNote: Double-header day — first game at 10:30 AM, same field.",
+   "location": "Blayton Elem School - BLAY 3, 800 Jolly Pond Rd, Williamsburg, VA 23188",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-17T13:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-17T14:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "1dnr61u5e4qjdobnesefnaue30",
+   "summary": "Flag Football: Week 6 — vs Herring-Panthers (Home)",
+   "description": "Yorktown NFL FLAG Fall 2026 — Week 6.\n\nPractice 1:00 – 2:00 PM, game 2:00 – 3:00 PM.\nOpponent: Herring - Panthers (league team id 8088488) — home designation\nField: McReynolds Athletic Complex 3B\n\nMyles's team: Moore – Cowboys (league team id 8009182, program 5025209).\n\nWilliamsburg league merged into Yorktown league (Perfect Performance NOVA email, 8/17/26). All games and practices at McReynolds Athletic Complex, so home/away is nominal — same drive either way.\n\nLast week published as of Sept 10. The 8/17 league email puts the season end at Oct 25, so more may still be posted.\n\nWeek numbering follows the league site. League-listed time is the game start; practice is the hour before.\n\nWade is coaching the 5th/6th division.",
+   "location": "McReynolds Athletic Complex (3B), 412 Sportsway, Yorktown, VA 23692",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-18T13:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-18T15:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "iiodcd46673bopbka14l4bvo7s_20261019T220000Z",
+   "summary": "Myles: Sharks Practice - Warhill Turf 4",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-19T18:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-19T19:30:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "a85av1i3pmmlgugtoj96vbbj38",
+   "summary": null,
+   "description": null,
+   "location": "Joosse Family Orthodontics",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-21T16:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-21T17:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "o1ph1qd4dduq0l8ou6nrmcusog_20261021T214500Z",
+   "summary": "Myles: Sharks Practice - Warhill Grass 8",
+   "description": "Tidewater Sharks U11 Premier White practice",
+   "location": null,
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-21T17:45:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-21T19:15:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "6qgu4g66lai1qetom9v38o2stc",
+   "summary": "Sharks @ Chesapeake United Reapers (Away)",
+   "description": "Match #667 — U11 Boys Sky Division\nChesapeake United SC 2015/2016B Reapers (Home) vs Tidewater Sharks Premier White (Away)\nField: Centerville Soccer Complex - 9B 9v9 CUSC\nAddress: 1857 Centerville Turnpike S, Chesapeake, VA 23322",
+   "location": "Centerville Soccer Complex - 9B 9v9 CUSC, 1857 Centerville Turnpike S, Chesapeake, VA 23322",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-24T11:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-24T12:00:00-04:00",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Myles"
+  },
+  {
+   "id": "7vkq0tr16p265bg6eh7b1119gc",
+   "summary": "W&M Football — vs Georgetown, 3:30 PM (Homecoming)",
+   "description": "Kickoff vs Georgetown. Homecoming game.",
+   "location": "Walter J. Zable Stadium at Cary Field, Williamsburg, VA",
+   "status": "confirmed",
+   "start": {
+    "dateTime": "2026-10-24T19:30:00Z",
+    "timeZone": "America/New_York"
+   },
+   "end": {
+    "dateTime": "2026-10-24T23:00:00Z",
+    "timeZone": "America/New_York"
+   },
+   "calendarName": "Family"
+  },
+  {
+   "id": "99g15upvd8519mstgs6cnd0cdo",
+   "summary": "Flag Football: Week 6 — Practice + Game / Playoffs (Yorktown)",
+   "description": "Yorktown NFL FLAG Fall 2026 — Week 6: 1 hour practice + 1 hour game, or Playoffs for applicable divisions. Final week of the regular season.\n\nWilliamsburg league merged into Yorktown league (Perfect Performance NOVA email, 8/17/26). All games and practices at McReynolds Athletic Complex. Season now follows the Yorktown calendar: Sept 13 – Oct 25, one week earlier than the previous Williamsburg schedule.\n\nWade is coaching the 5th/6th division.\n\nNote: falls the day after W&M Homecoming (Oct 24) — heavy back-to-back weekend.",
+   "location": "McReynolds Athletic Complex, 412 Sportsway, Yorktown, VA 23692",
+   "status": "confirmed",
+   "start": {
+    "date": "2026-10-25"
+   },
+   "end": {
+    "date": "2026-10-26"
+   },
+   "calendarName": "Myles"
+  }
+ ]
+}
