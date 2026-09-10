@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2344+ passing with a browser
+- Run npm test after changes — must stay at 2347+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -607,7 +607,37 @@ hazard the code comment beside it had already reasoned about correctly. **Readin
 allowlist for what it refuses, and never for what its entries can do, is how a "read-only"
 list acquires a writer.**
 
-Three SHOULD FIX items from the same round were taken. The repo-relative bound was enforced
+**A second Reviewer round returned FAIL too, on two more of exactly that class, and it
+was right again.** (1) `sed` was on the list as `sed -n`, with a comment explaining that
+`-n` is the printing form and `-i` is refused separately. Both true; both about the wrong
+axis. **sed's danger is its SCRIPT OPERAND**: `sed -n 'w /tmp/pwned' FILE` writes the file
+and `sed -n '1e touch FILE'` executes a shell command, and both were run. GNU ships
+`--sandbox` precisely to disable `e`/`r`/`w`, which is the tell that these are a known
+execution surface rather than a corner case. `sed` is absent now; requiring `--sandbox` was
+considered and rejected, because it would make this guard's safety depend on another
+program honouring a flag, and a sed without it would silently be back to the unbounded
+form. (2) **`rg --pre=COMMAND` executes an arbitrary program**, once per searched path —
+proved by running it, where the preprocessor's output replaced the file's contents. `rg`
+was on revision 1's list too, so that one is inherited rather than introduced here.
+
+Three further findings from that round, each a claim that was wider than the code: **the
+guard said the code it runs is "version-controlled"** while permitting `node_modules`,
+which is inside the repository, gitignored, and full of third-party CLIs that write through
+positional operands (`playwright screenshot <url> <outfile>`); **the `/`-root test ran
+before backslash normalization**, so a Windows UNC path was neither `/`-rooted nor
+drive-lettered nor `..`-bearing and passed — harmless on Linux, an absolute escape on the
+machine this repository's hooks were ported for; and `sort --compress-program` and
+`file -C` are two more flag-reachable launchers. All fixed, each with a paired case.
+
+**Two blanket sentences were deleted rather than softened**, because both were false as
+written: the reader list's "every binary here is a reporter: none of them writes without a
+redirect" (`rg --pre` was on that list), and the adversarial document's "no command on the
+allowlist is *itself* a write". What replaces them is narrow and checkable: nothing on the
+list writes through a bare positional operand or a flag, and the flag-reachable ones are
+pinned by name. **A blanket claim about a list nobody re-derives is worse than no claim** —
+it is what let two rounds of review find a writer sitting in plain sight.
+
+Three SHOULD FIX items from the first round were taken. The repo-relative bound was enforced
 on the `node <script>` route and **not** on `node --test`, so `node --test /tmp/x.test.js`
 was allowed while the change claimed "repo-relative paths only" — a widening whose paired
 refusal tested a different property than the one being claimed. `npm --prefix` redirects the
@@ -618,14 +648,15 @@ time, because `gh pr merge`, `gh pr comment` and `gh pr create` share that names
 `gh api` left out entirely.
 
 **Guards proved by mutation, not asserted:** `node scratch/reviewer-allowlist/mutation-check.mjs`
-→ **24/24 proven**, green control, plus two self-tests — a syntax error in the guard, and a
+→ **29/29 proven**, green control, plus two self-tests — a syntax error in the guard, and a
 run that emits no summary at all. The second matters on its own: a hang and a clean pass
 parse identically, so without it the harness's own "inconclusive" branch would be unproven.
-Three rows were wrong across the two runs and are worth recording, because all three are the
-same error. One `find` string had the wrong indentation and silently applied zero times (the
-harness caught it, which is what the occurrence assertion is for). One expectation named the
-`sed -i` case, which the allowlist refuses *before* the scoped rule is reached. And after the
-`node --test` bound was added, the write-flag expectation named
+Four harness rows were wrong across the three runs and are worth recording, because all four
+are the same error. Two `find` strings went stale against code they targeted and silently applied
+zero times — once from an indentation mismatch, once because `isRepoRelativePath` was rewritten
+under them (the harness caught both, which is what the occurrence assertion is for). One
+expectation named the `sed -i` case, which the allowlist refuses *before* the scoped rule is
+reached. And after the `node --test` bound was added, the write-flag expectation named
 `--test-reporter-destination`, which that bound now refuses on its own — so the mutation was
 being scored on a case another rule owns. **An expectation that names a double-guarded case
 scores the wrong rule and reads as proof.** Each is now attributed to the rule that actually
@@ -1994,7 +2025,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2344 | **2344** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2347 | **2347** | **0** | **0** |
 
 Measured on `claude/reviewer-shell-allowlist-q8e57z`, whose merge base with `main` is
 **`ada361f`** (PR #57). **That merge base was re-measured in this session, after
@@ -2002,11 +2033,11 @@ Measured on `claude/reviewer-shell-allowlist-q8e57z`, whose merge base with `mai
 which is also the figure PR #58 records against the same commit, from a different session.
 Re-measure anyway; the run costs less than the correction does.
 
-This change adds **+102**, all in one new file:
+This change adds **+105**, all in one new file:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `test/hooks/reviewer-allowlist.test.js` (new) | — | 102 | +102 |
+| `test/hooks/reviewer-allowlist.test.js` (new) | — | 105 | +105 |
 
 The file is the behavioural matrix for **revision 2 of `guard-readonly.mjs`, which is not
 installed** — `.claude/hooks/` is deny-listed, so the guard ships as paste-ready content in
@@ -2020,11 +2051,11 @@ section exists to prevent. The new file needs no browser and contributes 0 to th
 no-browser failure set either way.
 
 Companion harness, **not** part of `npm test` and run on demand:
-`node scratch/reviewer-allowlist/mutation-check.mjs` → 24 mutations, 24/24 proven, green
+`node scratch/reviewer-allowlist/mutation-check.mjs` → 29 mutations, 29/29 proven, green
 control, plus two self-tests (a syntax error in the guard, and a run that emits no summary
 at all — a hang and a clean pass parse identically, so the second is what makes the
 harness's own "inconclusive" branch real rather than decorative).
-`node scratch/reviewer-allowlist/adversarial-test.mjs` → 39/39, and takes `--installed` to
+`node scratch/reviewer-allowlist/adversarial-test.mjs` → 49/49, and takes `--installed` to
 drive `.claude/hooks/` after the paste.
 
 Exact invocation:
@@ -2033,7 +2064,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2344+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2347+ with no failures once a browser resolves.**
 
 ### Previous baseline — measured Sept 9, 2026 on the Reviewer-gate branch
 
@@ -2590,13 +2621,13 @@ method, so they chain directly to the 988 pre-change number above.
   Debugger's core command. Network documentation is granted — on install — as `WebFetch`/`WebSearch` in the
   Reviewer's frontmatter, never as `curl`, whose flag surface is a write and upload
   primitive.
-  **Guards proved by mutation rather than asserted:** 24 mutations, **24/24 proven**, green
-  control, plus two self-tests. Two rows were wrong on the first run and are recorded rather
+  **Guards proved by mutation rather than asserted:** 29 mutations, **29/29 proven**, green
+  control, plus two self-tests. Harness rows were wrong on three separate occasions and are recorded rather
   than quietly fixed: one `find` string had the wrong indentation and applied zero times (the
   occurrence assertion caught it, which is what it is for), and one expectation named the
   `sed -i` case — which the allowlist refuses *before* the scoped rule is reached, so that
   rule is defence in depth with nothing of its own to prove, and the test now says so instead
-  of taking credit for it. Tests **2242 → 2344**, all passing with a browser; the merge base
+  of taking credit for it. Tests **2242 → 2347**, all passing with a browser; the merge base
   was re-measured in-session rather than taken from this file.
 
 - **Mobile companion — local implementation (Sept 9, 2026):**

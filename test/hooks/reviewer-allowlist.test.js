@@ -130,9 +130,10 @@ const WIDENINGS = [
     "grep -E 'renderDashboardV2|renderAthletics' render/dashboard-v2.js",
     "grep -E 'x' f.js | tee /tmp/pwned"],
 
-  ['a line range without opening the whole file',
-    'sed -n 1,40p CLAUDE.md',
-    'sed -i s/a/b/ CLAUDE.md'],
+  // A `sed -n RANGE p` widening stood here for two rounds and was WITHDRAWN, not
+  // repaired: review showed sed's script operand writes files and executes shell
+  // commands regardless of -n. See the dedicated sed case below. The Read tool
+  // takes an offset and a limit, which is what this was wanted for.
 
   ['a hash, for a byte-identity claim',
     'sha256sum render/dashboard-v2.js',
@@ -320,6 +321,38 @@ test('binaries that write through a positional operand are not on the allowlist'
   assert.ok(blocked(next('tree')), 'tree is absent entirely');
 });
 
+// sed's danger is its SCRIPT OPERAND, not its flags. Two drafts admitted `sed -n`
+// on the reasoning that -n is the printing form and -i is refused separately -
+// both true, both irrelevant. Confirmed by running them: `sed -n 'w FILE'` wrote a
+// file and `sed -n '1e touch FILE'` executed a shell command, under -n.
+test('sed is not on the allowlist, because its script operand writes and executes', () => {
+  assert.ok(blocked(next("sed -n 'w /tmp/pwned' CLAUDE.md")), "the w command writes a file");
+  assert.ok(blocked(next("sed -n '1e touch /tmp/pwned' CLAUDE.md")), 'the e command executes a shell command');
+  assert.ok(blocked(next("sed -n 's/a/b/w /tmp/pwned' CLAUDE.md")), 'the s///w form writes too');
+  assert.ok(blocked(next('sed -n 1,40p CLAUDE.md')), 'the innocent form is absent as well, which is the point');
+  assert.ok(blocked(next('sed --version')), 'and its version probe, since it cannot be run');
+});
+
+// rg --pre names a PROGRAM that ripgrep executes once per searched path. Proved
+// by running it: `rg --pre ./pre.sh PATTERN victim` ran pre.sh and substituted
+// its output. rg was on revision 1's list too, so this is an inherited hole.
+test('ripgrep cannot be handed an external program to execute', () => {
+  assert.ok(allowed(next("rg -n 'artifactVersion' dashboard-artifact")), 'ordinary ripgrep still works');
+  assert.ok(blocked(next('rg --pre ./evil.sh pattern CLAUDE.md')), '--pre executes a program');
+  assert.ok(blocked(next('rg --pre=./evil.sh pattern CLAUDE.md')), 'the = form too');
+  assert.ok(blocked(next('rg --hostname-bin ./evil.sh pattern CLAUDE.md')), '--hostname-bin executes a program');
+});
+
+// Two more of the same class, found by auditing the rest of the reader list the
+// way `uniq` was audited.
+test('the remaining reader-list binaries cannot be turned into writers or launchers', () => {
+  assert.ok(allowed(next('sort package.json')), 'ordinary sort still works');
+  assert.ok(blocked(next('sort --compress-program=/bin/sh package.json')), 'sort runs its compress program');
+  assert.ok(allowed(next('file package.json')), 'ordinary file still works');
+  assert.ok(blocked(next('file -C -m /tmp/magic')), 'file -C writes a compiled magic file');
+  assert.ok(blocked(next('file --compile -m /tmp/magic')), 'the long form too');
+});
+
 test('binaries that write the system clock are not on the allowlist', () => {
   assert.ok(blocked(next('date --set=2020-01-01')), 'date --set moves the system clock');
   assert.ok(blocked(next('date -s 2020-01-01')), 'the short form too');
@@ -340,6 +373,29 @@ test('both node routes are bounded to paths inside the repository', () => {
   assert.ok(blocked(next('node /tmp/evil.mjs')), 'the same bound on the script route');
 });
 
+// "Inside the repository" and "committed" are different sets, and only the second
+// supports the guard's claim that the code it runs is reviewable. node_modules is
+// gitignored and full of third-party CLIs that write through positional operands.
+test('node_modules is not a repo-relative path for this purpose', () => {
+  assert.ok(blocked(next('node node_modules/playwright/cli.js screenshot https://x /tmp/pwned.png')),
+    'a gitignored third-party CLI writes an arbitrary absolute path');
+  assert.ok(blocked(next('node node_modules/.bin/anything.js')), 'anywhere under node_modules');
+  assert.ok(blocked(next('node --test node_modules/')), 'on the --test route as well');
+  assert.ok(allowed(next('node scratch/reviewer-allowlist/mutation-check.mjs')), 'committed paths are unaffected');
+});
+
+// The `/`-root test used to run on the RAW token while only the `..` scan
+// normalized backslashes, so a Windows UNC or root path was neither `/`-rooted
+// nor drive-lettered nor `..`-bearing and passed. Backslash is refused outside
+// quotes, so the smuggling form is a quoted token.
+test('a Windows-rooted path is not mistaken for a relative one', () => {
+  assert.ok(blocked(next("node '\\\\server\\share\\evil.js'")), 'a UNC path');
+  assert.ok(blocked(next("node '\\Windows\\evil.js'")), 'a backslash-rooted path');
+  assert.ok(blocked(next("node 'C:\\evil.js'")), 'a drive-lettered path');
+  assert.ok(blocked(next("node --test '\\\\server\\share'")), 'on the --test route as well');
+  assert.ok(allowed(next("node 'scratch/reviewer-allowlist/mutation-check.mjs'")), 'a quoted repo path still works');
+});
+
 // npm --prefix runs the script against a DIFFERENT package root, so `npm test
 // --prefix /elsewhere` is not this repository's suite. Revision 1's `$` anchor
 // prevented this incidentally; bounding the arguments removed that anchor, so
@@ -349,6 +405,11 @@ test('npm cannot be redirected to another package root', () => {
   assert.ok(blocked(next('npm test --prefix /elsewhere')), '--prefix');
   assert.ok(blocked(next('npm run build:dashboard-artifact -C /elsewhere')), '-C');
   assert.ok(blocked(next('npm test --global')), '--global');
+  assert.ok(blocked(next('npm run build:dashboard-artifact --workspaces')), '--workspaces, the plural form');
+  // Bounded to the text before a `--` passthrough: after it, -C/-g/-w belong to
+  // the called script, and blocking those would be a false block.
+  assert.ok(allowed(next('npm test -- test/hooks/reviewer-allowlist.test.js -C')),
+    'a passthrough argument that merely looks like an npm flag is not npm’s');
 });
 
 // A short flag's meaning depends on the binary, so these cannot be global:

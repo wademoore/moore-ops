@@ -42,10 +42,12 @@ So the net effect is **wider reach and narrower capability**.
 
 ---
 
-## The first draft of this change failed its own review — read this before trusting it
+## Two drafts of this change failed review — read this before trusting it
 
-The Reviewer was run over this change and returned **FAIL** with two BLOCKING
-findings, both correct, both confirmed by running them:
+The Reviewer was run over this change twice and returned **FAIL** both times, on
+findings that were correct both times and confirmed by running them.
+
+**Round 1** — two BLOCKING:
 
 * **`uniq`, `xxd` and `tree` were on the reader list, and all three write files.**
   `uniq INPUT OUTPUT` writes through a bare **positional** operand, so no flag rule
@@ -66,10 +68,31 @@ package root; and the Reviewer still could not complete its **own** checklist it
 7, so a short list of `gh` read verbs is enumerated (verbs one at a time, because
 `gh pr merge` and `gh pr create` share that namespace; `gh api` is left out).
 
-**The transferable part:** `uniq` sat one token away from `sort` in the same
-alternation, whose `-o` hazard the comment beside it had already reasoned about
-correctly. Reading an allowlist for what it refuses, and never for what its entries
-can *do*, is how a "read-only" list acquires a writer.
+**Round 2** — two more BLOCKING, of the same class:
+
+* **`sed` writes AND executes through its script operand, and `-n` disables
+  neither.** `sed -n 'w /tmp/pwned' FILE` wrote the file; `sed -n '1e touch FILE'`
+  ran the command. Both were run. GNU ships `--sandbox` precisely to disable
+  `e`/`r`/`w`, which is the tell that this is a known execution surface. `sed` is
+  now absent entirely; requiring `--sandbox` was considered and rejected, because
+  it would make this guard's safety depend on another program honouring a flag.
+* **`rg --pre=COMMAND` executes an arbitrary program**, once per searched path.
+  Run for real: `rg --pre ./pre.sh PATTERN victim` ran the script and substituted
+  its output. `rg` was on revision 1's list too, so this closes an inherited hole.
+
+Round 2 also found that `node_modules` is inside the repository but **not
+committed** — so `node node_modules/playwright/cli.js screenshot <url> <outfile>`
+wrote an arbitrary absolute path while the guard claimed the code it runs is
+version-controlled — plus `sort --compress-program`, `file -C`, and a Windows UNC
+path that slipped past a `/`-root test running before backslash normalization.
+
+**The transferable part, which both rounds taught in the same shape:** `uniq` sat
+one token from `sort` in the same alternation, whose `-o` hazard the comment beside
+it had already reasoned about correctly; `sed` carried a comment explaining why
+`-n` made it safe, which was true about flags and irrelevant to the actual danger.
+Reading an allowlist for what it refuses, and never for what its entries can *do*,
+is how a "read-only" list acquires a writer — and a comment reasoning about the
+wrong axis reads exactly like one reasoning about the right one.
 
 ---
 
@@ -117,7 +140,7 @@ node --test test/hooks/reviewer-allowlist.test.js
 node scratch/reviewer-allowlist/adversarial-test.mjs
 ```
 
-Expect `# pass 102 / # fail 0` and `39/39 steps behaved as expected.`
+Expect `# pass 105 / # fail 0` and `49/49 steps behaved as expected.`
 
 Optionally, the harness that proves the matrix has teeth (about six minutes):
 
@@ -125,7 +148,7 @@ Optionally, the harness that proves the matrix has teeth (about six minutes):
 node scratch/reviewer-allowlist/mutation-check.mjs
 ```
 
-Expect `24/24 mutations proven`.
+Expect `29/29 mutations proven`.
 
 ---
 
@@ -159,9 +182,9 @@ node scratch/reviewer-allowlist/adversarial-test.mjs --installed
 | what to expect | why |
 |---|---|
 | `guard-readonly.test.js` — 26 pass, unchanged | it drives the **installed** copy. Revision 2 was designed so that not one of its cases changes verdict, and the parity section of the new matrix restates every one of them and asserts exactly that against revision 2 — so this is a confirmation, not a hope. If it goes red, the paste is wrong |
-| `reviewer-allowlist.test.js` — 102 pass | its last case is dormant until install and then asserts the installed hook is **byte-identical** to the reviewed copy, so a stray edit during the paste cannot drift them apart silently |
+| `reviewer-allowlist.test.js` — 105 pass | its last case is dormant until install and then asserts the installed hook is **byte-identical** to the reviewed copy, so a stray edit during the paste cannot drift them apart silently |
 | `enforcement-wiring.test.js` — 7 pass | no BOM, hooks still wired, frontmatter still declares the role argument |
-| `adversarial-test.mjs --installed` — 39/39 | the `--installed` flag is the whole point: before the paste it drives `scratch/`, after it drives `.claude/hooks/` |
+| `adversarial-test.mjs --installed` — 49/49 | the `--installed` flag is the whole point: before the paste it drives `scratch/`, after it drives `.claude/hooks/` |
 
 Then the full suite:
 
@@ -169,7 +192,7 @@ Then the full suite:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-Expect `# pass 2344 / # fail 0` (2242 at the merge base, +102 from the new matrix).
+Expect `# pass 2347 / # fail 0` (2242 at the merge base, +105 from the new matrix).
 
 ---
 

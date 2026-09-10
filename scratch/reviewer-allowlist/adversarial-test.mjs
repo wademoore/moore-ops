@@ -107,11 +107,29 @@ show('Confirming a pull request exists — checklist item 7, which no revision a
 show('The write verb one token away in the same namespace.', 'BLOCKS', 'gh pr merge 58');
 show('A read verb carrying a write flag.', 'BLOCKS', 'gh pr view 58 -X POST');
 
-console.log('--- E. ordinary write attempts, refused before and after --------------------\n');
+console.log('--- E. writers the SECOND draft still let in, found in the next round -------\n');
+
+show('sed writes through its SCRIPT operand. -n does not disable it.', 'BLOCKS',
+  "sed -n 'w /tmp/pwned' CLAUDE.md");
+show('sed executes a shell command through its script operand, also under -n.', 'BLOCKS',
+  "sed -n '1e touch /tmp/pwned' CLAUDE.md");
+show('So sed is absent entirely, innocent form and all.', 'BLOCKS', 'sed -n 1,40p CLAUDE.md');
+show('ripgrep runs --pre once per searched path. Proved by running it.', 'BLOCKS',
+  'rg --pre ./evil.sh pattern CLAUDE.md');
+show('Ordinary ripgrep is untouched.', 'ALLOWS', "rg -n 'artifactVersion' dashboard-artifact");
+show('sort runs its compress program on spilled temp files.', 'BLOCKS',
+  'sort --compress-program=/bin/sh package.json');
+show('file -C writes a compiled magic file.', 'BLOCKS', 'file -C -m /tmp/magic');
+show('node_modules is inside the repo but is NOT committed, and ships CLIs that write.', 'BLOCKS',
+  'node node_modules/playwright/cli.js screenshot https://x /tmp/pwned.png');
+show('A Windows UNC path is not a relative path.', 'BLOCKS', "node '\\\\server\\share\\evil.js'");
+
+console.log('--- F. ordinary write attempts, refused before and after --------------------\n');
 
 show('Delete files.', 'BLOCKS', 'rm -rf render');
 show('Redirect into a file.', 'BLOCKS', 'printf x > CLAUDE.md');
 show('Edit in place.', 'BLOCKS', 'sed -i s/PASS/FAIL/ CLAUDE.md');
+show('Overwrite through a positional operand.', 'BLOCKS', 'uniq CLAUDE.md package.json');
 show('Write through sort.', 'BLOCKS', 'sort -o /tmp/pwned package.json');
 show('Hand git an external command as its pager.', 'BLOCKS', 'git -c core.pager=touch log');
 show('Commit.', 'BLOCKS', 'git commit -m "fixed it myself"');
@@ -120,7 +138,7 @@ show('Change configuration.', 'BLOCKS', 'git config user.email attacker@example.
 show('Install a dependency.', 'BLOCKS', 'npm install left-pad');
 show('Execute a string.', 'BLOCKS', 'node -e "require(\'fs\').writeFileSync(\'/tmp/pwned\',\'x\')"');
 
-console.log('--- F. the two roles stay distinct, and the main thread stays unrestricted --\n');
+console.log('--- G. the two roles stay distinct, and the main thread stays unrestricted --\n');
 
 show('The Debugger keeps node -e; that is its documented core capability.', 'ALLOWS',
   'node -e 1', 'debugger');

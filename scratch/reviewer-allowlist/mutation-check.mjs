@@ -128,8 +128,8 @@ const MUTATIONS = [
     [`${REFUSED}the evidence script under review`, 'both node routes are bounded']],
 
   ['.. escapes accepted in a script path',
-    "  return !t.replace(/\\\\/g, '/').split('/').includes('..');",
-    '  return true;',
+    "  if (segments.includes('..')) return false;",
+    '',
     [`${REFUSED}a committed skill script`, 'both node routes are bounded']],
 
   // The defect this row pins was found in review: the repo-relative bound was
@@ -147,6 +147,35 @@ const MUTATIONS = [
     'diff|cmp|od|stat|file|basename',
     'diff|cmp|od|xxd|uniq|tree|date|stat|file|basename',
     ['positional operand are not on the allowlist', 'write the system clock are not on the allowlist']],
+
+  // Round 2 found four more of the B1 class. `sed -n 'w FILE'` writes and
+  // `sed -n '1e CMD'` executes, both under -n, so no flag rule could see either;
+  // `rg --pre` runs an arbitrary program once per searched path; and a Windows
+  // UNC path defeated a `/`-root test that ran before backslash normalization.
+  ['sed re-admitted in its "printing" form',
+    '  // `sed` IS DELIBERATELY ABSENT',
+    '  re(String.raw`sed\\s+-n${ARGS}`),\n  // `sed` IS DELIBERATELY ABSENT',
+    ['sed is not on the allowlist']],
+
+  ['rg handed an external program to execute',
+    "  [/^rg\\b[\\s\\S]*(?:^|\\s)--(?:pre|pre-glob|hostname-bin)(?:[=\\s]|$)/, 'rg --pre / --hostname-bin executes an external program'],",
+    '',
+    ['ripgrep cannot be handed an external program']],
+
+  ['sort --compress-program and file -C re-admitted',
+    "  [/^sort\\b[\\s\\S]*(?:^|\\s)--compress-program(?:[=\\s]|$)/, 'sort --compress-program runs an external program on its temp files'],",
+    '',
+    ['remaining reader-list binaries cannot be turned into writers']],
+
+  ['the repo bound tested before backslashes are normalized',
+    "  const t = unquote(tokenRaw).replace(/\\\\/g, '/');",
+    '  const t = unquote(tokenRaw);',
+    ['a Windows-rooted path is not mistaken for a relative one']],
+
+  ['node_modules treated as a repo path',
+    "  return !segments.includes('node_modules');",
+    '  return true;',
+    ['node_modules is not a repo-relative path']],
 
   ['gh widened to a prefix rule',
     "  re(String.raw`gh (?:pr (?:list|view|status|checks|diff)|run (?:list|view)|issue (?:list|view)|repo view)${ARGS}`),",

@@ -27,16 +27,27 @@
 // checking it. The two properties cannot both hold: a PreToolUse hook sees a
 // command string, not a filesystem, so it cannot sandbox anything.
 //
-// What revision 2 DOES bound is the class: execution is confined to paths inside
-// the repository (no absolute path, no `..`, no `-e` for the Reviewer), so the
-// code that runs is itself version-controlled and reviewable. And it CLOSES three
-// direct-write routes revision 1 left open, each confirmed by running it:
+// What revision 2 DOES bound is the class: execution is confined to COMMITTED
+// paths inside the repository - no absolute path, no `..`, no node_modules, and
+// no `-e` for the Reviewer - so the code that runs is itself version-controlled
+// and reviewable.
+//
+// That sentence used to say "paths inside the repository" and then claim the
+// result was version-controlled. Review caught the gap: node_modules is inside
+// the repository and is gitignored, and `node node_modules/playwright/cli.js
+// screenshot <url> <outfile>` writes an arbitrary absolute path. "Inside the
+// repo" and "committed" are different sets, and only the second supports the
+// claim, so the check now enforces the second.
+//
+// And it CLOSES four routes revision 1 left open - three writes and one read
+// escape - each confirmed by running it:
 //
 //   * `git branch -D x` / `-m a b` / `git branch newname`  - modified a branch
 //   * `git diff --output=/path`                            - wrote an arbitrary file
 //   * `git diff\ntouch f`                                  - a newline is a separator
 //                                                            and was not in the
 //                                                            composition character set
+//   * `cat $HOME/...`                                      - unchecked expansion
 //
 // So the delta is a widening in reach and a NARROWING in capability.
 // ---------------------------------------------------------------------------
@@ -169,12 +180,22 @@ const SCOPED_FLAG_DENY = [
   [/^git\s+grep\b[\s\S]*(?:^|\s)-O(?:[=\s]|$)/, 'git grep -O runs an external pager command'],
   [/^sed\b[\s\S]*(?:^|\s)-i(?:[=\s]|$)/, 'sed -i edits a file in place'],
   [/^sort\b[\s\S]*(?:^|\s)-o(?:[=\s]|$)/, 'sort -o writes its output to a file'],
+  [/^sort\b[\s\S]*(?:^|\s)--compress-program(?:[=\s]|$)/, 'sort --compress-program runs an external program on its temp files'],
+  [/^file\b[\s\S]*(?:^|\s)(?:-C|--compile)(?:[=\s]|$)/, 'file -C writes a compiled magic file'],
+  // ripgrep's --pre and --hostname-bin name a PROGRAM that rg then executes, once
+  // per searched path. Proved by running it: `rg --pre ./pre.sh PATTERN victim`
+  // ran pre.sh and substituted its output for the file's contents. rg was on
+  // revision 1's list too, so this closes an inherited hole rather than one of
+  // this change's own.
+  [/^rg\b[\s\S]*(?:^|\s)--(?:pre|pre-glob|hostname-bin)(?:[=\s]|$)/, 'rg --pre / --hostname-bin executes an external program'],
   [/^(?:node|npm|npx)\b[\s\S]*(?:^|\s)-r(?:[=\s]|$)/, 'node -r loads a module from any path'],
   // npm --prefix / -C / --global run the script against a DIFFERENT package root,
   // so `npm test --prefix /elsewhere` is not this repository's test suite at all.
   // Revision 1's `$` anchor prevented this incidentally; bounding the arguments
   // removed that anchor, so the bound has to be restated deliberately.
-  [/^(?:npm|npx)\b[\s\S]*(?:^|\s)(?:--prefix|--cwd|-C|--global|-g|--workspace|-w)(?:[=\s]|$)/,
+  // Bounded to the text BEFORE a `--` passthrough: after it, `-C`/`-g`/`-w` are the
+  // called script's flags, not npm's, and blocking those is a false block.
+  [/^(?:npm|npx)\b(?:(?!\s--\s)[\s\S])*?(?:^|\s)(?:--prefix|--cwd|-C|--global|-g|--workspaces?|-w)(?:[=\s]|$)/,
     'npm --prefix / -C / --global redirects the package root away from this repository'],
   // gh has write verbs and write flags. The allowlist admits only read verbs;
   // this refuses the flags that turn a read endpoint into a write request.
@@ -193,12 +214,31 @@ const SCRIPT_EXT = /\.(?:mjs|cjs|js)$/;
 
 const unquote = (t) => t.replace(/^['"]|['"]$/g, '');
 
-/** A path inside the repository: not absolute, not home-relative, no `..` escape. */
+/**
+ * A path inside the repository: not absolute, not home-relative, no `..` escape,
+ * and not inside node_modules.
+ *
+ * NORMALIZE FIRST, THEN TEST. An earlier version checked `startsWith('/')` on the
+ * raw token and only replaced backslashes for the `..` scan, so a Windows
+ * UNC/root path - `\\server\share\evil.js`, or `\Windows\evil.js` - was neither
+ * `/`-rooted nor drive-lettered nor `..`-bearing, and passed. Backslash is refused
+ * outside quotes, but single quotes make everything literal, so the token could be
+ * smuggled in quoted. Harmless on Linux; an absolute escape on the Windows machine
+ * this repository's hooks were ported for.
+ *
+ * node_modules is excluded because "inside the repository" is NOT the same as
+ * "version-controlled", and the guard's whole argument for permitting execution
+ * rests on the second. node_modules is gitignored and full of third-party CLIs -
+ * `node node_modules/playwright/cli.js screenshot <url> <outfile>` writes an
+ * arbitrary absolute path through positional operands.
+ */
 function isRepoRelativePath(tokenRaw) {
-  const t = unquote(tokenRaw);
+  const t = unquote(tokenRaw).replace(/\\/g, '/');
   if (!t || t.startsWith('-')) return false;
   if (t.startsWith('/') || t.startsWith('~') || /^[A-Za-z]:/.test(t)) return false;
-  return !t.replace(/\\/g, '/').split('/').includes('..');
+  const segments = t.split('/');
+  if (segments.includes('..')) return false;
+  return !segments.includes('node_modules');
 }
 
 /** The same, and an executable module rather than a directory or a data file. */
@@ -263,7 +303,7 @@ const SHARED = [
   { test: isRepoScriptRun },
 
   // "could not even ask git for its own version"
-  re(String.raw`(?:git|node|npm|npx|python3|sam|jq|rg|grep|sed) (?:--version|-v|-V)`),
+  re(String.raw`(?:git|node|npm|npx|python3|sam|jq|rg|grep) (?:--version|-v|-V)`),
 
   // Read-only git. Every verb here reports; none of them mutates a ref, the
   // index, the working tree or configuration.
@@ -277,8 +317,14 @@ const SHARED = [
   re(String.raw`git tag\s+(?:-l|--list|-n\d*)${ARGS}`),
   re(String.raw`git (?:stash (?:list|show)|worktree list)${ARGS}`),
 
-  // Reading and summarising files. Every binary here is a reporter: none of them
-  // writes without a redirect, and redirects are refused by the scanner above.
+  // Reading and summarising files. None of these writes through a bare positional
+  // operand, and the ones with a write or exec FLAG are pinned in SCOPED_FLAG_DENY
+  // above (`sort -o`, `sort --compress-program`, `file -C`, `rg --pre`).
+  //
+  // That sentence is deliberately narrow. It replaces "every binary here is a
+  // reporter: none of them writes without a redirect", which was simply false -
+  // review found `rg --pre` executing an arbitrary program on this very list. A
+  // blanket claim about a list nobody re-derives is worse than no claim.
   //
   // FOUR BINARIES ARE DELIBERATELY ABSENT, and the reason is the sharpest lesson
   // in this file. A review of the first draft found that `uniq`, `xxd` and `tree`
@@ -310,8 +356,24 @@ const SHARED = [
   // are refused separately in SCOPED_FLAG_DENY. `gh api` is deliberately absent:
   // its endpoint argument alone decides nothing, and the method is a flag.
   re(String.raw`gh (?:pr (?:list|view|status|checks|diff)|run (?:list|view)|issue (?:list|view)|repo view)${ARGS}`),
-  // sed only in its printing form; -i is additionally refused above.
-  re(String.raw`sed\s+-n${ARGS}`),
+  // `sed` IS DELIBERATELY ABSENT, and this is the sharpest version of the lesson
+  // above. The first two drafts admitted `sed -n`, reasoning that `-n` is the
+  // printing form and `-i` is refused separately. Both true, and both irrelevant:
+  // sed's danger is in its SCRIPT OPERAND, not its flags.
+  //
+  //   sed -n 'w /tmp/pwned' FILE     writes the pattern space to any path
+  //   sed -n '1e touch /tmp/x' FILE  EXECUTES a shell command
+  //
+  // Confirmed by running both: each produced its file, under `-n`. GNU ships
+  // `--sandbox` precisely to disable e/r/w, which is the tell that these are a
+  // known execution surface rather than an obscure corner.
+  //
+  // Requiring `--sandbox` was considered and rejected: it would make this guard's
+  // safety depend on another program honouring a flag, and a sed without it (BSD,
+  // some Windows builds) would silently be back to the unbounded form. Absence is
+  // the only defence I can state without that dependency - the same conclusion
+  // `uniq` forced. The Read tool takes an offset and a limit, which is what the
+  // `sed -n RANGE p` idiom was wanted for.
 
   re(String.raw`(?:Get-Content|Get-ChildItem|Get-Item|Get-Location|Get-Command|Get-FileHash|Select-String|Measure-Object|Compare-Object|Resolve-Path|Test-Path)${ARGS}`),
 ];
