@@ -79,13 +79,13 @@ function findLeagueRank(swimmerName, configEventName, rankings) {
 // config fields that decide whether the season is active at all means the label
 // cannot disagree with the window it describes.
 //
-// A season spanning two calendar years renders as "2026\u201327"; one contained in a
-// single calendar year renders as that year alone, rather than "2026\u201326".
+// A season spanning two calendar years renders as "2026–27"; one contained in a
+// single calendar year renders as that year alone, rather than "2026–26".
 //
 // The year test matches four leading digits rather than coercing with Number():
 // `Number(String(undefined ?? '').slice(0, 4))` is 0, and `Number.isInteger(0)`
 // is true, so a coercion guard would let a missing seasonStart through and
-// render "0\u201327 757 Season". Unreachable today because isSeasonActive() gates
+// render "0–27 757 Season". Unreachable today because isSeasonActive() gates
 // the call, but a guard that does not guard is worse than none.
 function swim757SeasonLabel(sport) {
   const year = value => (/^(\d{4})/.exec(String(value ?? '')) || [])[1];

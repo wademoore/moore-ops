@@ -803,12 +803,19 @@ the Sharks season being active in September. Enabling Ophelia's 757swim 2026-27 
 Sept 10, 2026 makes `swim757Active` true from Sept 5 onward, so `athleticsCardCount()`
 returns **2** on Sept 12 and the panel resolves `.athletics-multi` at 40%, not
 `.athletics-one` at 26%. Nothing about the Spotlight broke — it adapts to whatever the card
-count is, which is exactly what "not touching what determines it" buys — but the *measured
-number* above describes the one-card state only, and Big Sports Saturday will not render in
-it. The layout suite still measures 1473.83 × 315.63 because its fixture pins
+count is, which is exactly what "not touching what determines it" buys — **and that is now
+measured rather than asserted**: `scratch/current-season-athletics/measure-spotlight-cardcount.mjs`
+renders the real Sept 12 Spotlight in both card counts and, using this repo's own containment
+check (every visible `.spotlight *` against the panel's padding-inset content box in all four
+directions), reports `escaping: []`, `horizontallyClipped: []` and the same **24** elements in
+each. But the *measured number* above describes the one-card state only, and Big Sports Saturday
+will not render in it. The layout suite still measures 1473.83 × 315.63 because its fixture pins
 `swim757Active: false` deliberately; that fixture is a controlled one-card case, not an
 observation of Sept 12. Re-measure before quoting this figure for a live date.
-`.upcoming-panel` is untouched; Next Two Weeks loses no space.
+`.upcoming-panel` is untouched **by the Spotlight**; the Spotlight itself costs Next Two Weeks no
+space. The *card count* does: enabling Ophelia's 757swim season on Sept 10 2026 takes Sept 12 to
+two cards, and the Upcoming panel measures **874.08 → 704.11** as a result. Do not read this
+sentence as "Next Two Weeks is 874.08 on Sept 12".
 
 **The ordinary title and grid must stay direct children of `.paper-panel`.** Several
 shipped rules use the child combinator — `.paper-panel>.section-title` sets its height,
@@ -2559,8 +2566,13 @@ method, so they chain directly to the 988 pre-change number above.
   now renders in the two-card panel. **That it still fits is measured, not asserted** —
   `scratch/current-season-athletics/measure-spotlight-cardcount.mjs` renders the real Sept 12
   Spotlight in both card counts: one-card **1473.83 × 315.63**, two-card **1473.83 × 485.59**,
-  and in both the Spotlight is visible, measures the same **11** elements, sits **17 px inside**
-  the panel's bottom edge, and has **zero** horizontally clipped nodes. The Upcoming panel goes
+  and in both the Spotlight is visible, measures the same **24** elements, and reports
+  `escaping: []` and `horizontallyClipped: []`. Containment is this repo's own check, not a
+  weaker stand-in: every visible `.spotlight *` descendant against the panel's **padding-inset
+  content box in all four directions**, mirroring `render/dashboard-v2-layout.test.js`. A first
+  version compared only the outer `.spotlight` bottom against the panel's *border* box — looser
+  by `paddingBottom`, silent about the other three sides and about every descendant — which is
+  precisely how two checks drift apart. The Upcoming panel goes
   **874.08 → 704.11**. The 1473.83 × 315.63 figure quoted in the Family Spotlight section
   describes the one-card state only and has been corrected there. Presentation was not touched —
   Codex owns the athletics card and the supplied logo.
@@ -2570,9 +2582,11 @@ method, so they chain directly to the 988 pre-change number above.
   check fires on every Spotlight label in every geometry because `line-height:1` text reports a
   line box a few px taller than its client box. The shipped layout suite documents exactly that
   and compares widths; this harness now does too.
-  Four mutations prove the new guards have teeth (results gate reintroduced, config reverted,
-  hardcoded label restored, prior season renamed), each failing for its own reason with a green
-  control and green restore. Tests **2284 → 2297**, all passing with a browser.
+  **Five** mutations prove the new guards have teeth — results gate reintroduced, config reverted,
+  hardcoded label restored, buffer widened 7→14, prior season renamed — each failing for its own
+  reason, with a green control and a green restore. The count is re-derivable rather than quoted:
+  run `node scratch/current-season-athletics/mutation-check.mjs`. It is committed for the same
+  reason `scratch/mobile-publishing-contract/mutation-check.mjs` is, one entry above. Tests **2284 → 2297**, all passing with a browser.
 
 - **Mobile publishing contract defined and encoded (Sept 9, 2026):** The handoff item
   `docs/dashboard-v2/mobile-dashboard-spec.md` listed as number 3 — "define successful-generation
@@ -3277,7 +3291,12 @@ enumerated under test, digest, and render directly to Node. No deployment.
   inventing them would be fabricating household data — the exact failure the Updater guard rails
   exist to prevent. What it needs is the real schedule (Wade or the league), after which it is a
   routine Updater task: add the season to `flag-football.json` with `teamName: "Cowboys"`, then
-  repoint the `flagFootball` window in `sports-config.json`. **Do that before Sept 20** if the
+  repoint the `flagFootball` window in `sports-config.json`. **Expect three assertions in
+  `test/current-season-athletics.test.js` to go red when you do, by design, not by accident** —
+  the two that pin today's no-current-season fallback (`seasonLabel === 'Spring 2026'` and "no
+  season covers today") and the one pinning the current flag football window. They are tripwires
+  saying "a current season now exists, re-examine what these tests assert", and updating them is
+  part of that task rather than a sign it went wrong. **Do that before Sept 20** if the
   card is meant to be live for the first game. Note the ordering trap: repointing the window
   without adding the season entry makes the fallback's stale Spring 2026 record visible.
 

@@ -75,7 +75,12 @@ function apply(m) {
     if (j < 0) throw new Error(`from-text not found after anchor in ${m.file}`);
     mutated = original.slice(0, j) + m.to + original.slice(j + m.from.length);
   } else {
-    if (original.split(m.from).length - 1 !== 1) throw new Error(`from-text not unique in ${m.file}`);
+    const hits = original.split(m.from).length - 1;
+    // Distinguish the two causes: 0 usually means the file drifted (or a CRLF checkout
+    // broke a multi-line anchor), >1 means the anchor is ambiguous. One message for
+    // both would send a future reader looking in the wrong place.
+    if (hits === 0) throw new Error(`from-text not found in ${m.file} (drifted, or CRLF checkout on a multi-line anchor?)`);
+    if (hits > 1)   throw new Error(`from-text not unique in ${m.file} (${hits} matches)`);
     mutated = original.replace(m.from, m.to);
   }
   if (mutated === original) throw new Error(`mutation was a no-op in ${m.file}`);

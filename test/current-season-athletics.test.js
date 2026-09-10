@@ -66,7 +66,10 @@ function scheduleSpanFromDoc(markdown) {
       // for every row in this schedule. A New Year-crossing range (12/30-1/2/27)
       // would violate it and silently produce a start AFTER its own end, which
       // could then become the season's `last`. Refuse rather than mis-date.
-      if (end < start) throw new Error(`schedule row spans a year boundary, unsupported: ${cell}`);
+      // end < start has two causes — a year-crossing range (12/30-1/2/27), which the
+      // single two-digit year cannot express, and a transposed range. Name both rather
+      // than misdirecting a future reader to the wrong one.
+      if (end < start) throw new Error(`schedule row ends before it starts (year-crossing or transposed range, unsupported): ${cell}`);
       days.push(end);
     }
   }
