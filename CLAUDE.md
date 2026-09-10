@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2343+ passing with a browser
+- Run npm test after changes — must stay at 2345+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -1936,26 +1936,26 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2343 | **2343** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2345 | **2345** | **0** | **0** |
 
 Measured on `claude/loving-knuth-478237` after merging `origin/main` at **`2d54679`** (PR #64).
 **`git fetch origin main` was run before deriving that**, per the standing warning; the ref was
 stale at `3d250aa` and the fetch moved it forward three merges. `2d54679` was re-measured in
 this session, before any change and after `npm install`: **2316 / 2316 / 0 / 0 with a browser**.
 
-This change adds **+27**, in two existing files:
+This change adds **+29**, in two existing files:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `digest/aliases.test.js` | 30 | 49 | +19 |
+| `digest/aliases.test.js` | 30 | 51 | +21 |
 | `test/flagFootballParser.test.js` | 30 | 38 | +8 |
 
-2316 + 27 = 2343, so the table closes against a measurement rather than a recorded figure.
+2316 + 29 = 2345, so the table closes against a measurement rather than a recorded figure.
 `digest/builder.test.js` contributes **0** node:test points (10 either way); its internal
 assertion count moved 126 → 127.
 
 **Take these numbers from a run, never from a grep.** Measured at this commit:
-`grep -c "name: '"` on the mutation harness reports **14** against a true **15**, because one
+`grep -c "name: '"` on the mutation harness reports **16** against a true **17**, because one
 mutation's name contains an apostrophe and is therefore double-quoted. That undercount reads as
 plausible, which is why it survived several review rounds on this branch. The authoritative
 commands are `node digest/builder.test.js` → `Results: N passed`, `node --test <file>` →
@@ -1981,11 +1981,15 @@ it tests something the change does not touch: an all-day flag game still sets
 `hasGameThisWeek`.
 
 Companion mutation evidence, committed and run on demand rather than in `npm test`:
-`node scratch/flag-football-derivation/mutation-check.mjs` → **15 mutations, 15/15 caught**,
-green 87/87 control and green 87/87 restore. Its `TEST_FILES` moved from
+`node scratch/flag-football-derivation/mutation-check.mjs` → **17 mutations, 17/17 caught**,
+green 89/89 control and green 89/89 restore. Its `TEST_FILES` moved from
 `digest/builder.test.js` to `test/flagFootballParser.test.js` with the source change, and four
 mutations targeting the retired builder fixtures were dropped and five targeting the new
-pairing added. **The mutations are deliberately not enumerated here** — three earlier drafts
+pairing added; a sixth review round then added two more — a malformed (zero or negative)
+duration folded into the measured-short branch, and `formatETTime` repointed off Eastern. That
+second one closes a real blind spot rather than adding coverage for its own sake: the timezone
+pin had **no** mutation at all, so it was protected only incidentally, by the fixtures' explicit
+`-04:00` offsets happening to disagree with a UTC host. **The mutations are deliberately not enumerated here** — three earlier drafts
 enumerated them and each was outgrown by a later round, the same drift three times in the
 paragraph about drift. The harness prints every name when it runs and the `MUTATIONS` array
 names them in one place, where they cannot fall out of step with a count written elsewhere.
@@ -2052,7 +2056,7 @@ The no-browser row is deliberately absent from this measurement, for the reason 
 above gives.
 
 **Coder mode had to keep `npm test` at 2309+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2343.)
+Current baseline above; the figure is now 2345.)
 
 ### Previous baseline — measured Sept 10, 2026 on the current-season athletics branch
 
@@ -2096,7 +2100,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2297+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2343.)
+Current baseline above; the figure is now 2345.)
 
 ### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
@@ -2672,12 +2676,16 @@ method, so they chain directly to the 988 pre-change number above.
   11:00, game 12:00, field 4B) and Week 3 (real: practice 13:00, game 14:00, field 4A)
   resolved to the *identical* stale string — which is the shape of the defect in one line: a
   single constant standing in for a per-occurrence fact.
-  **The season file was considered as the derivation source and rejected on measurement, not
-  preference.** `data/flag-football.json` has no `fall-2026` season at all, no game anywhere
-  carries `practiceTime` or `field`, and `time` appears on only **7 of its 45** games — and a
-  season-level constant could not express a per-week game time even if all of that were
-  populated. The task that surfaced this described those fields as already present; they are
-  not, and the correction is recorded here rather than worked around.
+  **The season file was considered as the derivation source and rejected on measurement — and
+  then, once `main` moved, half-adopted. Both halves are stated here because the first was
+  briefly written in the present tense and the tree now refutes it.** At this branch's point
+  (`3d250aa`) `data/flag-football.json` carried **no** `fall-2026` season, **no**
+  `practiceTime` on any game, and only 7 `"time"` entries in the whole file; the task that
+  surfaced this defect described those fields as already present, and they were not. **That is
+  no longer true of the tree you are reading**: PR #62 added the season, and today the same
+  file answers 1 / 6 / 13 to those three greps. Re-run them rather than trusting either
+  figure — the paragraph that stated the old numbers as current is exactly the drift this
+  file's Test baseline section exists to catch, and it survived several rounds here.
   **Two sources, split on purpose — and the split changed once main moved.** The event
   *subtitle* derives from the calendar occurrence the row is already drawn from, via a new
   exported `flagFootballDetails()`: it reads the same occurrence it decorates, so it is
@@ -2723,36 +2731,64 @@ method, so they chain directly to the 988 pre-change number above.
   section covers the subtitle properly. (This entry first said "repaired, not deleted"; the
   line was deleted outright, and the wording is corrected here rather than left to drift.)
   **Guards proved rather than claimed:** `node scratch/flag-football-derivation/mutation-check.mjs`
-  → **14 mutations, 14/14 caught**, green 59/59 control and restore. The first three restore the
-  three literals verbatim; the rest are the ways a correct-*looking* rewrite could still be
-  wrong. Not enumerated here — the harness names each one when it runs, and three drafts of
-  this entry listed a set that a later round had already grown.
-  Tests **2297 → 2316**, all passing with a browser.
-  **Five independent Reviewer passes ran on this branch: the first four returned FAIL, the
-  fifth PASS.** An earlier version of this paragraph said four passes with the first three
-  failing, and claimed "the implementation passed every pass from the first" against a "ratio"
-  of one code defect to three rounds of documentation drift. **All four of those claims were
-  wrong**, and they are corrected here rather than left, because a paragraph about review
-  accuracy being itself inaccurate is the defect it describes:
+  → **17 mutations, 17/17 caught**, green 89/89 control and restore. Three of them restore the
+  three retired literals verbatim, and they are **not** the first three — the two subtitle
+  literals are mutations 1 and 2, while the third moved into the parser with `thisWeekTime` and
+  is restored by `thisWeekTime unpaired from thisWeekOpponent`. The rest are the ways a
+  correct-*looking* rewrite could still be wrong. Not enumerated beyond that — the harness names
+  each one when it runs, and three drafts of this entry listed a set a later round had already
+  grown.
+  Tests **2316 → 2345**, all passing with a browser, measured against a re-measured base rather
+  than a recorded one. **This paragraph previously read `14 mutations, 14/14, green 59/59` and
+  `Tests 2297 → 2316`, and every one of those four figures was false** — the counts were the
+  pre-rebase harness, 59 was a test total from before `TEST_FILES` moved, and `2297 → 2316`
+  named neither endpoint of this change (2316 is the base; 2297 predates PR #62). They are
+  recorded here rather than silently corrected, because this is the entry whose own subject is
+  figures that go stale, and it went stale in the commit that swept it.
+  **Six independent Reviewer passes ran on this branch: passes 1-4 and 6 returned FAIL, pass 5
+  PASS.** An earlier version of this paragraph said four passes with the first three failing,
+  and claimed "the implementation passed every pass from the first" against a "ratio" of one
+  code defect to three rounds of documentation drift. **All four of those claims were wrong**,
+  and they are corrected here rather than left, because a paragraph about review accuracy being
+  itself inaccurate is the defect it describes:
 
-  - **Production behaviour changed twice in response to review**, so the implementation did
-    not pass untouched. Pass 1 found `flagFootballDetails` treating a *missing* `end` the same
+  - **Production behaviour changed three times in response to review**, so the implementation
+    did not pass untouched. Pass 1 found `flagFootballDetails` treating a *missing* `end` the same
     as a *measured-short* block — handing back the practice hour as the game hour,
     confidently, in the one branch the header says exists to prevent exactly that; unknown
     duration now yields `gameTime: null`, which also makes `builder.js`'s "Null when it cannot
     be derived" comment true rather than aspirational. Pass 2 found the `< 2h` threshold doing
     the same thing one band narrower, which is why there is now an explicit ambiguous
-    60–120-minute case. A 90-minute block's output differs because of that second change.
+    60–120-minute case. A 90-minute block's output differs because of that second change. Pass 6
+    found the same shape a **third** time, at the bottom of the range: `durationMs <= 1h` also
+    admits zero and negative, so an event whose end sits at or before its own start was read as
+    "measured and short" — i.e. as *evidence* the block is the game — and confidently returned
+    the practice hour. A self-contradicting pair is not evidence, and it now fails closed like
+    an absent end. Three rounds, one branch, one mistake made in three different bands: the
+    lesson is that "short" and "unmeasurable" are separate categories, and every boundary
+    between them has to be drawn deliberately.
   - **Test-guard defects were found in three separate rounds**: a DST fixture pairing a
     run-time-relative date with a static offset (which would have gone red on Nov 1 2026); the
     tripwire written to prevent its return, which could not fail; that tripwire's region
     boundary, and its two blocklist checks with no positive assertion; a venue assertion that
     stayed true under the very mutation it was meant to catch; and an unpinned resolved title.
-  - **Documentation drift failed three consecutive rounds** — a figure the tree did not
-    support, twice introduced by the very commit sweeping that section for that defect. That
-    is the single largest category here, in a repository whose stated policy treats it as
-    first-class, and it is why derived counts were removed from the prose above rather than
-    corrected a fourth time.
+  - **A guard that read as protective and was not, found in pass 6.** The practice-exclusion
+    test carried a practice-only fixture, whose null opponent and null time are what a correct
+    parser returns anyway — so deleting the type filter left both assertions true. It now pairs
+    the practice with a real game, which is what makes `null` distinguishable from
+    `Ravens`/`12:00 PM`. Pass 6 also found the timezone pin in `formatETTime` had no mutation at
+    all, protected only incidentally by the fixtures' explicit offsets disagreeing with a UTC
+    host; there is one now.
+  - **Documentation drift failed four consecutive rounds** — a figure the tree did not
+    support, three times introduced by the very commit sweeping that section for that defect.
+    Removing derived counts from the prose was not enough on its own: pass 6 found the
+    changelog still carrying a mutation count, a control total and a test delta from before the
+    rebase, all four false, plus a present-tense description of `data/flag-football.json` that
+    three greps refute. That is the single largest category on this branch, in a repository
+    whose stated policy treats it as first-class. **The durable lesson is narrower than "check
+    your numbers":** the stale figures all described the *pre-rebase* branch, and the rebase
+    changed the implementation without anyone re-reading the paragraph that described it. A
+    merge that changes behaviour is a documentation change too.
 
   Which finding came from which pass is deliberately stated above rather than presented as one
   undifferentiated list, because an earlier draft's flat "(1) … (2) … three MINOR" read as a
