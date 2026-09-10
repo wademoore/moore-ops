@@ -13,7 +13,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { resolveEvent, GEAR } from './aliases.js';
+import { resolveEvent, GEAR, flagFootballDetails } from './aliases.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -124,7 +124,6 @@ describe('Flag game — pattern matcher + opponent extraction', () => {
     assert.equal(game1.isFlagGame, true);
     assert.equal(game1.cardType, 'coaching');
     assert.ok(game1.owner.includes('wade'));
-    assert.ok(game1.subtitle.includes('3:00 PM'));
   });
 
   it('Flag Cowboys vs Ravens (no period) still resolves', () => {
@@ -283,5 +282,251 @@ describe('ResolvedEvent shape — all fields present on every code path', () => 
     const resolved = resolveEvent(mkEvent('Anything Else', 'Family'));
     const missing = REQUIRED_FIELDS.filter(f => !(f in resolved));
     assert.equal(missing.length, 0, `missing: ${missing.join(', ')}`);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Section 7: Flag football venue and times are derived, never hardcoded
+// ---------------------------------------------------------------------------
+//
+// Until Sept 2026 the flag game subtitle, the 'Flag Practice' subtitle and
+// builder.js's athletics.thisWeekTime were three hardcoded literals describing
+// the Spring 2026 season: 3:00 PM games following a 2:00 PM practice at
+// Williamsburg Christian Academy. Fall 2026 moved to Yorktown NFL FLAG at
+// McReynolds Athletic Complex, with the game at 12:00 PM some weeks and
+// 2:00 PM others — so the literals were wrong on time AND venue, on every
+// game, and nothing in the suite noticed because nothing asserted them
+// against a real occurrence.
+//
+// These cases assert the derivation rather than any particular season's
+// values, so they stay true when the league moves again. The two fixtures
+// below are transcribed verbatim from the live Myles calendar (2026-09-10),
+// including each event's own league-authored description, which is what makes
+// the expected times checkable against a source other than the code.
+
+// Week 2: "Practice 11:00 AM – 12:00 PM, game 12:00 – 1:00 PM.
+//          Field: McReynolds Athletic Complex 4B"
+const WEEK2 = {
+  summary: 'Flag Football: Week 2 — vs Langston-Ravens (Home)',
+  _calName: 'Myles',
+  location: 'McReynolds Athletic Complex (4B), 412 Sportsway, Yorktown, VA 23692',
+  start: { dateTime: '2026-09-20T11:00:00-04:00' },
+  end:   { dateTime: '2026-09-20T13:00:00-04:00' },
+};
+
+// Week 3: "Practice 1:00 – 2:00 PM, game 2:00 – 3:00 PM.
+//          Field: McReynolds Athletic Complex 4A"
+const WEEK3 = {
+  summary: 'Flag Football: Week 3 — vs Henze/Pfauth-Bears (Away)',
+  _calName: 'Myles',
+  location: 'McReynolds Athletic Complex (4A), 412 Sportsway, Yorktown, VA 23692',
+  start: { dateTime: '2026-09-27T13:00:00-04:00' },
+  end:   { dateTime: '2026-09-27T15:00:00-04:00' },
+};
+
+/** The literals this section exists to keep from coming back. */
+const RETIRED_LITERALS = [
+  'Williamsburg Christian Academy',
+  '3:00 PM (follows 2:00 PM practice)',
+];
+
+describe('flagFootballDetails — derivation from the occurrence', () => {
+  it('reads the event start as the practice start and the game an hour later', () => {
+    // The league books one combined block per game week. Reading start as the
+    // game time is the specific off-by-one-hour error this guards.
+    assert.deepEqual(flagFootballDetails(WEEK2), {
+      startTime: '11:00 AM',
+      practiceTime: '11:00 AM',
+      gameTime: '12:00 PM',
+      venue: 'McReynolds Athletic Complex (4B)',
+    });
+  });
+
+  it('shortens the location to venue + field, never to something untrue', () => {
+    const { venue } = flagFootballDetails(WEEK2);
+    assert.ok(
+      WEEK2.location.startsWith(venue),
+      `venue ${JSON.stringify(venue)} must be a prefix of the authoritative location`,
+    );
+    assert.ok(venue.includes('4B'), 'field number is the useful half — keep it');
+    // The two assertions above both stay true if the venue is NOT shortened at
+    // all, so on their own they do not test shortening. These do.
+    assert.ok(!venue.includes(','), 'the leading segment only — no street address');
+    assert.ok(venue.length < WEEK2.location.length, 'must actually be shorter');
+  });
+
+  it('a block measurably too short to hold a practice reports no practice', () => {
+    const gameOnly = {
+      ...WEEK2,
+      end: { dateTime: '2026-09-20T12:00:00-04:00' },  // 1h
+    };
+    const d = flagFootballDetails(gameOnly);
+    assert.equal(d.practiceTime, null);
+    assert.equal(d.gameTime, '11:00 AM', 'the block is the game itself');
+  });
+
+  it('a block of UNKNOWN duration yields no game time — not the practice hour', () => {
+    // Absence of an end is absence of evidence, not evidence of a short block.
+    // Returning startTime here would hand back the practice hour as the game
+    // hour, confidently, which is the exact off-by-one this helper prevents.
+    for (const noEnd of [{ ...WEEK2, end: undefined },
+                         { ...WEEK2, end: { date: '2026-09-20' } },
+                         { ...WEEK2, end: { dateTime: 'not-a-date' } }]) {
+      const d = flagFootballDetails(noEnd);
+      assert.equal(d.gameTime, null, 'game hour is underivable without a duration');
+      assert.equal(d.practiceTime, null);
+      assert.equal(d.startTime, '11:00 AM', 'the start is still known and still reported');
+      assert.equal(d.venue, 'McReynolds Athletic Complex (4B)', 'venue is independent of the times');
+    }
+  });
+
+  it('an ambiguous 90-minute block yields no game time rather than a guess', () => {
+    // Between one and two hours the block could be one long session (game at
+    // the start) or practice-then-short-game (game an hour in). The readings
+    // disagree by exactly the hour this helper exists to get right.
+    const ambiguous = { ...WEEK2, end: { dateTime: '2026-09-20T12:30:00-04:00' } };
+    const d = flagFootballDetails(ambiguous);
+    assert.equal(d.gameTime, null);
+    assert.equal(d.practiceTime, null);
+    assert.equal(d.startTime, '11:00 AM', 'the start is still known');
+  });
+
+  it('a block of exactly one hour is the game itself', () => {
+    // The boundary on the other side: an hour leaves no room for an hour of
+    // practice ahead of anything, so the start is unambiguously the game.
+    const exactlyOneHour = { ...WEEK2, end: { dateTime: '2026-09-20T12:00:00-04:00' } };
+    assert.equal(flagFootballDetails(exactlyOneHour).gameTime, '11:00 AM');
+  });
+
+  it('a zero-length block is malformed, not short — no game time', () => {
+    // The branch above reads a SHORT duration as evidence the block is the
+    // game. An end equal to its own start is not short, it is contradictory,
+    // and treating it as evidence would name the practice hour as the game
+    // hour with full confidence — the exact defect this helper replaces.
+    const zeroLength = { ...WEEK2, end: { dateTime: WEEK2.start.dateTime } };
+    const d = flagFootballDetails(zeroLength);
+    assert.equal(d.gameTime, null);
+    assert.equal(d.practiceTime, null);
+    // The start is still a fact the event states directly, so it survives.
+    assert.equal(d.startTime, '11:00 AM');
+    assert.equal(d.venue, 'McReynolds Athletic Complex (4B)');
+  });
+
+  it('an end BEFORE its own start is malformed too — no game time', () => {
+    const backwards = { ...WEEK2, end: { dateTime: '2026-09-20T10:00:00-04:00' } };
+    const d = flagFootballDetails(backwards);
+    assert.equal(d.gameTime, null);
+    assert.equal(d.practiceTime, null);
+    assert.equal(d.startTime, '11:00 AM');
+  });
+
+  it('omits rather than guesses when the event carries no location', () => {
+    const { venue } = flagFootballDetails({ ...WEEK2, location: undefined });
+    assert.equal(venue, null);
+  });
+
+  it('omits rather than guesses when the event is all-day', () => {
+    const allDay = { summary: WEEK2.summary, _calName: 'Myles', start: { date: '2026-09-20' } };
+    assert.deepEqual(flagFootballDetails(allDay), {
+      startTime: null, gameTime: null, practiceTime: null, venue: null,
+    });
+  });
+
+  it('does not throw on a missing or malformed event', () => {
+    for (const bad of [{}, { start: {} }, { start: { dateTime: 'not-a-date' } }]) {
+      const d = flagFootballDetails(bad);
+      assert.equal(d.gameTime, null);
+    }
+  });
+});
+
+describe('Flag game subtitle — per-occurrence, not a season constant', () => {
+  it('Week 2 subtitle matches the league-published Week 2 facts', () => {
+    const r = resolveEvent(WEEK2);
+    assert.equal(
+      r.subtitle,
+      '12:00 PM (follows 11:00 AM practice) · McReynolds Athletic Complex (4B)',
+    );
+  });
+
+  it('pins the resolved title too — the opponent capture keeps the (Home)/(Away) tag', () => {
+    // Pre-existing behaviour of the PATTERN_MATCHERS regex, not introduced here:
+    // the capture group is greedy to end-of-summary, so the league's home/away
+    // designation rides along into the title. Pinned so it is visible rather
+    // than incidental — a reader of these fixtures would otherwise not notice.
+    assert.equal(resolveEvent(WEEK2).title, 'Cowboys Flag Football — vs. Langston-Ravens (Home)');
+    assert.equal(resolveEvent(WEEK3).title, 'Cowboys Flag Football — vs. Henze/Pfauth-Bears (Away)');
+  });
+
+  it('a title with no "vs" is not a flag game at all', () => {
+    // "Flag Football: Week 1 — Meet & Greet" (the real Sept 13 event) matches
+    // neither the pattern matcher nor the 'Flag Practice' alias key, so it
+    // falls to passthrough: no coaching card, no venue, no coaching tasks.
+    const meetGreet = { ...WEEK2, summary: 'Flag Football: Week 1 — Meet & Greet' };
+    const r = resolveEvent(meetGreet);
+    assert.equal(r.isFlagGame, false);
+    assert.equal(r.title, 'Flag Football: Week 1 — Meet & Greet');
+  });
+
+  it('Week 3 differs from Week 2 — a single hardcoded string cannot serve both', () => {
+    const wk2 = resolveEvent(WEEK2).subtitle;
+    const wk3 = resolveEvent(WEEK3).subtitle;
+    assert.equal(
+      wk3,
+      '2:00 PM (follows 1:00 PM practice) · McReynolds Athletic Complex (4A)',
+    );
+    assert.notEqual(wk2, wk3, 'two weeks of one season must not resolve alike');
+  });
+
+  it('carries none of the retired Spring 2026 literals', () => {
+    for (const ev of [WEEK2, WEEK3]) {
+      const { subtitle } = resolveEvent(ev);
+      for (const stale of RETIRED_LITERALS) {
+        assert.ok(!subtitle.includes(stale), `stale literal returned: ${stale}`);
+      }
+    }
+  });
+
+  it('an ambiguous 90-minute block renders the venue with no time at all', () => {
+    // The rendered consequence of the ambiguous band, pinned rather than left
+    // implicit: `when` is null, so joinSubtitle drops it and the subtitle is
+    // the venue alone. Deliberate — a venue with no time is recoverable, a
+    // confident wrong hour is the defect this whole section exists to remove.
+    const r = resolveEvent({ ...WEEK2, end: { dateTime: '2026-09-20T12:30:00-04:00' } });
+    assert.equal(r.subtitle, 'McReynolds Athletic Complex (4B)');
+    assert.equal(r.isFlagGame, true);
+  });
+
+  it('leaves no dangling separator when the venue is underivable', () => {
+    const r = resolveEvent({ ...WEEK2, location: undefined });
+    assert.equal(r.subtitle, '12:00 PM (follows 11:00 AM practice)');
+  });
+
+  it('an all-day game states nothing rather than stating a false time', () => {
+    const r = resolveEvent({ summary: WEEK2.summary, _calName: 'Myles', start: { date: '2026-09-20' } });
+    assert.equal(r.isFlagGame, true, 'still a flag game — only the detail is unknown');
+    assert.equal(r.subtitle, '');
+  });
+});
+
+describe("'Flag Practice' alias — also derived", () => {
+  it('takes its time and venue from the event', () => {
+    const r = resolveEvent({
+      summary: 'Flag Practice',
+      _calName: 'Myles',
+      location: 'McReynolds Athletic Complex (4D), 412 Sportsway, Yorktown, VA 23692',
+      start: { dateTime: '2026-09-13T11:00:00-04:00' },
+      end:   { dateTime: '2026-09-13T12:30:00-04:00' },
+    });
+    assert.equal(r.subtitle, '11:00 AM · McReynolds Athletic Complex (4D) · Myles + Coach Wade');
+    assert.equal(r.cardType, 'coaching');
+  });
+
+  it('keeps the standing detail when time and venue are underivable', () => {
+    const r = resolveEvent(mkEvent('Flag Practice', 'Myles'));
+    assert.equal(r.subtitle, 'Myles + Coach Wade');
+    for (const stale of RETIRED_LITERALS) {
+      assert.ok(!r.subtitle.includes(stale), `stale literal returned: ${stale}`);
+    }
   });
 });

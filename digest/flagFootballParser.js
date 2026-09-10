@@ -150,13 +150,17 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
         ? nextCaptain.captains.join(' & ')
         : captains[captains.length - 1].captains.join(' & '));
   const mylesCaptain    = !!(nextCaptain?.mylesCaptain);
-  const thisWeekOpponent = nextCaptain ? nextCaptain.opponent : null;
+  const captainOpponent  = nextCaptain ? nextCaptain.opponent : null;
 
   // ── Next flag game ───────────────────────────────────────────────────────────
   // First upcoming scheduled game involving my team, sorted ascending.
   // Friendly games are included — they are real events worth showing.
   // Practices are NOT: a practice row has no opponent, so without this filter
-  // it would be selected and reported with `opponent: undefined`. Stated as a
+  // it would be selected and reported with a null opponent and a null time —
+  // keyOf(null) is null, so the `teamsMap.get(oppAbbr) || oppAbbr` fallback
+  // resolves to null rather than to `undefined`, which is what an earlier
+  // version of this comment said. The visible effect is a hidden next-game box
+  // on a week that really does have a game. Stated as a
   // deny-list rather than an allow-list so that no existing type ('regular',
   // 'playoff', 'consolation') changes behaviour.
   const scheduledGames = (season.games || [])
@@ -178,6 +182,21 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
     };
   }
 
+  // ── Next-game opponent and time — from ONE row, deliberately ─────────────
+  // These two are rendered together as "Next game vs. <opponent> · <time>", so
+  // they have to describe the same fixture. They previously did not:
+  // thisWeekOpponent came from captainAssignments while thisWeekTime was a
+  // hardcoded '3:00 PM' set in builder.js. That was invisible only because a
+  // constant is true of every game — the moment the time became real, the two
+  // halves of one sentence could describe different fixtures.
+  //
+  // Both now project from nextFlagGame, which is one row of one file, so they
+  // cannot disagree. When there is no next game the time is absent rather than
+  // borrowed from somewhere else, and the opponent falls back to the captain
+  // assignment so seasons that carry captains but no schedule keep working.
+  const thisWeekOpponent = nextFlagGame ? nextFlagGame.opponent : captainOpponent;
+  const thisWeekTime     = nextFlagGame ? formatClockTime(nextFlagGame.time) : null;
+
   // ── Season complete ──────────────────────────────────────────────────────────
   // All regular, non-rescheduled, non-friendly games must be final,
   // AND referenceDate must be past seasonEnd.
@@ -198,10 +217,30 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
     standings,
     mylesCaptain,
     thisWeekOpponent,
+    thisWeekTime,
     seasonComplete,
     finalRecord,
     seasonLabel:  season.label,
     teamName:     seasonTeamName,
     nextFlagGame,
   };
+}
+
+/**
+ * Formats a season-file 24-hour clock string as a display time.
+ *
+ *   '12:00' → '12:00 PM'      '14:00' → '2:00 PM'      '09:30' → '9:30 AM'
+ *
+ * Returns null for anything that is not a 24-hour clock string — a missing,
+ * empty or malformed `time` yields no time rather than a guessed one, which is
+ * what lets the renderer omit the separator instead of printing a wrong hour.
+ */
+export function formatClockTime(hhmm) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm ?? '').trim());
+  if (!m) return null;
+  const h = Number(m[1]);
+  const min = Number(m[2]);
+  if (h > 23 || min > 59) return null;
+  const h12 = h % 12 === 0 ? 12 : h % 12;
+  return `${h12}:${m[2]} ${h < 12 ? 'AM' : 'PM'}`;
 }

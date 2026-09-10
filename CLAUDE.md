@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2309+ passing with a browser
+- Run npm test after changes — must stay at 2349+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -1947,7 +1947,76 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 10, 2026 on the Yorktown NFL FLAG season branch
+### Current baseline — measured Sept 10, 2026 on the flag football derivation branch
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2349 | **2349** | **0** | **0** |
+
+Measured on `claude/loving-knuth-478237` after merging `origin/main` at **`975fbc2`** (PR #66).
+**`git fetch origin main` was run twice, and both times it mattered.** The first fetch moved a
+ref stale at `3d250aa` forward three merges to `2d54679` (PR #64), which measured **2316**. The
+PR then reported `mergeable_state: "behind"` — `main` had advanced again to `975fbc2` while the
+branch sat in review — so it was merged in and **both ends re-measured in a `git worktree`**:
+base `975fbc2` = **2320 / 2320 / 0 / 0**, branch = **2349 / 2349 / 0 / 0**.
+
+**The delta survived the move and the base did not, which is the point of re-measuring both.**
+This change still adds exactly +29; `#66` added 4 tests to the base, so an entry that had
+updated only its own total would have quietly claimed a +33 this branch never made.
+
+This change adds **+29**, in two existing files:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/aliases.test.js` | 30 | 51 | +21 |
+| `test/flagFootballParser.test.js` | 30 | 38 | +8 |
+
+2320 + 29 = 2349, so the table closes against a measurement rather than a recorded figure.
+Both operands were measured this session; neither is carried forward from an earlier entry.
+`digest/builder.test.js` contributes **0** node:test points (10 either way); its internal
+assertion count moved 126 → 127.
+
+**Take these numbers from a run, never from a grep.** Measured at this commit:
+`grep -c "name: '"` on the mutation harness reports **16** against a true **17**, because one
+mutation's name contains an apostrophe and is therefore double-quoted. That undercount reads as
+plausible, which is why it survived several review rounds on this branch. The authoritative
+commands are `node digest/builder.test.js` → `Results: N passed`, `node --test <file>` →
+`# tests N`, and the harness's own `N/N mutations caught` line.
+
+**An earlier version of this paragraph carried a second example that no longer reproduces, and
+it is removed rather than restated.** It said `grep -c '^assert(' digest/builder.test.js`
+undercounts by missing indented and multi-line calls. That was true while the DST tripwire's
+indented assertions were in the file; removing them left only column-0 calls, so the grep now
+reports **127** and agrees exactly with the run. Checking it before writing it down is the only
+reason this entry does not contain a fabricated figure — which is the same defect this
+paragraph exists to warn about, and it very nearly recurred here.
+
+**A block of builder assertions was removed with the source it tested, and that is reported
+rather than done quietly.** An earlier version of this branch derived `athletics.thisWeekTime`
+from the calendar occurrence, and `digest/builder.test.js` carried five assertions plus a
+four-assertion source-level DST tripwire pinning that derivation. `thisWeekTime` now comes from
+the season file, so those assertions described a path that no longer exists — they were deleted
+along with it, not weakened. **The occurrence-derivation itself is still covered**, in
+`digest/aliases.test.js`, because the event *subtitle* still uses it; and the new source is
+covered in `test/flagFootballParser.test.js`. One assertion from that block was kept, because
+it tests something the change does not touch: an all-day flag game still sets
+`hasGameThisWeek`.
+
+Companion mutation evidence, committed and run on demand rather than in `npm test`:
+`node scratch/flag-football-derivation/mutation-check.mjs` → **17 mutations, 17/17 caught**,
+green 89/89 control and green 89/89 restore. Its `TEST_FILES` moved from
+`digest/builder.test.js` to `test/flagFootballParser.test.js` with the source change, and four
+mutations targeting the retired builder fixtures were dropped and five targeting the new
+pairing added; a sixth review round then added two more — a malformed (zero or negative)
+duration folded into the measured-short branch, and `formatETTime` repointed off Eastern. That
+second one closes a real blind spot rather than adding coverage for its own sake: the timezone
+pin had **no** mutation at all, so it was protected only incidentally, by the fixtures' explicit
+`-04:00` offsets happening to disagree with a UTC host. **The mutations are deliberately not enumerated here** — three earlier drafts
+enumerated them and each was outgrown by a later round, the same drift three times in the
+paragraph about drift. The harness prints every name when it runs and the `MUTATIONS` array
+names them in one place, where they cannot fall out of step with a count written elsewhere.
+
+### Previous baseline — measured Sept 10, 2026 on the Yorktown NFL FLAG season branch
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -2005,17 +2074,11 @@ found by the Reviewer, not by the harness: **there was no mutation for the stand
 nothing detected that the tie-as-loss fix had been applied to the record loop and not to the
 identical shape 30 lines below it. A harness only proves the guards you thought to attack.
 
-The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
-quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
-prevent.
+The no-browser row is deliberately absent from this measurement, for the reason the entry
+above gives.
 
-Exact invocation:
-
-```bash
-DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
-```
-
-**Coder mode must keep `npm test` at 2309+ with no failures once a browser resolves.**
+**Coder mode had to keep `npm test` at 2309+ under this baseline.** (Superseded — see
+Current baseline above; the figure is now 2349.)
 
 ### Previous baseline — measured Sept 10, 2026 on the current-season athletics branch
 
@@ -2059,7 +2122,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2297+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2309.)
+Current baseline above; the figure is now 2349.)
 
 ### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
@@ -2623,6 +2686,160 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Flag football venue and times now derive from the occurrence (Sept 10, 2026):**
+  `digest/aliases.js` carried three hardcoded literals describing the **Spring 2026** season
+  — 3:00 PM games following a 2:00 PM practice at Williamsburg Christian Academy — on the
+  flag-game pattern matcher, on the `'Flag Practice'` alias, and (as `athletics.thisWeekTime`)
+  in `digest/builder.js`. Fall 2026 is Yorktown NFL FLAG at McReynolds Athletic Complex, with
+  the game at **12:00 PM some weeks and 2:00 PM others**, on a different numbered field each
+  week, so all three were wrong on time *and* venue, on every game.
+  **Measured before the change against the live Myles calendar**, Week 2 (real: practice
+  11:00, game 12:00, field 4B) and Week 3 (real: practice 13:00, game 14:00, field 4A)
+  resolved to the *identical* stale string — which is the shape of the defect in one line: a
+  single constant standing in for a per-occurrence fact.
+  **The season file was considered as the derivation source and rejected on measurement — and
+  then, once `main` moved, half-adopted. Both halves are stated here because the first was
+  briefly written in the present tense and the tree now refutes it.** At this branch's point
+  (`3d250aa`) `data/flag-football.json` carried **no** `fall-2026` season, **no**
+  `practiceTime` on any game, and only 7 `"time"` entries in the whole file; the task that
+  surfaced this defect described those fields as already present, and they were not. **That is
+  no longer true of the tree you are reading**: PR #62 added the season, and today the same
+  file answers 1 / 6 / 13 to those three greps. Re-run them rather than trusting either
+  figure — the paragraph that stated the old numbers as current is exactly the drift this
+  file's Test baseline section exists to catch, and it survived several rounds here.
+  **Two sources, split on purpose — and the split changed once main moved.** The event
+  *subtitle* derives from the calendar occurrence the row is already drawn from, via a new
+  exported `flagFootballDetails()`: it reads the same occurrence it decorates, so it is
+  structurally incapable of disagreeing with its own row. **`athletics.thisWeekTime` derives
+  from the season file instead**, and that is a deliberate revision made when this branch was
+  rebased onto `main`. PR #62 landed the Fall 2026 season with per-game `time`, `practiceTime`
+  and `field` — the very fields the original task described and that genuinely did not exist
+  when this branch started — and `flagFootballParser` already computed a `nextFlagGame`
+  carrying opponent *and* time from one row. `thisWeekTime` is rendered beside
+  `thisWeekOpponent` as "Next game vs. X · <time>", so the two must describe one fixture;
+  sourcing the time from the calendar while the opponent came from the season file would have
+  left them able to disagree. Both now project from `nextFlagGame`. See the resolved open item
+  below — this closes a coupling this branch itself opened.
+  **The non-obvious half is that the event start is the PRACTICE start, not the game start.**
+  The league books one combined block per game week (one-hour practice, then the game), so
+  reading `start.dateTime` as the game time is off by exactly an hour and looks entirely
+  plausible. Verified against each event's own league-authored description across all five
+  Fall 2026 game weeks: `game = start + 1h` holds in all five.
+  **Every derived field is independently nullable and an underivable one is omitted rather
+  than guessed** — an all-day or location-less occurrence states nothing instead of stating
+  something false, and `joinSubtitle()` drops empty segments so nothing leaves a dangling `·`.
+  **Scope is the digest layer only**, and that was checked against the ownership boundary
+  rather than assumed: `subtitle` is a `ResolvedEvent` data field and `thisWeekTime` an
+  athletics data field, not markup. No renderer is in the diff. Codex handled the presentation
+  consequence separately in PR #64, which drops the separator when the time is absent — merged
+  before this, so the two halves meet correctly.
+  **Measured end to end on the real data, dated 2026-09-10:** the athletics card now resolves
+  `flagFootballActive: true`, `seasonLabel: "Fall 2026"`, `thisWeekOpponent: "Ravens"`,
+  `thisWeekTime: "12:00 PM"` — one row of one file, and the first correct game time this card
+  has ever shown. On `main` before this change the same run gave `thisWeekOpponent: null` (so
+  the box was hidden) over a hardcoded `'3:00 PM'` that matches **none** of the five Fall 2026
+  games (12:00, 14:00, 14:00, 12:00, 14:00).
+  **`render/dashboard.js` also hardcodes the old venue and is deliberately left alone** — it
+  is the frozen v1 surface. No v1 test breaks: `render/dashboard.test.js` supplies its own
+  `thisWeekTime: '3:00 PM'` fixture and so tests renderer pass-through, not this value. The
+  freeze's failing-test exception was therefore not needed and was not used. The consequence
+  is recorded as a Known open item rather than fixed quietly: v1 will now print a derived
+  time beside a stale venue.
+  **One existing assertion was removed and re-covered, and is reported rather than done
+  quietly:** `digest/aliases.test.js` asserted `subtitle.includes('3:00 PM')` against an event
+  carrying no time at all, so it pinned a hardcoded literal rather than any behaviour. The
+  surrounding case keeps its title/`isFlagGame`/`cardType`/`owner` assertions, and the new
+  section covers the subtitle properly. (This entry first said "repaired, not deleted"; the
+  line was deleted outright, and the wording is corrected here rather than left to drift.)
+  **Guards proved rather than claimed:** `node scratch/flag-football-derivation/mutation-check.mjs`
+  → **17 mutations, 17/17 caught**, green 89/89 control and restore. Three of them restore the
+  three retired literals verbatim, and they are **not** the first three — the two subtitle
+  literals are mutations 1 and 2, while the third moved into the parser with `thisWeekTime` and
+  is restored by `thisWeekTime unpaired from thisWeekOpponent`. The rest are the ways a
+  correct-*looking* rewrite could still be wrong. Not enumerated beyond that — the harness names
+  each one when it runs, and three drafts of this entry listed a set a later round had already
+  grown.
+  Tests **2320 → 2349**, all passing with a browser, measured against a re-measured base rather
+  than a recorded one — and re-measured a *second* time when `main` advanced to `975fbc2`
+  (PR #66) while this branch sat in review. The delta stayed +29 across that move because #66
+  touched only `render/`; the base did not, which is why both ends are measured rather than one. **This paragraph previously read `14 mutations, 14/14, green 59/59` and
+  `Tests 2297 → 2316`, and every one of those four figures was false** — the counts were the
+  pre-rebase harness, 59 was a test total from before `TEST_FILES` moved, and `2297 → 2316`
+  named neither endpoint of this change (2316 is the base; 2297 predates PR #62). They are
+  recorded here rather than silently corrected, because this is the entry whose own subject is
+  figures that go stale, and it went stale in the commit that swept it.
+  **Seven independent Reviewer passes ran on this branch: passes 1-4, 6 and 7 returned FAIL,
+  pass 5 PASS.** An earlier version of this paragraph said four passes with the first three failing,
+  and claimed "the implementation passed every pass from the first" against a "ratio" of one
+  code defect to three rounds of documentation drift. **All four of those claims were wrong**,
+  and they are corrected here rather than left, because a paragraph about review accuracy being
+  itself inaccurate is the defect it describes:
+
+  - **Production behaviour changed three times in response to review**, so the implementation
+    did not pass untouched. Pass 1 found `flagFootballDetails` treating a *missing* `end` the same
+    as a *measured-short* block — handing back the practice hour as the game hour,
+    confidently, in the one branch the header says exists to prevent exactly that; unknown
+    duration now yields `gameTime: null`, which also makes `builder.js`'s "Null when it cannot
+    be derived" comment true rather than aspirational. Pass 2 found the `< 2h` threshold doing
+    the same thing one band narrower, which is why there is now an explicit ambiguous
+    60–120-minute case. A 90-minute block's output differs because of that second change. Pass 6
+    found the same shape a **third** time, at the bottom of the range: `durationMs <= 1h` also
+    admits zero and negative, so an event whose end sits at or before its own start was read as
+    "measured and short" — i.e. as *evidence* the block is the game — and confidently returned
+    the practice hour. A self-contradicting pair is not evidence, and it now fails closed like
+    an absent end. Three rounds, one branch, one mistake made in three different bands: the
+    lesson is that "short" and "unmeasurable" are separate categories, and every boundary
+    between them has to be drawn deliberately.
+  - **Test-guard defects were found in three separate rounds**: a DST fixture pairing a
+    run-time-relative date with a static offset (which would have gone red on Nov 1 2026); the
+    tripwire written to prevent its return, which could not fail; that tripwire's region
+    boundary, and its two blocklist checks with no positive assertion; a venue assertion that
+    stayed true under the very mutation it was meant to catch; and an unpinned resolved title.
+  - **Two same-commit contradictions, found in pass 7.** Besides the diff figure above, the
+    `flagFootballDetails` JSDoc was updated to "Five cases" while a cross-reference 31 lines
+    below it — pointing at that very table — still read "Four bands". One edit, two sites,
+    one updated. Both are now consistent.
+  - **A guard that read as protective and was not, found in pass 6.** The practice-exclusion
+    test carried a practice-only fixture, whose null opponent and null time are what a correct
+    parser returns anyway — so deleting the type filter left both assertions true. It now pairs
+    the practice with a real game, which is what makes `null` distinguishable from
+    `Ravens`/`12:00 PM`. Pass 6 also found the timezone pin in `formatETTime` had no mutation at
+    all, protected only incidentally by the fixtures' explicit offsets disagreeing with a UTC
+    host; there is one now.
+  - **Documentation drift was found in every round except 1 and 5** — so rounds 2, 3, 4, 6, 7
+    and 8, though only 2-4, 6 and 7 *failed* on it; round 8's was a SHOULD FIX on a PASS.
+    Four of them were introduced by the very commit sweeping that section for that defect.
+    **This bullet has now drifted twice about drift.** It said "consecutive" for three commits
+    running, incremented mechanically each round, while the paragraph 38 lines above says pass
+    5 returned PASS — the two could not both be true; and the count that replaced it ("five of
+    the seven rounds") was stale within one round, because round 8 found drift too. It is
+    stated as an exception list rather than a total for that reason: a total has to be
+    recomputed every round and nobody does, which is the whole subject of the bullet.
+    Removing derived counts from the prose was not enough on its own: pass 6 found the
+    changelog still carrying a mutation count, a control total and a test delta from before the
+    rebase, all four false, plus a present-tense description of `data/flag-football.json` that
+    three greps refute. **Pass 7 then found that the commit fixing all of that had introduced
+    the same defect one level down**, in a code comment rather than in this file: a note in
+    `digest/builder.test.js` quoted its own diff size as `+14/-0` — true at `317a6f4` — and
+    rewriting that note took it to `+17/-0` at `6ddcbf3`. Both are historical; the figure has
+    moved again since, which is the whole point. Two things came out of it. The narrow fix is that the comment
+    no longer states a number at all — updating it to 17 would only have reset the clock, which
+    is the move this very paragraph exists to warn against. The general one is that "derived
+    counts do not belong in prose" was being applied to `CLAUDE.md` alone, while the same
+    figures sat unexamined in comments; a rule scoped to one file is not scoped to the defect,
+    which is the lesson the gate section of this file already teaches about deny rules.
+    That is the single largest category on this branch, in a repository
+    whose stated policy treats it as first-class. **The other durable lesson is narrower than
+    "check your numbers":** the stale figures all described the *pre-rebase* branch, and the
+    rebase changed the implementation without anyone re-reading the paragraph that described
+    it. A merge that changes behaviour is a documentation change too.
+
+  Which finding came from which pass is deliberately stated above rather than presented as one
+  undifferentiated list, because an earlier draft's flat "(1) … (2) … three MINOR" read as a
+  single pass's output and made the sequence unrecoverable. One SHOULD FIX is recorded as an
+  open item rather than fixed, because it lands on a Codex-owned surface — see the
+  `thisWeekTime` nullability item.
 
 - **Myles's Fall 2026 Yorktown NFL FLAG season created; team identity keyed on the league's
   numeric team id (Sept 10, 2026):** Closes the Known open item opened one entry below, which
@@ -3489,6 +3706,103 @@ enumerated under test, digest, and render directly to Node. No deployment.
 
 ## Known open items
 
+- **✓ RESOLVED Sept 10, 2026 — `thisWeekTime` and `thisWeekOpponent` now come from one row.**
+  This item was opened by a Reviewer pass against an earlier version of this same branch, which
+  derived `thisWeekTime` from a calendar occurrence while `thisWeekOpponent` came from
+  `data/flag-football.json` — two sources for the two halves of one rendered sentence, able in
+  principle to describe different fixtures. Both now project from `flagFootballParser`'s
+  `nextFlagGame`, which is one row of one file, so they cannot disagree; `builder.js` sets only
+  `hasGameThisWeek` and deliberately overwrites neither.
+  **What made the fix possible was PR #62**, which landed the Fall 2026 season with per-game
+  `time`. Before it, the season file had no time to read and the calendar was the only source —
+  so the coupling was not an oversight so much as the only shape available at the time. Worth
+  keeping as a pattern: when two fields are rendered as one sentence, they need one source, and
+  the moment one of them stops being a constant the requirement becomes visible.
+  **When there is no next scheduled game the time is absent rather than borrowed** — the
+  opponent falls back to `captainAssignments` so legacy seasons keep working, and the renderer
+  drops the separator (PR #64). That is an absent half, not a disagreeing one.
+
+- **✓ RESOLVED Sept 10, 2026 by PR #64 — Codex handled the nullability on both renderers.**
+  `render/dashboard-v2.js` now moves the separator inside the conditional
+  (`vs. ${opponent}${time ? ` · ${time}` : ''}`) and `render/dashboard-mobile.js` calls `note()`
+  only when there is a time, so an unknown time renders `vs. Ravens` with no trailing `·` and
+  no empty element. Verified by mutation rather than taken on trust: reverting both one-line
+  fixes turns `render/flag-game-time.test.js` red at 3/6 and the layout footprint test at 1/23.
+  The Athletics panel footprint is unchanged (1473.83 × 315.63). The handoff as originally
+  written follows, for provenance.
+  **[HISTORICAL] `athletics.thisWeekTime` became nullable, and two Codex-owned renderers
+  concatenated it against an unconditional separator.** Raised by
+  an independent Reviewer pass on the flag football derivation branch. Before that change
+  `thisWeekTime` was the literal `'3:00 PM'` whenever `hasGameThisWeek` was true; it is now
+  `null` in three cases: an all-day occurrence, one whose duration cannot be measured, and —
+  added later in the same branch, which is why an earlier draft of this item undercounted the
+  path — an ordinary **timed** occurrence whose measured duration falls between one and two
+  hours, where whether the block is one long session or practice-then-game is genuinely
+  ambiguous.
+  `render/dashboard-v2.js:850` renders
+  `` `vs. ${esc(a.thisWeekOpponent)} · ${esc(a.thisWeekTime || '')}` ``, so a null now produces
+  `vs. Eagles · ` with a trailing separator on the television;
+  `render/dashboard-mobile.js:112` has the milder `note(a.thisWeekTime || '')`, an empty note
+  element. **This is the same dangling-separator failure `joinSubtitle()` was added to prevent
+  inside `aliases.js`** — the discipline simply stops at the module boundary, which is worth
+  noticing as a pattern rather than as one bug.
+  **Deliberately not fixed here.** Both files are presentation surfaces, and the Surface
+  boundaries section is explicit that Codex owns those and that the loop must not reach across
+  to fix its own blockers there — the request goes to Wade's coordinating chat, gets scoped,
+  and Codex builds it. That is what this entry is. The digest side is already correct: `null`
+  is the honest value for "no derivable game time", and making it non-null again to spare the
+  renderer would put back the guessing the change removed.
+  **Reachability is higher than an earlier draft of this item claimed, and the correction is
+  the point.** That draft said the null path "needs an all-day flag game", which was true when
+  written and stopped being true within the same branch: the ambiguous 60–120-minute band
+  reaches it from an ordinary timed event, and a 90-minute game block is a mundane calendar
+  shape needing nothing unusual. The all-day route is also real — the Fall 2026 calendar
+  contains `"Flag Football: Week 6 — Practice + Game / Playoffs (Yorktown)"` (Oct 25) and the
+  Nov 1 rain-date entry, though neither matches the ` vs ` pattern today so neither currently
+  sets `isFlagGame`. Net: treat `vs. <opponent> · ` with a trailing separator as a state Codex
+  should expect to render, not an exotic one.
+
+- **The approved Sept 20 flag football accent can no longer bind to any event on the calendar
+  (Sept 10, 2026).** Found while fixing the flag football subtitle, verified rather than
+  inferred, and **deliberately not fixed** — the entry is approved with dated provenance and
+  changing it needs Wade. `data/special-events.json`'s
+  `myles-flag-football-week1-2026-09-20` qualifies on a `calendarOccurrence` that is
+  `kind: "all-day"` with `titleMatch.mode: "literal"`, value
+  `"Flag Football: Week 1 — Practice + Game (Yorktown)"`, provenance "read live 2026-08-30".
+  The Myles calendar has since been rebuilt for the Williamsburg→Yorktown league merger
+  (Perfect Performance NOVA email, 8/17/26; the events' own `updated` stamps are 2026-09-10).
+  On 2026-09-20 it now carries a **timed** event (11:00–13:00) titled
+  `"Flag Football: Week 2 — vs Langston-Ravens (Home)"`; the Week 1 event moved to **Sept 13**
+  and is titled `"Flag Football: Week 1 — Meet & Greet"`. Measured against the shipped
+  predicate with a green control — `titleMatches(live, spec)` and `titleMatches(week1, spec)`
+  are both **false**, `titleMatches(spec.value, spec)` is **true** — so the node fails on the
+  title alone, and separately on `all-day` vs timed.
+  **This is the fail-closed design working, not a breakage**: the row renders ordinary, which
+  is exactly what "a range that stopped spanning both days fails closed rather than accenting a
+  changed event" promises. The open part is that an *approved, `enabled: true`* treatment is now
+  inert and nothing says so — and the same league merger moved the season, so the entry's
+  premise ("the first fall game", `label: "FIRST GAME"`) now points at Sept 13's Meet & Greet
+  or Sept 20's Week 2, not at what it was written against. Re-scoping it is a registry change
+  plus, per the Event-row Accent section, a fresh wash-clearance check: the `FIRST GAME` chip's
+  clearance depends on rendered title length, and both candidate titles differ in length from
+  the approved one. **Do that before Sept 19, 4:00 PM ET** if the accent is meant to be visible.
+  Note this is a *different* failure from the Known open item below, which is about the season
+  data being absent; both touch the same date and neither fixes the other.
+
+- **Frozen v1 now prints a derived flag football time beside a stale venue (Sept 10, 2026).**
+  `render/dashboard.js:589` renders `${thisWeekTime || '3:00 PM'} · Williamsburg Christian
+  Academy`. As of the Sept 10 derivation change, `thisWeekTime` is the real Fall 2026 game hour
+  (12:00 PM or 2:00 PM by week) while the venue literal beside it still names the Spring 2026
+  school — so the line is now half-right rather than uniformly stale. **Left alone deliberately**:
+  `render/dashboard.js` is the frozen v1 surface and the freeze forbids touching it without Wade
+  asking in that session. No test breaks — `render/dashboard.test.js` supplies its own
+  `thisWeekTime` fixture — so the freeze's failing-test exception does not apply and was not
+  used. Fix it in whatever session retires or unfreezes v1; the correct value is already
+  available as `flagFootballDetails(event).venue`. Worth knowing that this is exactly the
+  failure mode the Frozen surfaces section describes: a surface nobody reads produces no signal
+  when it goes wrong.
+
+
 - **Fall 2026 flag football standings are not a division table, and the new tie column is
   produced but displayed nowhere (Sept 10, 2026).** Both raised by a round-2 Reviewer pass, and
   both are consequences of the season that was just added rather than pre-existing defects.
@@ -3522,10 +3836,19 @@ enumerated under test, digest, and render directly to Node. No deployment.
   argument is that silent rot on a frozen surface is the failure mode; a stale doc nobody wrote
   down is exactly that. Fix it whenever the freeze is next lifted, or when v1 is retired.
 
-- **The flag-game event subtitle and `thisWeekTime` still name the SPRING season's venue and
-  time, and the fall season being live now makes that visible (Sept 10, 2026).** Raised by an
-  independent Reviewer pass against the claim that this belonged to Codex. **It does not — it is
-  digest-layer, which Surface boundaries assign to the loop.** Two hardcoded sites:
+- **✓ RESOLVED Sept 10, 2026 — both hardcoded Spring 2026 sites are gone.** This item, opened
+  by a Reviewer pass on the #62 branch, named exactly the two digest-layer sites this branch
+  fixes: `digest/aliases.js`'s flag-game subtitle and `digest/builder.js`'s `thisWeekTime`.
+  It also predicted the right shape of the fix — "derive from `data/flag-football.json`" rather
+  than swap one literal for another — and that is what `thisWeekTime` does. **The subtitle took
+  the other available source and the reasoning is worth keeping:** it derives from the calendar
+  occurrence, because a subtitle decorating a row must agree with *that row*, and because the
+  season file has no per-occurrence venue (only a season-level `location`) while every calendar
+  event carries its own numbered field. The `'Flag Practice'` alias was fixed with it. Frozen
+  v1's copy is deliberately untouched — see the item below. The original follows.
+  **[HISTORICAL] The flag-game event subtitle and `thisWeekTime` still name the SPRING season's
+  venue and time.** Raised by an independent Reviewer pass against the claim that this belonged
+  to Codex. **It does not — it is digest-layer, which Surface boundaries assign to the loop.** Two hardcoded sites:
   `digest/aliases.js`'s flag-game `PATTERN_MATCHERS` entry emits
   `subtitle: '3:00 PM (follows 2:00 PM practice) · Williamsburg Christian Academy'`, and
   `digest/builder.js`'s `isFlagGame` cross-reference sets `athletics.thisWeekTime = '3:00 PM'`
@@ -3590,6 +3913,22 @@ enumerated under test, digest, and render directly to Node. No deployment.
   part of that task rather than a sign it went wrong. **Do that before Sept 20** if the
   card is meant to be live for the first game. Note the ordering trap: repointing the window
   without adding the season entry makes the fallback's stale Spring 2026 record visible.
+
+  **Amended Sept 10, 2026 — the schedule is no longer missing, which changes what this item
+  is blocked on.** The claim above that there is "no fall-2026 schedule … anywhere in the repo
+  or the docs" was true of the repo and is still true of it, but the Myles calendar now carries
+  the full season, read live while fixing the flag football subtitle: **Yorktown NFL FLAG,
+  Sept 13 – Oct 25 2026**, all at McReynolds Athletic Complex after the Williamsburg league
+  merged into Yorktown (Perfect Performance NOVA email, 8/17/26). Six weeks are published —
+  Week 1 Meet & Greet (9/13, practice only), then Weeks 2-6 on 9/20, 9/27, 10/4, 10/11 and
+  10/18 against Langston-Ravens, Henze/Pfauth-Bears, Schmidt-Broncos, Baker/In-Texans and
+  Herring-Panthers, each a one-hour practice followed by the game, with the numbered field on
+  each event. Myles's team is `Moore – Cowboys` (league team id 8009182, program 5025209), and
+  Wade coaches the 5th/6th division. So the season window and the opponent list are now
+  derivable; **`myTeamAbbr` and the other seven teams' abbreviations still are not**, and the
+  Week 6 entries are internally inconsistent on the calendar (a timed 10/18 "Week 6" and a
+  separate all-day 10/25 "Week 6"), so this stays an Updater task with a question in it rather
+  than a mechanical transcription. Nothing was fabricated into `flag-football.json`.
 
 - **✓ RESOLVED Sept 8, 2026 — each day of the 72h window now gets its own prep item.** `digest/builder.js` derives the strip per day (`generateTasks(day.events, day.date, getSchoolStrip(day.date))`) instead of handing one today-strip to all three days. `generateTasks()` is unchanged: its contract was always "emit from the strip you are given", and it was the caller that gave it the wrong one — so its ~40 existing unit tests stand untouched rather than being rewritten to a new contract. **The entry this replaces was right about the mechanism and understated the damage in one direction.** It named the false positive (a stale row repeated on later days) but not the false negative: the same slot is single-valued, so Wednesday's stale baritone row *displaced* Friday's genuine Ophelia library-book row rather than merely joining it. Simulating all 290 mornings of the 2026-27 school year: **123 stale prep rows shipped per year** (58% of the 212 the email emitted) on **71 mornings (24.5%)**, and **177 genuinely-owed prep rows never appeared on their own day.** After the fix the year emits 266 rows, all correct — net **+54 rows/year**, about +0.19 per morning. **Blast radius is narrower than "the digest":** only `render/email.js` renders past `days[0]`; `render/dashboard.js` (frozen v1), `render/dashboard-v2.js` and `digest/nowNextSelector.js` all read `days[0]` alone, and `days[0]`'s task list is unchanged by construction — so the entire correction lands in the email's second and third day blocks and the frozen surface was neither touched nor at risk. Wording was deliberately left alone: the row reads `"⚠ Pack library book **this morning** (Ophelia — Media **today**)"` — two relative words, not one — and both are scoped by the `dayHeader(day.date)` the row sits under. The shipped email already does exactly this with the solo-evening row's `"tonight"` in future day blocks, so no new precedent is set. **The general gap the entry named — "nothing asserts task-list contents across the window" — is what the test closes**, generically: a 26-morning sweep in `digest/builder.test.js` compares every day of every window against an oracle derived straight from `getRotation()`, so it fails for any day-specific prep item on any wrong day in either direction. **Two cross-day interactions the fix creates were found by review and are now pinned rather than left incidental:** on all **25** school-day Music-eves Myles's baritone row shares an email with his library-book row (the same 25 the `schoolRotation.js` collision argument counts — but as Wednesday's item under Wednesday's header, not as the Tuesday-morning nudge that argument rejected; `tomorrowWarnings` stays free of instrument warnings and a test asserts it), and on **59** mornings a year the strip's "pack library book tonight" line coexists with the day-1 block's own "pack library book this morning" row (kept — different instructions at different times, and suppressing the day-1 row would restore the false negative). Neither is a regression, though they differ in shape: on a Music-eve the day-1 block pre-fix carried *today's* row instead, so (1) is a substitution; on an S2 morning neither child owes anything that day, so pre-fix the block carried nothing and (2) is genuinely newly-visible output on those 59 mornings. All four tests proved to have teeth against two mutants: the pre-fix today-strip (all four red) and a today-only guard, which kills the stale rows but keeps all 177 false negatives (all four red, the sweep and the Oct 21 pin failing on the false-negative assertion) — so the block discriminates between the fix and the tempting half-fix.
 

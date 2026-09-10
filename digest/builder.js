@@ -347,12 +347,15 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   // ── 12. Athletics data ───────────────────────────────────────────────────
   const athletics = parseAthleticsDoc(today, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData);
 
-  // Cross-reference calendar for flag game this week
+  // Cross-reference calendar for flag game this week.
+  // This sets ONLY hasGameThisWeek — "is there a flag game on the calendar in
+  // the 72h window". thisWeekOpponent and thisWeekTime are both projected from
+  // the season file by flagFootballParser and are deliberately not touched
+  // here: overwriting one of a rendered pair from a second source is exactly
+  // what let a hardcoded '3:00 PM' sit beside a real opponent.
   const flagGameEvent = allResolved.find(ev => ev.isFlagGame);
   if (flagGameEvent) {
     athletics.hasGameThisWeek = true;
-    athletics.thisWeekTime    = '3:00 PM';
-    // thisWeekOpponent already set by flagFootballParser — do not overwrite
   }
 
   // ── 12.5. Weekly priorities ──────────────────────────────────────────────
