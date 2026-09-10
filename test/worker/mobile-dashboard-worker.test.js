@@ -217,7 +217,7 @@ describe('document route', () => {
     // a header that disagrees with the body. Mutating the MANIFEST, not the
     // document, is what makes that guard falsifiable.
     for (const wrong of [1, 999_999_999, 0]) {
-      const { call } = await scenario({
+      const { call, store, manifest } = await scenario({
         mutate: (objects, published) => ({
           ...objects,
           [MOBILE_MANIFEST_KEY]: {
@@ -229,6 +229,14 @@ describe('document route', () => {
       const response = await call('/');
       assert.equal(response.headers.get(REASON_HEADER), 'artifact-malformed', `size ${wrong}`);
       assert.equal(response.status, 502, `size ${wrong}`);
+      // Every validation failure in this Worker is 502/artifact-malformed,
+      // so the status alone cannot say WHICH check refused it. Asserting the
+      // document was actually read pins the refusal to the cross-check
+      // against the body rather than to some earlier rejection of the
+      // manifest — otherwise a future change that rejected `size: 0` in
+      // `resolvePointer` would keep this case green while it stopped
+      // exercising anything.
+      assert.ok(store.requestedKeys.includes(manifest.artifact.key), `size ${wrong}: the document was never read, so the body cross-check never ran`);
     }
   });
 

@@ -16,6 +16,7 @@
 // It edits tracked files in place and restores them in a `finally`. Run it on
 // a clean tree, and check `git status` afterwards if it is interrupted.
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -103,15 +104,22 @@ const MUTATIONS = [
     s => s.replace('          CONFIG: worker/mobile-dashboard/wrangler.toml', '          CONFIG: package.json')],
   ['the workflow loses the CONFIG mapping entirely', WORKFLOW,
     s => s.replace('        env:\n          CONFIG: worker/mobile-dashboard/wrangler.toml\n', '')],
+  ['the reader policy statement regains a key IAM refuses in an identity policy', POLICY,
+    s => s.replace('      "Sid": "ReadMobileDashboardArtifactsOnly",', '      "Sid": "ReadMobileDashboardArtifactsOnly",\n      "Principal": "*",')],
   ['the reader policy regains a top-level key IAM would refuse', POLICY,
     s => s.replace('{\n  "Version"', '{\n  "_comment": "apply with put-user-policy",\n  "Version"')],
 
   // --- last-good and integrity --------------------------------------------
   ['the manifest-declared size is no longer cross-checked against the body', WORKER,
     s => s.replace("  if (bytes.byteLength !== manifest.artifact.size) throw new ServeFailure('artifact-malformed');\n", '')],
-  ['the served content-length is taken from a size nothing checked', WORKER,
-    s => s.replace("  if (bytes.byteLength !== manifest.artifact.size) throw new ServeFailure('artifact-malformed');\n  if (await sha256Hex(bytes) !== manifest.artifact.sha256) throw new ServeFailure('artifact-malformed');",
-      "  if (await sha256Hex(bytes) !== manifest.artifact.sha256) throw new ServeFailure('artifact-malformed');")],
+  // This row used to delete the same line as the row above, by a different
+  // route, so the two mutated trees were byte-identical and one property was
+  // scored twice. The distinct-mutant check below now refuses that. What was
+  // missing behind the duplicate is this: nothing mutated the served
+  // content-length itself, so the test asserting it agrees with the body was
+  // an unmutated guard — the exact category this harness exists to catch.
+  ['the served content-length disagrees with the body', WORKER,
+    s => s.replace("    'content-length': String(manifest.artifact.size),\n    // The successful-generation timestamp", "    'content-length': String(manifest.artifact.size + 1),\n    // The successful-generation timestamp")],
   ['the document is served without checking it against its manifest', WORKER,
     s => s.replace("  if (bytes.byteLength !== manifest.artifact.size) throw new ServeFailure('artifact-malformed');\n  if (await sha256Hex(bytes) !== manifest.artifact.sha256) throw new ServeFailure('artifact-malformed');", '')],
   ['the contract predicate is dropped from pointer resolution', WORKER,
@@ -192,11 +200,23 @@ if (control.red || control.total < 40) { console.error('control run is not green
 
 const survived = [];
 let proven = 0;
+// Two rows once deleted the same line by different routes, producing
+// byte-identical trees, and the harness scored the property twice — turning
+// "45 mutations proven" into 44 distinct ones plus a restatement. Guarding
+// `mutated !== original` catches a no-op edit but not a duplicate of another
+// edit, so the mutated tree is fingerprinted as well.
+const seen = new Map();
 for (const [label, file, mutate] of MUTATIONS) {
   const path = resolve(root, file);
   const original = readFileSync(path, 'utf8');
   const mutated = mutate(original);
   if (mutated === original) { console.error(`MUTATION DID NOT APPLY: ${label}`); process.exit(1); }
+  const fingerprint = `${file}\u0000${createHash('sha256').update(mutated).digest('hex')}`;
+  if (seen.has(fingerprint)) {
+    console.error(`DUPLICATE MUTANT: ${label} produces the same tree as ${seen.get(fingerprint)}`);
+    process.exit(1);
+  }
+  seen.set(fingerprint, label);
   writeFileSync(path, mutated);
   let outcome;
   try { outcome = runSuite(); } finally { writeFileSync(path, original); }
@@ -231,6 +251,6 @@ console.log(`self-test: a syntax error reports ${selfTest.total} tests (control 
 
 const after = runSuite();
 console.log(`restored: ${after.total} tests, ${after.pass} pass, ${after.fail} fail, ${after.cancelled} cancelled`);
-console.log(`${proven}/${MUTATIONS.length} mutations proven`);
+console.log(`${proven}/${MUTATIONS.length} mutations proven, all distinct (${seen.size} unique mutated trees)`);
 if (survived.length) console.error(`SURVIVING GUARDS (report these): ${survived.join(' | ')}`);
 process.exit(!after.red && survived.length === 0 ? 0 : 1);
