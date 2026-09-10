@@ -72,6 +72,25 @@ function findLeagueRank(swimmerName, configEventName, rankings) {
   return match ? match.place : null;
 }
 
+// 757swim season label — derived from the configured window, never hardcoded.
+// The label this replaced was the string literal '2025–26 757 Season', which stayed
+// behind when the 2026-27 season was configured and would have named the wrong
+// season on every surface that reads opheliaSeason. Deriving it from the same
+// config fields that decide whether the season is active at all means the label
+// cannot disagree with the window it describes.
+//
+// A season spanning two calendar years renders as "2026–27"; one contained in a
+// single calendar year renders as that year alone, rather than "2026–26".
+function swim757SeasonLabel(sport) {
+  const startYear = Number(String(sport?.seasonStart ?? '').slice(0, 4));
+  const endYear   = Number(String(sport?.seasonEnd   ?? '').slice(0, 4));
+  if (!Number.isInteger(startYear) || !Number.isInteger(endYear)) return '757 Season';
+  const span = endYear > startYear
+    ? `${startYear}\u2013${String(endYear).slice(-2)}`
+    : `${startYear}`;
+  return `${span} 757 Season`;
+}
+
 // Event name mapping — sports-config uses abbreviated names; swim-results.json uses full names.
 // Falls back to the config name as-is if no mapping is defined.
 const EVENT_NAME_MAP = {
@@ -332,7 +351,7 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
 
   const opheliaSeason = wavesActive
     ? '2026 Waves Season'
-    : swim757Active ? '2025–26 757 Season' : 'Off-Season';
+    : swim757Active ? swim757SeasonLabel(config.swim757) : 'Off-Season';
 
   return {
     mylesPBRows,

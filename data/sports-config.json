@@ -12,9 +12,9 @@
     "bufferDays": 3
   },
   "swim757": {
-    "active": false,
-    "seasonStart": "2025-09-01",
-    "seasonEnd": "2026-05-31",
+    "active": true,
+    "seasonStart": "2026-09-12",
+    "seasonEnd": "2027-04-25",
     "bufferDays": 7
   },
   "sharks": {
