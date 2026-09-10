@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2345+ passing with a browser
+- Run npm test after changes — must stay at 2349+ passing with a browser
   (see "Test baseline" for the exact invocation and the no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
@@ -1951,12 +1951,18 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2345 | **2345** | **0** | **0** |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2349 | **2349** | **0** | **0** |
 
-Measured on `claude/loving-knuth-478237` after merging `origin/main` at **`2d54679`** (PR #64).
-**`git fetch origin main` was run before deriving that**, per the standing warning; the ref was
-stale at `3d250aa` and the fetch moved it forward three merges. `2d54679` was re-measured in
-this session, before any change and after `npm install`: **2316 / 2316 / 0 / 0 with a browser**.
+Measured on `claude/loving-knuth-478237` after merging `origin/main` at **`975fbc2`** (PR #66).
+**`git fetch origin main` was run twice, and both times it mattered.** The first fetch moved a
+ref stale at `3d250aa` forward three merges to `2d54679` (PR #64), which measured **2316**. The
+PR then reported `mergeable_state: "behind"` — `main` had advanced again to `975fbc2` while the
+branch sat in review — so it was merged in and **both ends re-measured in a `git worktree`**:
+base `975fbc2` = **2320 / 2320 / 0 / 0**, branch = **2349 / 2349 / 0 / 0**.
+
+**The delta survived the move and the base did not, which is the point of re-measuring both.**
+This change still adds exactly +29; `#66` added 4 tests to the base, so an entry that had
+updated only its own total would have quietly claimed a +33 this branch never made.
 
 This change adds **+29**, in two existing files:
 
@@ -1965,7 +1971,8 @@ This change adds **+29**, in two existing files:
 | `digest/aliases.test.js` | 30 | 51 | +21 |
 | `test/flagFootballParser.test.js` | 30 | 38 | +8 |
 
-2316 + 29 = 2345, so the table closes against a measurement rather than a recorded figure.
+2320 + 29 = 2349, so the table closes against a measurement rather than a recorded figure.
+Both operands were measured this session; neither is carried forward from an earlier entry.
 `digest/builder.test.js` contributes **0** node:test points (10 either way); its internal
 assertion count moved 126 → 127.
 
@@ -2071,7 +2078,7 @@ The no-browser row is deliberately absent from this measurement, for the reason 
 above gives.
 
 **Coder mode had to keep `npm test` at 2309+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2345.)
+Current baseline above; the figure is now 2349.)
 
 ### Previous baseline — measured Sept 10, 2026 on the current-season athletics branch
 
@@ -2115,7 +2122,7 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2297+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2345.)
+Current baseline above; the figure is now 2349.)
 
 ### Previous baseline — measured Sept 9, 2026 on the mobile publishing-contract branch
 
@@ -2753,8 +2760,10 @@ method, so they chain directly to the 988 pre-change number above.
   correct-*looking* rewrite could still be wrong. Not enumerated beyond that — the harness names
   each one when it runs, and three drafts of this entry listed a set a later round had already
   grown.
-  Tests **2316 → 2345**, all passing with a browser, measured against a re-measured base rather
-  than a recorded one. **This paragraph previously read `14 mutations, 14/14, green 59/59` and
+  Tests **2320 → 2349**, all passing with a browser, measured against a re-measured base rather
+  than a recorded one — and re-measured a *second* time when `main` advanced to `975fbc2`
+  (PR #66) while this branch sat in review. The delta stayed +29 across that move because #66
+  touched only `render/`; the base did not, which is why both ends are measured rather than one. **This paragraph previously read `14 mutations, 14/14, green 59/59` and
   `Tests 2297 → 2316`, and every one of those four figures was false** — the counts were the
   pre-rebase harness, 59 was a test total from before `TEST_FILES` moved, and `2297 → 2316`
   named neither endpoint of this change (2316 is the base; 2297 predates PR #62). They are
