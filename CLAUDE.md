@@ -2687,24 +2687,37 @@ method, so they chain directly to the 988 pre-change number above.
   wrong. Not enumerated here — the harness names each one when it runs, and three drafts of
   this entry listed a set that a later round had already grown.
   Tests **2297 → 2316**, all passing with a browser.
-  **Four independent Reviewer passes ran on this branch; the first three returned FAIL and each
-  was right.** The implementation passed every pass from the first; what failed, three times
-  running, was this file — a figure the tree did not support, usually introduced by the very
-  commit sweeping that section for that defect. That is recorded because the ratio is the
-  finding: one real code defect (below) against three rounds of documentation drift, in a
-  repository whose stated policy treats the second as first-class. Everything raised against
-  the implementation is fixed here. (1) BLOCKING — the builder fixtures paired a
-  run-time-relative date with a static UTC offset, so two assertions would have started
-  failing on Nov 1 2026; and the tripwire first written to prevent that could not fail, for
-  the same reason the fixture was wrong. (2) SHOULD FIX — `flagFootballDetails` treated a
-  *missing* `end` the same as a *measured-short* block, handing back the practice hour as the
-  game hour, confidently, in the one branch the header says exists to prevent exactly that.
-  Absence of evidence is now distinguished from evidence of absence: unknown duration yields
-  `gameTime: null`, which also makes `builder.js`'s "Null when it cannot be derived" comment
-  true rather than aspirational. Three MINOR findings were also taken: a venue assertion that
-  stayed true under the very mutation it was meant to catch, an unpinned resolved title, and
-  the CLAUDE.md wording above. One SHOULD FIX is recorded as an open item rather than fixed,
-  because it lands on a Codex-owned surface — see the `thisWeekTime` nullability item.
+  **Five independent Reviewer passes ran on this branch: the first four returned FAIL, the
+  fifth PASS.** An earlier version of this paragraph said four passes with the first three
+  failing, and claimed "the implementation passed every pass from the first" against a "ratio"
+  of one code defect to three rounds of documentation drift. **All four of those claims were
+  wrong**, and they are corrected here rather than left, because a paragraph about review
+  accuracy being itself inaccurate is the defect it describes:
+
+  - **Production behaviour changed twice in response to review**, so the implementation did
+    not pass untouched. Pass 1 found `flagFootballDetails` treating a *missing* `end` the same
+    as a *measured-short* block — handing back the practice hour as the game hour,
+    confidently, in the one branch the header says exists to prevent exactly that; unknown
+    duration now yields `gameTime: null`, which also makes `builder.js`'s "Null when it cannot
+    be derived" comment true rather than aspirational. Pass 2 found the `< 2h` threshold doing
+    the same thing one band narrower, which is why there is now an explicit ambiguous
+    60–120-minute case. A 90-minute block's output differs because of that second change.
+  - **Test-guard defects were found in three separate rounds**: a DST fixture pairing a
+    run-time-relative date with a static offset (which would have gone red on Nov 1 2026); the
+    tripwire written to prevent its return, which could not fail; that tripwire's region
+    boundary, and its two blocklist checks with no positive assertion; a venue assertion that
+    stayed true under the very mutation it was meant to catch; and an unpinned resolved title.
+  - **Documentation drift failed three consecutive rounds** — a figure the tree did not
+    support, twice introduced by the very commit sweeping that section for that defect. That
+    is the single largest category here, in a repository whose stated policy treats it as
+    first-class, and it is why derived counts were removed from the prose above rather than
+    corrected a fourth time.
+
+  Which finding came from which pass is deliberately stated above rather than presented as one
+  undifferentiated list, because an earlier draft's flat "(1) … (2) … three MINOR" read as a
+  single pass's output and made the sequence unrecoverable. One SHOULD FIX is recorded as an
+  open item rather than fixed, because it lands on a Codex-owned surface — see the
+  `thisWeekTime` nullability item.
 
 - **Current-season athletics updated for both kids (Sept 10, 2026):** Ophelia's 757swim
   2026-27 season is enabled in `data/sports-config.json` with the window documented in
