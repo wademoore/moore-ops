@@ -12,9 +12,13 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2613+ passing with a browser
+- Run npm test after changes — must stay at 2615+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
-  no-browser row)
+  no-browser row). **This line and the floor at the end of the current baseline
+  entry are one figure in two places — move both or neither.** It has now gone
+  stale twice: it sat at `624+` from July until Sept 7, and a Reviewer round caught
+  it left at `2613+` in the very commit that raised the baseline to `2615` — a
+  floor of `2613+` licenses deleting the two tests that commit added.
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
 
@@ -440,13 +444,59 @@ file runs unchanged on Windows) with a real PreToolUse payload on stdin and asse
 exit code (2 = blocked, 0 = allowed), so it tests the shipped script, not a copy of its
 logic.
 
-`test/hooks/enforcement-wiring.test.js` (**6 tests**) is the companion tripwire: it reads
+`test/hooks/enforcement-wiring.test.js` (**9 tests**) is the companion tripwire: it reads
 the shipped `settings.json` and agent files and asserts the guard is actually *wired* —
 matcher reaching `Edit`, `Write`, `Bash` and `PowerShell`, exec form, no BOM on any
 enforcement file, the reviewer/debugger frontmatter hooks present with the right role
 argument, every hook script parsing, and the retired bash guard absent. The matrix proves
 the script works; this proves something runs it. The gap between those two is exactly how
 the guard was dropped from `settings.json` unnoticed in Sept 2026.
+
+**It covered three of the six mechanisms until Sept 11, 2026, and two of the three it
+missed were the Reviewer gate's.** Deleting `hooks.SubagentStop` or `hooks.Stop` from `settings.json`
+left the whole suite green — the identical hole the file was written to close, one event
+type over, standing for the entire life of the gate. Two cases now assert each half:
+present under its own event, exec form, `${CLAUDE_PROJECT_DIR}`-anchored, the recorder's
+matcher reaching `reviewer`, and the Stop gate's matcher **narrowing nothing** (a matcher
+scoped to one agent would look wired while letting ordinary turns end ungated, which is
+worse than absent). Both scripts also joined the existence list, which had named three of
+the five shipped scripts. **That takes coverage to five of six, not six of six** — see
+the next paragraph for the one still uncovered.
+
+**⚠ The `permissions.deny` block is the sixth mechanism and nothing asserts it — not before
+this change and not after.** It is listed *first* among the six above and holds the four
+branch-pinning rules that are the branching policy's second layer. Delete the whole `deny`
+block and every test stays green — established by the check that actually shows it, not by
+the grep that reads like it does: `test/hooks/enforcement-wiring.test.js` is the **only**
+test that reads `settings.json` at all, and it indexes `hooks` and nothing else. (`grep -rn
+"permissions" test/` returning only two unrelated GitHub-workflow keys shows merely that no
+test *mentions* the word. Round 2 rejected that as support in the Known open item; this copy
+kept it for a further round, which is the partial-sweep failure recorded twice **below**
+— at "Verified state" and in the changelog entry — happening a third time. A fourth round
+caught that this sentence said "above"; the substance held, the direction did not.) Left uncovered
+deliberately — this change was scoped to the Reviewer gate — and recorded here rather than
+rounded away, because a first draft of this very paragraph said "four of the six" and so
+counted the one genuinely uncovered mechanism as covered, in the section whose subject is
+unverified coverage claims. A Reviewer round caught it. See Known open items.
+
+**The count said 6 in TWO places in this section and the file measured 7**, from the
+read-only backstop `bf3be6f` (#46) added without touching this file — the drift the section
+above already names that commit for, in a third location. Corrected by measurement, not
+arithmetic — but only here at first: the "Verified state" line below kept `6/6` for a
+further round, so the fix for a stale figure introduced a contradiction where the base had
+merely been uniformly wrong. **A figure in this file is rarely in one place. Grep for it.**
+
+The tripwire's own teeth are re-derivable rather than asserted: `node
+scratch/enforcement-wiring/mutation-check.mjs` copies `.claude/` and the **real,
+unmodified** test file into a throwaway tree outside the repository (the shipped
+`settings.json` cannot be edited — the deny rules refuse `Edit` and `Write` on it),
+damages one wiring decision there, and requires the suite to go red **on the case naming
+that decision** with every other case still green. **11 mutations, 11/11 proven** against
+the current file; run against the pre-change file the same eleven score **0/11, all
+SURVIVED**, which is the measurement that establishes the gap was real rather than argued.
+(This sentence read 9/9 after the first pass and 10/10 after the second; each Reviewer round
+added a row for an assertion nothing attacked. It is a third copy of one figure and it went
+stale twice. Grep before believing any number in this file, and re-run before writing one.)
 
 This supersedes the earlier 63-case matrix, which lived only in a session scratchpad and
 did not survive it. Coverage is a superset: all 24 rule-(b) utilities are now enumerated
@@ -469,7 +519,10 @@ during development. It is now bounded to a single whitespace-free token. Both ca
 confirmed to have teeth: against a copy of the hook with that one character class
 reverted, both flip from allow to block and the test fails.
 
-**Verified state:** 94/94 passing (plus 6/6 wiring). The file sits in `test/hooks/`, a subdirectory, which
+**Verified state:** 94/94 passing (plus 9/9 wiring — it was 6/6 here and `(**6 tests**)`
+sixty-seven lines above, both wrong by one and consistent with each other; the commit that
+corrected the first left this one, so for one round the section said 9 and 6 for the same
+measurement. Second Reviewer round, same defect, one copy down). The file sits in `test/hooks/`, a subdirectory, which
 is why it survived the globstar bug — that bug is fixed as of Aug 27, 2026 (see Test
 baseline), so plain `npm test` now picks up every test file regardless of depth and the
 placement no longer buys anything. Keeping it in `test/hooks/` remains fine on
@@ -2339,7 +2392,158 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 11, 2026 on the workerd runtime-guard branch
+### Current baseline — measured Sept 11, 2026 on the Reviewer-gate wiring branch
+
+| Invocation | tests | pass | fail | cancelled | duration |
+|---|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 57765 ms |
+
+**One run reported a single failure, it did not reproduce, and its name was not captured —
+recorded rather than rounded to "green".** The denominator is deliberately *runs since the
+suite's executed files last changed*, not "runs on this tree": `git diff --name-only
+61cdf61..HEAD -- test/ digest/ render/` is **empty**, so every run in this window exercised
+byte-identical inputs. **Nine browser-enabled runs in that window. One reported
+2615/2614/1/0; the other eight reported 2615/2615/0/0**, five of them captured to file
+specifically to catch the name if it recurred. It did not. Eleven runs were recorded across
+the whole branch (the durations paragraph below lists all eleven); nine of them fall in this
+window. The count is of runs whose `# fail` line was read — one further invocation in the
+window was filtered to `not ok` lines only, showed none, and is deliberately **excluded**
+rather than counted as a pass with no totals, so that every run behind every figure here was
+scored the same way.
+
+⚠ **That denominator is the fix for a defect this paragraph committed three times.** The
+run count was first stated per-branch, then per-tree — and a *tree* changes every time
+anyone edits documentation, so each round's own edit invalidated the count the previous
+round had just corrected, silently, while the code under test never moved. Round 5 caught
+the second instance and round 6 the third. Two rules came out of it, and they are worth more
+than the numbers they fixed: **a retraction must name the error and never restate the
+current figure** — a live number inside a correction is one more place to rot, and it rots
+unseen because nobody re-reads a parenthetical they have already fixed — and **a denominator
+must be anchored to something that only changes when the measured thing changes.** "Runs
+since `test/ digest/ render/` last changed" survives any number of documentation edits;
+"runs on this tree" cannot survive even one.
+
+What is established: `# cancelled 0` in the failing run, which rules out the no-browser
+hook cascade — that produces `fail 4 / cancelled 53` — so the failure came from a test body
+rather than a `before` hook. It does **not** establish an *assertion* failure specifically:
+any top-level `test()` body throwing for any reason gives `fail 1 / cancelled 0`. Also
+established: this change's diff touches **zero** files under `render/` or `digest/`
+(`git diff --name-only a903756..HEAD -- render/ digest/` is empty), and the two test files
+it does touch pass 66/66 in five consecutive isolated runs.
+
+What is **not** established is which test failed. The signature — one failure, zero
+cancelled, non-reproducing, green on re-run — matches the latent `render/dashboard-v2.test.js`
+clock flake this file documents under Known open items. **That is a consistent signature,
+not an identification, and the frequency argues against it rather than for it.** At that
+item's own ~0.11% per run the chance of meeting it at all in nine runs is **1.00%**, and the
+expected wait to a first occurrence is about **900 runs** — so one sighting here is roughly
+a **1-in-100** event under that model, and the observed one-in-nine is an empirical 11.1%
+per run, **100×** what the mechanism predicts. Not the "about what you'd expect" a first
+draft of this paragraph claimed. Read it as: the shape matches a known flake, the rate does not, and the
+possibilities left open are ordinary bad luck, a different cause, or a documented rate that
+is understated. None of the three is settled by one uncaptured failure.
+
+Measured on `claude/zealous-cray-hw8avn`, branched from `origin/main` at **`a903756`**
+(PR #72) — the branch point and the merge base are the same commit. **`git fetch origin
+main` was run before deriving it, per the standing warning, and it mattered again: the ref
+was stale at `2d01027` and the fetch moved it to `a903756`, nineteen merges on.** The base
+was re-measured in this session, after `npm install` and before any change: **2613 / 2613 /
+0 / 0, 63310 ms** — which matches the entry below, so the recorded figure held.
+Re-measure anyway; the run costs less than the correction does.
+
+This change adds **+2**, both in one existing file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/hooks/enforcement-wiring.test.js` | 7 | 9 | +2 |
+| `test/hooks/reviewer-gate.test.js` | 57 | 57 | 0 |
+
+2613 + 2 = 2615, and **2615 is the measured figure in the table above rather than that
+sum** — the agreement is reassuring and is not itself evidence. Both before-figures were
+measured on the unmodified tree at `a903756` in this session.
+
+**`test/hooks/reviewer-gate.test.js` contributes 0, and that is the point rather than an
+omission.** Its 57 cases are unchanged; what changed is *which program they run*. The file
+resolved its hook directory to `scratch/reviewer-gate/` unless `REVIEWER_GATE_HOOK_DIR`
+was set, so 57 cases were proving properties of a byte-identical duplicate that no hook
+event executes, with nothing enforcing that duplicate stays identical. The default is now
+`.claude/hooks/` — the copies `settings.json` actually runs. A test count cannot show that;
+it is the one change here whose whole effect is invisible to arithmetic.
+
+**No existing test was deleted or skipped.** `git diff --numstat` over `test/` reports 3
+deletions in the wiring file (the `commandHooks()` body, generalised to take an event name)
+and 9 in the behavioural file (the header paragraphs and the one `HOOK_DIR` line). No
+`it()` or `test()` was removed, and no `.skip`/`.todo` appears anywhere in the diff. The
+only assertion whose meaning changed is `HOOK_DIR`'s default, which is the change itself.
+
+**Do not read the durations as a comparison.** Base 63310 ms in **one** run; this branch
+60440, 59503, 61284, 60772, 58503, 60033, 57214, 59098, 58343, 57368 and 57765 ms —
+eleven runs, nine of them in the anchored window above, a spread of **4070 ms**,
+wider than the whole gap to the base figure.
+The branch is the faster number every time and that means nothing: one run on the base side
+cannot support a comparison at all, least of all for a change that adds two assertions
+reading an already-parsed object. Nothing is demonstrable in either direction; the cost is
+below the noise floor here. (This paragraph has been rewritten at every round as the run
+count grew, which is itself the argument for not quoting a duration as evidence.)
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2615+ with no failures once a browser resolves.**
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
+quoting a figure that was not taken is exactly the unfalsifiable claim this section exists
+to prevent.
+
+Two companion harnesses, both **committed** and run on demand. New: `node
+scratch/enforcement-wiring/mutation-check.mjs` → **11 mutations, 11/11 proven**, green
+9-case control, plus two self-test rows run before the table — one writes unparseable JSON
+and requires the harness's own hollowness check to catch it, the other submits a repeated
+tree and requires the duplicate detector to catch that. Each row must redden **the case
+naming that decision** with every other case green, so an over-broad mutation is scored
+`OVER-BROAD` rather than "as expected" — the failure mode the sibling harnesses in this
+repo each had to learn.
+
+**It carries the two properties this file records as still missing elsewhere**, rather than
+repeating them: mutated trees are fingerprinted and a duplicate aborts the run (the defect
+recorded against `scratch/mobile-worker/mutation-check.mjs`, whose count went 45 to 44
+distinct plus a restatement — two mutations producing identical trees are one property
+scored twice, while whatever the duplicate stood in for is covered by nothing;
+`scratch/mobile-publishing-contract/` owns the *other* scoring defect, a hung mutant
+draining the runner and printing `# fail 0`), **and the control tree is registered too**, so a mutation whose replacement equals
+its anchor aborts instead of scoring `SURVIVED` as if it were a coverage gap — the omission
+the season-markers open item names. The distinct-tree **count** is deliberately not printed:
+a duplicate aborts, so any run reaching the summary has it equal to the row count by
+construction, and printing it would restate the row count as a second measurement.
+
+**The same eleven rows score 0/11, all SURVIVED, against the pre-change file**, measured in
+a `git worktree` at `a903756`. That is the evidence the gap was real rather than argued, and
+it is the whole reason this file's figures are re-derivable instead of quoted.
+
+**Two of the eleven rows exist only because Reviewer rounds found assertions nothing
+attacked, and the second is the first one level down.** `assertExecForm()` makes three
+assertions — `type`, `command`, and the `${CLAUDE_PROJECT_DIR}` anchor on `args[0]`. The
+exec-form mutation deletes `args`, so `wiredHook()` returns undefined and the case fails at
+`assert.ok(guard)` **before `assertExecForm` is called at all**: that row reaches none of
+the three. The de-anchor row covered the anchor; round 1 added a row changing only the
+launcher, which reached `command` and left `type` unmutated; round 2 caught that and added a
+row changing only `type`. So one helper hid three assertions behind a `.find()` that can
+fail earlier, and it took two rounds to enumerate them — the argument for counting a
+helper's **assertions** rather than the rows that enter it. (A first version of this
+paragraph and of the harness's own comment both said the exec-form row reached two of the
+three. It reaches none. Round 3.)
+
+Unchanged and re-run rather than assumed: `node scratch/reviewer-gate/mutation-check.mjs` →
+**25 mutations, ALL PROVEN**, control 57. Repointing the behavioural default does not touch
+it, because its control calls `runSuite(HERE)` — naming `scratch/reviewer-gate` explicitly
+— and every mutant is a temp copy of that same directory. That is what keeps the harness
+measuring the tree it mutates rather than the wired one, and it is why the duplicates and
+the `REVIEWER_GATE_HOOK_DIR` override both have to stay.
+
+### Previous baseline — measured Sept 11, 2026 on the workerd runtime-guard branch
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
@@ -2405,7 +2609,8 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2613+ with no failures once a browser resolves.**
+**Coder mode had to keep `npm test` at 2613+ under this baseline.** (Superseded — see
+Current baseline above; the figure is now **2615**.)
 
 **The new file needs a runtime the other 2591 tests do not.** `workerd` is a **devDependency**
 (`require('workerd').default` is the platform binary's absolute path, so nothing guesses a
@@ -3065,6 +3270,19 @@ This change adds **+57**, all in one new file:
 |---|---|---|---|
 | `test/hooks/reviewer-gate.test.js` (new) | — | 57 | +57 |
 
+⚠ **Read this paragraph as provenance, not as current wiring.** It described the branch it
+was measured on, where the gate genuinely was unwired; `1bad0fd` (#53) installed it, and
+since Sept 11, 2026 `test/hooks/reviewer-gate.test.js` defaults to the **wired** copies in
+`.claude/hooks/` rather than the scratch ones this paragraph names. What is still true is
+narrow and worth stating exactly: `scratch/reviewer-gate/` is not referenced by
+`.claude/settings.json`, so **no hook event ever executes the copies in it**. It is not
+unreferenced — `mutation-check.mjs` names it as its own control, and three scripts in
+`scratch/reviewer-gate-install/` point at it. A first version of this pointer said
+"referenced by nothing" and cited the current baseline as support, which is the passage that
+says the harness names the directory explicitly and that the duplicates must be kept because
+of it. A third Reviewer round caught it. **Unwired is not unreferenced**, and generalising
+the first into the second is how a true claim becomes a false one.
+
 The file is a behavioural matrix for a **standalone, unwired** Stop-hook artifact in
 `scratch/reviewer-gate/` — two hooks that make a Reviewer pass mandatory. Nothing under
 `.claude/` is touched, so no hook in this repository behaves differently because of it;
@@ -3565,6 +3783,205 @@ method, so they chain directly to the 988 pre-change number above.
 
 ## Current state (changelog)
 
+- **The wiring tripwire did not cover the Reviewer gate, and the behavioural matrix tested
+  the wrong copies (Sept 11, 2026):** Three defects in the enforcement test layer, all in
+  the same place and all of the shape this repository writes about most: a guard that reads
+  as protective and is not.
+
+  **(1) Deleting either Reviewer-gate wiring entry left the suite green.**
+  `test/hooks/enforcement-wiring.test.js` exists to fail when a mechanism is dropped from
+  `.claude/settings.json` — it was written because the archived-files guard was once dropped
+  unnoticed. It asserted **three** of the six wired mechanisms, and two of the three it
+  missed were
+  `hooks.SubagentStop` → `record-review-verdict.mjs` and `hooks.Stop` → `require-review.mjs`,
+  wired by `1bad0fd` (#53) and never covered for the whole of their life. Two cases now
+  assert each half: present under its own event, exec form, `${CLAUDE_PROJECT_DIR}`-anchored,
+  the recorder's matcher reaching `reviewer`, and the Stop gate's matcher **narrowing
+  nothing** — a matcher scoped to one agent would look wired while letting ordinary turns end
+  ungated, which is worse than being absent. Both scripts also joined the existence list,
+  which had named three of the five shipped scripts. Coverage goes three of six → **five of
+  six**; the sixth, the `permissions.deny` block, is asserted by nothing and stays that way
+  here — out of scope, and now written down rather than rounded away. A first draft of this
+  entry said "four of the six", which counted the one genuinely uncovered mechanism as
+  covered.
+
+  **Demonstrated rather than asserted, and inside the deny rules.** `Edit`/`Write` on
+  `.claude/settings.json` are refused by this repo's own configuration, so the control cannot
+  damage the shipped file. `scratch/enforcement-wiring/mutation-check.mjs` copies `.claude/`
+  and the **real, unmodified** test file into a throwaway tree outside the repository,
+  damages one wiring decision there, and requires the suite to go red **on the case naming
+  that decision** with every other case green. **11/11 proven** on the current file; **0/11,
+  all SURVIVED** on the pre-change file in a `git worktree` at `a903756`. That contrast is
+  the finding: the gap was measured, not argued.
+
+  **(2) The behavioural matrix ran against a copy nothing executes.**
+  `test/hooks/reviewer-gate.test.js` resolved its hook directory to `scratch/reviewer-gate/`
+  by default. Three byte-identical copies of both scripts exist — `.claude/hooks/`,
+  `scratch/reviewer-gate/`, `scratch/reviewer-gate-install/` — and **nothing enforces that
+  they stay identical**, so 57 cases were proving properties of a program no hook event ever
+  runs. The default is now `.claude/hooks/`. The test count does not move, which is exactly
+  why this one is worth writing down: its whole effect is invisible to arithmetic.
+
+  **The duplicates and the `REVIEWER_GATE_HOOK_DIR` override both stay, deliberately.**
+  `.claude/hooks/` is unwritable under the deny rules, so `scratch/reviewer-gate/mutation-check.mjs`
+  needs a tree it can damage: it copies its own directory to a temp tree, mutates it there,
+  and points the variable at that, with its control naming `scratch/reviewer-gate`
+  explicitly. Re-run unchanged: **25 mutations, ALL PROVEN**, control 57 — which is the
+  evidence that repointing the default did not disturb it, rather than the assertion of it.
+
+  **(3) A false comment in source, which this project rates above a false document.** That
+  file's header said the scripts "are NOT wired into `.claude/settings.json`" and "there is
+  deliberately no wiring to assert yet." Both false since #53. The next session reads a
+  header comment as authority and has no reason to check it. Rewritten to state what is true
+  and to name the sibling file where the wiring *is* asserted, so the division of labour is
+  explicit rather than inferred. `scratch/reviewer-gate/README.md`'s "Nothing here is wired
+  up" was corrected in the same pass — accurate about the *directory*, and read as "the gate
+  is not installed", which would have become actively misleading beside a test that now
+  defaults to the wired copies.
+
+  **A fourth, smaller drift was found by measuring rather than reading:** this file recorded
+  `enforcement-wiring.test.js` at **6 tests** and it measured **7**, from the read-only
+  backstop `bf3be6f` (#46) added without touching `CLAUDE.md` — the third stranded location
+  that commit left behind, after the mechanism count and the read-only subsection. Corrected
+  to the measured 9.
+
+  **Two independent Reviewer rounds returned FAIL. Neither raised a BLOCKING finding, and
+  every item in both was documentation — the behaviour was right from round 1.** Round 1
+  raised two SHOULD FIX, both defects of exactly the kind this change exists to correct. (1) The CODER MODE floor at
+  the top of this file still read `2613+` while the new baseline read `2615+` — same-commit
+  drift, in the commit whose subject is stale guarantees, and a floor of `2613+` licenses
+  deleting the two tests the commit adds. The base carried `2613` in *both* places and was
+  consistent; this change made it contradictory. (2) "It asserted four of the six wired
+  mechanisms" was wrong: the base asserted **three**, and the sixth — the `permissions.deny`
+  block — is asserted by nothing before or after. So the miscount counted the one genuinely
+  uncovered mechanism as covered. Corrected to three-of-six → five-of-six, with the
+  remaining gap written up in Known open items rather than closed on the way past. Three
+  MINOR items were also taken: the tenth mutation row above, a distinct-tree fingerprint
+  guard with its own self-test, and a note on why the recorder's matcher assertion is
+  deliberately one-directional (a wider matcher is defended by the recorder's own
+  `agent_type` guard, which has its own mutation row next door).
+
+  **Round 2 then failed on the round-1 defect, one copy down, missed by the round-1 fix's
+  own sweep.** `(**6 tests**)` was corrected to 9 while `94/94 passing (plus 6/6 wiring)`
+  sixty-seven lines below it kept the 6 — so the section stated 9 and 6 for one
+  measurement, and two passages asserting the count had been "corrected by measurement"
+  were thereby false. The sweep that caught a third copy of the *harness* figure did not
+  sweep for the *count* the same commit had just changed. The lesson is narrower than
+  "grep before writing a number": **grep for the number you just changed, not only for the
+  one you were told about.** Round 2's five MINOR items were also taken — an eleventh
+  mutation row for `assert.equal(guard.type, 'command')`, the last assertion in the new
+  helper nothing attacked, which is round 1's MINOR (a) one assertion down (10/10 → 11/11,
+  and the pre-change figure re-derived at 0/11); "blockers" corrected to SHOULD FIX,
+  since round 1 raised no BLOCKING finding and a record that upgrades its own severities is
+  the inaccuracy this file elsewhere insists on fixing; the open item's grep narrowed to
+  what it actually shows, with the stronger check stated beside it; `wiredHook()`'s JSDoc
+  narrowed from "the one hook" to what a `.find()` returns; and the duplicate-mutant defect
+  re-attributed to `scratch/mobile-worker/`, which is where it was found —
+  `scratch/mobile-publishing-contract/` owns the *other* scoring defect, a hung mutant
+  draining the runner and printing `# fail 0`.
+
+  **Round 3 found the same family a third time, and this one was introduced by the round-2
+  fix rather than inherited.** Two SHOULD FIX, no BLOCKING. (1) The provenance pointer
+  round 2 added asserted `scratch/reviewer-gate/` is "referenced by nothing" and cited the
+  current baseline as support — the passage that says the mutation harness names that
+  directory as its own control and that the duplicates must be kept because of it. Four
+  files reference it. The true claim is narrower: it is not referenced by `settings.json`,
+  so no hook event executes it. **Unwired is not unreferenced.** Sweeping for the *statement*
+  rather than for the flagged line then found a **fourth** copy of the same false
+  generalisation that no Reviewer round had flagged — `scratch/reviewer-gate/README.md`,
+  written by this change's own first commit, saying the duplicates are "byte-identical
+  duplicates that nothing references". Corrected there too, which is the sweep working
+  rather than a further defect. (2) Round 2's MINOR (c) was
+  fixed in the Known open item and left standing in the gate section, which kept resting the
+  identical claim on the grep round 2 had just rejected — a partial sweep, for the third
+  round running. Two MINOR taken: the harness comment and the baseline narrative both said
+  the exec-form row reached two of `assertExecForm()`'s three assertions when it reaches
+  none (it fails at `assert.ok(guard)` first), and round 2's commit message called a SHOULD
+  FIX a "blocker" in the same commit whose MINOR (b) corrected that word in `CLAUDE.md`.
+
+  **Round 4 returned PASS.** Its one SHOULD FIX was inherited rather than introduced —
+  `scratch/reviewer-gate/README.md` said the reviewer-gate harness has 24 mutations where
+  the array has 25, stale since before this branch — but the change had edited that file and
+  restated the contradicting figure without grepping the file it had open. Corrected, along
+  with a direction word and the parked attribution, which had been disclosed only in a commit
+  message where a reader of this file alone would meet the contradiction undisclosed.
+
+  **Round 5 returned FAIL on the paragraph round 4 added, and the finding is the pattern's
+  purest form: the retracted figure survived its own retraction by two lines.** The flake
+  note corrected "one run out of eight" to six-runs-on-this-tree and then closed with "the
+  row above is the figure seven of eight runs produced" — arithmetic derived from the number
+  the sentence immediately above it retracts. Round 5 also caught a real overclaim in the
+  same paragraph: it said eight runs is "roughly where you would expect to meet" a
+  0.11%-per-run flake once, and called the sighting "corroboration of the rate". At 0.11%,
+  the observed frequency is about two orders of magnitude higher than that mechanism
+  predicts, so it argues *against* the identification rather than for it. The figures behind
+  that are in the current baseline entry and are deliberately not restated here — see below
+  for why. Two MINOR taken: `# cancelled 0`
+  rules out the no-browser hook cascade but not a non-assertion throw, and the open item's
+  copy said "one run in six on the branch" where six was the count on the final tree.
+
+  **Round 6 failed on the fix for round 5, and it closes the loop on what was actually going
+  wrong.** The round-5 fix wrote the branch total and the per-tree run count *into the
+  retraction it had just written*, so when the final measurement added a seventh run the
+  retraction became the stale part — contradicting the sentence it was attached to, and
+  disowning a phrase ("six consecutive re-runs") that the new count had made correct. Three
+  contradictions in one parenthetical, all of them a correction that had rotted. Also taken:
+  one ratio stated in two incompatible forms at once. Both are now one value in one form,
+  computed from the anchored denominator below rather than restated here — a historical note
+  that carries a live figure is the defect this very entry is about. **The rule that falls out is sharper than "grep for the statement":
+  a retraction must name the error and never restate the current figure.** A live number
+  inside a correction is one more place for it to rot, and it rots silently, because nobody
+  re-reads a parenthetical they have already fixed. Every run figure now lives in exactly one
+  place and is linked to rather than copied.
+
+  **The durable fix, made after round 6 rather than in response to a finding, was to change
+  the denominator.** The run count had been stated per-branch, then per-tree; a *tree*
+  changes on every documentation edit, so each round's own commit silently invalidated the
+  count the previous round had corrected, while the code under test never moved once. It is
+  now *runs since the suite's executed files last changed* — `git diff --name-only
+  61cdf61..HEAD -- test/ digest/ render/` is empty, so every run in the window exercised
+  byte-identical inputs, and no number of further documentation edits can rot it. **No
+  further suite runs were taken after that figure was written down, deliberately**: with the
+  denominator anchored, each additional run changes the count, so the measurement and the
+  writing-down have to stop together. That is the generalisable form of "freeze before
+  measuring" — freeze, measure, write, and then stop measuring.
+
+  **Round 7 then caught the claim that this had single-sourced the figures, which was
+  false.** Anchoring the denominator stopped it rotting; it did not reduce the number of
+  places it was written down, and the run count plus all four derived figures were sitting in
+  three — this entry, the baseline, and the Known open item — agreeing today and each a place
+  the next session could forget. Made true rather than softened — and stated at the width it
+  actually holds, which is the narrower half of the lesson: **the derived arithmetic** (the
+  probability, the expected wait, the ratio) now appears **only** in the current baseline
+  entry, and this paragraph points at it rather than restating it. The bare observation —
+  one failure in nine runs — still appears twice, because a Known open item has to stand
+  alone for a reader who never reaches the baseline; those two are named here as a pair that
+  must move together, which is the honest version of a guarantee that cannot be made
+  absolute. Claiming "exactly one place" for everything is what got flagged the first time. Round 7 also found the two run
+  counts using different accounting (one included an invocation whose totals were never
+  read); both now count only runs whose `# fail` line was read, which is nine in the window
+  and eleven on the branch, stated together.
+
+  **Six rounds, five FAILs, zero BLOCKING findings, and no behavioural defect in any of
+  them — every item was documentation.** The generalisable part is not "check your numbers":
+  it is that **a fix for a claim in one place is not a fix for the claim**, because this file
+  states most things more than once. Round 1 moved one of two floors; round 2 moved one of
+  two counts; round 3 found one of two copies of a rejected justification, plus a new claim
+  that contradicted its own cited support; round 5 found a retracted figure still in use two
+  lines below its own retraction. The habit that would have caught every one is the same:
+  after correcting a statement, grep for the statement — not for the word you were given —
+  and re-derive anything computed *from* the number you just changed, which is the step that
+  round 5 caught missing.
+
+  **The Reviewer could not verify six of its own checks in round 1, and said so rather than
+  working around them** — its read-only allowlist refuses an env-prefixed `npm test` and a bare
+  `node <script>`, so the browser-enabled row and all three mutation figures were unverified
+  by it. That is the gap the Known open item on the read-only allowlist already describes,
+  observed again.
+
+  Tests **2613 → 2615**, all passing with a browser; both ends measured in this session, the
+  base on the unmodified tree at `a903756`. No test file loses a case, and nothing is skipped.
+
 - **The mobile dashboard Worker's production path was returning 504 on every route;
   bound the fetch receiver, added the diagnostic that would have named it, and closed
   the gap that let it ship (Sept 11, 2026):** `handleRequest` resolved its fetch as
@@ -3839,7 +4256,12 @@ method, so they chain directly to the 988 pre-change number above.
   the loudest catch in a set reads as a survivor — and it fingerprints each mutated tree and
   refuses a duplicate outright, because two mutations producing byte-identical trees are one
   property scored twice while whatever the duplicate stood in for is covered by nothing. Both
-  are recorded in this file as defects found in `scratch/mobile-publishing-contract/`; neither
+  are recorded in this file as defects found in `scratch/mobile-publishing-contract/` — ⚠ the
+  duplicate-tree half of that attribution is **wrong**, and is corrected in the Sept 11
+  wiring entry: it was found in `scratch/mobile-worker/mutation-check.mjs`, whose count went
+  45 to 44 distinct plus a restatement, while `mobile-publishing-contract/` owns the hung-
+  mutant `# fail 0` defect. Left standing here because this paragraph is another change's
+  changelog entry; flagged so a reader meeting both does not have to adjudicate. Neither
   was live here (all 21 trees are distinct), and they are enforced now rather than left to be
   rediscovered. The run prints the distinct-tree count beside the proven count.
 
@@ -5165,6 +5587,38 @@ enumerated under test, digest, and render directly to Node. No deployment.
 
 ## Known open items
 
+- **The `permissions.deny` block is the one enforcement mechanism no test asserts
+  (Sept 11, 2026).** `.claude/settings.json` declares six mechanisms; after this date
+  `test/hooks/enforcement-wiring.test.js` asserts five. The sixth is the `deny` array
+  itself — the four branch-pinning rules, the archived-path `Edit`/`Write` rules, and the
+  rules that keep the enforcement config out of reach of those two tools. **Delete the
+  whole block and `npm test` stays green.** Two checks, and only the second actually establishes
+  it. `grep -rn "permissions" test/` returns two GitHub-workflow `permissions:` keys, in
+  `test/worker/mobile-worker-config.test.js` and `test/ci-workflow-package-gate.test.js`,
+  neither of which reads `settings.json` — but that shows only that no test *mentions* the
+  word, and says nothing about a test that parses `settings.json` and asserts over it. The
+  check that settles it: `test/hooks/enforcement-wiring.test.js` is the **only** test that
+  reads `settings.json` at all, and it indexes `hooks` and nothing else. A Reviewer round
+  caught the first standing in for the second.
+
+  **Left uncovered deliberately**, because the change that found it was scoped to the
+  Reviewer gate and widening a tripwire on the way past is how a reviewed diff stops being
+  reviewable. Recorded because the alternative was worse: the first draft of the paragraph
+  describing that change asserted the tripwire had covered "four of the six", which counted
+  this very mechanism as covered. A Reviewer round caught it. An uncovered mechanism is a
+  gap; an uncovered mechanism *recorded as covered* is the failure mode this file's gate
+  section exists to prevent.
+
+  **Note before writing the test, because it is not the same shape as the other five.**
+  Those assert that something *runs*; a deny rule asserts that a string is *present in a
+  list*, which is close to asserting the file's own contents back at itself. The useful
+  version pins the outcome rather than the text — the four branch-pinning rules as a set,
+  and the archived-path rules as a set — so reordering or reformatting the array does not
+  go red while removing a rule does. Note also that the deny rules are friction, not a
+  gate: server-side branch protection is the real enforcement, and a green test here must
+  never be read as proof the protected branch is safe. That argument is made in full in
+  "The generalizable lesson" above and should be linked from any test that lands.
+
 - **The Reviewer gate's verdict records live inside `.git/` and are keyed by session id, so a
   cloud session can never verify a review that happened in another checkout (Sept 11, 2026).**
   `record-review-verdict.mjs` writes to `join(gitDir, 'moore-ops-review-gate',
@@ -5291,6 +5745,20 @@ enumerated under test, digest, and render directly to Node. No deployment.
   sports-ticker `Updated` stamp does the same. The test makes two independent
   `renderDashboardV2()` calls ~67 ms apart, so the pair differs whenever it
   straddles a **minute** boundary: ≈67/60000 ≈ 0.11% per run.
+  **Second sighting, Sept 11, 2026 — shape consistent, rate not:** one run in nine on the
+  Reviewer-gate wiring branch reported exactly this signature — `# fail 1`, `# cancelled 0`,
+  non-reproducing across eight further runs over byte-identical test inputs, on a branch whose
+  diff touches no file under `render/`. The
+  name was not captured, so it is **not** a second identification — and it is not
+  corroboration of the rate either, which a first draft of this note wrongly claimed. At
+  0.11% per run the observed frequency is about **two orders of magnitude** higher than this
+  mechanism predicts — the exact figures are in the Sept 11 baseline entry and are not
+  restated here, so that they have one home. So either that was a coincidence at roughly that
+  level, or something else produced it, or 0.11% understates the real rate. **If you meet a lone non-reproducing failure in this suite, capture the TAP to a
+  file on the first run** — five captured re-runs after the fact caught nothing, which is
+  the whole difficulty with a rare event, and capturing it is the only thing that would
+  settle which of the three is true.
+
   **Proved deterministically**, not by frequency: stubbing `Date` so the second
   render lands 200 ms later in the *next* minute makes the documents differ, and
   the only differing content is `5:30 AM` → `5:31 AM` in `live-clock` plus the

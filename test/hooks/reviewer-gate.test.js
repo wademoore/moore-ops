@@ -1,20 +1,38 @@
 // Behavioural matrix for the Reviewer gate: a SubagentStop recorder and a Stop
 // gate that together make the Reviewer pass mandatory before a turn can end.
 //
-// The scripts under test live in scratch/reviewer-gate/ and are NOT wired into
-// .claude/settings.json -- they are a standalone artifact, installed by hand.
-// That is why this file spawns them by path rather than asserting any wiring;
-// there is deliberately no wiring to assert yet.
+// By default the scripts under test are the WIRED copies in .claude/hooks/, the
+// ones .claude/settings.json actually runs -- the recorder on SubagentStop matched
+// to the reviewer agent, the gate on Stop. That wiring landed in 1bad0fd (#53); the
+// header here went on saying "NOT wired into .claude/settings.json ... there is
+// deliberately no wiring to assert yet" long after it stopped being true, which is
+// the failure this project rates above a stale document: the next session reads a
+// comment as authority and has no reason to check it.
+//
+// Byte-identical duplicates of both scripts also live in scratch/reviewer-gate/ and
+// scratch/reviewer-gate-install/, and nothing enforces that they stay identical. So
+// while this file defaulted to the scratch copy, 57 cases were proving properties of
+// a program no hook event ever executes. Defaulting to .claude/hooks/ closes that.
 //
 // Cases spawn the real scripts with real hook payloads on stdin, against a real
 // throwaway git repository, and assert the exit code (2 = blocked, 0 = allowed).
 // So this tests the shipped scripts, not a copy of their logic -- the same
 // standard test/hooks/guard-archived-files.test.js sets.
 //
-// REVIEWER_GATE_HOOK_DIR exists solely so the mutation harness can point this
-// same file at a deliberately-broken copy of the hooks and observe it go red.
-// A guard that has never been seen failing is not a proven guard. No production
-// caller sets it; unset, it resolves to the real scratch directory.
+// This file asserts BEHAVIOUR, not wiring. That the two entries exist in
+// settings.json at all is asserted next door, in enforcement-wiring.test.js; the
+// two halves are the same division of labour guard-archived-files.test.js and that
+// file already have. Neither proves the other.
+//
+// REVIEWER_GATE_HOOK_DIR exists solely so the mutation harness can point this same
+// file at a deliberately-broken copy of the hooks and observe it go red. A guard
+// that has never been seen failing is not a proven guard. That is why the scratch
+// duplicates must stay: .claude/hooks/ is unwritable under this repo's own deny
+// rules, so the harness needs a copy it can damage, and it copies
+// scratch/reviewer-gate/ to a temp tree, mutates it there, and points the variable
+// at that -- its control run naming scratch/reviewer-gate explicitly, so the
+// harness keeps measuring the tree it mutates rather than the wired one. No
+// production caller sets the variable.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
@@ -24,7 +42,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const HOOK_DIR = process.env.REVIEWER_GATE_HOOK_DIR || join(REPO, 'scratch', 'reviewer-gate');
+const HOOK_DIR = process.env.REVIEWER_GATE_HOOK_DIR || join(REPO, '.claude', 'hooks');
 const RECORDER = join(HOOK_DIR, 'record-review-verdict.mjs');
 const GATE = join(HOOK_DIR, 'require-review.mjs');
 

@@ -17,6 +17,12 @@
 //     where frontmatter hooks do not fire;
 //   - the reviewer and debugger read-only guards are declared in their agent
 //     frontmatter with the right role argument;
+//   - the Reviewer gate's two halves are wired on their own events: the verdict
+//     recorder on SubagentStop matched to the reviewer agent, and the Stop gate on
+//     Stop with a matcher that narrows nothing. These were wired in 1bad0fd (#53)
+//     and this file did not notice them for the whole of their life so far --
+//     deleting either entry left the suite green, which is the same hole the
+//     archived-files guard fell through and the reason this file exists;
 //   - every hook script parses, and no file under .claude/hooks or .claude/agents
 //     carries a BOM;
 //   - the retired bash guard is gone, so a stale copy cannot drift back in.
@@ -40,10 +46,35 @@ const hasBom = (path) => readFileSync(path).subarray(0, 3).equals(BOM);
 const settings = JSON.parse(readFileSync(SETTINGS, 'utf8'));
 const preToolUse = settings?.hooks?.PreToolUse ?? [];
 
-/** Every command hook in PreToolUse, flattened with its matcher. */
-function commandHooks() {
-  return preToolUse.flatMap((entry) =>
+/** Every command hook declared for one event, flattened with its matcher. */
+function commandHooks(event = 'PreToolUse') {
+  return (settings?.hooks?.[event] ?? []).flatMap((entry) =>
     (entry.hooks ?? []).map((h) => ({ matcher: entry.matcher, ...h })));
+}
+
+/**
+ * The FIRST hook for `event` whose script path ends in `script`, or undefined.
+ *
+ * First, not only: this is a `.find()`, so a second entry naming the same script --
+ * with a narrower matcher, say -- would go unexamined. Matching the three
+ * pre-existing cases above, which have the same property. Nothing in settings.json
+ * declares a script twice today; if one ever does, this returns the wrong one
+ * silently rather than failing, so widen it before relying on it.
+ *
+ * Structural, never a text search: a grep of settings.json for a script name is
+ * satisfied by the statusMessage beside it and by this repo's own prose about
+ * these hooks, so it would keep passing after the entry was deleted. Reading the
+ * parsed args is what makes the assertion falsifiable.
+ */
+function wiredHook(event, script) {
+  return commandHooks(event).find((h) => (h.args ?? []).some((a) => a.endsWith(`/.claude/hooks/${script}`)));
+}
+
+/** The exec-form + anchored-path contract every settings-level hook here shares. */
+function assertExecForm(guard, script) {
+  assert.equal(guard.type, 'command');
+  assert.equal(guard.command, 'node', `${script}: exec form -- command is the node binary, the script is in args`);
+  assert.match(guard.args[0], /^\$\{CLAUDE_PROJECT_DIR\}\//, `${script}: the script path is anchored on \${CLAUDE_PROJECT_DIR}`);
 }
 
 /** Claude Code treats the matcher as a regex over the tool name. */
@@ -104,11 +135,42 @@ test('reviewer and debugger declare the read-only guard in their frontmatter', (
   }
 });
 
+test('the Reviewer verdict recorder is wired on SubagentStop for the reviewer agent', () => {
+  const guard = wiredHook('SubagentStop', 'record-review-verdict.mjs');
+  assert.ok(guard, 'a SubagentStop hook runs .claude/hooks/record-review-verdict.mjs');
+  assertExecForm(guard, 'record-review-verdict.mjs');
+  assert.ok(matcherReaches(guard.matcher, 'reviewer'),
+    `matcher "${guard.matcher}" reaches the reviewer agent -- the recorder is the only thing that writes a verdict, so a matcher that misses reviewer leaves the Stop gate with nothing to read`);
+  // Deliberately one-directional: this fails on a matcher too NARROW and passes on
+  // one too wide. A wider matcher is defended by the recorder itself, which checks
+  // agent_type on stdin and exits without writing for anything else -- a decision
+  // that has its own mutation row in scratch/reviewer-gate/mutation-check.mjs
+  // ("recorder drops the agent_type guard"). Asserting a width bound here would pin
+  // an incidental and go red on a legitimate rewrite while adding no coverage.
+});
+
+test('the Stop gate is wired, and its matcher narrows nothing', () => {
+  const guard = wiredHook('Stop', 'require-review.mjs');
+  assert.ok(guard, 'a Stop hook runs .claude/hooks/require-review.mjs');
+  assertExecForm(guard, 'require-review.mjs');
+  // The gate must consider EVERY turn. A matcher narrowed to one agent or tool
+  // would let ordinary turns end with unreviewed commits and look wired while
+  // doing so, which is worse than being absent. Checked against the empty string
+  // and representative values rather than against the literal "", so an equally
+  // permissive matcher written differently still passes.
+  for (const probe of ['', 'reviewer', 'coder', 'Bash', 'anything-at-all']) {
+    assert.ok(matcherReaches(guard.matcher, probe),
+      `matcher "${guard.matcher}" must not narrow: it fails to reach "${probe}"`);
+  }
+});
+
 test('every hook script parses and no enforcement file carries a BOM', () => {
   const hooks = readdirSync(HOOKS_DIR).filter((f) => f.endsWith('.mjs'));
   assert.ok(hooks.includes('guard-archived-files.mjs'), 'the Node archive guard exists');
   assert.ok(hooks.includes('block-main-push.mjs'), 'the push guard exists');
   assert.ok(hooks.includes('guard-readonly.mjs'), 'the read-only guard exists');
+  assert.ok(hooks.includes('record-review-verdict.mjs'), 'the Reviewer verdict recorder exists');
+  assert.ok(hooks.includes('require-review.mjs'), 'the Stop gate exists');
   for (const f of hooks) {
     const path = join(HOOKS_DIR, f);
     assert.equal(hasBom(path), false, `${f} has no BOM`);
