@@ -152,12 +152,18 @@ const MUTATIONS = [
       "  if (!isMobileManifest(manifest)) { logUnderlying('pointer-shape', 'artifact-malformed', config.manifestKey, new Error('manifest failed the contract predicate')); throw new ServeFailure('artifact-malformed'); }")],
 
   // --- the configuration fault a round-3 review found logged nowhere -------
+  // Both rows anchor on the PHASE LITERAL and consume to end of line, not on
+  // the message text. They were written against the message and rotted on the
+  // very next commit, when a round-4 review showed the message described one
+  // of `mobileKey`'s three checks and had to be reworded — the sixth and
+  // seventh anchors to rot on this change, and the second pair to rot for the
+  // stated reason that an anchor should name the predicate and not the prose.
   ['a misconfigured pointer key goes back to being silent', WORKER,
-    s => s.replace("    logUnderlying('config-pointer', 'artifact-malformed', null, new Error('MOBILE_MANIFEST_KEY is not a key under the mobile prefix'));\n", '')],
+    s => s.replace(/ {4}logUnderlying\('config-pointer'.*\n/, '')],
   ['the rejected pointer key is echoed into the log', WORKER,
     s => s.replace(
-      "new Error('MOBILE_MANIFEST_KEY is not a key under the mobile prefix')",
-      'new Error(`MOBILE_MANIFEST_KEY=${env.MOBILE_MANIFEST_KEY} is not a key under the mobile prefix`)')],
+      / {4}logUnderlying\('config-pointer'.*\n/,
+      '    logUnderlying(\'config-pointer\', \'artifact-malformed\', null, new Error(`MOBILE_MANIFEST_KEY=${env.MOBILE_MANIFEST_KEY} was refused`));\n')],
 
   // --- the claim that workerd loaded the SHIPPED file ----------------------
   // `assertGraphIsVerbatim` is the only thing standing between "the shipped

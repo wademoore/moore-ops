@@ -2422,8 +2422,8 @@ scratch/mobile-worker-receiver/mutation-check.mjs` → **32 mutations, 32/32 pro
 requires the harness's own hollowness check to catch it. Seventeen of the 32 were added for
 guards the three review rounds produced.
 
-**Two of those fourteen SURVIVED their first run, and both were gaps in the new tests rather
-than in the Worker** — a log site added under review with no test behind it, and a
+**Two rows added under review SURVIVED their first run, and both were gaps in the new tests
+rather than in the Worker** — a log site added under review with no test behind it, and a
 "documented gap" case whose fixture reached one throw site while the claim was made for a
 family of a dozen. Both closed, and each verified to fail against its mutation before the
 harness was re-run. It does **not** print a distinct-tree count: a duplicate
@@ -2450,7 +2450,8 @@ assertion held. Fixed rather than reported-and-parked: the case now asserts the 
 store saw no document read, and the mutation fails it (1 failing, on that case). The figures
 above were regenerated after that repair, which left the total where it was because the
 repair strengthened an existing `it()` rather than adding one. (The total has since moved to
-**2613** for a different reason — the two review rounds added nine cases between them — and
+**2613** for a different reason — rounds 1 and 2 of review added five cases and four, and
+rounds 3 and 4 added none, strengthening existing ones instead — and
 an intermediate figure of 2604 survived in this sentence and in the superseded-baseline
 pointer below until a round-2 review caught both. Same-commit drift, in the commit that
 rewrote this section, which is precisely what the section exists to catch. It is recorded
@@ -3615,7 +3616,8 @@ method, so they chain directly to the 988 pre-change number above.
   carried the underlying error in `cause` and nothing read it, so a Worker with
   observability enabled reported `storage-unreachable` and kept the only fact that says
   *which* one it was. One `console.error` JSON line now names the error's constructor and
-  message plus the phase and key, at **ten** sites under nine distinct phases. **This
+  message plus the phase and key, at **ten** call sites under **eight** distinct phases
+  (`upstream-status` serves three of them). **This
   sentence listed five and justified the 5xx one as "the one reason two upstream conditions
   share" — which is verbatim the argument `worker.js` now calls false, left standing one
   level down by the very commit that retracted it.** A round-3 review caught it, and it is

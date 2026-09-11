@@ -409,7 +409,11 @@ describe('the serve-failure diagnostic, at the unit level', () => {
     const branches = [
       ['config-store', { ...env, ARTIFACT_BUCKET: '' }],
       ['config-credentials', { ...env, AWS_SECRET_ACCESS_KEY: '' }],
+      // Both reachable shapes of a bad pointer. The traversal key IS under
+      // the mobile prefix and fails on the dot segment instead — the case the
+      // log message used to describe wrongly.
       ['config-pointer', { ...env, MOBILE_MANIFEST_KEY: 'dashboard-v2/current/manifest.json' }],
+      ['config-pointer', { ...env, MOBILE_MANIFEST_KEY: 'dashboard-mobile/../dashboard-v2/current/manifest.json' }],
     ];
     for (const [phase, caseEnv] of branches) {
       const { lines } = await captured(() => handleRequest(request(), caseEnv, {
@@ -444,16 +448,22 @@ describe('the serve-failure diagnostic, at the unit level', () => {
   });
 
   it('stays silent for the manifest-shape family, which is the documented gap', async () => {
-    // Stated rather than implied: a dozen field checks share one remedy
-    // (republish), so they are deliberately not logged. Both the contract
-    // PREDICATE and an individual field check are exercised, because the
-    // first version of this case reached only the field check — so a mutation
-    // adding a line at the predicate survived, and the "documented gap" was
-    // pinned at one site while being claimed for a family.
-    // One fixture per CATEGORY of the silent family, because a round-3 review
-    // found the previous pair pinning two sites while the claim was made for
-    // eleven. The integrity pair (document versus manifest) is not reachable
-    // from a single canned response and is named in the PR as uncovered.
+    // Stated rather than implied: every check whose fault is in the PUBLISHED
+    // RELEASE shares one remedy — republish — so none of them is logged.
+    //
+    // No count appears here. This comment carried "a dozen" and then
+    // "eleven", four lines apart in one block, and both were wrong; the
+    // Worker's own `logUnderlying` comment records the same defect three
+    // times over and now enumerates categories instead. A category list can
+    // be checked against the file.
+    //
+    // One fixture per category that a single canned response can reach: the
+    // contract predicate, an `artifact` field check, and the manifest's own
+    // key refused by `mobileKey`. The first version reached only the field
+    // check, so a mutation adding a line at the predicate survived.
+    // The document-against-manifest integrity pair, and `releasePrefixOf`'s
+    // throw, are not reachable from a single canned response and are named in
+    // the PR's Parked section as uncovered by this case.
     const valid = { schemaVersion: 1, artifactVersion: 'dashboard-mobile', generatedAt: NOW.toISOString() };
     const bodies = [
       ['fails the contract predicate', { not: 'a manifest' }],

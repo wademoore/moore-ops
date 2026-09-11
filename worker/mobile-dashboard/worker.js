@@ -165,19 +165,25 @@ function scrubCredentials(text) {
  *   logged, so those two reasons always name their own cause;
  * - `artifact-missing` has exactly one cause and needs no line;
  * - `artifact-malformed` is logged wherever the fault is OURS OR THE
- *   TRANSPORT'S — a non-ok upstream status, a body that would not parse, and
- *   a `MOBILE_MANIFEST_KEY` outside the mobile prefix;
- * - it is SILENT for the remaining sites, every one of which locates the
- *   fault in the PUBLISHED RELEASE: the manifest's own key, the contract
- *   predicate, four field checks, and the two document-against-manifest
- *   integrity checks. They share one remedy — republish — so a line apiece
- *   would be volume rather than signal. Named here as a known gap.
+ *   TRANSPORT'S: a non-ok upstream status, a pointer body that would not
+ *   parse, and `MOBILE_MANIFEST_KEY` refused by `mobileKey` (any of its three
+ *   checks, via `configuredManifestKey`);
+ * - it is SILENT wherever the fault is in the PUBLISHED RELEASE: the
+ *   manifest's own `artifact.key` refused by `mobileKey`, that key refused by
+ *   `releasePrefixOf`, the contract predicate, the `artifact` field checks,
+ *   and the two document-against-manifest integrity checks. They share one
+ *   remedy — republish — so a line apiece would be volume rather than signal.
+ *   Named here as a known gap.
  *
- * The second revision of this comment claimed "a dozen field checks"; a
- * review counted five, beside a key check and two integrity checks. A comment
- * that retracts an unmeasured claim with another unmeasured claim has not
- * learned anything, so the categories above are enumerated rather than
- * summarised.
+ * NO COUNT APPEARS IN THE TWO LISTS ABOVE, and that is deliberate rather than
+ * vague. This comment has now been wrong three times in exactly one way: it
+ * claimed "fourteen throw sites" (thirteen), then "a dozen field checks"
+ * (four), then — correcting that — said "four field checks" and "a review
+ * counted five" four lines apart, because the arithmetic had been reconciled
+ * by inflating a category instead of by naming the site the enumeration
+ * omitted. That site was `releasePrefixOf`'s, and it is named above now. A
+ * category list can be checked against the file; a total invites being
+ * written rather than derived.
  *
  * WHAT IS DELIBERATELY ABSENT. Not the signed headers: `authorization`
  * carries `Credential=<access key id>/<scope>`. Not `config.credentials`,
@@ -249,7 +255,13 @@ function configuredManifestKey(env) {
   try {
     return mobileKey(env.MOBILE_MANIFEST_KEY || MOBILE_MANIFEST_KEY);
   } catch (error) {
-    logUnderlying('config-pointer', 'artifact-malformed', null, new Error('MOBILE_MANIFEST_KEY is not a key under the mobile prefix'));
+    // All THREE of `mobileKey`'s checks are described, not just the prefix
+    // one. A round-4 review pointed out that
+    // `dashboard-mobile/../dashboard-v2/x` IS under the prefix and fails on
+    // the dot segment, so the earlier wording was false for exactly the key
+    // the traversal check exists to refuse — and pointed the reader at the
+    // wrong check.
+    logUnderlying('config-pointer', 'artifact-malformed', null, new Error('MOBILE_MANIFEST_KEY is empty, outside the mobile prefix, or contains a dot or empty path segment'));
     throw error;
   }
 }
@@ -558,12 +570,12 @@ export default { fetch: (request, env, ctx) => handleRequest(request, env, {}) }
 
 export {
   DEFAULT_UPSTREAM_TIMEOUT_MS,
-  MAX_DIAGNOSTIC_MESSAGE,
   DISCOVERY_ROUTES,
   DOCUMENT_CONTENT_TYPE,
   DOCUMENT_ROUTES,
   FAILURES,
   MANIFEST_CONTENT_TYPE,
+  MAX_DIAGNOSTIC_MESSAGE,
   REASON_HEADER,
   ServeFailure,
   handleRequest,
