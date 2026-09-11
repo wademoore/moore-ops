@@ -2396,26 +2396,40 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 58343 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 57368 ms |
 
 **One run reported a single failure, it did not reproduce, and its name was not captured —
-recorded rather than rounded to "green".** Exactly: six browser-enabled runs were taken on
-this final tree. The first reported 2615/**2614**/**1**/0; the five after it all reported
-2615/2615/0/0, and three of those five were captured to file specifically to catch the name
-if it recurred. It did not. (An earlier draft of this paragraph said "one run out of eight"
+recorded rather than rounded to "green".** Exactly: seven browser-enabled runs were taken on
+this final tree. The first reported 2615/**2614**/**1**/0; the six after it all reported
+2615/2615/0/0, and four of those six were captured to file specifically to catch the name if
+it recurred. It did not. (An earlier draft of this paragraph said "one run out of eight"
 and "six consecutive re-runs", counting runs taken on *earlier* trees into a claim about
 this one. Nine browser-enabled runs were taken across the branch in total; six were on the
-tree this table describes.) So the row above is the
-figure seven of eight runs produced. What is established: `# cancelled 0` in the failing
-run, so it was a genuine assertion failure and not the no-browser hook cascade; this
-change's diff touches **zero** files under `render/` or `digest/`
-(`git diff --name-only a903756..HEAD -- render/ digest/` is empty); and the two test files
-it does touch pass 66/66 in five consecutive isolated runs. What is **not** established is
-which test failed. The signature — one failure, zero cancelled, non-reproducing, green on
-re-run — matches the latent `render/dashboard-v2.test.js` clock flake this file already
-documents under Known open items at ~0.1% per suite run, and eight runs is roughly where
-you would expect to meet it once. **That is a consistent signature, not an identification**,
-and it is written here as the former.
+tree this table describes.) So the row above is the figure **six of the seven runs on this
+tree** produced. (A first version of this sentence said "seven of eight" — arithmetic
+carried over from the "one run out of eight" that the parenthetical immediately above it
+retracts. The retracted figure survived its own retraction by two lines, which is this
+branch's recurring defect in its fifth instance and is left on the record rather than
+quietly swapped.)
+
+What is established: `# cancelled 0` in the failing run, which rules out the no-browser
+hook cascade — that produces `fail 4 / cancelled 53` — so the failure came from a test body
+rather than a `before` hook. It does **not** establish an *assertion* failure specifically:
+any top-level `test()` body throwing for any reason gives `fail 1 / cancelled 0`. Also
+established: this change's diff touches **zero** files under `render/` or `digest/`
+(`git diff --name-only a903756..HEAD -- render/ digest/` is empty), and the two test files
+it does touch pass 66/66 in five consecutive isolated runs.
+
+What is **not** established is which test failed. The signature — one failure, zero
+cancelled, non-reproducing, green on re-run — matches the latent `render/dashboard-v2.test.js`
+clock flake this file documents under Known open items. **That is a consistent signature,
+not an identification, and the frequency argues against it rather than for it.** At that
+item's own ~0.11% per run the chance of meeting it at all in seven runs is **0.78%**, and
+the expected wait to a first occurrence is about **900 runs** — so one sighting here is
+roughly a 1-in-128 event under that model, not the "about what you'd expect" a first draft of this
+paragraph claimed. Read it as: the shape matches a known flake, the rate does not, and the
+possibilities left open are ordinary bad luck, a different cause, or a documented rate that
+is understated. None of the three is settled by one uncaptured failure.
 
 Measured on `claude/zealous-cray-hw8avn`, branched from `origin/main` at **`a903756`**
 (PR #72) — the branch point and the merge base are the same commit. **`git fetch origin
@@ -2451,8 +2465,8 @@ and 9 in the behavioural file (the header paragraphs and the one `HOOK_DIR` line
 only assertion whose meaning changed is `HOOK_DIR`'s default, which is the change itself.
 
 **Do not read the durations as a comparison.** Base 63310 ms in **one** run; this branch
-60440, 59503, 61284, 60772, 58503, 60033, 57214, 59098 and 58343 ms across four Reviewer
-rounds — nine runs on five successive trees, a spread of **4070 ms**, wider than the whole
+60440, 59503, 61284, 60772, 58503, 60033, 57214, 59098, 58343 and 57368 ms across five Reviewer
+rounds — ten runs on five successive trees, a spread of **4070 ms**, wider than the whole
 gap to the base figure.
 The branch is the faster number every time and that means nothing: one run on the base side
 cannot support a comparison at all, least of all for a change that adds two assertions
@@ -3873,14 +3887,36 @@ method, so they chain directly to the 988 pre-change number above.
   none (it fails at `assert.ok(guard)` first), and round 2's commit message called a SHOULD
   FIX a "blocker" in the same commit whose MINOR (b) corrected that word in `CLAUDE.md`.
 
-  **Three rounds, three FAILs, zero BLOCKING findings, and no behavioural defect in any of
+  **Round 4 returned PASS.** Its one SHOULD FIX was inherited rather than introduced —
+  `scratch/reviewer-gate/README.md` said the reviewer-gate harness has 24 mutations where
+  the array has 25, stale since before this branch — but the change had edited that file and
+  restated the contradicting figure without grepping the file it had open. Corrected, along
+  with a direction word and the parked attribution, which had been disclosed only in a commit
+  message where a reader of this file alone would meet the contradiction undisclosed.
+
+  **Round 5 returned FAIL on the paragraph round 4 added, and the finding is the pattern's
+  purest form: the retracted figure survived its own retraction by two lines.** The flake
+  note corrected "one run out of eight" to six-runs-on-this-tree and then closed with "the
+  row above is the figure seven of eight runs produced" — arithmetic derived from the number
+  the sentence immediately above it retracts. Round 5 also caught a real overclaim in the
+  same paragraph: it said eight runs is "roughly where you would expect to meet" a
+  0.11%-per-run flake once, and called the sighting "corroboration of the rate". At 0.11%,
+  P(≥1 in seven runs) is **0.78%** and the expected wait is about **900 runs** — so the
+  observation is ~100× more frequent than that mechanism predicts and argues *against* the
+  identification rather than for it. Both copies now say so. Two MINOR taken: `# cancelled 0`
+  rules out the no-browser hook cascade but not a non-assertion throw, and the open item's
+  copy said "one run in six on the branch" where six was the count on the final tree.
+
+  **Five rounds, four FAILs, zero BLOCKING findings, and no behavioural defect in any of
   them — every item was documentation.** The generalisable part is not "check your numbers":
   it is that **a fix for a claim in one place is not a fix for the claim**, because this file
   states most things more than once. Round 1 moved one of two floors; round 2 moved one of
   two counts; round 3 found one of two copies of a rejected justification, plus a new claim
-  that contradicted its own cited support. The habit that would have caught all three is the
-  same: after correcting a statement, grep for the statement, not for the word you were
-  given.
+  that contradicted its own cited support; round 5 found a retracted figure still in use two
+  lines below its own retraction. The habit that would have caught every one is the same:
+  after correcting a statement, grep for the statement — not for the word you were given —
+  and re-derive anything computed *from* the number you just changed, which is the step that
+  round 5 caught missing.
 
   **The Reviewer could not verify six of its own checks in round 1, and said so rather than
   working around them** — its read-only allowlist refuses an env-prefixed `npm test` and a bare
@@ -5654,13 +5690,19 @@ enumerated under test, digest, and render directly to Node. No deployment.
   sports-ticker `Updated` stamp does the same. The test makes two independent
   `renderDashboardV2()` calls ~67 ms apart, so the pair differs whenever it
   straddles a **minute** boundary: ≈67/60000 ≈ 0.11% per run.
-  **Second sighting, Sept 11, 2026, consistent but not confirmed:** one run in six on
-  the Reviewer-gate wiring branch reported exactly this signature — `# fail 1`,
-  `# cancelled 0`, non-reproducing across five consecutive re-runs, on a branch whose
-  diff touches no file under `render/`. The name was not captured, so it is corroboration
-  of the rate rather than a second identification. **If you meet a lone non-reproducing
-  failure in this suite, capture the TAP to a file on the first run** — three captured
-  re-runs after the fact caught nothing, which is the whole difficulty with a 0.1% event.
+  **Second sighting, Sept 11, 2026 — shape consistent, rate not:** one run in seven on the
+  Reviewer-gate wiring branch's final tree (ten runs across the branch as a whole)
+  reported exactly this signature — `# fail 1`, `# cancelled 0`, non-reproducing across
+  six consecutive re-runs, on a branch whose diff touches no file under `render/`. The
+  name was not captured, so it is **not** a second identification — and it is not
+  corroboration of the rate either, which a first draft of this note wrongly claimed. At
+  0.11% per run, P(≥1 in seven runs) is **0.78%** and the expected wait is about **900
+  runs**; one sighting in seven is ~100× more frequent than this mechanism predicts. So either that
+  was a 1-in-128 coincidence, or something else produced it, or 0.11% understates the real
+  rate. **If you meet a lone non-reproducing failure in this suite, capture the TAP to a
+  file on the first run** — four captured re-runs after the fact caught nothing, which is
+  the whole difficulty with a rare event, and capturing it is the only thing that would
+  settle which of the three is true.
 
   **Proved deterministically**, not by frequency: stubbing `Date` so the second
   render lands 200 ms later in the *next* minute makes the documents differ, and
