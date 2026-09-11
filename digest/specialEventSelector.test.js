@@ -449,7 +449,13 @@ describe('specialEventSelector — shipped registry integrity', () => {
         .sort((a, b) => a[0].localeCompare(b[0])),
       [
         ['big-sports-saturday-2026-09-12', 'spotlight', 'feature-slot'],
-        ['myles-flag-football-week1-2026-09-20', 'accent', 'event-row'],
+        // UPDATED (2026-09-10): the single `...-week1-2026-09-20` accent was
+        // replaced by two, one per marked moment, on identifiers that follow
+        // the league's own week numbering — September 13 is Week 1 and
+        // September 20 is Week 2. The guard is unchanged in kind: an
+        // unreviewed addition still fails here.
+        ['myles-flag-football-week-1-season-opener-2026-09-13', 'accent', 'event-row'],
+        ['myles-flag-football-week-2-first-game-2026-09-20', 'accent', 'event-row'],
         ['ophelia-757swim-catch-em-all-1-2026-09-19', 'accent', 'event-row'],
       ],
     );

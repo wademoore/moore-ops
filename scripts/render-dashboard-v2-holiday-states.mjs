@@ -37,6 +37,7 @@ const readJson = name => JSON.parse(readFileSync(new URL(`../data/${name}`, impo
 const HOLIDAY = readJson('holiday-themes.json');
 const SPECIAL_EVENTS = readJson('special-events.json');
 const SHARKS = readJson('sharks-soccer.json');
+const FLAG_SEASON = JSON.parse(readFileSync(new URL('../data/flag-football.json', import.meta.url), 'utf8'));
 
 const ACTIVATE = Date.parse('2026-10-24T20:00:00Z');   // Sat Oct 24, 4:00 PM ET
 const EXPIRE = Date.parse('2026-11-01T09:00:00Z');     // Sun Nov 1, 4:00 AM ET
@@ -94,6 +95,7 @@ const STATES = [
         now: Date.parse('2026-09-18T16:10:00Z'),
         specialEventsConfig: SPECIAL_EVENTS,
         sharksSoccerData: SHARKS,
+        flagFootballData: FLAG_SEASON,
       }),
       paletteMode: 'day',
       holidayThemes: true,

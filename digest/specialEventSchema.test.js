@@ -1,6 +1,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { SEASON_MILESTONES as PARSER_SEASON_MILESTONES } from './flagFootballParser.js';
+import { MILESTONE_SOURCES } from './specialEventQualify.js';
 
 import {
   ACCENT_RENDERERS,
@@ -23,6 +25,10 @@ import {
   RENDERER_REQUIRED_TITLE_MATCH_MODE,
   TITLE_MATCH_MODES,
   validateEntry,
+  QUALIFIER_NODE_TYPES,
+  SEASON_MILESTONES,
+  SEASON_MILESTONE_SOURCES,
+  TITLE_MATCHED_NODE_TYPES,
   validateRegistry,
 } from './specialEventSchema.js';
 
@@ -656,9 +662,20 @@ describe('specialEventSchema — title matching', () => {
     assert.ok(!errorsFor(approved).includes(REASON.TITLE_MATCH_INVALID));
   });
 
-  it('the shipped registry pins both accent titles literally', () => {
+  it('pins every title-matched accent literally, and the rest match no title at all', () => {
+    // UPDATED (2026-09-10), not relaxed. This used to assert that EVERY accent
+    // is pinned literally, which was true while every accent was anchored on a
+    // calendar title. The two flag-football accents are now anchored on
+    // `seasonMilestone` nodes and carry no titleMatch at all, so the original
+    // assertion would read `undefined.mode` — see the sibling case below,
+    // which is the guard that they carry no title match rather than a loose
+    // one. The rule itself is unchanged and still has teeth for every node
+    // that does name a title.
     const registry = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
-    for (const treatment of registry.treatments.filter(t => t.level === 'accent')) {
+    const titleMatched = registry.treatments
+      .filter(t => t.level === 'accent' && t.qualification.titleMatch);
+    assert.equal(titleMatched.length, 1, 'exactly one accent is still anchored on a calendar title');
+    for (const treatment of titleMatched) {
       assert.equal(treatment.qualification.titleMatch.mode, 'literal', treatment.id);
     }
     // The Spotlight deliberately keeps prefix matching: its presentation does
@@ -785,28 +802,175 @@ describe('specialEventSchema — renderers that require a strict title match', (
     assert.equal(prefixNodes.length, 2);
     for (const node of prefixNodes) assert.equal(node.titleMatch.mode, 'prefix', node.id);
 
-    // Both accents are pinned literally.
+    // UPDATED (2026-09-10): "both accents are pinned literally" became "every
+    // accent that names a title pins it literally". A seasonMilestone accent
+    // names none, which is the stronger position rather than a weaker one —
+    // there is no string for a rename to invalidate.
     for (const accent of registry.treatments.filter(t => t.level === 'accent')) {
-      assert.equal(accent.qualification.titleMatch.mode, 'literal', accent.id);
+      if (accent.qualification.titleMatch) {
+        assert.equal(accent.qualification.titleMatch.mode, 'literal', accent.id);
+      } else {
+        assert.equal(accent.qualification.type, 'seasonMilestone', accent.id);
+      }
     }
   });
 
-  it('would reject the shipped accents if either were relaxed', () => {
+  it('leaves a seasonMilestone accent unconstrained by the title-match rule', () => {
+    // The rule is keyed on the renderer AND applied only to title-matched node
+    // types, so a seasonMilestone node driving `accent-event-row-v1` is neither
+    // required to carry a title nor rejected for lacking one. Asserted rather
+    // than assumed, because the rule's own wording ("requires `literal` for
+    // accent-event-row-v1") reads as if it should reach every node.
+    const milestone = {
+      id: 'm', date: '2026-09-13', level: 'accent', surface: 'event-row', audience: 'myles',
+      status: 'ready', enabled: true, priority: 151,
+      qualification: {
+        type: 'seasonMilestone', id: 'anchor', source: 'flagFootball',
+        seasonId: 'fall-2026', milestone: 'season-opener', expectedWeek: 1, calendar: 'Myles',
+      },
+      lifecycle: {},
+      presentation: { renderer: 'accent-event-row-v1', ref: 'anchor', owner: 'Myles', doodle: 'football-laces' },
+    };
+    assert.deepEqual(validateEntry(milestone).errors, []);
+  });
+
+  it('would reject the shipped title-matched accent if it were relaxed', () => {
     // Teeth: the rule is what stops the registry drifting back to a permissive
-    // match, so prove the shipped entries actually depend on it.
+    // match, so prove the shipped entry actually depends on it.
+    //
+    // UPDATED (2026-09-10) from "the shipped accents" to "the shipped
+    // title-matched accent". The counts move 1 -> 3 surviving and 2 -> 1
+    // rejected because two accents no longer carry a titleMatch to relax; the
+    // relaxation is applied to whichever entries do, so the mutation still
+    // reaches everything the rule governs.
     const registry = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
+    const relaxable = registry.treatments.filter(t => t.level === 'accent' && t.qualification.titleMatch);
+    assert.equal(relaxable.length, 1, 'the mutation must have something to relax');
     for (const mode of ['exact', 'prefix']) {
       const relaxed = {
         ...registry,
-        treatments: registry.treatments.map(t => (t.level !== 'accent' ? t : {
+        treatments: registry.treatments.map(t => (t.level !== 'accent' || !t.qualification.titleMatch ? t : {
           ...t,
           qualification: { ...t.qualification, titleMatch: { ...t.qualification.titleMatch, mode } },
         })),
       };
       const result = validateRegistry(relaxed);
-      assert.equal(result.entries.length, 1, `only the spotlight should survive with accents on ${mode}`);
+      assert.equal(result.entries.length, registry.treatments.length - 1,
+        `the relaxed accent should be the only casualty with ${mode}`);
       assert.ok(result.reasons.includes(REASON.TITLE_MATCH_TOO_PERMISSIVE), mode);
-      assert.equal(result.rejected.length, 2, mode);
+      assert.deepEqual(result.rejected.map(r => r.id), ['ophelia-757swim-catch-em-all-1-2026-09-19'], mode);
     }
+  });
+});
+
+describe('specialEventSchema — seasonMilestone nodes', () => {
+  const base = {
+    id: 'm', date: '2026-09-13', level: 'accent', surface: 'event-row', audience: 'myles',
+    status: 'ready', enabled: true, priority: 151,
+    lifecycle: {},
+    presentation: { renderer: 'accent-event-row-v1', ref: 'anchor', owner: 'Myles', doodle: 'football-laces' },
+  };
+  const node = (overrides = {}) => ({
+    ...base,
+    qualification: {
+      type: 'seasonMilestone', id: 'anchor', source: 'flagFootball',
+      seasonId: 'fall-2026', milestone: 'season-opener', expectedWeek: 1, calendar: 'Myles',
+      ...overrides,
+    },
+  });
+  const errorsFor = raw => validateEntry(raw).errors;
+
+  it('is an accepted qualifier node type', () => {
+    assert.ok(QUALIFIER_NODE_TYPES.includes('seasonMilestone'));
+    assert.deepEqual(errorsFor(node()), []);
+  });
+
+  it('is deliberately NOT a title-matched node type', () => {
+    // This is the whole point of the node type: it names a calendar but binds
+    // to the schedule, so the load-time "every calendar-anchored node needs a
+    // title" rule must not reach it. If a future edit adds it to
+    // TITLE_MATCHED_NODE_TYPES, every shipped flag-football accent stops
+    // validating — which is what this asserts.
+    assert.ok(!TITLE_MATCHED_NODE_TYPES.includes('seasonMilestone'));
+    assert.ok(!errorsFor(node()).includes(REASON.TITLE_MATCH_INVALID));
+  });
+
+  it('rejects an unknown source rather than falling back to one', () => {
+    assert.deepEqual(SEASON_MILESTONE_SOURCES, ['flagFootball']);
+    for (const source of ['sharks', 'waves', '', null, undefined, 7]) {
+      assert.ok(errorsFor(node({ source })).includes(REASON.UNKNOWN_MILESTONE_SOURCE), String(source));
+    }
+  });
+
+  it('rejects an unknown milestone', () => {
+    assert.deepEqual(SEASON_MILESTONES, ['season-opener', 'first-game']);
+    for (const milestone of ['last-game', 'opener', '', null, undefined]) {
+      assert.ok(errorsFor(node({ milestone })).includes(REASON.SEASON_MILESTONE_INVALID), String(milestone));
+    }
+  });
+
+  it('requires a season id and a calendar', () => {
+    for (const seasonId of ['', '   ', null, undefined, 7]) {
+      assert.ok(errorsFor(node({ seasonId })).includes(REASON.SEASON_MILESTONE_INVALID), `seasonId ${seasonId}`);
+    }
+    for (const calendar of ['', '   ', null, undefined, 7]) {
+      assert.ok(errorsFor(node({ calendar })).includes(REASON.SEASON_MILESTONE_INVALID), `calendar ${calendar}`);
+    }
+  });
+
+  it('requires a positive integer league week', () => {
+    for (const expectedWeek of [0, -1, 1.5, '1', null, undefined]) {
+      assert.ok(errorsFor(node({ expectedWeek })).includes(REASON.SEASON_MILESTONE_INVALID), String(expectedWeek));
+    }
+    assert.deepEqual(errorsFor(node({ expectedWeek: 2, milestone: 'first-game' })), []);
+  });
+
+  it('agrees with the qualifier about which sources exist', () => {
+    // Two lists must name the same sources: the schema's, which rejects an
+    // unknown one at load, and the qualifier's dispatch table, which resolves
+    // it. Drift fails closed in both directions, so this is not a correctness
+    // risk — but nothing bound them, unlike SEASON_MILESTONES, which is
+    // re-exported precisely so it cannot drift.
+    assert.deepEqual([...SEASON_MILESTONE_SOURCES].sort(), Object.keys(MILESTONE_SOURCES).sort());
+  });
+
+  it('takes its milestone vocabulary from the sport module, not a private copy', () => {
+    // SEASON_MILESTONES is re-exported from flagFootballParser so the schema
+    // and the resolver cannot disagree about which milestones exist. A private
+    // duplicate here is exactly how the two would drift.
+    assert.equal(SEASON_MILESTONES, PARSER_SEASON_MILESTONES);
+  });
+
+  it('validates the two shipped flag-football entries as written', () => {
+    const registry = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
+    const milestones = registry.treatments.filter(t => t.qualification.type === 'seasonMilestone');
+    assert.deepEqual(milestones.map(t => [t.id, t.qualification.milestone, t.qualification.expectedWeek]), [
+      ['myles-flag-football-week-1-season-opener-2026-09-13', 'season-opener', 1],
+      ['myles-flag-football-week-2-first-game-2026-09-20', 'first-game', 2],
+    ]);
+    for (const treatment of milestones) assert.deepEqual(validateEntry(treatment).errors, [], treatment.id);
+  });
+
+  it('names identifiers by the league week numbering, not by position', () => {
+    // The predecessor entry called September 20 "week1"; the league calls it
+    // Week 2 and September 13 Week 1. The id, the expectedWeek cross-check and
+    // data/flag-football.json must all say the same thing, because Wade and the
+    // other parents use the league's numbering.
+    const registry = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
+    const season = JSON.parse(readFileSync(new URL('../data/flag-football.json', import.meta.url), 'utf8'))
+      .seasons.find(entry => entry.seasonId === 'fall-2026');
+    for (const treatment of registry.treatments.filter(t => t.qualification.type === 'seasonMilestone')) {
+      const week = treatment.qualification.expectedWeek;
+      assert.ok(treatment.id.includes(`week-${week}-`), `${treatment.id} must name week ${week}`);
+      const row = season.games.find(game => game.week === week);
+      assert.equal(row.date, treatment.date, `${treatment.id} must sit on week ${week}'s own date`);
+    }
+    // Scoped to identifiers, not to the document: the replacement entry's
+    // `note` names the deleted `...-week1-...` id on purpose, as provenance for
+    // why it went away. That prose is the record, not a leftover.
+    assert.deepEqual(registry.treatments.map(t => t.id).filter(id => /week-?\d/.test(id)), [
+      'myles-flag-football-week-1-season-opener-2026-09-13',
+      'myles-flag-football-week-2-first-game-2026-09-20',
+    ]);
   });
 });

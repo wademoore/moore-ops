@@ -467,9 +467,14 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
   const SATURDAY = Date.parse('2026-09-19T20:30:00Z');
   const BEFORE = Date.parse('2026-09-17T12:00:00Z');
   const EXPIRED = Date.parse('2026-09-21T01:00:00Z');
+  // Every accented row active at once, so no row can satisfy a "differs"
+  // assertion merely by still being staged.
+  const BOTH_ACTIVE = Date.parse('2026-09-20T04:00:00Z');
+
+  const FLAG_SEASON = JSON.parse(readFileSync(new URL('../data/flag-football.json', import.meta.url), 'utf8'));
 
   const data = (overrides = {}) => eventRowAccentSampleData({
-    now: FRIDAY, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS, ...overrides,
+    now: FRIDAY, specialEventsConfig: REGISTRY, sharksSoccerData: SHARKS, flagFootballData: FLAG_SEASON, ...overrides,
   });
 
   /**
@@ -531,6 +536,7 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
             wash: pick('.accent-wash'),
             doodle: pick('.accent-doodle'),
             label: pick('.accent-label'),
+            labelText: element.querySelector('.accent-label')?.textContent?.trim() ?? null,
             // The countdown badge lives in the day group's own third column,
             // outside this row's box — so it is measured from the day group,
             // not from the row.
@@ -554,7 +560,7 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
 
     assert.deepEqual(ordinary.states, ['ordinary', 'ordinary']);
     assert.deepEqual(active.states, ['active', 'ordinary'],
-      'on Friday the swim accent is visible and the flag-football accent is still staged');
+      'on Friday the swim accent is visible and the first-game accent is still staged');
 
     // Panels, day groups, every row box and every row order are identical.
     assert.deepEqual(active.upcomingPanel, ordinary.upcomingPanel);
@@ -614,7 +620,6 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
 
     // BOTH_ACTIVE puts every accented row in the active state, so no row can
     // pass the "differs" half of this test merely by still being staged.
-    const BOTH_ACTIVE = Date.parse('2026-09-20T04:00:00Z');
     for (const row of geometry) {
       const height = row.bottom - row.top;
       assert.ok(row.textRight >= row.titleRight && row.textRight >= row.detailRight);
@@ -634,41 +639,145 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
     }
   });
 
-  it('pins both accent titles literally, so the reading area cannot grow under the wash', async () => {
-    // The pixel guard above proves the wash clears TODAY's text. It cannot
-    // prove that for a title that arrives later from the calendar, because the
-    // fixture supplies the title. `literal` matching is what closes that gap:
-    // a longer title stops qualifying, so the row it would have overflowed
-    // renders ordinary instead. Asserted here, next to the geometry it
-    // protects, rather than only in the selector suite.
+  it('keeps the swim title pinned, and measures what the flag-football accents trade for dropping it', async () => {
+    // REPLACES (2026-09-10) a case titled "pins both accent titles literally,
+    // so the reading area cannot grow under the wash". That assertion is no
+    // longer true of two of the three accents and could not be kept: they are
+    // anchored on data/flag-football.json and name no title, deliberately, so
+    // that renaming a calendar event cannot silently kill a treatment. It is
+    // replaced rather than deleted, and by a measurement of the consequence
+    // rather than a proxy for it.
+    //
+    // What `literal` was protecting: the wash carries zero alpha across the
+    // left 46% of the row and ramps rightwards, so a title long enough to
+    // cross that boundary sits over tinted paper. `literal` pinned the exact
+    // approved title, which pinned its rendered width.
+    //
+    // Why a length cap is not a substitute: rendered width is not proportional
+    // to character count. Measured in this very layout, a title of repeated
+    // "il " clears the boundary at 101 characters while one of repeated "Wm "
+    // fails at 41 — a 2.5x spread. Any cap safe for the wide case would reject
+    // both real titles (36 and 49 characters).
     const registry = JSON.parse(readFileSync(new URL('../data/special-events.json', import.meta.url), 'utf8'));
-    for (const treatment of registry.treatments.filter(entry => entry.level === 'accent')) {
-      assert.equal(treatment.qualification.titleMatch.mode, 'literal', treatment.id);
+    const titleMatched = registry.treatments.filter(t => t.level === 'accent' && t.qualification.titleMatch);
+    assert.equal(titleMatched.length, 1, 'the swim accent is the one still anchored on a title');
+    assert.equal(titleMatched[0].qualification.titleMatch.mode, 'literal');
+    for (const treatment of registry.treatments.filter(t => t.level === 'accent' && !t.qualification.titleMatch)) {
+      assert.equal(treatment.qualification.type, 'seasonMilestone', treatment.id);
     }
 
-    const longer = {
-      ...ACCENT_OCCURRENCES.flagFootball,
-      title: 'Flag Football: Week 1 — Practice + Game (Yorktown, McReynolds Athletic Complex, Field 3)',
+    // The swim accent still fails closed on a longer title, so its own reading
+    // area cannot grow under the wash.
+    const longerSwim = {
+      ...ACCENT_OCCURRENCES.swim,
+      title: "757swim: Catch 'Em All Series #1 - 200 Back (Christiansburg Aquatic Center, Session 2)",
     };
-    await page.setContent(renderDashboardV2(data({ occurrences: [ACCENT_OCCURRENCES.swim, longer] })), { waitUntil: 'load' });
-    await page.evaluate(() => document.fonts.ready);
-    const result = await page.evaluate(at => {
-      window.updateEventRowAccents(at);
-      const rows = [...document.querySelectorAll('.upcoming-event')];
-      const long = rows.find(row => row.querySelector('strong').textContent.includes('McReynolds'));
-      return {
-        longRowPresent: Boolean(long),
-        longRowAccented: Boolean(long?.dataset.accentId),
-        longRowHeight: long ? +long.getBoundingClientRect().height.toFixed(2) : null,
-        accentedIds: rows.map(row => row.dataset.accentId).filter(Boolean),
-      };
-    }, Date.parse('2026-09-20T04:00:00Z'));
+    const swimResult = await measure(
+      data({ occurrences: [longerSwim, ACCENT_OCCURRENCES.flagFootballFirstGame] }), BOTH_ACTIVE);
+    // Positively assert the ordinary row is still DRAWN before asserting it is
+    // not accented — otherwise "no ophelia accent" would also be satisfied by
+    // the row having vanished, which is a different (and worse) outcome.
+    assert.ok(swimResult.rows.some(row => row.title.includes('Christiansburg Aquatic Center')),
+      'the ordinary swim row must still be drawn');
+    assert.deepEqual(swimResult.rows.filter(row => row.accentId?.startsWith('ophelia')), [],
+      'a swim title longer than the approved one must not be accented');
 
-    assert.ok(result.longRowPresent, 'the ordinary row must still be drawn');
-    assert.equal(result.longRowAccented, false, 'a title longer than the approved one must not be accented');
-    assert.equal(result.longRowHeight, 42, 'the ordinary row keeps its height');
-    assert.deepEqual(result.accentedIds, ['ophelia-757swim-catch-em-all-1-2026-09-19'],
-      'the unrelated accent is unaffected');
+    // The flag-football accent DOES survive a longer title. Measure where its
+    // text ends against the wash's transparent zone, and record the overflow
+    // rather than asserting it away.
+    const longerFlag = {
+      ...ACCENT_OCCURRENCES.flagFootballFirstGame,
+      title: 'Flag Football: Week 2 — Practice + Game (Yorktown, McReynolds Athletic Complex, Field 3)',
+    };
+    await page.setContent(renderDashboardV2(data({ occurrences: [ACCENT_OCCURRENCES.swim, longerFlag] })), { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+    const flag = await page.evaluate(at => {
+      window.updateEventRowAccents(at);
+      const row = [...document.querySelectorAll('.upcoming-event')].find(r => r.dataset.accentId?.includes('flag-football'));
+      if (!row) return null;
+      const range = document.createRange();
+      range.selectNodeContents(row.querySelector('strong'));
+      const wash = row.querySelector('.accent-wash').getBoundingClientRect();
+      return {
+        state: row.dataset.accentState,
+        height: +row.getBoundingClientRect().height.toFixed(2),
+        titleRight: +range.getBoundingClientRect().right.toFixed(2),
+        // The gradient is transparent to 46% of the wash and ramps from there.
+        clearBoundary: +(wash.left + 0.46 * wash.width).toFixed(2),
+      };
+    }, BOTH_ACTIVE);
+
+    assert.ok(flag, 'the renamed flag-football row must still be accented — that is the point of the node type');
+    assert.equal(flag.state, 'active');
+    // A precondition, labelled as one: the rest of this case says nothing
+    // unless the title really does reach past the clear zone.
+    assert.ok(flag.titleRight > flag.clearBoundary,
+      'this probe is only meaningful if the title overflows the clear zone');
+
+    // THE GUARD. The overflow costs nothing in layout, because every decoration
+    // is absolutely positioned: a longer title changes where the text ends and
+    // nothing else. Proved by rendering the SAME long title with the accent
+    // suppressed and comparing geometry, rather than by bounding the overflow
+    // against a number — the title here is a constant of this fixture, so any
+    // numeric bound on it would be a constant too and could not fail for a
+    // real-world reason. This can: unpin any decoration and it goes red.
+    const unaccented = await measure(
+      data({ occurrences: [ACCENT_OCCURRENCES.swim, longerFlag], familySpotlight: false }), BOTH_ACTIVE);
+    const accented = await measure(data({ occurrences: [ACCENT_OCCURRENCES.swim, longerFlag] }), BOTH_ACTIVE);
+    assert.deepEqual(accented.rows.map(row => row.box), unaccented.rows.map(row => row.box),
+      'an over-long accented row must have the same geometry as the same row unaccented');
+    assert.deepEqual(accented.upcomingPanel, unaccented.upcomingPanel);
+    assert.deepEqual(accented.days, unaccented.days);
+
+    // Readability under the overflow is measured, not asserted here — a
+    // contrast ratio needs pixel sampling, which
+    // scratch/flag-football-season-markers/measure-contrast.mjs does. Its sweep
+    // grows a realistic title a word at a time and records the LOWEST contrast
+    // anywhere along the text run (the wash is masked by the brush artwork, so
+    // alpha is not monotonic in x and sampling only the text's right end
+    // under-reports). The minimum is bounded rather than open-ended: contrast
+    // bottoms out at 6.41:1 around 109 characters and then plateaus at 6.52:1,
+    // because beyond ~114 the title wraps instead of extending. Ordinary is
+    // 9.23:1, and WCAG AAA for normal text is 7:1 — so the worst REACHABLE
+    // title is below AAA and above AA (4.5:1), while both real titles (36 and
+    // 49 characters) measure 9.23:1, identical to an unaccented row.
+    //
+    // These figures read 7.32:1 and 10.80:1 until Sept 11, 2026 and never
+    // reproduced: the script reports 6.41:1 / 9.23:1 on this tree and on the
+    // pre-rebase commit 3eee432 alike. Nothing here asserts a contrast ratio,
+    // so no test went red on the discrepancy — which is exactly why a comment
+    // carrying a number has to be re-derived from a run, not carried forward.
+  });
+
+  it('clears the widest chip that ships — SEASON OPENER, which no other fixture renders', async () => {
+    // `SEASON OPENER` is 13 characters against `FIRST GAME`'s 10, under a cap of
+    // 14 — the widest label this registry can produce. Every other fixture here
+    // uses a `now` on or after Sept 18, and eventRowAccentSampleData partitions
+    // occurrences into `=== todayKey` and `> todayKey`, so the Sept 13 opener row
+    // is absent from both buckets in all of them. Its clearance guards were
+    // therefore unfalsifiable: the assertions below ran only against the narrower
+    // chip. A Reviewer round caught that, and this is the case that closes it.
+    const OPENER_VISIBLE = Date.parse('2026-09-12T20:00:00Z');   // Sept 12, 4:00 PM ET
+    const OPENER_ACTIVE = Date.parse('2026-09-13T00:00:00Z');    // Sept 12, 8:00 PM ET
+    const active = await measure(data({ now: OPENER_VISIBLE }), OPENER_ACTIVE);
+
+    const opener = active.decorations.find(d => d.accentId === 'myles-flag-football-week-1-season-opener-2026-09-13');
+    assert.ok(opener, 'the season-opener row must be accented at this instant, or the case proves nothing');
+    assert.equal(opener.labelText, 'SEASON OPENER',
+      'this case exists to measure the 13-character chip; a different label means the fixture moved');
+    assert.ok(opener.labelText.length > 'FIRST GAME'.length,
+      'if this is no longer the widest chip, re-point the case at whichever is');
+
+    const row = active.rows.find(candidate => candidate.accentId === opener.accentId);
+    assert.ok(row, 'the accented row must be measurable');
+    assert.equal(opener.label.display, 'block');
+    assert.ok(opener.label.left > opener.titleTextRight, 'the widest chip overlaps the title');
+    assert.ok(opener.label.left > opener.detailTextRight, 'the widest chip overlaps the detail line');
+    assert.ok(opener.countChip, 'countdown badge not found');
+    assert.ok(opener.label.right <= opener.countChip.left, 'the widest chip overlaps the countdown badge');
+    assert.ok(opener.label.right <= opener.doodle.left, 'the widest chip overlaps the doodle');
+    assert.ok(opener.label.height <= row.box.height, 'the widest chip is taller than its row');
+    assert.ok(opener.label.right <= row.box.right, 'the widest chip escapes the row');
   });
 
   it('places every decoration clear of the text and inside the row band', async () => {

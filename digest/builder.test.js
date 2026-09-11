@@ -311,6 +311,13 @@ assert(Array.isArray(dig.specialEventsConfig.treatments),
                                                      'specialEventsConfig carries a treatments array');
 assert(dig.sharksSoccerData && Array.isArray(dig.sharksSoccerData.seasons),
                                                      'sharksSoccerData surfaced for fixture joins');
+// flagFootballData is surfaced, not re-read: this harness injects
+// FIXTURE_FF_WITH_RECORD above, so identity with that object is what proves the
+// same parsed season data athletics already uses is what a season-milestone
+// treatment resolves against. (Asserting the real fall-2026 season here would
+// be asserting the fixture, not the plumbing.)
+assert(dig.flagFootballData === FIXTURE_FF_WITH_RECORD,
+                                                     'flagFootballData surfaced for season-milestone joins');
 assert('familySpotlightConfig' in dig,                'familySpotlightConfig retained for the migration window');
 assert(dig.familySpotlightConfig && Array.isArray(dig.familySpotlightConfig.spotlights),
                                                      'familySpotlightConfig carries a spotlights array');

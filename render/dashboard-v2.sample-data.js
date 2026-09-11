@@ -207,16 +207,24 @@ function specialEventsSampleData({ now, specialEventsConfig, sharksSoccerData })
 }
 
 /**
- * The two real September 19-20, 2026 all-day occurrences, in the exact shape
- * the Google Calendar API returns them: one two-day event for the swim meet
- * (exclusive end 2026-09-21, so the inclusive final day is the 20th) and one
- * single-day event for flag football.
+ * The real September 2026 occurrences the shipped accents attach to, in the
+ * exact shape the Google Calendar API returns them.
  *
- * These are transcribed from the live Ophelia and Myles calendars, ids
+ * All three are transcribed from the live Ophelia and Myles calendars, ids
  * included, so a test that matches them is matching the same identity
- * production will. The swim meet is deliberately ONE event: Google returns a
- * multi-day all-day event as a single instance, so the ordinary renderer draws
- * exactly one row for it and an accent has exactly one row to decorate.
+ * production will. Two properties are load-bearing:
+ *
+ *   - The swim meet is deliberately ONE event. Google returns a multi-day
+ *     all-day event as a single instance, so the ordinary renderer draws
+ *     exactly one row for it and an accent has exactly one row to decorate.
+ *
+ *   - The two flag-football occurrences are TIMED, not all-day, and their
+ *     titles carry the league's own week numbering. Both were hand-edited on
+ *     the live calendar after the first accent shipped, which is precisely why
+ *     the treatments that attach to them no longer match on a title: their
+ *     qualification comes from data/flag-football.json instead. The titles are
+ *     transcribed faithfully so a test can rename them and prove that nothing
+ *     depends on them.
  */
 const ACCENT_OCCURRENCES = Object.freeze({
   swim: Object.freeze({
@@ -232,8 +240,21 @@ const ACCENT_OCCURRENCES = Object.freeze({
       end: { date: '2026-09-21' },
     },
   }),
-  flagFootball: Object.freeze({
-    title: 'Flag Football: Week 1 — Practice + Game (Yorktown)',
+  flagFootballSeasonOpener: Object.freeze({
+    title: 'Flag Football: Week 1 — Meet & Greet',
+    subtitle: '',
+    cardType: 'standard',
+    owner: [],
+    _calName: 'Myles',
+    raw: {
+      id: '3pmtu8era4eu5ur8shcbfij94k',
+      status: 'confirmed',
+      start: { dateTime: '2026-09-13T11:00:00-04:00' },
+      end: { dateTime: '2026-09-13T12:30:00-04:00' },
+    },
+  }),
+  flagFootballFirstGame: Object.freeze({
+    title: 'Flag Football: Week 2 — vs Langston-Ravens (Home)',
     subtitle: '',
     cardType: 'standard',
     owner: [],
@@ -241,8 +262,8 @@ const ACCENT_OCCURRENCES = Object.freeze({
     raw: {
       id: 'togv7r767h546spap4tt9ava3c',
       status: 'confirmed',
-      start: { date: '2026-09-20' },
-      end: { date: '2026-09-21' },
+      start: { dateTime: '2026-09-20T11:00:00-04:00' },
+      end: { dateTime: '2026-09-20T13:00:00-04:00' },
     },
   }),
 });
@@ -284,8 +305,14 @@ function eventRowAccentSampleData({
   now,
   specialEventsConfig,
   sharksSoccerData,
+  flagFootballData,
   familySpotlight = true,
-  occurrences = [ACCENT_OCCURRENCES.swim, ACCENT_OCCURRENCES.flagFootball, ...ACCENT_NEIGHBOURS],
+  occurrences = [
+    ACCENT_OCCURRENCES.swim,
+    ACCENT_OCCURRENCES.flagFootballSeasonOpener,
+    ACCENT_OCCURRENCES.flagFootballFirstGame,
+    ...ACCENT_NEIGHBOURS,
+  ],
 } = {}) {
   const instant = new Date(now);
   const todayKey = etDateKey(instant);
@@ -296,6 +323,7 @@ function eventRowAccentSampleData({
     familySpotlight,
     specialEventsConfig,
     sharksSoccerData,
+    flagFootballData,
     days: [{ date: d(todayKey), events: occurrences.filter(item => occurrenceDateKey(item) === todayKey), tasks: [], menuEvent: null }],
     upcomingEvents: occurrences.filter(item => occurrenceDateKey(item) > todayKey),
     athletics: {

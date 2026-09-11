@@ -482,6 +482,14 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
     specialEventsConfig:   specialEventsData || null,
     familySpotlightConfig: safeLegacySpotlightConfig(specialEventsData || null),
     sharksSoccerData:      sharksData || null,
+    // flagFootballData is surfaced on exactly the same terms as
+    // sharksSoccerData above: the object already loaded, not re-read, so a
+    // treatment can resolve a season milestone (the season's first event, its
+    // first competitive fixture) from the schedule instead of from a calendar
+    // event's title. Additive and display-only — the v1 renderers and index.js
+    // ignore it, and athletics still reads the same object through
+    // parseAthleticsDoc above.
+    flagFootballData:      flagFootballData || null,
     // The ambient Holiday Theme registry. Additive and display-only: it is
     // read by render/dashboard-v2.js alone, and is ignored by the v1 renderers
     // (render/dashboard.js, render/email.js) and by index.js. It is a wholly

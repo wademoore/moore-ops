@@ -13,12 +13,16 @@
  *   calendarRange       multi-day all-day range, matched on its inclusive end
  *   sportsFixture       stable fixture id (never a moving projection)
  *   approvedDate        an explicitly confirmed, provenance-carrying milestone
+ *   seasonMilestone     a fixture derived from season data (first event of the
+ *                       season, first competitive game), joined to its calendar
+ *                       row by date and clock rather than by title
  *
  * Compound forms: { all: [...] }, { any: [...] }, { exactly: N, of: [...] }.
  * `exactly` counts *distinct* occurrences, so two references to one occurrence
  * count once — duplicate references can never satisfy a count.
  */
 
+import { selectSeasonMilestone } from './flagFootballParser.js';
 import { isSharksTeam } from './sharksParser.js';
 import { REASON, isClock, isDateKey } from './specialEventSchema.js';
 import { norm } from './specialEventOccurrences.js';
@@ -189,6 +193,125 @@ function qualifySportsFixture(node, ctx) {
 }
 
 /**
+ * Selects the single live occurrence sitting at a given calendar/date/kind,
+ * with no reference to its title.
+ *
+ * `selectOccurrence` above deliberately requires a title, because a node that
+ * binds on calendar and date alone would accept any event that happens to sit
+ * there. This one is the exception, and it earns it by fixing the two things a
+ * title was standing in for by a stronger route:
+ *
+ *   - WHICH EVENT. Candidates are narrowed by the start clock the season
+ *     schedule declares BEFORE ambiguity is judged, so an unrelated event
+ *     landing on the same day at a different time is simply not a candidate.
+ *     What remains after that — zero, cancelled, or two or more — all fails
+ *     closed. There is no "pick the first" anywhere.
+ *
+ *     The ordering matters and was got wrong first time round: checking the
+ *     clock only after the ambiguity test meant any second event on the day
+ *     killed the treatment regardless of when it was, which is a worse
+ *     property than the title matching this replaces.
+ *
+ *   - THAT IT IS THE RIGHT EVENT AT ALL. Its date and clock come from the
+ *     season schedule, which is the authoritative record of when the fixture
+ *     is. A title is a human-retyped description of that record, so pinning
+ *     the title pins the description and not the fact.
+ *
+ * The trade is deliberate and runs one way: a rename can no longer break the
+ * treatment, and an unrelated same-day, same-clock event can. Renames happen
+ * routinely — the league reschedules and the events are hand-edited — and a
+ * collision on both date and clock does not.
+ */
+function selectUntitledOccurrence(index, { calendar, kind, dateKey, startsAtEt = null }) {
+  const onTheDay = (index.byCalendar.get(calendar) || [])
+    .filter(occurrence => occurrence.kind === kind && occurrence.startDateKey === dateKey);
+  if (!onTheDay.length) return { occurrence: null, reason: REASON.NODE_NOT_FOUND };
+
+  const candidates = startsAtEt == null
+    ? onTheDay
+    : onTheDay.filter(occurrence => occurrence.startsAtEt === startsAtEt);
+  // Distinguish "nothing on that calendar and date" from "the right day, wrong
+  // clock" — the latter means the schedule and the calendar disagree about
+  // when the fixture is, which is a staleness worth naming separately.
+  if (!candidates.length) return { occurrence: null, reason: REASON.NODE_TIME_MISMATCH };
+
+  const live = candidates.filter(occurrence => occurrence.status !== 'cancelled');
+  if (!live.length) return { occurrence: null, reason: REASON.NODE_CANCELLED };
+  if (live.length > 1) return { occurrence: null, reason: REASON.NODE_AMBIGUOUS };
+  return { occurrence: live[0], reason: null };
+}
+
+/**
+ * Season-data accessors, by declared source.
+ *
+ * A dispatch table rather than a branch, so adding a second sport is a named
+ * addition with its own accessor. It is not a generalisation that comes for
+ * free: only flag football's season rows carry a league week, a
+ * practice/fixture type and a per-row clock together.
+ *
+ * Null-prototype so a `source` of `"constructor"` or `"toString"` misses rather
+ * than resolving to an inherited function. `validateRegistry` already rejects an
+ * unknown source before this runs, so this is defence in depth — but the rest of
+ * this framework is double-layered and a lookup that throws here would drop
+ * EVERY accent, not just the offending one.
+ */
+const MILESTONE_SOURCES = Object.freeze(Object.assign(Object.create(null), {
+  flagFootball: {
+    data: digestData => digestData?.flagFootballData,
+    select: selectSeasonMilestone,
+  },
+}));
+
+const MILESTONE_REASON = Object.freeze({
+  'season-not-found': REASON.MILESTONE_SEASON_NOT_FOUND,
+  'milestone-unknown': REASON.MILESTONE_NOT_FOUND,
+  'milestone-not-found': REASON.MILESTONE_NOT_FOUND,
+  'milestone-ambiguous': REASON.MILESTONE_AMBIGUOUS,
+});
+
+/**
+ * Resolves a treatment anchored on a season milestone.
+ *
+ * Order matters and is the same shape the rest of this module uses: resolve
+ * the authoritative fixture first, cross-check it against what the treatment
+ * was approved for, and only then look for the calendar row to decorate.
+ *
+ * The two cross-checks are what keep an approved treatment from drifting onto
+ * a fixture nobody approved. `expectedWeek` catches a renumbered or inserted
+ * week; `entry.date` catches a reschedule. Either mismatch renders the row
+ * ordinary until the treatment is deliberately revalidated — which is a
+ * configuration decision, not something to paper over by following the
+ * schedule wherever it moves.
+ */
+function qualifySeasonMilestone(node, ctx) {
+  const source = MILESTONE_SOURCES[node.source];
+  if (!source) return { ok: false, reason: REASON.MILESTONE_SEASON_NOT_FOUND };
+
+  const selected = source.select(source.data(ctx.data), node.seasonId, node.milestone);
+  if (!selected.ok) {
+    return { ok: false, reason: MILESTONE_REASON[selected.reason] ?? REASON.MILESTONE_NOT_FOUND };
+  }
+
+  const { row, startsAtEt } = selected;
+  if (row.week !== node.expectedWeek) return { ok: false, reason: REASON.MILESTONE_MISMATCH };
+  if (row.date !== ctx.entryDate) return { ok: false, reason: REASON.MILESTONE_MISMATCH };
+
+  // The schedule decides which kind of occurrence to expect, so a fixture with
+  // a published clock cannot be satisfied by an all-day placeholder, and one
+  // without cannot be satisfied by a timed event. A disagreement here means
+  // the schedule and the calendar disagree — a real staleness, unlike a rename.
+  const kind = startsAtEt ? 'timed' : 'all-day';
+  const found = selectUntitledOccurrence(ctx.index, {
+    calendar: node.calendar,
+    kind,
+    dateKey: row.date,
+    startsAtEt,
+  });
+  if (!found.occurrence) return { ok: false, reason: found.reason };
+  return { ok: true, ref: found.occurrence };
+}
+
+/**
  * An explicitly confirmed milestone with no calendar dependency.
  *
  * Provenance completeness is validated at load (specialEventSchema), so by the
@@ -224,6 +347,7 @@ const NODE_HANDLERS = Object.freeze({
   calendarRange: qualifyCalendarRange,
   sportsFixture: qualifySportsFixture,
   approvedDate: qualifyApprovedDate,
+  seasonMilestone: qualifySeasonMilestone,
 });
 
 /** Distinct-occurrence identity for `exactly` counting and refId collection. */
@@ -299,7 +423,8 @@ function qualifyNode(node, ctx) {
  * Qualifies one validated registry entry against the digest data.
  *
  * @param {object} entry   a validated entry from specialEventSchema
- * @param {object} data    digest data (days, upcomingEvents, sharksSoccerData)
+ * @param {object} data    digest data (days, upcomingEvents, sharksSoccerData,
+ *                         flagFootballData)
  * @param {object} index   occurrence index from buildOccurrenceIndex()
  * @returns {{ok: boolean, entryId: string, refs: object, refIds: string[],
  *            facts: object, reasons: string[], rejected: object}}
@@ -345,4 +470,4 @@ function qualifyEntry(entry, data, index) {
   };
 }
 
-export { findFixture, qualifyEntry, qualifyNode, refIdentity, titleMatches };
+export { MILESTONE_SOURCES, findFixture, qualifyEntry, qualifyNode, refIdentity, titleMatches };
