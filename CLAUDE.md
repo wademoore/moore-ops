@@ -2343,7 +2343,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2613 | **2613** | **0** | **0** | 59715 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2613 | **2613** | **0** | **0** | 62265 ms |
 
 Measured on `claude/clever-lovelace-2e62va`, branched from `origin/main` at **`7b57027`**
 (PR #65) — the branch point and the merge base are the same commit, because the branch was
@@ -2354,8 +2354,10 @@ the fetch: a ref nineteen merges behind produces a merge base nineteen merges be
 every figure derived from it. **The base was re-measured in a `git worktree` at `7b57027` before any
 change: 2591 / 2591 / 0 / 0, 63944 ms** — which matches the entry below, so the recorded
 figure held. A draft of this sentence called that "the first time in six baselines", which
-four passages further down this same section contradict: the entries for Sept 6, Sept 8,
-Sept 9 and Sept 10 each record a figure holding. It held; it was not unprecedented.
+four passages further down this same section contradict: the entries for Sept 7, Sept 8,
+Sept 9 and Sept 10 each record a figure holding. (A draft of this correction cited Sept 6,
+which says the opposite — "the merge base measures 2053, not the 2052 recorded below". A fix
+for a false claim that introduces a smaller false one is the same defect; caught in round 3.) It held; it was not unprecedented.
 Re-measure anyway — the run costs less than the correction does.
 
 This change adds **+22**, all in one new file:
@@ -2384,9 +2386,10 @@ file among the changed paths at all", which is literally false — two appear, a
 
 **Do not read the durations as a comparison, and the numbers say why.** Base `7b57027`
 ran **63944 ms** (one run); this branch ran **58981 ms**, **63246 ms**, **62572 ms**,
-**60554 ms**, **61299 ms** and finally **59715 ms** — same machine, same browser, sequential.
-The spread *within the branch* is 4265 ms, wider than the branch-versus-base gap, so **no
-difference is demonstrable in either direction** from seven runs. The new tests boot workerd three times, so the true cost is
+**60554 ms**, **61299 ms**, **59715 ms** and finally **62265 ms** — same machine, same
+browser, sequential. The spread *within the branch* is 4265 ms, wider than the
+branch-versus-base gap, so **no difference is demonstrable in either direction** from eight
+runs. The new tests boot workerd three times, so the true cost is
 certainly an increase and not the saving the first figure appeared to show; it is simply
 below the noise floor here. An earlier draft of this entry quoted the 58981 ms alone as
 evidence of no increase — the unfalsifiable claim the entry below already retracts once, and
@@ -2414,10 +2417,10 @@ suite, because a guard that quietly disappears on the machine where it matters i
 shape of the defect it was written for.
 
 Companion mutation harness, **committed** and run on demand — `node
-scratch/mobile-worker-receiver/mutation-check.mjs` → **29 mutations, 29/29 proven**, green
+scratch/mobile-worker-receiver/mutation-check.mjs` → **32 mutations, 32/32 proven**, green
 22-test control, green restore, plus a self-test row that injects a real syntax error and
-requires the harness's own hollowness check to catch it. Fourteen of the 29 were added for
-guards the two review rounds produced.
+requires the harness's own hollowness check to catch it. Seventeen of the 32 were added for
+guards the three review rounds produced.
 
 **Two of those fourteen SURVIVED their first run, and both were gaps in the new tests rather
 than in the Worker** — a log site added under review with no test behind it, and a
@@ -3612,10 +3615,16 @@ method, so they chain directly to the 988 pre-change number above.
   carried the underlying error in `cause` and nothing read it, so a Worker with
   observability enabled reported `storage-unreachable` and kept the only fact that says
   *which* one it was. One `console.error` JSON line now names the error's constructor and
-  message plus the phase and key, at every site that swallowed one — the transport catch,
-  the body catch, the pointer parse, a 5xx status (the one reason two upstream conditions
-  share, so the absence of a line would otherwise be the discriminator) and the outer
-  handler catch. A
+  message plus the phase and key, at **ten** sites under nine distinct phases. **This
+  sentence listed five and justified the 5xx one as "the one reason two upstream conditions
+  share" — which is verbatim the argument `worker.js` now calls false, left standing one
+  level down by the very commit that retracted it.** A round-3 review caught it, and it is
+  the second time in three rounds that a fix corrected a claim in the code and left its twin
+  in this file. The rule the code follows is in `logUnderlying`'s own comment and is
+  enumerated there rather than paraphrased here: every cause of `storage-unreachable` and of
+  `credentials-rejected` is logged, `artifact-missing` has one cause and needs none, and
+  `artifact-malformed` is logged where the fault is ours or the transport's and silent where
+  it is in the published release. A
   `TypeError: Illegal invocation` and a DNS failure are then distinguishable **without a
   redeploy**, which is precisely what this defect cost. Deliberately absent: the signed
   headers (`authorization` carries `Credential=<access key id>/<scope>`), the credentials,
@@ -3630,7 +3639,7 @@ method, so they chain directly to the 988 pre-change number above.
   **`workerd` is a devDependency** and is **not** in the shipped Lambda package —
   `deploy.yml` installs `npm ci --omit=dev`. No dependency was added to the Worker itself.
 
-  **29 mutations, 29/29 proven** (`node
+  **32 mutations, 32/32 proven** (`node
   scratch/mobile-worker-receiver/mutation-check.mjs`), green 22-test control and restore,
   with a self-test row proving its own hollowness check is live. **Four rows survived a first
   run across the three harness generations, and every one was a hollow guard in the new
@@ -3648,9 +3657,20 @@ method, so they chain directly to the 988 pre-change number above.
   run** rather than scoring them silently. Six anchors rotted across this change in total.
   The lesson is narrower than "anchors rot": **adding a diagnostic is precisely the edit that
   turns a single-line throw into a block**, so anchor on the predicate, not the statement.
+  One of those repoints then needed a second correction — a negated-brace bound stopped at
+  the `}` of a `${...}` inside the block's own template literal and matched nothing, which
+  the harness also refused. It is a lookahead now.
 
-  **A Reviewer pass returned PASS with no BLOCKING findings and three SHOULD FIX items, all
-  acted on.** The largest was not guard strength: the credential-safety assertion could not
+  **Three Reviewer rounds ran: round 1 PASS, rounds 2 and 3 FAIL.** Round 1 raised three
+  SHOULD FIX, round 2 one BLOCKING and five SHOULD FIX, round 3 two BLOCKING and four SHOULD
+  FIX; every item was acted on. The Test-baseline section above once said round 2 failed
+  while this entry still called round 1 "the" review — two sections of one file disagreeing
+  about whether a review failed, in a commit that edited both. **The pattern across the three
+  rounds is worth more than the individual items: each round found a fix that corrected a
+  claim in one place and left the identical claim standing one level down** — first a
+  credential guard that could not fail, then a bijection argument retracted in code and left
+  in this file, then a comment that quoted the very grep command that measured it and so
+  inflated its own count by one. The largest was not guard strength: the credential-safety assertion could not
   fail, while the sibling Node suite deliberately models a transport error quoting an access
   key id in its message — text `logUnderlying` would have shipped verbatim. The message is
   now scrubbed of access-key shapes before truncation (`{16,}` and unanchored, because

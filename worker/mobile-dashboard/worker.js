@@ -152,19 +152,32 @@ function scrubCredentials(text) {
  * WHICH FAILURES ARE LOGGED, AS A RULE RATHER THAN AS AN ARGUMENT. An earlier
  * version of this comment claimed every reason but `storage-unreachable` was
  * a bijection with its cause, so the rest could stay silent "by design rather
- * than by omission". A Reviewer pass showed that is simply false of this
- * file: `credentials-rejected` has three causes and `artifact-malformed`
- * fourteen throw sites. The rule that actually holds:
+ * than by omission". A review showed that is simply false of this file:
+ * `credentials-rejected` has three causes, and `artifact-malformed` is thrown
+ * from 13 sites. (Count it by grepping for the ServeFailure construction with
+ * that reason; the command is deliberately NOT quoted here, because the first
+ * draft of this sentence did quote it and the quoted literal then matched its
+ * own grep, reporting 14. A comment cannot contain the probe that measures
+ * it.) The rule that actually holds, and that a later review checked site by
+ * site:
  *
  * - every cause of `storage-unreachable` and of `credentials-rejected` is
  *   logged, so those two reasons always name their own cause;
  * - `artifact-missing` has exactly one cause and needs no line;
- * - `artifact-malformed` is logged where it comes from the TRANSPORT (a
- *   non-ok status, or a body that would not parse) and NOT where it comes
- *   from the published manifest failing the contract. That family of a dozen
- *   field checks shares ONE remedy — the published manifest is wrong,
- *   republish it — so a line per field would be volume rather than signal.
- *   It is named here as a known gap rather than argued away.
+ * - `artifact-malformed` is logged wherever the fault is OURS OR THE
+ *   TRANSPORT'S — a non-ok upstream status, a body that would not parse, and
+ *   a `MOBILE_MANIFEST_KEY` outside the mobile prefix;
+ * - it is SILENT for the remaining sites, every one of which locates the
+ *   fault in the PUBLISHED RELEASE: the manifest's own key, the contract
+ *   predicate, four field checks, and the two document-against-manifest
+ *   integrity checks. They share one remedy — republish — so a line apiece
+ *   would be volume rather than signal. Named here as a known gap.
+ *
+ * The second revision of this comment claimed "a dozen field checks"; a
+ * review counted five, beside a key check and two integrity checks. A comment
+ * that retracts an unmeasured claim with another unmeasured claim has not
+ * learned anything, so the categories above are enumerated rather than
+ * summarised.
  *
  * WHAT IS DELIBERATELY ABSENT. Not the signed headers: `authorization`
  * carries `Credential=<access key id>/<scope>`. Not `config.credentials`,
@@ -210,6 +223,37 @@ function releasePrefixOf(artifactKey) {
   return artifactKey.slice(0, cut);
 }
 
+/**
+ * The configured pointer, with its validation failure reported.
+ *
+ * `mobileKey()` throws `artifact-malformed` for a key outside the mobile
+ * prefix, and a round-3 review found this call reaching it SILENTLY — the one
+ * site that contradicted the rule below. It is a deployment fault in the same
+ * function as the other two, with its own remedy (fix `MOBILE_MANIFEST_KEY` in
+ * wrangler.toml), and reporting it with no line points whoever debugs it at
+ * the publisher instead of at their own configuration.
+ *
+ * The VALUE is deliberately not logged. The other two config branches name
+ * their variables and report no values, and this key is by definition the one
+ * that failed validation — so it is arbitrary environment text rather than
+ * something already known to be a safe key path.
+ *
+ * The reason it throws stays `artifact-malformed`, which is arguably the wrong
+ * class for a configuration fault — `credentials-rejected` renders "This
+ * origin is misconfigured" and would read better. It is NOT changed here:
+ * mobile-dashboard-worker.test.js pins `artifact-malformed` for exactly this
+ * case, and this change edits no existing test. Recorded as an open question
+ * rather than settled quietly.
+ */
+function configuredManifestKey(env) {
+  try {
+    return mobileKey(env.MOBILE_MANIFEST_KEY || MOBILE_MANIFEST_KEY);
+  } catch (error) {
+    logUnderlying('config-pointer', 'artifact-malformed', null, new Error('MOBILE_MANIFEST_KEY is not a key under the mobile prefix'));
+    throw error;
+  }
+}
+
 function readConfig(env) {
   const bucket = env.ARTIFACT_BUCKET;
   const region = env.AWS_REGION;
@@ -238,7 +282,7 @@ function readConfig(env) {
   return {
     bucket,
     region,
-    manifestKey: mobileKey(env.MOBILE_MANIFEST_KEY || MOBILE_MANIFEST_KEY),
+    manifestKey: configuredManifestKey(env),
     credentials: { accessKeyId, secretAccessKey, sessionToken: env.AWS_SESSION_TOKEN || undefined },
     timeoutMs: Number(env.UPSTREAM_TIMEOUT_MS) > 0 ? Number(env.UPSTREAM_TIMEOUT_MS) : DEFAULT_UPSTREAM_TIMEOUT_MS,
   };
@@ -514,6 +558,7 @@ export default { fetch: (request, env, ctx) => handleRequest(request, env, {}) }
 
 export {
   DEFAULT_UPSTREAM_TIMEOUT_MS,
+  MAX_DIAGNOSTIC_MESSAGE,
   DISCOVERY_ROUTES,
   DOCUMENT_CONTENT_TYPE,
   DOCUMENT_ROUTES,

@@ -34,7 +34,7 @@ import {
 } from '../../dashboard-artifact/mobile-contract.js';
 import { publishMobileArtifact } from '../../dashboard-artifact/mobile-generator.js';
 import { mobilePreviewStates } from '../../render/dashboard-mobile.sample-data.js';
-import { handleRequest } from '../../worker/mobile-dashboard/worker.js';
+import { MAX_DIAGNOSTIC_MESSAGE, handleRequest } from '../../worker/mobile-dashboard/worker.js';
 import { ACCESS_KEY_SHAPED, BUCKET, CREDENTIALS, REGION, assertGraphIsVerbatim, startWorkerd } from './workerd-harness.js';
 
 const NOW = new Date('2026-09-09T20:10:00.000Z');
@@ -301,7 +301,7 @@ describe('the serve-failure diagnostic, at the unit level', () => {
       now: () => NOW.getTime(),
     }));
     const entry = JSON.parse(lines.find(line => line.includes('serve-failure')));
-    assert.equal(entry.message.length, 200);
+    assert.equal(entry.message.length, MAX_DIAGNOSTIC_MESSAGE);
   });
 
   it('redacts an access key id out of an upstream message, before truncating it', async () => {
@@ -320,7 +320,8 @@ describe('the serve-failure diagnostic, at the unit level', () => {
     // cannot be contained in the surviving fragment and the assertion passes
     // under the very mutation it is named for — which is what a round-2
     // review found the hardcoded 12 doing against a 10-character remnant.
-    const survivesIfTruncatedFirst = 200 - PAD;
+    // Imported rather than restated, so the bound and the probe cannot drift.
+    const survivesIfTruncatedFirst = MAX_DIAGNOSTIC_MESSAGE - PAD;
     assert.ok(survivesIfTruncatedFirst > 0, 'the pad must leave a fragment for this case to mean anything');
     assert.ok(
       !entry.message.includes(ACCESS_KEY_SHAPED.slice(0, survivesIfTruncatedFirst)),
@@ -397,16 +398,32 @@ describe('the serve-failure diagnostic, at the unit level', () => {
     assert.equal(seen.size, 3, 'the three causes must be distinguishable from one another, not merely logged');
   });
 
-  it('logs a variable name and never a variable value', async () => {
+  it('logs a variable name and never a variable value, on every configuration branch', async () => {
     // The configuration branches cannot say WHICH of their two variables is
     // missing without reporting one, so they name both and report neither.
-    const { lines } = await captured(() => handleRequest(request(), { ...env, AWS_SECRET_ACCESS_KEY: '' }, {
-      fetch: async () => new Response('', { status: 200 }),
-      now: () => NOW.getTime(),
-    }));
-    const line = lines.find(entry => entry.includes('serve-failure'));
-    assert.ok(!line.includes(CREDENTIALS.accessKeyId), 'the configured access key id must not be logged');
-    assert.ok(!line.includes(BUCKET), 'a configured value must not be logged, only the variable name');
+    //
+    // Run against ALL THREE branches. A round-3 review found this case
+    // asserting "the bucket value is not logged" against the credentials
+    // branch alone — which has no path to the bucket value, so that half was
+    // satisfied by the scenario rather than by the code.
+    const branches = [
+      ['config-store', { ...env, ARTIFACT_BUCKET: '' }],
+      ['config-credentials', { ...env, AWS_SECRET_ACCESS_KEY: '' }],
+      ['config-pointer', { ...env, MOBILE_MANIFEST_KEY: 'dashboard-v2/current/manifest.json' }],
+    ];
+    for (const [phase, caseEnv] of branches) {
+      const { lines } = await captured(() => handleRequest(request(), caseEnv, {
+        fetch: async () => new Response('', { status: 200 }),
+        now: () => NOW.getTime(),
+      }));
+      const line = lines.find(entry => entry.includes('serve-failure'));
+      assert.ok(line, `${phase} must write a line`);
+      assert.equal(JSON.parse(line).phase, phase);
+      assert.ok(!line.includes(CREDENTIALS.accessKeyId), `${phase}: the access key id must not be logged`);
+      assert.ok(!line.includes(CREDENTIALS.secretAccessKey), `${phase}: the secret must not be logged`);
+      assert.ok(!line.includes(BUCKET), `${phase}: a configured value must not be logged, only the variable name`);
+      assert.ok(!line.includes('dashboard-v2'), `${phase}: the rejected key's own value must not be echoed`);
+    }
   });
 
   it('names the upstream status when a non-ok answer becomes artifact-malformed', async () => {
@@ -433,9 +450,15 @@ describe('the serve-failure diagnostic, at the unit level', () => {
     // first version of this case reached only the field check — so a mutation
     // adding a line at the predicate survived, and the "documented gap" was
     // pinned at one site while being claimed for a family.
+    // One fixture per CATEGORY of the silent family, because a round-3 review
+    // found the previous pair pinning two sites while the claim was made for
+    // eleven. The integrity pair (document versus manifest) is not reachable
+    // from a single canned response and is named in the PR as uncovered.
+    const valid = { schemaVersion: 1, artifactVersion: 'dashboard-mobile', generatedAt: NOW.toISOString() };
     const bodies = [
       ['fails the contract predicate', { not: 'a manifest' }],
-      ['fails one field check', { schemaVersion: 1, artifactVersion: 'dashboard-mobile', generatedAt: NOW.toISOString() }],
+      ['fails a field check', valid],
+      ['names a key outside the mobile prefix', { ...valid, artifact: { key: 'dashboard-v2/current/index.html', versionId: 'v1', size: 1, sha256: 'a'.repeat(64) } }],
     ];
     for (const [label, body] of bodies) {
       const { result, lines } = await captured(() => handleRequest(request(), env, {

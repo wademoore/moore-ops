@@ -151,6 +151,14 @@ const MUTATIONS = [
       "  if (!isMobileManifest(manifest)) throw new ServeFailure('artifact-malformed');",
       "  if (!isMobileManifest(manifest)) { logUnderlying('pointer-shape', 'artifact-malformed', config.manifestKey, new Error('manifest failed the contract predicate')); throw new ServeFailure('artifact-malformed'); }")],
 
+  // --- the configuration fault a round-3 review found logged nowhere -------
+  ['a misconfigured pointer key goes back to being silent', WORKER,
+    s => s.replace("    logUnderlying('config-pointer', 'artifact-malformed', null, new Error('MOBILE_MANIFEST_KEY is not a key under the mobile prefix'));\n", '')],
+  ['the rejected pointer key is echoed into the log', WORKER,
+    s => s.replace(
+      "new Error('MOBILE_MANIFEST_KEY is not a key under the mobile prefix')",
+      'new Error(`MOBILE_MANIFEST_KEY=${env.MOBILE_MANIFEST_KEY} is not a key under the mobile prefix`)')],
+
   // --- the claim that workerd loaded the SHIPPED file ----------------------
   // `assertGraphIsVerbatim` is the only thing standing between "the shipped
   // Worker" and a phrase. It cannot be falsified by mutating worker.js, which
@@ -168,6 +176,16 @@ const MUTATIONS = [
     s => s.replace(
       "const ENTRY_SOURCE = \"export { default } from './worker.js';\\n\";",
       "const ENTRY_SOURCE = \"export * from './worker.js';\\n\";")],
+  // The shim's own regex was covered by NOTHING: the widened-shim row above is
+  // caught by workerd's boot refusal before the assertion evaluates, so a
+  // round-3 review flagged both surviving assertions as unmutated guards. This
+  // row produces a shim that BOOTS identically — same default, same module,
+  // only the quoting differs — so the boot refusal cannot fire and the regex
+  // is the only thing that can catch it.
+  ['the entry shim is rewritten in a form the regex should refuse', HARNESS,
+    s => s.replace(
+      "const ENTRY_SOURCE = \"export { default } from './worker.js';\\n\";",
+      "const ENTRY_SOURCE = 'export { default } from \"./worker.js\";\\n';")],
   ['the harness loads something other than the shipped Worker', HARNESS,
     s => s.replace(
       '      await copyFile(path.join(REPO_ROOT, name), path.join(root, name));',

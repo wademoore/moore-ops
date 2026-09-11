@@ -52,8 +52,19 @@ const MUTATIONS = [
   // branch grew a block so it could carry a diagnostic. Anchored on the
   // PREDICATE rather than the whole statement, so adding or changing lines
   // inside the block cannot rot it a third time.
+  // BOUNDED at the block's own close, like the other two. A round-3 review
+  // noted the first version's `[\s\S]*?` could backtrack PAST the closing
+  // brace if the first throw inside the block ever stopped being
+  // `credentials-rejected`, silently mutating the 404, 5xx or non-ok branch
+  // instead — and it would still "apply", so the harness would not refuse.
+  //
+  // The bound is a lookahead, not `[^}]`: the block's own body contains
+  // `${response.status}` inside a template literal, so a negated-brace class
+  // stops at that brace and the anchor matches nothing at all. Tried, and it
+  // silently failed to apply rather than over-matching — which the harness
+  // DOES refuse, so the wrong fix was caught the same way the rot was.
   ['a rejected credential is reported as an unreachable store', WORKER,
-    s => s.replace(/(if \(response\.status === 403 \|\| response\.status === 401\) \{[\s\S]*?throw new ServeFailure\(')credentials-rejected/, '$1storage-unreachable')],
+    s => s.replace(/(if \(response\.status === 403 \|\| response\.status === 401\) \{(?:(?!\n {2}\})[\s\S])*?throw new ServeFailure\(')credentials-rejected/, '$1storage-unreachable')],
   ['an unreachable store is reported as a missing artifact', WORKER,
     s => s.replace("    throw new ServeFailure('storage-unreachable', error);\n  } finally {", "    throw new ServeFailure('artifact-missing', error);\n  } finally {")],
   // ANCHOR REPOINTED (Sept 11, 2026). This row matched a single line until the
