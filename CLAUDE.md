@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2591+ passing with a browser
+- Run npm test after changes — must stay at 2604+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row)
 - Confirm file changes before moving to next file
@@ -2339,7 +2339,91 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 11, 2026 on the season-markers branch, rebased onto #71
+### Current baseline — measured Sept 11, 2026 on the workerd runtime-guard branch
+
+| Invocation | tests | pass | fail | cancelled | duration |
+|---|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2604 | **2604** | **0** | **0** | 62572 ms |
+
+Measured on `claude/clever-lovelace-2e62va`, branched from `origin/main` at **`7b57027`**
+(PR #65) — the branch point and the merge base are the same commit, because the branch was
+cut from `origin/main` after `git fetch origin main` moved a ref that was stale at `2d01027`
+by three merges. **The base was re-measured in a `git worktree` at `7b57027` before any
+change: 2591 / 2591 / 0 / 0, 63944 ms** — which matches the entry below, so for the first
+time a recorded baseline in this file needed no correction. Re-measure anyway; the run costs
+less than the correction does.
+
+This change adds **+13**, all in one new file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/worker/workerd-runtime.test.js` (new) | — | 13 | +13 |
+
+2591 + 13 = 2604, and **2604 is the measured figure in the table above rather than that
+sum** — the agreement is reassuring and is not itself evidence.
+`test/worker/workerd-harness.js` is a helper, not a suite; `package.json`'s globs select
+`*.test.js` only, so it contributes 0. **No existing test file is edited, deleted or
+skipped** — `git diff --numstat` reports no test file among the changed paths at all, which
+is the whole finding: nothing in 2591 tests could see the defect, so there was no existing
+assertion to update.
+
+**Do not read the durations as a comparison, and the numbers say why.** Base `7b57027`
+ran **63944 ms** (one run); this branch ran **58981 ms**, then **63246 ms**, then
+**62572 ms** — same machine, same browser, sequential. The spread *within the branch* is
+4265 ms, wider than the branch-versus-base gap, so **no difference is demonstrable in either
+direction** from four runs. The 13 new tests boot workerd three times, so the true cost is
+certainly an increase and not the saving the first figure appeared to show; it is simply
+below the noise floor here. An earlier draft of this entry quoted the 58981 ms alone as
+evidence of no increase — the unfalsifiable claim the entry below already retracts once, and
+the very next run refuted it, exactly as it did there.
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
+quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
+prevent.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2604+ with no failures once a browser resolves.**
+
+**The new file needs a runtime the other 2591 tests do not.** `workerd` is a **devDependency**
+(`require('workerd').default` is the platform binary's absolute path, so nothing guesses a
+triple). It is installed by `npm ci` in both workflows that run `npm test` — `ci.yml` and
+`deploy-mobile-worker.yml`, both `ubuntu-latest` — and it is **not** in the shipped Lambda
+package, because `deploy.yml` installs with `npm ci --omit=dev`. There is deliberately **no
+skip-if-absent path**: a missing workerd fails the `before` hook loudly and cancels the
+suite, because a guard that quietly disappears on the machine where it matters is the exact
+shape of the defect it was written for.
+
+Companion mutation harness, **committed** and run on demand — `node
+scratch/mobile-worker-receiver/mutation-check.mjs` → **15 mutations, 15/15 proven, all
+distinct (15 unique mutated trees)**, green 13-test control, green restore, plus a self-test
+row that injects a real syntax error and requires the harness's own hollowness check to catch
+it. Its `SUITE` is `test/worker/workerd-runtime.test.js` **alone**, deliberately: rows added
+to `scratch/mobile-worker/mutation-check.mjs` would be "caught" by three Node suites that
+were green while production returned 504, so the evidence would say nothing about the guard
+actually being added. Attribution is the whole point of the second harness.
+
+**One row survived the first full run, and it was a hollow guard in the new test rather than
+a coverage gap in the Worker.** `HEAD transfers the document it exists to avoid transferring`
+deleted the HEAD short-circuit, and the test still passed — because HTTP strips a body from a
+HEAD response whatever the Worker did, so `arrayBuffer().byteLength === 0` is guaranteed by
+the protocol and not by the code. The Worker read the whole megabyte, returned it, and every
+assertion held. Fixed rather than reported-and-parked: the case now asserts the substitute
+store saw no document read, and the mutation fails it (1 failing, on that case). The figures
+above were regenerated after that repair — the suite total is unchanged at 2604, because the
+repair strengthened an existing `it()` rather than adding one.
+
+`scratch/mobile-worker/mutation-check.mjs` was **re-run unchanged and is still 46/46 proven,
+all distinct, control 76 green, restored 76 green.** That is the anchor-rot check, not a
+formality: this change edited `worker/mobile-dashboard/worker.js`, which 30-odd of its rows
+attack by exact string match, and a row whose anchor no longer applies is scored as a
+survivor rather than skipped.
+
+### Previous baseline — measured Sept 11, 2026 on the season-markers branch, rebased onto #71
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -2414,7 +2498,10 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2591+ with no failures once a browser resolves.**
+**Coder mode had to keep `npm test` at 2591+ under this baseline.** (Superseded — see
+Current baseline above; the figure is now 2604. That entry's 2591 was re-measured at
+`7b57027` in a `git worktree` and held exactly, which is the first time in six baselines
+a recorded figure has needed no correction.)
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
 quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
@@ -3426,6 +3513,85 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **The mobile dashboard Worker's production path was returning 504 on every route;
+  bound the fetch receiver, added the diagnostic that would have named it, and closed
+  the gap that let it ship (Sept 11, 2026):** `handleRequest` resolved its fetch as
+  `deps.fetch || globalThis.fetch` and then called it as `resolved.fetch(...)` — a METHOD
+  call, so the receiver was the object literal rather than the global scope. workerd's
+  `fetch` is a native binding that checks its receiver: it threw
+  `TypeError: Illegal invocation` **synchronously, inside the isolate, before a request was
+  built**. That throw lands in `readObject`'s transport catch, so every route answered
+  **504 `storage-unreachable` in about a millisecond** while the store was healthy and the
+  credentials were valid. `.bind(globalThis)` is the whole of the fix.
+
+  **Reproduced against the unmodified tree before anything was changed**, and the sharpest
+  evidence is not the status code: with the real published objects behind a substitute S3,
+  all three routes returned 504 and the store recorded **zero requests**. Nothing was ever
+  asked. After the fix the same harness records the pointer read and the version-pinned
+  document read, both signed `AWS4-HMAC-SHA256`, and serves 200.
+
+  **Three independent reasons 2591 green tests could not see it, which is the part worth
+  carrying forward.** Every scenario in `mobile-dashboard-worker.test.js` passes its own
+  `{ fetch, now }`, so the `globalThis.fetch` branch was never evaluated; the default export
+  — the only entrypoint Cloudflare ever calls — was imported by nothing; and the substitute
+  store is a plain function, which has no receiver to check even if it had been reached.
+  Node has no receiver check either, so a detached `fetch` there simply proceeds and fails
+  later at the network. A substitute cannot exhibit a property the real runtime enforces:
+  that is the general lesson, and it is why the new guard is a *runtime* rather than a
+  fourth Node suite.
+
+  **`test/worker/workerd-runtime.test.js` (+13) drives the real default export inside
+  workerd and injects nothing.** `globalOutbound` points the serving Worker's global fetch
+  at a second workerd service standing in for S3, so the Worker calls the platform's own
+  `fetch` — receiver check included — over a real loopback socket.
+  `assertGraphIsVerbatim` hashes the four modules workerd loaded against the repository's
+  own, so "the shipped Worker" is a fact rather than a phrase. An **entry shim** was
+  required and is the narrowest possible one (`export { default } from './worker.js'`):
+  workerd validates every export of an entrypoint module as a handler and refuses
+  `worker.js` outright with `Incorrect type for map entry
+  'DEFAULT_UPSTREAM_TIMEOUT_MS'` — those named exports exist for the Node suite, and
+  Cloudflare uses the default alone.
+
+  **The new test fails against the unfixed build; this was demonstrated, not asserted.**
+  Reverting the one token gives **6 of 13 failing**, with
+  `expected the document, got 504 / storage-unreachable` and
+  `expected a pointer read and a document read, saw 0`.
+
+  **A diagnostic was added where the real error was being discarded.** `ServeFailure`
+  carried the underlying error in `cause` and nothing read it, so a Worker with
+  observability enabled reported `storage-unreachable` and kept the only fact that says
+  *which* one it was. One `console.error` JSON line now names the error's constructor and
+  message plus the phase and key, at the three sites that swallowed one. A
+  `TypeError: Illegal invocation` and a DNS failure are then distinguishable **without a
+  redeploy**, which is precisely what this defect cost. Deliberately absent: the signed
+  headers (`authorization` carries `Credential=<access key id>/<scope>`), the credentials,
+  `env`, and the error object itself; the message is truncated at 200 characters. A test
+  scans the whole of workerd's output for the fixture secret, the fixture key id and
+  `Credential=`.
+
+  **The error taxonomy is otherwise untouched**, and asserted so under workerd: no 401, no
+  403 and no 3xx across five routes × seven methods, with `redirect: 'manual'` so a 3xx
+  would be visible rather than followed.
+
+  **`workerd` is a devDependency** and is **not** in the shipped Lambda package —
+  `deploy.yml` installs `npm ci --omit=dev`. No dependency was added to the Worker itself.
+
+  **15 mutations, 15/15 proven, all distinct** (`node
+  scratch/mobile-worker-receiver/mutation-check.mjs`), green control and restore, with a
+  self-test row proving its own hollowness check is live. **One row survived the first run
+  and it was a hollow guard in the new test, not a gap in the Worker:** deleting the HEAD
+  short-circuit left the HEAD case green, because HTTP strips a body from a HEAD response
+  whatever the Worker did — so the empty body was the protocol's guarantee, not the code's,
+  while the Worker read and returned the whole megabyte. The case now asserts the store saw
+  no document read, and the mutation fails it. Fixed rather than parked, and the evidence
+  regenerated afterwards. **The existing
+  `scratch/mobile-worker/mutation-check.mjs` was re-run unchanged and is still 46/46
+  proven, all distinct, control 76 green** — the anchor-rot check this file's own Key
+  Learnings demand, since this change edited the text its 46 rows attack.
+
+  Tests **2591 → 2604**, all passing with a browser; **both ends measured on this tree**,
+  the base in a `git worktree` at `7b57027`. No existing test file is touched.
 
 - **Flag football's two season markers derived from season data, not calendar titles
   (Sept 10, 2026):** Sept 13 (the Meet & Greet that opens the season) and Sept 20 (the first

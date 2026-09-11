@@ -90,6 +90,49 @@ class ServeFailure extends Error {
   }
 }
 
+/** Keeps one diagnostic line bounded, whatever an upstream message contains. */
+const MAX_DIAGNOSTIC_MESSAGE = 200;
+
+/**
+ * One line of diagnostic output for a failure that HAD a real underlying
+ * error, emitted before that error is collapsed into a response reason.
+ *
+ * WHY THIS IS NOT OPTIONAL, AND WHY IT IS EXACTLY THIS MUCH
+ *
+ * `ServeFailure` carries the original error in `cause`, and until now nothing
+ * read it — so a Worker with observability enabled reported `storage-
+ * unreachable` and kept the only fact that says WHICH storage-unreachable it
+ * was. Those facts are not interchangeable. A `TypeError: Illegal invocation`
+ * is a defect in this file: the call never left the isolate and no amount of
+ * rotating a secret or waiting out an S3 incident will change it. An
+ * `AbortError`, a DNS failure or a TLS failure is a genuine upstream
+ * condition. The two demand opposite responses, and telling them apart used
+ * to require a redeploy carrying a print statement. One line here removes
+ * that.
+ *
+ * `phase` and `key` say which of the two reads failed — the pointer or the
+ * document — because the remedy differs, and both are configuration that
+ * already sits in wrangler.toml in plain text.
+ *
+ * WHAT IS DELIBERATELY ABSENT. Not the signed headers: `authorization`
+ * carries `Credential=<access key id>/<scope>`. Not `config.credentials`,
+ * not `env`, and not the error object itself, whose own properties are set
+ * by whatever threw rather than by us. Name, message and our own two labels
+ * are the whole of it, and the message is truncated so an upstream string
+ * cannot run away with the log.
+ */
+function logUnderlying(phase, reason, key, error) {
+  console.error(JSON.stringify({
+    worker: 'mobile-dashboard',
+    event: 'serve-failure',
+    phase,
+    reason,
+    key,
+    error: error instanceof Error ? error.name : typeof error,
+    message: String(error instanceof Error ? error.message : error).slice(0, MAX_DIAGNOSTIC_MESSAGE),
+  }));
+}
+
 /**
  * The single chokepoint. Every key that reaches the network passes through
  * here, and anything outside the mobile prefix throws before a URL exists.
@@ -171,6 +214,10 @@ async function readObject(config, deps, key, versionId) {
     // A transport error, a DNS failure, a TLS failure or our own abort. In
     // every one of them nothing about the object is known, which is exactly
     // what `storage-unreachable` says and what an "old document" must not.
+    //
+    // It is ALSO where a synchronous throw from the call itself lands, which
+    // is not the same thing at all and is the reason the line below exists.
+    logUnderlying('upstream-fetch', 'storage-unreachable', safeKey, error);
     throw new ServeFailure('storage-unreachable', error);
   } finally {
     clearTimeout(timer);
@@ -187,6 +234,7 @@ async function readObject(config, deps, key, versionId) {
     // The headers arrived and the body did not. The object exists; what we
     // hold is incomplete, so it is a transport condition rather than a
     // malformed document.
+    logUnderlying('upstream-body', 'storage-unreachable', safeKey, error);
     throw new ServeFailure('storage-unreachable', error);
   }
 }
@@ -203,6 +251,7 @@ async function resolvePointer(config, deps) {
   try {
     manifest = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
   } catch (error) {
+    logUnderlying('pointer-parse', 'artifact-malformed', config.manifestKey, error);
     throw new ServeFailure('artifact-malformed', error);
   }
   // The contract's own predicate, imported rather than reimplemented. A body
@@ -331,7 +380,30 @@ const DOCUMENT_ROUTES = new Set(['/', `/${MOBILE_DOCUMENT_PATH}`]);
 const DISCOVERY_ROUTES = new Set([`/${MOBILE_DISCOVERY_MANIFEST_PATH}`]);
 
 async function handleRequest(request, env, deps = {}) {
-  const resolved = { fetch: deps.fetch || globalThis.fetch, now: deps.now || (() => Date.now()) };
+  const resolved = {
+    // `.bind(globalThis)` is load-bearing and its absence was invisible under
+    // every test this repository had. `globalThis.fetch` in workerd is a
+    // native binding that checks its receiver; assigning it onto a plain
+    // object and then calling `resolved.fetch(...)` — a METHOD call, so
+    // `this` is `resolved` — makes it throw `TypeError: Illegal invocation`
+    // synchronously, before a request is built, before DNS, before anything.
+    // That throw lands in readObject's transport catch, so EVERY route
+    // answered 504 `storage-unreachable` in about a millisecond while the
+    // store was healthy and the credentials were fine.
+    //
+    // Neither runtime the tests ran in could show it. Node's fetch enforces
+    // no receiver check, so the detached call simply proceeds; and the Node
+    // suite injects `deps.fetch`, so this branch was never taken there at
+    // all. test/worker/workerd-runtime.test.js closes both halves by driving
+    // the default export inside workerd with no `deps` at all.
+    //
+    // `now` below needs no such treatment and is not an oversight:
+    // `Date.now()` inside the arrow is an ordinary method call on `Date`,
+    // which is its correct receiver. It is spelled out because the next
+    // reader will check.
+    fetch: deps.fetch || globalThis.fetch.bind(globalThis),
+    now: deps.now || (() => Date.now()),
+  };
   const method = request.method.toUpperCase();
   const pathname = new URL(request.url).pathname;
   const isDiscovery = DISCOVERY_ROUTES.has(pathname);
