@@ -471,8 +471,9 @@ the grep that reads like it does: `test/hooks/enforcement-wiring.test.js` is the
 test that reads `settings.json` at all, and it indexes `hooks` and nothing else. (`grep -rn
 "permissions" test/` returning only two unrelated GitHub-workflow keys shows merely that no
 test *mentions* the word. Round 2 rejected that as support in the Known open item; this copy
-kept it for a further round, which is the partial-sweep failure recorded twice above,
-happening a third time.) Left uncovered
+kept it for a further round, which is the partial-sweep failure recorded twice **below**
+— at "Verified state" and in the changelog entry — happening a third time. A fourth round
+caught that this sentence said "above"; the substance held, the direction did not.) Left uncovered
 deliberately — this change was scoped to the Reviewer gate — and recorded here rather than
 rounded away, because a first draft of this very paragraph said "four of the six" and so
 counted the one genuinely uncovered mechanism as covered, in the section whose subject is
@@ -2395,7 +2396,26 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 60772 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 58343 ms |
+
+**One run reported a single failure, it did not reproduce, and its name was not captured —
+recorded rather than rounded to "green".** Exactly: six browser-enabled runs were taken on
+this final tree. The first reported 2615/**2614**/**1**/0; the five after it all reported
+2615/2615/0/0, and three of those five were captured to file specifically to catch the name
+if it recurred. It did not. (An earlier draft of this paragraph said "one run out of eight"
+and "six consecutive re-runs", counting runs taken on *earlier* trees into a claim about
+this one. Nine browser-enabled runs were taken across the branch in total; six were on the
+tree this table describes.) So the row above is the
+figure seven of eight runs produced. What is established: `# cancelled 0` in the failing
+run, so it was a genuine assertion failure and not the no-browser hook cascade; this
+change's diff touches **zero** files under `render/` or `digest/`
+(`git diff --name-only a903756..HEAD -- render/ digest/` is empty); and the two test files
+it does touch pass 66/66 in five consecutive isolated runs. What is **not** established is
+which test failed. The signature — one failure, zero cancelled, non-reproducing, green on
+re-run — matches the latent `render/dashboard-v2.test.js` clock flake this file already
+documents under Known open items at ~0.1% per suite run, and eight runs is roughly where
+you would expect to meet it once. **That is a consistent signature, not an identification**,
+and it is written here as the former.
 
 Measured on `claude/zealous-cray-hw8avn`, branched from `origin/main` at **`a903756`**
 (PR #72) — the branch point and the merge base are the same commit. **`git fetch origin
@@ -2430,12 +2450,15 @@ and 9 in the behavioural file (the header paragraphs and the one `HOOK_DIR` line
 `it()` or `test()` was removed, and no `.skip`/`.todo` appears anywhere in the diff. The
 only assertion whose meaning changed is `HOOK_DIR`'s default, which is the change itself.
 
-**Do not read the durations as a comparison.** Base 63310 ms in one run; this branch
-60440 ms, 59503 ms, 61284 ms and 60772 ms across three Reviewer rounds. The branch's own
-spread is **1781 ms**, it is the faster number all four times, and one run on the base side
-cannot support any claim at all — least of all for a change that adds two assertions reading
-an already-parsed object. Nothing is demonstrable in either direction; the cost is below the
-noise floor here.
+**Do not read the durations as a comparison.** Base 63310 ms in **one** run; this branch
+60440, 59503, 61284, 60772, 58503, 60033, 57214, 59098 and 58343 ms across four Reviewer
+rounds — nine runs on five successive trees, a spread of **4070 ms**, wider than the whole
+gap to the base figure.
+The branch is the faster number every time and that means nothing: one run on the base side
+cannot support a comparison at all, least of all for a change that adds two assertions
+reading an already-parsed object. Nothing is demonstrable in either direction; the cost is
+below the noise floor here. (This paragraph has been rewritten at every round as the run
+count grew, which is itself the argument for not quoting a duration as evidence.)
 
 Exact invocation:
 
@@ -4142,7 +4165,12 @@ method, so they chain directly to the 988 pre-change number above.
   the loudest catch in a set reads as a survivor — and it fingerprints each mutated tree and
   refuses a duplicate outright, because two mutations producing byte-identical trees are one
   property scored twice while whatever the duplicate stood in for is covered by nothing. Both
-  are recorded in this file as defects found in `scratch/mobile-publishing-contract/`; neither
+  are recorded in this file as defects found in `scratch/mobile-publishing-contract/` — ⚠ the
+  duplicate-tree half of that attribution is **wrong**, and is corrected in the Sept 11
+  wiring entry: it was found in `scratch/mobile-worker/mutation-check.mjs`, whose count went
+  45 to 44 distinct plus a restatement, while `mobile-publishing-contract/` owns the hung-
+  mutant `# fail 0` defect. Left standing here because this paragraph is another change's
+  changelog entry; flagged so a reader meeting both does not have to adjudicate. Neither
   was live here (all 21 trees are distinct), and they are enforced now rather than left to be
   rediscovered. The run prints the distinct-tree count beside the proven count.
 
@@ -5626,6 +5654,14 @@ enumerated under test, digest, and render directly to Node. No deployment.
   sports-ticker `Updated` stamp does the same. The test makes two independent
   `renderDashboardV2()` calls ~67 ms apart, so the pair differs whenever it
   straddles a **minute** boundary: ≈67/60000 ≈ 0.11% per run.
+  **Second sighting, Sept 11, 2026, consistent but not confirmed:** one run in six on
+  the Reviewer-gate wiring branch reported exactly this signature — `# fail 1`,
+  `# cancelled 0`, non-reproducing across five consecutive re-runs, on a branch whose
+  diff touches no file under `render/`. The name was not captured, so it is corroboration
+  of the rate rather than a second identification. **If you meet a lone non-reproducing
+  failure in this suite, capture the TAP to a file on the first run** — three captured
+  re-runs after the fact caught nothing, which is the whole difficulty with a 0.1% event.
+
   **Proved deterministically**, not by frequency: stubbing `Date` so the second
   render lands 200 ms later in the *next* minute makes the documents differ, and
   the only differing content is `5:30 AM` → `5:31 AM` in `live-clock` plus the

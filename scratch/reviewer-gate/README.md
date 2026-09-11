@@ -284,11 +284,15 @@ supersedes the previous verdict in both directions.
 `test/hooks/reviewer-gate.test.js` — 57 cases, inside the normal `npm test` globs.
 Each spawns the real script with a real hook payload against a real throwaway git
 repository and asserts the exit code, so it tests the shipped scripts rather than a
-copy of their logic.
+copy of their logic. **Since Sept 11, 2026 "the shipped scripts" means the WIRED
+copies in `.claude/hooks/`, not the ones in this directory** — the file's default hook
+directory was repointed there, because three byte-identical copies exist and nothing
+enforces that they stay identical. `REVIEWER_GATE_HOOK_DIR` still overrides it, which
+is how the harness below points the same file at a damaged tree.
 
-`node scratch/reviewer-gate/mutation-check.mjs` — 24 mutations. Each removes exactly
+`node scratch/reviewer-gate/mutation-check.mjs` — 25 mutations. Each removes exactly
 one deliberate decision from the hooks, runs that same test file against the damaged
-copy, and must go red **in the cases that name that decision**. Result: 24/24 proven,
+copy, and must go red **in the cases that name that decision**. Result: 25/25 proven,
 with a green control row and two self-test rows.
 
 Three properties make the table mean something rather than merely look green:
