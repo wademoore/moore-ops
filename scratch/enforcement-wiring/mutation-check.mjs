@@ -101,6 +101,15 @@ const MUTATIONS = [
     (t) => editSettings(t, (s) => { s.hooks.SubagentStop[0].hooks[0].command = 'sh'; }),
     [RECORDER_CASE]],
 
+  // assertExecForm() has three assertions and rows 7 and 9 reached two of them. This
+  // row keeps args and command intact and changes only `type`, so
+  // assert.equal(guard.type, 'command') is the one thing that can catch it. Added
+  // after a Reviewer round found it unmutated -- the same finding as row 9, one
+  // assertion down, which is this repo's most-repeated failure shape.
+  ['gate hook retyped away from "command"',
+    (t) => editSettings(t, (s) => { s.hooks.Stop[0].hooks[0].type = 'shell'; }),
+    [GATE_CASE]],
+
   // The wiring can be intact while the script it names is gone. Before this change
   // the existence list named three of the five shipped scripts.
   ['gate script file deleted while its wiring stays',
@@ -165,7 +174,10 @@ function settingsParse(tree) {
  *
  * Two mutations that produce identical trees are one property scored twice, while
  * whatever the duplicate stood in for is covered by nothing -- the defect CLAUDE.md
- * records against scratch/mobile-publishing-contract/. The tree, not just
+ * records against scratch/mobile-worker/mutation-check.mjs, whose count went 45 to 44
+ * distinct plus a restatement. (Not mobile-publishing-contract/, which owns the other
+ * scoring defect: a hung mutant draining the runner and printing "# fail 0".) The
+ * tree, not just
  * settings.json, because one row deletes a hook FILE and leaves settings.json
  * byte-identical to the control.
  */

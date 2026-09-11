@@ -53,7 +53,13 @@ function commandHooks(event = 'PreToolUse') {
 }
 
 /**
- * The one hook for `event` whose script path ends in `script`, or undefined.
+ * The FIRST hook for `event` whose script path ends in `script`, or undefined.
+ *
+ * First, not only: this is a `.find()`, so a second entry naming the same script --
+ * with a narrower matcher, say -- would go unexamined. Matching the three
+ * pre-existing cases above, which have the same property. Nothing in settings.json
+ * declares a script twice today; if one ever does, this returns the wrong one
+ * silently rather than failing, so widen it before relying on it.
  *
  * Structural, never a text search: a grep of settings.json for a script name is
  * satisfied by the statusMessage beside it and by this repo's own prose about

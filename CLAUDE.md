@@ -473,22 +473,24 @@ rounded away, because a first draft of this very paragraph said "four of the six
 counted the one genuinely uncovered mechanism as covered, in the section whose subject is
 unverified coverage claims. A Reviewer round caught it. See Known open items.
 
-**The count in this paragraph said 6 and the file measured 7**, from the read-only
-backstop `bf3be6f` (#46) added without touching this file — the drift the section above
-already names that commit for, in a third location. Corrected by measurement, not
-arithmetic.
+**The count said 6 in TWO places in this section and the file measured 7**, from the
+read-only backstop `bf3be6f` (#46) added without touching this file — the drift the section
+above already names that commit for, in a third location. Corrected by measurement, not
+arithmetic — but only here at first: the "Verified state" line below kept `6/6` for a
+further round, so the fix for a stale figure introduced a contradiction where the base had
+merely been uniformly wrong. **A figure in this file is rarely in one place. Grep for it.**
 
 The tripwire's own teeth are re-derivable rather than asserted: `node
 scratch/enforcement-wiring/mutation-check.mjs` copies `.claude/` and the **real,
 unmodified** test file into a throwaway tree outside the repository (the shipped
 `settings.json` cannot be edited — the deny rules refuse `Edit` and `Write` on it),
 damages one wiring decision there, and requires the suite to go red **on the case naming
-that decision** with every other case still green. **10 mutations, 10/10 proven** against
-the current file; run against the pre-change file the same ten score **0/10, all SURVIVED**,
-which is the measurement that establishes the gap was real rather than argued. (This
-sentence said 9/9 and 0/9 until the Reviewer round that added the tenth row — a third copy
-of one figure, caught by sweeping for it rather than by remembering it. Grep before
-believing any number in this file.)
+that decision** with every other case still green. **11 mutations, 11/11 proven** against
+the current file; run against the pre-change file the same eleven score **0/11, all
+SURVIVED**, which is the measurement that establishes the gap was real rather than argued.
+(This sentence read 9/9 after the first pass and 10/10 after the second; each Reviewer round
+added a row for an assertion nothing attacked. It is a third copy of one figure and it went
+stale twice. Grep before believing any number in this file, and re-run before writing one.)
 
 This supersedes the earlier 63-case matrix, which lived only in a session scratchpad and
 did not survive it. Coverage is a superset: all 24 rule-(b) utilities are now enumerated
@@ -511,7 +513,10 @@ during development. It is now bounded to a single whitespace-free token. Both ca
 confirmed to have teeth: against a copy of the hook with that one character class
 reverted, both flip from allow to block and the test fails.
 
-**Verified state:** 94/94 passing (plus 6/6 wiring). The file sits in `test/hooks/`, a subdirectory, which
+**Verified state:** 94/94 passing (plus 9/9 wiring — it was 6/6 here and `(**6 tests**)`
+sixty-seven lines above, both wrong by one and consistent with each other; the commit that
+corrected the first left this one, so for one round the section said 9 and 6 for the same
+measurement. Second Reviewer round, same defect, one copy down). The file sits in `test/hooks/`, a subdirectory, which
 is why it survived the globstar bug — that bug is fixed as of Aug 27, 2026 (see Test
 baseline), so plain `npm test` now picks up every test file regardless of depth and the
 placement no longer buys anything. Keeping it in `test/hooks/` remains fine on
@@ -2385,7 +2390,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 59503 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 61284 ms |
 
 Measured on `claude/zealous-cray-hw8avn`, branched from `origin/main` at **`a903756`**
 (PR #72) — the branch point and the merge base are the same commit. **`git fetch origin
@@ -2421,11 +2426,11 @@ and 9 in the behavioural file (the header paragraphs and the one `HOOK_DIR` line
 only assertion whose meaning changed is `HOOK_DIR`'s default, which is the change itself.
 
 **Do not read the durations as a comparison.** Base 63310 ms in one run; this branch
-60440 ms and then 59503 ms across the Reviewer round — so the *branch* is the faster number
-both times, which is not a claim anyone should make for a change that adds two assertions.
-Two runs on one side and one on the other is fewer than this file's own spread measurements
-have repeatedly shown are needed. Nothing is demonstrable in either direction; the new cases
-read an already-parsed object and their cost is certainly below the noise floor here.
+60440 ms, then 59503 ms, then 61284 ms across two Reviewer rounds. The branch's own spread
+is **1781 ms**, it is the faster number all three times, and one run on the base side cannot
+support any claim at all — least of all for a change that adds two assertions reading an
+already-parsed object. Nothing is demonstrable in either direction; the cost is below the
+noise floor here.
 
 Exact invocation:
 
@@ -2440,7 +2445,7 @@ quoting a figure that was not taken is exactly the unfalsifiable claim this sect
 to prevent.
 
 Two companion harnesses, both **committed** and run on demand. New: `node
-scratch/enforcement-wiring/mutation-check.mjs` → **10 mutations, 10/10 proven**, green
+scratch/enforcement-wiring/mutation-check.mjs` → **11 mutations, 11/11 proven**, green
 9-case control, plus two self-test rows run before the table — one writes unparseable JSON
 and requires the harness's own hollowness check to catch it, the other submits a repeated
 tree and requires the duplicate detector to catch that. Each row must redden **the case
@@ -2450,23 +2455,29 @@ repo each had to learn.
 
 **It carries the two properties this file records as still missing elsewhere**, rather than
 repeating them: mutated trees are fingerprinted and a duplicate aborts the run (the defect
-recorded against `scratch/mobile-publishing-contract/` — two mutations producing identical
-trees are one property scored twice, while whatever the duplicate stood in for is covered by
-nothing), **and the control tree is registered too**, so a mutation whose replacement equals
+recorded against `scratch/mobile-worker/mutation-check.mjs`, whose count went 45 to 44
+distinct plus a restatement — two mutations producing identical trees are one property
+scored twice, while whatever the duplicate stood in for is covered by nothing;
+`scratch/mobile-publishing-contract/` owns the *other* scoring defect, a hung mutant
+draining the runner and printing `# fail 0`), **and the control tree is registered too**, so a mutation whose replacement equals
 its anchor aborts instead of scoring `SURVIVED` as if it were a coverage gap — the omission
 the season-markers open item names. The distinct-tree **count** is deliberately not printed:
 a duplicate aborts, so any run reaching the summary has it equal to the row count by
 construction, and printing it would restate the row count as a second measurement.
 
-**The same ten rows score 0/10, all SURVIVED, against the pre-change file**, measured in a
-`git worktree` at `a903756`. That is the evidence the gap was real rather than argued, and
+**The same eleven rows score 0/11, all SURVIVED, against the pre-change file**, measured in
+a `git worktree` at `a903756`. That is the evidence the gap was real rather than argued, and
 it is the whole reason this file's figures are re-derivable instead of quoted.
 
-**One row exists only because a Reviewer round found an assertion nothing attacked.** The
-exec-form mutation deleted `args`, so `wiredHook()` returned undefined and the case failed
-at `assert.ok(guard)` before reaching `assert.equal(guard.command, 'node')` — leaving that
-assertion unmutated, in a harness whose entire purpose is that no assertion goes unproven.
-A tenth row now keeps `args` intact and changes only the launcher.
+**Two of the eleven rows exist only because Reviewer rounds found assertions nothing
+attacked, and the second is the first one level down.** `assertExecForm()` makes three
+assertions; the exec-form mutation deleted `args`, so `wiredHook()` returned undefined and
+the case failed at `assert.ok(guard)` before reaching either of the other two. Round 1 added
+a row changing only the launcher, which reached `assert.equal(guard.command, 'node')` and
+left `assert.equal(guard.type, 'command')` still unmutated. Round 2 caught that and added a
+row changing only `type`. In a harness whose entire purpose is that no assertion goes
+unproven, one helper hid two of them behind an early failure — which is the argument for
+counting a helper's assertions rather than its rows.
 
 Unchanged and re-run rather than assumed: `node scratch/reviewer-gate/mutation-check.mjs` →
 **25 mutations, ALL PROVEN**, control 57. Repointing the behavioural default does not touch
@@ -3202,6 +3213,12 @@ This change adds **+57**, all in one new file:
 |---|---|---|---|
 | `test/hooks/reviewer-gate.test.js` (new) | — | 57 | +57 |
 
+⚠ **Read this paragraph as provenance, not as current wiring.** It described the branch it
+was measured on, where the gate genuinely was unwired; `1bad0fd` (#53) installed it, and
+since Sept 11, 2026 `test/hooks/reviewer-gate.test.js` defaults to the **wired** copies in
+`.claude/hooks/` rather than the scratch ones this paragraph names. What is still true is
+that `scratch/reviewer-gate/` itself is referenced by nothing — see the current baseline.
+
 The file is a behavioural matrix for a **standalone, unwired** Stop-hook artifact in
 `scratch/reviewer-gate/` — two hooks that make a Reviewer pass mandatory. Nothing under
 `.claude/` is touched, so no hook in this repository behaves differently because of it;
@@ -3729,7 +3746,7 @@ method, so they chain directly to the 988 pre-change number above.
   damage the shipped file. `scratch/enforcement-wiring/mutation-check.mjs` copies `.claude/`
   and the **real, unmodified** test file into a throwaway tree outside the repository,
   damages one wiring decision there, and requires the suite to go red **on the case naming
-  that decision** with every other case green. **10/10 proven** on the current file; **0/10,
+  that decision** with every other case green. **11/11 proven** on the current file; **0/11,
   all SURVIVED** on the pre-change file in a `git worktree` at `a903756`. That contrast is
   the finding: the gap was measured, not argued.
 
@@ -3764,8 +3781,9 @@ method, so they chain directly to the 988 pre-change number above.
   that commit left behind, after the mechanism count and the read-only subsection. Corrected
   to the measured 9.
 
-  **An independent Reviewer round returned FAIL, and both blockers were documentation
-  defects of exactly the kind this change exists to correct.** (1) The CODER MODE floor at
+  **Two independent Reviewer rounds returned FAIL. Neither raised a BLOCKING finding, and
+  every item in both was documentation — the behaviour was right from round 1.** Round 1
+  raised two SHOULD FIX, both defects of exactly the kind this change exists to correct. (1) The CODER MODE floor at
   the top of this file still read `2613+` while the new baseline read `2615+` — same-commit
   drift, in the commit whose subject is stale guarantees, and a floor of `2613+` licenses
   deleting the two tests the commit adds. The base carried `2613` in *both* places and was
@@ -3779,8 +3797,27 @@ method, so they chain directly to the 988 pre-change number above.
   deliberately one-directional (a wider matcher is defended by the recorder's own
   `agent_type` guard, which has its own mutation row next door).
 
-  **The Reviewer could not verify six of its own checks, and said so rather than working
-  around them** — its read-only allowlist refuses an env-prefixed `npm test` and a bare
+  **Round 2 then failed on the round-1 defect, one copy down, missed by the round-1 fix's
+  own sweep.** `(**6 tests**)` was corrected to 9 while `94/94 passing (plus 6/6 wiring)`
+  sixty-seven lines below it kept the 6 — so the section stated 9 and 6 for one
+  measurement, and two passages asserting the count had been "corrected by measurement"
+  were thereby false. The sweep that caught a third copy of the *harness* figure did not
+  sweep for the *count* the same commit had just changed. The lesson is narrower than
+  "grep before writing a number": **grep for the number you just changed, not only for the
+  one you were told about.** Round 2's five MINOR items were also taken — an eleventh
+  mutation row for `assert.equal(guard.type, 'command')`, the last assertion in the new
+  helper nothing attacked, which is round 1's MINOR (a) one assertion down (10/10 → 11/11,
+  and the pre-change figure re-derived at 0/11); "blockers" corrected to SHOULD FIX,
+  since round 1 raised no BLOCKING finding and a record that upgrades its own severities is
+  the inaccuracy this file elsewhere insists on fixing; the open item's grep narrowed to
+  what it actually shows, with the stronger check stated beside it; `wiredHook()`'s JSDoc
+  narrowed from "the one hook" to what a `.find()` returns; and the duplicate-mutant defect
+  re-attributed to `scratch/mobile-worker/`, which is where it was found —
+  `scratch/mobile-publishing-contract/` owns the *other* scoring defect, a hung mutant
+  draining the runner and printing `# fail 0`.
+
+  **The Reviewer could not verify six of its own checks in round 1, and said so rather than
+  working around them** — its read-only allowlist refuses an env-prefixed `npm test` and a bare
   `node <script>`, so the browser-enabled row and all three mutation figures were unverified
   by it. That is the gap the Known open item on the read-only allowlist already describes,
   observed again.
@@ -5393,10 +5430,14 @@ enumerated under test, digest, and render directly to Node. No deployment.
   `test/hooks/enforcement-wiring.test.js` asserts five. The sixth is the `deny` array
   itself — the four branch-pinning rules, the archived-path `Edit`/`Write` rules, and the
   rules that keep the enforcement config out of reach of those two tools. **Delete the
-  whole block and `npm test` stays green.** Confirmed rather than assumed: `grep -rn
-  "permissions" test/` returns only two GitHub-workflow `permissions:` keys, in
+  whole block and `npm test` stays green.** Two checks, and only the second actually establishes
+  it. `grep -rn "permissions" test/` returns two GitHub-workflow `permissions:` keys, in
   `test/worker/mobile-worker-config.test.js` and `test/ci-workflow-package-gate.test.js`,
-  neither of which reads `settings.json`.
+  neither of which reads `settings.json` — but that shows only that no test *mentions* the
+  word, and says nothing about a test that parses `settings.json` and asserts over it. The
+  check that settles it: `test/hooks/enforcement-wiring.test.js` is the **only** test that
+  reads `settings.json` at all, and it indexes `hooks` and nothing else. A Reviewer round
+  caught the first standing in for the second.
 
   **Left uncovered deliberately**, because the change that found it was scoped to the
   Reviewer gate and widening a tripwire on the way past is how a reviewed diff stops being
