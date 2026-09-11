@@ -2402,9 +2402,14 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 recorded rather than rounded to "green".** The denominator is deliberately *runs since the
 suite's executed files last changed*, not "runs on this tree": `git diff --name-only
 61cdf61..HEAD -- test/ digest/ render/` is **empty**, so every run in this window exercised
-byte-identical inputs. **Ten browser-enabled runs in that window. One reported
-2615/2614/1/0; the other nine reported 2615/2615/0/0**, five of them captured to file
-specifically to catch the name if it recurred. It did not.
+byte-identical inputs. **Nine browser-enabled runs in that window. One reported
+2615/2614/1/0; the other eight reported 2615/2615/0/0**, five of them captured to file
+specifically to catch the name if it recurred. It did not. Eleven runs were recorded across
+the whole branch (the durations paragraph below lists all eleven); nine of them fall in this
+window. The count is of runs whose `# fail` line was read — one further invocation in the
+window was filtered to `not ok` lines only, showed none, and is deliberately **excluded**
+rather than counted as a pass with no totals, so that every run behind every figure here was
+scored the same way.
 
 ⚠ **That denominator is the fix for a defect this paragraph committed three times.** The
 run count was first stated per-branch, then per-tree — and a *tree* changes every time
@@ -2430,10 +2435,11 @@ What is **not** established is which test failed. The signature — one failure,
 cancelled, non-reproducing, green on re-run — matches the latent `render/dashboard-v2.test.js`
 clock flake this file documents under Known open items. **That is a consistent signature,
 not an identification, and the frequency argues against it rather than for it.** At that
-item's own ~0.11% per run the chance of meeting it at all in ten runs is **1.11%**, and the
+item's own ~0.11% per run the chance of meeting it at all in nine runs is **1.00%**, and the
 expected wait to a first occurrence is about **900 runs** — so one sighting here is roughly
-a **1-in-90** event under that model, not the "about what you'd expect" a first draft of this
-paragraph claimed. Read it as: the shape matches a known flake, the rate does not, and the
+a **1-in-100** event under that model, and the observed one-in-nine is an empirical 11.1%
+per run, **100×** what the mechanism predicts. Not the "about what you'd expect" a first
+draft of this paragraph claimed. Read it as: the shape matches a known flake, the rate does not, and the
 possibilities left open are ordinary bad luck, a different cause, or a documented rate that
 is understated. None of the three is settled by one uncaptured failure.
 
@@ -2471,9 +2477,9 @@ and 9 in the behavioural file (the header paragraphs and the one `HOOK_DIR` line
 only assertion whose meaning changed is `HOOK_DIR`'s default, which is the change itself.
 
 **Do not read the durations as a comparison.** Base 63310 ms in **one** run; this branch
-60440, 59503, 61284, 60772, 58503, 60033, 57214, 59098, 58343, 57368 and 57765 ms across six Reviewer
-rounds — eleven runs, a spread of **4070 ms**, wider than the whole gap to the base
-figure.
+60440, 59503, 61284, 60772, 58503, 60033, 57214, 59098, 58343, 57368 and 57765 ms —
+eleven runs, nine of them in the anchored window above, a spread of **4070 ms**,
+wider than the whole gap to the base figure.
 The branch is the faster number every time and that means nothing: one run on the base side
 cannot support a comparison at all, least of all for a change that adds two assertions
 reading an already-parsed object. Nothing is demonstrable in either direction; the cost is
@@ -3907,9 +3913,10 @@ method, so they chain directly to the 988 pre-change number above.
   the sentence immediately above it retracts. Round 5 also caught a real overclaim in the
   same paragraph: it said eight runs is "roughly where you would expect to meet" a
   0.11%-per-run flake once, and called the sighting "corroboration of the rate". At 0.11%,
-  P(≥1 in ten runs) is **1.11%** and the expected wait is about **900 runs** — so the
-  observation is **90×** more frequent than that mechanism predicts — one in ten against
-  0.11% per run — and argues *against* the identification rather than for it. Both copies now say so. Two MINOR taken: `# cancelled 0`
+  the observed frequency is about two orders of magnitude higher than that mechanism
+  predicts, so it argues *against* the identification rather than for it. The figures behind
+  that are in the current baseline entry and are deliberately not restated here — see below
+  for why. Two MINOR taken: `# cancelled 0`
   rules out the no-browser hook cascade but not a non-assertion throw, and the open item's
   copy said "one run in six on the branch" where six was the count on the final tree.
 
@@ -3938,6 +3945,22 @@ method, so they chain directly to the 988 pre-change number above.
   denominator anchored, each additional run changes the count, so the measurement and the
   writing-down have to stop together. That is the generalisable form of "freeze before
   measuring" — freeze, measure, write, and then stop measuring.
+
+  **Round 7 then caught the claim that this had single-sourced the figures, which was
+  false.** Anchoring the denominator stopped it rotting; it did not reduce the number of
+  places it was written down, and the run count plus all four derived figures were sitting in
+  three — this entry, the baseline, and the Known open item — agreeing today and each a place
+  the next session could forget. Made true rather than softened — and stated at the width it
+  actually holds, which is the narrower half of the lesson: **the derived arithmetic** (the
+  probability, the expected wait, the ratio) now appears **only** in the current baseline
+  entry, and this paragraph points at it rather than restating it. The bare observation —
+  one failure in nine runs — still appears twice, because a Known open item has to stand
+  alone for a reader who never reaches the baseline; those two are named here as a pair that
+  must move together, which is the honest version of a guarantee that cannot be made
+  absolute. Claiming "exactly one place" for everything is what got flagged the first time. Round 7 also found the two run
+  counts using different accounting (one included an invocation whose totals were never
+  read); both now count only runs whose `# fail` line was read, which is nine in the window
+  and eleven on the branch, stated together.
 
   **Six rounds, five FAILs, zero BLOCKING findings, and no behavioural defect in any of
   them — every item was documentation.** The generalisable part is not "check your numbers":
@@ -5722,16 +5745,16 @@ enumerated under test, digest, and render directly to Node. No deployment.
   sports-ticker `Updated` stamp does the same. The test makes two independent
   `renderDashboardV2()` calls ~67 ms apart, so the pair differs whenever it
   straddles a **minute** boundary: ≈67/60000 ≈ 0.11% per run.
-  **Second sighting, Sept 11, 2026 — shape consistent, rate not:** one run in ten on the
+  **Second sighting, Sept 11, 2026 — shape consistent, rate not:** one run in nine on the
   Reviewer-gate wiring branch reported exactly this signature — `# fail 1`, `# cancelled 0`,
-  non-reproducing across nine further runs over byte-identical test inputs, on a branch whose
+  non-reproducing across eight further runs over byte-identical test inputs, on a branch whose
   diff touches no file under `render/`. The
   name was not captured, so it is **not** a second identification — and it is not
   corroboration of the rate either, which a first draft of this note wrongly claimed. At
-  0.11% per run, P(≥1 in ten runs) is **1.11%** and the expected wait is about **900 runs**;
-  one in ten is an empirical 10% per run, **90×** what this mechanism predicts. So either that
-  was a 1-in-90 coincidence, or something else produced it, or 0.11% understates the real
-  rate. **If you meet a lone non-reproducing failure in this suite, capture the TAP to a
+  0.11% per run the observed frequency is about **two orders of magnitude** higher than this
+  mechanism predicts — the exact figures are in the Sept 11 baseline entry and are not
+  restated here, so that they have one home. So either that was a coincidence at roughly that
+  level, or something else produced it, or 0.11% understates the real rate. **If you meet a lone non-reproducing failure in this suite, capture the TAP to a
   file on the first run** — five captured re-runs after the fact caught nothing, which is
   the whole difficulty with a rare event, and capturing it is the only thing that would
   settle which of the three is true.
