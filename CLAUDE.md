@@ -12,8 +12,9 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2426+ passing with a browser
-  (see "Test baseline" for the exact invocation and the no-browser row)
+- Run npm test after changes — must stay at 2510+ passing with a browser
+  (see "Test baseline" for the exact invocation; the current entry records no
+  no-browser row)
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
 
@@ -2126,7 +2127,104 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 10, 2026 on the flag football event identity branch, after merging #67
+### Current baseline — measured Sept 10, 2026 on the mobile Worker branch, rebased onto #69
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2510 | **2510** | **0** | **0** |
+
+Measured on `claude/cloudflare-worker-mobile-dashboard-ckrpyw` **after rebasing onto
+`origin/main` at `92a89bf` (PR #69)**. The branch was opened against `2f7ac47` (PR #58), and
+eight pull requests — #61, #62, #63, #64, #66, #67, #68 and #69 — landed on `main` while it
+sat in review, so **both** ends were re-measured on the rebased tree rather than carried
+forward from the pre-rebase entry.
+
+**The recorded baseline did NOT hold, and this time the drift is inside this section rather
+than upstream of it.** The entry below records **2426** and sets the Coder-mode floor there.
+That figure was measured on `claude/amazing-franklin-7l2hue` after merging `6174ff7`, and it
+was right for that tree — but `main` has advanced to `92a89bf`, and **`92a89bf` measures
+2434**, re-measured directly in a `git worktree` in this session. PR #69 added **8** tests —
+`render/dashboard-v2-layout.test.js` 24 → 26, `render/dashboard-mobile-layout.test.js`
+13 → 14, and a new `render/flag-event-logos.test.js` at 5 — and edited only the
+Frozen-surfaces paragraph, never this section. So the floor recorded on `main` was eight
+short of `main` itself, and a branch that trusted it would have measured its own delta
+against a number no commit produces.
+
+This change adds **+76**, in three new files, and modifies no existing test:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/worker/mobile-dashboard-worker.test.js` (new) | — | 44 | +44 |
+| `test/worker/mobile-worker-config.test.js` (new) | — | 20 | +20 |
+| `test/worker/sigv4-known-answer.test.js` (new) | — | 12 | +12 |
+
+44 + 20 + 12 = 76, and 2434 + 76 = **2510** — which is the measured figure in the table
+above, **measured on the rebased tree rather than obtained by adding a delta to a recorded
+figure.** The agreement is reassuring and is not itself evidence.
+`test/worker/fake-object-store.js` is a helper, not a suite; `package.json`'s globs select
+`*.test.js` only, so it contributes 0.
+
+**The delta survived the rebase and both endpoints did not, which is the whole reason for
+measuring each end.** Before the rebase this entry read 2284 → 2360 against `2f7ac47`. The
++76 is unchanged; both endpoints moved by 150. An entry that had updated only its own total
+would have claimed a delta this branch never made — the same mistake the flag-football
+derivation entry below records catching.
+
+**Suite duration was measured, and the run-to-run spread is larger than the difference
+between the sides.** Base `92a89bf` **49313 ms**, one run; rebased branch **52415 ms** then
+**48969 ms**, two runs — same machine, same browser, run sequentially with nothing else
+running. The branch's own two runs **straddle** the base figure, so no increase is
+demonstrable in either direction from these three runs. That is deliberately a weaker claim
+than the pre-rebase entry's "no measurable increase", which rested on three warm runs per
+side: that comparison was not re-taken here, and quoting a measurement that was not made is
+exactly the unfalsifiable claim this section exists to prevent. **The first draft of this
+very paragraph made that mistake** — it cited the single 52415 ms run as a "~3.1 s gap"
+consistent with the new files' cost, and the next run refuted it.
+
+The no-browser row is deliberately absent, for the same reason.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2510+ with no failures once a browser resolves.**
+
+Companion mutation harness, **committed** and run on demand — `node
+scratch/mobile-worker/mutation-check.mjs` → **46 mutations, 46/46 proven, all distinct (46
+unique mutated trees)**, zero survivors, green control (76 tests), green restore, plus a
+self-test row that injects a real syntax error and requires the harness's own hollowness
+check to catch it. **Re-run after the rebase and identical to the pre-rebase run**, which is
+what establishes that eight merged pull requests changed nothing this harness attacks; the
+branch-owned trees are byte-identical across the rebase. It lives in the repository for the
+same reason its sibling does: a mutation count nobody can re-derive is not evidence.
+
+**That figure was wrong twice inside this one change, in two different ways, and a Reviewer
+pass caught both.** First it read 37/37 while the fix commit had already added six
+mutations — the very ones proving the round-one fixes had teeth — so the evidence line
+attested to a run that did not include them. Then, corrected to 45/45, it counted two rows
+that deleted the same line by different routes and therefore produced **byte-identical
+mutated trees**: one property scored twice, dressed as two. Guarding `mutated !== original`
+catches a no-op edit but says nothing about a duplicate of another edit, so the harness now
+fingerprints each mutated tree and refuses a duplicate outright. Behind that duplicate was a
+real gap — nothing mutated the served `content-length`, so the test asserting it agrees with
+the body was an unmutated guard. Re-derive the number rather than trusting it: the harness
+prints it, and prints the distinct-tree count beside it.
+
+**The harness found a hole in itself, and that is the entry worth carrying forward.** A
+mutant that removes the Worker's upstream read bound makes one test *hang*; `node --test`
+then drains, marks the enclosing suites `not ok`, and prints `# fail 0` alongside
+`# cancelled 21`. Scored on `# fail` alone — which is what
+`scratch/mobile-publishing-contract/mutation-check.mjs` still does — that mutant reads as a
+survivor when it is in fact the loudest catch in the set. This harness now counts
+cancellations and the runner's exit status as red, and the test itself races an explicit
+tripwire so the same defect fails with a sentence rather than a cancellation. The tripwire
+timer is deliberately **not** `unref()`d: the first version was, which let Node exit while
+the hung request was still pending and reproduced the identical `# fail 0` illusion one
+level down.
+
+### Previous baseline — measured Sept 10, 2026 on the flag football event identity branch, after merging #67
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -2254,7 +2352,10 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2426+ with no failures once a browser resolves.**
+**Coder mode had to keep `npm test` at 2426+ under this baseline.** (Superseded — see
+Current baseline above; the figure is now 2510. Note that 2426 never described `main`'s
+head for long: PR #69 added 8 tests without touching this section, so `92a89bf` measures
+2434.)
 
 ### Previous baseline — measured Sept 10, 2026 on the flag football derivation branch
 
@@ -3002,6 +3103,148 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **Cloudflare Worker serving the mobile dashboard document (Sept 10, 2026):** The
+  publishing contract merged in #58 ends by naming what it deliberately did not decide —
+  "the authenticated origin, its host, its identity provider, session length". This is the
+  origin half. `worker/mobile-dashboard/` plus a manual-only deploy workflow, a scoped
+  reader policy, and three test files. **The contract is not changed and nothing on the
+  television path is touched**: the diff modifies no existing file at all except this one,
+  adds nothing to `dashboard-artifact/`, `render/`, `data/` or
+  `infrastructure/dashboard-artifact-refresh/`, and every path it adds falls outside the
+  display deploy workflow's `paths:` filter — asserted, not assumed. **Nothing here is
+  deployed**: the Worker's workflow is `workflow_dispatch` only, and
+  `MOBILE_ARTIFACT_ENABLED` is still `0`, so there is no published document for an origin
+  to serve yet.
+
+  **One claim in the first draft of this entry was broader than what was checked, and is
+  corrected here rather than quietly dropped.** It said merging "deploys neither surface".
+  True of the two workflows in question — but `.github/workflows/deploy.yml`, which ships
+  the v1 email digest Lambda, triggers on every push to `main` with no `paths:` filter, so
+  merging runs it exactly as every merge does. It is untouched by this change, and its zip
+  excludes neither `worker/` nor `infrastructure/`, so the new trees ride along as inert
+  files in that package — pre-existing behaviour for every directory its exclude list does
+  not name. Narrowing that list is parked, not done here.
+
+  **The Worker imports the contract rather than restating it.** `isMobileManifest()`, the
+  key prefix, the pointer key and the discovery path all come from
+  `dashboard-artifact/mobile-contract.js`, so the origin and the publisher cannot drift
+  about artifact identity — the same argument the contract document already makes for its
+  own predicate.
+
+  **Two invariants fall out of "authentication is handled entirely by the platform in
+  front", and both are enforced rather than described.** The Worker never emits 401, 403 or
+  any 3xx, because expiry surfaces as a redirect to an external sign-in host issued before
+  a request reaches it and a Worker status in either family would be indistinguishable from
+  that redirect while meaning something else; and no failure body can satisfy
+  `isMobileManifest()`, so a consumer applying the contract's own predicate can never read
+  an age out of a failure. Both hold across every route, method and failure class.
+
+  **Four failure classes, each distinguishable in the response**: `artifact-missing` (404),
+  `artifact-malformed` (502), `storage-unreachable` (504), `credentials-rejected` (500) —
+  the last a 500 rather than a 502 because it is a fault in this origin's own
+  configuration, and the page says so, since whoever reads it will otherwise try signing in
+  again. Every response carries `x-mobile-dashboard-reason`, success included.
+
+  **Last-good is the contract's, and where the contract is silent nothing was invented.**
+  The Worker resolves through the pointer and never lists, so an orphan release — the one
+  failure shape the publisher can leave behind, which sorts newest and has no discovery
+  route — is unreachable by construction. The contract says nothing about an origin serving
+  a stale copy through a storage outage, so a storage outage is reported as one; answering
+  "how old is this?" with a number the contract never promised is the failure it exists to
+  prevent.
+
+  **Signing is proven against published vectors, not against itself**: RFC 4231's
+  HMAC-SHA256 cases, the AWS documentation's signing-key derivation example, and two AWS
+  SigV4 test-suite cases, each confirmed against an independent implementation in another
+  language before being written down. No npm dependency was added — WebCrypto, not the
+  vendor SDK. The substitute object store additionally recomputes the signature from the
+  request it actually received, which catches the half no vector can: signing one key and
+  fetching another.
+
+  **Guards were removed or rewritten during the mutation pass rather than kept.** A
+  byte-length check beside the SHA-256 comparison could not be made to fail — no damage
+  changes the length without changing the digest — so it was deleted rather than called
+  defence in depth. Two single-line prefix-check mutations were equivalent mutants (three
+  layers of `mobileKey()`, any one of which refuses the key), so the harness now mutates
+  the property instead of the line. And two guards fired on this change's own comment prose
+  — a display key path in a header comment, `AWS_SECRET_ACCESS_KEY` in the very grep that
+  refuses one — and were made precise about what they mean rather than relaxed, each with a
+  negative control proving the preprocessing does not hide what the scan looks for.
+
+  **An independent Reviewer pass then returned FAIL, and it was right on every count.** It
+  found a real defect: the request URL was built with `encodeURIComponent` while the
+  signature was computed with the signer's RFC 3986 encoder, which agree on every key
+  published today and disagree on `!'()*` — a mismatch that would have surfaced as
+  `credentials-rejected` and sent whoever debugged it to rotate a good secret. It found
+  that the last-good test, the sole evidence for that acceptance criterion, proved almost
+  nothing: it gave the failing publish its own `putObject`, disconnected from the store the
+  Worker reads, so the store was structurally incapable of changing, while its comment
+  claimed it asserted the store was byte-unchanged. It found the `env: CONFIG:` mapping
+  outside everything that checked it — **verbatim the hole this file already documents for
+  the holiday flag**, regressed to the pre-fix pattern. It found a top-level `_comment` in
+  the IAM policy that would have made `put-user-policy` answer
+  `MalformedPolicyDocument` — a comment that broke the command it documented. And it found
+  a tautological assertion, an overclaiming comment, a sanity check satisfied by the wrong
+  half of its corpus, a glob matcher that failed open, and two documentation claims broader
+  than what was checked.
+
+  **Fixing the encoder defect exposed a fifth hollow guard, one level down.** The
+  regression test written for it passed against the unfixed build, because the substitute
+  object store decoded the request path and re-encoded it canonically before recomputing —
+  normalising away the very difference under test. The store now canonicalises the bytes
+  that actually arrived, and the test then fails against the unfixed build as it always
+  should have.
+
+  **A second Reviewer pass returned FAIL with no BLOCKING findings, and its best catch was
+  that a guard had been deleted on a bad argument.** The byte-length check beside the
+  SHA-256 comparison was removed as unfalsifiable, reasoning that no damage changes a
+  document's length without changing its digest. True of the document, and beside the
+  point: `artifact.size` is a separate manifest field, validated nowhere else, and it is
+  what `content-length` is served from — so a manifest with a correct digest and a wrong
+  size would have been served with a header disagreeing with its body. The guard is
+  falsifiable by mutating the **manifest** rather than the document, and it is back with a
+  test that does exactly that. The same pass found the record wrong in two places (a test
+  total contradicting its own table 700 lines above, and this mutation line attesting to
+  the pre-fix harness), an assertion added in the fix commit that could never go red,
+  `Principal` wrongly admitted by a test named "a document IAM would actually accept",
+  a workflow slice loose enough that an interposed step could satisfy it, and two
+  comments claiming more than their tests drove. All corrected.
+
+  **A third pass returned PASS with no BLOCKING findings.** Its one SHOULD FIX was the
+  duplicate-mutant defect described under Test baseline — two rows producing byte-identical
+  trees, so 45 was really 44 distinct plus a restatement, and the `content-length` guard
+  hiding behind the duplicate was mutated by nothing. Fixed after the pass rather than
+  parked, because shipping a knowingly overstated evidence figure is the exact failure this
+  branch spent two rounds correcting; the harness now refuses duplicate mutants by
+  fingerprint. Also taken from that pass: a mutation for the `Principal` key the IAM
+  grammar test newly forbids, and a discriminating assertion on the manifest-size cases —
+  every validation failure here is 502/`artifact-malformed`, so the status alone could not
+  say which check refused, and the cases now assert the document was actually read.
+  Tests **2434 → 2510**, all passing with a browser, both ends re-measured on the rebased
+  tree.
+
+  **Rebased onto `92a89bf` (PR #69); the only conflicted file was this one.** The branch was
+  opened against `2f7ac47`, and #61, #62, #63, #64, #66, #67, #68 and #69 landed on `main`
+  while it sat in review. Both sides had inserted a new current baseline and a new changelog
+  entry at the same two anchors, which is the whole of the conflict. **Every branch-owned
+  tree is byte-identical across the rebase** — `worker/`, `test/worker/`,
+  `scratch/mobile-worker/`, `infrastructure/mobile-worker/`,
+  `.github/workflows/deploy-mobile-worker.yml` and `docs/dashboard-v2/mobile-worker.md`, all
+  verified with `git diff` against the pre-rebase tip — so no behaviour moved, and the
+  mutation harness re-ran at the same **46/46, all distinct**, which is the evidence for that
+  rather than the assertion of it.
+
+  **Two figures this entry used to state are corrected rather than carried forward, and one
+  is withdrawn.** It read "Tests 2284 → 2360" against `2f7ac47`; the +76 delta is unchanged
+  but both endpoints moved by 150, so trusting the recorded total would have claimed a delta
+  this branch never made. And "suite duration unchanged (measured, three runs each side)" is
+  **not restated**: the rebased tree was measured once at the base (49313 ms) and twice
+  on the branch (52415 ms, 48969 ms), and the branch's two runs straddle the base figure —
+  enough to show no difference is demonstrable, not enough to reproduce a
+  three-runs-per-side claim. Re-measuring found the
+  Test-baseline section's own floor stale too — see that section for the eight tests #69 added
+  without updating it.
 
 - **Flag football calendar occurrences now carry league team identity, and an
   unmatched one is visible (Sept 10, 2026):** #66 gave the athletics cards local
