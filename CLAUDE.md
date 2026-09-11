@@ -87,6 +87,13 @@ Cowboys artwork was supplied by Wade. Ravens, Bears, Broncos, Texans, and Panthe
 PNGs came from ESPN's `https://a.espncdn.com/i/teamlogos/nfl/500/` assets
 (`bal`, `chi`, `den`, `hou`, `car` respectively), downloaded September 10, 2026.
 
+Wall athletics cards use transparent, proportion-preserving 96px team artwork
+below the kid-colored ribbons, beside the record or season label. The compact
+single-card layout places that summary beside the schedule/results and preserves
+the panel footprint. Mobile and calendar/opponent artwork keep their existing
+sizes. Spotlight migration fixtures remain original; their comparison normalizes
+only this subsequent team-artwork relocation.
+
 ### v1 dashboard is frozen (2026-08-27)
 
 `render/dashboard.js` (v1) is frozen. Do not iterate, improve, refactor, or
