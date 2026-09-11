@@ -23,7 +23,8 @@
 //
 // Run: node scratch/enforcement-wiring/mutation-check.mjs
 import { spawnSync } from 'node:child_process';
-import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync, unlinkSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync, unlinkSync, readdirSync, statSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
@@ -90,6 +91,16 @@ const MUTATIONS = [
     }),
     [GATE_CASE]],
 
+  // Row 7 deletes `args`, so wiredHook() returns undefined and the case fails at
+  // assert.ok(guard) BEFORE the exec-form check runs -- which left
+  // `assert.equal(guard.command, 'node')` unmutated, i.e. an assertion never seen
+  // failing, in a harness written because that is the defect. This row keeps args
+  // intact and changes only the launcher, so the exec-form assertion is the one
+  // thing that can catch it.
+  ['recorder launched through a shell instead of the node binary',
+    (t) => editSettings(t, (s) => { s.hooks.SubagentStop[0].hooks[0].command = 'sh'; }),
+    [RECORDER_CASE]],
+
   // The wiring can be intact while the script it names is gone. Before this change
   // the existence list named three of the five shipped scripts.
   ['gate script file deleted while its wiring stays',
@@ -149,6 +160,39 @@ function settingsParse(tree) {
   } catch (e) { return { parses: false, error: String(e.message).split('\n')[0] }; }
 }
 
+/**
+ * A fingerprint of the whole .claude/ tree: every path, and every file's bytes.
+ *
+ * Two mutations that produce identical trees are one property scored twice, while
+ * whatever the duplicate stood in for is covered by nothing -- the defect CLAUDE.md
+ * records against scratch/mobile-publishing-contract/. The tree, not just
+ * settings.json, because one row deletes a hook FILE and leaves settings.json
+ * byte-identical to the control.
+ */
+function fingerprint(tree) {
+  const root = join(tree, '.claude');
+  const h = createHash('sha256');
+  const walk = (dir, rel) => {
+    for (const name of readdirSync(dir).sort()) {
+      const abs = join(dir, name);
+      const path = rel ? `${rel}/${name}` : name;
+      if (statSync(abs).isDirectory()) { h.update(`D ${path}\n`); walk(abs, path); }
+      else { h.update(`F ${path}\n`); h.update(readFileSync(abs)); }
+    }
+  };
+  walk(root, '');
+  return h.digest('hex');
+}
+
+const seen = new Map();
+/** Returns the earlier row's name when `tree` duplicates one already registered. */
+function registerTree(name, tree) {
+  const fp = fingerprint(tree);
+  if (seen.has(fp)) return seen.get(fp);
+  seen.set(fp, name);
+  return null;
+}
+
 const rows = [];
 let harnessOk = true;
 
@@ -163,6 +207,18 @@ let harnessOk = true;
     caught ? 'caught before the suite ran' : 'NOT CAUGHT -- the hollowness check is inert']);
 }
 
+{
+  // The duplicate detector, exercised on every run rather than hand-checked once.
+  const a = makeTree(); const b = makeTree();
+  const fresh = registerTree('SELF-TEST probe', a) === null;
+  const dup = registerTree('SELF-TEST probe (repeat)', b) === 'SELF-TEST probe';
+  seen.clear();
+  const caught = fresh && dup;
+  if (!caught) harnessOk = false;
+  rows.push(['SELF-TEST: two identical trees', '-', '-',
+    caught ? 'duplicate detected' : 'NOT CAUGHT -- the duplicate guard is inert']);
+}
+
 // CONTROL. If the undamaged copy is not green the rest of the table means nothing.
 const controlTree = makeTree();
 const control = runSuite(controlTree);
@@ -170,10 +226,21 @@ rows.push(['CONTROL (undamaged copy of .claude/)', control.pass, control.fail,
   control.fail === 0 && control.pass > 0 ? 'green' : 'NOT GREEN']);
 if (control.fail !== 0 || control.pass <= 0) harnessOk = false;
 const CONTROL_PASS = control.pass;
+// Registering the control is what makes a no-op mutation abort rather than score
+// SURVIVED -- a harness bug that would otherwise read as a coverage gap. CLAUDE.md
+// records that omission as still open in the season-markers harness.
+registerTree('CONTROL', controlTree);
 
 for (const [name, mutate, expectRed] of MUTATIONS) {
   const tree = makeTree();
   mutate(tree);
+
+  const duplicateOf = registerTree(name, tree);
+  if (duplicateOf !== null) {
+    rows.push([name, '-', '-', `DUPLICATE TREE -- byte-identical to "${duplicateOf}"`]);
+    harnessOk = false;
+    continue;
+  }
 
   const { parses, error } = settingsParse(tree);
   if (!parses) {
@@ -211,6 +278,9 @@ for (const [n, p, f, note] of rows) {
   console.log(`${String(n).padEnd(w)}  ${String(p).padStart(4)}  ${String(f).padStart(4)}  ${note}`);
 }
 const caught = rows.filter((r) => String(r[3]).startsWith('caught by:')).length;
+// No distinct-tree COUNT is printed. A duplicate aborts the run, so any run reaching
+// this line has that number equal to the row count by construction; printing it would
+// restate the row count as if it were a second measurement.
 console.log(`\n${caught}/${MUTATIONS.length} mutations proven; control ${CONTROL_PASS} passing.`);
 console.log(harnessOk ? 'HARNESS OK' : 'HARNESS FAILED');
 process.exit(harnessOk ? 0 : 1);

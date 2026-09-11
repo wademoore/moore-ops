@@ -12,9 +12,13 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2613+ passing with a browser
+- Run npm test after changes — must stay at 2615+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
-  no-browser row)
+  no-browser row). **This line and the floor at the end of the current baseline
+  entry are one figure in two places — move both or neither.** It has now gone
+  stale twice: it sat at `624+` from July until Sept 7, and a Reviewer round caught
+  it left at `2613+` in the very commit that raised the baseline to `2615` — a
+  floor of `2613+` licenses deleting the two tests that commit added.
 - Confirm file changes before moving to next file
 - End with: "Coder complete — ready for review or push"
 
@@ -448,15 +452,26 @@ argument, every hook script parsing, and the retired bash guard absent. The matr
 the script works; this proves something runs it. The gap between those two is exactly how
 the guard was dropped from `settings.json` unnoticed in Sept 2026.
 
-**It covered four of the six mechanisms until Sept 11, 2026, and the two it missed were
-the Reviewer gate's.** Deleting `hooks.SubagentStop` or `hooks.Stop` from `settings.json`
+**It covered three of the six mechanisms until Sept 11, 2026, and two of the three it
+missed were the Reviewer gate's.** Deleting `hooks.SubagentStop` or `hooks.Stop` from `settings.json`
 left the whole suite green — the identical hole the file was written to close, one event
 type over, standing for the entire life of the gate. Two cases now assert each half:
 present under its own event, exec form, `${CLAUDE_PROJECT_DIR}`-anchored, the recorder's
 matcher reaching `reviewer`, and the Stop gate's matcher **narrowing nothing** (a matcher
 scoped to one agent would look wired while letting ordinary turns end ungated, which is
 worse than absent). Both scripts also joined the existence list, which had named three of
-the five shipped scripts.
+the five shipped scripts. **That takes coverage to five of six, not six of six** — see
+the next paragraph for the one still uncovered.
+
+**⚠ The `permissions.deny` block is the sixth mechanism and nothing asserts it — not before
+this change and not after.** It is listed *first* among the six above and holds the four
+branch-pinning rules that are the branching policy's second layer, and `grep -rn
+"permissions" test/` returns only two GitHub-workflow `permissions:` keys in unrelated
+files. Delete the whole `deny` block and every test stays green. Left uncovered
+deliberately — this change was scoped to the Reviewer gate — and recorded here rather than
+rounded away, because a first draft of this very paragraph said "four of the six" and so
+counted the one genuinely uncovered mechanism as covered, in the section whose subject is
+unverified coverage claims. A Reviewer round caught it. See Known open items.
 
 **The count in this paragraph said 6 and the file measured 7**, from the read-only
 backstop `bf3be6f` (#46) added without touching this file — the drift the section above
@@ -468,9 +483,12 @@ scratch/enforcement-wiring/mutation-check.mjs` copies `.claude/` and the **real,
 unmodified** test file into a throwaway tree outside the repository (the shipped
 `settings.json` cannot be edited — the deny rules refuse `Edit` and `Write` on it),
 damages one wiring decision there, and requires the suite to go red **on the case naming
-that decision** with every other case still green. **9 mutations, 9/9 proven** against the
-current file; run against the pre-change file the same nine score **0/9, all SURVIVED**,
-which is the measurement that establishes the gap was real rather than argued.
+that decision** with every other case still green. **10 mutations, 10/10 proven** against
+the current file; run against the pre-change file the same ten score **0/10, all SURVIVED**,
+which is the measurement that establishes the gap was real rather than argued. (This
+sentence said 9/9 and 0/9 until the Reviewer round that added the tenth row — a third copy
+of one figure, caught by sweeping for it rather than by remembering it. Grep before
+believing any number in this file.)
 
 This supersedes the earlier 63-case matrix, which lived only in a session scratchpad and
 did not survive it. Coverage is a superset: all 24 rule-(b) utilities are now enumerated
@@ -2367,7 +2385,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 60440 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 59503 ms |
 
 Measured on `claude/zealous-cray-hw8avn`, branched from `origin/main` at **`a903756`**
 (PR #72) — the branch point and the merge base are the same commit. **`git fetch origin
@@ -2402,11 +2420,12 @@ and 9 in the behavioural file (the header paragraphs and the one `HOOK_DIR` line
 `it()` or `test()` was removed, and no `.skip`/`.todo` appears anywhere in the diff. The
 only assertion whose meaning changed is `HOOK_DIR`'s default, which is the change itself.
 
-**Do not read the durations as a comparison.** One run per side — base 63310 ms, branch
-60440 ms — is fewer runs than this file's own spread measurements have repeatedly shown are
-needed, and the *branch* is the faster number, which is not a claim anyone should make for
-a change that adds two assertions. Nothing is demonstrable in either direction; the new
-cases read an already-parsed object and their cost is certainly below the noise floor here.
+**Do not read the durations as a comparison.** Base 63310 ms in one run; this branch
+60440 ms and then 59503 ms across the Reviewer round — so the *branch* is the faster number
+both times, which is not a claim anyone should make for a change that adds two assertions.
+Two runs on one side and one on the other is fewer than this file's own spread measurements
+have repeatedly shown are needed. Nothing is demonstrable in either direction; the new cases
+read an already-parsed object and their cost is certainly below the noise floor here.
 
 Exact invocation:
 
@@ -2421,16 +2440,33 @@ quoting a figure that was not taken is exactly the unfalsifiable claim this sect
 to prevent.
 
 Two companion harnesses, both **committed** and run on demand. New: `node
-scratch/enforcement-wiring/mutation-check.mjs` → **9 mutations, 9/9 proven**, green 9-case
-control, plus a self-test row that writes unparseable JSON and requires the harness's own
-hollowness check to catch it before the suite runs. Each row must redden **the case naming
-that decision** with every other case green, so an over-broad mutation is scored
+scratch/enforcement-wiring/mutation-check.mjs` → **10 mutations, 10/10 proven**, green
+9-case control, plus two self-test rows run before the table — one writes unparseable JSON
+and requires the harness's own hollowness check to catch it, the other submits a repeated
+tree and requires the duplicate detector to catch that. Each row must redden **the case
+naming that decision** with every other case green, so an over-broad mutation is scored
 `OVER-BROAD` rather than "as expected" — the failure mode the sibling harnesses in this
 repo each had to learn.
 
-**The same nine rows score 0/9, all SURVIVED, against the pre-change file**, measured in a
+**It carries the two properties this file records as still missing elsewhere**, rather than
+repeating them: mutated trees are fingerprinted and a duplicate aborts the run (the defect
+recorded against `scratch/mobile-publishing-contract/` — two mutations producing identical
+trees are one property scored twice, while whatever the duplicate stood in for is covered by
+nothing), **and the control tree is registered too**, so a mutation whose replacement equals
+its anchor aborts instead of scoring `SURVIVED` as if it were a coverage gap — the omission
+the season-markers open item names. The distinct-tree **count** is deliberately not printed:
+a duplicate aborts, so any run reaching the summary has it equal to the row count by
+construction, and printing it would restate the row count as a second measurement.
+
+**The same ten rows score 0/10, all SURVIVED, against the pre-change file**, measured in a
 `git worktree` at `a903756`. That is the evidence the gap was real rather than argued, and
 it is the whole reason this file's figures are re-derivable instead of quoted.
+
+**One row exists only because a Reviewer round found an assertion nothing attacked.** The
+exec-form mutation deleted `args`, so `wiredHook()` returned undefined and the case failed
+at `assert.ok(guard)` before reaching `assert.equal(guard.command, 'node')` — leaving that
+assertion unmutated, in a harness whose entire purpose is that no assertion goes unproven.
+A tenth row now keeps `args` intact and changes only the launcher.
 
 Unchanged and re-run rather than assumed: `node scratch/reviewer-gate/mutation-check.mjs` →
 **25 mutations, ALL PROVEN**, control 57. Repointing the behavioural default does not touch
@@ -3674,23 +3710,28 @@ method, so they chain directly to the 988 pre-change number above.
   **(1) Deleting either Reviewer-gate wiring entry left the suite green.**
   `test/hooks/enforcement-wiring.test.js` exists to fail when a mechanism is dropped from
   `.claude/settings.json` — it was written because the archived-files guard was once dropped
-  unnoticed. It asserted four of the six wired mechanisms. The two it missed were
+  unnoticed. It asserted **three** of the six wired mechanisms, and two of the three it
+  missed were
   `hooks.SubagentStop` → `record-review-verdict.mjs` and `hooks.Stop` → `require-review.mjs`,
   wired by `1bad0fd` (#53) and never covered for the whole of their life. Two cases now
   assert each half: present under its own event, exec form, `${CLAUDE_PROJECT_DIR}`-anchored,
   the recorder's matcher reaching `reviewer`, and the Stop gate's matcher **narrowing
   nothing** — a matcher scoped to one agent would look wired while letting ordinary turns end
   ungated, which is worse than being absent. Both scripts also joined the existence list,
-  which had named three of the five shipped scripts.
+  which had named three of the five shipped scripts. Coverage goes three of six → **five of
+  six**; the sixth, the `permissions.deny` block, is asserted by nothing and stays that way
+  here — out of scope, and now written down rather than rounded away. A first draft of this
+  entry said "four of the six", which counted the one genuinely uncovered mechanism as
+  covered.
 
   **Demonstrated rather than asserted, and inside the deny rules.** `Edit`/`Write` on
   `.claude/settings.json` are refused by this repo's own configuration, so the control cannot
   damage the shipped file. `scratch/enforcement-wiring/mutation-check.mjs` copies `.claude/`
   and the **real, unmodified** test file into a throwaway tree outside the repository,
   damages one wiring decision there, and requires the suite to go red **on the case naming
-  that decision** with every other case green. **9/9 proven** on the current file; **0/9, all
-  SURVIVED** on the pre-change file in a `git worktree` at `a903756`. That contrast is the
-  finding: the gap was measured, not argued.
+  that decision** with every other case green. **10/10 proven** on the current file; **0/10,
+  all SURVIVED** on the pre-change file in a `git worktree` at `a903756`. That contrast is
+  the finding: the gap was measured, not argued.
 
   **(2) The behavioural matrix ran against a copy nothing executes.**
   `test/hooks/reviewer-gate.test.js` resolved its hook directory to `scratch/reviewer-gate/`
@@ -3722,6 +3763,27 @@ method, so they chain directly to the 988 pre-change number above.
   backstop `bf3be6f` (#46) added without touching `CLAUDE.md` — the third stranded location
   that commit left behind, after the mechanism count and the read-only subsection. Corrected
   to the measured 9.
+
+  **An independent Reviewer round returned FAIL, and both blockers were documentation
+  defects of exactly the kind this change exists to correct.** (1) The CODER MODE floor at
+  the top of this file still read `2613+` while the new baseline read `2615+` — same-commit
+  drift, in the commit whose subject is stale guarantees, and a floor of `2613+` licenses
+  deleting the two tests the commit adds. The base carried `2613` in *both* places and was
+  consistent; this change made it contradictory. (2) "It asserted four of the six wired
+  mechanisms" was wrong: the base asserted **three**, and the sixth — the `permissions.deny`
+  block — is asserted by nothing before or after. So the miscount counted the one genuinely
+  uncovered mechanism as covered. Corrected to three-of-six → five-of-six, with the
+  remaining gap written up in Known open items rather than closed on the way past. Three
+  MINOR items were also taken: the tenth mutation row above, a distinct-tree fingerprint
+  guard with its own self-test, and a note on why the recorder's matcher assertion is
+  deliberately one-directional (a wider matcher is defended by the recorder's own
+  `agent_type` guard, which has its own mutation row next door).
+
+  **The Reviewer could not verify six of its own checks, and said so rather than working
+  around them** — its read-only allowlist refuses an env-prefixed `npm test` and a bare
+  `node <script>`, so the browser-enabled row and all three mutation figures were unverified
+  by it. That is the gap the Known open item on the read-only allowlist already describes,
+  observed again.
 
   Tests **2613 → 2615**, all passing with a browser; both ends measured in this session, the
   base on the unmodified tree at `a903756`. No test file loses a case, and nothing is skipped.
@@ -5325,6 +5387,34 @@ enumerated under test, digest, and render directly to Node. No deployment.
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
 
 ## Known open items
+
+- **The `permissions.deny` block is the one enforcement mechanism no test asserts
+  (Sept 11, 2026).** `.claude/settings.json` declares six mechanisms; after this date
+  `test/hooks/enforcement-wiring.test.js` asserts five. The sixth is the `deny` array
+  itself — the four branch-pinning rules, the archived-path `Edit`/`Write` rules, and the
+  rules that keep the enforcement config out of reach of those two tools. **Delete the
+  whole block and `npm test` stays green.** Confirmed rather than assumed: `grep -rn
+  "permissions" test/` returns only two GitHub-workflow `permissions:` keys, in
+  `test/worker/mobile-worker-config.test.js` and `test/ci-workflow-package-gate.test.js`,
+  neither of which reads `settings.json`.
+
+  **Left uncovered deliberately**, because the change that found it was scoped to the
+  Reviewer gate and widening a tripwire on the way past is how a reviewed diff stops being
+  reviewable. Recorded because the alternative was worse: the first draft of the paragraph
+  describing that change asserted the tripwire had covered "four of the six", which counted
+  this very mechanism as covered. A Reviewer round caught it. An uncovered mechanism is a
+  gap; an uncovered mechanism *recorded as covered* is the failure mode this file's gate
+  section exists to prevent.
+
+  **Note before writing the test, because it is not the same shape as the other five.**
+  Those assert that something *runs*; a deny rule asserts that a string is *present in a
+  list*, which is close to asserting the file's own contents back at itself. The useful
+  version pins the outcome rather than the text — the four branch-pinning rules as a set,
+  and the archived-path rules as a set — so reordering or reformatting the array does not
+  go red while removing a rule does. Note also that the deny rules are friction, not a
+  gate: server-side branch protection is the real enforcement, and a green test here must
+  never be read as proof the protected branch is safe. That argument is made in full in
+  "The generalizable lesson" above and should be linked from any test that lands.
 
 - **The Reviewer gate's verdict records live inside `.git/` and are keyed by session id, so a
   cloud session can never verify a review that happened in another checkout (Sept 11, 2026).**

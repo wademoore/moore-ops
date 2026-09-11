@@ -135,6 +135,12 @@ test('the Reviewer verdict recorder is wired on SubagentStop for the reviewer ag
   assertExecForm(guard, 'record-review-verdict.mjs');
   assert.ok(matcherReaches(guard.matcher, 'reviewer'),
     `matcher "${guard.matcher}" reaches the reviewer agent -- the recorder is the only thing that writes a verdict, so a matcher that misses reviewer leaves the Stop gate with nothing to read`);
+  // Deliberately one-directional: this fails on a matcher too NARROW and passes on
+  // one too wide. A wider matcher is defended by the recorder itself, which checks
+  // agent_type on stdin and exits without writing for anything else -- a decision
+  // that has its own mutation row in scratch/reviewer-gate/mutation-check.mjs
+  // ("recorder drops the agent_type guard"). Asserting a width bound here would pin
+  // an incidental and go red on a legitimate rewrite while adding no coverage.
 });
 
 test('the Stop gate is wired, and its matcher narrows nothing', () => {
