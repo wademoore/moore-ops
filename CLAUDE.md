@@ -440,13 +440,37 @@ file runs unchanged on Windows) with a real PreToolUse payload on stdin and asse
 exit code (2 = blocked, 0 = allowed), so it tests the shipped script, not a copy of its
 logic.
 
-`test/hooks/enforcement-wiring.test.js` (**6 tests**) is the companion tripwire: it reads
+`test/hooks/enforcement-wiring.test.js` (**9 tests**) is the companion tripwire: it reads
 the shipped `settings.json` and agent files and asserts the guard is actually *wired* —
 matcher reaching `Edit`, `Write`, `Bash` and `PowerShell`, exec form, no BOM on any
 enforcement file, the reviewer/debugger frontmatter hooks present with the right role
 argument, every hook script parsing, and the retired bash guard absent. The matrix proves
 the script works; this proves something runs it. The gap between those two is exactly how
 the guard was dropped from `settings.json` unnoticed in Sept 2026.
+
+**It covered four of the six mechanisms until Sept 11, 2026, and the two it missed were
+the Reviewer gate's.** Deleting `hooks.SubagentStop` or `hooks.Stop` from `settings.json`
+left the whole suite green — the identical hole the file was written to close, one event
+type over, standing for the entire life of the gate. Two cases now assert each half:
+present under its own event, exec form, `${CLAUDE_PROJECT_DIR}`-anchored, the recorder's
+matcher reaching `reviewer`, and the Stop gate's matcher **narrowing nothing** (a matcher
+scoped to one agent would look wired while letting ordinary turns end ungated, which is
+worse than absent). Both scripts also joined the existence list, which had named three of
+the five shipped scripts.
+
+**The count in this paragraph said 6 and the file measured 7**, from the read-only
+backstop `bf3be6f` (#46) added without touching this file — the drift the section above
+already names that commit for, in a third location. Corrected by measurement, not
+arithmetic.
+
+The tripwire's own teeth are re-derivable rather than asserted: `node
+scratch/enforcement-wiring/mutation-check.mjs` copies `.claude/` and the **real,
+unmodified** test file into a throwaway tree outside the repository (the shipped
+`settings.json` cannot be edited — the deny rules refuse `Edit` and `Write` on it),
+damages one wiring decision there, and requires the suite to go red **on the case naming
+that decision** with every other case still green. **9 mutations, 9/9 proven** against the
+current file; run against the pre-change file the same nine score **0/9, all SURVIVED**,
+which is the measurement that establishes the gap was real rather than argued.
 
 This supersedes the earlier 63-case matrix, which lived only in a session scratchpad and
 did not survive it. Coverage is a superset: all 24 rule-(b) utilities are now enumerated
@@ -2339,7 +2363,83 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 ## Test baseline
 
-### Current baseline — measured Sept 11, 2026 on the workerd runtime-guard branch
+### Current baseline — measured Sept 11, 2026 on the Reviewer-gate wiring branch
+
+| Invocation | tests | pass | fail | cancelled | duration |
+|---|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 60440 ms |
+
+Measured on `claude/zealous-cray-hw8avn`, branched from `origin/main` at **`a903756`**
+(PR #72) — the branch point and the merge base are the same commit. **`git fetch origin
+main` was run before deriving it, per the standing warning, and it mattered again: the ref
+was stale at `2d01027` and the fetch moved it to `a903756`, nineteen merges on.** The base
+was re-measured in this session, after `npm install` and before any change: **2613 / 2613 /
+0 / 0, 63310 ms** — which matches the entry below, so the recorded figure held.
+Re-measure anyway; the run costs less than the correction does.
+
+This change adds **+2**, both in one existing file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/hooks/enforcement-wiring.test.js` | 7 | 9 | +2 |
+| `test/hooks/reviewer-gate.test.js` | 57 | 57 | 0 |
+
+2613 + 2 = 2615, and **2615 is the measured figure in the table above rather than that
+sum** — the agreement is reassuring and is not itself evidence. Both before-figures were
+measured on the unmodified tree at `a903756` in this session.
+
+**`test/hooks/reviewer-gate.test.js` contributes 0, and that is the point rather than an
+omission.** Its 57 cases are unchanged; what changed is *which program they run*. The file
+resolved its hook directory to `scratch/reviewer-gate/` unless `REVIEWER_GATE_HOOK_DIR`
+was set, so 57 cases were proving properties of a byte-identical duplicate that no hook
+event executes, with nothing enforcing that duplicate stays identical. The default is now
+`.claude/hooks/` — the copies `settings.json` actually runs. A test count cannot show that;
+it is the one change here whose whole effect is invisible to arithmetic.
+
+**No existing test was deleted or skipped.** `git diff --numstat` over `test/` reports 3
+deletions in the wiring file (the `commandHooks()` body, generalised to take an event name)
+and 9 in the behavioural file (the header paragraphs and the one `HOOK_DIR` line). No
+`it()` or `test()` was removed, and no `.skip`/`.todo` appears anywhere in the diff. The
+only assertion whose meaning changed is `HOOK_DIR`'s default, which is the change itself.
+
+**Do not read the durations as a comparison.** One run per side — base 63310 ms, branch
+60440 ms — is fewer runs than this file's own spread measurements have repeatedly shown are
+needed, and the *branch* is the faster number, which is not a claim anyone should make for
+a change that adds two assertions. Nothing is demonstrable in either direction; the new
+cases read an already-parsed object and their cost is certainly below the noise floor here.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2615+ with no failures once a browser resolves.**
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
+quoting a figure that was not taken is exactly the unfalsifiable claim this section exists
+to prevent.
+
+Two companion harnesses, both **committed** and run on demand. New: `node
+scratch/enforcement-wiring/mutation-check.mjs` → **9 mutations, 9/9 proven**, green 9-case
+control, plus a self-test row that writes unparseable JSON and requires the harness's own
+hollowness check to catch it before the suite runs. Each row must redden **the case naming
+that decision** with every other case green, so an over-broad mutation is scored
+`OVER-BROAD` rather than "as expected" — the failure mode the sibling harnesses in this
+repo each had to learn.
+
+**The same nine rows score 0/9, all SURVIVED, against the pre-change file**, measured in a
+`git worktree` at `a903756`. That is the evidence the gap was real rather than argued, and
+it is the whole reason this file's figures are re-derivable instead of quoted.
+
+Unchanged and re-run rather than assumed: `node scratch/reviewer-gate/mutation-check.mjs` →
+**25 mutations, ALL PROVEN**, control 57. Repointing the behavioural default does not touch
+it, because its control calls `runSuite(HERE)` — naming `scratch/reviewer-gate` explicitly
+— and every mutant is a temp copy of that same directory. That is what keeps the harness
+measuring the tree it mutates rather than the wired one, and it is why the duplicates and
+the `REVIEWER_GATE_HOOK_DIR` override both have to stay.
+
+### Previous baseline — measured Sept 11, 2026 on the workerd runtime-guard branch
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
@@ -2405,7 +2505,8 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2613+ with no failures once a browser resolves.**
+**Coder mode had to keep `npm test` at 2613+ under this baseline.** (Superseded — see
+Current baseline above; the figure is now **2615**.)
 
 **The new file needs a runtime the other 2591 tests do not.** `workerd` is a **devDependency**
 (`require('workerd').default` is the platform binary's absolute path, so nothing guesses a
@@ -3564,6 +3665,66 @@ method, so they chain directly to the 988 pre-change number above.
 +2 from Emma Unavailability Flag boundary-coverage follow-up (Aug 16, 2026, same day, on `main`): explicit test cases for a block starting *exactly* 14 days from `ctx.today` (fires — inclusive) and *exactly* 15 days out (does not fire), added to `digest/flags.test.js`'s `evaluateEmmaUnavailability` block. The Reviewer's independent boundary pass had hand-verified the underlying logic in `flags.js` is already correct at these exact edges (the prior committed test cases only exercised a 6-day and a 16-day gap, not the true boundary) — this follow-up closes the test-coverage gap only; no change to `digest/emmaUnavailabilityParser.js` or `digest/flags.js`.
 
 ## Current state (changelog)
+
+- **The wiring tripwire did not cover the Reviewer gate, and the behavioural matrix tested
+  the wrong copies (Sept 11, 2026):** Three defects in the enforcement test layer, all in
+  the same place and all of the shape this repository writes about most: a guard that reads
+  as protective and is not.
+
+  **(1) Deleting either Reviewer-gate wiring entry left the suite green.**
+  `test/hooks/enforcement-wiring.test.js` exists to fail when a mechanism is dropped from
+  `.claude/settings.json` — it was written because the archived-files guard was once dropped
+  unnoticed. It asserted four of the six wired mechanisms. The two it missed were
+  `hooks.SubagentStop` → `record-review-verdict.mjs` and `hooks.Stop` → `require-review.mjs`,
+  wired by `1bad0fd` (#53) and never covered for the whole of their life. Two cases now
+  assert each half: present under its own event, exec form, `${CLAUDE_PROJECT_DIR}`-anchored,
+  the recorder's matcher reaching `reviewer`, and the Stop gate's matcher **narrowing
+  nothing** — a matcher scoped to one agent would look wired while letting ordinary turns end
+  ungated, which is worse than being absent. Both scripts also joined the existence list,
+  which had named three of the five shipped scripts.
+
+  **Demonstrated rather than asserted, and inside the deny rules.** `Edit`/`Write` on
+  `.claude/settings.json` are refused by this repo's own configuration, so the control cannot
+  damage the shipped file. `scratch/enforcement-wiring/mutation-check.mjs` copies `.claude/`
+  and the **real, unmodified** test file into a throwaway tree outside the repository,
+  damages one wiring decision there, and requires the suite to go red **on the case naming
+  that decision** with every other case green. **9/9 proven** on the current file; **0/9, all
+  SURVIVED** on the pre-change file in a `git worktree` at `a903756`. That contrast is the
+  finding: the gap was measured, not argued.
+
+  **(2) The behavioural matrix ran against a copy nothing executes.**
+  `test/hooks/reviewer-gate.test.js` resolved its hook directory to `scratch/reviewer-gate/`
+  by default. Three byte-identical copies of both scripts exist — `.claude/hooks/`,
+  `scratch/reviewer-gate/`, `scratch/reviewer-gate-install/` — and **nothing enforces that
+  they stay identical**, so 57 cases were proving properties of a program no hook event ever
+  runs. The default is now `.claude/hooks/`. The test count does not move, which is exactly
+  why this one is worth writing down: its whole effect is invisible to arithmetic.
+
+  **The duplicates and the `REVIEWER_GATE_HOOK_DIR` override both stay, deliberately.**
+  `.claude/hooks/` is unwritable under the deny rules, so `scratch/reviewer-gate/mutation-check.mjs`
+  needs a tree it can damage: it copies its own directory to a temp tree, mutates it there,
+  and points the variable at that, with its control naming `scratch/reviewer-gate`
+  explicitly. Re-run unchanged: **25 mutations, ALL PROVEN**, control 57 — which is the
+  evidence that repointing the default did not disturb it, rather than the assertion of it.
+
+  **(3) A false comment in source, which this project rates above a false document.** That
+  file's header said the scripts "are NOT wired into `.claude/settings.json`" and "there is
+  deliberately no wiring to assert yet." Both false since #53. The next session reads a
+  header comment as authority and has no reason to check it. Rewritten to state what is true
+  and to name the sibling file where the wiring *is* asserted, so the division of labour is
+  explicit rather than inferred. `scratch/reviewer-gate/README.md`'s "Nothing here is wired
+  up" was corrected in the same pass — accurate about the *directory*, and read as "the gate
+  is not installed", which would have become actively misleading beside a test that now
+  defaults to the wired copies.
+
+  **A fourth, smaller drift was found by measuring rather than reading:** this file recorded
+  `enforcement-wiring.test.js` at **6 tests** and it measured **7**, from the read-only
+  backstop `bf3be6f` (#46) added without touching `CLAUDE.md` — the third stranded location
+  that commit left behind, after the mechanism count and the read-only subsection. Corrected
+  to the measured 9.
+
+  Tests **2613 → 2615**, all passing with a browser; both ends measured in this session, the
+  base on the unmodified tree at `a903756`. No test file loses a case, and nothing is skipped.
 
 - **The mobile dashboard Worker's production path was returning 504 on every route;
   bound the fetch receiver, added the diagnostic that would have named it, and closed

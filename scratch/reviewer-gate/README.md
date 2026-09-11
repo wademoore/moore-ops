@@ -1,9 +1,14 @@
 # Reviewer gate — Stop-hook mechanism that makes the Reviewer pass mandatory
 
-**Status: standalone artifact. Nothing here is wired up.** These files sit in
-`scratch/` and are not referenced by `.claude/settings.json`. Installing them is a
-manual step, described below. Until you take that step this directory changes no
-behaviour at all.
+**Status: the gate IS installed.** `1bad0fd` (#53) put both scripts in
+`.claude/hooks/` and wired them in `.claude/settings.json`; that wiring is asserted
+by `test/hooks/enforcement-wiring.test.js`, and `test/hooks/reviewer-gate.test.js`
+now exercises those wired copies by default. What remains unwired is **this
+directory**: the copies here are byte-identical duplicates that nothing references,
+kept as raw material for `mutation-check.mjs`, which needs a tree it can damage
+(`.claude/hooks/` is unwritable under this repo's own deny rules). The Install
+section below is retained as the record of how the gate was installed -- read it as
+history, not as a step still outstanding.
 
 ---
 
