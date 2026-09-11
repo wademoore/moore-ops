@@ -101,11 +101,15 @@ const MUTATIONS = [
     (t) => editSettings(t, (s) => { s.hooks.SubagentStop[0].hooks[0].command = 'sh'; }),
     [RECORDER_CASE]],
 
-  // assertExecForm() has three assertions and rows 7 and 9 reached two of them. This
-  // row keeps args and command intact and changes only `type`, so
-  // assert.equal(guard.type, 'command') is the one thing that can catch it. Added
-  // after a Reviewer round found it unmutated -- the same finding as row 9, one
-  // assertion down, which is this repo's most-repeated failure shape.
+  // assertExecForm() makes three assertions -- type, command, and the
+  // ${CLAUDE_PROJECT_DIR} anchor on args[0] -- and each needs its own row, because a
+  // row that fails earlier never reaches it. The exec-form row above reaches NONE of
+  // the three: deleting `args` makes wiredHook() return undefined, so the case fails
+  // at assert.ok(guard) before assertExecForm is called at all. The de-anchor row
+  // covers the anchor and the shell-launcher row covers `command`, which left `type`
+  // unmutated until a Reviewer round found it. This row keeps args and command intact
+  // and changes only `type`, so assert.equal(guard.type, 'command') is the one thing
+  // that can catch it. Count a helper's ASSERTIONS, not the rows that enter it.
   ['gate hook retyped away from "command"',
     (t) => editSettings(t, (s) => { s.hooks.Stop[0].hooks[0].type = 'shell'; }),
     [GATE_CASE]],

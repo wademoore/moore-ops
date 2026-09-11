@@ -465,9 +465,14 @@ the next paragraph for the one still uncovered.
 
 **⚠ The `permissions.deny` block is the sixth mechanism and nothing asserts it — not before
 this change and not after.** It is listed *first* among the six above and holds the four
-branch-pinning rules that are the branching policy's second layer, and `grep -rn
-"permissions" test/` returns only two GitHub-workflow `permissions:` keys in unrelated
-files. Delete the whole `deny` block and every test stays green. Left uncovered
+branch-pinning rules that are the branching policy's second layer. Delete the whole `deny`
+block and every test stays green — established by the check that actually shows it, not by
+the grep that reads like it does: `test/hooks/enforcement-wiring.test.js` is the **only**
+test that reads `settings.json` at all, and it indexes `hooks` and nothing else. (`grep -rn
+"permissions" test/` returning only two unrelated GitHub-workflow keys shows merely that no
+test *mentions* the word. Round 2 rejected that as support in the Known open item; this copy
+kept it for a further round, which is the partial-sweep failure recorded twice above,
+happening a third time.) Left uncovered
 deliberately — this change was scoped to the Reviewer gate — and recorded here rather than
 rounded away, because a first draft of this very paragraph said "four of the six" and so
 counted the one genuinely uncovered mechanism as covered, in the section whose subject is
@@ -2390,7 +2395,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 61284 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2615 | **2615** | **0** | **0** | 60772 ms |
 
 Measured on `claude/zealous-cray-hw8avn`, branched from `origin/main` at **`a903756`**
 (PR #72) — the branch point and the merge base are the same commit. **`git fetch origin
@@ -2426,10 +2431,10 @@ and 9 in the behavioural file (the header paragraphs and the one `HOOK_DIR` line
 only assertion whose meaning changed is `HOOK_DIR`'s default, which is the change itself.
 
 **Do not read the durations as a comparison.** Base 63310 ms in one run; this branch
-60440 ms, then 59503 ms, then 61284 ms across two Reviewer rounds. The branch's own spread
-is **1781 ms**, it is the faster number all three times, and one run on the base side cannot
-support any claim at all — least of all for a change that adds two assertions reading an
-already-parsed object. Nothing is demonstrable in either direction; the cost is below the
+60440 ms, 59503 ms, 61284 ms and 60772 ms across three Reviewer rounds. The branch's own
+spread is **1781 ms**, it is the faster number all four times, and one run on the base side
+cannot support any claim at all — least of all for a change that adds two assertions reading
+an already-parsed object. Nothing is demonstrable in either direction; the cost is below the
 noise floor here.
 
 Exact invocation:
@@ -2471,13 +2476,16 @@ it is the whole reason this file's figures are re-derivable instead of quoted.
 
 **Two of the eleven rows exist only because Reviewer rounds found assertions nothing
 attacked, and the second is the first one level down.** `assertExecForm()` makes three
-assertions; the exec-form mutation deleted `args`, so `wiredHook()` returned undefined and
-the case failed at `assert.ok(guard)` before reaching either of the other two. Round 1 added
-a row changing only the launcher, which reached `assert.equal(guard.command, 'node')` and
-left `assert.equal(guard.type, 'command')` still unmutated. Round 2 caught that and added a
-row changing only `type`. In a harness whose entire purpose is that no assertion goes
-unproven, one helper hid two of them behind an early failure — which is the argument for
-counting a helper's assertions rather than its rows.
+assertions — `type`, `command`, and the `${CLAUDE_PROJECT_DIR}` anchor on `args[0]`. The
+exec-form mutation deletes `args`, so `wiredHook()` returns undefined and the case fails at
+`assert.ok(guard)` **before `assertExecForm` is called at all**: that row reaches none of
+the three. The de-anchor row covered the anchor; round 1 added a row changing only the
+launcher, which reached `command` and left `type` unmutated; round 2 caught that and added a
+row changing only `type`. So one helper hid three assertions behind a `.find()` that can
+fail earlier, and it took two rounds to enumerate them — the argument for counting a
+helper's **assertions** rather than the rows that enter it. (A first version of this
+paragraph and of the harness's own comment both said the exec-form row reached two of the
+three. It reaches none. Round 3.)
 
 Unchanged and re-run rather than assumed: `node scratch/reviewer-gate/mutation-check.mjs` →
 **25 mutations, ALL PROVEN**, control 57. Repointing the behavioural default does not touch
@@ -3217,7 +3225,14 @@ This change adds **+57**, all in one new file:
 was measured on, where the gate genuinely was unwired; `1bad0fd` (#53) installed it, and
 since Sept 11, 2026 `test/hooks/reviewer-gate.test.js` defaults to the **wired** copies in
 `.claude/hooks/` rather than the scratch ones this paragraph names. What is still true is
-that `scratch/reviewer-gate/` itself is referenced by nothing — see the current baseline.
+narrow and worth stating exactly: `scratch/reviewer-gate/` is not referenced by
+`.claude/settings.json`, so **no hook event ever executes the copies in it**. It is not
+unreferenced — `mutation-check.mjs` names it as its own control, and three scripts in
+`scratch/reviewer-gate-install/` point at it. A first version of this pointer said
+"referenced by nothing" and cited the current baseline as support, which is the passage that
+says the harness names the directory explicitly and that the duplicates must be kept because
+of it. A third Reviewer round caught it. **Unwired is not unreferenced**, and generalising
+the first into the second is how a true claim becomes a false one.
 
 The file is a behavioural matrix for a **standalone, unwired** Stop-hook artifact in
 `scratch/reviewer-gate/` — two hooks that make a Reviewer pass mandatory. Nothing under
@@ -3815,6 +3830,34 @@ method, so they chain directly to the 988 pre-change number above.
   re-attributed to `scratch/mobile-worker/`, which is where it was found —
   `scratch/mobile-publishing-contract/` owns the *other* scoring defect, a hung mutant
   draining the runner and printing `# fail 0`.
+
+  **Round 3 found the same family a third time, and this one was introduced by the round-2
+  fix rather than inherited.** Two SHOULD FIX, no BLOCKING. (1) The provenance pointer
+  round 2 added asserted `scratch/reviewer-gate/` is "referenced by nothing" and cited the
+  current baseline as support — the passage that says the mutation harness names that
+  directory as its own control and that the duplicates must be kept because of it. Four
+  files reference it. The true claim is narrower: it is not referenced by `settings.json`,
+  so no hook event executes it. **Unwired is not unreferenced.** Sweeping for the *statement*
+  rather than for the flagged line then found a **fourth** copy of the same false
+  generalisation that no Reviewer round had flagged — `scratch/reviewer-gate/README.md`,
+  written by this change's own first commit, saying the duplicates are "byte-identical
+  duplicates that nothing references". Corrected there too, which is the sweep working
+  rather than a further defect. (2) Round 2's MINOR (c) was
+  fixed in the Known open item and left standing in the gate section, which kept resting the
+  identical claim on the grep round 2 had just rejected — a partial sweep, for the third
+  round running. Two MINOR taken: the harness comment and the baseline narrative both said
+  the exec-form row reached two of `assertExecForm()`'s three assertions when it reaches
+  none (it fails at `assert.ok(guard)` first), and round 2's commit message called a SHOULD
+  FIX a "blocker" in the same commit whose MINOR (b) corrected that word in `CLAUDE.md`.
+
+  **Three rounds, three FAILs, zero BLOCKING findings, and no behavioural defect in any of
+  them — every item was documentation.** The generalisable part is not "check your numbers":
+  it is that **a fix for a claim in one place is not a fix for the claim**, because this file
+  states most things more than once. Round 1 moved one of two floors; round 2 moved one of
+  two counts; round 3 found one of two copies of a rejected justification, plus a new claim
+  that contradicted its own cited support. The habit that would have caught all three is the
+  same: after correcting a statement, grep for the statement, not for the word you were
+  given.
 
   **The Reviewer could not verify six of its own checks in round 1, and said so rather than
   working around them** — its read-only allowlist refuses an env-prefixed `npm test` and a bare

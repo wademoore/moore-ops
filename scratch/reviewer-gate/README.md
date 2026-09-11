@@ -4,9 +4,12 @@
 `.claude/hooks/` and wired them in `.claude/settings.json`; that wiring is asserted
 by `test/hooks/enforcement-wiring.test.js`, and `test/hooks/reviewer-gate.test.js`
 now exercises those wired copies by default. What remains unwired is **this
-directory**: the copies here are byte-identical duplicates that nothing references,
-kept as raw material for `mutation-check.mjs`, which needs a tree it can damage
-(`.claude/hooks/` is unwritable under this repo's own deny rules). The Install
+directory**: the copies here are byte-identical duplicates that `.claude/settings.json`
+does not reference, so no hook event ever executes them. Unwired, not unreferenced —
+`mutation-check.mjs` here names this directory as its own control, and three scripts in
+`scratch/reviewer-gate-install/` point at it. They are kept as raw material for that
+harness, which needs a tree it can damage (`.claude/hooks/` is unwritable under this
+repo's own deny rules). The Install
 section below is retained as the record of how the gate was installed -- read it as
 history, not as a step still outstanding.
 
