@@ -450,7 +450,7 @@ describe('real-data resilience policies', () => {
     });
     assert.match(flag, /<span>NFL FLAG · Seahawks<\/span>/);
     // logo('') → the neutral activity-mark span, never a broken <img>.
-    assert.match(flag, /<div class="athletic-ribbon"><span class="activity-mark"/);
+    assert.match(flag, /<div class="athletic-summary"><div class="record">[^<]*<\/div><span class="activity-mark"/);
   });
 
   it('flag ribbon reads "NFL FLAG" alone when flagTeamName is null (fall-2026 initial state)', () => {
@@ -461,7 +461,7 @@ describe('real-data resilience policies', () => {
     assert.match(flag, /<span>NFL FLAG<\/span>/);
     assert.doesNotMatch(flag, /NFL FLAG ·/, 'no dangling separator');
     assert.doesNotMatch(flagRibbon(flag), /undefined|null|TBD/, 'never leaks a placeholder');
-    assert.match(flag, /<div class="athletic-ribbon"><span class="activity-mark"/);
+    assert.match(flag, /<div class="athletic-summary"><div class="record">[^<]*<\/div><span class="activity-mark"/);
   });
 
   it('flag ribbon treats a missing, empty, or whitespace-only team name identically to null', () => {
@@ -499,7 +499,7 @@ describe('real-data resilience policies', () => {
       ...sampleDashboardV2Data,
       athletics: { flagFootballActive: true, flagTeamName: 'constructor' },
     });
-    assert.match(flag, /<div class="athletic-ribbon"><span class="activity-mark"/);
+    assert.match(flag, /<div class="athletic-summary"><div class="record">[^<]*<\/div><span class="activity-mark"/);
     assert.doesNotMatch(flag, /function Object/);
   });
 
@@ -927,7 +927,12 @@ describe('special-event migration — byte equality with the legacy Family Spotl
     const start = html.indexOf('<section class="paper-panel athletics-panel');
     const alerts = html.indexOf('<section class="alerts-panel');
     const close = html.lastIndexOf('</section>', alerts) + '</section>'.length;
-    return html.slice(start, close).replace(/src="data:[^"]*"/g, 'src="<asset>"');
+    // Keep the original Spotlight migration baseline: normalize only the later,
+    // approved move of team artwork from the ribbon into the summary row.
+    return html.slice(start, close)
+      .replace(/<div class="athletic-ribbon">(<span>[^<]*<\/span>)<\/div>\n    <div class="athletic-summary">(<div class="record">[^<]*<\/div>)(<img class="athletic-logo"[^>]*>)<\/div>/g,
+        '<div class="athletic-ribbon">$3$1</div>\n    $2')
+      .replace(/src="data:[^"]*"/g, 'src="<asset>"');
   };
 
   for (const [name, now] of Object.entries(STATES)) {

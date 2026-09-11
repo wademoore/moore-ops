@@ -62,6 +62,38 @@ function overlap(a, b) {
 }
 
 describe('dashboard v2 2560x1440 layout verification', () => {
+  it('fits prominent team artwork below ribbons with one, two, and three cards', async () => {
+    for (const active of [
+      { flagFootballActive: true }, { swim757Active: true }, { sharksActive: true },
+      { flagFootballActive: true, swim757Active: true },
+      { flagFootballActive: true, swim757Active: true, sharksActive: true },
+      { wavesActive: true },
+    ]) {
+      await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
+        ...sampleDashboardV2Data.athletics,
+        flagFootballActive: false, swim757Active: false, sharksActive: false, wavesActive: false,
+        ...active, flagTeamName: 'Cowboys',
+        standings: ['Cowboys', 'Ravens', 'Bears', 'Broncos', 'Texans', 'Panthers'].map(team => ({ team, w: 0, l: 0 })),
+      } }), { waitUntil: 'load' });
+      await page.evaluate(() => document.fonts.ready);
+      const problems = await page.locator('.athletic-card').evaluateAll(cards => cards.flatMap(card => {
+        const mark = card.querySelector('.athletic-summary img');
+        const bounds = card.getBoundingClientRect();
+        const logo = mark.getBoundingClientRect();
+        const ribbon = card.querySelector('.athletic-ribbon').getBoundingClientRect();
+        const style = getComputedStyle(mark);
+        return [
+          logo.width !== 96 || logo.height !== 96 ? 'wrong logo size' : '',
+          logo.top < ribbon.bottom - 1 ? 'logo overlaps ribbon' : '',
+          style.backgroundColor !== 'rgba(0, 0, 0, 0)' || style.borderRadius !== '0px' ? 'logo backing' : '',
+          card.scrollHeight > card.clientHeight + 1 ? 'card overflow' : '',
+          [...card.querySelectorAll('tbody tr,.swim-row,.next-box')].some(node => node.getBoundingClientRect().bottom > bounds.bottom + 1) ? 'clipped content' : '',
+        ].filter(Boolean);
+      }));
+      assert.deepEqual(problems, [], JSON.stringify(active));
+    }
+  });
+
   it('shows the transparent calendar star alone and restores its fallback on image failure', async () => {
     const event = { title: 'Flag Football: Week 1 — Meet & Greet', subtitle: 'Myles', owner: [],
       raw: { id: 'flag-practice', start: { dateTime: '2026-09-13T11:00:00-04:00' } },

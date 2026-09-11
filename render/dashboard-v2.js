@@ -775,8 +775,8 @@ function renderStandingRows(rows, columns = ['team', 'w', 'l'], flagLogos = fals
 
 function renderWavesCard(a) {
   return `<article class="athletic-card tone-blue">
-    <div class="athletic-ribbon">${logo(V2_LOGOS.waves, 'athletic-logo')}<span>Wellington Waves</span></div>
-    <div class="record">${esc(a.wavesRecord || '0-0')}</div>
+    <div class="athletic-ribbon"><span>Wellington Waves</span></div>
+    <div class="athletic-summary"><div class="record">${esc(a.wavesRecord || '0-0')}</div>${logo(V2_LOGOS.waves, 'athletic-logo')}</div>
     <small>${esc(a.wavesSeasonYear || 2026)} season</small>
     ${a.wavesNextMeet ? `<div class="next-box"><b>Next meet</b><span>vs. ${esc(a.wavesNextMeet.opponent)} · ${esc(a.wavesNextMeet.date)}</span></div>` : ''}
     <table><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${renderStandingRows(a.wavesStandings)}</tbody></table>
@@ -796,8 +796,8 @@ function renderSwimmerCard(organization, logoAsset, tone, rows, season, footer) 
   }).join('');
 
   return `<article class="athletic-card tone-${tone}">
-    <div class="athletic-ribbon">${logo(logoAsset, 'athletic-logo')}<span>${esc(organization)}</span></div>
-    <div class="season-tag">${esc(season || 'Season')}</div>
+    <div class="athletic-ribbon"><span>${esc(organization)}</span></div>
+    <div class="athletic-summary"><div class="season-tag">${esc(season || 'Season')}</div>${logo(logoAsset, 'athletic-logo')}</div>
     <div class="swim-rows">${rendered || '<div class="empty-state">No results yet.</div>'}</div>
     ${footer ? `<div class="athletic-footer">${esc(footer)}</div>` : ''}
   </article>`;
@@ -819,8 +819,8 @@ function conversationalMatchDate(dateValue, timeValue) {
 function renderSharksCard(a) {
   const next = a.sharksNextGame;
   return `<article class="athletic-card tone-red">
-    <div class="athletic-ribbon">${logo(V2_LOGOS.sharks, 'athletic-logo')}<span>Tidewater Sharks</span></div>
-    <div class="record">${esc(a.sharksRecord || '0-0-0')}</div>
+    <div class="athletic-ribbon"><span>Tidewater Sharks</span></div>
+    <div class="athletic-summary"><div class="record">${esc(a.sharksRecord || '0-0-0')}</div>${logo(V2_LOGOS.sharks, 'athletic-logo')}</div>
     <small>${esc(a.sharksDivisionLabel || 'U11 Premier')}</small>
     ${a.sharksLastResult ? `<div class="result-line"><b>${esc(a.sharksLastResult)}</b><span>Latest result</span></div>` : ''}
     ${next ? `<div class="next-box"><b>Next match</b><span>${next.homeAway === 'away' ? '@' : 'vs.'} ${esc(next.opponent)}</span><strong>${esc(conversationalMatchDate(next.date, next.time))}</strong><small>${esc(next.venue || '')}</small></div>` : ''}
@@ -873,8 +873,8 @@ function renderFlagFootballCard(a) {
   const teamName = typeof a.flagTeamName === 'string' ? a.flagTeamName.trim() : '';
   const ribbonLabel = teamName ? `NFL FLAG · ${esc(teamName)}` : 'NFL FLAG';
   return `<article class="athletic-card flag-football-card tone-red">
-    <div class="athletic-ribbon">${logo(flagTeamLogo(teamName), 'athletic-logo')}<span>${ribbonLabel}</span></div>
-    <div class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</div>
+    <div class="athletic-ribbon"><span>${ribbonLabel}</span></div>
+    <div class="athletic-summary"><div class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</div>${logo(flagTeamLogo(teamName), 'athletic-logo')}</div>
     <small>${esc(a.seasonLabel || 'Season')}</small>
     ${a.lastResult ? `<div class="result-line"><b>${esc(a.lastResult)}</b><span>Latest result</span></div>` : ''}
     ${next ? `<div class="next-box"><b>Next game</b><span>${flagLogoMark(next.opponent)}vs. ${esc(next.opponent)}${next.detail ? ` · ${esc(next.detail)}` : ''}</span></div>` : ''}
@@ -1516,6 +1516,23 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .tone-purple .spotlight-name{color:${COLORS.purple}}
 .spotlight-title{font-family:"Roboto Slab",Georgia,serif;font-size:24px;line-height:1.05;font-weight:600;color:${COLORS.ink};margin-top:8px}
 .spotlight-detail{font-size:19px;line-height:1.15;font-weight:500;color:var(--secondary);margin-top:6px}
+/* Prominent team artwork below the kid-colored ribbon. */
+.athletic-summary{display:flex;align-items:center;justify-content:space-between;min-height:96px;flex-shrink:0;gap:12px}
+.athletic-summary>.record{margin-top:0}
+.athletic-summary>.season-tag{max-width:calc(100% - 116px)}
+.athletic-summary>.athletic-logo{width:96px;height:96px;flex:0 0 96px;object-fit:contain;background:transparent;border-radius:0;padding:0;margin-right:12px}
+.athletic-card .athletic-ribbon{padding-left:20px;flex-shrink:0}
+.flag-football-card td{padding:1px 0}
+.card-count-1 .athletic-card{grid-template-columns:290px minmax(0,1fr);grid-template-rows:46px auto 1fr}
+.card-count-1 .athletic-summary{grid-column:1;grid-row:2;align-self:start}
+.card-count-1 .athletic-summary>.record{font-size:58px;margin-top:0}
+.card-count-1 .athletic-card>small{margin-top:0}
+.card-count-1 .flag-football-card{grid-template-columns:290px minmax(0,1fr) 400px}
+.card-count-1 .swim-rows{grid-column:2;grid-row:2/4}
+.card-count-1 .athletic-footer{grid-column:1;grid-row:3}
+.card-count-1 .athletic-card:not(.flag-football-card)>table{grid-column:2;grid-row:3;align-self:end}
+.card-count-1 .athletic-card:has(>table):not(.flag-football-card)>.next-box{grid-row:2}
+
 /* ── Holiday Theme — ambient skin (holiday-theme-v1) ────────────────────────
    A skin, never a layout. Every rule in this block is scoped to
    [data-holiday-state="active"], so an artifact with no theme, a staged theme,
