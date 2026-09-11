@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2609+ passing with a browser
+- Run npm test after changes — must stay at 2613+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row)
 - Confirm file changes before moving to next file
@@ -2343,43 +2343,50 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2609 | **2609** | **0** | **0** | 60554 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2613 | **2613** | **0** | **0** | 59715 ms |
 
 Measured on `claude/clever-lovelace-2e62va`, branched from `origin/main` at **`7b57027`**
 (PR #65) — the branch point and the merge base are the same commit, because the branch was
 cut from `origin/main` after `git fetch origin main` moved a ref that was stale at `2d01027`
-by three merges. **The base was re-measured in a `git worktree` at `7b57027` before any
-change: 2591 / 2591 / 0 / 0, 63944 ms** — which matches the entry below, so for the first
-time a recorded baseline in this file needed no correction. Re-measure anyway; the run costs
-less than the correction does.
+by **19** merges — `git log --oneline 2d01027..7b57027 --first-parent` lists them. This
+sentence said "three" until a round-2 review counted them, which is the whole argument for
+the fetch: a ref nineteen merges behind produces a merge base nineteen merges behind, and
+every figure derived from it. **The base was re-measured in a `git worktree` at `7b57027` before any
+change: 2591 / 2591 / 0 / 0, 63944 ms** — which matches the entry below, so the recorded
+figure held. A draft of this sentence called that "the first time in six baselines", which
+four passages further down this same section contradict: the entries for Sept 6, Sept 8,
+Sept 9 and Sept 10 each record a figure holding. It held; it was not unprecedented.
+Re-measure anyway — the run costs less than the correction does.
 
-This change adds **+18**, all in one new file:
+This change adds **+22**, all in one new file:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `test/worker/workerd-runtime.test.js` (new) | — | 18 | +18 |
+| `test/worker/workerd-runtime.test.js` (new) | — | 22 | +22 |
 
-**It was +13 until a Reviewer pass**, which returned PASS with no BLOCKING findings and
-three SHOULD FIX items; acting on all three added five cases. The largest was not guard
+**It was +13 after the first pass over the code and grew twice under review.** Round 1
+returned PASS with three SHOULD FIX items and acting on them added five cases (+18); round 2
+returned **FAIL** with one BLOCKING and five SHOULD FIX, and acting on those added four more. The largest was not guard
 strength but a real gap: the credential-safety assertion could not fail, because the only
 workerd failure scenario's error message contained no credential — while this repository's
 own sibling suite deliberately models the opposite, a transport error quoting an access key
 id in its text, which `logUnderlying` would have shipped verbatim with observability
 enabled.
 
-2591 + 18 = 2609, and **2609 is the measured figure in the table above rather than that
+2591 + 22 = 2613, and **2613 is the measured figure in the table above rather than that
 sum** — the agreement is reassuring and is not itself evidence.
 `test/worker/workerd-harness.js` is a helper, not a suite; `package.json`'s globs select
 `*.test.js` only, so it contributes 0. **No existing test file is edited, deleted or
-skipped** — `git diff --numstat` reports no test file among the changed paths at all, which
-is the whole finding: nothing in 2591 tests could see the defect, so there was no existing
-assertion to update.
+skipped** — `git diff --name-status` reports both `test/` paths as `A`, additions, and no
+`M` against any pre-existing test. That is the whole finding: nothing in 2591 tests could see
+the defect, so there was no existing assertion to update. (An earlier draft said "no test
+file among the changed paths at all", which is literally false — two appear, as additions.)
 
 **Do not read the durations as a comparison, and the numbers say why.** Base `7b57027`
-ran **63944 ms** (one run); this branch ran **58981 ms**, **63246 ms**, **62572 ms** and
-finally **60554 ms** — same machine, same browser, sequential. The spread *within the branch*
-is 4265 ms, wider than the branch-versus-base gap, so **no difference is demonstrable in
-either direction** from five runs. The 13 new tests boot workerd three times, so the true cost is
+ran **63944 ms** (one run); this branch ran **58981 ms**, **63246 ms**, **62572 ms**,
+**60554 ms**, **61299 ms** and finally **59715 ms** — same machine, same browser, sequential.
+The spread *within the branch* is 4265 ms, wider than the branch-versus-base gap, so **no
+difference is demonstrable in either direction** from seven runs. The new tests boot workerd three times, so the true cost is
 certainly an increase and not the saving the first figure appeared to show; it is simply
 below the noise floor here. An earlier draft of this entry quoted the 58981 ms alone as
 evidence of no increase — the unfalsifiable claim the entry below already retracts once, and
@@ -2395,7 +2402,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2609+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2613+ with no failures once a browser resolves.**
 
 **The new file needs a runtime the other 2591 tests do not.** `workerd` is a **devDependency**
 (`require('workerd').default` is the platform binary's absolute path, so nothing guesses a
@@ -2407,10 +2414,16 @@ suite, because a guard that quietly disappears on the machine where it matters i
 shape of the defect it was written for.
 
 Companion mutation harness, **committed** and run on demand — `node
-scratch/mobile-worker-receiver/mutation-check.mjs` → **22 mutations, 22/22 proven**, green
-18-test control, green restore, plus a self-test row that injects a real syntax error and
-requires the harness's own hollowness check to catch it. Seven of the 22 were added for the
-guards the Reviewer round produced. It does **not** print a distinct-tree count: a duplicate
+scratch/mobile-worker-receiver/mutation-check.mjs` → **29 mutations, 29/29 proven**, green
+22-test control, green restore, plus a self-test row that injects a real syntax error and
+requires the harness's own hollowness check to catch it. Fourteen of the 29 were added for
+guards the two review rounds produced.
+
+**Two of those fourteen SURVIVED their first run, and both were gaps in the new tests rather
+than in the Worker** — a log site added under review with no test behind it, and a
+"documented gap" case whose fixture reached one throw site while the claim was made for a
+family of a dozen. Both closed, and each verified to fail against its mutation before the
+harness was re-run. It does **not** print a distinct-tree count: a duplicate
 or no-op mutant aborts the run, so any run reaching the summary has that number equal to the
 row count by construction, and printing it would be a restatement dressed as a second
 measurement. (CLAUDE.md records the same MINOR against the sibling harness, which does print
@@ -2432,20 +2445,31 @@ HEAD response whatever the Worker did, so `arrayBuffer().byteLength === 0` is gu
 the protocol and not by the code. The Worker read the whole megabyte, returned it, and every
 assertion held. Fixed rather than reported-and-parked: the case now asserts the substitute
 store saw no document read, and the mutation fails it (1 failing, on that case). The figures
-above were regenerated after that repair — the suite total is unchanged at 2604, because the
-repair strengthened an existing `it()` rather than adding one.
+above were regenerated after that repair, which left the total where it was because the
+repair strengthened an existing `it()` rather than adding one. (The total has since moved to
+**2613** for a different reason — the two review rounds added nine cases between them — and
+an intermediate figure of 2604 survived in this sentence and in the superseded-baseline
+pointer below until a round-2 review caught both. Same-commit drift, in the commit that
+rewrote this section, which is precisely what the section exists to catch. It is recorded
+here rather than quietly corrected, because this section's whole purpose is that its figures
+be checkable, and the fix is only credible if the failure is stated.)
 
 `scratch/mobile-worker/mutation-check.mjs` re-run: **46/46 proven, all distinct, control 76
-green, restored 76 green** — but **one of its anchors had to be repointed first, and that is
-the finding rather than a footnote.** Its row `a 5xx from the store is treated as a good
-response` matched a single line; the Reviewer round grew that branch into a block so it could
-carry a diagnostic, and the harness then **refused to run at all** with `MUTATION DID NOT
-APPLY` rather than scoring the row silently. That refusal is the whole reason the rot was
+green, restored 76 green** — but **three of its anchors had to be repointed first, and that
+is the finding rather than a footnote.** The rows `a 5xx from the store is treated as a good
+response`, `a rejected credential is reported as an unreachable store` and `a missing secret
+is silently treated as an anonymous read` each matched a single line; the review rounds grew
+all three branches into blocks so they could carry diagnostics, and the harness **refused to
+run at all** with `MUTATION DID NOT APPLY` rather than scoring a row silently.
+
+**The generalisable lesson is narrower than "anchors rot": a line-anchored mutation cannot
+survive its target becoming a block, and adding a diagnostic is exactly the edit that turns
+single-line throws into blocks.** All three are now anchored on the PREDICATE rather than the
+statement, so a further line inside any of them cannot rot the anchor a third time. That refusal is the whole reason the rot was
 visible, and the whole reason a change touching `worker.js` must re-run this harness. The
-anchor is now a block pattern rather than a line, so a further comment change inside it
-cannot rot it again. **Three anchors rotted across this change in total** — two in the new
-harness, one here — every one of them caused by the Reviewer round's edits, and every one
-surfaced by a harness declining to proceed.
+**Six anchors rotted across this change in total** — two in the new harness, three here, and
+one more in the new harness after round 2 — every one caused by a review round's edits, and
+every one surfaced by a harness declining to proceed rather than scoring a row silently.
 
 ### Previous baseline — measured Sept 11, 2026 on the season-markers branch, rebased onto #71
 
@@ -2523,9 +2547,8 @@ DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm te
 ```
 
 **Coder mode had to keep `npm test` at 2591+ under this baseline.** (Superseded — see
-Current baseline above; the figure is now 2604. That entry's 2591 was re-measured at
-`7b57027` in a `git worktree` and held exactly, which is the first time in six baselines
-a recorded figure has needed no correction.)
+Current baseline above; the figure is now **2613**. That entry's 2591 was re-measured at
+`7b57027` in a `git worktree` and held exactly.)
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
 quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
@@ -3565,7 +3588,7 @@ method, so they chain directly to the 988 pre-change number above.
   that is the general lesson, and it is why the new guard is a *runtime* rather than a
   fourth Node suite.
 
-  **`test/worker/workerd-runtime.test.js` (+13) drives the real default export inside
+  **`test/worker/workerd-runtime.test.js` drives the real default export inside
   workerd and injects nothing.** `globalOutbound` points the serving Worker's global fetch
   at a second workerd service standing in for S3, so the Worker calls the platform's own
   `fetch` — receiver check included — over a real loopback socket.
@@ -3578,9 +3601,12 @@ method, so they chain directly to the 988 pre-change number above.
   Cloudflare uses the default alone.
 
   **The new test fails against the unfixed build; this was demonstrated, not asserted.**
-  Reverting the one token gives **6 of 13 failing**, with
+  Reverting the one token gave **6 of 13 failing** when the file held 13 tests, with
   `expected the document, got 504 / storage-unreachable` and
-  `expected a pointer read and a document read, saw 0`.
+  `expected a pointer read and a document read, saw 0`. The mutation harness re-proves it on
+  the current file as its first row, `the fetch receiver is detached again`; the 6-of-13 is a
+  historical measurement against the 13-test version and is labelled as one rather than
+  restated as current.
 
   **A diagnostic was added where the real error was being discarded.** `ServeFailure`
   carried the underlying error in `cause` and nothing read it, so a Worker with
@@ -3604,22 +3630,24 @@ method, so they chain directly to the 988 pre-change number above.
   **`workerd` is a devDependency** and is **not** in the shipped Lambda package —
   `deploy.yml` installs `npm ci --omit=dev`. No dependency was added to the Worker itself.
 
-  **22 mutations, 22/22 proven** (`node
-  scratch/mobile-worker-receiver/mutation-check.mjs`), green control and restore, with a
-  self-test row proving its own hollowness check is live. **Two rows survived a first run
-  and both were hollow guards in the new test, not gaps in the Worker.** Deleting the HEAD
-  short-circuit left the HEAD case green, because HTTP strips a body from a HEAD response
-  whatever the Worker did — the empty body was the protocol's guarantee, not the code's,
-  while the Worker read and returned the whole megabyte. And the credential-safety
-  assertion could not fail at all, because the scenario's error message contained no
-  credential to redact. Both fixed rather than parked, and the evidence regenerated after
-  each.
+  **29 mutations, 29/29 proven** (`node
+  scratch/mobile-worker-receiver/mutation-check.mjs`), green 22-test control and restore,
+  with a self-test row proving its own hollowness check is live. **Four rows survived a first
+  run across the three harness generations, and every one was a hollow guard in the new
+  tests rather than a gap in the Worker.** Deleting the HEAD short-circuit left the HEAD case
+  green, because HTTP strips a body from a HEAD response whatever the Worker did. The
+  credential-safety assertion could not fail, because the scenario's message contained no
+  credential to redact. A log site added under review had no test behind it at all. And a
+  case claiming to pin a "documented gap" for a family of a dozen throw sites reached
+  exactly one of them. All four closed, each verified to fail against its own mutation, and
+  the evidence regenerated after each round.
 
-  **`scratch/mobile-worker/mutation-check.mjs` re-run: 46/46 proven, control 76 green — but
-  one anchor had to be repointed first.** Growing the 5xx branch into a block so it could
-  carry a diagnostic rotted a row that matched a single line, and that harness **refused to
-  run** rather than scoring the row silently. Three anchors rotted across this change, all
-  three surfaced by a harness declining to proceed.
+  **`scratch/mobile-worker/mutation-check.mjs` re-run: 46/46 proven, control 76 green — after
+  three of its anchors had to be repointed.** Growing three single-line throws into blocks so
+  they could carry diagnostics rotted three line-anchored rows, and that harness **refused to
+  run** rather than scoring them silently. Six anchors rotted across this change in total.
+  The lesson is narrower than "anchors rot": **adding a diagnostic is precisely the edit that
+  turns a single-line throw into a block**, so anchor on the predicate, not the statement.
 
   **A Reviewer pass returned PASS with no BLOCKING findings and three SHOULD FIX items, all
   acted on.** The largest was not guard strength: the credential-safety assertion could not
@@ -3631,7 +3659,7 @@ method, so they chain directly to the 988 pre-change number above.
   catch still erasing an unclassified throw — the same information loss one level out — and
   an assertion comparing a constant with itself. Both fixed.
 
-  Tests **2591 → 2609**, all passing with a browser; **both ends measured on this tree**,
+  Tests **2591 → 2613**, all passing with a browser; **both ends measured on this tree**,
   the base in a `git worktree` at `7b57027`. No existing test file is touched.
 
 - **Flag football's two season markers derived from season data, not calendar titles

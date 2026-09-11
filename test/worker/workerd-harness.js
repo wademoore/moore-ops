@@ -140,18 +140,29 @@ export async function assertGraphIsVerbatim(root) {
     const loaded = await readFile(path.join(root, name));
     assert.equal(sha256(loaded), sha256(shipped), `${name} loaded into workerd must be the shipped file, byte for byte`);
   }
-  // The shim gets its PROPERTIES asserted, not its text. A review caught the
-  // first version comparing the written file against the very constant it was
-  // written from — an assertion that cannot fail, sitting inside a function
-  // whose entire job is to prove rather than to claim. These four can fail:
-  // widening the shim to `export * from './worker.js'`, adding a named
-  // re-export, or repointing it at another module each break one of them.
+  // The shim gets its PROPERTIES asserted, not its text. Round 1 of review
+  // caught the first version comparing the written file against the very
+  // constant it was written from — an assertion that cannot fail, inside a
+  // function whose entire job is to prove rather than to claim.
+  //
+  // TWO assertions, not the four this comment once listed. Round 2 caught the
+  // other two — a namespace check and an identifier scan — sitting BEHIND an
+  // anchored whole-string regex that admits neither, so nothing could ever
+  // reach them. Adding unfalsifiable assertions while fixing an unfalsifiable
+  // assertion is the same defect one level down, and they are deleted rather
+  // than kept for appearance. What survives is a complete specification of
+  // the shim (anchored at both ends, no `m` flag) plus a line count that can
+  // fire first on a two-line shim.
+  //
+  // Honest scope: these are belt to workerd's braces. workerd refuses to boot
+  // a shim that re-exports non-handler names, and `startWorkerd` runs in the
+  // `before` hook while this runs in the first `it` — so a widened shim is
+  // caught by the boot refusal and these never evaluate. They catch a shim
+  // that still boots but is not the one intended.
   const entry = (await readFile(path.join(root, ENTRY_MODULE), 'utf8')).trim();
   const exports = entry.split('\n').filter(line => line.includes('export'));
   assert.equal(exports.length, 1, `the entry shim must carry exactly one export statement, found ${exports.length}`);
   assert.match(entry, /^export\s*\{\s*default\s*\}\s*from\s*'\.\/worker\.js';$/, 'the shim must re-export the default of ./worker.js and nothing else');
-  assert.ok(!entry.includes('*'), 'the shim must not re-export a namespace');
-  assert.ok(!/\bhandleRequest\b|\bmobileKey\b|\bFAILURES\b/.test(entry), 'the shim must not re-export anything the Node suite uses');
 }
 
 /**

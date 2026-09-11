@@ -145,9 +145,26 @@ function scrubCredentials(text) {
  * to require a redeploy carrying a print statement. One line here removes
  * that.
  *
- * `phase` and `key` say which of the two reads failed — the pointer or the
- * document — because the remedy differs, and both are configuration that
- * already sits in wrangler.toml in plain text.
+ * `phase` and `key` say which read or check failed, because the remedy
+ * differs; both are configuration that already sits in wrangler.toml in plain
+ * text.
+ *
+ * WHICH FAILURES ARE LOGGED, AS A RULE RATHER THAN AS AN ARGUMENT. An earlier
+ * version of this comment claimed every reason but `storage-unreachable` was
+ * a bijection with its cause, so the rest could stay silent "by design rather
+ * than by omission". A Reviewer pass showed that is simply false of this
+ * file: `credentials-rejected` has three causes and `artifact-malformed`
+ * fourteen throw sites. The rule that actually holds:
+ *
+ * - every cause of `storage-unreachable` and of `credentials-rejected` is
+ *   logged, so those two reasons always name their own cause;
+ * - `artifact-missing` has exactly one cause and needs no line;
+ * - `artifact-malformed` is logged where it comes from the TRANSPORT (a
+ *   non-ok status, or a body that would not parse) and NOT where it comes
+ *   from the published manifest failing the contract. That family of a dozen
+ *   field checks shares ONE remedy — the published manifest is wrong,
+ *   republish it — so a line per field would be volume rather than signal.
+ *   It is named here as a known gap rather than argued away.
  *
  * WHAT IS DELIBERATELY ABSENT. Not the signed headers: `authorization`
  * carries `Credential=<access key id>/<scope>`. Not `config.credentials`,
@@ -202,8 +219,22 @@ function readConfig(env) {
   // a credential problem would send whoever is debugging it to the wrong
   // place. It is deliberately the same class as a rejected secret: from a
   // consumer's side both mean "this origin cannot read its own store".
-  if (!bucket || !region) throw new ServeFailure('credentials-rejected');
-  if (!accessKeyId || !secretAccessKey) throw new ServeFailure('credentials-rejected');
+  // These two and the upstream 401/403 are the THREE causes of one 500 whose
+  // page reads "This is not a sign-in problem" — and they have three different
+  // remedies: fix the stack's configuration, set the secret, or repair the key
+  // or its policy. Nothing said which until a Reviewer pass pointed out that
+  // this was exactly the information loss the change was written to remove,
+  // standing behind an argument that it did not exist. The variable NAMES are
+  // logged; no value is, and neither branch can distinguish which of its two
+  // variables is missing without reporting one, so it does not try.
+  if (!bucket || !region) {
+    logUnderlying('config-store', 'credentials-rejected', null, new Error('ARTIFACT_BUCKET or AWS_REGION is not set'));
+    throw new ServeFailure('credentials-rejected');
+  }
+  if (!accessKeyId || !secretAccessKey) {
+    logUnderlying('config-credentials', 'credentials-rejected', null, new Error('AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY is not set'));
+    throw new ServeFailure('credentials-rejected');
+  }
   return {
     bucket,
     region,
@@ -260,20 +291,20 @@ async function readObject(config, deps, key, versionId) {
     clearTimeout(timer);
   }
 
-  if (response.status === 403 || response.status === 401) throw new ServeFailure('credentials-rejected');
+  if (response.status === 403 || response.status === 401) {
+    logUnderlying('upstream-status', 'credentials-rejected', safeKey, new Error(`upstream answered HTTP ${response.status}`));
+    throw new ServeFailure('credentials-rejected');
+  }
+  // 404 is the one reason with exactly one cause, so it needs no line.
   if (response.status === 404) throw new ServeFailure('artifact-missing');
   if (response.status >= 500) {
-    // `storage-unreachable` is the ONLY reason two different upstream
-    // conditions map onto — this and a transport throw — so without a line
-    // here the absence of one would be the discriminator, which is no way to
-    // read a log. Every other status is a bijection with its reason
-    // (401/403 -> credentials-rejected, 404 -> artifact-missing, other
-    // non-ok -> artifact-malformed), so those stay silent by design rather
-    // than by omission.
     logUnderlying('upstream-status', 'storage-unreachable', safeKey, new Error(`upstream answered HTTP ${response.status}`));
     throw new ServeFailure('storage-unreachable');
   }
-  if (!response.ok) throw new ServeFailure('artifact-malformed');
+  if (!response.ok) {
+    logUnderlying('upstream-status', 'artifact-malformed', safeKey, new Error(`upstream answered HTTP ${response.status}`));
+    throw new ServeFailure('artifact-malformed');
+  }
 
   try {
     return new Uint8Array(await response.arrayBuffer());
@@ -469,10 +500,10 @@ async function handleRequest(request, env, deps = {}) {
     // ...but it must not vanish on the way. A throw with no recognised class
     // is reported as `artifact-malformed` with its real identity erased —
     // precisely the information loss this change exists to remove, one level
-    // further out. A classified failure is NOT re-logged: it was already
-    // logged where it had an underlying error, or its reason names its cause
-    // uniquely, and logging it twice would make one request look like two
-    // failures.
+    // further out. A classified failure is NOT re-logged here: it was either
+    // already logged where it was raised, or it belongs to the one family
+    // this file deliberately leaves silent (see `logUnderlying`). Logging it
+    // again would make one request read as two failures, which a test pins.
     if (!classified) logUnderlying('handler', 'artifact-malformed', pathname, error);
     const reason = classified ? error.reason : 'artifact-malformed';
     return failureResponse(reason, { json: isDiscovery, method });

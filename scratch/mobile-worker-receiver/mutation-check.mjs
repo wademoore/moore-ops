@@ -126,15 +126,44 @@ const MUTATIONS = [
       "    if (!classified) logUnderlying('handler', 'artifact-malformed', pathname, error);",
       "    logUnderlying('handler', 'artifact-malformed', pathname, error);")],
 
+  // --- the three causes of one 500, found unlogged by a round-2 review -----
+  ['the store configuration cause of the 500 goes back to being silent', WORKER,
+    s => s.replace("    logUnderlying('config-store', 'credentials-rejected', null, new Error('ARTIFACT_BUCKET or AWS_REGION is not set'));\n", '')],
+  ['the missing-secret cause of the 500 goes back to being silent', WORKER,
+    s => s.replace("    logUnderlying('config-credentials', 'credentials-rejected', null, new Error('AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY is not set'));\n", '')],
+  ['the rejected-key cause of the 500 goes back to being silent', WORKER,
+    s => s.replace("    logUnderlying('upstream-status', 'credentials-rejected', safeKey, new Error(`upstream answered HTTP ${response.status}`));\n", '')],
+  // All three causes logged under ONE phase is the shape that looks fixed and
+  // is not: the reason is logged, and still nothing says which remedy applies.
+  ['the three causes are logged but under one indistinguishable phase', WORKER,
+    s => s.replace("logUnderlying('config-credentials', 'credentials-rejected'", "logUnderlying('config-store', 'credentials-rejected'")],
+  ['a configured value is logged instead of its variable name', WORKER,
+    s => s.replace(
+      "new Error('AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY is not set')",
+      'new Error(`AWS_ACCESS_KEY_ID=${accessKeyId} AWS_SECRET_ACCESS_KEY is not set`)')],
+  ['a non-ok upstream status stops being distinguishable from a bad manifest', WORKER,
+    s => s.replace("    logUnderlying('upstream-status', 'artifact-malformed', safeKey, new Error(`upstream answered HTTP ${response.status}`));\n", '')],
+  // The documented silent family, pinned from the other direction: a line per
+  // manifest field would be volume rather than signal, and the test that says
+  // so must be able to fail.
+  ['the manifest-shape family starts logging a line per field', WORKER,
+    s => s.replace(
+      "  if (!isMobileManifest(manifest)) throw new ServeFailure('artifact-malformed');",
+      "  if (!isMobileManifest(manifest)) { logUnderlying('pointer-shape', 'artifact-malformed', config.manifestKey, new Error('manifest failed the contract predicate')); throw new ServeFailure('artifact-malformed'); }")],
+
   // --- the claim that workerd loaded the SHIPPED file ----------------------
   // `assertGraphIsVerbatim` is the only thing standing between "the shipped
   // Worker" and a phrase. It cannot be falsified by mutating worker.js, which
   // changes both sides of the comparison equally, so what is mutated is the
   // harness's copy step — the one place a substitution could enter.
-  // Caught two ways, and that is the honest finding rather than a weakness:
-  // the shim's own property assertions fail, AND workerd refuses to boot a
-  // shim that re-exports non-handler names — the very refusal that made the
-  // shim necessary. Whichever fires first, the run is red.
+  // Caught by a BOOT REFUSAL, not by the shim's own assertions, and the
+  // distinction was got wrong in this comment's first version. `startWorkerd`
+  // runs in the `before` hook and `assertGraphIsVerbatim` in the first `it`,
+  // so workerd's refusal to boot a shim re-exporting non-handler names
+  // cancels the assertions before they evaluate. They are belt to those
+  // braces and catch a shim that still boots but is not the one intended.
+  // The catch shows as cancellations rather than failures, which is exactly
+  // why this harness scores `# cancelled` as red.
   ['the entry shim is widened to re-export everything', HARNESS,
     s => s.replace(
       "const ENTRY_SOURCE = \"export { default } from './worker.js';\\n\";",

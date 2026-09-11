@@ -307,14 +307,25 @@ describe('the serve-failure diagnostic, at the unit level', () => {
   it('redacts an access key id out of an upstream message, before truncating it', async () => {
     // Scrub-then-truncate, not the reverse: with a key straddling the 200-char
     // bound the other order leaves a fragment of it in the log.
-    const padded = `${'p'.repeat(190)}${ACCESS_KEY_SHAPED} tail`;
+    const PAD = 190;
+    const padded = `${'p'.repeat(PAD)}${ACCESS_KEY_SHAPED} tail`;
     const { lines } = await captured(() => handleRequest(request(), env, {
       fetch: async () => { throw new Error(padded); },
       now: () => NOW.getTime(),
     }));
     const entry = JSON.parse(lines.find(line => line.includes('serve-failure')));
     assert.ok(!entry.message.includes(ACCESS_KEY_SHAPED), 'the whole key must be gone');
-    assert.ok(!entry.message.includes(ACCESS_KEY_SHAPED.slice(0, 12)), 'no fragment of the key may survive the truncation');
+    // The probe length is DERIVED, not chosen. Truncating first would keep
+    // exactly `MAX - PAD` characters of the key, so a probe longer than that
+    // cannot be contained in the surviving fragment and the assertion passes
+    // under the very mutation it is named for — which is what a round-2
+    // review found the hardcoded 12 doing against a 10-character remnant.
+    const survivesIfTruncatedFirst = 200 - PAD;
+    assert.ok(survivesIfTruncatedFirst > 0, 'the pad must leave a fragment for this case to mean anything');
+    assert.ok(
+      !entry.message.includes(ACCESS_KEY_SHAPED.slice(0, survivesIfTruncatedFirst)),
+      'no fragment of the key may survive the truncation',
+    );
     assert.match(entry.message, /\[redacted\]/);
   });
 
@@ -358,6 +369,83 @@ describe('the serve-failure diagnostic, at the unit level', () => {
       now: () => NOW.getTime(),
     }));
     assert.equal(lines.filter(line => line.includes('serve-failure')).length, 1);
+  });
+
+  it('distinguishes the three causes of the one 500 the page cannot tell apart', async () => {
+    // `credentials-rejected` renders "This is not a sign-in problem" and has
+    // three remedies: fix the stack's configuration, set the secret, or
+    // repair the key. A round-2 review found none of the three logged, behind
+    // an argument that the reason named its cause uniquely — which was false.
+    const cases = [
+      [{ ...env, ARTIFACT_BUCKET: '' }, 'config-store', /ARTIFACT_BUCKET or AWS_REGION/],
+      [{ ...env, AWS_SECRET_ACCESS_KEY: '' }, 'config-credentials', /AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY/],
+      [env, 'upstream-status', /403/],
+    ];
+    const seen = new Set();
+    for (const [caseEnv, phase, message] of cases) {
+      const { result, lines } = await captured(() => handleRequest(request(), caseEnv, {
+        fetch: async () => new Response('', { status: 403 }),
+        now: () => NOW.getTime(),
+      }));
+      assert.equal(result.status, 500);
+      assert.equal(result.headers.get('x-mobile-dashboard-reason'), 'credentials-rejected');
+      const entry = JSON.parse(lines.find(line => line.includes('serve-failure')));
+      assert.equal(entry.phase, phase);
+      assert.match(entry.message, message);
+      seen.add(entry.phase);
+    }
+    assert.equal(seen.size, 3, 'the three causes must be distinguishable from one another, not merely logged');
+  });
+
+  it('logs a variable name and never a variable value', async () => {
+    // The configuration branches cannot say WHICH of their two variables is
+    // missing without reporting one, so they name both and report neither.
+    const { lines } = await captured(() => handleRequest(request(), { ...env, AWS_SECRET_ACCESS_KEY: '' }, {
+      fetch: async () => new Response('', { status: 200 }),
+      now: () => NOW.getTime(),
+    }));
+    const line = lines.find(entry => entry.includes('serve-failure'));
+    assert.ok(!line.includes(CREDENTIALS.accessKeyId), 'the configured access key id must not be logged');
+    assert.ok(!line.includes(BUCKET), 'a configured value must not be logged, only the variable name');
+  });
+
+  it('names the upstream status when a non-ok answer becomes artifact-malformed', async () => {
+    // `artifact-malformed` arrives from the transport as well as from the
+    // manifest, and those have opposite remedies. A mutation removing this
+    // line SURVIVED the first run of the harness — the log site was added
+    // with no test behind it, which is the gap this case closes.
+    const { result, lines } = await captured(() => handleRequest(request(), env, {
+      fetch: async () => new Response('', { status: 418 }),
+      now: () => NOW.getTime(),
+    }));
+    assert.equal(result.status, 502);
+    assert.equal(result.headers.get('x-mobile-dashboard-reason'), 'artifact-malformed');
+    const entry = JSON.parse(lines.find(line => line.includes('serve-failure')));
+    assert.equal(entry.phase, 'upstream-status');
+    assert.equal(entry.reason, 'artifact-malformed');
+    assert.match(entry.message, /418/);
+  });
+
+  it('stays silent for the manifest-shape family, which is the documented gap', async () => {
+    // Stated rather than implied: a dozen field checks share one remedy
+    // (republish), so they are deliberately not logged. Both the contract
+    // PREDICATE and an individual field check are exercised, because the
+    // first version of this case reached only the field check — so a mutation
+    // adding a line at the predicate survived, and the "documented gap" was
+    // pinned at one site while being claimed for a family.
+    const bodies = [
+      ['fails the contract predicate', { not: 'a manifest' }],
+      ['fails one field check', { schemaVersion: 1, artifactVersion: 'dashboard-mobile', generatedAt: NOW.toISOString() }],
+    ];
+    for (const [label, body] of bodies) {
+      const { result, lines } = await captured(() => handleRequest(request(), env, {
+        fetch: async () => new Response(JSON.stringify(body), { status: 200 }),
+        now: () => NOW.getTime(),
+      }));
+      assert.equal(result.status, 502, label);
+      assert.equal(result.headers.get('x-mobile-dashboard-reason'), 'artifact-malformed', label);
+      assert.deepEqual(lines, [], `the manifest-shape family is documented as silent (${label})`);
+    }
   });
 
   it('says nothing at all when the request succeeds', async () => {
