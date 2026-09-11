@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2604+ passing with a browser
+- Run npm test after changes — must stay at 2609+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row)
 - Confirm file changes before moving to next file
@@ -2343,7 +2343,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2604 | **2604** | **0** | **0** | 62572 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2609 | **2609** | **0** | **0** | 60554 ms |
 
 Measured on `claude/clever-lovelace-2e62va`, branched from `origin/main` at **`7b57027`**
 (PR #65) — the branch point and the merge base are the same commit, because the branch was
@@ -2353,13 +2353,21 @@ change: 2591 / 2591 / 0 / 0, 63944 ms** — which matches the entry below, so fo
 time a recorded baseline in this file needed no correction. Re-measure anyway; the run costs
 less than the correction does.
 
-This change adds **+13**, all in one new file:
+This change adds **+18**, all in one new file:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `test/worker/workerd-runtime.test.js` (new) | — | 13 | +13 |
+| `test/worker/workerd-runtime.test.js` (new) | — | 18 | +18 |
 
-2591 + 13 = 2604, and **2604 is the measured figure in the table above rather than that
+**It was +13 until a Reviewer pass**, which returned PASS with no BLOCKING findings and
+three SHOULD FIX items; acting on all three added five cases. The largest was not guard
+strength but a real gap: the credential-safety assertion could not fail, because the only
+workerd failure scenario's error message contained no credential — while this repository's
+own sibling suite deliberately models the opposite, a transport error quoting an access key
+id in its text, which `logUnderlying` would have shipped verbatim with observability
+enabled.
+
+2591 + 18 = 2609, and **2609 is the measured figure in the table above rather than that
 sum** — the agreement is reassuring and is not itself evidence.
 `test/worker/workerd-harness.js` is a helper, not a suite; `package.json`'s globs select
 `*.test.js` only, so it contributes 0. **No existing test file is edited, deleted or
@@ -2368,10 +2376,10 @@ is the whole finding: nothing in 2591 tests could see the defect, so there was n
 assertion to update.
 
 **Do not read the durations as a comparison, and the numbers say why.** Base `7b57027`
-ran **63944 ms** (one run); this branch ran **58981 ms**, then **63246 ms**, then
-**62572 ms** — same machine, same browser, sequential. The spread *within the branch* is
-4265 ms, wider than the branch-versus-base gap, so **no difference is demonstrable in either
-direction** from four runs. The 13 new tests boot workerd three times, so the true cost is
+ran **63944 ms** (one run); this branch ran **58981 ms**, **63246 ms**, **62572 ms** and
+finally **60554 ms** — same machine, same browser, sequential. The spread *within the branch*
+is 4265 ms, wider than the branch-versus-base gap, so **no difference is demonstrable in
+either direction** from five runs. The 13 new tests boot workerd three times, so the true cost is
 certainly an increase and not the saving the first figure appeared to show; it is simply
 below the noise floor here. An earlier draft of this entry quoted the 58981 ms alone as
 evidence of no increase — the unfalsifiable claim the entry below already retracts once, and
@@ -2387,7 +2395,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2604+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2609+ with no failures once a browser resolves.**
 
 **The new file needs a runtime the other 2591 tests do not.** `workerd` is a **devDependency**
 (`require('workerd').default` is the platform binary's absolute path, so nothing guesses a
@@ -2399,10 +2407,20 @@ suite, because a guard that quietly disappears on the machine where it matters i
 shape of the defect it was written for.
 
 Companion mutation harness, **committed** and run on demand — `node
-scratch/mobile-worker-receiver/mutation-check.mjs` → **15 mutations, 15/15 proven, all
-distinct (15 unique mutated trees)**, green 13-test control, green restore, plus a self-test
-row that injects a real syntax error and requires the harness's own hollowness check to catch
-it. Its `SUITE` is `test/worker/workerd-runtime.test.js` **alone**, deliberately: rows added
+scratch/mobile-worker-receiver/mutation-check.mjs` → **22 mutations, 22/22 proven**, green
+18-test control, green restore, plus a self-test row that injects a real syntax error and
+requires the harness's own hollowness check to catch it. Seven of the 22 were added for the
+guards the Reviewer round produced. It does **not** print a distinct-tree count: a duplicate
+or no-op mutant aborts the run, so any run reaching the summary has that number equal to the
+row count by construction, and printing it would be a restatement dressed as a second
+measurement. (CLAUDE.md records the same MINOR against the sibling harness, which does print
+it.)
+
+**One row is caught by a cancellation rather than a failure, and that vindicates a rule this
+harness inherited rather than discovered.** Widening the entry shim to `export * from
+'./worker.js'` makes workerd refuse to boot, so the `before` hook throws and eleven children
+report `cancelledByParent` with `# fail 0`. Scored on `# fail` alone that row would read as a
+survivor when it is in fact the loudest catch in the set. Its `SUITE` is `test/worker/workerd-runtime.test.js` **alone**, deliberately: rows added
 to `scratch/mobile-worker/mutation-check.mjs` would be "caught" by three Node suites that
 were green while production returned 504, so the evidence would say nothing about the guard
 actually being added. Attribution is the whole point of the second harness.
@@ -2417,11 +2435,17 @@ store saw no document read, and the mutation fails it (1 failing, on that case).
 above were regenerated after that repair — the suite total is unchanged at 2604, because the
 repair strengthened an existing `it()` rather than adding one.
 
-`scratch/mobile-worker/mutation-check.mjs` was **re-run unchanged and is still 46/46 proven,
-all distinct, control 76 green, restored 76 green.** That is the anchor-rot check, not a
-formality: this change edited `worker/mobile-dashboard/worker.js`, which 30-odd of its rows
-attack by exact string match, and a row whose anchor no longer applies is scored as a
-survivor rather than skipped.
+`scratch/mobile-worker/mutation-check.mjs` re-run: **46/46 proven, all distinct, control 76
+green, restored 76 green** — but **one of its anchors had to be repointed first, and that is
+the finding rather than a footnote.** Its row `a 5xx from the store is treated as a good
+response` matched a single line; the Reviewer round grew that branch into a block so it could
+carry a diagnostic, and the harness then **refused to run at all** with `MUTATION DID NOT
+APPLY` rather than scoring the row silently. That refusal is the whole reason the rot was
+visible, and the whole reason a change touching `worker.js` must re-run this harness. The
+anchor is now a block pattern rather than a line, so a further comment change inside it
+cannot rot it again. **Three anchors rotted across this change in total** — two in the new
+harness, one here — every one of them caused by the Reviewer round's edits, and every one
+surfaced by a harness declining to proceed.
 
 ### Previous baseline — measured Sept 11, 2026 on the season-markers branch, rebased onto #71
 
@@ -3562,7 +3586,10 @@ method, so they chain directly to the 988 pre-change number above.
   carried the underlying error in `cause` and nothing read it, so a Worker with
   observability enabled reported `storage-unreachable` and kept the only fact that says
   *which* one it was. One `console.error` JSON line now names the error's constructor and
-  message plus the phase and key, at the three sites that swallowed one. A
+  message plus the phase and key, at every site that swallowed one — the transport catch,
+  the body catch, the pointer parse, a 5xx status (the one reason two upstream conditions
+  share, so the absence of a line would otherwise be the discriminator) and the outer
+  handler catch. A
   `TypeError: Illegal invocation` and a DNS failure are then distinguishable **without a
   redeploy**, which is precisely what this defect cost. Deliberately absent: the signed
   headers (`authorization` carries `Credential=<access key id>/<scope>`), the credentials,
@@ -3577,20 +3604,34 @@ method, so they chain directly to the 988 pre-change number above.
   **`workerd` is a devDependency** and is **not** in the shipped Lambda package —
   `deploy.yml` installs `npm ci --omit=dev`. No dependency was added to the Worker itself.
 
-  **15 mutations, 15/15 proven, all distinct** (`node
+  **22 mutations, 22/22 proven** (`node
   scratch/mobile-worker-receiver/mutation-check.mjs`), green control and restore, with a
-  self-test row proving its own hollowness check is live. **One row survived the first run
-  and it was a hollow guard in the new test, not a gap in the Worker:** deleting the HEAD
+  self-test row proving its own hollowness check is live. **Two rows survived a first run
+  and both were hollow guards in the new test, not gaps in the Worker.** Deleting the HEAD
   short-circuit left the HEAD case green, because HTTP strips a body from a HEAD response
-  whatever the Worker did — so the empty body was the protocol's guarantee, not the code's,
-  while the Worker read and returned the whole megabyte. The case now asserts the store saw
-  no document read, and the mutation fails it. Fixed rather than parked, and the evidence
-  regenerated afterwards. **The existing
-  `scratch/mobile-worker/mutation-check.mjs` was re-run unchanged and is still 46/46
-  proven, all distinct, control 76 green** — the anchor-rot check this file's own Key
-  Learnings demand, since this change edited the text its 46 rows attack.
+  whatever the Worker did — the empty body was the protocol's guarantee, not the code's,
+  while the Worker read and returned the whole megabyte. And the credential-safety
+  assertion could not fail at all, because the scenario's error message contained no
+  credential to redact. Both fixed rather than parked, and the evidence regenerated after
+  each.
 
-  Tests **2591 → 2604**, all passing with a browser; **both ends measured on this tree**,
+  **`scratch/mobile-worker/mutation-check.mjs` re-run: 46/46 proven, control 76 green — but
+  one anchor had to be repointed first.** Growing the 5xx branch into a block so it could
+  carry a diagnostic rotted a row that matched a single line, and that harness **refused to
+  run** rather than scoring the row silently. Three anchors rotted across this change, all
+  three surfaced by a harness declining to proceed.
+
+  **A Reviewer pass returned PASS with no BLOCKING findings and three SHOULD FIX items, all
+  acted on.** The largest was not guard strength: the credential-safety assertion could not
+  fail, while the sibling Node suite deliberately models a transport error quoting an access
+  key id in its message — text `logUnderlying` would have shipped verbatim. The message is
+  now scrubbed of access-key shapes before truncation (`{16,}` and unanchored, because
+  `\bAKIA[0-9A-Z]{16}\b` cannot match a 21-character look-alike), and the substitute origin
+  throws exactly that hostile message so the guard can fail. The pass also found the outer
+  catch still erasing an unclassified throw — the same information loss one level out — and
+  an assertion comparing a constant with itself. Both fixed.
+
+  Tests **2591 → 2609**, all passing with a browser; **both ends measured on this tree**,
   the base in a `git worktree` at `7b57027`. No existing test file is touched.
 
 - **Flag football's two season markers derived from season data, not calendar titles

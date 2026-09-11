@@ -80,6 +80,15 @@ export const CREDENTIALS = Object.freeze({
 });
 
 /**
+ * An access-key-SHAPED string for the hostile-message scenario, assembled from
+ * two halves so that no literal in this file matches `(?:AKIA|ASIA)[0-9A-Z]{16,}`
+ * — the pattern the Worker scrubs with and the one this repository's deploy
+ * guard scans wrangler.toml for. It is not a key and opens nothing; its only
+ * job is to be redacted.
+ */
+export const ACCESS_KEY_SHAPED = `AKIA${'EXAMPLENOTAREALKEY'}`;
+
+/**
  * The Worker's complete module graph, as module names workerd will resolve
  * relative imports against. `node:crypto` closes it — nothing else is
  * imported by any of these four files.
@@ -131,8 +140,18 @@ export async function assertGraphIsVerbatim(root) {
     const loaded = await readFile(path.join(root, name));
     assert.equal(sha256(loaded), sha256(shipped), `${name} loaded into workerd must be the shipped file, byte for byte`);
   }
-  const entry = await readFile(path.join(root, ENTRY_MODULE), 'utf8');
-  assert.equal(entry, ENTRY_SOURCE, 'the entry shim must re-export the default and nothing else');
+  // The shim gets its PROPERTIES asserted, not its text. A review caught the
+  // first version comparing the written file against the very constant it was
+  // written from — an assertion that cannot fail, sitting inside a function
+  // whose entire job is to prove rather than to claim. These four can fail:
+  // widening the shim to `export * from './worker.js'`, adding a named
+  // re-export, or repointing it at another module each break one of them.
+  const entry = (await readFile(path.join(root, ENTRY_MODULE), 'utf8')).trim();
+  const exports = entry.split('\n').filter(line => line.includes('export'));
+  assert.equal(exports.length, 1, `the entry shim must carry exactly one export statement, found ${exports.length}`);
+  assert.match(entry, /^export\s*\{\s*default\s*\}\s*from\s*'\.\/worker\.js';$/, 'the shim must re-export the default of ./worker.js and nothing else');
+  assert.ok(!entry.includes('*'), 'the shim must not re-export a namespace');
+  assert.ok(!/\bhandleRequest\b|\bmobileKey\b|\bFAILURES\b/.test(entry), 'the shim must not re-export anything the Node suite uses');
 }
 
 /**
@@ -196,7 +215,12 @@ export default {
       hasAmzDate: request.headers.has('x-amz-date'),
     });
 
-    if (env.MODE === 'transport-failure') throw new Error('simulated upstream transport failure');
+    // The message deliberately quotes an access-key-shaped string, because a
+    // credential-safety assertion against a message that contains no
+    // credential is satisfied by construction and proves nothing. The shape is
+    // ASSEMBLED rather than written, so no literal in this repository matches
+    // an access-key scan. The sibling Node suite models the same hostile case.
+    if (env.MODE === 'transport-failure') throw new Error('simulated upstream transport failure while using ' + env.KEY_SHAPE);
 
     const record = env.OBJECTS[key];
     if (!record) {
@@ -246,6 +270,7 @@ const originWorker :Workerd.Worker = (
   bindings = [
     (name = "OBJECTS", json = embed "objects.json"),
     (name = "MODE", text = "${env.__MODE__ || 'serve'}"),
+    (name = "KEY_SHAPE", text = "${ACCESS_KEY_SHAPED}"),
   ],
 );
 `;

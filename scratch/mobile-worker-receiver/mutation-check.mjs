@@ -49,10 +49,13 @@ const MUTATIONS = [
   // --- the diagnostic ------------------------------------------------------
   ['the underlying error goes back to being swallowed into `cause`', WORKER,
     s => s.replace("    logUnderlying('upstream-fetch', 'storage-unreachable', safeKey, error);\n", '')],
+  // This anchor and the one below ROTTED when the credential scrubber was added
+  // in response to a Reviewer pass, and the harness refused to run rather than
+  // scoring them silently — which is the behaviour that makes the rot visible.
   ['the diagnostic restates the response reason instead of naming the error', WORKER,
     s => s.replace(
       '    error: error instanceof Error ? error.name : typeof error,\n'
-      + '    message: String(error instanceof Error ? error.message : error).slice(0, MAX_DIAGNOSTIC_MESSAGE),',
+      + "    // Scrubbed BEFORE truncating: a key straddling the bound would otherwise\n    // survive as a fragment.\n    message: scrubCredentials(String(error instanceof Error ? error.message : error)).slice(0, MAX_DIAGNOSTIC_MESSAGE),",
       '    error: reason,\n    message: reason,')],
   ['the diagnostic loses the key, so pointer and document failures read alike', WORKER,
     s => s.replace('    reason,\n    key,\n', '    reason,\n')],
@@ -71,8 +74,8 @@ const MUTATIONS = [
   // headers carry `Credential=<access key id>/<scope>`.
   ['the signed headers are logged alongside the error', WORKER,
     s => s.replace(
-      '    message: String(error instanceof Error ? error.message : error).slice(0, MAX_DIAGNOSTIC_MESSAGE),',
-      '    message: String(error instanceof Error ? error.message : error).slice(0, MAX_DIAGNOSTIC_MESSAGE),\n'
+      '    message: scrubCredentials(String(error instanceof Error ? error.message : error)).slice(0, MAX_DIAGNOSTIC_MESSAGE),',
+      '    message: scrubCredentials(String(error instanceof Error ? error.message : error)).slice(0, MAX_DIAGNOSTIC_MESSAGE),\n'
       + '    headers: JSON.stringify(headers),')],
 
   // --- what the runtime test asserts beyond the fix ------------------------
@@ -93,11 +96,49 @@ const MUTATIONS = [
       "if (response.status === 404) throw new ServeFailure('artifact-missing');",
       "if (response.status === 404) throw new ServeFailure('storage-unreachable');")],
 
+  // --- the credential scrubber (all three rows added after a Reviewer pass) -
+  // The pass found the credential guard satisfied by construction: the failure
+  // scenario's message contained no credential, so "no credential in the
+  // output" could not fail. The origin now quotes an access-key-shaped string
+  // and these rows attack the scrubber that removes it.
+  ['the upstream message is logged without scrubbing', WORKER,
+    s => s.replace(
+      'message: scrubCredentials(String(error instanceof Error ? error.message : error)).slice(0, MAX_DIAGNOSTIC_MESSAGE),',
+      'message: String(error instanceof Error ? error.message : error).slice(0, MAX_DIAGNOSTIC_MESSAGE),')],
+  ['the message is truncated before it is scrubbed, so a key at the bound survives in part', WORKER,
+    s => s.replace(
+      'message: scrubCredentials(String(error instanceof Error ? error.message : error)).slice(0, MAX_DIAGNOSTIC_MESSAGE),',
+      'message: scrubCredentials(String(error instanceof Error ? error.message : error).slice(0, MAX_DIAGNOSTIC_MESSAGE)),')],
+  // The exact near-miss the Reviewer identified: `\b` after sixteen
+  // characters cannot match a 21-character look-alike, because the
+  // seventeenth is a word character. A scrubber with this pattern reads as
+  // protection and is not.
+  ['the scrub pattern is anchored, so a longer look-alike slips through', WORKER,
+    s => s.replace('/(?:AKIA|ASIA)[0-9A-Z]{16,}/g', '/\\b(?:AKIA|ASIA)[0-9A-Z]{16}\\b/g')],
+
+  // --- the two diagnostics a Reviewer pass found missing --------------------
+  ['a 5xx from the store becomes indistinguishable from a transport throw again', WORKER,
+    s => s.replace("    logUnderlying('upstream-status', 'storage-unreachable', safeKey, new Error(`upstream answered HTTP ${response.status}`));\n", '')],
+  ['an unclassified throw is erased into artifact-malformed with no diagnostic', WORKER,
+    s => s.replace("    if (!classified) logUnderlying('handler', 'artifact-malformed', pathname, error);\n", '')],
+  ['the outer catch logs a classified failure too, so one request reads as two', WORKER,
+    s => s.replace(
+      "    if (!classified) logUnderlying('handler', 'artifact-malformed', pathname, error);",
+      "    logUnderlying('handler', 'artifact-malformed', pathname, error);")],
+
   // --- the claim that workerd loaded the SHIPPED file ----------------------
   // `assertGraphIsVerbatim` is the only thing standing between "the shipped
   // Worker" and a phrase. It cannot be falsified by mutating worker.js, which
   // changes both sides of the comparison equally, so what is mutated is the
   // harness's copy step — the one place a substitution could enter.
+  // Caught two ways, and that is the honest finding rather than a weakness:
+  // the shim's own property assertions fail, AND workerd refuses to boot a
+  // shim that re-exports non-handler names — the very refusal that made the
+  // shim necessary. Whichever fires first, the run is red.
+  ['the entry shim is widened to re-export everything', HARNESS,
+    s => s.replace(
+      "const ENTRY_SOURCE = \"export { default } from './worker.js';\\n\";",
+      "const ENTRY_SOURCE = \"export * from './worker.js';\\n\";")],
   ['the harness loads something other than the shipped Worker', HARNESS,
     s => s.replace(
       '      await copyFile(path.join(REPO_ROOT, name), path.join(root, name));',
@@ -228,6 +269,11 @@ console.log(`self-test: a syntax error reports ${selfTest.total} tests (control 
 
 const after = runSuite();
 console.log(`restored: ${after.total} tests, ${after.pass} pass, ${after.fail} fail, ${after.cancelled} cancelled`);
-console.log(`${proven}/${MUTATIONS.length} mutations proven, all distinct (${mutants.size} unique mutated trees)`);
+// `mutants.size` is NOT independent evidence and is not printed as though it
+// were: a duplicate aborts the run, so any run reaching this line has it equal
+// to MUTATIONS.length by construction. The abort is the guard; the number
+// would be a restatement. CLAUDE.md records the same MINOR against the
+// sibling harness, which does print it.
+console.log(`${proven}/${MUTATIONS.length} mutations proven; duplicate and no-op mutants abort the run, so every row above is a distinct tree`);
 if (survived.length) console.error(`SURVIVING GUARDS (report these): ${survived.join(' | ')}`);
 process.exit(!after.red && survived.length === 0 ? 0 : 1);

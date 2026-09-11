@@ -52,8 +52,15 @@ const MUTATIONS = [
     s => s.replace("if (response.status === 403 || response.status === 401) throw new ServeFailure('credentials-rejected');", "if (response.status === 403 || response.status === 401) throw new ServeFailure('storage-unreachable');")],
   ['an unreachable store is reported as a missing artifact', WORKER,
     s => s.replace("    throw new ServeFailure('storage-unreachable', error);\n  } finally {", "    throw new ServeFailure('artifact-missing', error);\n  } finally {")],
+  // ANCHOR REPOINTED (Sept 11, 2026). This row matched a single line until the
+  // 5xx branch grew a diagnostic and became a block, at which point this
+  // harness refused to run with `MUTATION DID NOT APPLY` rather than scoring
+  // the row silently — which is the behaviour that made the rot visible, and
+  // the reason the change that caused it re-ran this harness at all. Matched
+  // as a block by pattern now, so a further comment change inside it cannot
+  // rot the anchor again; the non-greedy body stops at the block's own close.
   ['a 5xx from the store is treated as a good response', WORKER,
-    s => s.replace("if (response.status >= 500) throw new ServeFailure('storage-unreachable');", '')],
+    s => s.replace(/ {2}if \(response\.status >= 500\) \{[\s\S]*?\n {2}\}\n/, '')],
   ['two failure classes collide on one status', WORKER,
     s => s.replace("'storage-unreachable': { status: 504,", "'storage-unreachable': { status: 502,")],
   ['a missing secret is silently treated as an anonymous read', WORKER,

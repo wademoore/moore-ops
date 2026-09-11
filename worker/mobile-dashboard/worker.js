@@ -94,6 +94,41 @@ class ServeFailure extends Error {
 const MAX_DIAGNOSTIC_MESSAGE = 200;
 
 /**
+ * An AWS access key id, wherever one appears. Deliberately UNANCHORED at both
+ * ends and `{16,}` rather than `{16}`: a review of this file's first version
+ * pointed out that `\bAKIA[0-9A-Z]{16}\b` fails to match a 21-character
+ * look-alike, because the trailing `\b` needs a non-word character after the
+ * sixteenth. A scrubber that misses a near-miss of the shape it is scrubbing
+ * is worse than none, since it reads as protection.
+ */
+const ACCESS_KEY_SHAPE = /(?:AKIA|ASIA)[0-9A-Z]{16,}/g;
+
+/**
+ * Removes the one credential shape an upstream message could recognisably
+ * quote, before that message reaches a log sink.
+ *
+ * WHAT THIS DOES AND DOES NOT PROMISE, because the difference matters.
+ *
+ * The load-bearing guarantee is structural and is not this function: nothing
+ * this Worker puts in a diagnostic line is credential-derived. `signRequest`
+ * is awaited OUTSIDE the try block whose catch logs, so a signing failure
+ * cannot reach a log line, and the `key` reported has already been through
+ * `mobileKey()`. What remains is an upstream error MESSAGE, which this Worker
+ * does not author — and this repository's own sibling suite models exactly the
+ * hostile case, a transport error that quotes an access key id in its text.
+ * With `[observability] enabled` that string would have been shipped verbatim.
+ *
+ * So: a recognisable access key id is redacted. An arbitrary secret is NOT,
+ * and cannot be — a 40-character secret has no shape distinguishable from a
+ * sha256 or an S3 version id, and a pattern loose enough to catch it would
+ * redact the diagnostics this line exists to carry. That limit is stated
+ * rather than papered over.
+ */
+function scrubCredentials(text) {
+  return text.replace(ACCESS_KEY_SHAPE, '[redacted]');
+}
+
+/**
  * One line of diagnostic output for a failure that HAD a real underlying
  * error, emitted before that error is collapsed into a response reason.
  *
@@ -129,7 +164,9 @@ function logUnderlying(phase, reason, key, error) {
     reason,
     key,
     error: error instanceof Error ? error.name : typeof error,
-    message: String(error instanceof Error ? error.message : error).slice(0, MAX_DIAGNOSTIC_MESSAGE),
+    // Scrubbed BEFORE truncating: a key straddling the bound would otherwise
+    // survive as a fragment.
+    message: scrubCredentials(String(error instanceof Error ? error.message : error)).slice(0, MAX_DIAGNOSTIC_MESSAGE),
   }));
 }
 
@@ -225,7 +262,17 @@ async function readObject(config, deps, key, versionId) {
 
   if (response.status === 403 || response.status === 401) throw new ServeFailure('credentials-rejected');
   if (response.status === 404) throw new ServeFailure('artifact-missing');
-  if (response.status >= 500) throw new ServeFailure('storage-unreachable');
+  if (response.status >= 500) {
+    // `storage-unreachable` is the ONLY reason two different upstream
+    // conditions map onto — this and a transport throw — so without a line
+    // here the absence of one would be the discriminator, which is no way to
+    // read a log. Every other status is a bijection with its reason
+    // (401/403 -> credentials-rejected, 404 -> artifact-missing, other
+    // non-ok -> artifact-malformed), so those stay silent by design rather
+    // than by omission.
+    logUnderlying('upstream-status', 'storage-unreachable', safeKey, new Error(`upstream answered HTTP ${response.status}`));
+    throw new ServeFailure('storage-unreachable');
+  }
   if (!response.ok) throw new ServeFailure('artifact-malformed');
 
   try {
@@ -418,7 +465,16 @@ async function handleRequest(request, env, deps = {}) {
     // Anything that is not one of the four named classes is reported as a
     // malformed artifact rather than leaking a message. An unclassified throw
     // must still land in a class a consumer can read.
-    const reason = error instanceof ServeFailure && FAILURES[error.reason] ? error.reason : 'artifact-malformed';
+    const classified = error instanceof ServeFailure && FAILURES[error.reason];
+    // ...but it must not vanish on the way. A throw with no recognised class
+    // is reported as `artifact-malformed` with its real identity erased —
+    // precisely the information loss this change exists to remove, one level
+    // further out. A classified failure is NOT re-logged: it was already
+    // logged where it had an underlying error, or its reason names its cause
+    // uniquely, and logging it twice would make one request look like two
+    // failures.
+    if (!classified) logUnderlying('handler', 'artifact-malformed', pathname, error);
+    const reason = classified ? error.reason : 'artifact-malformed';
     return failureResponse(reason, { json: isDiscovery, method });
   }
 }

@@ -35,7 +35,7 @@ import {
 import { publishMobileArtifact } from '../../dashboard-artifact/mobile-generator.js';
 import { mobilePreviewStates } from '../../render/dashboard-mobile.sample-data.js';
 import { handleRequest } from '../../worker/mobile-dashboard/worker.js';
-import { BUCKET, CREDENTIALS, REGION, assertGraphIsVerbatim, startWorkerd } from './workerd-harness.js';
+import { ACCESS_KEY_SHAPED, BUCKET, CREDENTIALS, REGION, assertGraphIsVerbatim, startWorkerd } from './workerd-harness.js';
 
 const NOW = new Date('2026-09-09T20:10:00.000Z');
 const ROUTES = ['/', '/index.html', `/${MOBILE_DISCOVERY_MANIFEST_PATH}`];
@@ -232,6 +232,24 @@ describe('the serve-failure diagnostic, inside workerd', () => {
     assert.ok(entry.message, 'the underlying error message must be reported');
   });
 
+  it('redacts an access key id the upstream error message quotes', async () => {
+    // This case exists because a Reviewer pass found the assertion below
+    // satisfied by construction: the scenario's error message contained no
+    // credential, so "no credential in the output" could not fail. The
+    // substitute origin now throws a message quoting an access-key-SHAPED
+    // string — the same hostile case the sibling Node suite models — and with
+    // observability enabled that text would otherwise be shipped verbatim.
+    await worker.call('/');
+    const log = worker.log();
+    assert.ok(!log.includes(ACCESS_KEY_SHAPED), 'an access key id quoted by an upstream message must not be logged');
+
+    const entry = JSON.parse(log.split('\n').filter(line => line.includes('"event":"serve-failure"'))[0]);
+    assert.match(entry.message, /\[redacted\]/, 'the key must be replaced rather than merely absent');
+    // Proves the surrounding diagnostic survives the redaction: a scrubber
+    // that ate the whole message would satisfy the two assertions above.
+    assert.match(entry.message, /simulated upstream transport failure/);
+  });
+
   it('writes nothing credential-shaped anywhere in its output', async () => {
     await worker.call('/');
     const log = worker.log();
@@ -284,6 +302,62 @@ describe('the serve-failure diagnostic, at the unit level', () => {
     }));
     const entry = JSON.parse(lines.find(line => line.includes('serve-failure')));
     assert.equal(entry.message.length, 200);
+  });
+
+  it('redacts an access key id out of an upstream message, before truncating it', async () => {
+    // Scrub-then-truncate, not the reverse: with a key straddling the 200-char
+    // bound the other order leaves a fragment of it in the log.
+    const padded = `${'p'.repeat(190)}${ACCESS_KEY_SHAPED} tail`;
+    const { lines } = await captured(() => handleRequest(request(), env, {
+      fetch: async () => { throw new Error(padded); },
+      now: () => NOW.getTime(),
+    }));
+    const entry = JSON.parse(lines.find(line => line.includes('serve-failure')));
+    assert.ok(!entry.message.includes(ACCESS_KEY_SHAPED), 'the whole key must be gone');
+    assert.ok(!entry.message.includes(ACCESS_KEY_SHAPED.slice(0, 12)), 'no fragment of the key may survive the truncation');
+    assert.match(entry.message, /\[redacted\]/);
+  });
+
+  it('names the upstream status when a 5xx and a transport throw share one reason', async () => {
+    // `storage-unreachable` is the one reason two upstream conditions map
+    // onto, so without this line the ABSENCE of a diagnostic would be the
+    // only way to tell them apart.
+    const { result, lines } = await captured(() => handleRequest(request(), env, {
+      fetch: async () => new Response('', { status: 503 }),
+      now: () => NOW.getTime(),
+    }));
+    assert.equal(result.status, 504);
+    const entry = JSON.parse(lines.find(line => line.includes('serve-failure')));
+    assert.equal(entry.phase, 'upstream-status');
+    assert.equal(entry.reason, 'storage-unreachable');
+    assert.match(entry.message, /503/);
+  });
+
+  it('reports an unclassified throw instead of erasing it into artifact-malformed', async () => {
+    // The outer catch collapsed anything unrecognised into `artifact-malformed`
+    // and discarded the real error — the same information loss this change
+    // removes, one level further out. `deps.now()` is called outside every
+    // inner try, so a throw from it reaches only that catch.
+    const { result, lines } = await captured(() => handleRequest(request(), env, {
+      fetch: async () => new Response('', { status: 200 }),
+      now: () => { throw new RangeError('clock unavailable'); },
+    }));
+    assert.equal(result.status, 502);
+    assert.equal(result.headers.get('x-mobile-dashboard-reason'), 'artifact-malformed');
+    const entry = JSON.parse(lines.find(line => line.includes('serve-failure')));
+    assert.equal(entry.phase, 'handler');
+    assert.equal(entry.error, 'RangeError');
+    assert.match(entry.message, /clock unavailable/);
+  });
+
+  it('does not log a classified failure twice', async () => {
+    // A failure logged where it had an underlying error must not be logged
+    // again by the outer catch, or one request reads as two failures.
+    const { lines } = await captured(() => handleRequest(request(), env, {
+      fetch: async () => { throw new Error('transport'); },
+      now: () => NOW.getTime(),
+    }));
+    assert.equal(lines.filter(line => line.includes('serve-failure')).length, 1);
   });
 
   it('says nothing at all when the request succeeds', async () => {
