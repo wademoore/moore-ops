@@ -177,6 +177,26 @@ When adding a new result entry:
 - `seconds` is decimal seconds (**field is named `seconds`, not `time`** — unlike `league-results-v2.json` which uses `time`)
 - `meet` is a short human-readable name; be consistent with existing entries
 
+### `unofficial: true` — a result no sanctioning body will certify (added Sept 12, 2026)
+
+Set it on a result from a meet that produced no official record — an intrasquad, or a meet
+whose Hy-Tek file was never generated. Absent means official; **do not** write
+`unofficial: false` on ordinary rows.
+
+It goes in **three** places for one swim, not one: the row here, the entry in
+`pb-records.json`, and the overlay row in `swim-annotations.json`. That is deliberate — the
+marker has to travel with the data rather than live only in a `note`, `pb-records.json`'s
+`{seconds, date, meet}` shape has nowhere else to say it, and a later official load that
+supersedes these rows needs to see that the standing PB came from an uncertified swim.
+
+**An unofficial swim may still set a PB.** This record exists to show growth, not to certify
+a result, so the fastest recorded time wins regardless of provenance.
+
+⚠ **Nothing reads the key yet, and the dashboard does not know about it.** `swimParser.js`
+projects only `{seconds, date, meet}` out of a PB entry, so an unofficial PB renders a plain
+`NEW PB!` on Dashboard v2 with no qualification. Expect that; it is not a bug. See CLAUDE.md
+→ Swim data conventions for the full rationale and the open items it raised.
+
 ---
 
 ## swim-annotations.json conventions
@@ -184,6 +204,14 @@ When adding a new result entry:
 Preserves `pb` and `note` fields for Moore family Waves (SCM) results. After `swimParser.js` repoints to `league-results-v2.json` as the primary source for Moore Waves data, this overlay will be the sole source for those annotations.
 
 **When to add an entry:** whenever a new Moore family Waves (SCM) result is added to `swim-results.json` with `pb: true` OR a non-empty `note`, add a corresponding entry here. SCY/757swim results do not need annotation entries.
+
+> **Why they are not needed, and what happens if you add one anyway.** `swimParser.js` consults
+> the annotation map **only** for rows sourced from `league-results-v2.json`, which is VPSU-only;
+> `swim-results.json` rows that survive into the digest carry their own `pb`/`note` instead. So an
+> SCY key such as `Moore Ophelia|25y Breaststroke|2026-09-12` can never match anything. Three such
+> rows exist (the Sept 12, 2026 KickOff) because they were explicitly requested as the
+> forward-looking home for pb/note — they are harmless and completely inert. Not forbidden, just
+> invisible: do not add one expecting it to change any output.
 
 **Schema fields:**
 

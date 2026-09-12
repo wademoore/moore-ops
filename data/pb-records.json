@@ -45,14 +45,16 @@
   "meet": "8 and Under Southeastern"
  },
  "Ophelia|25y Breaststroke|SCY": {
-  "seconds": 41.09,
-  "date": "2025-10-24",
-  "meet": "October Spooktacular"
+  "seconds": 33.37,
+  "date": "2026-09-12",
+  "meet": "757swim Season KickOff",
+  "unofficial": true
  },
  "Ophelia|50y Backstroke|SCY": {
-  "seconds": 89.23,
-  "date": "2026-01-10",
-  "meet": "Splash and Dash"
+  "seconds": 69.08,
+  "date": "2026-09-12",
+  "meet": "757swim Season KickOff",
+  "unofficial": true
  },
  "Ophelia|50y Freestyle|SCY": {
   "seconds": 93.9,
@@ -78,5 +80,11 @@
   "seconds": 156.89,
   "date": "2026-07-20",
   "meet": "WT vs WF"
+ },
+ "Ophelia|25y Butterfly|SCY": {
+  "seconds": 34.44,
+  "date": "2026-09-12",
+  "meet": "757swim Season KickOff",
+  "unofficial": true
  }
 }
