@@ -2337,13 +2337,28 @@ Key IDs:
 
 ## Skills
 
-Skill files are version-controlled in `skills/` in the repo root.
+Skill files are version-controlled in `.claude/skills/`, one directory per skill.
+**There is no top-level `skills/` directory.** This line named one until Sept 12, 2026,
+and `install-skills.ps1` read from that same non-existent path, so the session-start
+command below copied nothing — silently, because `Copy-Item`'s "cannot find path" is a
+*non-terminating* error that the script's `try`/`catch` did not catch: it printed `OK:`
+for every skill and exited 0. No commit reachable from any ref in this repository has
+ever contained a path under `skills/` (scanned with `git ls-tree -r --name-only` over
+`git rev-list --all`), so the script had never worked here.
 
 At the start of any new Claude Code session, run:
 
     .\install-skills.ps1
 
-from the repo root to copy all skill files to the correct Claude Code plugin path. The plugin path includes a session-scoped UUID that changes when the session rotates — this script detects it automatically.
+from the repo root to copy every directory under `.claude/skills/` into the Claude Code
+plugin path. **Windows/PowerShell only** — line 1 reads `$env:LOCALAPPDATA` and builds a
+`\`-separated Windows path.
+
+**What the script detects and what it does not.** The plugin directory on line 1 is a
+hardcoded literal, *including its UUID*. What the script auto-detects is the single
+session folder immediately beneath that directory, and it refuses to guess: it errors out
+if it finds zero session folders and again if it finds more than one. If the hardcoded
+component ever rotates, line 1 has to be edited by hand — nothing detects that.
 
 ### Skills in this repo
 
@@ -2352,6 +2367,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 | `moore-ops-updater` | prose-only | "Updater role" or any request to modify `data/` JSON files |
 | `moore-ops-weekly-review` | prose-only | "Weekly Review", "Weekly Review — Robyn is here", or any household review request |
 | `walmart-cart` | prose-only | Any request to add items to a Walmart cart, or Weekly Review Phase 6 grocery handoff |
+| `waves-weekly-check` | prose-only | Thin coordinator that runs `waves-champs-qualifier` and `waves-team-record-check` together for the weekly Waves review. Trigger (verbatim from its own `SKILL.md` description): `'Weekly Waves check'`, `'weekly swim check'`, `'run this week's Waves check'` |
 | `waves-champs-qualifier` | **committed** `.claude/skills/waves-champs-qualifier/check.js` | Champs qualifier check; any request about who has qualified or is close to qualifying |
 | `waves-team-record-check` | **committed** `.claude/skills/waves-team-record-check/check.js` | Team all-time record check; "did anyone break a record", "record post", Facebook draft |
 | `waves-div1-simulation` | **committed** `.claude/skills/waves-div1-simulation/check.js` | Manual — "simulate WT in Division 1", "what if WT replaced QL" |
@@ -2359,7 +2375,30 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 | `waves-record-progression` | **committed** `.claude/skills/waves-record-progression/check.js` | Manual — WT all-time record progression history; reads `league-results-history-v2.json`, `relay-results-history-v2.json`, `league-results-v2.json`, `relay-results-v2.json`; WT-only filter; console-only output; no test coverage. **Note:** `relay-results-history-v2.json` has a split ageGroup convention — Champs/SA rows use `"Men Open"`/`"Women Open"` (matches record keys directly) while regular-season rows use `"Boys/Girls 9-18"` (does not match). As a result, relay progressions are partially reconstructable: Champs/SA WT relay rows (e.g. 2024/2025 Champs, 2026 Summer Awards) contribute correctly; regular-season relay rows are silently skipped because their ageGroup never matches any relay record key. Confirmed live July 2026: Women Open 200m Medley Relay shows 2 Champs steps, Men Open 200m Medley/Freestyle Relay each show 1 Champs step; the Women Open record holder (regular-season dual meet, "Girls 9-18" label) is not in the progression. A `RELAY_AGEGRP_MAP` normalization (like `waves-team-record-check` uses) would fix the regular-season gap, but has not yet been applied to this script. |
 | `waves-standings` | **committed** `.claude/skills/waves-standings/standings.js` | Manual — VPSU division standings and cross-season division movement. Mode 1: "Waves standings [year]", "VPSU standings [year] Div [N]", "season standings". Mode 2: "division movement", "who moved divisions". CLI: `node standings.js [year] [division]` / `node standings.js --movement`. No digest/dashboard dependency. |
 
-**Note:** the five committed-script skills (`waves-champs-qualifier`, `waves-team-record-check`, `waves-div1-simulation`, `waves-div1-2027-projection`, `waves-record-progression`) run via `node <path>/check.js` (or `project.js`) and must not be re-derived manually from their SKILL.md — the script is authoritative. Prose-only skills are re-derived fresh from SKILL.md each invocation.
+**Note:** the **six** committed-script skills (`waves-champs-qualifier`,
+`waves-team-record-check`, `waves-div1-simulation`, `waves-div1-2027-projection`,
+`waves-record-progression`, `waves-standings`) run via `node <path>/<script>.js` and must
+not be re-derived manually from their SKILL.md — the script is authoritative. The script
+filename is not uniform: `check.js` for four of them, `project.js` for
+`waves-div1-2027-projection`, `standings.js` for `waves-standings`. Prose-only skills are
+re-derived fresh from SKILL.md each invocation.
+
+This note read "the five committed-script skills" and omitted `waves-standings` until
+Sept 12, 2026, while the table immediately above it already marked six rows
+`**committed**` — the count and the thing it counted were in the same section and
+disagreed. The figure is anchored to a command, not to this prose:
+`find .claude/skills -mindepth 2 -name '*.js' -printf '%h\n' | sort -u | wc -l` is the
+count, and it changes when a skill directory gains or loses a `.js`.
+
+**Two of the six have no SKILL.md at all** — `waves-div1-simulation` and
+`waves-div1-2027-projection` ship a script and nothing else
+(`for d in .claude/skills/*/; do [ -f "$d/SKILL.md" ] || echo "$d"; done`). For those two
+the sentence above understates the case: the script is not merely authoritative over a
+SKILL.md, it is the only definition that exists. Both are reached by path rather than by
+skill name in the one place the repo invokes them — `test/skills/` imports
+`../../.claude/skills/waves-div1-simulation/check.js` and
+`../../.claude/skills/waves-div1-2027-projection/project.js` directly — and the table row
+for each gives a `node <path>` invocation rather than a trigger phrase.
 
 **Three committed-script skills repointed to v2 data files in July 2026** (scoped, reviewed change — not a full v1→v2 cutover). `waves-champs-qualifier/check.js` reads `league-results-v2.json` and `league-results-history-v2.json` (history repointed v2 cutover Step 4); `waves-team-record-check/check.js` reads `league-results-v2.json` and `relay-results-v2.json`; `waves-record-progression/check.js` reads all four v2 files (history + current, individual + relay). This caught previously-undetected v1 encoding errors (e.g. Kinsley Welch's 100m IM at WT vs WC and Imogen Bissette's times, each +40.00s from the `minutes × 100` Updater bug). The week anchor in `waves-champs-qualifier/check.js` is currently **Week 6 / 2026-07-20** (`WEEK_NUM = 6`, `WEEK_DATE = '2026-07-20'`, `WEEK_LABEL = 'July 20'`). Advance these constants before each weekly run.
 

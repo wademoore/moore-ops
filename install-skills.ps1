@@ -1,3 +1,10 @@
+# Copies this repo's skills into the Claude Code plugin path.
+# Source of truth for skill content: .claude/skills/ (one directory per skill).
+# See CLAUDE.md, "Skills". Windows/PowerShell only: $env:LOCALAPPDATA below.
+#
+# The plugin directory on the next line is hardcoded, INCLUDING its UUID. Only the
+# session folder immediately beneath it is auto-detected. If the UUID rotates, edit
+# this line by hand -- nothing detects that.
 $pluginParent = "$env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\local-agent-mode-sessions\skills-plugin\601d1d47-d06e-4844-acb0-ca9a54af5b64"
 
 if (-not (Test-Path $pluginParent)) {
@@ -19,17 +26,47 @@ if ($sessionFolders.Count -gt 1) {
 
 $skillsDest = Join-Path $sessionFolders[0].FullName "skills"
 $repoRoot = $PSScriptRoot
-$skillsSrc = Join-Path $repoRoot "skills"
+$skillsSrc = Join-Path (Join-Path $repoRoot ".claude") "skills"
 
-$skills = @("moore-ops-updater", "moore-ops-weekly-review", "walmart-cart", "waves-champs-qualifier", "waves-team-record-check", "waves-weekly-check")
+# Fail loudly rather than reporting OK for a copy that did nothing. Copy-Item's
+# "cannot find path" is a NON-TERMINATING error, so an absent source used to sail
+# past try/catch and still print OK for every skill; these two guards plus the
+# -ErrorAction Stop below are what make a failure actually fail.
+if (-not (Test-Path $skillsSrc)) {
+    Write-Error "Skill source directory not found: $skillsSrc"
+    exit 1
+}
+
+# Enumerated, never hardcoded: a literal list is a second copy of the directory
+# listing and drifts from it. The previous hardcoded list had gone stale by four
+# skills.
+$skills = @(Get-ChildItem -Path $skillsSrc -Directory | Select-Object -ExpandProperty Name | Sort-Object)
+
+if ($skills.Count -eq 0) {
+    Write-Error "No skill directories found under $skillsSrc"
+    exit 1
+}
+
+$failed = 0
 
 foreach ($skill in $skills) {
     $src = Join-Path $skillsSrc $skill
     $dest = Join-Path $skillsDest $skill
     try {
-        Copy-Item -Path $src -Destination $dest -Recurse -Force
+        # Copy the CONTENTS into $dest, not $dest's parent. "Copy-Item $src -Destination
+        # $dest -Recurse" nests <skill>/<skill>/ on any run where $dest already exists.
+        New-Item -ItemType Directory -Force -Path $dest -ErrorAction Stop | Out-Null
+        Copy-Item -Path (Join-Path $src '*') -Destination $dest -Recurse -Force -ErrorAction Stop
         Write-Host "OK: $skill"
     } catch {
         Write-Host "FAIL: $skill - $_"
+        $failed++
     }
 }
+
+if ($failed -gt 0) {
+    Write-Error "$failed of $($skills.Count) skill(s) failed to copy to $skillsDest"
+    exit 1
+}
+
+Write-Host "Copied $($skills.Count) skill(s) to $skillsDest"
