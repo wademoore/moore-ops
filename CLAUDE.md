@@ -2362,12 +2362,13 @@ refuses to guess: it errors out if it finds zero session folders and again if it
 more than one. If the hardcoded component ever rotates, `$pluginParent` has to be edited
 by hand — nothing detects that.
 
-*(These three locators named "line 1" when this section was rewritten on Sept 12, 2026,
-and the same commit prepended a comment header to the script that moved the assignment to
-line 8 — so the prose was falsified by its own change, in the section being rewritten
-because its prose disagreed with the repo. A Reviewer round caught it. They now name the
-variable instead: `grep -n 'pluginParent =' install-skills.ps1` locates it at whatever
-line it has drifted to.)*
+*(These three locators named a fixed line number when this section was rewritten on
+Sept 12, 2026, and the same commit prepended a comment header to the script that pushed
+the assignment further down — so the prose was falsified by its own change, in the section
+being rewritten because its prose disagreed with the repo. A Reviewer round caught it.
+They now name the variable instead: `grep -n 'pluginParent =' install-skills.ps1` locates
+it wherever it has drifted to. No line number is restated here, deliberately — a live
+figure inside a retraction is one more place to rot.)*
 
 ### Skills in this repo
 
@@ -2825,22 +2826,27 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
           2026-08-04 so does not need to be specified anymore.
   ```
 
-  The assertion did not see a wrong diagnostic — it saw workerd's own startup deprecation
-  warning where it expected the diagnostic line, so the reading appears to race workerd's
-  stderr rather than to test a changed behaviour. **Measured, with no rate claimed:** one
-  failure in three browser-enabled full-suite runs that day, and **0 failures in five
-  isolated runs** of `node --experimental-vm-modules --test
-  test/worker/workerd-runtime.test.js` (22/22 each time). The failing and the following
-  green full-suite run were on a byte-identical tree — the same `git diff | sha256sum`,
-  `975c2ad3…` — and that change touched only `CLAUDE.md` and `install-skills.ps1`, neither
-  of which is under the three globbed directories nor imported by any test, so it cannot
-  be the cause.
+  The assertion did not see a *wrong* diagnostic — it saw workerd's own startup deprecation
+  warning where it expected the diagnostic line, so the read appears to sample the log
+  before the line arrives rather than to test a changed behaviour. `workerd-harness.js`
+  pushes both `child.stdout` and `child.stderr` into one buffer (lines 328-331), so the
+  stream is not a variable here and no stream name is named.
 
-  **Three runs is not a rate**, and the isolated runs do not disprove the load hypothesis —
-  they are the *easy* case for a race. Not fixed here: the session that found it was
-  correcting the Skills section and `test/worker/` was outside its remit. The next session
-  to touch `worker/mobile-dashboard/` or `test/worker/` should decide whether the read
-  waits for the diagnostic rather than sampling stderr once.
+  **No rate is claimed, and no run count is recorded here on purpose** — a denominator
+  that counts suite runs is invalidated by the next suite run, including the author's own
+  verification run, which is how a first draft of this entry went stale before it shipped.
+  Two things are anchored to something that only moves when the measured thing moves.
+  **It did not reproduce in isolation:** `node --experimental-vm-modules --test
+  test/worker/workerd-runtime.test.js` passed **22/22 in five consecutive runs**. **It
+  cannot have been caused by the change that found it:** `git diff origin/main
+  --name-only -- test/ digest/ render/` was empty on that tree, so no globbed test input
+  differed from `origin/main` at all.
+
+  The isolated runs do not disprove a load-dependent race — they are the *easy* case for
+  one. Not fixed here: the session that found it was correcting the Skills section and
+  `test/worker/` was outside its remit. The next session to touch
+  `worker/mobile-dashboard/` or `test/worker/` should decide whether that read waits for
+  the expected line rather than sampling the merged buffer once.
 
 - **The `permissions.deny` block is the one enforcement mechanism no test asserts
   (Sept 11, 2026).** `.claude/settings.json` declares six mechanisms; after this date
@@ -3013,6 +3019,14 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
   file on the first run** — five captured re-runs after the fact caught nothing, which is
   the whole difficulty with a rare event, and capturing it is the only thing that would
   settle which of the three is true.
+
+  **⚠ That capture was taken on Sept 12, 2026, and it was a different test** — see the
+  workerd entry at the top of Known open items. It does not resolve the three
+  possibilities above for the sightings *already recorded here*, because it is a fresh
+  sighting rather than an identification of an earlier one. What it does establish is that
+  `# fail 1` / `# cancelled 0` / non-reproducing is **not a discriminating signature**:
+  at least two mechanisms in this suite produce it. Do not read a future lone failure of
+  that shape as this entry's flake without capturing the name.
 
   **Proved deterministically**, not by frequency: stubbing `Date` so the second
   render lands 200 ms later in the *next* minute makes the documents differ, and

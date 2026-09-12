@@ -2,9 +2,11 @@
 # Source of truth for skill content: .claude/skills/ (one directory per skill).
 # See CLAUDE.md, "Skills". Windows/PowerShell only: $env:LOCALAPPDATA below.
 #
-# The plugin directory on the next line is hardcoded, INCLUDING its UUID. Only the
-# session folder immediately beneath it is auto-detected. If the UUID rotates, edit
-# this line by hand -- nothing detects that.
+# The plugin directory in the $pluginParent assignment below is hardcoded, INCLUDING
+# its UUID. Only the session folder immediately beneath it is auto-detected. If the
+# UUID rotates, edit $pluginParent by hand -- nothing detects that. (Named by variable
+# rather than by position: CLAUDE.md's copy of this note used a line number and was
+# falsified by the commit that added these very comment lines.)
 $pluginParent = "$env:LOCALAPPDATA\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude\local-agent-mode-sessions\skills-plugin\601d1d47-d06e-4844-acb0-ca9a54af5b64"
 
 if (-not (Test-Path $pluginParent)) {
