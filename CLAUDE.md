@@ -2342,23 +2342,32 @@ Skill files are version-controlled in `.claude/skills/`, one directory per skill
 and `install-skills.ps1` read from that same non-existent path, so the session-start
 command below copied nothing — silently, because `Copy-Item`'s "cannot find path" is a
 *non-terminating* error that the script's `try`/`catch` did not catch: it printed `OK:`
-for every skill and exited 0. No commit reachable from any ref in this repository has
-ever contained a path under `skills/` (scanned with `git ls-tree -r --name-only` over
-`git rev-list --all`), so the script had never worked here.
+for each of the six names in its hardcoded list and exited 0. No commit reachable from
+any ref in this repository has ever contained a path under `skills/` — re-derive with
+`git log --all --oneline -- 'skills'` and `git log --all --diff-filter=A --name-only --
+'skills/'`, both of which return nothing — so the script had never worked here.
 
 At the start of any new Claude Code session, run:
 
     .\install-skills.ps1
 
 from the repo root to copy every directory under `.claude/skills/` into the Claude Code
-plugin path. **Windows/PowerShell only** — line 1 reads `$env:LOCALAPPDATA` and builds a
-`\`-separated Windows path.
+plugin path. **Windows/PowerShell only** — the `$pluginParent` assignment reads
+`$env:LOCALAPPDATA` and builds a `\`-separated Windows path.
 
-**What the script detects and what it does not.** The plugin directory on line 1 is a
-hardcoded literal, *including its UUID*. What the script auto-detects is the single
-session folder immediately beneath that directory, and it refuses to guess: it errors out
-if it finds zero session folders and again if it finds more than one. If the hardcoded
-component ever rotates, line 1 has to be edited by hand — nothing detects that.
+**What the script detects and what it does not.** The plugin directory in the
+`$pluginParent` assignment is a hardcoded literal, *including its UUID*. What the script
+auto-detects is the single session folder immediately beneath that directory, and it
+refuses to guess: it errors out if it finds zero session folders and again if it finds
+more than one. If the hardcoded component ever rotates, `$pluginParent` has to be edited
+by hand — nothing detects that.
+
+*(These three locators named "line 1" when this section was rewritten on Sept 12, 2026,
+and the same commit prepended a comment header to the script that moved the assignment to
+line 8 — so the prose was falsified by its own change, in the section being rewritten
+because its prose disagreed with the repo. A Reviewer round caught it. They now name the
+variable instead: `grep -n 'pluginParent =' install-skills.ps1` locates it at whatever
+line it has drifted to.)*
 
 ### Skills in this repo
 
@@ -2388,17 +2397,23 @@ Sept 12, 2026, while the table immediately above it already marked six rows
 `**committed**` — the count and the thing it counted were in the same section and
 disagreed. The figure is anchored to a command, not to this prose:
 `find .claude/skills -mindepth 2 -name '*.js' -printf '%h\n' | sort -u | wc -l` is the
-count, and it changes when a skill directory gains or loses a `.js`.
+count. It counts *directories holding at least one* `.js`, so it moves only when a
+directory gains its first or loses its last one — `waves-champs-qualifier` holds two
+(`check.js` and `helpers.js`), and deleting `helpers.js` would leave the count at six.
 
 **Two of the six have no SKILL.md at all** — `waves-div1-simulation` and
 `waves-div1-2027-projection` ship a script and nothing else
 (`for d in .claude/skills/*/; do [ -f "$d/SKILL.md" ] || echo "$d"; done`). For those two
 the sentence above understates the case: the script is not merely authoritative over a
-SKILL.md, it is the only definition that exists. Both are reached by path rather than by
-skill name in the one place the repo invokes them — `test/skills/` imports
+SKILL.md, it is the only definition that exists. The one place the repo's *code* reaches
+either of them, it reaches them by path rather than by skill name — `test/skills/` imports
 `../../.claude/skills/waves-div1-simulation/check.js` and
-`../../.claude/skills/waves-div1-2027-projection/project.js` directly — and the table row
-for each gives a `node <path>` invocation rather than a trigger phrase.
+`../../.claude/skills/waves-div1-2027-projection/project.js` directly.
+
+*(A clause here also claimed the table row for each gives a `node <path>` invocation
+rather than a trigger phrase. That was false in both rows — each Trigger cell holds quoted
+trigger phrases, and the only row carrying a `node` invocation is `waves-standings`, which
+is not one of the two. Deleted rather than softened; a Reviewer round caught it.)*
 
 **Three committed-script skills repointed to v2 data files in July 2026** (scoped, reviewed change — not a full v1→v2 cutover). `waves-champs-qualifier/check.js` reads `league-results-v2.json` and `league-results-history-v2.json` (history repointed v2 cutover Step 4); `waves-team-record-check/check.js` reads `league-results-v2.json` and `relay-results-v2.json`; `waves-record-progression/check.js` reads all four v2 files (history + current, individual + relay). This caught previously-undetected v1 encoding errors (e.g. Kinsley Welch's 100m IM at WT vs WC and Imogen Bissette's times, each +40.00s from the `minutes × 100` Updater bug). The week anchor in `waves-champs-qualifier/check.js` is currently **Week 6 / 2026-07-20** (`WEEK_NUM = 6`, `WEEK_DATE = '2026-07-20'`, `WEEK_LABEL = 'July 20'`). Advance these constants before each weekly run.
 
@@ -2793,6 +2808,39 @@ because the second attaches to the same source file and nothing else points at i
 abort behaviour is read from the two harnesses, not from the removed text.)*
 
 ## Known open items
+
+- **A lone non-reproducing suite failure was captured on Sept 12, 2026, and it was NOT the
+  documented `render/dashboard-v2.test.js` clock flake.** The open item below asks whoever
+  meets such a failure to capture the TAP on the first run, because five captured re-runs
+  after the fact had caught nothing. This is that capture, and it names a different test:
+
+  ```
+  not ok 955 - the serve-failure diagnostic, inside workerd
+    location: 'test/worker/workerd-runtime.test.js:207:1'
+      not ok 1 - writes one line naming the underlying error a real storage failure produced
+        location: 'test/worker/workerd-runtime.test.js:217:3'
+        error: |-
+          expected a diagnostic line, workerd wrote:
+          service serving: The compatibility flag nodejs_compat became the default as of
+          2026-08-04 so does not need to be specified anymore.
+  ```
+
+  The assertion did not see a wrong diagnostic — it saw workerd's own startup deprecation
+  warning where it expected the diagnostic line, so the reading appears to race workerd's
+  stderr rather than to test a changed behaviour. **Measured, with no rate claimed:** one
+  failure in three browser-enabled full-suite runs that day, and **0 failures in five
+  isolated runs** of `node --experimental-vm-modules --test
+  test/worker/workerd-runtime.test.js` (22/22 each time). The failing and the following
+  green full-suite run were on a byte-identical tree — the same `git diff | sha256sum`,
+  `975c2ad3…` — and that change touched only `CLAUDE.md` and `install-skills.ps1`, neither
+  of which is under the three globbed directories nor imported by any test, so it cannot
+  be the cause.
+
+  **Three runs is not a rate**, and the isolated runs do not disprove the load hypothesis —
+  they are the *easy* case for a race. Not fixed here: the session that found it was
+  correcting the Skills section and `test/worker/` was outside its remit. The next session
+  to touch `worker/mobile-dashboard/` or `test/worker/` should decide whether the read
+  waits for the diagnostic rather than sampling stderr once.
 
 - **The `permissions.deny` block is the one enforcement mechanism no test asserts
   (Sept 11, 2026).** `.claude/settings.json` declares six mechanisms; after this date

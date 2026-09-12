@@ -30,8 +30,9 @@ $skillsSrc = Join-Path (Join-Path $repoRoot ".claude") "skills"
 
 # Fail loudly rather than reporting OK for a copy that did nothing. Copy-Item's
 # "cannot find path" is a NON-TERMINATING error, so an absent source used to sail
-# past try/catch and still print OK for every skill; these two guards plus the
-# -ErrorAction Stop below are what make a failure actually fail.
+# past try/catch and still print OK for every name in the hardcoded list; these two
+# guards, the per-skill empty-directory check in the loop, and -ErrorAction Stop are
+# together what make a failure actually fail.
 if (-not (Test-Path $skillsSrc)) {
     Write-Error "Skill source directory not found: $skillsSrc"
     exit 1
@@ -53,6 +54,13 @@ foreach ($skill in $skills) {
     $src = Join-Path $skillsSrc $skill
     $dest = Join-Path $skillsDest $skill
     try {
+        # An EMPTY source directory is the one residual of the silent-success bug: the
+        # wildcard below matches nothing, which is not an ItemNotFound error, so
+        # -ErrorAction Stop does not fire and the loop would print OK having copied
+        # nothing. Verified under PowerShell 7.4.6. Check explicitly instead.
+        if (-not (Get-ChildItem -Path $src -Force)) {
+            throw "source directory is empty"
+        }
         # Copy the CONTENTS into $dest, not $dest's parent. "Copy-Item $src -Destination
         # $dest -Recurse" nests <skill>/<skill>/ on any run where $dest already exists.
         New-Item -ItemType Directory -Force -Path $dest -ErrorAction Stop | Out-Null
