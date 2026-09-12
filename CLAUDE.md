@@ -2337,13 +2337,38 @@ Key IDs:
 
 ## Skills
 
-Skill files are version-controlled in `skills/` in the repo root.
+Skill files are version-controlled in `.claude/skills/`, one directory per skill.
+**There is no top-level `skills/` directory.** This line named one until Sept 12, 2026,
+and `install-skills.ps1` read from that same non-existent path, so the session-start
+command below copied nothing — silently, because `Copy-Item`'s "cannot find path" is a
+*non-terminating* error that the script's `try`/`catch` did not catch: it printed `OK:`
+for each of the six names in its hardcoded list and exited 0. No commit reachable from
+any ref in this repository has ever contained a path under `skills/` — re-derive with
+`git log --all --oneline -- 'skills'` and `git log --all --diff-filter=A --name-only --
+'skills/'`, both of which return nothing — so the script had never worked here.
 
 At the start of any new Claude Code session, run:
 
     .\install-skills.ps1
 
-from the repo root to copy all skill files to the correct Claude Code plugin path. The plugin path includes a session-scoped UUID that changes when the session rotates — this script detects it automatically.
+from the repo root to copy every directory under `.claude/skills/` into the Claude Code
+plugin path. **Windows/PowerShell only** — the `$pluginParent` assignment reads
+`$env:LOCALAPPDATA` and builds a `\`-separated Windows path.
+
+**What the script detects and what it does not.** The plugin directory in the
+`$pluginParent` assignment is a hardcoded literal, *including its UUID*. What the script
+auto-detects is the single session folder immediately beneath that directory, and it
+refuses to guess: it errors out if it finds zero session folders and again if it finds
+more than one. If the hardcoded component ever rotates, `$pluginParent` has to be edited
+by hand — nothing detects that.
+
+*(These three locators named a fixed line number when this section was rewritten on
+Sept 12, 2026, and the same commit prepended a comment header to the script that pushed
+the assignment further down — so the prose was falsified by its own change, in the section
+being rewritten because its prose disagreed with the repo. A Reviewer round caught it.
+They now name the variable instead: `grep -n 'pluginParent =' install-skills.ps1` locates
+it wherever it has drifted to. No line number is restated here, deliberately — a live
+figure inside a retraction is one more place to rot.)*
 
 ### Skills in this repo
 
@@ -2352,6 +2377,7 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 | `moore-ops-updater` | prose-only | "Updater role" or any request to modify `data/` JSON files |
 | `moore-ops-weekly-review` | prose-only | "Weekly Review", "Weekly Review — Robyn is here", or any household review request |
 | `walmart-cart` | prose-only | Any request to add items to a Walmart cart, or Weekly Review Phase 6 grocery handoff |
+| `waves-weekly-check` | prose-only | Thin coordinator that runs `waves-champs-qualifier` and `waves-team-record-check` together for the weekly Waves review. Trigger (verbatim from its own `SKILL.md` description): `'Weekly Waves check'`, `'weekly swim check'`, `'run this week's Waves check'` |
 | `waves-champs-qualifier` | **committed** `.claude/skills/waves-champs-qualifier/check.js` | Champs qualifier check; any request about who has qualified or is close to qualifying |
 | `waves-team-record-check` | **committed** `.claude/skills/waves-team-record-check/check.js` | Team all-time record check; "did anyone break a record", "record post", Facebook draft |
 | `waves-div1-simulation` | **committed** `.claude/skills/waves-div1-simulation/check.js` | Manual — "simulate WT in Division 1", "what if WT replaced QL" |
@@ -2359,7 +2385,36 @@ from the repo root to copy all skill files to the correct Claude Code plugin pat
 | `waves-record-progression` | **committed** `.claude/skills/waves-record-progression/check.js` | Manual — WT all-time record progression history; reads `league-results-history-v2.json`, `relay-results-history-v2.json`, `league-results-v2.json`, `relay-results-v2.json`; WT-only filter; console-only output; no test coverage. **Note:** `relay-results-history-v2.json` has a split ageGroup convention — Champs/SA rows use `"Men Open"`/`"Women Open"` (matches record keys directly) while regular-season rows use `"Boys/Girls 9-18"` (does not match). As a result, relay progressions are partially reconstructable: Champs/SA WT relay rows (e.g. 2024/2025 Champs, 2026 Summer Awards) contribute correctly; regular-season relay rows are silently skipped because their ageGroup never matches any relay record key. Confirmed live July 2026: Women Open 200m Medley Relay shows 2 Champs steps, Men Open 200m Medley/Freestyle Relay each show 1 Champs step; the Women Open record holder (regular-season dual meet, "Girls 9-18" label) is not in the progression. A `RELAY_AGEGRP_MAP` normalization (like `waves-team-record-check` uses) would fix the regular-season gap, but has not yet been applied to this script. |
 | `waves-standings` | **committed** `.claude/skills/waves-standings/standings.js` | Manual — VPSU division standings and cross-season division movement. Mode 1: "Waves standings [year]", "VPSU standings [year] Div [N]", "season standings". Mode 2: "division movement", "who moved divisions". CLI: `node standings.js [year] [division]` / `node standings.js --movement`. No digest/dashboard dependency. |
 
-**Note:** the five committed-script skills (`waves-champs-qualifier`, `waves-team-record-check`, `waves-div1-simulation`, `waves-div1-2027-projection`, `waves-record-progression`) run via `node <path>/check.js` (or `project.js`) and must not be re-derived manually from their SKILL.md — the script is authoritative. Prose-only skills are re-derived fresh from SKILL.md each invocation.
+**Note:** the **six** committed-script skills (`waves-champs-qualifier`,
+`waves-team-record-check`, `waves-div1-simulation`, `waves-div1-2027-projection`,
+`waves-record-progression`, `waves-standings`) run via `node <path>/<script>.js` and must
+not be re-derived manually from their SKILL.md — the script is authoritative. The script
+filename is not uniform: `check.js` for four of them, `project.js` for
+`waves-div1-2027-projection`, `standings.js` for `waves-standings`. Prose-only skills are
+re-derived fresh from SKILL.md each invocation.
+
+This note read "the five committed-script skills" and omitted `waves-standings` until
+Sept 12, 2026, while the table immediately above it already marked six rows
+`**committed**` — the count and the thing it counted were in the same section and
+disagreed. The figure is anchored to a command, not to this prose:
+`find .claude/skills -mindepth 2 -name '*.js' -printf '%h\n' | sort -u | wc -l` is the
+count. It counts *directories holding at least one* `.js`, so it moves only when a
+directory gains its first or loses its last one — `waves-champs-qualifier` holds two
+(`check.js` and `helpers.js`), and deleting `helpers.js` would leave the count at six.
+
+**Two of the six have no SKILL.md at all** — `waves-div1-simulation` and
+`waves-div1-2027-projection` ship a script and nothing else
+(`for d in .claude/skills/*/; do [ -f "$d/SKILL.md" ] || echo "$d"; done`). For those two
+the sentence above understates the case: the script is not merely authoritative over a
+SKILL.md, it is the only definition that exists. The one place the repo's *code* reaches
+either of them, it reaches them by path rather than by skill name — `test/skills/` imports
+`../../.claude/skills/waves-div1-simulation/check.js` and
+`../../.claude/skills/waves-div1-2027-projection/project.js` directly.
+
+*(A clause here also claimed the table row for each gives a `node <path>` invocation
+rather than a trigger phrase. That was false in both rows — each Trigger cell holds quoted
+trigger phrases, and the only row carrying a `node` invocation is `waves-standings`, which
+is not one of the two. Deleted rather than softened; a Reviewer round caught it.)*
 
 **Three committed-script skills repointed to v2 data files in July 2026** (scoped, reviewed change — not a full v1→v2 cutover). `waves-champs-qualifier/check.js` reads `league-results-v2.json` and `league-results-history-v2.json` (history repointed v2 cutover Step 4); `waves-team-record-check/check.js` reads `league-results-v2.json` and `relay-results-v2.json`; `waves-record-progression/check.js` reads all four v2 files (history + current, individual + relay). This caught previously-undetected v1 encoding errors (e.g. Kinsley Welch's 100m IM at WT vs WC and Imogen Bissette's times, each +40.00s from the `minutes × 100` Updater bug). The week anchor in `waves-champs-qualifier/check.js` is currently **Week 6 / 2026-07-20** (`WEEK_NUM = 6`, `WEEK_DATE = '2026-07-20'`, `WEEK_LABEL = 'July 20'`). Advance these constants before each weekly run.
 
@@ -2755,6 +2810,44 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
 
 ## Known open items
 
+- **A lone non-reproducing suite failure was captured on Sept 12, 2026, and it was NOT the
+  documented `render/dashboard-v2.test.js` clock flake.** The open item below asks whoever
+  meets such a failure to capture the TAP on the first run, because five captured re-runs
+  after the fact had caught nothing. This is that capture, and it names a different test:
+
+  ```
+  not ok 955 - the serve-failure diagnostic, inside workerd
+    location: 'test/worker/workerd-runtime.test.js:207:1'
+      not ok 1 - writes one line naming the underlying error a real storage failure produced
+        location: 'test/worker/workerd-runtime.test.js:217:3'
+        error: |-
+          expected a diagnostic line, workerd wrote:
+          service serving: The compatibility flag nodejs_compat became the default as of
+          2026-08-04 so does not need to be specified anymore.
+  ```
+
+  The assertion did not see a *wrong* diagnostic — it saw workerd's own startup deprecation
+  warning where it expected the diagnostic line, so the read appears to sample the log
+  before the line arrives rather than to test a changed behaviour. `workerd-harness.js`
+  pushes both `child.stdout` and `child.stderr` into one buffer (lines 328-331), so the
+  stream is not a variable here and no stream name is named.
+
+  **No rate is claimed, and no run count is recorded here on purpose** — a denominator
+  that counts suite runs is invalidated by the next suite run, including the author's own
+  verification run, which is how a first draft of this entry went stale before it shipped.
+  Two things are anchored to something that only moves when the measured thing moves.
+  **It did not reproduce in isolation:** `node --experimental-vm-modules --test
+  test/worker/workerd-runtime.test.js` passed **22/22 in five consecutive runs**. **It
+  cannot have been caused by the change that found it:** `git diff origin/main
+  --name-only -- test/ digest/ render/` was empty on that tree, so no globbed test input
+  differed from `origin/main` at all.
+
+  The isolated runs do not disprove a load-dependent race — they are the *easy* case for
+  one. Not fixed here: the session that found it was correcting the Skills section and
+  `test/worker/` was outside its remit. The next session to touch
+  `worker/mobile-dashboard/` or `test/worker/` should decide whether that read waits for
+  the expected line rather than sampling the merged buffer once.
+
 - **The `permissions.deny` block is the one enforcement mechanism no test asserts
   (Sept 11, 2026).** `.claude/settings.json` declares six mechanisms; after this date
   `test/hooks/enforcement-wiring.test.js` asserts five. The sixth is the `deny` array
@@ -2926,6 +3019,14 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
   file on the first run** — five captured re-runs after the fact caught nothing, which is
   the whole difficulty with a rare event, and capturing it is the only thing that would
   settle which of the three is true.
+
+  **⚠ That capture was taken on Sept 12, 2026, and it was a different test** — see the
+  workerd entry at the top of Known open items. It does not resolve the three
+  possibilities above for the sightings *already recorded here*, because it is a fresh
+  sighting rather than an identification of an earlier one. What it does establish is that
+  `# fail 1` / `# cancelled 0` / non-reproducing is **not a discriminating signature**:
+  at least two mechanisms in this suite produce it. Do not read a future lone failure of
+  that shape as this entry's flake without capturing the name.
 
   **Proved deterministically**, not by frequency: stubbing `Date` so the second
   render lands 200 ms later in the *next* minute makes the documents differ, and
