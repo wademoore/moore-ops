@@ -153,7 +153,7 @@ Confidence levels used here align with the standards in [01-editorial-charter.md
 
 **What it cannot prove:**
 - The margin by which a record was broken (must derive from the current record `time` vs. the new swim's time)
-- Records for age groups not covered (Girls 7-8 and Boys 7-8 brackets are absent — confirmed intentional per CLAUDE.md's `waves-team-record-check` skill notes)
+- Records for age groups not covered (Girls 7-8 and Boys 7-8 brackets are absent — confirmed intentional; the skipping rule is in `.claude/skills/waves-team-record-check/SKILL.md` and both brackets are named in that skill's `check.js` footer note)
 - Placement context (how the record-breaking swim placed in its heat)
 
 **Confidence level:** HIGH for times and holders. MEDIUM for historical records where `meetDate`/`meet`/`location` are null — some older records (pre-2013) lack this metadata.
@@ -250,6 +250,6 @@ Several editorial findings require joining multiple datasets. Known patterns:
 | "Personal best swim" | `league-results.json` + `pb-records.json` (Moore only) | Non-Moore PBs must be derived from `league-results.json` alone |
 | "Team record broken" | `league-results.json` + `waves-team-records.json` | Use `waves-team-record-check` skill output as authoritative; do not derive independently |
 | "New championship qualifier" | `league-results.json` + `sports-config.json` | Use `waves-champs-qualifier` skill output as authoritative |
-| "First time ever qualifier" | `league-results.json` + `league-results-history.json` + `swim-results.json` | See CLAUDE.md "hasAnyPriorQual" notes for known edge cases |
+| "First time ever qualifier" | `league-results.json` + `league-results-history.json` + `swim-results.json` | See `.claude/skills/waves-champs-qualifier/SKILL.md` "Data-format stability" / "SCY/yards rows" for known edge cases |
 | "VPSU top-50 placement" | `vpsu-rankings.json` | Moore swimmers only; cite `asOf` date |
 | "Division record / standings" | `waves-season.json` | Exclude `friendly` meets from record |
