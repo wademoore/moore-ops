@@ -314,17 +314,112 @@ human re-checking the data later, not an input to any parser.
 { "matchNumber": 641, "played": true, "homeScore": 1, "awayScore": 10, "unverified": true }
 ```
 
+### `forfeit: true` — a match awarded rather than played to a result (added Sept 14, 2026)
+
+Decided in conversation with Wade on this date; this paragraph is the first and only place
+it is written down. Not a pre-existing repo-wide convention — do not cite it as one.
+
+Set it on a match object whose `homeScore`/`awayScore` were awarded because a side did not
+field a team, rather than scored in play. **Absence means the result was played** — do not
+write `forfeit: false` on an ordinary row.
+
+Why carry it at all: an awarded score is an administrative outcome, not a scoreline, so
+anything that eventually derives standings from these rows needs to be able to keep it out
+of played-result arithmetic — goals for/against in particular. That is the forward-looking
+reason. It is **not** a live defect today: `digest/sharksParser.js` derives `seasonRecord`
+only from rows where `isSharksTeam()` matches one side, and the one row carrying the flag is
+between two other clubs. The `divisionStanding` that same parser returns is read straight
+out of this file's own `standings.teams` block, not computed from the match rows at all.
+
+One row carries it as of this writing — match 637 (2026-08-29, Chesapeake United Reapers
+3–0 VA Rush Killer Bees), entered in commit `b4dc214` (PR #77). `git grep -w forfeit` across
+the repository returns that single line of data and nothing else: no parser, no test.
+
+```json
+{ "matchNumber": 637, "played": true, "homeScore": 3, "awayScore": 0, "forfeit": true }
+```
+
+### `note` on a match row — free text for a caveat no other column carries (documented Sept 14, 2026)
+
+This field has been in the file since it was first added (commit `ba113fb`), longer than
+either key above; what was decided in conversation with Wade on this date is that it should
+be written down, and this paragraph is the first and only place that has happened. Not a
+pre-existing repo-wide convention — do not cite it as one.
+
+**Do not confuse it with `seasons[n].divisionSchedule.note`**, which is a separate,
+schedule-level field that predates all of this and describes the schedule as a whole.
+
+A row `note` is prose for a human reading the data later. Two distinct uses are present, and
+both are legitimate — do not narrow the field to either one:
+
+- **Recording that a fixture is anomalous.** Two rows do this, matches 640 and 674
+  (both 2026-09-12, one club scheduled at the same venue 90 minutes apart against two
+  different opponents), entered in commit
+  `d70f280` (PR #78). Their text opens, verbatim, `Unexplained, not ordinarily pending:` and
+  goes on to record that both remain unplayed with no result posted days after every other
+  fixture that day posted one. The phrasing matters: it distinguishes a result that is
+  *missing without explanation* from one merely not yet entered.
+- **Household or data caveats on an ordinary fixture.** Five rows do this — calendar
+  conflicts with W&M home games, a doubleheader cross-reference between matches 658 and 635,
+  and a venue-label discrepancy on match 673. All five date to commit `ba113fb` and are not
+  anomaly reports. Leave them alone.
+
+**Most rows carry no `note`, and that is the ordinary case** — 7 of 44 rows have one as of
+this writing. Do not add one to a fixture that has nothing unusual about it.
+
+Nothing reads this key or `forfeit`. Verified against the readers of this file:
+`digest/sharksParser.js` (which reads `homeTeam`, `awayTeam`, `played`, `homeScore`,
+`awayScore`, `date`, `time`, `venue` and `address`), the `findFixture()` helpers in
+`digest/familySpotlightSelector.js` and `digest/specialEventQualify.js` (which read only
+immutable columns by design), and `test/data.test.js`, which asserts the file's array shape
+and no row keys at all. Both keys are provenance for a human, not an input to any parser.
+
+```json
+{ "matchNumber": 640, "note": "Unexplained, not ordinarily pending: …", "played": false, "homeScore": null, "awayScore": null }
+```
+
 ---
 
 ## Commit and push protocol
 
+**A feature branch and a pull request are the only route to `main`. Do not push to
+`main` — it cannot succeed, and an earlier version of this section told you to.**
+
 After every data change:
 
-1. `git add data/<filename>.json`
-2. `git commit -m "Updater: <brief description of change>"`
-3. `git push origin main`
+1. Confirm you are not on `main`; create or check out a feature branch if you are.
+2. `git add data/<filename>.json`
+3. `git commit -m "Updater: <brief description of change>"`
+4. `git push -u origin <your-branch>`
+5. Run the Reviewer subagent over the diff and get a pass.
+6. Open the pull request. **Stop there — do not merge.**
 
 **Do not batch unrelated changes into one commit.** One logical update = one commit.
+
+### Why the old `git push origin main` step could never work
+
+Three separate mechanisms refuse it, and only the third is real enforcement. Read
+directly from the shipped files rather than summarised from memory:
+
+- **`.claude/settings.json`** — `permissions.deny` carries four rules,
+  `Bash(git push * main)`, `Bash(git push * main *)`, `Bash(git push * *:main)` and
+  `Bash(git push * *:main *)`. `git push origin main` matches the first.
+- **`.claude/hooks/block-main-push.mjs`** — a `PreToolUse` hook on `Bash|PowerShell`.
+  It exits 2 on any `git push` command whose text matches `/\bmain\b/`, **or** while
+  `main` is the checked-out branch. Its message, verbatim: `Blocked: pushes to main
+  are not permitted. Commit to a branch and open a PR.`
+- **Server-side branch protection on `main`** — the actual gate, and the only one that
+  binds routes other than Bash. Confirmed at the GitHub branch API: `main` reports
+  `"protected": true`; every other branch in the repo reports `false`.
+
+**Two consequences for the commands you type.** First, the hook reads the *whole*
+command string, so a compound or quoted command that merely mentions `main` is refused
+even when the push targets a feature branch — split it rather than working around it.
+Second, `.claude/hooks/require-review.mjs` runs on `Stop` and blocks the turn while any
+commit past the branch base lacks a passing Reviewer verdict, which is why step 5 is
+part of this protocol and not something to leave until afterwards. `.claude/agents/reviewer.md`
+item 7 expects exactly what steps 1-6 produce: work "committed and pushed to a feature
+branch, and that a PR exists or is ready to open."
 
 Example commit messages:
 ```
@@ -340,7 +435,7 @@ Updater: add Waves vs EH meet result 2026-06-22
 
 - [ ] All keys verified against naming conventions (not abbreviated)
 - [ ] All times converted to decimal seconds
-- [ ] Committed and pushed to main
+- [ ] Committed to a feature branch, branch pushed, Reviewer passed, PR opened, not merged
 - [ ] No logic files touched
 - [ ] User confirmed the changes look correct
 
