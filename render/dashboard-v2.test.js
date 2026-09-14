@@ -1052,3 +1052,26 @@ describe('dashboard v2 alerts panel — noteOnly flags', () => {
     assert.doesNotMatch(panel([banner]), /Celebration/);
   });
 });
+
+describe('dashboard v2 alerts panel — note capacity', () => {
+  // The cards are capped at three; the notes were capped at nothing. Unreachable
+  // today (one flag sets noteOnly) but the tier is generic, and the band is a
+  // fixed-height flex row with no wrap, so an uncapped list would be the next
+  // adopter's problem rather than a decision anyone took.
+  const note = n => ({ id: `note-${n}`, level: 'blue', noteOnly: true, title: `Note ${n}`, body: `Body ${n}` });
+  const panel = flags => renderDashboardV2({ ...sampleDashboardV2Data, flags })
+    .match(/<section class="alerts-panel">[\s\S]*?<\/section>/)[0];
+
+  it('renders at most two notes', () => {
+    const rendered = panel([note(1), note(2), note(3)]);
+    assert.equal((rendered.match(/class="alert-note/g) || []).length, 2);
+    assert.doesNotMatch(rendered, /Note 3/);
+  });
+
+  it('caps the notes without disturbing the three card positions', () => {
+    const alert = n => ({ id: `alert-${n}`, level: 'amber', title: `Alert ${n}`, body: `Body ${n}` });
+    const rendered = panel([alert(1), alert(2), alert(3), note(1), note(2), note(3)]);
+    assert.equal((rendered.match(/class="alert-card/g) || []).length, 3);
+    assert.equal((rendered.match(/class="alert-note/g) || []).length, 2);
+  });
+});

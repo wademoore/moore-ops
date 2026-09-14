@@ -147,6 +147,19 @@ describe('Kid activity overlap', () => {
       assert.notEqual(overlapFlag().bannerOnly, true);
     });
 
+    it('leads the body with the standing default, so truncation cannot eat it', () => {
+      // Order is load-bearing, not stylistic. `desc` is a cross product of the
+      // overlapping pairs, so it grows without bound, while the note renders in
+      // a fixed 92px band. Measured at 2560×1440 with the default trailing: at
+      // two pairs only 51.3% of the body was visible and the ellipsis had
+      // removed this whole sentence. render/dashboard-v2-layout.test.js asserts
+      // the rendered consequence; this asserts the shape that produces it.
+      assert.ok(
+        overlapFlag().body.startsWith('Standing default: Wade takes Myles, Robyn takes Ophelia.'),
+        `body must lead with the standing default, got: ${overlapFlag().body}`,
+      );
+    });
+
     it('states the standing default without asking for a decision', () => {
       const flag = overlapFlag();
       assert.match(flag.body, /Standing default: Wade takes Myles, Robyn takes Ophelia/);

@@ -221,12 +221,24 @@ const EVALUATORS = [
     // contradict `level: 'blue'`; 'Split Coverage Needed' and 'Confirm both can
     // cover' assert an open decision, which is the framing being retired — the
     // note states the pairing and the standing default and asks for nothing.
+    //
+    // THE STANDING DEFAULT LEADS, and the order is load-bearing rather than
+    // stylistic. `desc` is a cross product — two overlapping pairs produce four
+    // clauses — so it grows without bound, while the note renders in a fixed
+    // 92px band. Measured at 2560×1440 with the default trailing: at two pairs
+    // only 51.3% of the body was visible and the ellipsis had eaten the whole
+    // 'Wade takes Myles, Robyn takes Ophelia' sentence, leaving a note that
+    // listed activities and said nothing. Leading with it means the sentence
+    // the flag exists to state is the part that always survives, and the
+    // unbounded list is what truncates. render/dashboard-v2-layout.test.js
+    // asserts that sentence is inside the visible box at one, two and three
+    // pairs — which is one, four and nine overlap clauses.
     return {
       id: 'activity-overlap',
       level: 'blue',
       noteOnly: true,
       title: '🔵 Overlapping Activities — Standard Split Coverage',
-      body: `${desc}. Standing default: Wade takes Myles, Robyn takes Ophelia.`,
+      body: `Standing default: Wade takes Myles, Robyn takes Ophelia. ${desc}.`,
       owner: ['wade', 'robyn'],
       persist: false,
     };

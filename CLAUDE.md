@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2636+ passing with a browser
+- Run npm test after changes — must stay at 2641+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row). **This line and the floor at the end of the current baseline
   entry are one figure in two places — move both or neither.** It has now gone
@@ -2378,27 +2378,83 @@ presentation lever and it means *invisible* here. Stated rather than done quietl
 is deliberately generic (`renderAlerts` keys on `noteOnly`, not on the flag id) and the
 kid-overlap evaluator is its only user today.
 
-**Measured in a browser at 2560×1440, not asserted.** The note paints at 551.42 × 92 px
-inside the alerts band, `insidePanel: true`, title not clipped, level mark
-`rgb(24, 61, 107)`, title 16px against the card's 23px. The panel box is unchanged at
-`18, 1245, 2211.23 × 92`, the dashboard canvas is unchanged at `0,0,2560,1440`, there are
-still exactly three cards, and every card keeps its top and bottom edge. The cards do share
-width with the note (728.41 → 540.27 px each in the three-alert fixture) — the note costs no
-card *position*, which is the requirement, but it is not free of width, and that is recorded
-rather than glossed. No new text clipping: the same card `<b>` elements report the same
-overflow condition with and without the note.
+**Measured in a browser at 2560×1440, and the measurements are now asserted rather than
+merely taken.** The note paints at 574.91 × 92 px inside the alerts band, title never
+clipped, level mark `rgb(24, 61, 107)`, title 17px / body 14px against the card's 23px / 18px.
+The panel box is unchanged at `18, 1245, 2211.23 × 92` and there are still exactly three
+cards. The cards do share width with the note (728.41 → 532.44 px each with three
+long alerts) — the note costs no card *position*, which is the requirement, but it is not
+free of width, and that is recorded rather than glossed.
+
+⚠ **Two defects were found here by a Reviewer round, after the first version of this section
+called the rendering verified. Both were real and both are fixed; they are recorded because
+the first version's evidence looked exactly as convincing as this one's.**
+
+1. **The note ellipsised its own payload away.** The body was a single `nowrap` line, and
+   `desc` is a *cross product* — two overlapping pairs produce four clauses — so the body
+   grows without bound inside a fixed 92px band. Measured: at two pairs only **51.3%** of the
+   body was visible, and the removed half was the entire `Standing default: Wade takes Myles,
+   Robyn takes Ophelia.` sentence, because it sat at the end. The note showed activity names
+   and said nothing. Fixed on both sides: `digest/flags.js` now **leads** the body with the
+   standing default, and the body wraps to two lines. The standing default is now measured
+   fully visible at one, four and nine overlaps.
+2. **The note's width squeezed the urgent cards.** At `max-width:32%` the note reached 707px
+   and the cards fell to 488px, at which a long red-alert body overflowed its card by **9px**
+   — the demoted item crowding out the urgent ones, which is backwards. `max-width` is now
+   **26%**, which holds the cards at 532.44px where their overflow matches the no-note
+   baseline exactly (`cardOverflow 0`, and the pre-existing 2px/1px sub-pixel title/body
+   overflow identical in both states).
+
+**The tests that missed both are the lesson.** They asserted `textContent`, which returns the
+full string no matter what the CSS does with it, so they **could not fail** when the text was
+ellipsised away — on the one property the task singled out for verification. This repo
+already owns the right idiom (`scrollWidth > clientWidth`) and uses it twice in that same
+file. The replacements measure overflow directly, and locate the standing-default sentence
+with a `Range` and assert its painted rectangle lies inside the body's visible box — the same
+Range technique the Today-header check in that file already uses. Both new guards were
+mutation-checked: restoring the trailing body order reddens *"keeps the standing default
+fully visible even as the overlap list grows"* and nothing else; restoring `max-width:32%`
+reddens *"costs the three alert cards no overflow they do not already have"* and nothing else.
 
 **Byte-identical when no note flag is present.** `renderAlerts`'s output for zero, one, two
 or three ordinary flags is the same string it produced before the tier existed; a test pins
 the three-flag markup verbatim.
 
-**Not covered, and deliberately so.** `render/dashboard-mobile.js` filters only `bannerOnly`,
-so the flag still renders there as an ordinary "Operational notice" — mobile has no
-three-slot cap, so it was not one of the positions in question. `render/email.js`'s `renderFlags()` maps every
-flag it is given with no `bannerOnly` filter and no cap (its owner-tab sections filter on
-`owner` only), so the email is unchanged. Frozen v1's `renderAlerts` also filters only
-`bannerOnly`, so v1 still shows it as an alert, now blue — v1 is frozen and no v1 test fails,
-so the freeze's failing-test exception does not apply and was not used.
+**Notes are capped at two (`MAX_ALERT_NOTES`).** Unreachable today — one flag sets
+`noteOnly` — but the cards are capped and the notes were not, and the band is a fixed-height
+flex row with no wrap, so an uncapped list would have been the next adopter's problem rather
+than a decision anyone took. Raised by a Reviewer round as MINOR and closed rather than
+carried.
+
+**The other three surfaces, stated precisely — an earlier version of this paragraph got two
+of them wrong and a Reviewer round caught both.** It said "the email is unchanged" and that
+"v1 still shows it as an alert, now blue" unconditionally. Neither holds:
+
+- **Email — changed, in colour and in copy.** `render/email.js`'s `alertBox({level, title,
+  body})` selects `palette[level]`, so amber→blue changes this flag's box from the amber
+  palette to the blue one, and the title and body strings changed too. What is unchanged is
+  the email's *filtering and capping logic*: `renderFlags()` maps every flag with no
+  `bannerOnly` filter and no cap, and the owner-tab sections filter on `owner` only. Saying
+  "the email is unchanged" for that reason was a claim about the plumbing dressed as a claim
+  about the output.
+- **Frozen v1 — conditional, and it is where another flag's placement genuinely moves.**
+  `computeFlags` sorts red→amber→blue and `render/dashboard.js:838` takes
+  `.filter(!bannerOnly).slice(0, 3)`. Demoting to blue moves this flag to the tail, so on a
+  day carrying three or more red/amber flags it is now **dropped from v1 entirely**, where as
+  an amber it would have been shown — and a *different* blue flag can now take the slot it
+  used to hold. That is a side effect of a level change rather than an edit to another flag,
+  so it is not a breach of "do not touch other flags", but it is not "nothing else changed"
+  either. v1 is frozen and no v1 test fails, so the freeze's failing-test exception does not
+  apply and was not used.
+- **Mobile — reordered only.** `render/dashboard-mobile.js` filters only `bannerOnly` and has
+  no cap, so the flag still renders as an ordinary "Operational notice"; it was never one of
+  the positions in question. It does move to the end of that list, with the blue tone.
+
+**The same freed-slot effect exists on v2, and it is the intended one.** Excluding the note
+from `.slice(0, 3)` means a fourth non-note flag can now occupy a card position it would
+previously have been cut from. That is what "no longer consumes one of the alert card
+positions" buys, but it is another flag's placement changing and is recorded rather than left
+implicit.
 
 ## Weekly Household Operations Review
 
@@ -2550,13 +2606,15 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2636 | **2636** | **0** | **0** | 40537 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2641 | **2641** | **0** | **0** | 46753 ms |
 
-Three browser-enabled runs were taken on this branch — 2615/2615 on the unmodified tree,
-then 2636/2636 twice (41412 ms, then 40537 ms; the table quotes the later one). **Do not
-read the durations as a comparison**: two runs on one side and one on the other cannot
-support one, and the 875 ms spread between the two same-input runs is itself larger than any
-effect two dozen assertions could have.
+Six browser-enabled runs were taken on this branch — 2615/2615 on the unmodified tree, then
+2636/2636 twice before the Reviewer round (41412 ms, 40537 ms), then 2641/2641 three times
+after it (46092 ms, 45617 ms, 46753 ms). The table quotes the **last**; the only tree changes
+across those three were to this file, so all three ran byte-identical test inputs. **Do not
+read the durations as a comparison**: they measure three different trees, and the 1136 ms
+spread across the three byte-identical runs is itself larger than any effect two dozen
+assertions could have.
 
 Measured on `claude/demote-activity-overlap-flag-5hanxv`, branched from `origin/main` at
 **`0787d6c`**. `git fetch origin main` was run before deriving the merge base, per the
@@ -2566,15 +2624,15 @@ after `npm ci` and before any change: **2615 / 2615 / 0 / 0, 45307 ms** — whic
 figure the Sept 11 entry below recorded, so that figure held. Re-measure anyway; the run
 costs less than the correction does.
 
-This change adds **+21**, across three existing files:
+This change adds **+26**, across three existing files:
 
 | File | before | after | delta |
 |---|---|---|---|
-| `digest/flags.test.js` | 52 | 61 | +9 |
-| `render/dashboard-v2.test.js` | 93 | 101 | +8 |
-| `render/dashboard-v2-layout.test.js` | 28 | 32 | +4 |
+| `digest/flags.test.js` | 52 | 62 | +10 |
+| `render/dashboard-v2.test.js` | 93 | 103 | +10 |
+| `render/dashboard-v2-layout.test.js` | 28 | 34 | +6 |
 
-2615 + 21 = 2636, and **2636 is the measured figure in the table above rather than that
+2615 + 26 = 2641, and **2641 is the measured figure in the table above rather than that
 sum** — the agreement is reassuring and is not itself evidence. Every before-figure was
 measured on the unmodified tree at `0787d6c` in this session, via `git stash`.
 
@@ -2597,7 +2655,18 @@ that overlap"* asserted against `''`: the helper read the note body with
 is the empty `.alert-mark` span, that selector matched the mark. TAP captured before any
 re-run; fixed to `b + span`; 32/32 thereafter. Recorded because a test that reads the empty
 string and is then "fixed" is exactly how a browser assertion stops having teeth — this one
-was reading the real DOM, which is why it failed.
+was reading the real DOM, which is why it failed. **That whole case has since been deleted
+and replaced**: the Reviewer round found it was asserting `textContent`, which could not fail
+on the clipping it was supposed to catch. See the two defects recorded under
+"Activity-overlap flag demotion".
+
+**Three further runs failed during the Reviewer round, all in the new tests, all captured
+before re-running.** Six cases failed `ReferenceError: sentence is not defined` (the helper
+was handed `page.evaluate(fn, sentence)` where the constant is `STANDING_DEFAULT`); then four
+failed `TypeError: Cannot read properties of undefined` (the helper built its `note` result
+object and never put it in the return). Both were the helper, not the subject. The two
+deliberate mutation runs — reverting the body order, and restoring `max-width:32%` — each
+reddened exactly one case and are the evidence those guards have teeth, not failures.
 
 Exact invocation:
 
@@ -2605,7 +2674,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2636+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2641+ with no failures once a browser resolves.**
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
 quoting a figure that was not taken is exactly the unfalsifiable claim this section exists

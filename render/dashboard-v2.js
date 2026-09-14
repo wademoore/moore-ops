@@ -948,6 +948,8 @@ function renderAthletics(data) {
   </section>`;
 }
 
+const MAX_ALERT_NOTES = 2;
+
 // A `noteOnly` flag is standing household context rather than an open
 // operational alert. It is deliberately NOT one of the three .alert-card
 // positions — those are for things that changed — but it is still shown, as a
@@ -957,7 +959,11 @@ function renderAthletics(data) {
 function renderAlerts(flags) {
   const all = (flags || []).filter(flag => !flag.bannerOnly);
   const items = all.filter(flag => !flag.noteOnly).slice(0, 3);
-  const notes = all.filter(flag => flag.noteOnly);
+  // Capped like the cards. Unreachable today — one flag sets noteOnly — but the
+  // tier is deliberately generic, and the band is a fixed 92px row with no wrap,
+  // so an uncapped note list would be the next adopter's problem rather than a
+  // choice anyone made. Two mirrors the accent renderer's own per-panel cap.
+  const notes = all.filter(flag => flag.noteOnly).slice(0, MAX_ALERT_NOTES);
   const noteMarkup = notes.map(flag => `<div class="alert-note level-${esc(flag.level || 'blue')}">
     <span class="alert-mark" aria-hidden="true"></span>
     <div><b>${esc(cleanDisplayText(flag.title || 'Family note'))}</b><span>${esc(cleanDisplayText(flag.body || flag.message || ''))}</span></div>
@@ -1399,8 +1405,21 @@ const CSS = `
    is deliberately not one of them — no card fill, no border, shrink-to-fit width,
    and smaller type. Nothing else in this stylesheet targets .alert-note, so these
    sizes are final; the later couch-distance blocks only re-size .alert-card. The
-   level tint on .alert-mark still applies, so a note keeps its level colour. */
-.alert-note{flex:0 1 auto;max-width:32%;min-width:0;display:flex;align-items:center;gap:9px;padding:12px 2px 12px 6px;opacity:.74}.alert-note div{display:flex;flex-direction:column;min-width:0}.alert-note b{font-size:16px;font-weight:700;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.alert-note span{font-size:13px;line-height:1.05;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.alert-note .alert-mark{width:9px;height:9px}
+   level tint on .alert-mark still applies, so a note keeps its level colour.
+   17px/14px is subordinate to the card's 23px/18px while still meeting the
+   smallest body size this surface uses anywhere else (14px).
+   The body wraps to TWO lines rather than one. It was a single nowrap line and
+   that was measured to be wrong: the body carries an unbounded cross product of
+   overlapping pairs, and at two pairs 51.3% of it was ellipsised away. Two lines
+   roughly doubles the budget, and digest/flags.js now leads the body with the
+   standing default so the sentence that must survive is never the part cut.
+   max-width is 26% and that number is measured, not chosen. The note is a flex
+   sibling, so its width comes out of the three cards: at 32% it took the band to
+   707px and squeezed the cards to 488px, at which a long red-alert body overflowed
+   its card by 9px — the demoted thing crowding out the urgent ones, which is
+   backwards. 26% caps the note near 575px and holds the cards at ~525px, where
+   card overflow matches the no-note baseline exactly. */
+.alert-note{flex:0 1 auto;max-width:26%;min-width:0;display:flex;align-items:center;gap:9px;padding:10px 2px 10px 6px;opacity:.78}.alert-note div{display:flex;flex-direction:column;min-width:0}.alert-note b{font-size:17px;font-weight:700;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.alert-note span{font-size:14px;line-height:1.15;margin-top:3px;white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.alert-note .alert-mark{width:9px;height:9px}
 .rail-card{padding:12px}.clock-card{text-align:center;display:flex;flex-direction:column;justify-content:center}.clock-card time{font-family:Georgia,serif;font-size:45px;color:${COLORS.greenDark};line-height:1}.clock-card span{font-family:"Segoe Print","Trebuchet MS",sans-serif;font-size:13px;font-weight:800;margin-top:7px}.current-weather{display:flex;flex-direction:column;align-items:center;justify-content:center}.weather-now{display:flex;align-items:center;justify-content:center;gap:8px}.weather-now svg{width:47px;height:47px}.weather-now strong{font-family:Georgia,serif;font-size:46px;color:${COLORS.greenDark}}.current-weather>span{font-size:12px;font-style:italic}.current-weather>small{font-size:10px;margin-top:5px;color:#6a6c66}.forecast-card{display:flex;flex-direction:column;padding:4px 12px}.forecast-row{display:grid;grid-template-columns:1fr 31px 33px 28px;grid-template-rows:1fr auto;gap:0 4px;align-items:center;flex:1;border-bottom:1px solid rgba(20,40,31,.17);font-size:12px}.forecast-row>span{font-weight:800}.forecast-row svg{width:27px;height:27px;grid-row:1/3;grid-column:2}.forecast-row b{font-family:Georgia,serif;font-size:17px;text-align:right}.forecast-row small{font-size:11px;text-align:right}.forecast-row i{font-size:8px;grid-column:3/5;text-align:right;color:#53675e}.forecast-row.today>span{color:${COLORS.green}}svg{fill:none;stroke:${COLORS.greenDark};stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.countdown-card{text-align:center;display:flex;flex-direction:column;justify-content:center;position:relative}.countdown-card:before,.countdown-card:after{content:"";position:absolute;width:30px;height:2px;background:${COLORS.gold};top:57%;transform:rotate(18deg)}.countdown-card:before{left:14px}.countdown-card:after{right:14px;transform:rotate(-18deg)}.countdown-card span{font-family:"Segoe Print","Trebuchet MS",sans-serif;text-transform:uppercase;font-weight:900;color:${COLORS.green};font-size:17px}.countdown-card strong{font-family:Georgia,serif;font-size:70px;line-height:1;color:${COLORS.greenDark}}.countdown-card small{font-size:14px;font-weight:900;letter-spacing:.08em}
 .sports-ticker{background:${COLORS.greenDark};color:#fff;display:flex;align-items:center;border-radius:9px;padding:7px 12px;position:relative;overflow:hidden}.ticker-slot{flex:1;display:flex;align-items:center;gap:9px;opacity:.62;border-right:1px solid rgba(255,255,255,.2);padding:0 14px;min-width:0}.ticker-slot:first-child{padding-left:0}.ticker-slot.active{opacity:1}.ticker-slot>div{display:flex;flex-direction:column;min-width:0}.ticker-slot b{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ticker-slot span{font-size:8px;color:#e6c978;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.ticker-meta{display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.metadata-dedicated .ticker-meta{display:block;font-size:7px;line-height:1;color:rgba(241,230,208,.68);margin-top:2px}.ticker-logo{width:27px;height:27px;object-fit:contain;flex:0 0 auto}.updated{position:absolute;right:8px;bottom:2px;font-size:6px;color:#d6b55c}
 .priorities{display:flex;flex-direction:column;flex:1;min-height:0}.priority-row{flex:1;min-height:0}.today-bottom{margin-top:0}

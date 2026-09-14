@@ -5,6 +5,7 @@ import { renderDashboardV2 } from './dashboard-v2.js';
 import { readFileSync } from 'node:fs';
 import { ACCENT_OCCURRENCES, eventRowAccentSampleData, sampleDashboardV2Data, specialEventsSampleData } from './dashboard-v2.sample-data.js';
 import { resolveBrowserPath } from '../scripts/render-dashboard-v2-png.mjs';
+import { computeFlags } from '../digest/flags.js';
 
 let browser;
 let page;
@@ -851,89 +852,170 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
 // wall. These cases read the composited box out of a real browser.
 // ---------------------------------------------------------------------------
 
-describe('demoted alert note 2560x1440 visibility', () => {
-  const NOTE = Object.freeze({
-    id: 'activity-overlap',
-    level: 'blue',
-    noteOnly: true,
-    title: 'Overlapping Activities — Standard Split Coverage',
-    body: 'Sharks Practice (Myles) + Dance Class (Ophelia). Standing default: Wade takes Myles, Robyn takes Ophelia.',
-  });
 
-  async function alertsBand(flags) {
+describe('demoted alert note 2560x1440 visibility', () => {
+  // The sentence the flag exists to state. digest/flags.js puts it FIRST in the
+  // body precisely so it is the part that survives truncation; these cases are
+  // what hold that. Asserting `textContent` would not — it returns the full
+  // string whatever the CSS does with it, so it cannot fail when the text is
+  // ellipsised away, which is the failure mode this block exists to catch.
+  const STANDING_DEFAULT = 'Standing default: Wade takes Myles, Robyn takes Ophelia.';
+
+  // Real long alert copy, modelled on flags this repo actually emits, because
+  // the note takes its width out of the three cards and short fixture strings
+  // cannot show that cost.
+  const LONG_ALERTS = Object.freeze([
+    { level: 'red', title: 'Backpack Prep — Wade Action Required Tomorrow Morning', body: 'Tomorrow: Myles has Library (return Wings of Fire) · Ophelia has PE2 (sneakers)' },
+    { level: 'amber', title: 'Emma Unavailable — UTA Reserve Duty Sept 8–12', body: 'No afternoon coverage Mon through Fri. Confirm pickup arrangements for both kids.' },
+    { level: 'amber', title: 'Flag Football Schedule Gap — 1 Calendar Event Has No Season Entry', body: '2026-10-25 “Flag Football: Week 6 — Practice + Game / Playoffs (Yorktown)” is on the calendar but not in data/flag-football.json.' },
+  ]);
+
+  // Built through computeFlags rather than hand-written, so the body string is
+  // the one production emits — including the cross product that makes it grow.
+  const timedKidEvent = (title, calendarName) => ({
+    title,
+    _calName: calendarName,
+    id: `${calendarName}-${title}`,
+    raw: {
+      id: `${calendarName}-${title}`,
+      start: { dateTime: calendarName === 'Myles' ? '2026-09-08T18:00:00-04:00' : '2026-09-08T18:30:00-04:00' },
+      end: { dateTime: calendarName === 'Myles' ? '2026-09-08T19:00:00-04:00' : '2026-09-08T19:30:00-04:00' },
+    },
+  });
+  function overlapNote(pairs) {
+    const events = [];
+    for (let index = 0; index < pairs; index += 1) {
+      events.push(timedKidEvent(`Myles Activity ${index + 1}`, 'Myles'));
+      events.push(timedKidEvent(`Ophelia Activity ${index + 1}`, 'Ophelia'));
+    }
+    const flag = computeFlags({
+      today: new Date(2026, 8, 8), resolvedEvents: events,
+      schoolStrip: { myles: {}, ophelia: {} }, days: [], gmailHits: {},
+    }).find(item => item.id === 'activity-overlap');
+    assert.ok(flag, 'fixture must actually fire the activity-overlap flag');
+    return flag;
+  }
+
+  async function band(flags) {
     await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, flags }), { waitUntil: 'load' });
     await page.evaluate(() => document.fonts.ready);
-    return page.evaluate(() => {
-      const box = element => {
-        const rect = element.getBoundingClientRect();
-        return { left: +rect.left.toFixed(2), top: +rect.top.toFixed(2), width: +rect.width.toFixed(2), height: +rect.height.toFixed(2), right: +rect.right.toFixed(2), bottom: +rect.bottom.toFixed(2) };
-      };
+    return page.evaluate((sentence) => {
       const panel = document.querySelector('.alerts-panel');
-      const panelBox = box(panel);
+      const panelBox = panel.getBoundingClientRect();
+      const round = value => +value.toFixed(2);
+      const overflow = element => ({
+        x: element.scrollWidth - element.clientWidth,
+        y: element.scrollHeight - element.clientHeight,
+      });
+      const note = document.querySelector('.alert-note');
+      let noteOut = null;
+      if (note) {
+        const title = note.querySelector('b');
+        const body = note.querySelector('b + span');
+        const bodyBox = body.getBoundingClientRect();
+        // Range over the leading sentence, then ask whether that range's painted
+        // rectangle lies inside the body's visible (client) box. This is the same
+        // Range technique the Today-header check in this file already uses, and
+        // unlike textContent it moves when the CSS clips.
+        let sentenceInsideVisibleBox = null;
+        const textNode = note.querySelector('b + span').firstChild;
+        if (textNode && body.textContent.indexOf(sentence) === 0) {
+          const range = document.createRange();
+          range.setStart(textNode, 0);
+          range.setEnd(textNode, sentence.length);
+          const rect = range.getBoundingClientRect();
+          sentenceInsideVisibleBox = rect.left >= bodyBox.left - 1 && rect.right <= bodyBox.right + 1
+            && rect.top >= bodyBox.top - 1 && rect.bottom <= bodyBox.bottom + 1;
+        }
+        const noteBox = note.getBoundingClientRect();
+        noteOut = {
+          box: { left: round(noteBox.left), width: round(noteBox.width), height: round(noteBox.height) },
+          leadsWithSentence: body.textContent.indexOf(sentence) === 0,
+          sentenceInsideVisibleBox,
+          titleOverflow: overflow(title),
+          spillsBand: noteBox.bottom > panelBox.bottom + 0.5 || noteBox.right > panelBox.right + 0.5,
+          titleFontPx: parseFloat(getComputedStyle(title).fontSize),
+          bodyFontPx: parseFloat(getComputedStyle(body).fontSize),
+          cardTitleFontPx: parseFloat(getComputedStyle(document.querySelector('.alert-card b')).fontSize),
+        };
+      }
       return {
-        panel: panelBox,
-        cards: [...document.querySelectorAll('.alert-card')].map(box),
-        notes: [...document.querySelectorAll('.alert-note')].map(element => {
-          const style = getComputedStyle(element);
-          const noteBox = box(element);
-          const title = element.querySelector('b');
-          // `.alert-note` is itself a div and its first child is the empty
-          // `.alert-mark` span, so scope the body to the span that follows the
-          // title rather than to any descendant span.
-          const body = element.querySelector('b + span');
-          return {
-            box: noteBox,
-            displayed: style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0 && noteBox.width > 0 && noteBox.height > 0,
-            insidePanel: noteBox.left >= panelBox.left - 0.5 && noteBox.right <= panelBox.right + 0.5
-              && noteBox.top >= panelBox.top - 0.5 && noteBox.bottom <= panelBox.bottom + 0.5,
-            titleText: title.textContent,
-            bodyText: body.textContent,
-            titleFontPx: parseFloat(getComputedStyle(title).fontSize),
-            cardTitleFontPx: parseFloat(getComputedStyle(document.querySelector('.alert-card b')).fontSize),
-            markColor: getComputedStyle(element.querySelector('.alert-mark')).backgroundColor,
-          };
-        }),
+        panel: { left: round(panelBox.left), top: round(panelBox.top), width: round(panelBox.width), height: round(panelBox.height) },
+        note: noteOut,
+        noteCount: document.querySelectorAll('.alert-note').length,
+        cards: [...document.querySelectorAll('.alert-card')].map(card => ({
+          width: round(card.getBoundingClientRect().width),
+          spillsBand: card.getBoundingClientRect().bottom > panelBox.bottom + 0.5,
+          cardOverflow: overflow(card),
+          titleOverflow: overflow(card.querySelector('b')),
+          bodyOverflow: card.querySelector('b + span') ? overflow(card.querySelector('b + span')) : null,
+        })),
       };
-    });
+    }, STANDING_DEFAULT);
   }
 
   it('paints the note inside the alerts band with a non-zero, visible box', async () => {
-    const { notes } = await alertsBand([...sampleDashboardV2Data.flags, NOTE]);
-    assert.equal(notes.length, 1);
-    assert.equal(notes[0].displayed, true);
-    assert.equal(notes[0].insidePanel, true);
-    assert.ok(notes[0].box.width > 100, `note is only ${notes[0].box.width}px wide`);
-    assert.ok(notes[0].box.height > 20, `note is only ${notes[0].box.height}px tall`);
+    const { noteCount, cards, note } = await band([...sampleDashboardV2Data.flags, overlapNote(1)]);
+    assert.equal(noteCount, 1);
+    assert.equal(cards.length, 3);
+    assert.equal(note.spillsBand, false);
+    assert.ok(note.box.width > 100, `note is only ${note.box.width}px wide`);
+    assert.ok(note.box.height > 20, `note is only ${note.box.height}px tall`);
   });
 
-  it('shows both the standing default and the activities that overlap', async () => {
-    const { notes } = await alertsBand([...sampleDashboardV2Data.flags, NOTE]);
-    assert.match(notes[0].titleText, /Overlapping Activities/);
-    assert.match(notes[0].bodyText, /Sharks Practice \(Myles\)/);
-    assert.match(notes[0].bodyText, /Standing default/);
+  it('never clips the note title, at any overlap count', async () => {
+    for (const pairs of [1, 2, 3]) {
+      const { note } = await band([...LONG_ALERTS, overlapNote(pairs)]);
+      assert.deepEqual(note.titleOverflow, { x: 0, y: 0 }, `title clipped at ${pairs} pair(s)`);
+    }
   });
 
-  it('is subordinate to a card: smaller type, and it keeps its level colour', async () => {
-    const { notes } = await alertsBand([...sampleDashboardV2Data.flags, NOTE]);
-    assert.ok(notes[0].titleFontPx < notes[0].cardTitleFontPx,
-      `note title ${notes[0].titleFontPx}px is not smaller than card title ${notes[0].cardTitleFontPx}px`);
-    // The blue level mark, not the amber default — .alert-note .alert-mark sets
-    // size only, so .level-blue .alert-mark still supplies the colour.
-    assert.equal(notes[0].markColor, 'rgb(24, 61, 107)');
+  it('keeps the standing default fully visible even as the overlap list grows', async () => {
+    // `desc` is a cross product, so 3 pairs is 9 clauses and the body cannot fit.
+    // What must never truncate is the sentence the note exists to say. This case
+    // fails if digest/flags.js moves it back to the end of the body.
+    for (const pairs of [1, 2, 3]) {
+      const { note } = await band([...LONG_ALERTS, overlapNote(pairs)]);
+      assert.equal(note.leadsWithSentence, true, `body does not lead with the standing default at ${pairs} pair(s)`);
+      assert.equal(note.sentenceInsideVisibleBox, true, `standing default is clipped at ${pairs} pair(s)`);
+    }
+  });
+
+  it('is subordinate to a card but not below the surface’s smallest body size', async () => {
+    const { note } = await band([...sampleDashboardV2Data.flags, overlapNote(1)]);
+    assert.ok(note.titleFontPx < note.cardTitleFontPx,
+      `note title ${note.titleFontPx}px is not smaller than card title ${note.cardTitleFontPx}px`);
+    // A lower bound as well as an upper one: "smaller than a card" alone is
+    // satisfied by 1px, and the note has to stay readable at TV distance.
+    assert.ok(note.bodyFontPx >= 14, `note body ${note.bodyFontPx}px is below the 14px floor`);
+    assert.ok(note.titleFontPx >= 17, `note title ${note.titleFontPx}px is below the 17px floor`);
+  });
+
+  it('costs the three alert cards no overflow they do not already have', async () => {
+    // The note is a flex sibling, so its width comes out of the cards. At a wider
+    // cap this measured 9px of new vertical overflow on a long red alert — the
+    // demoted item crowding the urgent ones. Compared against the same long copy
+    // with no note, so a pre-existing sub-pixel overflow is not read as a
+    // regression. Both overlap counts, because the note's width varies with them.
+    const baseline = await band(LONG_ALERTS);
+    assert.equal(baseline.noteCount, 0);
+    for (const pairs of [1, 2, 3]) {
+      const withNote = await band([...LONG_ALERTS, overlapNote(pairs)]);
+      assert.equal(withNote.cards.length, 3, `card count moved at ${pairs} pair(s)`);
+      assert.deepEqual(
+        withNote.cards.map(card => ({ cardOverflow: card.cardOverflow, titleOverflow: card.titleOverflow, bodyOverflow: card.bodyOverflow, spillsBand: card.spillsBand })),
+        baseline.cards.map(card => ({ cardOverflow: card.cardOverflow, titleOverflow: card.titleOverflow, bodyOverflow: card.bodyOverflow, spillsBand: card.spillsBand })),
+        `the note changed card overflow at ${pairs} pair(s)`,
+      );
+    }
   });
 
   it('leaves the three card positions and the panel box exactly where they were', async () => {
-    const without = await alertsBand(sampleDashboardV2Data.flags);
-    const withNote = await alertsBand([...sampleDashboardV2Data.flags, NOTE]);
-    assert.equal(without.notes.length, 0);
+    const without = await band(sampleDashboardV2Data.flags);
+    const withNote = await band([...sampleDashboardV2Data.flags, overlapNote(1)]);
+    assert.equal(without.noteCount, 0);
     assert.equal(without.cards.length, 3);
     assert.equal(withNote.cards.length, 3);
     assert.deepEqual(withNote.panel, without.panel);
-    // Every card keeps the band's top and bottom edge; only the shared width
-    // changes, because the note is a flex sibling rather than a fourth card.
-    for (const [index, card] of withNote.cards.entries()) {
-      assert.equal(card.top, without.cards[index].top);
-      assert.equal(card.bottom, without.cards[index].bottom);
-    }
   });
 });
