@@ -148,10 +148,12 @@ describe('Kid activity overlap', () => {
     });
 
     it('leads the body with the standing default, so truncation cannot eat it', () => {
-      // Order is load-bearing, not stylistic. `desc` is a cross product of the
-      // overlapping pairs, so it grows without bound, while the note renders in
-      // a fixed 92px band. Measured at 2560×1440 with the default trailing: at
-      // two pairs only 51.3% of the body was visible and the ellipsis had
+      // Order is load-bearing, not stylistic. `desc` carries one clause per
+      // overlapping PAIR, bounded by |Myles timed| × |Ophelia timed| rather than
+      // by either alone, so it grows faster than the event count while the note
+      // renders in a fixed 92px band. Measured at 2560×1440 with the default
+      // trailing, on two Myles and two Ophelia events that mutually overlap
+      // (four clauses): only 51.3% of the body was visible and the ellipsis had
       // removed this whole sentence. render/dashboard-v2-layout.test.js asserts
       // the rendered consequence; this asserts the shape that produces it.
       assert.ok(

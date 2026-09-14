@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2641+ passing with a browser
+- Run npm test after changes — must stay at 2642+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row). **This line and the floor at the end of the current baseline
   entry are one figure in two places — move both or neither.** It has now gone
@@ -2363,8 +2363,12 @@ have. It would have hidden the flag rather than quieted it.
 **The text was reshaped with the level, not decoratively.** `🟡` is the amber indicator glyph
 and contradicts `level: 'blue'`; "Split Coverage Needed" and "Confirm both can cover" assert
 an open decision, which is the framing being retired. The note now reads
-`🔵 Overlapping Activities — Standard Split Coverage` / `<pairs>. Standing default: Wade takes
-Myles, Robyn takes Ophelia.` and asks for nothing.
+`🔵 Overlapping Activities — Standard Split Coverage` / `Standing default: Wade takes Myles,
+Robyn takes Ophelia. <pairs>.` and asks for nothing. The default **leads** the body, and that
+order is load-bearing rather than stylistic — see the clipping defect recorded below.
+*(This line said `<pairs>. Standing default: …` for one round after the order was reversed
+thirty lines below it. A Reviewer round caught it. A figure in this file is rarely in one
+place; grep before believing one.)*
 
 **Firing conditions are untouched.** The overlap detection, the `isRoutineCentersEvent()`
 exclusion and the `isStandardCoverageRoutine()` exclusion are unchanged, and the three
@@ -2391,8 +2395,11 @@ called the rendering verified. Both were real and both are fixed; they are recor
 the first version's evidence looked exactly as convincing as this one's.**
 
 1. **The note ellipsised its own payload away.** The body was a single `nowrap` line, and
-   `desc` is a *cross product* — two overlapping pairs produce four clauses — so the body
-   grows without bound inside a fixed 92px band. Measured: at two pairs only **51.3%** of the
+   `desc` carries one clause per overlapping *pair*, bounded by |Myles timed| × |Ophelia
+   timed| rather than by either alone, so it grows faster than the event count inside a fixed
+   92px band. (Two overlapping pairs give two clauses; two Myles and two Ophelia events that
+   all mutually overlap give four. An earlier wording said the latter was the general case.)
+   Measured on that four-clause fixture: only **51.3%** of the
    body was visible, and the removed half was the entire `Standing default: Wade takes Myles,
    Robyn takes Ophelia.` sentence, because it sat at the end. The note showed activity names
    and said nothing. Fixed on both sides: `digest/flags.js` now **leads** the body with the
@@ -2411,10 +2418,30 @@ ellipsised away — on the one property the task singled out for verification. T
 already owns the right idiom (`scrollWidth > clientWidth`) and uses it twice in that same
 file. The replacements measure overflow directly, and locate the standing-default sentence
 with a `Range` and assert its painted rectangle lies inside the body's visible box — the same
-Range technique the Today-header check in that file already uses. Both new guards were
-mutation-checked: restoring the trailing body order reddens *"keeps the standing default
-fully visible even as the overlap list grows"* and nothing else; restoring `max-width:32%`
-reddens *"costs the three alert cards no overflow they do not already have"* and nothing else.
+Range technique the Today-header check in that file already uses.
+
+⚠ **The first replacement guarded only half of the fix, and a second Reviewer round caught
+it — the same defect shape, one level down.** Fix (1) has two halves: the digest-side
+reordering and the CSS two-line clamp. The `Range` case is satisfied by the reordering
+alone, because the leading sentence is 56 characters and fits on one line either way — so
+**reverting only the CSS left the whole suite green (34/34), measured**. The mutation that
+would have shown it, reverting the CSS while keeping the order, had not been run; the
+mutation that was run reverts the order and fails at `leadsWithSentence` before any clipping
+is exercised. A guard now covers the clamp on its own: `white-space:nowrap` paints **one**
+line box at `clientHeight 16` and overflows horizontally (`scrollWidth 587` vs
+`clientWidth 549`) even at a single overlapping pair, where the clamp lays out on two or
+more with **no** horizontal overflow at `clientHeight 32`. All three properties are asserted.
+
+**Three mutations, each reddening exactly one case and leaving the rest green:** reverting
+the body order reddens *"keeps the standing default fully visible even as the overlap list
+grows"*; restoring `max-width:32%` reddens *"costs the three alert cards no overflow they do
+not already have"*; reverting the CSS to `nowrap` reddens *"wraps the body to two lines
+instead of running it off the end"*. The third is the one that used to redden nothing.
+
+*(One further correction from that round: this section listed the level mark's computed
+colour `rgb(24, 61, 107)` among the "now asserted" measurements while the rewrite had
+quietly dropped that assertion — only the `level-blue` class was still pinned. The computed
+colour is asserted again, and the deletion is recorded here rather than smoothed over.)*
 
 **Byte-identical when no note flag is present.** `renderAlerts`'s output for zero, one, two
 or three ordinary flags is the same string it produced before the tier existed; a test pins
@@ -2424,7 +2451,14 @@ the three-flag markup verbatim.
 `noteOnly` — but the cards are capped and the notes were not, and the band is a fixed-height
 flex row with no wrap, so an uncapped list would have been the next adopter's problem rather
 than a decision anyone took. Raised by a Reviewer round as MINOR and closed rather than
-carried.
+carried. **A third note is dropped silently**, with no overflow indicator — the same
+behaviour as the cards' own `.slice(0, 3)`, and stated here because "capped" and "capped
+visibly" are not the same claim.
+
+**The note's padding and opacity also moved** (12px → 10px, `.74` → `.78`) when the body
+gained its second line and the type was raised. Recorded because they rode along with the
+Reviewer fixes rather than being called out in that round's summary; neither changes the
+band's geometry, which the layout suite pins.
 
 **The other three surfaces, stated precisely — an earlier version of this paragraph got two
 of them wrong and a Reviewer round caught both.** It said "the email is unchanged" and that
@@ -2606,14 +2640,14 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2641 | **2641** | **0** | **0** | 46753 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2642 | **2642** | **0** | **0** | 47697 ms |
 
-Six browser-enabled runs were taken on this branch — 2615/2615 on the unmodified tree, then
-2636/2636 twice before the Reviewer round (41412 ms, 40537 ms), then 2641/2641 three times
-after it (46092 ms, 45617 ms, 46753 ms). The table quotes the **last**; the only tree changes
-across those three were to this file, so all three ran byte-identical test inputs. **Do not
-read the durations as a comparison**: they measure three different trees, and the 1136 ms
-spread across the three byte-identical runs is itself larger than any effect two dozen
+Eight browser-enabled runs were taken on this branch, across four trees — 2615/2615 on the
+unmodified tree; 2636/2636 twice after the first implementation (41412 ms, 40537 ms);
+2641/2641 three times after Reviewer round 1 (46092 ms, 45617 ms, 46753 ms); 2642/2642 twice
+after Reviewer round 2 (47471 ms, 47697 ms; the table quotes the later). **Do not read the durations as a
+comparison**: they measure four different trees, and the 1136 ms spread across the three
+runs that shared byte-identical test inputs is itself larger than any effect two dozen
 assertions could have.
 
 Measured on `claude/demote-activity-overlap-flag-5hanxv`, branched from `origin/main` at
@@ -2624,15 +2658,15 @@ after `npm ci` and before any change: **2615 / 2615 / 0 / 0, 45307 ms** — whic
 figure the Sept 11 entry below recorded, so that figure held. Re-measure anyway; the run
 costs less than the correction does.
 
-This change adds **+26**, across three existing files:
+This change adds **+27**, across three existing files:
 
 | File | before | after | delta |
 |---|---|---|---|
 | `digest/flags.test.js` | 52 | 62 | +10 |
 | `render/dashboard-v2.test.js` | 93 | 103 | +10 |
-| `render/dashboard-v2-layout.test.js` | 28 | 34 | +6 |
+| `render/dashboard-v2-layout.test.js` | 28 | 35 | +7 |
 
-2615 + 26 = 2641, and **2641 is the measured figure in the table above rather than that
+2615 + 27 = 2642, and **2642 is the measured figure in the table above rather than that
 sum** — the agreement is reassuring and is not itself evidence. Every before-figure was
 measured on the unmodified tree at `0787d6c` in this session, via `git stash`.
 
@@ -2640,13 +2674,15 @@ measured on the unmodified tree at `0787d6c` in this session, via `git stash`.
 suite was green at 2615/2615 with the source change applied and no test touched, which is
 the finding rather than a convenience: **nothing in the suite asserted either half of this
 flag's prominence** — not its `level`, not its NOW/NEXT candidacy, not its alert-card
-placement. All 21 new cases are guards for behaviour that previously had none.
-`git diff --numstat -- '*test*'` reports **0 deletions** in all three files — `100/0`,
-`96/0`, `66/0` — so no line of any pre-existing test changed at all, let alone an `it()`
-being removed. No `.skip` or `.todo` appears anywhere in the diff. *(An earlier draft of
-this paragraph claimed one deletion in the layout file, for a DOM selector fixed during
-development. That selector was on a line this same change had added, so against the base it
-is an insertion; numstat says 0. Measured, not recalled.)*
+placement. All 27 new cases are guards for behaviour that previously had none.
+`git diff --numstat 0787d6c -- '*test*'` reports **0 deletions** in all three files —
+`115/0`, `219/0`, `89/0` — so no line of any pre-existing test changed at all, let alone an
+`it()` being removed. No `.skip` or `.todo` appears anywhere in the diff. **The comparison
+must be against the base, not `HEAD`**: the two Reviewer rounds rewrote cases this branch
+had itself added, so `git diff --numstat` alone reports deletions that do not exist against
+`main`. *(An earlier draft claimed one deletion in the layout file, for a DOM selector fixed
+during development. That selector was on a line this same change had added, so against the
+base it is an insertion; numstat says 0. Measured, not recalled.)*
 
 **One run failed during development and the failure was in the new test, not the change.**
 `render/dashboard-v2-layout.test.js` → *"shows both the standing default and the activities
@@ -2674,7 +2710,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2641+ with no failures once a browser resolves.**
+**Coder mode must keep `npm test` at 2642+ with no failures once a browser resolves.**
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
 quoting a figure that was not taken is exactly the unfalsifiable claim this section exists

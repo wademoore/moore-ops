@@ -928,15 +928,27 @@ describe('demoted alert note 2560x1440 visibility', () => {
             && rect.top >= bodyBox.top - 1 && rect.bottom <= bodyBox.bottom + 1;
         }
         const noteBox = note.getBoundingClientRect();
+        // One rect per rendered line fragment, deduplicated by top edge: this is
+        // how many lines the body actually paints, which is what separates the
+        // two-line clamp from a single nowrap line. Nothing else in the note's
+        // geometry distinguishes them, so without this the clamp has no guard.
+        const bodyRange = document.createRange();
+        bodyRange.selectNodeContents(body);
+        const lineTops = new Set([...bodyRange.getClientRects()].map(rect => rect.top.toFixed(1)));
         noteOut = {
           box: { left: round(noteBox.left), width: round(noteBox.width), height: round(noteBox.height) },
           leadsWithSentence: body.textContent.indexOf(sentence) === 0,
           sentenceInsideVisibleBox,
+          bodyOverflow: overflow(body),
+          bodyClientHeight: body.clientHeight,
+          bodyLineHeightPx: parseFloat(getComputedStyle(body).lineHeight),
+          bodyRenderedLines: lineTops.size,
           titleOverflow: overflow(title),
           spillsBand: noteBox.bottom > panelBox.bottom + 0.5 || noteBox.right > panelBox.right + 0.5,
           titleFontPx: parseFloat(getComputedStyle(title).fontSize),
           bodyFontPx: parseFloat(getComputedStyle(body).fontSize),
           cardTitleFontPx: parseFloat(getComputedStyle(document.querySelector('.alert-card b')).fontSize),
+          markColor: getComputedStyle(note.querySelector('.alert-mark')).backgroundColor,
         };
       }
       return {
@@ -971,13 +983,38 @@ describe('demoted alert note 2560x1440 visibility', () => {
   });
 
   it('keeps the standing default fully visible even as the overlap list grows', async () => {
-    // `desc` is a cross product, so 3 pairs is 9 clauses and the body cannot fit.
+    // overlapNote(n) builds n Myles and n Ophelia events that all mutually
+    // overlap, so `desc` carries n² clauses: 3 pairs is 9, and cannot fit.
     // What must never truncate is the sentence the note exists to say. This case
     // fails if digest/flags.js moves it back to the end of the body.
     for (const pairs of [1, 2, 3]) {
       const { note } = await band([...LONG_ALERTS, overlapNote(pairs)]);
       assert.equal(note.leadsWithSentence, true, `body does not lead with the standing default at ${pairs} pair(s)`);
       assert.equal(note.sentenceInsideVisibleBox, true, `standing default is clipped at ${pairs} pair(s)`);
+    }
+  });
+
+  it('wraps the body to two lines instead of running it off the end', async () => {
+    // The other half of the clipping fix, and it needs its own guard: the
+    // leading-sentence case above is satisfied by the digest-side ordering alone
+    // (the sentence is 56 characters and fits one line), so reverting the CSS to
+    // `white-space:nowrap` left the whole suite green. Measured both ways —
+    // nowrap paints ONE line box at clientHeight 16 and overflows horizontally
+    // (scrollWidth 587 vs clientWidth 549) even at a single overlapping pair;
+    // the two-line clamp paints TWO at clientHeight 32 with no horizontal
+    // overflow at all. Both properties are asserted, because either one alone
+    // would let a different revert through.
+    for (const pairs of [1, 2, 3]) {
+      const { note } = await band([...LONG_ALERTS, overlapNote(pairs)]);
+      assert.equal(note.bodyOverflow.x, 0,
+        `note body overflows horizontally by ${note.bodyOverflow.x}px at ${pairs} pair(s) — it is not wrapping`);
+      // Laid-out line fragments, which includes any the clamp then hides — so
+      // this is "the text wrapped onto more than one line", not "two are shown".
+      // Under nowrap it is always exactly 1, whatever the content.
+      assert.ok(note.bodyRenderedLines >= 2,
+        `note body laid out on ${note.bodyRenderedLines} line(s) at ${pairs} pair(s) — it is not wrapping`);
+      assert.ok(note.bodyClientHeight >= note.bodyLineHeightPx * 1.8,
+        `note body box is ${note.bodyClientHeight}px, under two lines of ${note.bodyLineHeightPx}px`);
     }
   });
 
@@ -989,6 +1026,10 @@ describe('demoted alert note 2560x1440 visibility', () => {
     // satisfied by 1px, and the note has to stay readable at TV distance.
     assert.ok(note.bodyFontPx >= 14, `note body ${note.bodyFontPx}px is below the 14px floor`);
     assert.ok(note.titleFontPx >= 17, `note title ${note.titleFontPx}px is below the 17px floor`);
+    // The computed colour, not just the class. `.alert-note .alert-mark` sets
+    // size only, so `.level-blue .alert-mark` still supplies the tint — this is
+    // what proves a note keeps its level colour rather than the gold default.
+    assert.equal(note.markColor, 'rgb(24, 61, 107)');
   });
 
   it('costs the three alert cards no overflow they do not already have', async () => {

@@ -1409,8 +1409,9 @@ const CSS = `
    17px/14px is subordinate to the card's 23px/18px while still meeting the
    smallest body size this surface uses anywhere else (14px).
    The body wraps to TWO lines rather than one. It was a single nowrap line and
-   that was measured to be wrong: the body carries an unbounded cross product of
-   overlapping pairs, and at two pairs 51.3% of it was ellipsised away. Two lines
+   that was measured to be wrong: the body carries one clause per overlapping
+   pair, bounded by |Myles timed| × |Ophelia timed|, and on a fixture of two
+   mutually overlapping events each (four clauses) 51.3% of it was ellipsised away. Two lines
    roughly doubles the budget, and digest/flags.js now leads the body with the
    standing default so the sentence that must survive is never the part cut.
    max-width is 26% and that number is measured, not chosen. The note is a flex

@@ -223,9 +223,13 @@ const EVALUATORS = [
     // note states the pairing and the standing default and asks for nothing.
     //
     // THE STANDING DEFAULT LEADS, and the order is load-bearing rather than
-    // stylistic. `desc` is a cross product — two overlapping pairs produce four
-    // clauses — so it grows without bound, while the note renders in a fixed
-    // 92px band. Measured at 2560×1440 with the default trailing: at two pairs
+    // stylistic. `desc` has one clause per OVERLAPPING PAIR, and the loop above
+    // is a nested scan, so the count is bounded by |Myles timed| × |Ophelia
+    // timed| rather than by either alone — two of each that all overlap give
+    // four clauses, not two. So it grows faster than the event count, while the
+    // note renders in a fixed 92px band.
+    // Measured at 2560×1440 with the default trailing, on a fixture where two
+    // Myles and two Ophelia events mutually overlap (four clauses):
     // only 51.3% of the body was visible and the ellipsis had eaten the whole
     // 'Wade takes Myles, Robyn takes Ophelia' sentence, leaving a note that
     // listed activities and said nothing. Leading with it means the sentence
