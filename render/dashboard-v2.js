@@ -948,17 +948,33 @@ function renderAthletics(data) {
   </section>`;
 }
 
+// A `noteOnly` flag is standing household context rather than an open
+// operational alert. It is deliberately NOT one of the three .alert-card
+// positions — those are for things that changed — but it is still shown, as a
+// compact note at the end of the band. `bannerOnly` stays what it always was:
+// not rendered here at all. See digest/flags.js's kid-overlap evaluator, the
+// only flag that sets `noteOnly` today.
 function renderAlerts(flags) {
-  const items = (flags || []).filter(flag => !flag.bannerOnly).slice(0, 3);
-  if (!items.length) return '<section class="alerts-panel"><div class="alert-card calm"><b>All clear</b><span>No open operational alerts.</span></div></section>';
-  return `<section class="alerts-panel">${items.map(flag => {
-    const is757 = /757\s*swim/i.test(`${flag.title || ''} ${flag.body || flag.message || ''}`);
-    const indicator = is757 ? logo(V2_LOGOS.swim757, 'alert-identity') : '<span class="alert-mark" aria-hidden="true"></span>';
-    return `<div class="alert-card level-${esc(flag.level || 'blue')}">
+  const all = (flags || []).filter(flag => !flag.bannerOnly);
+  const items = all.filter(flag => !flag.noteOnly).slice(0, 3);
+  const notes = all.filter(flag => flag.noteOnly);
+  const noteMarkup = notes.map(flag => `<div class="alert-note level-${esc(flag.level || 'blue')}">
+    <span class="alert-mark" aria-hidden="true"></span>
+    <div><b>${esc(cleanDisplayText(flag.title || 'Family note'))}</b><span>${esc(cleanDisplayText(flag.body || flag.message || ''))}</span></div>
+  </div>`).join('');
+  // The all-clear card describes the three card positions, so it still stands
+  // when the only flags present are notes — a note is not an open alert.
+  const cardMarkup = items.length
+    ? items.map(flag => {
+      const is757 = /757\s*swim/i.test(`${flag.title || ''} ${flag.body || flag.message || ''}`);
+      const indicator = is757 ? logo(V2_LOGOS.swim757, 'alert-identity') : '<span class="alert-mark" aria-hidden="true"></span>';
+      return `<div class="alert-card level-${esc(flag.level || 'blue')}">
     ${indicator}
     <div><b>${esc(cleanDisplayText(flag.title || 'Family note'))}</b><span>${esc(cleanDisplayText(flag.body || flag.message || ''))}</span></div>
   </div>`;
-  }).join('')}</section>`;
+    }).join('')
+    : '<div class="alert-card calm"><b>All clear</b><span>No open operational alerts.</span></div>';
+  return `<section class="alerts-panel">${cardMarkup}${noteMarkup}</section>`;
 }
 
 function weatherIcon(kind) {
@@ -1379,6 +1395,12 @@ const CSS = `
 .athletics-grid{height:calc(100% - 38px);display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:11px}.athletic-card{min-width:0;border-right:1px solid rgba(20,40,31,.18);padding:0 10px 0 0;display:flex;flex-direction:column;overflow:hidden}.athletic-card:last-child{border-right:0}.athletic-ribbon{height:28px;color:#fff;display:flex;align-items:center;gap:6px;padding:3px 9px;font-size:11px;font-weight:900;text-transform:uppercase;clip-path:polygon(0 10%,5% 0,27% 8%,45% 0,68% 10%,92% 2%,100% 27%,97% 74%,100% 93%,70% 88%,46% 100%,20% 90%,0 100%,3% 52%)}.tone-red .athletic-ribbon{background:${COLORS.red}}.tone-purple .athletic-ribbon{background:${COLORS.purple}}.tone-blue .athletic-ribbon{background:${COLORS.blue}}.athletic-logo{width:21px;height:21px;object-fit:contain;background:#fff;border-radius:50%;padding:2px}.shark-mark{width:21px;height:12px;background:#1f7180;clip-path:polygon(0 45%,55% 0,100% 45%,62% 62%,46% 100%,38% 65%)}.record{font-family:Georgia,serif;font-size:32px;line-height:1;margin-top:5px}.athletic-card>small{font-size:10px;color:#6f756e}.season-tag{font-size:10px;background:rgba(212,154,24,.13);padding:4px 7px;margin:5px 0}.next-box{border:1px solid rgba(212,154,24,.35);background:rgba(212,154,24,.08);padding:5px 7px;margin-top:6px;display:flex;flex-direction:column;font-size:10px}.next-box b{text-transform:uppercase;font-size:8px;color:#726027}.result-line{display:flex;align-items:baseline;gap:7px;margin-top:6px}.result-line b{font-size:18px;color:#3f7c3f}.result-line span{font-size:9px;text-transform:uppercase}.standing-line{font-size:11px;margin-top:7px;font-weight:900}table{width:100%;border-collapse:collapse;margin-top:auto;font-size:10px}th{text-transform:uppercase;font-size:8px;color:#697269;text-align:right;border-bottom:1px solid rgba(20,40,31,.22)}th:first-child,td:first-child{text-align:left}td{text-align:right;padding:2px 0;border-bottom:1px solid rgba(20,40,31,.08)}tr.is-me td{font-weight:900;color:${COLORS.green}}.swim-rows{display:flex;flex-direction:column}.swim-row{display:grid;grid-template-columns:1.3fr .7fr .55fr .85fr;gap:4px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(20,40,31,.12);font-size:10px}.swim-row>span{display:flex;gap:4px}.swim-row span small{background:#e1e1dc;border-radius:4px;padding:1px 3px;font-size:7px}.swim-row strong{font-family:Georgia,serif;font-size:16px}.swim-row em{font-size:7px;color:#3f7c3f;font-weight:900}.swim-row i{font-size:8px;color:${COLORS.red}}.swim-row>b{font-size:7px;color:#6e726d;text-align:right}.athletic-footer{margin-top:auto;font-size:8px;color:#6e726d}.empty-state{color:#827c70;font-style:italic;font-size:13px;padding:10px}
 .alert-card{flex:1;border:1.5px solid rgba(190,141,43,.42);background:rgba(250,245,233,.85);border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;min-width:0}.alert-card div{display:flex;flex-direction:column;min-width:0}.alert-card b{font-size:14px}.alert-card span{font-size:11px;margin-top:3px}.alert-mark{width:13px;height:13px;border-radius:50%;background:${COLORS.gold};flex:0 0 auto}.level-red .alert-mark{background:${COLORS.red}}.level-blue .alert-mark{background:${COLORS.blue}}.level-amber .alert-mark{background:${COLORS.gold}}.calm .alert-mark{background:#628d50}
 .alert-identity{width:29px;height:29px;object-fit:contain;flex:0 0 auto}
+/* Standing context, not an open alert: shares the alerts band with the cards but
+   is deliberately not one of them — no card fill, no border, shrink-to-fit width,
+   and smaller type. Nothing else in this stylesheet targets .alert-note, so these
+   sizes are final; the later couch-distance blocks only re-size .alert-card. The
+   level tint on .alert-mark still applies, so a note keeps its level colour. */
+.alert-note{flex:0 1 auto;max-width:32%;min-width:0;display:flex;align-items:center;gap:9px;padding:12px 2px 12px 6px;opacity:.74}.alert-note div{display:flex;flex-direction:column;min-width:0}.alert-note b{font-size:16px;font-weight:700;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.alert-note span{font-size:13px;line-height:1.05;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.alert-note .alert-mark{width:9px;height:9px}
 .rail-card{padding:12px}.clock-card{text-align:center;display:flex;flex-direction:column;justify-content:center}.clock-card time{font-family:Georgia,serif;font-size:45px;color:${COLORS.greenDark};line-height:1}.clock-card span{font-family:"Segoe Print","Trebuchet MS",sans-serif;font-size:13px;font-weight:800;margin-top:7px}.current-weather{display:flex;flex-direction:column;align-items:center;justify-content:center}.weather-now{display:flex;align-items:center;justify-content:center;gap:8px}.weather-now svg{width:47px;height:47px}.weather-now strong{font-family:Georgia,serif;font-size:46px;color:${COLORS.greenDark}}.current-weather>span{font-size:12px;font-style:italic}.current-weather>small{font-size:10px;margin-top:5px;color:#6a6c66}.forecast-card{display:flex;flex-direction:column;padding:4px 12px}.forecast-row{display:grid;grid-template-columns:1fr 31px 33px 28px;grid-template-rows:1fr auto;gap:0 4px;align-items:center;flex:1;border-bottom:1px solid rgba(20,40,31,.17);font-size:12px}.forecast-row>span{font-weight:800}.forecast-row svg{width:27px;height:27px;grid-row:1/3;grid-column:2}.forecast-row b{font-family:Georgia,serif;font-size:17px;text-align:right}.forecast-row small{font-size:11px;text-align:right}.forecast-row i{font-size:8px;grid-column:3/5;text-align:right;color:#53675e}.forecast-row.today>span{color:${COLORS.green}}svg{fill:none;stroke:${COLORS.greenDark};stroke-width:3;stroke-linecap:round;stroke-linejoin:round}.countdown-card{text-align:center;display:flex;flex-direction:column;justify-content:center;position:relative}.countdown-card:before,.countdown-card:after{content:"";position:absolute;width:30px;height:2px;background:${COLORS.gold};top:57%;transform:rotate(18deg)}.countdown-card:before{left:14px}.countdown-card:after{right:14px;transform:rotate(-18deg)}.countdown-card span{font-family:"Segoe Print","Trebuchet MS",sans-serif;text-transform:uppercase;font-weight:900;color:${COLORS.green};font-size:17px}.countdown-card strong{font-family:Georgia,serif;font-size:70px;line-height:1;color:${COLORS.greenDark}}.countdown-card small{font-size:14px;font-weight:900;letter-spacing:.08em}
 .sports-ticker{background:${COLORS.greenDark};color:#fff;display:flex;align-items:center;border-radius:9px;padding:7px 12px;position:relative;overflow:hidden}.ticker-slot{flex:1;display:flex;align-items:center;gap:9px;opacity:.62;border-right:1px solid rgba(255,255,255,.2);padding:0 14px;min-width:0}.ticker-slot:first-child{padding-left:0}.ticker-slot.active{opacity:1}.ticker-slot>div{display:flex;flex-direction:column;min-width:0}.ticker-slot b{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ticker-slot span{font-size:8px;color:#e6c978;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.ticker-meta{display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.metadata-dedicated .ticker-meta{display:block;font-size:7px;line-height:1;color:rgba(241,230,208,.68);margin-top:2px}.ticker-logo{width:27px;height:27px;object-fit:contain;flex:0 0 auto}.updated{position:absolute;right:8px;bottom:2px;font-size:6px;color:#d6b55c}
 .priorities{display:flex;flex-direction:column;flex:1;min-height:0}.priority-row{flex:1;min-height:0}.today-bottom{margin-top:0}

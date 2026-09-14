@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2615+ passing with a browser
+- Run npm test after changes — must stay at 2636+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row). **This line and the floor at the end of the current baseline
   entry are one figure in two places — move both or neither.** It has now gone
@@ -2322,6 +2322,84 @@ left until that merges. Also untouched: `render/` in its entirety, Dashboard v1,
 the email renderer, `data/flag-football.json`, `data/sports-config.json`,
 `data/special-events.json`, and every kill switch.
 
+## Activity-overlap flag demotion (September 14, 2026)
+
+The `activity-overlap` flag recites the always-on split-coverage rule — Wade takes Myles,
+Robyn takes Ophelia — so it is standing household context rather than news, and it was
+taking the two most prominent positions on Dashboard v2 on every day it fired. It is
+**demoted, not removed**: whether it is worth nothing is not established, so it stays
+visible.
+
+**What it was taking, read from the code rather than inferred.**
+
+1. `digest/nowNextSelector.js`'s `problemCandidates()` admits every flag passing
+   `!bannerOnly && (level === 'red' || level === 'amber')` as a `NOW_NEXT_UNRESOLVED_PROBLEM`
+   at `PRIORITY` **700**, the top of the table (`IMMINENT_DEPARTURE` is next at 600), and
+   `selectNowNext` features `candidates[0]`. An amber flag therefore won the featured slot
+   outright. Reproduced before the change: featured `selectedSource` was
+   `{"type":"flag","id":"activity-overlap"}` with the real event pushed to
+   `"Later today: Sharks Practice"`.
+2. `render/dashboard-v2.js`'s `renderAlerts()` — **v2's only consumer of `data.flags`** —
+   sliced the first three non-`bannerOnly` flags into `.alert-card`s regardless of level, so
+   it also held one of three card positions.
+
+**`supportFrom()` never admits an `UNRESOLVED_PROBLEM` into a supporting block**, so there
+is no middle tier: leaving the featured slot means leaving NOW/NEXT entirely. That is why
+the demotion is total on that surface rather than a rank change.
+
+**Two levers, both on the flag; the selector is untouched.**
+
+| lever | effect | why this one |
+|---|---|---|
+| `level: 'amber'` → `'blue'` | fails `problemCandidates`'s existing red/amber filter | the flag stops qualifying; **`nowNextSelector.js` is not edited**, so nothing else is re-ranked. Blue is also the honest level for standing context. |
+| `noteOnly: true` (new) | `renderAlerts()` keeps it out of the three cards and renders it as a compact `.alert-note` | level alone does not help — `renderAlerts` ignores level entirely |
+
+**`bannerOnly: true` would have done both in one property and was rejected.** Dashboard v2
+renders `bannerOnly` flags **nowhere**: `renderAlerts` is v2's only flags consumer and filters
+them out, and the only surface that honours `bannerOnly` is frozen v1
+(`render/dashboard.js`), which additionally needs a `message` or `label()` this flag does not
+have. It would have hidden the flag rather than quieted it.
+
+**The text was reshaped with the level, not decoratively.** `🟡` is the amber indicator glyph
+and contradicts `level: 'blue'`; "Split Coverage Needed" and "Confirm both can cover" assert
+an open decision, which is the framing being retired. The note now reads
+`🔵 Overlapping Activities — Standard Split Coverage` / `<pairs>. Standing default: Wade takes
+Myles, Robyn takes Ophelia.` and asks for nothing.
+
+**Firing conditions are untouched.** The overlap detection, the `isRoutineCentersEvent()`
+exclusion and the `isStandardCoverageRoutine()` exclusion are unchanged, and the three
+pre-existing `digest/flags.test.js` firing cases pass unmodified.
+
+**The `.alert-note` tier, and its one crossing of the surface boundary.** CLAUDE.md's
+Surface boundaries section gives presentation to Codex. This change edits
+`render/dashboard-v2.js` anyway, in `renderAlerts()` and one CSS rule, because "not a card
+but still visible" has no existing expression on v2 — `bannerOnly` is the only flag-level
+presentation lever and it means *invisible* here. Stated rather than done quietly. The tier
+is deliberately generic (`renderAlerts` keys on `noteOnly`, not on the flag id) and the
+kid-overlap evaluator is its only user today.
+
+**Measured in a browser at 2560×1440, not asserted.** The note paints at 551.42 × 92 px
+inside the alerts band, `insidePanel: true`, title not clipped, level mark
+`rgb(24, 61, 107)`, title 16px against the card's 23px. The panel box is unchanged at
+`18, 1245, 2211.23 × 92`, the dashboard canvas is unchanged at `0,0,2560,1440`, there are
+still exactly three cards, and every card keeps its top and bottom edge. The cards do share
+width with the note (728.41 → 540.27 px each in the three-alert fixture) — the note costs no
+card *position*, which is the requirement, but it is not free of width, and that is recorded
+rather than glossed. No new text clipping: the same card `<b>` elements report the same
+overflow condition with and without the note.
+
+**Byte-identical when no note flag is present.** `renderAlerts`'s output for zero, one, two
+or three ordinary flags is the same string it produced before the tier existed; a test pins
+the three-flag markup verbatim.
+
+**Not covered, and deliberately so.** `render/dashboard-mobile.js` filters only `bannerOnly`,
+so the flag still renders there as an ordinary "Operational notice" — mobile has no
+three-slot cap, so it was not one of the positions in question. `render/email.js`'s `renderFlags()` maps every
+flag it is given with no `bannerOnly` filter and no cap (its owner-tab sections filter on
+`owner` only), so the email is unchanged. Frozen v1's `renderAlerts` also filters only
+`bannerOnly`, so v1 still shows it as an alert, now blue — v1 is frozen and no v1 test fails,
+so the freeze's failing-test exception does not apply and was not used.
+
 ## Weekly Household Operations Review
 
 ### Phase 5 — Menu Planning (~5 min)
@@ -2449,7 +2527,7 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 - **`render/dashboard.js`** — **FROZEN (2026-08-27) — do not iterate, refactor, or debug; see "Frozen surfaces" near the top of this file.** HTML dashboard renderer; consumes `digestData` and produces the full dashboard page. Added `eventDateKeyET(start)` (Jul 2026), exported for testing — resolves an event's ET calendar-date bucket key: `start.date` passthrough for all-day events, `toLocaleDateString('en-CA', {timeZone: 'America/New_York'})` for timed events. Replaces the old `raw.slice(0,10)` UTC-slice in `renderWeekCard`, which had misbucketed any event at/after 8 PM ET into the next day.
 - **`render/email.js`** — HTML email renderer; parallel to dashboard but for the digest email.
 - **`digest/aliases.js`** — maps raw calendar event titles/calendars to resolved display forms.
-- **`digest/flags.js`** — computes alert flags (gear reminders, bag-prep warnings, etc.) from resolved events. Added (Aug 2026) an Emma-unavailability evaluator reading `ctx.emmaUnavailableBlocks` — no I/O, pure.
+- **`digest/flags.js`** — computes alert flags (gear reminders, bag-prep warnings, etc.) from resolved events. Added (Aug 2026) an Emma-unavailability evaluator reading `ctx.emmaUnavailableBlocks` — no I/O, pure. The kid-overlap evaluator is the one flag carrying `noteOnly: true` (Sept 2026) — see "Activity-overlap flag demotion".
 - **`digest/emmaUnavailabilityParser.js`** — added Aug 2026. Fetches and parses Emma's UTA reserve-duty / annual-tour-duty unavailability blocks from the "House Manager" calendar (`690a345d...@group.calendar.google.com`, intentionally excluded from `FAMILY_CALENDARS`). Exports pure helpers (`extractUnavailabilityType`, `exclusiveEndToInclusive`, `buildUnavailabilityBlock`, `parseEmmaUnavailabilityBlocks`) plus the async `fetchEmmaUnavailabilityBlocks(today)` entry point, which takes the caller's already ET-anchored `today` and never constructs `new Date()` itself.
 - **`digest/routineAnchorsParser.js`** — see the Routine Anchors section above. No file I/O of its own; reads `data/routine-anchors.json` via `builder.js`'s standard `readDataFile()`. Two independent suppression checks — `isRoutineSuppressedByCalendar` (school-type, 🏫-calendar-title scan) and `isCaregiverAnchorSuppressed` (caregiver-type, checks `emmaUnavailabilityParser.js` blocks) — with the branching between them decided by `builder.js`, keyed on `anchor.caregiver` presence.
 - **`digest/generateTasks.js`** — derives today's task list from events and school strip.
@@ -2468,7 +2546,66 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 ## Test baseline
 
-### Current baseline — measured Sept 11, 2026 on the Reviewer-gate wiring branch
+### Current baseline — measured Sept 14, 2026 on the activity-overlap demotion branch
+
+| Invocation | tests | pass | fail | cancelled | duration |
+|---|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2636 | **2636** | **0** | **0** | 41412 ms |
+
+Measured on `claude/demote-activity-overlap-flag-5hanxv`, branched from `origin/main` at
+**`0787d6c`**. `git fetch origin main` was run before deriving the merge base, per the
+standing warning; here the ref was already current, so the fetch moved nothing and
+`HEAD == merge-base == origin/main == 0787d6c`. The base was re-measured in this session,
+after `npm ci` and before any change: **2615 / 2615 / 0 / 0, 45307 ms** — which matches the
+figure the Sept 11 entry below recorded, so that figure held. Re-measure anyway; the run
+costs less than the correction does.
+
+This change adds **+21**, across three existing files:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `digest/flags.test.js` | 52 | 61 | +9 |
+| `render/dashboard-v2.test.js` | 93 | 101 | +8 |
+| `render/dashboard-v2-layout.test.js` | 28 | 32 | +4 |
+
+2615 + 21 = 2636, and **2636 is the measured figure in the table above rather than that
+sum** — the agreement is reassuring and is not itself evidence. Every before-figure was
+measured on the unmodified tree at `0787d6c` in this session, via `git stash`.
+
+**No existing test was deleted, skipped or weakened, and none needed updating.** The full
+suite was green at 2615/2615 with the source change applied and no test touched, which is
+the finding rather than a convenience: **nothing in the suite asserted either half of this
+flag's prominence** — not its `level`, not its NOW/NEXT candidacy, not its alert-card
+placement. All 21 new cases are guards for behaviour that previously had none.
+`git diff --numstat -- '*test*'` reports **0 deletions** in all three files — `100/0`,
+`96/0`, `66/0` — so no line of any pre-existing test changed at all, let alone an `it()`
+being removed. No `.skip` or `.todo` appears anywhere in the diff. *(An earlier draft of
+this paragraph claimed one deletion in the layout file, for a DOM selector fixed during
+development. That selector was on a line this same change had added, so against the base it
+is an insertion; numstat says 0. Measured, not recalled.)*
+
+**One run failed during development and the failure was in the new test, not the change.**
+`render/dashboard-v2-layout.test.js` → *"shows both the standing default and the activities
+that overlap"* asserted against `''`: the helper read the note body with
+`querySelector('div > span')`, and since `.alert-note` is itself a `div` whose first child
+is the empty `.alert-mark` span, that selector matched the mark. TAP captured before any
+re-run; fixed to `b + span`; 32/32 thereafter. Recorded because a test that reads the empty
+string and is then "fixed" is exactly how a browser assertion stops having teeth — this one
+was reading the real DOM, which is why it failed.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2636+ with no failures once a browser resolves.**
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
+quoting a figure that was not taken is exactly the unfalsifiable claim this section exists
+to prevent.
+
+### Prior baseline — Sept 11, 2026, retained only for the flake-rate figures cited from Known open items
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
@@ -2569,7 +2706,13 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2615+ with no failures once a browser resolves.**
+⚠ **This entry's Coder-mode floor line was removed on Sept 14, 2026, deliberately.** It read
+`2615+`, and the moment a newer baseline was added above it the figure existed in *three*
+places rather than the two the rule names — a stale floor of `2615+` licenses deleting the
+21 tests the newer change added, which is the precise failure the rule at the top of this
+file describes. The floor lives in exactly two places: the CODER MODE bullet and the end of
+the **current** baseline entry. A superseded entry keeps its measurement table and loses its
+floor.
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
 quoting a figure that was not taken is exactly the unfalsifiable claim this section exists
@@ -3280,7 +3423,7 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
 - **Dashboard artifact package initialization is now validated (Aug 28, 2026):** The bundled Lambda erased `import.meta.url`, causing `render/first-day-level3.js` to throw `ERR_INVALID_URL` at cold start even though the template already supplied `DASHBOARD_FIRST_DAY_ASSET_DIR`. The loader now honors that environment path, matching the everyday renderer, and `validate-dashboard-artifact-package.mjs` loads the built bundle with all three packaged-directory environment variables so this class of deploy-time startup failure blocks CI before SAM deploy.
 - **NOW/NEXT occurrence identity (Aug 17, 2026):** event candidates are keyed by concrete occurrence (`raw.id + start`), while `raw.recurringEventId` remains source metadata only. Competing candidate types for one occurrence are consolidated before ranking; supporting orientation excludes only the chosen occurrence so later instances of a recurring event remain eligible. Keep these identities separate in future selector changes.
 - **Dashboard Centers are calendar-driven (Aug 2026):** Dashboard v2 renders a compact Monday-Friday kid-facing Centers strip below Weekly Priorities from dated calendar events named `Myles: [Center] (Centers)` / `Ophelia: [Center] (Centers)`. `data/kids-profile.json` supplies reference metadata only (both children now carry a confirmed `centersRotation` with an explicit `phaseConfirmed: true`; Myles's `centersGroup` is 6, Ophelia's is permanently null because numbered groups are Grade 5 only); its rotation sequence must never be advanced to infer dated Centers. The strip shows the current school week Monday-Friday, then rolls to the upcoming school week on Saturday for weekend preparation. The 14-day pull includes seven days of history so the full current week remains available after Monday. Routine Centers entries are excluded from Today/NOW-NEXT and Next Two Weeks. `schoolStrip.centersWeek` supports optional date-scoped `action` cues for bring/do reminders without changing ordinary center cells.
-- **Centers do not create kid-activity conflict flags (Sept 7, 2026):** The event-list filters already kept `Myles: [Center] (Centers)` / `Ophelia: [Center] (Centers)` out of NOW/NEXT and Next Two Weeks, but `computeFlags()` intentionally receives the complete resolved calendar set. Its kid-overlap evaluator therefore compared timed Centers entries as ordinary activities, emitted the amber `activity-overlap` flag, and NOW/NEXT correctly promoted that flag as an unresolved problem. The evaluator now reuses `isRoutineCentersEvent()` to exclude Centers at the conflict boundary. This is deliberately narrower than filtering the shared `resolvedEvents` input: Centers still populate `schoolStrip.centersWeek`, v1 keeps the same shared digest contract, and genuine overlapping Myles/Ophelia activities still flag. Two regression cases in `digest/flags.test.js` cover both directions.
+- **Centers do not create kid-activity conflict flags (Sept 7, 2026):** The event-list filters already kept `Myles: [Center] (Centers)` / `Ophelia: [Center] (Centers)` out of NOW/NEXT and Next Two Weeks, but `computeFlags()` intentionally receives the complete resolved calendar set. Its kid-overlap evaluator therefore compared timed Centers entries as ordinary activities, emitted the then-amber `activity-overlap` flag, and NOW/NEXT correctly promoted that flag as an unresolved problem. *(That promotion is no longer reachable — the flag was demoted to `level: 'blue'` on Sept 14, 2026 and is no longer a NOW/NEXT candidate at all; see "Activity-overlap flag demotion" below. The Centers exclusion this entry describes is unaffected: it is a firing condition, and firing conditions were not touched.)* The evaluator now reuses `isRoutineCentersEvent()` to exclude Centers at the conflict boundary. This is deliberately narrower than filtering the shared `resolvedEvents` input: Centers still populate `schoolStrip.centersWeek`, v1 keeps the same shared digest contract, and genuine overlapping Myles/Ophelia activities still flag. Two regression cases in `digest/flags.test.js` cover both directions.
 - **Standing GK training uses settled coverage (Sept 7, 2026):** Weekly GK/goalkeeper training is ordinary calendar context with a known household setup, not an unresolved split-coverage problem. `digest/routineEventPolicy.js` is the shared classifier for common GK, Goalkeeper, and GK Skills Training title forms. The kid-overlap flag evaluator excludes those occurrences, and NOW/NEXT excludes their ordinary imminent/orientation candidates while continuing to surface explicit cancellation, reschedule, move, or other change language. The event stays in the calendar and Coming Up inputs; this is not a builder or renderer filter. Other practices and training remain eligible for existing conflict and NOW/NEXT behavior.
 - **Coming Up is chronological and layout-aware, not prioritized (Aug 30, 2026):** Dashboard v2 applies the established 14-day window, menu/Centers exclusions, deduplication, and consecutive-repeat collapsing, then renders occurrences in time order. The taller one-athletics-card layout targets 14 events; the shorter multi-card layout targets 10. The final visible date is always included whole, so a day's schedule is never split merely to hit the numeric target. It must not priority-rank this panel. When more eligible occurrences remain, it displays their exact count as `+N later in the two-week window`; NOW/NEXT and On the Horizon retain their separate priority selection. Current conditions come from a nearby valid National Weather Service station observation, while forecast highs/lows and precipitation come from the NWS point forecast; retain the station/time label and nearby-station fallback so modeled conditions are not presented as observations.
 - **Dashboard v2 canonical composition (Aug 2026):** NOW/NEXT and the calendar-driven Centers strip are one everyday Dashboard v2, published as the normal `index.html` by `dashboard-artifact/generator.js`. The artifact contract requires both `now-next` and `centers-block` markers, preventing the old events-oriented fallback from being published accidentally. Shadow viewers, sibling `now-next.html` artifacts, and dual-publish machinery are not part of the canonical branch. The legacy v1 Drive dashboard remains only as a rollback path until the consolidated v2 has completed a production soak.

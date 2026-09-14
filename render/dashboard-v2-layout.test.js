@@ -841,3 +841,99 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
     assert.deepEqual(off.rows.map(row => row.box), ordinary.rows.map(row => row.box));
   });
 });
+
+// ---------------------------------------------------------------------------
+// The demoted activity-overlap flag renders as a note, measured rather than
+// asserted. "Still visible somewhere on the dashboard" is the half of the
+// demotion that a markup assertion cannot establish on its own: a note that is
+// zero-width, fully transparent, or pushed outside the panel would satisfy
+// every string check in render/dashboard-v2.test.js and show nothing on the
+// wall. These cases read the composited box out of a real browser.
+// ---------------------------------------------------------------------------
+
+describe('demoted alert note 2560x1440 visibility', () => {
+  const NOTE = Object.freeze({
+    id: 'activity-overlap',
+    level: 'blue',
+    noteOnly: true,
+    title: 'Overlapping Activities — Standard Split Coverage',
+    body: 'Sharks Practice (Myles) + Dance Class (Ophelia). Standing default: Wade takes Myles, Robyn takes Ophelia.',
+  });
+
+  async function alertsBand(flags) {
+    await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, flags }), { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+    return page.evaluate(() => {
+      const box = element => {
+        const rect = element.getBoundingClientRect();
+        return { left: +rect.left.toFixed(2), top: +rect.top.toFixed(2), width: +rect.width.toFixed(2), height: +rect.height.toFixed(2), right: +rect.right.toFixed(2), bottom: +rect.bottom.toFixed(2) };
+      };
+      const panel = document.querySelector('.alerts-panel');
+      const panelBox = box(panel);
+      return {
+        panel: panelBox,
+        cards: [...document.querySelectorAll('.alert-card')].map(box),
+        notes: [...document.querySelectorAll('.alert-note')].map(element => {
+          const style = getComputedStyle(element);
+          const noteBox = box(element);
+          const title = element.querySelector('b');
+          // `.alert-note` is itself a div and its first child is the empty
+          // `.alert-mark` span, so scope the body to the span that follows the
+          // title rather than to any descendant span.
+          const body = element.querySelector('b + span');
+          return {
+            box: noteBox,
+            displayed: style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity) > 0 && noteBox.width > 0 && noteBox.height > 0,
+            insidePanel: noteBox.left >= panelBox.left - 0.5 && noteBox.right <= panelBox.right + 0.5
+              && noteBox.top >= panelBox.top - 0.5 && noteBox.bottom <= panelBox.bottom + 0.5,
+            titleText: title.textContent,
+            bodyText: body.textContent,
+            titleFontPx: parseFloat(getComputedStyle(title).fontSize),
+            cardTitleFontPx: parseFloat(getComputedStyle(document.querySelector('.alert-card b')).fontSize),
+            markColor: getComputedStyle(element.querySelector('.alert-mark')).backgroundColor,
+          };
+        }),
+      };
+    });
+  }
+
+  it('paints the note inside the alerts band with a non-zero, visible box', async () => {
+    const { notes } = await alertsBand([...sampleDashboardV2Data.flags, NOTE]);
+    assert.equal(notes.length, 1);
+    assert.equal(notes[0].displayed, true);
+    assert.equal(notes[0].insidePanel, true);
+    assert.ok(notes[0].box.width > 100, `note is only ${notes[0].box.width}px wide`);
+    assert.ok(notes[0].box.height > 20, `note is only ${notes[0].box.height}px tall`);
+  });
+
+  it('shows both the standing default and the activities that overlap', async () => {
+    const { notes } = await alertsBand([...sampleDashboardV2Data.flags, NOTE]);
+    assert.match(notes[0].titleText, /Overlapping Activities/);
+    assert.match(notes[0].bodyText, /Sharks Practice \(Myles\)/);
+    assert.match(notes[0].bodyText, /Standing default/);
+  });
+
+  it('is subordinate to a card: smaller type, and it keeps its level colour', async () => {
+    const { notes } = await alertsBand([...sampleDashboardV2Data.flags, NOTE]);
+    assert.ok(notes[0].titleFontPx < notes[0].cardTitleFontPx,
+      `note title ${notes[0].titleFontPx}px is not smaller than card title ${notes[0].cardTitleFontPx}px`);
+    // The blue level mark, not the amber default — .alert-note .alert-mark sets
+    // size only, so .level-blue .alert-mark still supplies the colour.
+    assert.equal(notes[0].markColor, 'rgb(24, 61, 107)');
+  });
+
+  it('leaves the three card positions and the panel box exactly where they were', async () => {
+    const without = await alertsBand(sampleDashboardV2Data.flags);
+    const withNote = await alertsBand([...sampleDashboardV2Data.flags, NOTE]);
+    assert.equal(without.notes.length, 0);
+    assert.equal(without.cards.length, 3);
+    assert.equal(withNote.cards.length, 3);
+    assert.deepEqual(withNote.panel, without.panel);
+    // Every card keeps the band's top and bottom edge; only the shared width
+    // changes, because the note is a flex sibling rather than a fourth card.
+    for (const [index, card] of withNote.cards.entries()) {
+      assert.equal(card.top, without.cards[index].top);
+      assert.equal(card.bottom, without.cards[index].bottom);
+    }
+  });
+});

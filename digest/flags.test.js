@@ -12,6 +12,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { computeFlags } from './flags.js';
+import { selectNowNext } from './nowNextSelector.js';
 import { GAP_REASON } from './flagFootballIdentity.js';
 
 // ---------------------------------------------------------------------------
@@ -111,6 +112,105 @@ describe('Kid activity overlap', () => {
     ] }));
 
     assert.equal(flags.find(flag => flag.id === 'activity-overlap'), undefined);
+  });
+
+  // ── Demotion (Sept 2026) ──────────────────────────────────────────────────
+  // The flag recites the always-on split-coverage rule, so it is standing
+  // context rather than news. Before this change nothing in the suite asserted
+  // either half of its prominence, which is why it could sit in the two most
+  // prominent positions on the wall unchallenged. These cases are new guards,
+  // not rewritten ones — no assertion was relaxed, deleted or skipped to reach
+  // them, and the three firing cases above are untouched.
+  describe('demoted prominence', () => {
+    const overlapFlag = () => computeFlags(ctx({ resolvedEvents: [
+      timedKidEvent('Sharks Practice', 'Myles', '2026-09-08T18:00:00-04:00', '2026-09-08T19:00:00-04:00'),
+      timedKidEvent('Dance Class', 'Ophelia', '2026-09-08T18:30:00-04:00', '2026-09-08T19:30:00-04:00'),
+    ] })).find(flag => flag.id === 'activity-overlap');
+
+    it('is blue, so nowNextSelector’s problemCandidates filter rejects it', () => {
+      // problemCandidates() admits `!bannerOnly && (level red || amber)` at
+      // PRIORITY 700 — the top of the table — and supportFrom() never admits an
+      // UNRESOLVED_PROBLEM into a supporting block, so an amber flag here means
+      // the featured slot or nothing. Blue is what makes it stop qualifying;
+      // nowNextSelector.js itself is deliberately not modified.
+      assert.equal(overlapFlag().level, 'blue');
+    });
+
+    it('is noteOnly, so the v2 alerts panel keeps it out of the three cards', () => {
+      assert.equal(overlapFlag().noteOnly, true);
+    });
+
+    it('is not bannerOnly, because Dashboard v2 renders bannerOnly flags nowhere', () => {
+      // renderAlerts() is v2's only consumer of data.flags and filters
+      // bannerOnly out entirely, so bannerOnly would hide the flag rather than
+      // quiet it. It is demoted, not retired.
+      assert.notEqual(overlapFlag().bannerOnly, true);
+    });
+
+    it('states the standing default without asking for a decision', () => {
+      const flag = overlapFlag();
+      assert.match(flag.body, /Standing default: Wade takes Myles, Robyn takes Ophelia/);
+      assert.doesNotMatch(flag.body, /Confirm/i);
+      assert.doesNotMatch(flag.title, /Needed/i);
+      // The amber indicator glyph would contradict level 'blue'.
+      assert.doesNotMatch(flag.title, /\u{1F7E1}/u);
+    });
+
+    it('still names both overlapping activities, so the note is identifiable', () => {
+      const flag = overlapFlag();
+      assert.match(flag.body, /Sharks Practice \(Myles\)/);
+      assert.match(flag.body, /Dance Class \(Ophelia\)/);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// End-to-end: the demoted flag no longer displaces real events in NOW/NEXT.
+// computeFlags() feeds selectNowNext() exactly as builder.js wires them, so
+// this asserts the outcome the demotion exists for rather than the property
+// that produces it.
+// ---------------------------------------------------------------------------
+
+describe('Kid activity overlap — NOW/NEXT outcome', () => {
+  const kidEvent = (title, calendarName, start, end) => ({
+    title,
+    _calName: calendarName,
+    id: `${calendarName}-${title}`,
+    raw: { id: `${calendarName}-${title}`, start: { dateTime: start }, end: { dateTime: end } },
+  });
+  const events = [
+    kidEvent('Sharks Practice', 'Myles', '2026-09-08T18:00:00-04:00', '2026-09-08T19:00:00-04:00'),
+    kidEvent('Dance Class', 'Ophelia', '2026-09-08T18:30:00-04:00', '2026-09-08T19:30:00-04:00'),
+  ];
+  const now = new Date('2026-09-08T16:00:00-04:00');
+  const nowNext = () => {
+    const flags = computeFlags(ctx({ today: d('2026-09-08'), resolvedEvents: events }));
+    assert.ok(flags.find(flag => flag.id === 'activity-overlap'), 'fixture must actually fire the flag');
+    return selectNowNext({ flags, days: [{ events, tasks: [] }], upcomingEvents: [], now }, { now });
+  };
+
+  it('does not take the featured slot', () => {
+    const selected = nowNext().diagnostics.selectedSource;
+    assert.notEqual(selected.id, 'activity-overlap');
+    assert.equal(selected.type, 'event');
+  });
+
+  it('leaves the featured slot to a real event', () => {
+    assert.equal(nowNext().subject, 'Sharks Practice');
+  });
+
+  it('is not a candidate at all, at any rank', () => {
+    // Not merely outranked: problemCandidates() never builds it, so it cannot
+    // resurface if the day happens to contain nothing else.
+    const ids = nowNext().diagnostics.candidates.map(item => item.sourceId);
+    assert.ok(!ids.includes('activity-overlap'), `unexpected candidate: ${ids.join(', ')}`);
+  });
+
+  it('does not feature even on a day with no other candidate', () => {
+    const flags = computeFlags(ctx({ today: d('2026-09-08'), resolvedEvents: events }));
+    const bare = selectNowNext({ flags, days: [], upcomingEvents: [], now }, { now });
+    assert.equal(bare.diagnostics.selectedSource.type, 'fallback');
+    assert.equal(bare.signal, 'All clear');
   });
 });
 
