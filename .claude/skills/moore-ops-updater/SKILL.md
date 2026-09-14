@@ -286,6 +286,36 @@ Games live under `seasons[n].games`. Each game:
 
 ---
 
+## sharks-soccer.json conventions
+
+Matches live under `seasons[n].divisionSchedule.matches`. See the table above for the
+standings-vs-schedule team-name wording caveat.
+
+### `unverified: true` — a result entered before the league posted it (added Sept 14, 2026)
+
+Decided in conversation with Wade on this date; this paragraph is the first and only place
+it is written down. Not a pre-existing repo-wide convention — do not cite it as one.
+
+Set it on a match object when its result (`played`/`homeScore`/`awayScore`) was recorded
+from a household member's own observation of the match and has not yet been checked against
+the league's published GotSport/TASL page. **Absence means the result is published** —
+do not write `unverified: false` on an ordinary row.
+
+This replaces an earlier field, `resultSource` (a string, e.g. `"household-report"`), which
+carried the same meaning under a name that described *where* the result came from rather
+than *whether it's been checked*. `resultSource` was used once, on match 641, and was
+removed from that row once the league posted its own confirmation (commit `d70f280`, PR
+#78). As of this writing, zero rows in this file carry either field.
+
+Nothing in `digest/sharksParser.js` or elsewhere reads this key — it is provenance for a
+human re-checking the data later, not an input to any parser.
+
+```json
+{ "matchNumber": 641, "played": true, "homeScore": 1, "awayScore": 10, "unverified": true }
+```
+
+---
+
 ## Commit and push protocol
 
 After every data change:
