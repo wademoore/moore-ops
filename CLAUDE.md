@@ -2550,7 +2550,13 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2636 | **2636** | **0** | **0** | 41412 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2636 | **2636** | **0** | **0** | 40537 ms |
+
+Three browser-enabled runs were taken on this branch — 2615/2615 on the unmodified tree,
+then 2636/2636 twice (41412 ms, then 40537 ms; the table quotes the later one). **Do not
+read the durations as a comparison**: two runs on one side and one on the other cannot
+support one, and the 875 ms spread between the two same-input runs is itself larger than any
+effect two dozen assertions could have.
 
 Measured on `claude/demote-activity-overlap-flag-5hanxv`, branched from `origin/main` at
 **`0787d6c`**. `git fetch origin main` was run before deriving the merge base, per the
