@@ -2867,9 +2867,18 @@ helper's **assertions** rather than the rows that enter it. (A first version of 
 paragraph and of the harness's own comment both said the exec-form row reached two of the
 three. It reaches none. Round 3.)
 
-Unchanged and re-run rather than assumed: `node scratch/reviewer-gate/mutation-check.mjs` →
-**25 mutations, ALL PROVEN**, control 57. Repointing the behavioural default does not touch
-it, because its control calls `runSuite(HERE)` — naming `scratch/reviewer-gate` explicitly
+⚠ **The figures in this paragraph were measured before the gate's unknown-verdict note was
+reworded, and they no longer hold.** It read: "Unchanged and re-run rather than assumed:
+`node scratch/reviewer-gate/mutation-check.mjs` → **25 mutations, ALL PROVEN**, control 57."
+That was true when written. Reworking the wired hook and then the tests that assert it left
+the harness measuring a stale scratch copy; its control no longer passes and two rows no
+longer prove anything. **The current measurement has exactly one home — the Known open item
+below — and is deliberately not restated here**, because a live figure inside a retraction is
+one more place to rot, which is the failure this section records happening three times.
+
+What still holds is the mechanism, which no rewording touches: repointing the behavioural
+default does not touch the harness, because its control calls `runSuite(HERE)` — naming
+`scratch/reviewer-gate` explicitly
 — and every mutant is a temp copy of that same directory. That is what keeps the harness
 measuring the tree it mutates rather than the wired one, and it is why the duplicates and
 the `REVIEWER_GATE_HOOK_DIR` override both have to stay.
@@ -3097,12 +3106,38 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
   same program. A comment in `reviewer-gate.test.js` states this so the next reader does not
   follow the pointer and get the contradictory result.
 
+  ⚠ **`require-review.mjs` is the smaller half of this divergence.**
+  `record-review-verdict.mjs` has drifted further and earlier: `git diff --no-index --stat
+  .claude/hooks/record-review-verdict.mjs scratch/reviewer-gate/record-review-verdict.mjs`
+  reports **29 insertions, 109 deletions**, because the scratch copy predates `14774ab`
+  (#83) and has **no Tier 1 at all** — `grep -c SubagentHandback` is **0** there against
+  **5** in the wired copy. So the harness's control and its recorder mutation rows measure a
+  recorder missing the entire tier #83 added: the very tier whose absence made the old gate
+  note false. Nothing in the suite covers that tier either — `grep -rl SubagentHandback
+  test/` returns nothing — which is why this half of the drift does not show up in the
+  control's failure count at all. **Any remedy must name both scripts**; syncing only
+  `require-review.mjs` produces a green control and leaves the larger divergence in place,
+  reading as though it were closed.
+
+  One trap for whoever syncs them: `14774ab` and `9c0b88c` each stripped the trailing
+  newline from the file they touched, and the harness row `'recorder is allowed to block'`
+  anchors on a string ending `process.exit(0);\n`. A wholesale copy would make that anchor
+  match zero times and the harness would abort rather than score the row.
+
+  **A second consequence of the red control, beyond the two dead rows:** every mutated run
+  now inherits the control's 2 failures, so `mutation-check.mjs`'s `r.fail === 0` check —
+  its detector for a mutation that changed nothing behaviourally — can no longer fire. The
+  harness's own comment already says a non-green control makes the table meaningless; this
+  is the specific mechanism.
+
   **Not fixed deliberately, on scope:** the remedy edits two hook copies (the session that
   found it was told not to change any hook) and then the harness's own expected names — an
   unreviewed change to the thing that produces the evidence, inside the change it would be
-  evidence for. Remedy when someone takes it: sync both scratch copies to
-  `.claude/hooks/require-review.mjs`, update the two expect arrays, and re-run the harness
-  expecting a green control and 25/25. Note also that nothing enforces the copies stay
+  evidence for. Remedy when someone takes it: sync all four scratch copies —
+  `require-review.mjs` AND `record-review-verdict.mjs`, in both `scratch/reviewer-gate/`
+  and `scratch/reviewer-gate-install/` — to their `.claude/hooks/` originals, fix any
+  mutation anchor the sync invalidates (see the trailing-newline trap above), update the two
+  expect arrays, and re-run the harness expecting a green control and 25/25. Note also that nothing enforces the copies stay
   identical — `reviewer-gate.test.js`'s own header says so, and no test asserts parity.
 
 - **All three of Ophelia's 50-yard times in `swim-results.json` are recorded exactly 20.00s

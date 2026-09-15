@@ -9,8 +9,12 @@
 // the failure this project rates above a stale document: the next session reads a
 // comment as authority and has no reason to check it.
 //
-// Byte-identical duplicates of both scripts also live in scratch/reviewer-gate/ and
-// scratch/reviewer-gate-install/, and nothing enforces that they stay identical. So
+// Duplicates of both scripts also live in scratch/reviewer-gate/ and
+// scratch/reviewer-gate-install/, and nothing enforces that they stay identical -- they
+// are NOT byte-identical today, which is why that word is gone from this sentence. Both
+// scratch copies of require-review.mjs predate the unknown-verdict rewording, and both
+// copies of record-review-verdict.mjs predate #83's SubagentHandback tier entirely. See
+// Known open items in CLAUDE.md; the comment at the no-source test depends on it. So
 // while this file defaulted to the scratch copy, 57 cases were proving properties of
 // a program no hook event ever executes. Defaulting to .claude/hooks/ closes that.
 //
@@ -148,6 +152,11 @@ const recorder = (repo, extra) => runHook(RECORDER, subagentPayload(repo, extra)
  * of stderr: the "Unreviewed range:" line above it carries SHAs, and every fixture
  * builds its own throwaway repo, so two notes compared as whole stderr differ for
  * reasons that have nothing to do with the note.
+ *
+ * Captures ONE line -- `.` does not cross a newline -- which is all a recordNote is
+ * today. A future multi-line note would put its later lines outside anything asserted
+ * through this helper. Negative assertions therefore read whole stderr instead: they
+ * gain nothing from the narrowing and would lose reach.
  */
 function reason(stderr) {
   const m = /^Reason: (.*)$/m.exec(stderr);
@@ -206,7 +215,7 @@ test('blocks: verdict is "fail"', () => {
   assert.match(stderr, /last Reviewer verdict was "fail"/);
 });
 
-test('blocks: verdict "unknown" with a known source names that source, and asserts no cause', () => {
+test('blocks: verdict "unknown" with a known source names that source, without the retired cause', () => {
   const repo = makeRepo({ commits: 1 });
   writeRecord(repo, {
     schema: 1, sessionId: SESSION, sha: repo.head, verdict: 'unknown',
@@ -230,8 +239,17 @@ test('blocks: verdict "unknown" with a known source names that source, and asser
   // cannot know which occurred. The old note asserted the first of the three and
   // sent the reader to an install step that may already be correctly applied.
   // Matching literals rather than intent is deliberate here: these ARE the specific
-  // false statements being kept out, and a looser pattern would not name them.
-  assert.doesNotMatch(reason(stderr), /emitted no "REVIEW: PASS"|install step/);
+  // false statements being kept out, and a looser pattern would not name them. The
+  // cost is that it is a regression pin against that text and not a general guarantee
+  // -- a cause worded differently would pass, which is why this test is named for
+  // what it pins rather than for "asserts no cause".
+  //
+  // Read against whole stderr, not reason(): the gate's closing paragraph is part of
+  // the block message too, and a cause reinstated there would escape a Reason-only
+  // pin. A negative assertion gains nothing from the narrowing -- the SHA noise that
+  // reason() exists for cannot satisfy one -- so it costs only reach. The pair this
+  // test replaced read whole stderr, and narrowing it was an unannounced weakening.
+  assert.doesNotMatch(stderr, /emitted no "REVIEW: PASS"|install step/);
 });
 
 test('blocks: verdict "unknown" with no source gets its own note, not the known-source one', () => {
@@ -285,8 +303,9 @@ test('blocks: verdict "unknown" with no source gets its own note, not the known-
   // this test replaced carried the pin here, so omitting it was a net weakening.
   // It matters most on this branch: a falsy source can be a recorder-side read
   // failure (transcriptLines() returns [] on any throw), so a note blaming the
-  // Reviewer is least supportable exactly here.
-  assert.doesNotMatch(reason(withoutSource.stderr), /emitted no "REVIEW: PASS"|install step/);
+  // Reviewer is least supportable exactly here. Whole stderr, for the reason given on
+  // the same assertion in the previous test; literal-scoped, with the same limit.
+  assert.doesNotMatch(withoutSource.stderr, /emitted no "REVIEW: PASS"|install step/);
 });
 
 test('blocks: a truthy non-pass verdict is not treated as a pass', () => {
