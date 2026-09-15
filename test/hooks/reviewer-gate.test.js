@@ -249,6 +249,12 @@ test('blocks: verdict "unknown" with a known source names that source, without t
   // pin. A negative assertion gains nothing from the narrowing -- the SHA noise that
   // reason() exists for cannot satisfy one -- so it costs only reach. The pair this
   // test replaced read whole stderr, and narrowing it was an unannounced weakening.
+  //
+  // That reasoning is about FALSE-CAUSE pins, which ask whether a claim appears anywhere
+  // in the message. It does NOT generalise to every doesNotMatch here: the
+  // doesNotMatch(/recorded from/) in the next test asks which note the gate CHOSE, and
+  // reason() is the right scope for that, per its own docstring. Do not "fix" it to match
+  // this one.
   assert.doesNotMatch(stderr, /emitted no "REVIEW: PASS"|install step/);
 });
 

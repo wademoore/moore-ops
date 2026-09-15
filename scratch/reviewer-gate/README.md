@@ -4,8 +4,10 @@
 `.claude/hooks/` and wired them in `.claude/settings.json`; that wiring is asserted
 by `test/hooks/enforcement-wiring.test.js`, and `test/hooks/reviewer-gate.test.js`
 now exercises those wired copies by default. What remains unwired is **this
-directory**: the copies here are byte-identical duplicates that `.claude/settings.json`
-does not reference, so no hook event ever executes them. Unwired, not unreferenced —
+directory**: the copies here are duplicates that `.claude/settings.json` does not
+reference, so no hook event ever executes them. They are **no longer byte-identical** to
+their wired originals — see the Known open item in CLAUDE.md; this file said "byte-identical"
+until Sept 15, 2026 and it had stopped being true. Unwired, not unreferenced —
 `mutation-check.mjs` here names this directory as its own control, and three scripts in
 `scratch/reviewer-gate-install/` point at it. They are kept as raw material for that
 harness, which needs a tree it can damage (`.claude/hooks/` is unwritable under this
@@ -286,14 +288,22 @@ Each spawns the real script with a real hook payload against a real throwaway gi
 repository and asserts the exit code, so it tests the shipped scripts rather than a
 copy of their logic. **Since Sept 11, 2026 "the shipped scripts" means the WIRED
 copies in `.claude/hooks/`, not the ones in this directory** — the file's default hook
-directory was repointed there, because three byte-identical copies exist and nothing
-enforces that they stay identical. `REVIEWER_GATE_HOOK_DIR` still overrides it, which
+directory was repointed there, because three copies exist and nothing enforces that they
+stay identical — which they now are not, in both scripts and in both scratch directories. `REVIEWER_GATE_HOOK_DIR` still overrides it, which
 is how the harness below points the same file at a damaged tree.
 
 `node scratch/reviewer-gate/mutation-check.mjs` — 25 mutations. Each removes exactly
 one deliberate decision from the hooks, runs that same test file against the damaged
-copy, and must go red **in the cases that name that decision**. Result: 25/25 proven,
-with a green control row and two self-test rows.
+copy, and must go red **in the cases that name that decision**.
+
+⚠ **The result this paragraph used to state no longer holds.** It read: "Result: 25/25
+proven, with a green control row and two self-test rows." That was true when written. The
+gate's unknown-verdict note was later reworded in `.claude/hooks/` and the tests updated to
+match, while the copies in this directory were not, so the harness now measures a stale tree:
+its control fails and two rows prove nothing. **The current measurement, the cause and the
+remedy have one home — the Known open item in CLAUDE.md — and are deliberately not restated
+here**, because a live figure in a second document is how this drift started. What still
+holds is everything below about WHY the table is built this way.
 
 Three properties make the table mean something rather than merely look green:
 

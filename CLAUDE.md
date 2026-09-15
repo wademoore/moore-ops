@@ -3080,16 +3080,21 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
 
 ## Known open items
 
-- **The Reviewer gate's two scratch hook copies have drifted from the wired one, and the
-  mutation harness's control is NOT GREEN as a result (Sept 15, 2026).** `9c0b88c` reworded
+- **All four of the Reviewer gate's scratch hook copies have drifted from their wired
+  originals, and the mutation harness's control is NOT GREEN as a result (Sept 15, 2026).**
+  The lead said "two" for one round, while the body below established four — a skimmer acting
+  on the lead syncs half of them, gets a green control, and leaves the rest looking closed. `9c0b88c` reworded
   the unknown-verdict note in `.claude/hooks/require-review.mjs` only;
   `scratch/reviewer-gate/require-review.mjs` and
   `scratch/reviewer-gate-install/require-review.mjs` still carry the pre-rewording strings
   (`grep -n 'emitted no' scratch/*/require-review.mjs` shows both at :185). Once
   `test/hooks/reviewer-gate.test.js` was updated to assert the shipped note, `node
   scratch/reviewer-gate/mutation-check.mjs` measured **CONTROL 55 pass / 2 fail, NOT GREEN**,
-  and **25 mutations, NOT ALL PROVEN** — two rows UNPROVEN because their expected test names
-  (`mutation-check.mjs` lines 48-51 and 120-122) were renamed by the same change.
+  and **25 mutations, NOT ALL PROVEN** — two rows UNPROVEN because the test names in their
+  `expect` arrays were renamed by the same change. They are the rows `an unknown verdict
+  counts as coverage` and `gate asserts one cause of "unknown" for both`; locate them with
+  `grep -n 'counts as coverage\|asserts one cause' scratch/reviewer-gate/mutation-check.mjs`
+  rather than by line number, since the remedy below rewrites exactly those lines.
 
   **The harness is not in `npm test` and not in CI**, so this does not turn a pull request
   red: `package.json`'s globs cover `test/`, `digest/` and `render/` only, and `ci.yml`
@@ -3113,9 +3118,19 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
   (#83) and has **no Tier 1 at all** — `grep -c SubagentHandback` is **0** there against
   **5** in the wired copy. So the harness's control and its recorder mutation rows measure a
   recorder missing the entire tier #83 added: the very tier whose absence made the old gate
-  note false. Nothing in the suite covers that tier either — `grep -rl SubagentHandback
-  test/` returns nothing — which is why this half of the drift does not show up in the
-  control's failure count at all. **Any remedy must name both scripts**; syncing only
+  note false. Nothing in the suite exercises that tier either — no test constructs a handback
+  payload at all — which is why this half of the drift does not show up in the control's
+  failure count.
+
+  ⚠ **Do not check that with `grep -rl SubagentHandback test/`.** A draft of this entry
+  cited exactly that command as returning nothing, and the very commit that wrote the
+  citation also added the name to `reviewer-gate.test.js`'s header, so the command now
+  returns a hit and the hit is a comment. A reader following it would conclude the tier is
+  covered and that this open item can be closed. The question is whether any test builds a
+  `tool_use` block for the recorder to find; `grep -rn "tool_use" test/hooks/reviewer-gate.test.js`
+  answers it and is currently empty. Recorded rather than quietly corrected because this repo
+  already merged `fe684df` for a self-falsifying grep result, and this is the same shape in
+  the entry whose subject is unverified claims. **Any remedy must name both scripts**; syncing only
   `require-review.mjs` produces a green control and leaves the larger divergence in place,
   reading as though it were closed.
 
@@ -3124,20 +3139,30 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
   anchors on a string ending `process.exit(0);\n`. A wholesale copy would make that anchor
   match zero times and the harness would abort rather than score the row.
 
-  **A second consequence of the red control, beyond the two dead rows:** every mutated run
-  now inherits the control's 2 failures, so `mutation-check.mjs`'s `r.fail === 0` check —
-  its detector for a mutation that changed nothing behaviourally — can no longer fire. The
-  harness's own comment already says a non-green control makes the table meaningless; this
-  is the specific mechanism.
+  **One thing that is NOT a consequence of the red control, recorded because a draft of this
+  entry said it was:** `mutation-check.mjs`'s `r.fail === 0` branch — its label for a
+  mutation that changed nothing behaviourally — cannot fire, but the control is not why. It
+  sits after `else if (missed.length)`, and every row in `MUTATIONS` carries a non-empty
+  `expect` array, so a run with zero failures matches every expected name as missing and
+  takes the earlier branch. That held before this branch and will hold after the remedy. What
+  the red control actually costs is blunter and the harness already says it: with a non-green
+  control the whole table means nothing.
 
   **Not fixed deliberately, on scope:** the remedy edits two hook copies (the session that
   found it was told not to change any hook) and then the harness's own expected names — an
   unreviewed change to the thing that produces the evidence, inside the change it would be
-  evidence for. Remedy when someone takes it: sync all four scratch copies —
+  evidence for. The same falsified figures have a second home: `scratch/reviewer-gate/README.md` states
+  "25/25 proven, with a green control row" and calls the copies byte-identical, both in the
+  present tense and both falsified by this branch. Retracted there too, in the same commit
+  as this paragraph — a retraction that reaches one of two documents is how the drift this
+  entry describes started.
+
+  Remedy when someone takes it: sync all four scratch copies —
   `require-review.mjs` AND `record-review-verdict.mjs`, in both `scratch/reviewer-gate/`
   and `scratch/reviewer-gate-install/` — to their `.claude/hooks/` originals, fix any
   mutation anchor the sync invalidates (see the trailing-newline trap above), update the two
-  expect arrays, and re-run the harness expecting a green control and 25/25. Note also that nothing enforces the copies stay
+  expect arrays, restore `scratch/reviewer-gate/README.md`'s figures once they are true
+  again, and re-run the harness expecting a green control and 25/25. Note also that nothing enforces the copies stay
   identical — `reviewer-gate.test.js`'s own header says so, and no test asserts parity.
 
 - **All three of Ophelia's 50-yard times in `swim-results.json` are recorded exactly 20.00s
