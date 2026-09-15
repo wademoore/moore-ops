@@ -2913,6 +2913,20 @@ alternatives were tested and this one is both sufficient and the least invasive:
 The `**` in a quoted pattern is now Node's to interpret, not the shell's, so the script
 behaves identically under dash, bash, and zsh.
 
+## Today’s schedule visibility (September 15, 2026)
+
+Dashboard v2 always renders the non-menu events supplied in `days[0].events`.
+When Now / Next is present, a “Today’s schedule” section follows its headline
+and supporting items, before weekly priorities. Previously Now / Next
+suppressed the event list while Coming Up excluded today, leaving same-day
+activities invisible when an unrelated alert won the headline. The schedule
+remains complete even when a headline repeats an event. Digest selection,
+future-event bucketing, and task treatment are unchanged. Regression coverage
+includes a coverage alert alongside timed and all-day events, excluding menus.
+Schedule rows use compact spacing when sharing the panel with Now / Next.
+A browser check covers four events plus five schoolwork rows, weekly priorities,
+Centers, and dinner staying inside the panel at 2560×1440.
+
 ## Schoolwork preview (September 7, 2026 — local, not deployed)
 
 Dashboard v2 now extracts `[Assignment]`, `[Quiz]`, `[Test]`, and `[Project]`
