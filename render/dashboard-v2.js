@@ -505,10 +505,10 @@ function renderToday(data) {
   const tomorrow = data.tomorrowMenu;
 
   return `<section class="paper-panel today-panel ${data.nowNext ? 'has-now-next' : ''}">
-    ${data.nowNext ? renderNowNext(data.nowNext) : `${renderSectionTitle(`Today — ${formatCalendarDate(data.today, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`, 'green', 'star')}
-    <div class="subhead">Events</div>
+    ${data.nowNext ? renderNowNext(data.nowNext) : renderSectionTitle(`Today — ${formatCalendarDate(data.today, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}`, 'green', 'star')}
+    <div class="subhead">${data.nowNext ? 'Today’s schedule' : 'Events'}</div>
     <div class="today-events">${eventRows}</div>
-    ${taskRows ? `<div class="subhead">Tasks</div><div class="tasks">${taskRows}</div>` : ''}`}
+    ${!data.nowNext && taskRows ? `<div class="subhead">Tasks</div><div class="tasks">${taskRows}</div>` : ''}
     ${priorityRows ? `<div class="subhead">Weekly priorities</div><div class="priorities">${priorityRows}</div>` : ''}
     ${renderCenters(school.centersWeek)}
     ${renderSchoolwork(data.schoolwork)}
@@ -1526,6 +1526,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .paper-panel,.rail-card,.alert-card{background:var(--surface-panel);border-color:rgba(130,92,32,.48);box-shadow:0 4px 12px rgba(45,29,11,.08),inset 0 0 18px rgba(90,65,28,.035)}
 .alert-card,.alert-card.calm{background:var(--surface-alt)}
 .current-weather{background:linear-gradient(160deg,rgba(212,154,24,.12),var(--surface-panel) 44%,rgba(15,74,54,.09))}.forecast-card{background:linear-gradient(180deg,var(--surface-panel),var(--surface-alt))}.forecast-row,.forecast-row:nth-child(even){background:rgba(205,190,158,.5);box-shadow:none}
+.has-now-next .today-event{padding:1px 0}.has-now-next .today-event-copy strong{font-size:22px}.has-now-next .today-event-copy span{font-size:16px}
 .today-event-copy span,.upcoming-event span,.task-row small,.athletic-card>small,.athletic-footer,.next-up-copy small,.forecast-fallback,.current-weather.weather-unavailable>span{color:var(--secondary)}
 .today-event,.upcoming-day,.priority-row,.task-row,.school-line,.subhead:after,.athletic-card,.swim-row,.horizon-item{border-color:var(--rule)}
 .paper-panel>.section-title{height:70px;margin-top:-31px;margin-bottom:8px}.paper-panel>.section-title:before{height:70px}.paper-panel>.section-title span{font-size:30px;padding-left:70px;letter-spacing:.045em}.doodle-calendar span{padding-left:84px!important}.dinner-block .section-title{height:54px}.dinner-block .section-title:before{height:54px}.dinner-block .section-title span{font-size:25px;line-height:1.2;padding-left:61px}
