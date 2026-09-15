@@ -63,6 +63,26 @@ function overlap(a, b) {
 }
 
 describe('dashboard v2 2560x1440 layout verification', () => {
+  it('keeps four today events and full schoolwork visible alongside NOW/NEXT', async () => {
+    const data = structuredClone(sampleDashboardV2Data);
+    data.days[0].events.push(...structuredClone(data.days[0].events));
+    data.schoolwork = { items: Array.from({ length: 5 }, (_, index) => ({
+      date: '2026-06-09', child: 'Myles', title: `Assignment ${index + 1}`, type: 'Homework',
+    })) };
+    await page.setContent(renderDashboardV2(data), { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+    const result = await page.evaluate(() => {
+      const panel = document.querySelector('.today-panel').getBoundingClientRect();
+      const rows = [...document.querySelectorAll('.today-event,.schoolwork-row,.today-bottom')];
+      return { count: rows.length, clipped: rows.filter(row => {
+        const rect = row.getBoundingClientRect();
+        return rect.top < panel.top || rect.bottom > panel.bottom;
+      }).map(row => row.className) };
+    });
+    assert.equal(result.count, 10);
+    assert.deepEqual(result.clipped, []);
+  });
+
   it('fits prominent team artwork below ribbons with one, two, and three cards', async () => {
     for (const active of [
       { flagFootballActive: true }, { swim757Active: true }, { sharksActive: true },

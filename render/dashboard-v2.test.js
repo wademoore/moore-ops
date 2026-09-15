@@ -37,12 +37,36 @@ describe('approved NOW/NEXT rendering contract', () => {
     });
   }
 
-  it('uses NOW/NEXT as the canonical v2 Today presentation', () => {
+  it('keeps today’s schedule alongside the NOW/NEXT headline', () => {
     const html = renderDashboardV2({ ...sampleDashboardV2Data, nowNext: { tone: 'calm', signal: 'All clear', subject: 'Nothing needs your attention tonight' } });
     assert.match(html, /today-panel has-now-next/);
     assert.doesNotMatch(html, />Events</);
+    assert.match(html, /Today’s schedule/);
+    assert.match(html, /4th Grade End of School Color Games Celebration/);
     assert.match(html, /Weekly priorities/);
     assert.match(html, /Tonight(?:'|&#39;)s Dinner/);
+  });
+
+  it('retains every supplied today event when an unrelated coverage alert wins NOW/NEXT', () => {
+    const event = (title, start) => ({ title, cardType: 'standard', raw: { start: start.length === 10 ? { date: start } : { dateTime: start } } });
+    const events = [
+      event('Morning appointment', '2026-09-15T08:00:00-04:00'),
+      event('Evening practice', '2026-09-15T17:45:00-04:00'),
+      event('School notice', '2026-09-15'),
+      { ...event('Dinner only', '2026-09-15'), cardType: 'menu' },
+    ];
+    const html = renderToday({
+      today: new Date('2026-09-15T12:00:00'),
+      now: new Date('2026-09-15T07:39:00-04:00'),
+      days: [{ events, tasks: [] }],
+      nowNext: { tone: 'problem', signal: 'Emma unavailable' },
+    });
+    assert.match(html, /Emma unavailable/);
+    assert.match(html, /Morning appointment/);
+    assert.match(html, /Evening practice/);
+    assert.match(html, /School notice/);
+    assert.equal((html.match(/class="today-event person-/g) || []).length, 3);
+    assert.doesNotMatch(html, /Dinner only/);
   });
 
   it('uses existing display normalization for the approved both-kids camp title', () => {
@@ -544,7 +568,7 @@ describe('real-data resilience policies', () => {
       days: [{ events: [{ ...shorthand, raw: { start: { dateTime: '2026-06-09T09:30:00-04:00' } } }], tasks: [] }],
       upcomingEvents: [shorthand],
     });
-    assert.equal((html.match(/Robyn · Dentist/g) || []).length, 1);
+    assert.equal((html.match(/Robyn · Dentist/g) || []).length, 2);
     assert.doesNotMatch(html, />R Dentist</);
   });
 

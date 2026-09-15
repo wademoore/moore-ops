@@ -134,7 +134,8 @@ describe('event-row accent — decorated rows', () => {
     assert.equal((html.match(/data-accent-id="/g) || []).length, 1);
     assert.ok(html.includes(`data-accent-id="${GAME_ID}"`));
     assert.ok(!html.includes(`data-accent-id="${SWIM_ID}"`));
-    assert.ok(!html.includes('Catch &#39;Em All Series'), 'the meet is today, so it is not in the lookahead');
+    assert.ok(!renderUpcoming(dataAt(GAME_VISIBLE)).includes('Catch &#39;Em All Series'), 'the meet is today, so it is not in the lookahead');
+    assert.ok(html.includes('Catch &#39;Em All Series'), 'today’s meet remains visible in Today’s schedule');
   });
 
   it('never synthesises a second row for the two-day swim meet', () => {
