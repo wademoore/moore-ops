@@ -351,9 +351,16 @@ instead. That is better in the one respect that produced this defect — a list 
 not falsified by editing the prose around it — but it is **not** a stable anchor in general,
 and this sentence claimed it was until a Reviewer round objected. It is hand-maintained
 prose: it rots silently when a reader changes, and it is already not a complete list of what
-loads `data/sharks-soccer.json` — `digest/builder.js:216` is the call that actually reads the
-file and the enumeration below does not name it. Treat it as the readers that were checked,
-not as every reader there is, and re-derive rather than cite it.
+loads `data/sharks-soccer.json` — `digest/builder.js`'s `readDataFile('sharks-soccer.json')`
+call is the digest's own load of the file, and the enumeration below does not name it.
+`grep -n "readDataFile('sharks-soccer.json')" digest/builder.js` locates that call wherever it
+has drifted to. **No line number is given here, deliberately, and an earlier version of this
+retraction gave one.** CLAUDE.md's Skills section states the rule — a live figure inside a
+retraction is one more place to rot — and applies it by naming a thing rather than a location,
+which is what this now does. The locator is also the form that fails visibly: add a second
+load and the grep shows both, where a stale line number silently points at whatever moved into
+its place. Treat the enumeration as the readers that were checked, not as every reader there
+is, and re-derive rather than cite it.
 
 ```json
 { "matchNumber": 637, "played": true, "homeScore": 3, "awayScore": 0, "forfeit": true }
