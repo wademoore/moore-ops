@@ -9,8 +9,12 @@
 // the failure this project rates above a stale document: the next session reads a
 // comment as authority and has no reason to check it.
 //
-// Byte-identical duplicates of both scripts also live in scratch/reviewer-gate/ and
-// scratch/reviewer-gate-install/, and nothing enforces that they stay identical. So
+// Duplicates of both scripts also live in scratch/reviewer-gate/ and
+// scratch/reviewer-gate-install/, and nothing enforces that they stay identical -- they
+// are NOT byte-identical today, which is why that word is gone from this sentence. Both
+// scratch copies of require-review.mjs predate the unknown-verdict rewording, and both
+// copies of record-review-verdict.mjs predate #83's SubagentHandback tier entirely. See
+// Known open items in CLAUDE.md; the comment at the no-source test depends on it. So
 // while this file defaulted to the scratch copy, 57 cases were proving properties of
 // a program no hook event ever executes. Defaulting to .claude/hooks/ closes that.
 //
@@ -141,6 +145,25 @@ const subagentPayload = (repo, extra = {}) => ({
 const gate = (repo, extra) => runHook(GATE, stopPayload(repo, extra), repo.dir);
 const recorder = (repo, extra) => runHook(RECORDER, subagentPayload(repo, extra), repo.dir);
 
+/**
+ * The gate's one-line "Reason:" note, isolated from the rest of the block message.
+ *
+ * Assertions about WHICH note the gate chose must read this line and not the whole
+ * of stderr: the "Unreviewed range:" line above it carries SHAs, and every fixture
+ * builds its own throwaway repo, so two notes compared as whole stderr differ for
+ * reasons that have nothing to do with the note.
+ *
+ * Captures ONE line -- `.` does not cross a newline -- which is all a recordNote is
+ * today. A future multi-line note would put its later lines outside anything asserted
+ * through this helper. Negative assertions therefore read whole stderr instead: they
+ * gain nothing from the narrowing and would lose reach.
+ */
+function reason(stderr) {
+  const m = /^Reason: (.*)$/m.exec(stderr);
+  assert.ok(m, `gate output carried no Reason line:\n${stderr}`);
+  return m[1];
+}
+
 // ---------------------------------------------------------------------------
 // BLOCK CONDITIONS. Each of these is the guarded condition; each must exit 2.
 // ---------------------------------------------------------------------------
@@ -192,7 +215,7 @@ test('blocks: verdict is "fail"', () => {
   assert.match(stderr, /last Reviewer verdict was "fail"/);
 });
 
-test('blocks: verdict "unknown" from a message with no sentinel names the missing line', () => {
+test('blocks: verdict "unknown" with a known source names that source, without the retired cause', () => {
   const repo = makeRepo({ commits: 1 });
   writeRecord(repo, {
     schema: 1, sessionId: SESSION, sha: repo.head, verdict: 'unknown',
@@ -200,21 +223,95 @@ test('blocks: verdict "unknown" from a message with no sentinel names the missin
   });
   const { code, stderr } = gate(repo);
   assert.equal(code, 2);
-  assert.match(stderr, /emitted no "REVIEW: PASS"/);
+
+  // The source tier is the one thing the record does establish about this case, so
+  // the note quotes it back: it tells the operator WHICH text was classified, which
+  // is where they go to look. Load-bearing literal -- the value is interpolated
+  // through JSON.stringify(record.source), so the quotation marks are part of what
+  // the gate emits, and a note that dropped the source would leave the operator
+  // nothing to act on. It is NOT the only thing separating this note from the
+  // no-source one -- their tails differ too -- so the next test does not lean on it.
+  assert.match(reason(stderr), /recorded from "last_assistant_message"/);
+
+  // The retired claim, pinned so it cannot return. classify() in
+  // record-review-verdict.mjs collapses three situations into 'unknown' -- no
+  // sentinel line, two contradicting ones, and empty text -- so from here the gate
+  // cannot know which occurred. The old note asserted the first of the three and
+  // sent the reader to an install step that may already be correctly applied.
+  // Matching literals rather than intent is deliberate here: these ARE the specific
+  // false statements being kept out, and a looser pattern would not name them. The
+  // cost is that it is a regression pin against that text and not a general guarantee
+  // -- a cause worded differently would pass, which is why this test is named for
+  // what it pins rather than for "asserts no cause".
+  //
+  // Read against whole stderr, not reason(): the gate's closing paragraph is part of
+  // the block message too, and a cause reinstated there would escape a Reason-only
+  // pin. A negative assertion gains nothing from the narrowing -- the SHA noise that
+  // reason() exists for cannot satisfy one -- so it costs only reach. The pair this
+  // test replaced read whole stderr, and narrowing it was an unannounced weakening.
+  //
+  // That reasoning is about FALSE-CAUSE pins, which ask whether a claim appears anywhere
+  // in the message. It does NOT generalise to every doesNotMatch here: the
+  // doesNotMatch(/recorded from/) in the next test asks which note the gate CHOSE, and
+  // reason() is the right scope for that, per its own docstring. Do not "fix" it to match
+  // this one.
+  assert.doesNotMatch(stderr, /emitted no "REVIEW: PASS"|install step/);
 });
 
-test('blocks: verdict "unknown" from no readable message says THAT, not the other thing', () => {
-  const repo = makeRepo({ commits: 1 });
-  // Same verdict, different cause, different remedy. Claiming the Reviewer "ran
-  // but forgot the line" here would be a false assertion pointing at an install
-  // step that may already be correctly applied.
-  writeRecord(repo, {
-    schema: 1, sessionId: SESSION, sha: repo.head, verdict: 'unknown', source: null,
+test('blocks: verdict "unknown" with no source gets its own note, not the known-source one', () => {
+  const known = makeRepo({ commits: 1 });
+  writeRecord(known, {
+    schema: 1, sessionId: SESSION, sha: known.head, verdict: 'unknown',
+    source: 'last_assistant_message',
   });
-  const { code, stderr } = gate(repo);
-  assert.equal(code, 2);
-  assert.match(stderr, /no readable final message/);
-  assert.doesNotMatch(stderr, /emitted no "REVIEW: PASS"/);
+  const none = makeRepo({ commits: 1 });
+  writeRecord(none, {
+    schema: 1, sessionId: SESSION, sha: none.head, verdict: 'unknown', source: null,
+  });
+
+  const withSource = gate(known);
+  const withoutSource = gate(none);
+  assert.equal(withSource.code, 2);
+  assert.equal(withoutSource.code, 2);
+
+  // The intent this test exists for, stated without depending on either wording:
+  // one verdict value, two records that differ only in `source`, and the gate must
+  // not describe them with one note. A falsy source can mean the recorder found no
+  // text at all -- transcriptLines() returns [] on ANY read failure -- so it is not
+  // interchangeable with a source that was found and could not be classified.
+  assert.notEqual(reason(withSource.stderr), reason(withoutSource.stderr));
+
+  // notEqual alone does NOT catch that collapse. Measured, and the provenance
+  // matters: copy .claude/hooks/ to a temp tree, rewrite `record.source ?` to
+  // `true ?` there, point REVIEWER_GATE_HOOK_DIR at it. The no-source note then
+  // reads "...recorded from null..." -- the source is interpolated, so it is still a
+  // DIFFERENT string from the known-source note and the comparison above passes.
+  // The assertions below are what redden it.
+  //
+  // Do not read that as a result of scratch/reviewer-gate/mutation-check.mjs, whose
+  // row 'gate asserts one cause of "unknown" for both' applies the same rewrite. The
+  // harness mutates its own scratch copy of the hooks, and that copy still carries
+  // the pre-rewording note, which interpolates nothing -- so there the collapse makes
+  // the two notes IDENTICAL and notEqual would redden. Same mutation, opposite
+  // reading, because the two trees are no longer the same program.
+  //
+  // "recorded from" is load-bearing: it is the known-source branch's framing, and
+  // its presence here is exactly what the collapse produces. "names no source" is
+  // the no-source branch's own claim, and the collapse drops it.
+  assert.doesNotMatch(reason(withoutSource.stderr), /recorded from/);
+  assert.match(reason(withoutSource.stderr), /names no source/);
+
+  // The retired false cause, pinned absent on THIS branch too, not only on the
+  // known-source one. Without this a no-source note could re-acquire the claim while
+  // keeping "names no source" and never saying "recorded from", and every assertion
+  // above would still pass -- measured against a copy of the hooks carrying exactly
+  // that note, which this file scored 57/57 before the line below existed. The pair
+  // this test replaced carried the pin here, so omitting it was a net weakening.
+  // It matters most on this branch: a falsy source can be a recorder-side read
+  // failure (transcriptLines() returns [] on any throw), so a note blaming the
+  // Reviewer is least supportable exactly here. Whole stderr, for the reason given on
+  // the same assertion in the previous test; literal-scoped, with the same limit.
+  assert.doesNotMatch(withoutSource.stderr, /emitted no "REVIEW: PASS"|install step/);
 });
 
 test('blocks: a truthy non-pass verdict is not treated as a pass', () => {

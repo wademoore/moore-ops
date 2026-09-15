@@ -177,14 +177,32 @@ if (sessionId && /^[A-Za-z0-9._-]+$/.test(sessionId)) {
     } else if (typeof record.sha !== 'string' || !/^[0-9a-f]{40}$/.test(record.sha)) {
       recordNote = 'the recorded Reviewer verdict carries no usable commit SHA';
     } else if (record.verdict === 'unknown') {
-      // "unknown" has two causes and they need different remedies. Asserting the
-      // wrong one is a small instance of the container hook's defect this file
-      // criticises: telling the model something untrue that it cannot act on. The
-      // record already distinguishes them; read it rather than guessing.
+      // record.source distinguishes ONE thing, and it is narrower than it looks:
+      // whether the recorder found any text to classify. Truthy means it did, and
+      // names which tier; classify() then could not read a single agreed verdict
+      // from that text. Falsy means no tier produced any text at all -- which can be
+      // a recorder-side failure (an unreadable agent_transcript_path, a handback
+      // tool renamed by a future build, an absent last_assistant_message) and so is
+      // not a claim about what the Reviewer did either.
+      //
+      // It does NOT say WHY classification failed on text that WAS found. No
+      // sentinel line, two contradicting ones, and one sitting only inside a fence
+      // are indistinguishable from here, so neither message below asserts a cause.
+      // An earlier version of the truthy message did assert one -- it said the
+      // Reviewer had emitted no verdict line -- and that was false in every
+      // observed instance: the recorder was classifying the post-handback wrap-up
+      // ("Report delivered to the caller.") rather than the report. Since 14774ab
+      // the recorder reads the SubagentHandback payload first, so this branch now
+      // means classification genuinely failed on the report itself -- a different
+      // condition from the one the old comment described.
+      //
+      // Asserting the wrong cause is a small instance of the container hook's
+      // defect this file criticises: telling the model something untrue that it
+      // cannot act on. Read the record itself if you need more than the branch.
       recordNote = record.source
-        ? 'the Reviewer ran but emitted no "REVIEW: PASS" / "REVIEW: FAIL" line on '
-          + 'its own (see the reviewer.md install step in the README)'
-        : 'the Reviewer produced no readable final message, so no verdict could be read';
+        ? `a Reviewer verdict was recorded from ${JSON.stringify(record.source)}, but it `
+          + 'reads "unknown" rather than a pass or a fail'
+        : 'a Reviewer verdict was recorded, but it reads "unknown" and names no source';
     } else if (record.verdict !== 'pass') {
       recordNote = `the last Reviewer verdict was ${JSON.stringify(record.verdict)}, not a pass`;
     } else if (git(['rev-parse', '--verify', '--quiet', `${record.sha}^{commit}`]) === null) {
