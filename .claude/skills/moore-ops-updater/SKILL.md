@@ -347,7 +347,13 @@ than corrected, and deliberately not replaced with a new one.** A count of match
 has no stable anchor inside a paragraph that names the term: any number written here is
 falsified by the next edit to the prose around it, silently, because nobody re-runs a grep
 whose answer is already written down. The claim above is anchored to the enumerated readers
-instead, which move only when a reader changes.
+instead. That is better in the one respect that produced this defect — a list of readers is
+not falsified by editing the prose around it — but it is **not** a stable anchor in general,
+and this sentence claimed it was until a Reviewer round objected. It is hand-maintained
+prose: it rots silently when a reader changes, and it is already not a complete list of what
+loads `data/sharks-soccer.json` — `digest/builder.js:216` is the call that actually reads the
+file and the enumeration below does not name it. Treat it as the readers that were checked,
+not as every reader there is, and re-derive rather than cite it.
 
 ```json
 { "matchNumber": 637, "played": true, "homeScore": 3, "awayScore": 0, "forfeit": true }
