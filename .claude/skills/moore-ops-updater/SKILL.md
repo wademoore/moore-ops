@@ -18,7 +18,7 @@ You are operating in the **Updater role** for the moore-ops household digest pro
 
 ## Role definition
 
-Targeted data changes only. You read data files, make the specific change requested, verify correctness, then commit and push. You do not touch logic files, renderers, tests, or anything outside the `data/` directory unless explicitly told otherwise by the user.
+Targeted data changes only. You read data files, make the specific change requested, verify correctness, then commit to a feature branch, push that branch, get a Reviewer pass, and open a pull request without merging it. The steps are in "Commit and push protocol" below, which is authoritative and also records why a direct push to the default branch cannot succeed. You do not touch logic files, renderers, tests, or anything outside the `data/` directory unless explicitly told otherwise by the user.
 
 **Scope boundary — never touch without explicit user instruction:**
 - `digest/` — any parser or builder
@@ -332,8 +332,35 @@ between two other clubs. The `divisionStanding` that same parser returns is read
 out of this file's own `standings.teams` block, not computed from the match rows at all.
 
 One row carries it as of this writing — match 637 (2026-08-29, Chesapeake United Reapers
-3–0 VA Rush Killer Bees), entered in commit `b4dc214` (PR #77). `git grep -w forfeit` across
-the repository returns that single line of data and nothing else: no parser, no test.
+3–0 VA Rush Killer Bees), entered in commit `b4dc214` (PR #77). No parser and no test reads
+it — the `note` subsection below enumerates the readers of this file that were checked, and
+names this key alongside `note` rather than covering `note` alone.
+
+⚠ **This paragraph used to state the result of running `git grep -w forfeit` across the
+repository, and the commit that wrote that statement falsified it in the act of making it.**
+The stated result was that the grep returned the one line of data and nothing else. But this
+subsection's heading, the sentence itself and the JSON example below it all contain the word,
+so the prose became matches of its own grep. Read directly here rather than recalled: at
+`dcf0674^` — the parent of the commit that added the sentence, PR #81 — that grep returns the
+`data/sharks-soccer.json` row alone; at `dcf0674` it does not. **The result is deleted rather
+than corrected, and deliberately not replaced with a new one.** A count of matches for a term
+has no stable anchor inside a paragraph that names the term: any number written here is
+falsified by the next edit to the prose around it, silently, because nobody re-runs a grep
+whose answer is already written down. The claim above is anchored to the enumerated readers
+instead. That is better in the one respect that produced this defect — a list of readers is
+not falsified by editing the prose around it — but it is **not** a stable anchor in general,
+and this sentence claimed it was until a Reviewer round objected. It is hand-maintained
+prose: it rots silently when a reader changes, and it is already not a complete list of what
+loads `data/sharks-soccer.json` — `digest/builder.js`'s `readDataFile('sharks-soccer.json')`
+call is the digest's own load of the file, and the enumeration below does not name it.
+`grep -n "readDataFile('sharks-soccer.json')" digest/builder.js` locates that call wherever it
+has drifted to. **No line number is given here, deliberately, and an earlier version of this
+retraction gave one.** CLAUDE.md's Skills section states the rule — a live figure inside a
+retraction is one more place to rot — and applies it by naming a thing rather than a location,
+which is what this now does. The locator is also the form that fails visibly: add a second
+load and the grep shows both, where a stale line number silently points at whatever moved into
+its place. Treat the enumeration as the readers that were checked, not as every reader there
+is, and re-derive rather than cite it.
 
 ```json
 { "matchNumber": 637, "played": true, "homeScore": 3, "awayScore": 0, "forfeit": true }
