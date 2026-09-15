@@ -3071,6 +3071,40 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
 
 ## Known open items
 
+- **The Reviewer gate's two scratch hook copies have drifted from the wired one, and the
+  mutation harness's control is NOT GREEN as a result (Sept 15, 2026).** `9c0b88c` reworded
+  the unknown-verdict note in `.claude/hooks/require-review.mjs` only;
+  `scratch/reviewer-gate/require-review.mjs` and
+  `scratch/reviewer-gate-install/require-review.mjs` still carry the pre-rewording strings
+  (`grep -n 'emitted no' scratch/*/require-review.mjs` shows both at :185). Once
+  `test/hooks/reviewer-gate.test.js` was updated to assert the shipped note, `node
+  scratch/reviewer-gate/mutation-check.mjs` measured **CONTROL 55 pass / 2 fail, NOT GREEN**,
+  and **25 mutations, NOT ALL PROVEN** — two rows UNPROVEN because their expected test names
+  (`mutation-check.mjs` lines 48-51 and 120-122) were renamed by the same change.
+
+  **The harness is not in `npm test` and not in CI**, so this does not turn a pull request
+  red: `package.json`'s globs cover `test/`, `digest/` and `render/` only, and `ci.yml`
+  names nothing under `scratch/`. That is exactly why it is recorded here — a NOT-GREEN
+  control that nothing fails on is how a harness quietly stops being evidence, which this
+  file's gate section rates above an ordinary bug.
+
+  **The sharper consequence is that one mutation now reads two ways.** The row `'gate asserts
+  one cause of "unknown" for both'` rewrites `record.source ?` to `true ?`. Against the
+  **wired** hook the no-source note becomes `recorded from null` — still distinct from the
+  known-source note, so a bare `notEqual` survives it. Against the **scratch** copy the old
+  truthy note interpolates nothing, so the collapse makes the two notes identical and
+  `notEqual` reddens. Same mutation, opposite reading, because the two trees are no longer the
+  same program. A comment in `reviewer-gate.test.js` states this so the next reader does not
+  follow the pointer and get the contradictory result.
+
+  **Not fixed deliberately, on scope:** the remedy edits two hook copies (the session that
+  found it was told not to change any hook) and then the harness's own expected names — an
+  unreviewed change to the thing that produces the evidence, inside the change it would be
+  evidence for. Remedy when someone takes it: sync both scratch copies to
+  `.claude/hooks/require-review.mjs`, update the two expect arrays, and re-run the harness
+  expecting a green control and 25/25. Note also that nothing enforces the copies stay
+  identical — `reviewer-gate.test.js`'s own header says so, and no test asserts parity.
+
 - **All three of Ophelia's 50-yard times in `swim-results.json` are recorded exactly 20.00s
   slow, and `pb-records.json` carries one of them (found Sept 12, 2026; reported, NOT
   corrected).** Found while recording the 757swim Season KickOff. Of the rows the two files

@@ -217,10 +217,11 @@ test('blocks: verdict "unknown" with a known source names that source, and asser
 
   // The source tier is the one thing the record does establish about this case, so
   // the note quotes it back: it tells the operator WHICH text was classified, which
-  // is where they go to look. Load-bearing literal, twice over -- the value is
-  // interpolated through JSON.stringify(record.source), so the quotation marks are
-  // part of what the gate emits, and naming the source is also the only thing that
-  // distinguishes this note from the no-source one (see the next test).
+  // is where they go to look. Load-bearing literal -- the value is interpolated
+  // through JSON.stringify(record.source), so the quotation marks are part of what
+  // the gate emits, and a note that dropped the source would leave the operator
+  // nothing to act on. It is NOT the only thing separating this note from the
+  // no-source one -- their tails differ too -- so the next test does not lean on it.
   assert.match(reason(stderr), /recorded from "last_assistant_message"/);
 
   // The retired claim, pinned so it cannot return. classify() in
@@ -256,19 +257,36 @@ test('blocks: verdict "unknown" with no source gets its own note, not the known-
   // interchangeable with a source that was found and could not be classified.
   assert.notEqual(reason(withSource.stderr), reason(withoutSource.stderr));
 
-  // notEqual alone does NOT catch the collapse, and that is measured rather than
-  // assumed. The harness mutation 'gate asserts one cause of "unknown" for both'
-  // (scratch/reviewer-gate/mutation-check.mjs) rewrites `record.source ?` to
-  // `true ?`. Run against that mutant, the no-source note reads "...recorded from
-  // null, but it reads unknown..." -- still a different string from the
-  // known-source note, so the comparison above survives the mutation it is aimed
-  // at. The two assertions below are what actually redden it.
+  // notEqual alone does NOT catch that collapse. Measured, and the provenance
+  // matters: copy .claude/hooks/ to a temp tree, rewrite `record.source ?` to
+  // `true ?` there, point REVIEWER_GATE_HOOK_DIR at it. The no-source note then
+  // reads "...recorded from null..." -- the source is interpolated, so it is still a
+  // DIFFERENT string from the known-source note and the comparison above passes.
+  // The assertions below are what redden it.
+  //
+  // Do not read that as a result of scratch/reviewer-gate/mutation-check.mjs, whose
+  // row 'gate asserts one cause of "unknown" for both' applies the same rewrite. The
+  // harness mutates its own scratch copy of the hooks, and that copy still carries
+  // the pre-rewording note, which interpolates nothing -- so there the collapse makes
+  // the two notes IDENTICAL and notEqual would redden. Same mutation, opposite
+  // reading, because the two trees are no longer the same program.
   //
   // "recorded from" is load-bearing: it is the known-source branch's framing, and
   // its presence here is exactly what the collapse produces. "names no source" is
   // the no-source branch's own claim, and the collapse drops it.
   assert.doesNotMatch(reason(withoutSource.stderr), /recorded from/);
   assert.match(reason(withoutSource.stderr), /names no source/);
+
+  // The retired false cause, pinned absent on THIS branch too, not only on the
+  // known-source one. Without this a no-source note could re-acquire the claim while
+  // keeping "names no source" and never saying "recorded from", and every assertion
+  // above would still pass -- measured against a copy of the hooks carrying exactly
+  // that note, which this file scored 57/57 before the line below existed. The pair
+  // this test replaced carried the pin here, so omitting it was a net weakening.
+  // It matters most on this branch: a falsy source can be a recorder-side read
+  // failure (transcriptLines() returns [] on any throw), so a note blaming the
+  // Reviewer is least supportable exactly here.
+  assert.doesNotMatch(reason(withoutSource.stderr), /emitted no "REVIEW: PASS"|install step/);
 });
 
 test('blocks: a truthy non-pass verdict is not treated as a pass', () => {
