@@ -10,8 +10,9 @@
 //
 // FAILURE DIRECTIONS, chosen deliberately:
 //
-//   Cannot determine a verdict (no last_assistant_message and no readable agent
-//   transcript)          -> record verdict "unknown". FAIL CLOSED downstream:
+//   Cannot determine a verdict (no readable SubagentHandback message, no
+//   last_assistant_message and no readable agent transcript text)
+//                        -> record verdict "unknown". FAIL CLOSED downstream:
 //                           require-review.mjs treats anything other than "pass"
 //                           as no coverage, so an undeterminable review blocks
 //                           exactly as an absent one does.
@@ -30,14 +31,33 @@
 //                           direction in which a failure of this script grants
 //                           coverage it did not observe.
 //
-// Payload shape is the SubagentStop schema as shipped in Claude Code 2.1.266
-// (verified against the installed binary, not from documentation):
+// Payload shape is the SubagentStop schema, read from the installed binary and
+// not from documentation. Last measured on Claude Code 2.1.272; an earlier
+// revision of this header cited 2.1.266, the build it was written against.
 //   session_id, transcript_path, cwd            -- base
 //   stop_hook_active, agent_id, agent_type,
 //   agent_transcript_path, last_assistant_message?  -- SubagentStop
 // `matcher` for this event matches the agent_type field, so settings.json does
 // the reviewer filtering; the agent_type guard below is defence in depth so the
 // script is still correct if wired with an empty matcher.
+//
+// PROVENANCE of the list above, split because its two halves are not equally
+// well evidenced and one sentence covering both would overclaim:
+//
+//   Field names and presence -- MEASURED. Every field listed is one that a real
+//   captured SubagentStop payload actually carried. The list is a subset, not the
+//   whole schema: that payload also carried scratchpad_dir, prompt_id,
+//   permission_mode, effort, background_tasks and session_crons, none of which
+//   this script reads.
+//
+//   The `?` on last_assistant_message -- FROM THE BINARY ONLY. Its schema string
+//   reads last_assistant_message:o().optional(). No payload lacking the field was
+//   ever observed -- both captured payloads carried it -- so the optionality is
+//   read, not witnessed. Tier 2 guards for its absence regardless, which is the
+//   right way round: the guard does not depend on the claim being confirmed.
+//
+// Re-measure rather than trusting the version number. It records when the shape
+// was last checked, not that it is still true.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -92,8 +112,17 @@ if (!gitDir || !head) process.exit(0);
 
 // --- verdict extraction -----------------------------------------------------
 //
-// One tier, not two: a whole-line sentinel that nothing else in the message
-// contradicts, or "unknown". See classify() below for what was there before, what
+// Two independent questions, kept apart deliberately, because each has its own
+// notion of "tiers" and conflating them is how this banner went stale:
+//
+//   WHICH TEXT is the review?   THREE source tiers -- the handback message, then
+//                               last_assistant_message, then the transcript's
+//                               text blocks. See the "THREE tiers" block below.
+//   WHAT VERDICT does it carry? ONE rule, not two: a whole-line sentinel that
+//                               nothing else in the message contradicts, or
+//                               "unknown".
+//
+// See classify() below for what stood in place of that single rule before, what
 // replaced "last match wins", and why.
 
 // Whole-line, fenced code excluded, and CONTRADICTION IS AMBIGUITY.
@@ -130,32 +159,83 @@ function classify(text) {
   return seen.size === 1 ? [...seen][0] : 'unknown'; // none, or self-contradictory
 }
 
-let text = typeof payload?.last_assistant_message === 'string' ? payload.last_assistant_message : '';
-let source = text ? 'last_assistant_message' : '';
+// THREE tiers. Tier 1 is consulted UNCONDITIONALLY and overwrites; tiers 2 and 3
+// fill in only if it found nothing. That asymmetry -- not the textual order -- is
+// what stops last_assistant_message deciding. Measured: swapping the tier 1 and
+// tier 2 blocks textually leaves every harness case green, because tier 1 still
+// overwrites; only making tier 1 yield to an already-set value breaks it.
+//
+// A subagent does not conclude by emitting its report as text. It concludes by
+// CALLING A TOOL: the report is the `message` input of a SubagentHandback
+// tool_use block. `SubagentHandback` is the only handback tool name in the
+// installed binary (2.1.272), so the exact match below is not over-fitted to one
+// run -- but it is a name, and if a future build renames it this tier goes quiet
+// and the tiers below resume deciding, which is the pre-existing behaviour.
+//
+// Measured against a real Reviewer run on Claude Code 2.1.272, agent transcript
+// agent-a69e60dd368bd86c8.jsonl (45 entries):
+//   entry 41  assistant  tool_use SubagentHandback  <- report, ends "REVIEW: PASS"
+//   entry 44  assistant  text     "Report delivered to the caller."
+// and the SubagentStop payload carried
+//   last_assistant_message = "Report delivered to the caller."
+// So BOTH pre-existing sources see only the post-handback wrap-up. The live hook
+// recorded verdict "unknown", source "last_assistant_message", for a Reviewer
+// whose report ended with a bare "REVIEW: PASS".
+//
+// last_assistant_message is always present and always the wrap-up, so it must
+// never be able to mask a handback. Tiers 2 and 3 are unchanged in behaviour and
+// remain a real fallback, not dead code: with no readable handback the verdict
+// resolves exactly as it did before this change.
+let text = '';
+let source = '';
 
-// last_assistant_message is optional in the schema. Fall back to the agent's own
-// transcript rather than recording "unknown" the moment the convenience field is
-// absent.
-if (!text && typeof payload?.agent_transcript_path === 'string' && payload.agent_transcript_path) {
+/** Transcript lines, or [] on ANY failure. Read once; shared by tiers 1 and 3. */
+function transcriptLines(path) {
+  if (typeof path !== 'string' || !path) return [];
   try {
-    const lines = readFileSync(payload.agent_transcript_path, 'utf8').split(/\r?\n/);
-    for (let i = lines.length - 1; i >= 0 && !text; i -= 1) {
-      if (!lines[i].trim()) continue;
-      let entry;
-      try { entry = JSON.parse(lines[i]); } catch { continue; }
-      if (entry?.type !== 'assistant') continue;
-      const content = entry?.message?.content;
-      if (!Array.isArray(content)) continue;
-      const joined = content
-        .filter((b) => b?.type === 'text' && typeof b.text === 'string')
-        .map((b) => b.text)
-        .join('\n')
-        .trim();
-      if (joined) { text = joined; source = 'agent_transcript_path'; }
-    }
+    return readFileSync(path, 'utf8').split(/\r?\n/);
   } catch {
-    // Unreadable transcript is not a verdict. Falls through to "unknown".
+    return []; // Unreadable transcript is not a verdict. Falls through.
   }
+}
+
+const lines = transcriptLines(payload?.agent_transcript_path);
+
+/** Last assistant entry whose blocks yield non-empty text under `pick`. */
+function scanBack(pick) {
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    if (!lines[i].trim()) continue;
+    let entry;
+    try { entry = JSON.parse(lines[i]); } catch { continue; }
+    if (entry?.type !== 'assistant') continue;
+    const content = entry?.message?.content;
+    if (!Array.isArray(content)) continue;
+    const joined = content.map(pick).filter((s) => typeof s === 'string').join('\n').trim();
+    if (joined) return joined;
+  }
+  return '';
+}
+
+// Tier 1: the handback payload. Backwards, so a resumed agent's LAST handback
+// wins rather than a superseded earlier one.
+const handback = scanBack((b) => (
+  b?.type === 'tool_use' && b?.name === 'SubagentHandback' && typeof b?.input?.message === 'string'
+    ? b.input.message
+    : undefined
+));
+if (handback) { text = handback; source = 'agent_handback'; }
+
+// Tier 2: last_assistant_message. Unchanged; still optional in the schema.
+if (!text && typeof payload?.last_assistant_message === 'string' && payload.last_assistant_message) {
+  text = payload.last_assistant_message;
+  source = 'last_assistant_message';
+}
+
+// Tier 3: the agent's own transcript text blocks. Unchanged in behaviour; it now
+// reuses the lines already read rather than re-reading the file.
+if (!text) {
+  const spoken = scanBack((b) => (b?.type === 'text' && typeof b.text === 'string' ? b.text : undefined));
+  if (spoken) { text = spoken; source = 'agent_transcript_path'; }
 }
 
 const record = {
