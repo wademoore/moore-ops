@@ -189,8 +189,12 @@ marker has to travel with the data rather than live only in a `note`, `pb-record
 `{seconds, date, meet}` shape has nowhere else to say it, and a later official load that
 supersedes these rows needs to see that the standing PB came from an uncertified swim.
 
-**An unofficial swim may still set a PB.** This record exists to show growth, not to certify
-a result, so the fastest recorded time wins regardless of provenance.
+**From a household decision in conversation, recorded nowhere else:**
+
+In-house 757 meet results (no Hy-Tek file, Ophelia's results only) count
+toward her personal bests, because PBs here track her own progression,
+not certified performance. They do not count toward qualifying standards
+or champs targets, which remain official-results-only. Decided 2026-09-15.
 
 ⚠ **Nothing reads the key yet, and the dashboard does not know about it.** `swimParser.js`
 projects only `{seconds, date, meet}` out of a PB entry, so an unofficial PB renders a plain
