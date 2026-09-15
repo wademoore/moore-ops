@@ -1,9 +1,17 @@
 # Reviewer gate — Stop-hook mechanism that makes the Reviewer pass mandatory
 
-**Status: standalone artifact. Nothing here is wired up.** These files sit in
-`scratch/` and are not referenced by `.claude/settings.json`. Installing them is a
-manual step, described below. Until you take that step this directory changes no
-behaviour at all.
+**Status: the gate IS installed.** `1bad0fd` (#53) put both scripts in
+`.claude/hooks/` and wired them in `.claude/settings.json`; that wiring is asserted
+by `test/hooks/enforcement-wiring.test.js`, and `test/hooks/reviewer-gate.test.js`
+now exercises those wired copies by default. What remains unwired is **this
+directory**: the copies here are byte-identical duplicates that `.claude/settings.json`
+does not reference, so no hook event ever executes them. Unwired, not unreferenced —
+`mutation-check.mjs` here names this directory as its own control, and three scripts in
+`scratch/reviewer-gate-install/` point at it. They are kept as raw material for that
+harness, which needs a tree it can damage (`.claude/hooks/` is unwritable under this
+repo's own deny rules). The Install
+section below is retained as the record of how the gate was installed -- read it as
+history, not as a step still outstanding.
 
 ---
 
@@ -276,11 +284,15 @@ supersedes the previous verdict in both directions.
 `test/hooks/reviewer-gate.test.js` — 57 cases, inside the normal `npm test` globs.
 Each spawns the real script with a real hook payload against a real throwaway git
 repository and asserts the exit code, so it tests the shipped scripts rather than a
-copy of their logic.
+copy of their logic. **Since Sept 11, 2026 "the shipped scripts" means the WIRED
+copies in `.claude/hooks/`, not the ones in this directory** — the file's default hook
+directory was repointed there, because three byte-identical copies exist and nothing
+enforces that they stay identical. `REVIEWER_GATE_HOOK_DIR` still overrides it, which
+is how the harness below points the same file at a damaged tree.
 
-`node scratch/reviewer-gate/mutation-check.mjs` — 24 mutations. Each removes exactly
+`node scratch/reviewer-gate/mutation-check.mjs` — 25 mutations. Each removes exactly
 one deliberate decision from the hooks, runs that same test file against the damaged
-copy, and must go red **in the cases that name that decision**. Result: 24/24 proven,
+copy, and must go red **in the cases that name that decision**. Result: 25/25 proven,
 with a green control row and two self-test rows.
 
 Three properties make the table mean something rather than merely look green:

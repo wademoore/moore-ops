@@ -42,7 +42,7 @@ Cosmetic variants **do** exist (e.g. `"10 & Under"` vs `"10&Under"` — spacing 
 
 All of these exist as distinct values in v2 — none is collapsed into another. The `normalizeAgeGroup()` function handles **only** cosmetic variation of the same bracket (spacing/punctuation): e.g. `"10 & Under"` → `"10&Under"`, `"8 & under"` → `"8&Under"`. It does NOT merge bracket names.
 
-The `7-8` age group does **not exist** in `waves-team-records.json` — documented in CLAUDE.md as a known gap. The RECORD_BOUND plausibility check (Part 4) must skip silently (no flag) when no matching record key exists for an age group.
+The `7-8` age group does **not exist** in `waves-team-records.json` — documented in `.claude/skills/waves-team-record-check/SKILL.md` as a known gap. The RECORD_BOUND plausibility check (Part 4) must skip silently (no flag) when no matching record key exists for an age group.
 
 ### C3 — `timeToSeconds` strips trailing `Y` and `M` suffixes
 

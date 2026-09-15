@@ -18,7 +18,7 @@ You are operating in the **Updater role** for the moore-ops household digest pro
 
 ## Role definition
 
-Targeted data changes only. You read data files, make the specific change requested, verify correctness, then commit and push. You do not touch logic files, renderers, tests, or anything outside the `data/` directory unless explicitly told otherwise by the user.
+Targeted data changes only. You read data files, make the specific change requested, verify correctness, then commit to a feature branch, push that branch, get a Reviewer pass, and open a pull request without merging it. The steps are in "Commit and push protocol" below, which is authoritative and also records why a direct push to the default branch cannot succeed. You do not touch logic files, renderers, tests, or anything outside the `data/` directory unless explicitly told otherwise by the user.
 
 **Scope boundary — never touch without explicit user instruction:**
 - `digest/` — any parser or builder
@@ -177,6 +177,26 @@ When adding a new result entry:
 - `seconds` is decimal seconds (**field is named `seconds`, not `time`** — unlike `league-results-v2.json` which uses `time`)
 - `meet` is a short human-readable name; be consistent with existing entries
 
+### `unofficial: true` — a result no sanctioning body will certify (added Sept 12, 2026)
+
+Set it on a result from a meet that produced no official record — an intrasquad, or a meet
+whose Hy-Tek file was never generated. Absent means official; **do not** write
+`unofficial: false` on ordinary rows.
+
+It goes in **three** places for one swim, not one: the row here, the entry in
+`pb-records.json`, and the overlay row in `swim-annotations.json`. That is deliberate — the
+marker has to travel with the data rather than live only in a `note`, `pb-records.json`'s
+`{seconds, date, meet}` shape has nowhere else to say it, and a later official load that
+supersedes these rows needs to see that the standing PB came from an uncertified swim.
+
+**An unofficial swim may still set a PB.** This record exists to show growth, not to certify
+a result, so the fastest recorded time wins regardless of provenance.
+
+⚠ **Nothing reads the key yet, and the dashboard does not know about it.** `swimParser.js`
+projects only `{seconds, date, meet}` out of a PB entry, so an unofficial PB renders a plain
+`NEW PB!` on Dashboard v2 with no qualification. Expect that; it is not a bug. See CLAUDE.md
+→ Swim data conventions for the full rationale and the open items it raised.
+
 ---
 
 ## swim-annotations.json conventions
@@ -184,6 +204,14 @@ When adding a new result entry:
 Preserves `pb` and `note` fields for Moore family Waves (SCM) results. After `swimParser.js` repoints to `league-results-v2.json` as the primary source for Moore Waves data, this overlay will be the sole source for those annotations.
 
 **When to add an entry:** whenever a new Moore family Waves (SCM) result is added to `swim-results.json` with `pb: true` OR a non-empty `note`, add a corresponding entry here. SCY/757swim results do not need annotation entries.
+
+> **Why they are not needed, and what happens if you add one anyway.** `swimParser.js` consults
+> the annotation map **only** for rows sourced from `league-results-v2.json`, which is VPSU-only;
+> `swim-results.json` rows that survive into the digest carry their own `pb`/`note` instead. So an
+> SCY key such as `Moore Ophelia|25y Breaststroke|2026-09-12` can never match anything. Three such
+> rows exist (the Sept 12, 2026 KickOff) because they were explicitly requested as the
+> forward-looking home for pb/note — they are harmless and completely inert. Not forbidden, just
+> invisible: do not add one expecting it to change any output.
 
 **Schema fields:**
 
@@ -258,15 +286,167 @@ Games live under `seasons[n].games`. Each game:
 
 ---
 
+## sharks-soccer.json conventions
+
+Matches live under `seasons[n].divisionSchedule.matches`. See the table above for the
+standings-vs-schedule team-name wording caveat.
+
+### `unverified: true` — a result entered before the league posted it (added Sept 14, 2026)
+
+Decided in conversation with Wade on this date; this paragraph is the first and only place
+it is written down. Not a pre-existing repo-wide convention — do not cite it as one.
+
+Set it on a match object when its result (`played`/`homeScore`/`awayScore`) was recorded
+from a household member's own observation of the match and has not yet been checked against
+the league's published GotSport/TASL page. **Absence means the result is published** —
+do not write `unverified: false` on an ordinary row.
+
+This replaces an earlier field, `resultSource` (a string, e.g. `"household-report"`), which
+carried the same meaning under a name that described *where* the result came from rather
+than *whether it's been checked*. `resultSource` was used once, on match 641, and was
+removed from that row once the league posted its own confirmation (commit `d70f280`, PR
+#78). As of this writing, zero rows in this file carry either field.
+
+Nothing in `digest/sharksParser.js` or elsewhere reads this key — it is provenance for a
+human re-checking the data later, not an input to any parser.
+
+```json
+{ "matchNumber": 641, "played": true, "homeScore": 1, "awayScore": 10, "unverified": true }
+```
+
+### `forfeit: true` — a match awarded rather than played to a result (added Sept 14, 2026)
+
+Decided in conversation with Wade on this date; this paragraph is the first and only place
+it is written down. Not a pre-existing repo-wide convention — do not cite it as one.
+
+Set it on a match object whose `homeScore`/`awayScore` were awarded because a side did not
+field a team, rather than scored in play. **Absence means the result was played** — do not
+write `forfeit: false` on an ordinary row.
+
+Why carry it at all: an awarded score is an administrative outcome, not a scoreline, so
+anything that eventually derives standings from these rows needs to be able to keep it out
+of played-result arithmetic — goals for/against in particular. That is the forward-looking
+reason. It is **not** a live defect today: `digest/sharksParser.js` derives `seasonRecord`
+only from rows where `isSharksTeam()` matches one side, and the one row carrying the flag is
+between two other clubs. The `divisionStanding` that same parser returns is read straight
+out of this file's own `standings.teams` block, not computed from the match rows at all.
+
+One row carries it as of this writing — match 637 (2026-08-29, Chesapeake United Reapers
+3–0 VA Rush Killer Bees), entered in commit `b4dc214` (PR #77). No parser and no test reads
+it — the `note` subsection below enumerates the readers of this file that were checked, and
+names this key alongside `note` rather than covering `note` alone.
+
+⚠ **This paragraph used to state the result of running `git grep -w forfeit` across the
+repository, and the commit that wrote that statement falsified it in the act of making it.**
+The stated result was that the grep returned the one line of data and nothing else. But this
+subsection's heading, the sentence itself and the JSON example below it all contain the word,
+so the prose became matches of its own grep. Read directly here rather than recalled: at
+`dcf0674^` — the parent of the commit that added the sentence, PR #81 — that grep returns the
+`data/sharks-soccer.json` row alone; at `dcf0674` it does not. **The result is deleted rather
+than corrected, and deliberately not replaced with a new one.** A count of matches for a term
+has no stable anchor inside a paragraph that names the term: any number written here is
+falsified by the next edit to the prose around it, silently, because nobody re-runs a grep
+whose answer is already written down. The claim above is anchored to the enumerated readers
+instead. That is better in the one respect that produced this defect — a list of readers is
+not falsified by editing the prose around it — but it is **not** a stable anchor in general,
+and this sentence claimed it was until a Reviewer round objected. It is hand-maintained
+prose: it rots silently when a reader changes, and it is already not a complete list of what
+loads `data/sharks-soccer.json` — `digest/builder.js`'s `readDataFile('sharks-soccer.json')`
+call is the digest's own load of the file, and the enumeration below does not name it.
+`grep -n "readDataFile('sharks-soccer.json')" digest/builder.js` locates that call wherever it
+has drifted to. **No line number is given here, deliberately, and an earlier version of this
+retraction gave one.** CLAUDE.md's Skills section states the rule — a live figure inside a
+retraction is one more place to rot — and applies it by naming a thing rather than a location,
+which is what this now does. The locator is also the form that fails visibly: add a second
+load and the grep shows both, where a stale line number silently points at whatever moved into
+its place. Treat the enumeration as the readers that were checked, not as every reader there
+is, and re-derive rather than cite it.
+
+```json
+{ "matchNumber": 637, "played": true, "homeScore": 3, "awayScore": 0, "forfeit": true }
+```
+
+### `note` on a match row — free text for a caveat no other column carries (documented Sept 14, 2026)
+
+This field has been in the file since it was first added (commit `ba113fb`), longer than
+either key above; what was decided in conversation with Wade on this date is that it should
+be written down, and this paragraph is the first and only place that has happened. Not a
+pre-existing repo-wide convention — do not cite it as one.
+
+**Do not confuse it with `seasons[n].divisionSchedule.note`**, which is a separate,
+schedule-level field that predates all of this and describes the schedule as a whole.
+
+A row `note` is prose for a human reading the data later. Two distinct uses are present, and
+both are legitimate — do not narrow the field to either one:
+
+- **Recording that a fixture is anomalous.** Two rows do this, matches 640 and 674
+  (both 2026-09-12, one club scheduled at the same venue 90 minutes apart against two
+  different opponents), entered in commit
+  `d70f280` (PR #78). Their text opens, verbatim, `Unexplained, not ordinarily pending:` and
+  goes on to record that both remain unplayed with no result posted days after every other
+  fixture that day posted one. The phrasing matters: it distinguishes a result that is
+  *missing without explanation* from one merely not yet entered.
+- **Household or data caveats on an ordinary fixture.** Five rows do this — calendar
+  conflicts with W&M home games, a doubleheader cross-reference between matches 658 and 635,
+  and a venue-label discrepancy on match 673. All five date to commit `ba113fb` and are not
+  anomaly reports. Leave them alone.
+
+**Most rows carry no `note`, and that is the ordinary case** — 7 of 44 rows have one as of
+this writing. Do not add one to a fixture that has nothing unusual about it.
+
+Nothing reads this key or `forfeit`. Verified against the readers of this file:
+`digest/sharksParser.js` (which reads `homeTeam`, `awayTeam`, `played`, `homeScore`,
+`awayScore`, `date`, `time`, `venue` and `address`), the `findFixture()` helpers in
+`digest/familySpotlightSelector.js` and `digest/specialEventQualify.js` (which read only
+immutable columns by design), and `test/data.test.js`, which asserts the file's array shape
+and no row keys at all. Both keys are provenance for a human, not an input to any parser.
+
+```json
+{ "matchNumber": 640, "note": "Unexplained, not ordinarily pending: …", "played": false, "homeScore": null, "awayScore": null }
+```
+
+---
+
 ## Commit and push protocol
+
+**A feature branch and a pull request are the only route to `main`. Do not push to
+`main` — it cannot succeed, and an earlier version of this section told you to.**
 
 After every data change:
 
-1. `git add data/<filename>.json`
-2. `git commit -m "Updater: <brief description of change>"`
-3. `git push origin main`
+1. Confirm you are not on `main`; create or check out a feature branch if you are.
+2. `git add data/<filename>.json`
+3. `git commit -m "Updater: <brief description of change>"`
+4. `git push -u origin <your-branch>`
+5. Run the Reviewer subagent over the diff and get a pass.
+6. Open the pull request. **Stop there — do not merge.**
 
 **Do not batch unrelated changes into one commit.** One logical update = one commit.
+
+### Why the old `git push origin main` step could never work
+
+Three separate mechanisms refuse it, and only the third is real enforcement. Read
+directly from the shipped files rather than summarised from memory:
+
+- **`.claude/settings.json`** — `permissions.deny` carries four rules,
+  `Bash(git push * main)`, `Bash(git push * main *)`, `Bash(git push * *:main)` and
+  `Bash(git push * *:main *)`. `git push origin main` matches the first.
+- **`.claude/hooks/block-main-push.mjs`** — a `PreToolUse` hook on `Bash|PowerShell`.
+  It exits 2 on any `git push` command whose text matches `/\bmain\b/`, **or** while
+  `main` is the checked-out branch. Its message, verbatim: `Blocked: pushes to main
+  are not permitted. Commit to a branch and open a PR.`
+- **Server-side branch protection on `main`** — the actual gate, and the only one that
+  binds routes other than Bash. Confirmed at the GitHub branch API: `main` reports
+  `"protected": true`; every other branch in the repo reports `false`.
+
+**Two consequences for the commands you type.** First, the hook reads the *whole*
+command string, so a compound or quoted command that merely mentions `main` is refused
+even when the push targets a feature branch — split it rather than working around it.
+Second, `.claude/hooks/require-review.mjs` runs on `Stop` and blocks the turn while any
+commit past the branch base lacks a passing Reviewer verdict, which is why step 5 is
+part of this protocol and not something to leave until afterwards. `.claude/agents/reviewer.md`
+item 7 expects exactly what steps 1-6 produce: work "committed and pushed to a feature
+branch, and that a PR exists or is ready to open."
 
 Example commit messages:
 ```
@@ -282,7 +462,7 @@ Updater: add Waves vs EH meet result 2026-06-22
 
 - [ ] All keys verified against naming conventions (not abbreviated)
 - [ ] All times converted to decimal seconds
-- [ ] Committed and pushed to main
+- [ ] Committed to a feature branch, branch pushed, Reviewer passed, PR opened, not merged
 - [ ] No logic files touched
 - [ ] User confirmed the changes look correct
 

@@ -48,16 +48,39 @@ const MUTATIONS = [
   // --- the four failure classes -------------------------------------------
   ['a missing artifact is reported as a malformed one', WORKER,
     s => s.replace("if (response.status === 404) throw new ServeFailure('artifact-missing');", "if (response.status === 404) throw new ServeFailure('artifact-malformed');")],
+  // ANCHOR REPOINTED (Sept 11, 2026), same cause as the 5xx row below: the
+  // branch grew a block so it could carry a diagnostic. Anchored on the
+  // PREDICATE rather than the whole statement, so adding or changing lines
+  // inside the block cannot rot it a third time.
+  // BOUNDED at the block's own close, like the other two. A round-3 review
+  // noted the first version's `[\s\S]*?` could backtrack PAST the closing
+  // brace if the first throw inside the block ever stopped being
+  // `credentials-rejected`, silently mutating the 404, 5xx or non-ok branch
+  // instead — and it would still "apply", so the harness would not refuse.
+  //
+  // The bound is a lookahead, not `[^}]`: the block's own body contains
+  // `${response.status}` inside a template literal, so a negated-brace class
+  // stops at that brace and the anchor matches nothing at all. Tried, and it
+  // silently failed to apply rather than over-matching — which the harness
+  // DOES refuse, so the wrong fix was caught the same way the rot was.
   ['a rejected credential is reported as an unreachable store', WORKER,
-    s => s.replace("if (response.status === 403 || response.status === 401) throw new ServeFailure('credentials-rejected');", "if (response.status === 403 || response.status === 401) throw new ServeFailure('storage-unreachable');")],
+    s => s.replace(/(if \(response\.status === 403 \|\| response\.status === 401\) \{(?:(?!\n {2}\})[\s\S])*?throw new ServeFailure\(')credentials-rejected/, '$1storage-unreachable')],
   ['an unreachable store is reported as a missing artifact', WORKER,
     s => s.replace("    throw new ServeFailure('storage-unreachable', error);\n  } finally {", "    throw new ServeFailure('artifact-missing', error);\n  } finally {")],
+  // ANCHOR REPOINTED (Sept 11, 2026). This row matched a single line until the
+  // 5xx branch grew a diagnostic and became a block, at which point this
+  // harness refused to run with `MUTATION DID NOT APPLY` rather than scoring
+  // the row silently — which is the behaviour that made the rot visible, and
+  // the reason the change that caused it re-ran this harness at all. Matched
+  // as a block by pattern now, so a further comment change inside it cannot
+  // rot the anchor again; the non-greedy body stops at the block's own close.
   ['a 5xx from the store is treated as a good response', WORKER,
-    s => s.replace("if (response.status >= 500) throw new ServeFailure('storage-unreachable');", '')],
+    s => s.replace(/ {2}if \(response\.status >= 500\) \{[\s\S]*?\n {2}\}\n/, '')],
   ['two failure classes collide on one status', WORKER,
     s => s.replace("'storage-unreachable': { status: 504,", "'storage-unreachable': { status: 502,")],
+  // ANCHOR REPOINTED (Sept 11, 2026), same cause. Removes the whole guard.
   ['a missing secret is silently treated as an anonymous read', WORKER,
-    s => s.replace("  if (!accessKeyId || !secretAccessKey) throw new ServeFailure('credentials-rejected');", '')],
+    s => s.replace(/ {2}if \(!accessKeyId \|\| !secretAccessKey\) \{[\s\S]*?\n {2}\}\n/, '')],
 
   // --- the boundary with the platform's authentication --------------------
   ['the Worker answers a credential failure the way an expired session looks', WORKER,

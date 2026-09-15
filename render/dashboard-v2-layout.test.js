@@ -5,6 +5,7 @@ import { renderDashboardV2 } from './dashboard-v2.js';
 import { readFileSync } from 'node:fs';
 import { ACCENT_OCCURRENCES, eventRowAccentSampleData, sampleDashboardV2Data, specialEventsSampleData } from './dashboard-v2.sample-data.js';
 import { resolveBrowserPath } from '../scripts/render-dashboard-v2-png.mjs';
+import { computeFlags } from '../digest/flags.js';
 
 let browser;
 let page;
@@ -839,5 +840,223 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
     // Row geometry with the switch off matches the ordinary-state geometry.
     const ordinary = await measure(data(), BEFORE);
     assert.deepEqual(off.rows.map(row => row.box), ordinary.rows.map(row => row.box));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The demoted activity-overlap flag renders as a note, measured rather than
+// asserted. "Still visible somewhere on the dashboard" is the half of the
+// demotion that a markup assertion cannot establish on its own: a note that is
+// zero-width, fully transparent, or pushed outside the panel would satisfy
+// every string check in render/dashboard-v2.test.js and show nothing on the
+// wall. These cases read the composited box out of a real browser.
+// ---------------------------------------------------------------------------
+
+
+describe('demoted alert note 2560x1440 visibility', () => {
+  // The sentence the flag exists to state. digest/flags.js puts it FIRST in the
+  // body precisely so it is the part that survives truncation; these cases are
+  // what hold that. Asserting `textContent` would not — it returns the full
+  // string whatever the CSS does with it, so it cannot fail when the text is
+  // ellipsised away, which is the failure mode this block exists to catch.
+  const STANDING_DEFAULT = 'Standing default: Wade takes Myles, Robyn takes Ophelia.';
+
+  // Real long alert copy, modelled on flags this repo actually emits, because
+  // the note takes its width out of the three cards and short fixture strings
+  // cannot show that cost.
+  const LONG_ALERTS = Object.freeze([
+    { level: 'red', title: 'Backpack Prep — Wade Action Required Tomorrow Morning', body: 'Tomorrow: Myles has Library (return Wings of Fire) · Ophelia has PE2 (sneakers)' },
+    { level: 'amber', title: 'Emma Unavailable — UTA Reserve Duty Sept 8–12', body: 'No afternoon coverage Mon through Fri. Confirm pickup arrangements for both kids.' },
+    { level: 'amber', title: 'Flag Football Schedule Gap — 1 Calendar Event Has No Season Entry', body: '2026-10-25 “Flag Football: Week 6 — Practice + Game / Playoffs (Yorktown)” is on the calendar but not in data/flag-football.json.' },
+  ]);
+
+  // Built through computeFlags rather than hand-written, so the body string is
+  // the one production emits — including the cross product that makes it grow.
+  const timedKidEvent = (title, calendarName) => ({
+    title,
+    _calName: calendarName,
+    id: `${calendarName}-${title}`,
+    raw: {
+      id: `${calendarName}-${title}`,
+      start: { dateTime: calendarName === 'Myles' ? '2026-09-08T18:00:00-04:00' : '2026-09-08T18:30:00-04:00' },
+      end: { dateTime: calendarName === 'Myles' ? '2026-09-08T19:00:00-04:00' : '2026-09-08T19:30:00-04:00' },
+    },
+  });
+  function overlapNote(pairs) {
+    const events = [];
+    for (let index = 0; index < pairs; index += 1) {
+      events.push(timedKidEvent(`Myles Activity ${index + 1}`, 'Myles'));
+      events.push(timedKidEvent(`Ophelia Activity ${index + 1}`, 'Ophelia'));
+    }
+    const flag = computeFlags({
+      today: new Date(2026, 8, 8), resolvedEvents: events,
+      schoolStrip: { myles: {}, ophelia: {} }, days: [], gmailHits: {},
+    }).find(item => item.id === 'activity-overlap');
+    assert.ok(flag, 'fixture must actually fire the activity-overlap flag');
+    return flag;
+  }
+
+  async function band(flags) {
+    await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, flags }), { waitUntil: 'load' });
+    await page.evaluate(() => document.fonts.ready);
+    return page.evaluate((sentence) => {
+      const panel = document.querySelector('.alerts-panel');
+      const panelBox = panel.getBoundingClientRect();
+      const round = value => +value.toFixed(2);
+      const overflow = element => ({
+        x: element.scrollWidth - element.clientWidth,
+        y: element.scrollHeight - element.clientHeight,
+      });
+      const note = document.querySelector('.alert-note');
+      let noteOut = null;
+      if (note) {
+        const title = note.querySelector('b');
+        const body = note.querySelector('b + span');
+        const bodyBox = body.getBoundingClientRect();
+        // Range over the leading sentence, then ask whether that range's painted
+        // rectangle lies inside the body's visible (client) box. This is the same
+        // Range technique the Today-header check in this file already uses, and
+        // unlike textContent it moves when the CSS clips.
+        let sentenceInsideVisibleBox = null;
+        const textNode = note.querySelector('b + span').firstChild;
+        if (textNode && body.textContent.indexOf(sentence) === 0) {
+          const range = document.createRange();
+          range.setStart(textNode, 0);
+          range.setEnd(textNode, sentence.length);
+          const rect = range.getBoundingClientRect();
+          sentenceInsideVisibleBox = rect.left >= bodyBox.left - 1 && rect.right <= bodyBox.right + 1
+            && rect.top >= bodyBox.top - 1 && rect.bottom <= bodyBox.bottom + 1;
+        }
+        const noteBox = note.getBoundingClientRect();
+        // One rect per rendered line fragment, deduplicated by top edge: this is
+        // how many lines the body actually paints, which is what separates the
+        // two-line clamp from a single nowrap line. Nothing else in the note's
+        // geometry distinguishes them, so without this the clamp has no guard.
+        const bodyRange = document.createRange();
+        bodyRange.selectNodeContents(body);
+        const lineTops = new Set([...bodyRange.getClientRects()].map(rect => rect.top.toFixed(1)));
+        noteOut = {
+          box: { left: round(noteBox.left), width: round(noteBox.width), height: round(noteBox.height) },
+          leadsWithSentence: body.textContent.indexOf(sentence) === 0,
+          sentenceInsideVisibleBox,
+          bodyOverflow: overflow(body),
+          bodyClientHeight: body.clientHeight,
+          bodyLineHeightPx: parseFloat(getComputedStyle(body).lineHeight),
+          bodyRenderedLines: lineTops.size,
+          titleOverflow: overflow(title),
+          spillsBand: noteBox.bottom > panelBox.bottom + 0.5 || noteBox.right > panelBox.right + 0.5,
+          titleFontPx: parseFloat(getComputedStyle(title).fontSize),
+          bodyFontPx: parseFloat(getComputedStyle(body).fontSize),
+          cardTitleFontPx: parseFloat(getComputedStyle(document.querySelector('.alert-card b')).fontSize),
+          markColor: getComputedStyle(note.querySelector('.alert-mark')).backgroundColor,
+        };
+      }
+      return {
+        panel: { left: round(panelBox.left), top: round(panelBox.top), width: round(panelBox.width), height: round(panelBox.height) },
+        note: noteOut,
+        noteCount: document.querySelectorAll('.alert-note').length,
+        cards: [...document.querySelectorAll('.alert-card')].map(card => ({
+          width: round(card.getBoundingClientRect().width),
+          spillsBand: card.getBoundingClientRect().bottom > panelBox.bottom + 0.5,
+          cardOverflow: overflow(card),
+          titleOverflow: overflow(card.querySelector('b')),
+          bodyOverflow: card.querySelector('b + span') ? overflow(card.querySelector('b + span')) : null,
+        })),
+      };
+    }, STANDING_DEFAULT);
+  }
+
+  it('paints the note inside the alerts band with a non-zero, visible box', async () => {
+    const { noteCount, cards, note } = await band([...sampleDashboardV2Data.flags, overlapNote(1)]);
+    assert.equal(noteCount, 1);
+    assert.equal(cards.length, 3);
+    assert.equal(note.spillsBand, false);
+    assert.ok(note.box.width > 100, `note is only ${note.box.width}px wide`);
+    assert.ok(note.box.height > 20, `note is only ${note.box.height}px tall`);
+  });
+
+  it('never clips the note title, at any overlap count', async () => {
+    for (const pairs of [1, 2, 3]) {
+      const { note } = await band([...LONG_ALERTS, overlapNote(pairs)]);
+      assert.deepEqual(note.titleOverflow, { x: 0, y: 0 }, `title clipped at ${pairs} pair(s)`);
+    }
+  });
+
+  it('keeps the standing default fully visible even as the overlap list grows', async () => {
+    // overlapNote(n) builds n Myles and n Ophelia events that all mutually
+    // overlap, so `desc` carries n² clauses: 3 pairs is 9, and cannot fit.
+    // What must never truncate is the sentence the note exists to say. This case
+    // fails if digest/flags.js moves it back to the end of the body.
+    for (const pairs of [1, 2, 3]) {
+      const { note } = await band([...LONG_ALERTS, overlapNote(pairs)]);
+      assert.equal(note.leadsWithSentence, true, `body does not lead with the standing default at ${pairs} pair(s)`);
+      assert.equal(note.sentenceInsideVisibleBox, true, `standing default is clipped at ${pairs} pair(s)`);
+    }
+  });
+
+  it('wraps the body to two lines instead of running it off the end', async () => {
+    // The other half of the clipping fix, and it needs its own guard: the
+    // leading-sentence case above is satisfied by the digest-side ordering alone
+    // (the sentence is 56 characters and fits one line), so reverting the CSS to
+    // `white-space:nowrap` left the whole suite green. Measured both ways —
+    // nowrap paints ONE line box at clientHeight 16 and overflows horizontally
+    // (scrollWidth 587 vs clientWidth 549) even at a single overlapping pair;
+    // the two-line clamp paints TWO at clientHeight 32 with no horizontal
+    // overflow at all. Both properties are asserted, because either one alone
+    // would let a different revert through.
+    for (const pairs of [1, 2, 3]) {
+      const { note } = await band([...LONG_ALERTS, overlapNote(pairs)]);
+      assert.equal(note.bodyOverflow.x, 0,
+        `note body overflows horizontally by ${note.bodyOverflow.x}px at ${pairs} pair(s) — it is not wrapping`);
+      // Laid-out line fragments, which includes any the clamp then hides — so
+      // this is "the text wrapped onto more than one line", not "two are shown".
+      // Under nowrap it is always exactly 1, whatever the content.
+      assert.ok(note.bodyRenderedLines >= 2,
+        `note body laid out on ${note.bodyRenderedLines} line(s) at ${pairs} pair(s) — it is not wrapping`);
+      assert.ok(note.bodyClientHeight >= note.bodyLineHeightPx * 1.8,
+        `note body box is ${note.bodyClientHeight}px, under two lines of ${note.bodyLineHeightPx}px`);
+    }
+  });
+
+  it('is subordinate to a card but not below the surface’s smallest body size', async () => {
+    const { note } = await band([...sampleDashboardV2Data.flags, overlapNote(1)]);
+    assert.ok(note.titleFontPx < note.cardTitleFontPx,
+      `note title ${note.titleFontPx}px is not smaller than card title ${note.cardTitleFontPx}px`);
+    // A lower bound as well as an upper one: "smaller than a card" alone is
+    // satisfied by 1px, and the note has to stay readable at TV distance.
+    assert.ok(note.bodyFontPx >= 14, `note body ${note.bodyFontPx}px is below the 14px floor`);
+    assert.ok(note.titleFontPx >= 17, `note title ${note.titleFontPx}px is below the 17px floor`);
+    // The computed colour, not just the class. `.alert-note .alert-mark` sets
+    // size only, so `.level-blue .alert-mark` still supplies the tint — this is
+    // what proves a note keeps its level colour rather than the gold default.
+    assert.equal(note.markColor, 'rgb(24, 61, 107)');
+  });
+
+  it('costs the three alert cards no overflow they do not already have', async () => {
+    // The note is a flex sibling, so its width comes out of the cards. At a wider
+    // cap this measured 9px of new vertical overflow on a long red alert — the
+    // demoted item crowding the urgent ones. Compared against the same long copy
+    // with no note, so a pre-existing sub-pixel overflow is not read as a
+    // regression. Both overlap counts, because the note's width varies with them.
+    const baseline = await band(LONG_ALERTS);
+    assert.equal(baseline.noteCount, 0);
+    for (const pairs of [1, 2, 3]) {
+      const withNote = await band([...LONG_ALERTS, overlapNote(pairs)]);
+      assert.equal(withNote.cards.length, 3, `card count moved at ${pairs} pair(s)`);
+      assert.deepEqual(
+        withNote.cards.map(card => ({ cardOverflow: card.cardOverflow, titleOverflow: card.titleOverflow, bodyOverflow: card.bodyOverflow, spillsBand: card.spillsBand })),
+        baseline.cards.map(card => ({ cardOverflow: card.cardOverflow, titleOverflow: card.titleOverflow, bodyOverflow: card.bodyOverflow, spillsBand: card.spillsBand })),
+        `the note changed card overflow at ${pairs} pair(s)`,
+      );
+    }
+  });
+
+  it('leaves the three card positions and the panel box exactly where they were', async () => {
+    const without = await band(sampleDashboardV2Data.flags);
+    const withNote = await band([...sampleDashboardV2Data.flags, overlapNote(1)]);
+    assert.equal(without.noteCount, 0);
+    assert.equal(without.cards.length, 3);
+    assert.equal(withNote.cards.length, 3);
+    assert.deepEqual(withNote.panel, without.panel);
   });
 });

@@ -154,6 +154,34 @@ const EVALUATORS = [
   // ── Kid activity overlap ─────────────────────────────────────────────────
   // Myles and Ophelia have overlapping activities at different locations.
   // Default pattern: Wade takes Myles, Robyn takes Ophelia (Section 6 always-on rule).
+  //
+  // DEMOTED (Sept 2026). The firing conditions below are unchanged; only the
+  // flag's prominence is. What it says is the always-on rule itself, so it
+  // recites a standing household default rather than reporting something new,
+  // and it was taking the two most prominent positions on Dashboard v2:
+  //
+  //   1. `level: 'amber'` made it a candidate in nowNextSelector.js's
+  //      problemCandidates(), which admits `!bannerOnly && (red || amber)` at
+  //      PRIORITY 700 — the top of the table. It therefore won the featured
+  //      NOW/NEXT slot outright on any day it fired, pushing the actual events
+  //      into supporting blocks. `level: 'blue'` fails that existing filter.
+  //      The selector itself is deliberately NOT edited: this flag stops
+  //      qualifying, the ranking does not change for anything else. Note that
+  //      supportFrom() never admits an UNRESOLVED_PROBLEM candidate into a
+  //      supporting block, so leaving the featured slot means leaving NOW/NEXT
+  //      entirely — there is no middle tier to demote into.
+  //
+  //   2. It consumed one of the three .alert-card positions, because
+  //      render/dashboard-v2.js's renderAlerts() slices the first three
+  //      non-bannerOnly flags regardless of level. `noteOnly: true` is what
+  //      that renderer keys on to keep it out of the cards and render it as a
+  //      compact standing note instead.
+  //
+  // `bannerOnly: true` would have done both in one property and was rejected:
+  // Dashboard v2 renders bannerOnly flags nowhere at all (renderAlerts is v2's
+  // only flags consumer and filters them out), so it would have made the flag
+  // invisible rather than quiet. It is demoted, not retired — whether it is
+  // worth nothing is not established.
   (ctx) => {
     const isKidActivity = (event, calendarName) => event._calName === calendarName
       && event.cardType !== 'menu'
@@ -189,11 +217,32 @@ const EVALUATORS = [
       .map(o => `${o.myles.title} (Myles) + ${o.ophelia.title} (Ophelia)`)
       .join('; ');
 
+    // Text reshaped with the level. '🟡' is the amber indicator glyph and would
+    // contradict `level: 'blue'`; 'Split Coverage Needed' and 'Confirm both can
+    // cover' assert an open decision, which is the framing being retired — the
+    // note states the pairing and the standing default and asks for nothing.
+    //
+    // THE STANDING DEFAULT LEADS, and the order is load-bearing rather than
+    // stylistic. `desc` has one clause per OVERLAPPING PAIR, and the loop above
+    // is a nested scan, so the count is bounded by |Myles timed| × |Ophelia
+    // timed| rather than by either alone — two of each that all overlap give
+    // four clauses, not two. So it grows faster than the event count, while the
+    // note renders in a fixed 92px band.
+    // Measured at 2560×1440 with the default trailing, on a fixture where two
+    // Myles and two Ophelia events mutually overlap (four clauses):
+    // only 51.3% of the body was visible and the ellipsis had eaten the whole
+    // 'Wade takes Myles, Robyn takes Ophelia' sentence, leaving a note that
+    // listed activities and said nothing. Leading with it means the sentence
+    // the flag exists to state is the part that always survives, and the
+    // unbounded list is what truncates. render/dashboard-v2-layout.test.js
+    // asserts that sentence is inside the visible box at one, two and three
+    // pairs — which is one, four and nine overlap clauses.
     return {
       id: 'activity-overlap',
-      level: 'amber',
-      title: '🟡 Overlapping Activities — Split Coverage Needed',
-      body: `${desc}. Default: Wade takes Myles, Robyn takes Ophelia. Confirm both can cover.`,
+      level: 'blue',
+      noteOnly: true,
+      title: '🔵 Overlapping Activities — Standard Split Coverage',
+      body: `Standing default: Wade takes Myles, Robyn takes Ophelia. ${desc}.`,
       owner: ['wade', 'robyn'],
       persist: false,
     };

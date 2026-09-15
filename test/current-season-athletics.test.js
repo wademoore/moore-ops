@@ -417,7 +417,9 @@ describe('flag football team identity', () => {
   // This assertion previously pinned the SPRING window (2026-04-26 -> 2026-06-07,
   // bufferDays 0) under the title 'this update is 757swim-only'. That was
   // accurate for the change it was written for, and it is exactly the tripwire
-  // CLAUDE.md predicted would go red once a real fall season landed. It is
+  // predicted by the fall-2026 Known open item in CLAUDE.md (removed with the
+  // changelog and the closed-work record; see git) once a real fall season
+  // landed. It is
   // repointed at the fall window rather than deleted, so the window still
   // cannot drift silently.
   it('pins the fall 2026 flag football season window', async () => {

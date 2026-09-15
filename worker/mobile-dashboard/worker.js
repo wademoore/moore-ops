@@ -90,6 +90,122 @@ class ServeFailure extends Error {
   }
 }
 
+/** Keeps one diagnostic line bounded, whatever an upstream message contains. */
+const MAX_DIAGNOSTIC_MESSAGE = 200;
+
+/**
+ * An AWS access key id, wherever one appears. Deliberately UNANCHORED at both
+ * ends and `{16,}` rather than `{16}`: a review of this file's first version
+ * pointed out that `\bAKIA[0-9A-Z]{16}\b` fails to match a 21-character
+ * look-alike, because the trailing `\b` needs a non-word character after the
+ * sixteenth. A scrubber that misses a near-miss of the shape it is scrubbing
+ * is worse than none, since it reads as protection.
+ */
+const ACCESS_KEY_SHAPE = /(?:AKIA|ASIA)[0-9A-Z]{16,}/g;
+
+/**
+ * Removes the one credential shape an upstream message could recognisably
+ * quote, before that message reaches a log sink.
+ *
+ * WHAT THIS DOES AND DOES NOT PROMISE, because the difference matters.
+ *
+ * The load-bearing guarantee is structural and is not this function: nothing
+ * this Worker puts in a diagnostic line is credential-derived. `signRequest`
+ * is awaited OUTSIDE the try block whose catch logs, so a signing failure
+ * cannot reach a log line, and the `key` reported has already been through
+ * `mobileKey()`. What remains is an upstream error MESSAGE, which this Worker
+ * does not author — and this repository's own sibling suite models exactly the
+ * hostile case, a transport error that quotes an access key id in its text.
+ * With `[observability] enabled` that string would have been shipped verbatim.
+ *
+ * So: a recognisable access key id is redacted. An arbitrary secret is NOT,
+ * and cannot be — a 40-character secret has no shape distinguishable from a
+ * sha256 or an S3 version id, and a pattern loose enough to catch it would
+ * redact the diagnostics this line exists to carry. That limit is stated
+ * rather than papered over.
+ */
+function scrubCredentials(text) {
+  return text.replace(ACCESS_KEY_SHAPE, '[redacted]');
+}
+
+/**
+ * One line of diagnostic output for a failure that HAD a real underlying
+ * error, emitted before that error is collapsed into a response reason.
+ *
+ * WHY THIS IS NOT OPTIONAL, AND WHY IT IS EXACTLY THIS MUCH
+ *
+ * `ServeFailure` carries the original error in `cause`, and until now nothing
+ * read it — so a Worker with observability enabled reported `storage-
+ * unreachable` and kept the only fact that says WHICH storage-unreachable it
+ * was. Those facts are not interchangeable. A `TypeError: Illegal invocation`
+ * is a defect in this file: the call never left the isolate and no amount of
+ * rotating a secret or waiting out an S3 incident will change it. An
+ * `AbortError`, a DNS failure or a TLS failure is a genuine upstream
+ * condition. The two demand opposite responses, and telling them apart used
+ * to require a redeploy carrying a print statement. One line here removes
+ * that.
+ *
+ * `phase` and `key` say which read or check failed, because the remedy
+ * differs; both are configuration that already sits in wrangler.toml in plain
+ * text.
+ *
+ * WHICH FAILURES ARE LOGGED, AS A RULE RATHER THAN AS AN ARGUMENT. An earlier
+ * version of this comment claimed every reason but `storage-unreachable` was
+ * a bijection with its cause, so the rest could stay silent "by design rather
+ * than by omission". A review showed that is simply false of this file:
+ * `credentials-rejected` has three causes, and `artifact-malformed` is thrown
+ * from 13 sites. (Count it by grepping for the ServeFailure construction with
+ * that reason; the command is deliberately NOT quoted here, because the first
+ * draft of this sentence did quote it and the quoted literal then matched its
+ * own grep, reporting 14. A comment cannot contain the probe that measures
+ * it.) The rule that actually holds, and that a later review checked site by
+ * site:
+ *
+ * - every cause of `storage-unreachable` and of `credentials-rejected` is
+ *   logged, so those two reasons always name their own cause;
+ * - `artifact-missing` has exactly one cause and needs no line;
+ * - `artifact-malformed` is logged wherever the fault is OURS OR THE
+ *   TRANSPORT'S: a non-ok upstream status, a pointer body that would not
+ *   parse, and `MOBILE_MANIFEST_KEY` refused by `mobileKey` (any of its three
+ *   checks, via `configuredManifestKey`);
+ * - it is SILENT wherever the fault is in the PUBLISHED RELEASE: the
+ *   manifest's own `artifact.key` refused by `mobileKey`, that key refused by
+ *   `releasePrefixOf`, the contract predicate, the `artifact` field checks,
+ *   and the two document-against-manifest integrity checks. They share one
+ *   remedy — republish — so a line apiece would be volume rather than signal.
+ *   Named here as a known gap.
+ *
+ * NO COUNT APPEARS IN THE TWO LISTS ABOVE, and that is deliberate rather than
+ * vague. This comment has now been wrong three times in exactly one way: it
+ * claimed "fourteen throw sites" (thirteen), then "a dozen field checks"
+ * (four), then — correcting that — said "four field checks" and "a review
+ * counted five" four lines apart, because the arithmetic had been reconciled
+ * by inflating a category instead of by naming the site the enumeration
+ * omitted. That site was `releasePrefixOf`'s, and it is named above now. A
+ * category list can be checked against the file; a total invites being
+ * written rather than derived.
+ *
+ * WHAT IS DELIBERATELY ABSENT. Not the signed headers: `authorization`
+ * carries `Credential=<access key id>/<scope>`. Not `config.credentials`,
+ * not `env`, and not the error object itself, whose own properties are set
+ * by whatever threw rather than by us. Name, message and our own two labels
+ * are the whole of it, and the message is truncated so an upstream string
+ * cannot run away with the log.
+ */
+function logUnderlying(phase, reason, key, error) {
+  console.error(JSON.stringify({
+    worker: 'mobile-dashboard',
+    event: 'serve-failure',
+    phase,
+    reason,
+    key,
+    error: error instanceof Error ? error.name : typeof error,
+    // Scrubbed BEFORE truncating: a key straddling the bound would otherwise
+    // survive as a fragment.
+    message: scrubCredentials(String(error instanceof Error ? error.message : error)).slice(0, MAX_DIAGNOSTIC_MESSAGE),
+  }));
+}
+
 /**
  * The single chokepoint. Every key that reaches the network passes through
  * here, and anything outside the mobile prefix throws before a URL exists.
@@ -113,6 +229,43 @@ function releasePrefixOf(artifactKey) {
   return artifactKey.slice(0, cut);
 }
 
+/**
+ * The configured pointer, with its validation failure reported.
+ *
+ * `mobileKey()` throws `artifact-malformed` for a key outside the mobile
+ * prefix, and a round-3 review found this call reaching it SILENTLY — the one
+ * site that contradicted the rule below. It is a deployment fault in the same
+ * function as the other two, with its own remedy (fix `MOBILE_MANIFEST_KEY` in
+ * wrangler.toml), and reporting it with no line points whoever debugs it at
+ * the publisher instead of at their own configuration.
+ *
+ * The VALUE is deliberately not logged. The other two config branches name
+ * their variables and report no values, and this key is by definition the one
+ * that failed validation — so it is arbitrary environment text rather than
+ * something already known to be a safe key path.
+ *
+ * The reason it throws stays `artifact-malformed`, which is arguably the wrong
+ * class for a configuration fault — `credentials-rejected` renders "This
+ * origin is misconfigured" and would read better. It is NOT changed here:
+ * mobile-dashboard-worker.test.js pins `artifact-malformed` for exactly this
+ * case, and this change edits no existing test. Recorded as an open question
+ * rather than settled quietly.
+ */
+function configuredManifestKey(env) {
+  try {
+    return mobileKey(env.MOBILE_MANIFEST_KEY || MOBILE_MANIFEST_KEY);
+  } catch (error) {
+    // All THREE of `mobileKey`'s checks are described, not just the prefix
+    // one. A round-4 review pointed out that
+    // `dashboard-mobile/../dashboard-v2/x` IS under the prefix and fails on
+    // the dot segment, so the earlier wording was false for exactly the key
+    // the traversal check exists to refuse — and pointed the reader at the
+    // wrong check.
+    logUnderlying('config-pointer', 'artifact-malformed', null, new Error('MOBILE_MANIFEST_KEY is empty, outside the mobile prefix, or contains a dot or empty path segment'));
+    throw error;
+  }
+}
+
 function readConfig(env) {
   const bucket = env.ARTIFACT_BUCKET;
   const region = env.AWS_REGION;
@@ -122,12 +275,26 @@ function readConfig(env) {
   // a credential problem would send whoever is debugging it to the wrong
   // place. It is deliberately the same class as a rejected secret: from a
   // consumer's side both mean "this origin cannot read its own store".
-  if (!bucket || !region) throw new ServeFailure('credentials-rejected');
-  if (!accessKeyId || !secretAccessKey) throw new ServeFailure('credentials-rejected');
+  // These two and the upstream 401/403 are the THREE causes of one 500 whose
+  // page reads "This is not a sign-in problem" — and they have three different
+  // remedies: fix the stack's configuration, set the secret, or repair the key
+  // or its policy. Nothing said which until a Reviewer pass pointed out that
+  // this was exactly the information loss the change was written to remove,
+  // standing behind an argument that it did not exist. The variable NAMES are
+  // logged; no value is, and neither branch can distinguish which of its two
+  // variables is missing without reporting one, so it does not try.
+  if (!bucket || !region) {
+    logUnderlying('config-store', 'credentials-rejected', null, new Error('ARTIFACT_BUCKET or AWS_REGION is not set'));
+    throw new ServeFailure('credentials-rejected');
+  }
+  if (!accessKeyId || !secretAccessKey) {
+    logUnderlying('config-credentials', 'credentials-rejected', null, new Error('AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY is not set'));
+    throw new ServeFailure('credentials-rejected');
+  }
   return {
     bucket,
     region,
-    manifestKey: mobileKey(env.MOBILE_MANIFEST_KEY || MOBILE_MANIFEST_KEY),
+    manifestKey: configuredManifestKey(env),
     credentials: { accessKeyId, secretAccessKey, sessionToken: env.AWS_SESSION_TOKEN || undefined },
     timeoutMs: Number(env.UPSTREAM_TIMEOUT_MS) > 0 ? Number(env.UPSTREAM_TIMEOUT_MS) : DEFAULT_UPSTREAM_TIMEOUT_MS,
   };
@@ -171,15 +338,29 @@ async function readObject(config, deps, key, versionId) {
     // A transport error, a DNS failure, a TLS failure or our own abort. In
     // every one of them nothing about the object is known, which is exactly
     // what `storage-unreachable` says and what an "old document" must not.
+    //
+    // It is ALSO where a synchronous throw from the call itself lands, which
+    // is not the same thing at all and is the reason the line below exists.
+    logUnderlying('upstream-fetch', 'storage-unreachable', safeKey, error);
     throw new ServeFailure('storage-unreachable', error);
   } finally {
     clearTimeout(timer);
   }
 
-  if (response.status === 403 || response.status === 401) throw new ServeFailure('credentials-rejected');
+  if (response.status === 403 || response.status === 401) {
+    logUnderlying('upstream-status', 'credentials-rejected', safeKey, new Error(`upstream answered HTTP ${response.status}`));
+    throw new ServeFailure('credentials-rejected');
+  }
+  // 404 is the one reason with exactly one cause, so it needs no line.
   if (response.status === 404) throw new ServeFailure('artifact-missing');
-  if (response.status >= 500) throw new ServeFailure('storage-unreachable');
-  if (!response.ok) throw new ServeFailure('artifact-malformed');
+  if (response.status >= 500) {
+    logUnderlying('upstream-status', 'storage-unreachable', safeKey, new Error(`upstream answered HTTP ${response.status}`));
+    throw new ServeFailure('storage-unreachable');
+  }
+  if (!response.ok) {
+    logUnderlying('upstream-status', 'artifact-malformed', safeKey, new Error(`upstream answered HTTP ${response.status}`));
+    throw new ServeFailure('artifact-malformed');
+  }
 
   try {
     return new Uint8Array(await response.arrayBuffer());
@@ -187,6 +368,7 @@ async function readObject(config, deps, key, versionId) {
     // The headers arrived and the body did not. The object exists; what we
     // hold is incomplete, so it is a transport condition rather than a
     // malformed document.
+    logUnderlying('upstream-body', 'storage-unreachable', safeKey, error);
     throw new ServeFailure('storage-unreachable', error);
   }
 }
@@ -203,6 +385,7 @@ async function resolvePointer(config, deps) {
   try {
     manifest = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes));
   } catch (error) {
+    logUnderlying('pointer-parse', 'artifact-malformed', config.manifestKey, error);
     throw new ServeFailure('artifact-malformed', error);
   }
   // The contract's own predicate, imported rather than reimplemented. A body
@@ -331,7 +514,30 @@ const DOCUMENT_ROUTES = new Set(['/', `/${MOBILE_DOCUMENT_PATH}`]);
 const DISCOVERY_ROUTES = new Set([`/${MOBILE_DISCOVERY_MANIFEST_PATH}`]);
 
 async function handleRequest(request, env, deps = {}) {
-  const resolved = { fetch: deps.fetch || globalThis.fetch, now: deps.now || (() => Date.now()) };
+  const resolved = {
+    // `.bind(globalThis)` is load-bearing and its absence was invisible under
+    // every test this repository had. `globalThis.fetch` in workerd is a
+    // native binding that checks its receiver; assigning it onto a plain
+    // object and then calling `resolved.fetch(...)` — a METHOD call, so
+    // `this` is `resolved` — makes it throw `TypeError: Illegal invocation`
+    // synchronously, before a request is built, before DNS, before anything.
+    // That throw lands in readObject's transport catch, so EVERY route
+    // answered 504 `storage-unreachable` in about a millisecond while the
+    // store was healthy and the credentials were fine.
+    //
+    // Neither runtime the tests ran in could show it. Node's fetch enforces
+    // no receiver check, so the detached call simply proceeds; and the Node
+    // suite injects `deps.fetch`, so this branch was never taken there at
+    // all. test/worker/workerd-runtime.test.js closes both halves by driving
+    // the default export inside workerd with no `deps` at all.
+    //
+    // `now` below needs no such treatment and is not an oversight:
+    // `Date.now()` inside the arrow is an ordinary method call on `Date`,
+    // which is its correct receiver. It is spelled out because the next
+    // reader will check.
+    fetch: deps.fetch || globalThis.fetch.bind(globalThis),
+    now: deps.now || (() => Date.now()),
+  };
   const method = request.method.toUpperCase();
   const pathname = new URL(request.url).pathname;
   const isDiscovery = DISCOVERY_ROUTES.has(pathname);
@@ -346,7 +552,16 @@ async function handleRequest(request, env, deps = {}) {
     // Anything that is not one of the four named classes is reported as a
     // malformed artifact rather than leaking a message. An unclassified throw
     // must still land in a class a consumer can read.
-    const reason = error instanceof ServeFailure && FAILURES[error.reason] ? error.reason : 'artifact-malformed';
+    const classified = error instanceof ServeFailure && FAILURES[error.reason];
+    // ...but it must not vanish on the way. A throw with no recognised class
+    // is reported as `artifact-malformed` with its real identity erased —
+    // precisely the information loss this change exists to remove, one level
+    // further out. A classified failure is NOT re-logged here: it was either
+    // already logged where it was raised, or it belongs to the one family
+    // this file deliberately leaves silent (see `logUnderlying`). Logging it
+    // again would make one request read as two failures, which a test pins.
+    if (!classified) logUnderlying('handler', 'artifact-malformed', pathname, error);
+    const reason = classified ? error.reason : 'artifact-malformed';
     return failureResponse(reason, { json: isDiscovery, method });
   }
 }
@@ -360,6 +575,7 @@ export {
   DOCUMENT_ROUTES,
   FAILURES,
   MANIFEST_CONTENT_TYPE,
+  MAX_DIAGNOSTIC_MESSAGE,
   REASON_HEADER,
   ServeFailure,
   handleRequest,
