@@ -53,19 +53,37 @@
  *                                 to decide whether a result is a 757 result.
  *   date:           'YYYY-MM-DD'  The day this race was swum. On a multi-day
  *                                 meet, races carry different dates.
- *   seconds:        number|null   The result. null if and only if `dq` is
- *                                 true. Never borrowed from another swim.
+ *   seconds:        number|null   The result, never borrowed from another
+ *                                 swim. A DQ ALWAYS has null here. The
+ *                                 converse is NOT guaranteed: a non-DQ row
+ *                                 whose source carries no time also yields
+ *                                 null, with `dq: false`. **Key a DQ badge on
+ *                                 `dq`, never on `seconds === null`.** Every
+ *                                 null-seconds row in data/swim-results.json
+ *                                 is a DQ today (6 of 6), so the two happen to
+ *                                 coincide — but nothing enforces that and no
+ *                                 test asserts it.
  *   dq:             boolean       True for a disqualification. A DQ race is
  *                                 always present in `races` — it is never
  *                                 dropped and never replaced by an older
  *                                 swim of the same event.
- *   personalBest:   object|null   { seconds, date, meet } — the standing
+ *   personalBest:   object|null   { seconds, date, meet } ONLY — the standing
  *                                 course-scoped personal best for this event
  *                                 from data/pb-records.json, which may be a
  *                                 Waves swim or an older 757 swim. null means
  *                                 pb-records.json holds no entry for
  *                                 'Ophelia|<event>|<course>', not that no
- *                                 best exists.
+ *                                 best exists. An `unofficial: true` marker on
+ *                                 the pb-records entry is NOT projected — all
+ *                                 three 2026-09-12 entries carry one — so this
+ *                                 view cannot distinguish a record set at an
+ *                                 in-house meet from one set at a sanctioned
+ *                                 meet. That matches what was asked for
+ *                                 (seconds, meet and date), and it means this
+ *                                 module is a SECOND place to change if an
+ *                                 unofficial PB should ever be badged
+ *                                 differently; swimParser.js's PB projection
+ *                                 is no longer the only one.
  *   isPersonalBest: boolean       True when THIS race is the swim the record
  *                                 names (same seconds, date and meet). Covers
  *                                 an event's first-ever swim, whose standing

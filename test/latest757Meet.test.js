@@ -12,6 +12,16 @@
  * multi-day meet, one meet name in two years, two meets on one date, a
  * relay, and a Waves row swum in yards — each of which is a stated
  * requirement and none of which any real row exercises.
+ *
+ * ⚠ STANDING OBLIGATION — the next 757 meet entered will redden ten cases.
+ * Five cases hard-assert the 2026-09-12 KickOff as the latest meet, and five
+ * more reach the April meet by filtering `r.date !== '2026-09-12'`. The 757
+ * season runs to April 2027, so an ordinary Updater data entry — not a code
+ * change — turns them red. That is the accepted cost of asserting against the
+ * real files rather than a fixture copy that would drift, and the remedy is to
+ * re-point both anchors at the new meet, never to relax the assertions. It is
+ * recorded here and in CLAUDE.md's Known open items so the next Updater
+ * session is not surprised by it.
  */
 
 import { describe, it } from 'node:test';

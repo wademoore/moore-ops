@@ -75,6 +75,13 @@ export function eventDistance(event) {
 
 /**
  * True when the row is one of Ophelia's individual 757 races.
+ *
+ * A row whose `date` is not a 'YYYY-MM-DD' calendar date, or whose `meet` is
+ * missing or empty, is excluded — it can be neither grouped nor ordered. That
+ * is a silent drop from a view documented as "every individual race", so it is
+ * named here rather than left implicit. No such row exists in
+ * data/swim-results.json today.
+ *
  * @param {object} row
  * @returns {boolean}
  */
@@ -155,10 +162,24 @@ function compareRaces(a, b) {
  * Builds one race entry, with its course-scoped personal best attached.
  *
  * The personal-best key is built verbatim from the row's own event and
- * course. No abbreviated-to-full name mapping is applied: measured, all 24
- * 757 rows and all 11 Ophelia keys in pb-records.json already use full event
- * names, so a mapping would be a no-op today, and a genuine mismatch fails
- * closed to `personalBest: null` rather than pointing at a different event.
+ * course, and applying swimParser.js's EVENT_NAME_MAP here would be WRONG
+ * rather than merely unnecessary.
+ *
+ * All 24 757 rows in swim-results.json use full event names, so the map is a
+ * no-op on every row this module can see. But pb-records.json is NOT uniformly
+ * full-named: 10 of the 11 Ophelia keys are, and the eleventh is
+ * `Ophelia|100m IM|SCM` — which is the ABBREVIATED form by that same map
+ * (`'100m IM' -> '100m Individual Medley'`). Mapping before lookup would build
+ * `Ophelia|100m Individual Medley|SCM`, which is `undefined` in that file,
+ * while the verbatim key returns the record. So the map would turn a hit into
+ * a miss for the one key where it applies at all.
+ *
+ * (An earlier version of this comment said all 11 keys were full-named and
+ * that a mapping "would be a no-op". Both halves were wrong; a Reviewer round
+ * caught it. The code never changed.)
+ *
+ * A genuine mismatch fails closed to `personalBest: null` rather than pointing
+ * at a different event.
  *
  * `isPersonalBest` requires the record to name this exact swim on all three
  * of seconds, date and meet. Date and meet alone would be ambiguous at a
