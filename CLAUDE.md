@@ -2334,8 +2334,8 @@ implementer's work, and this is the shape they build against.
 
 **The field-level contract lives in `digest/athleticsParser.js`'s header**, not
 here and not in `render/dashboard.js`. That renderer holds the repo's only other
-`AthleticsData` typedef and is a frozen surface, so it was deliberately not
-edited; `athleticsParser.js` is the module that assembles `AthleticsData`, which
+*complete* `AthleticsData` typedef and is a frozen surface, so it was deliberately
+not edited; `athleticsParser.js` is the module that assembles `AthleticsData`, which
 makes it the producer and the right home. `digest/builder.js`'s `OUTPUT —
 digestData` block carries a pointer to it, because that block is what CLAUDE.md
 sends a Designer to read. The grouping and ordering rules are in
@@ -2365,8 +2365,19 @@ next time the Updater records a 757 meet** — which the 2026-27 season guarante
 before April 2027. No test asserts any of the three, so they rot silently. The same
 figures appear in `digest/latest757Meet.js`'s header comment, which makes two places
 to correct. What the *argument* rests on is only that both courses are present, and
-that does not depend on the counts. Re-derive before quoting:
-`node -e "…filter(r=>r.team==='757 Swim')"`.
+that does not depend on the counts.
+
+Re-derive before quoting, with a command a read-only Reviewer can actually run —
+`node -e` is refused by `guard-readonly.mjs`, so the handle previously offered here
+could not be exercised by the role expected to check it:
+
+```
+grep -c '"757 Swim"' data/swim-results.json      # the 24
+grep -c '"team": "757 Swim"' data/swim-results.json
+```
+
+The SCY/SCM split needs the rows themselves; `grep -n '"757 Swim"' data/swim-results.json`
+locates all of them, and the four SCM rows are the 2026-04-25 block.
 
 Rows are read from the **raw** `swimResults` array, not from `swimParser`'s merged
 `sortedResults`. `sortedResults` drops any `swim-results.json` row shadowed by a
@@ -2808,17 +2819,20 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2680 | **2680** | **0** | **0** | 51537.612474 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2680 | **2680** | **0** | **0** | 46280.362306 ms |
 
 Anchor for every figure in this entry: it counts the tests `npm test`'s globs select
 on this branch with a browser resolving. It moves when a test file is added or
 removed, or when no browser resolves.
 
-**Re-measured after a Reviewer round**, whose corrections were documentation and
-comments only — `git diff` over `digest/` and `test/` between the two runs contains
-no non-comment line. The counts are identical across both runs; the duration is the
-later one. Both harnesses below were re-run on the same tree and reported the same
-results.
+**Re-measured after each of two Reviewer rounds**, whose corrections were
+documentation and comments only — `git diff` over `digest/` and `test/` between the
+runs contains no non-comment line. The counts are identical across every run of this
+branch; the duration quoted is the latest. **Do not read the durations against each
+other**: four runs of this same code reported 50586.058509, 52270.188861,
+51537.612474 and 46280.362306 ms, a 5989 ms spread on identical inputs, which is
+what a duration figure is worth here. Both harnesses below were re-run on this tree
+and reported the same results.
 
 Measured on `claude/dazzling-einstein-x3jhzm`, branched from `origin/main` at
 **`777bb3f`**. `git fetch origin main` was run before deriving the merge base, per
@@ -2842,22 +2856,32 @@ be.** `git diff --numstat 777bb3f -- 'test/' 'digest/*.test.js' 'render/*.test.j
 returns exactly one row:
 
 ```
-406	0	test/latest757Meet.test.js
+416	0	test/latest757Meet.test.js
 ```
 
-That is the new file — 406 insertions, **0 deletions** — and **no other tracked test
-file appears at all**. No `.skip` or `.todo` appears anywhere in the diff or in
-either new file. The change is purely additive: one new key, and nothing in the
-suite asserted an exhaustive athletics key set.
+That is the new file — 416 insertions, **0 deletions** — and **no other tracked test
+file appears at all**. The insertion count is the whole file's length, so it moves
+whenever this branch edits that file again; **0 deletions and the absence of every
+other path are the load-bearing parts**, and neither depends on the count. No
+`.skip` or `.todo` appears anywhere in the diff or in either new file. The change is
+purely additive: one new key, and nothing in the suite asserted an exhaustive
+athletics key set.
 
-⚠ **This paragraph said that command "returns no rows at all" until a Reviewer round
-ran it and got a row.** The claim was true when it was written — the file was still
-untracked, so `git diff` against a commit could not see it — and became false the
-instant the change was committed. The substance held throughout; the evidence
-falsified itself. **A measurement taken against an untracked file is not a
-measurement of the commit**, which is the lesson worth more than the sentence: take
-figures that describe a commit *after* committing, or cite a command whose answer
-does not depend on staging state.
+⚠ **This paragraph has now been wrong twice, and the second time is the more
+instructive.** It first said the command "returns no rows at all" — true when
+written, because the file was still untracked and `git diff` against a commit cannot
+see an untracked file, and false the instant the change was committed. A Reviewer
+round ran it and got a row. The correction then quoted **406**, which was the count
+*before* that same correction commit appended a ten-line header to the very file it
+was measuring; the real figure was **416**, and a second Reviewer round caught it.
+So the retraction was falsified by the commit carrying it.
+
+**Two rules come out of that, and they are worth more than the number.** A figure
+describing a commit must be taken **after** every edit in that commit, including the
+edits made while writing the figure down — it is not enough to measure after the
+last *code* edit if a documentation edit touches a file the figure counts. And a
+count of a file's own length is the most fragile anchor available: prefer the
+property (`0` deletions, no other path present) over the magnitude.
 
 **Three runs failed during development, all in the new tests, all before the
 freeze.** The mutation harness's first pass scored three rows SURVIVED — `!dq` in
@@ -3373,7 +3397,9 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
   explanation at the failure rather than only here.
 
 - **`render/dashboard.js`'s `AthleticsData` typedef is now knowingly incomplete
-  (Sept 15, 2026).** It is the repo's only `AthleticsData` typedef and does not list
+  (Sept 15, 2026).** It is the repo's only *complete* `AthleticsData` typedef — the
+  block in `digest/athleticsParser.js` documents one field, not the whole type — and
+  it does not list
   `opheliaLatest757Meet`. `render/dashboard.js` is **frozen**, and the freeze's only
   sanctioned exception is a failing v1 test, which this is not — v1's tests build their
   own fixtures and are green. So the typedef is knowingly stale and left that way, with
@@ -3386,7 +3412,7 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
   DESIGNER MODE says `digest/builder.js`'s `OUTPUT — digestData` block "is the
   field-level contract every surface renders from". For this key the field list lives in
   `digest/athleticsParser.js`'s header, with a pointer from that block. The reasoning is
-  that `athleticsParser.js` assembles `AthleticsData` and the only other typedef is
+  that `athleticsParser.js` assembles `AthleticsData` and the only complete typedef is
   frozen — but the two statements now disagree about where the contract lives, and
   whether `builder.js` should inline athletics fields or keep pointing is a decision
   this entry does not make.

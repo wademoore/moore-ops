@@ -12,9 +12,11 @@
  * AthleticsData.opheliaLatest757Meet  (added 2026-09-15)
  * ─────────────────────────────────────────────────────────────────────────
  * The field-level contract for the latest-757-meet view. It is the home of
- * this shape because athleticsParser.js assembles AthleticsData; the only
- * other AthleticsData typedef in the repo lives in render/dashboard.js,
- * which is a frozen surface and was deliberately not edited.
+ * this shape because athleticsParser.js assembles AthleticsData. The repo's
+ * only COMPLETE AthleticsData typedef lives in render/dashboard.js, which is
+ * a frozen surface and was deliberately not edited; the block below documents
+ * one field rather than the whole type, so it does not replace that typedef
+ * and does not make this a second one.
  *
  * Additive and read-only. NO renderer consumes it today — presentation is a
  * separate implementer's work. It exists so that a card showing every race
