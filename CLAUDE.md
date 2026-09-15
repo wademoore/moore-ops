@@ -2333,7 +2333,7 @@ Additive, read-only, and **read by no renderer**: presentation is a separate
 implementer's work, and this is the shape they build against.
 
 **The field-level contract lives in `digest/athleticsParser.js`'s header**, not
-here and not in `render/dashboard.js`. That renderer holds the repo's only other
+here and not in `render/dashboard.js`. That renderer holds the repo's only
 *complete* `AthleticsData` typedef and is a frozen surface, so it was deliberately
 not edited; `athleticsParser.js` is the module that assembles `AthleticsData`, which
 makes it the producer and the right home. `digest/builder.js`'s `OUTPUT —
@@ -2372,9 +2372,14 @@ Re-derive before quoting, with a command a read-only Reviewer can actually run �
 could not be exercised by the role expected to check it:
 
 ```
-grep -c '"757 Swim"' data/swim-results.json      # the 24
-grep -c '"team": "757 Swim"' data/swim-results.json
+grep -c '"757 Swim"' data/swim-results.json             # the 24
+grep -c '"team": "757 Swim"' data/swim-results.json     # also 24 — see below
 ```
+
+The second command is what makes the first one's answer a **row** count rather than
+a line count: it shows the token occurs only ever as a `team` value, so no other
+field can inflate the total. Both return 24; if they ever disagree, the first one is
+no longer counting rows.
 
 The SCY/SCM split needs the rows themselves; `grep -n '"757 Swim"' data/swim-results.json`
 locates all of them, and the four SCM rows are the 2026-04-25 block.
@@ -2819,20 +2824,26 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
-| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2680 | **2680** | **0** | **0** | 46280.362306 ms |
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2680 | **2680** | **0** | **0** | 45581.108427 ms |
 
 Anchor for every figure in this entry: it counts the tests `npm test`'s globs select
 on this branch with a browser resolving. It moves when a test file is added or
 removed, or when no browser resolves.
 
-**Re-measured after each of two Reviewer rounds**, whose corrections were
-documentation and comments only — `git diff` over `digest/` and `test/` between the
-runs contains no non-comment line. The counts are identical across every run of this
-branch; the duration quoted is the latest. **Do not read the durations against each
-other**: four runs of this same code reported 50586.058509, 52270.188861,
-51537.612474 and 46280.362306 ms, a 5989 ms spread on identical inputs, which is
-what a duration figure is worth here. Both harnesses below were re-run on this tree
-and reported the same results.
+**Re-measured after each of three Reviewer rounds**, whose corrections were
+documentation and comments only — `git diff` over `digest/` and `test/` across all
+of them contains no non-comment line. **The counts are identical on every run of
+this branch**, which is the part that means anything; the duration is the latest run
+and is recorded for completeness, not as a comparable figure.
+
+⚠ **Do not quote the duration as evidence of anything, and do not maintain a list of
+them.** Five runs of byte-identical code on this machine varied by about **15%** of
+the fastest — the same suite, the same inputs, no code change between them. An
+earlier version of this paragraph listed every duration and stated the spread
+between them; each documentation edit then added a run and falsified the spread, so
+the list was a figure that rotted on every commit that touched it. It is deliberately
+not reproduced. Both harnesses below were re-run on this tree and reported the same
+results.
 
 Measured on `claude/dazzling-einstein-x3jhzm`, branched from `origin/main` at
 **`777bb3f`**. `git fetch origin main` was run before deriving the merge base, per
@@ -2873,8 +2884,11 @@ written, because the file was still untracked and `git diff` against a commit ca
 see an untracked file, and false the instant the change was committed. A Reviewer
 round ran it and got a row. The correction then quoted **406**, which was the count
 *before* that same correction commit appended a ten-line header to the very file it
-was measuring; the real figure was **416**, and a second Reviewer round caught it.
-So the retraction was falsified by the commit carrying it.
+was measuring; a second Reviewer round caught it. The corrected figure is the one in
+the fenced block above and is deliberately not restated here — this file's own rule
+is that a retraction names the error and never repeats the live value, because a
+number inside a parenthetical nobody re-reads is one more place to rot. So the
+retraction was falsified by the commit carrying it.
 
 **Two rules come out of that, and they are worth more than the number.** A figure
 describing a commit must be taken **after** every edit in that commit, including the
