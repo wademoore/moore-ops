@@ -9,6 +9,7 @@
 
 import { timeToSeconds } from './dateUtils.js';
 import { isSeasonActive }               from './sportsConfig.js';
+import { selectLatest757Meet }          from './latest757Meet.js';
 
 /**
  * Returns the correct English ordinal suffix for integer n.
@@ -360,9 +361,23 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
     ? '2026 Waves Season'
     : swim757Active ? swim757SeasonLabel(config.swim757) : 'Off-Season';
 
+  // ── Latest 757 meet ──────────────────────────────────────────────────────────
+  // Additive and read-only. Gated on exactly the condition under which the
+  // events757 branch above is selected, so this view is present precisely when
+  // the per-configured-event 757 rows are: absent during Waves season, absent
+  // off-season. Sourced from the raw swimResults array rather than
+  // sortedResults, because sortedResults drops any swim-results.json row
+  // shadowed by a league-results-v2.json row and league-results-v2.json is
+  // VPSU-only — such a shadow would be a data error that silently deleted a
+  // 757 race from the view.
+  const opheliaLatest757Meet = (!wavesActive && swim757Active)
+    ? selectLatest757Meet(swimResults || [], records)
+    : null;
+
   return {
     mylesPBRows,
     opheliaPBRows,
+    opheliaLatest757Meet,
     mylesSeason,
     opheliaSeason,
     mylesFooter:      config.swimmers.myles.footer,
