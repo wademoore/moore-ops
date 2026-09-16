@@ -19,6 +19,18 @@
 export const NON_GAME_TYPES = new Set(['practice']);
 
 /**
+ * Fold a team reference to a comparable key: the league's numeric team id when
+ * a season declares one, the legacy string abbr otherwise. Null and undefined
+ * both collapse to null so an absent side never compares equal to a real one.
+ *
+ * Module-scoped because BOTH resolvers in this file key on it — parseFlagFootball()
+ * for the record and the standings, selectSeasonMilestone() for the milestone
+ * narrowing — and two identical local copies is how they would eventually drift
+ * apart, the same argument this repo already made for OWNER_TONE.
+ */
+const keyOf = value => (value === null || value === undefined ? null : String(value));
+
+/**
  * @param {object} flagFootballData  Parsed flag-football.json
  * @param {Date}   referenceDate
  * @param {object} config            sports-config.json (unused — season identity comes from season data)
@@ -43,7 +55,6 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   // opposite of sharksParser.js, where the mascot IS unique and only the
   // wording of the team string varies between the schedule and the standings,
   // which is why fuzzy matching is right there and wrong here.
-  const keyOf   = v => (v === null || v === undefined ? null : String(v));
   const teamKey = t => keyOf(t.teamId ?? t.abbr);
   const myKey    = keyOf(season.myTeamId ?? season.myTeamAbbr);
   const teamsMap = new Map(season.teams.map(t => [teamKey(t), t.teamName]));
@@ -362,7 +373,6 @@ export function selectSeasonMilestone(flagFootballData, seasonId, milestone) {
   // `sportsFixture` node, which likewise reads teams while refusing `played`
   // and the scores.
   const season = matching[0];
-  const keyOf = value => (value === null || value === undefined ? null : String(value));
   const myKey = keyOf(season.myTeamId ?? season.myTeamAbbr);
   const isMine = row => myKey === null
     || keyOf(row.home) === myKey

@@ -1711,7 +1711,7 @@ wrong reason rather than failing closed.
 teams play on the season's opening Sunday. An unrestricted scan tied four `regular` rows on the
 earliest date, so `first-game` returned `milestone-ambiguous` and the approved
 `myles-flag-football-week-2-first-game-2026-09-20` accent failed closed — on a fixture that had
-not changed at all. **51 tests red**, in six files. Measured before and after on the real data:
+not changed at all. The runner reported **`# fail 51`**, with 49 leaf failures across six files. Measured before and after on the real data:
 `first-game` goes `{ok:true, week 2, 2026-09-20}` → `{ok:false, milestone-ambiguous}` → back to
 `{ok:true, week 2, 2026-09-20}`. `season-opener` resolves to the Week 1 practice throughout and
 was never affected — only one row sits on 2026-09-13.
@@ -1738,6 +1738,42 @@ Reading a column to find our row and exposing it to a surface are different ques
 ambiguity` pins that four rows really do sit on 2026-09-20 and exactly one is ours (so the tie is
 real rather than hypothetical), that renaming our mascot does not move the milestone (a second
 Cowboys exists), and that a team-less season still resolves.
+
+### Three further consequences of loading the division schedule (Sept 16, 2026)
+
+All three were found by a Reviewer round rather than at authoring time, and all three are
+recorded rather than fixed — two are presentation, one is a behaviour change with no owner yet.
+
+**Two standings rows now read "Cowboys", with identical artwork, on two live surfaces.**
+`parseFlagFootball` sets `standings[].team = team.teamName`, and both 8009182 (ours) and
+8057461 (Watkins) carry `teamName: "Cowboys"`. Dashboard v2's flag-logo lookup keys on the
+lowercased mascot, so both resolve the same artwork. `render/dashboard-mobile.js` and frozen
+`render/dashboard.js` both `.map()` the standings with **no cap**, so both render two visually
+identical Cowboys rows today, separated only by the `isMe` styling and its "· Our team" suffix.
+This is *in spec* — the Frozen-surfaces rule says mascot lookup selects artwork only and `isMe`
+identifies our row — but it is a new visible ambiguity that this data load created, and
+`leagueName` (`"Watkins - Cowboys"`) exists precisely to disambiguate it.
+
+**`seasonComplete` moved from a 5-row denominator to a 20-row one.** `parseFlagFootball`
+computes `regularGames` over the whole season, unnarrowed, and requires every row to be
+`final`. That count went 5 → 20 with this load. `finalRecord` is `seasonComplete ?
+seasonRecord : null`, and `seasonComplete` gates frozen v1's "Season Complete · Final Record"
+note and suppresses its game and next boxes. **If only our own results are ever entered — the
+realistic Updater pattern — that note becomes unreachable.** Consistent with how `fall-2025`
+already behaves and arguably more correct, but it is a rendered consequence and it was not
+deliberate.
+
+**The two abbr-keyed seasons changed behaviour too, from fail-closed to resolving.**
+`fall-2025` and `spring-2026` each carry several fixtures on their earliest dates, so both
+milestones previously returned `milestone-ambiguous` for them and now resolve to the row our
+team plays in. Harmless — `data/special-events.json` configures `seasonMilestone` only against
+`fall-2026` — but it is the one case where the narrowing turns a fail-closed into an answer,
+which is the direction worth recording rather than the reverse.
+
+⚠ **`CLAUDE.md`'s Frozen-surfaces entry says the single flag-card layout "puts six standings
+rows beside the record and next matchup".** That was written when the division had six teams,
+so it read as a statement about the division; it is now a statement about `.slice(0, 6)`. Not
+edited here — it describes a frozen surface — but it no longer means what it says.
 
 **Generalisation stops here, deliberately.** `SEASON_MILESTONE_SOURCES` has one entry.
 Flag football's rows carry a league `week`, a practice/fixture `type` and a per-row clock
@@ -2330,8 +2366,8 @@ game dates, and the narrowing is what makes them resolve instead of failing
 closed. The foresight was load-bearing rather than decorative: the sibling
 resolver in `flagFootballParser.js` had **not** been written this way, and
 loading the schedule turned `selectSeasonMilestone('first-game')` ambiguous and
-reddened 51 tests until it was given the same narrowing. See "Season-derived
-treatments" below.
+reddened the suite (`# fail 51`) until it was given the same narrowing. See
+"Season-derived treatments" above.
 
 ### The field
 
@@ -2953,9 +2989,23 @@ This change adds **+1**, in one existing file:
 2744 + 1 = 2745, and **2745 is the measured figure in the table above rather than that sum** —
 the agreement is reassuring and is not itself evidence.
 
-**Four existing tests were updated and none was deleted, skipped or weakened.** `git diff
---numstat afe1876 -- 'test/' 'digest/*.test.js' 'render/*.test.js'` reports two files; no
-`.skip` or `.todo` appears anywhere in the diff. Each update is recorded beside the assertion
+**Five existing tests were updated and none was deleted, skipped or weakened.** ⚠ **Both
+figures in this sentence were wrong when first written and a Reviewer round caught both.** It
+said "four" while its own bullet below enumerated 1 + 1 + 2 + 1 = five, and it said the command
+reports "two files" when it reports three:
+
+```
+$ git diff --numstat afe1876 -- 'test/' 'digest/*.test.js' 'render/*.test.js'
+15	3	digest/specialEventAccents.test.js
+38	11	test/current-season-athletics.test.js
+70	7	test/flagFootballParser.test.js
+```
+
+The five are: `resolves the current team by numeric league id, never by mascot` and `carries all
+six of our scheduled events…` (both `current-season-athletics`), `reads only immutable fixture
+columns…` and `never selects a later week of the shipped season` (both `flagFootballParser`), and
+`never fires on any later week of the season` (`specialEventAccents`). One `it()` was added and
+none removed — `git diff -S".skip(" --name-only` and `-S".todo("` both return nothing. Each update is recorded beside the assertion
 it changes, with its reasoning, and each falls into one of two kinds:
 
 - **Three were stale-shape assertions** whose premise the data change falsified: `teams.length
@@ -2967,15 +3017,34 @@ it changes, with its reasoning, and each falls into one of two kinds:
   below — so the mutation set drops those two columns and the test asserts instead that they
   stay unreachable from the returned projection, which is the claim worth keeping.
 
-**Three runs failed during development and all three were the same real regression, caught by
-the suite rather than by inspection.** Loading the division schedule put four regular-type
-rows on the season's earliest fixture date, and `selectSeasonMilestone()` scanned every row in
-the season, so `first-game` tied and failed closed as `milestone-ambiguous` — silently
-retiring the approved Sept 20 FIRST GAME accent. **51 tests red**, across
-`digest/specialEventAccents.test.js` (34), `render/dashboard-v2-accent.test.js` (12),
-`test/flagFootballParser.test.js` (5), `render/dashboard-v2-layout.test.js` (5),
-`test/current-season-athletics.test.js` (3) and `render/dashboard-v2-holiday.test.js` (2).
-That is the guard working, not a fault in it.
+**One run failed during development, and it was one real regression caught by the suite rather
+than by inspection.** Loading the division schedule put four regular-type rows on the season's
+earliest fixture date, and `selectSeasonMilestone()` scanned every row in the season, so
+`first-game` tied and failed closed as `milestone-ambiguous` — silently retiring the approved
+Sept 20 FIRST GAME accent. The runner's own summary line read **`# fail 51`**.
+
+⚠ **The per-file breakdown printed here was wrong and a Reviewer round caught it.** It read
+34 / 12 / 5 / 5 / 3 / 2 and summed to **61** against a headline of 51 — a self-contradiction
+inside the one section whose whole purpose is that a figure be checkable. The cause: it was
+produced by a grep that counted *suite rollup* `not ok` lines alongside leaf ones. The TAP
+carries 49 leaf failures and 14 suite rollups, 63 lines in all, and **none of the three numbers
+is the other**. Re-derived by parsing each `not ok` line's own `location:`, leaf cases only:
+
+| file | leaf failures |
+|---|---|
+| `digest/specialEventAccents.test.js` | 28 |
+| `render/dashboard-v2-accent.test.js` | 10 |
+| `render/dashboard-v2-layout.test.js` | 4 |
+| `test/flagFootballParser.test.js` | 4 |
+| `test/current-season-athletics.test.js` | 2 |
+| `render/dashboard-v2-holiday.test.js` | 1 |
+| **total** | **49** |
+
+**`# fail 51` is the runner's figure and 49 is the leaf-case count; they are different
+measurements and neither is a decomposition of the other.** Both are stated rather than one
+being reconciled into the other, because node's `# fail` includes some non-leaf points and
+this file's own rule is to take a number from a run rather than from arithmetic. That is the
+guard working, not a fault in it.
 
 Exact invocation:
 
@@ -3102,7 +3171,6 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Previous floor: 2680 passing tests; superseded by the current baseline above.**
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was
 run, and quoting a figure that was not taken is exactly the unfalsifiable claim this
@@ -4125,9 +4193,23 @@ New parked work is recorded in `BACKLOG.md` at the repository root, not here.
   **(1) is closed by the data, exactly as this item predicted it would be.** It said "getting
   the full division schedule would resolve (1) at the data layer instead, and is an Updater
   task if the league ever publishes it" — the league published it, and that is what happened.
-  `fall-2026.games` now carries all 20 regular-season fixtures (5 per team, 8 teams), so
-  `renderStandingRows` draws a genuine division table rather than one in which each opponent
-  has played a single game against us. The season `note` records the source and capture date.
+  `fall-2026.games` now carries all 20 regular-season fixtures (5 per team, 8 teams), so the
+  standings **data** is a genuine division table rather than one in which each opponent has
+  played a single game against us. The season `note` records the source and capture date.
+
+  ⚠ **This sentence named `renderStandingRows` as the thing that "draws a genuine division
+  table" until a Reviewer round falsified it, and the contradiction was with this change's own
+  commit message.** `renderStandingRows` in `render/dashboard-v2.js` does `.slice(0, 6)`, so
+  Dashboard v2 shows six of the eight rows. `parseFlagFootball` emits one row per
+  `season.teams` entry, so `standings.length` is now 8 and **two rows are dropped on the wall**.
+  Today the sort key is `b.w - a.w || a.l - b.l` with every row at 0/0, so the stable sort
+  preserves `teams[]` order and the two dropped are exactly the two teams the Sept 16 load
+  added. **The sharper consequence is not today's**: `isMe` takes no part in the sort or the
+  slice, so once results are entered our own row can fall to 7th or 8th and **disappear from
+  the wall entirely**. Nothing in the suite covers it — `render/dashboard-v2-layout.test.js`'s
+  standings case builds its own six-row fixture, so the real eight never reaches a browser
+  assertion. Presentation is Codex's, so this is recorded rather than fixed; it is the
+  replacement defect for the one this item closes, not an afterthought to it.
 
   **(2) is unchanged and still open.** `parseFlagFootball` emits a `t` (ties) field on every
   standings row and no renderer displays it — v2 and mobile head their tables `Team | W | L`,

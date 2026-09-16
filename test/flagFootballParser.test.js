@@ -552,7 +552,11 @@ describe('selectSeasonMilestone', () => {
     for (const milestone of SEASON_MILESTONES) {
       const from = selectSeasonMilestone(played, 'fall-2026', milestone);
       assert.deepEqual(from.row.week, selectSeasonMilestone(REAL, 'fall-2026', milestone).row.week, milestone);
-      // The mutation is not vacuous: the source rows really do carry these.
+      // Restates the projection guard at the point the mutation could have
+      // breached it. The non-vacuousness check — that the SOURCE rows really do
+      // carry these columns — lives in the MILESTONE_FIXTURE_FIELDS test above;
+      // this loop asserts absence from the returned row and says nothing about
+      // the source, so do not read it as covering both.
       for (const mutable of ['status', 'homeScore', 'awayScore', 'home', 'away']) {
         assert.ok(!(mutable in from.row), `${mutable} must not be reachable from a milestone row`);
       }
