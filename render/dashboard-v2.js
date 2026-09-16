@@ -524,11 +524,7 @@ function renderToday(data) {
 }
 
 function athleticsCardCount(data, latest757Card = safeLatest757Card(data.athletics || {})) {
-  const a = data.athletics || {};
-  return Number(Boolean(a.flagFootballActive))
-    + Number(Boolean(a.wavesActive)) * 3
-    + Number(Boolean(latest757Card))
-    + Number(Boolean(a.sharksActive));
+  return athleticsCards(data.athletics || {}, latest757Card).length;
 }
 
 function collapseUpcomingEvents(events, today) {
@@ -828,13 +824,13 @@ function safeLatest757Card(a) {
         meet.dates.some(date => !swimMeetDate(date)) ||
         meet.races.some(race => !race || typeof race.event !== 'string' || !race.event.trim() ||
           (race.personalBest != null && !swimMeetDate(race.personalBest.date)))) return '';
-    return renderLatest757Card(a, meet);
+    return renderLatest757Card(a, meet, athleticsCards(a, '').length + 1);
   } catch {
     return '';
   }
 }
 
-function renderLatest757Card(a, meet) {
+function renderLatest757Card(a, meet, cardCount) {
   // Household preference, 2026-09-15. Keep the producer's array unchanged;
   // stable sorting retains its order for repeated races and unknown strokes.
   const strokeRank = race => {
@@ -843,10 +839,12 @@ function renderLatest757Card(a, meet) {
   };
   const races = [...meet.races].sort((a, b) =>
     ((a.distance ?? Infinity) - (b.distance ?? Infinity)) || strokeRank(a) - strokeRank(b));
+  // Use the same rendered card list as the panel and layout count.
+  const rowLimit = cardCount > 1 ? 4 : 5;
   const date = meet.dates.length > 1
     ? `${swimMeetDate(meet.startDate)} – ${swimMeetDate(meet.endDate)}`
     : swimMeetDate(meet.startDate);
-  const rows = races.slice(0, 5).map(race => {
+  const rows = races.slice(0, rowLimit).map(race => {
     const pb = race.personalBest;
     const isPB = !race.dq && race.isPersonalBest;
     const pbDate = pb ? swimMeetDate(pb.date) : '';
@@ -857,13 +855,13 @@ function renderLatest757Card(a, meet) {
       ${isPB ? '' : `<div class="latest-757-pb">${pb ? `PB ${esc(swimResultTime(pb.seconds))} · ${esc(pb.meet)}${pbDate ? ` · ${esc(pbDate)}` : ''}` : 'PB not recorded'}</div>`}
     </div>`;
   }).join('');
-  return `<article class="athletic-card tone-purple latest-757-card${races.length >= 5 ? ' latest-757-dense' : ''}">
+  return `<article class="athletic-card tone-purple latest-757-card${races.length >= 4 ? ' latest-757-dense' : ''}">
     <div class="athletic-ribbon"><span>757 Swim</span></div>
     <div class="athletic-summary"><div class="season-tag">${esc(a.opheliaSeason || 'Season')}</div>${logo(V2_LOGOS.swim757, 'athletic-logo')}</div>
     <div class="latest-757-results">
       <div class="latest-757-meet"><strong>${esc(meet.meet)}</strong><span>${esc(date)}</span></div>
       <div class="swim-rows">${rows}</div>
-      ${races.length > 5 ? `<div class="latest-757-more">+${races.length - 5} more races</div>` : ''}
+      ${races.length > rowLimit ? `<div class="latest-757-more">+${races.length - rowLimit} more races</div>` : ''}
     </div>
     ${a.opheliaFooter ? `<div class="athletic-footer">${esc(a.opheliaFooter)}</div>` : ''}
   </article>`;
@@ -948,8 +946,7 @@ function renderFlagFootballCard(a) {
   </article>`;
 }
 
-function renderAthletics(data, latest757Card = safeLatest757Card(data.athletics || {})) {
-  const a = data.athletics || {};
+function athleticsCards(a, latest757Card) {
   const cards = [];
   if (a.flagFootballActive) cards.push(renderFlagFootballCard(a));
   if (a.wavesActive) cards.push(renderWavesCard(a));
@@ -964,6 +961,13 @@ function renderAthletics(data, latest757Card = safeLatest757Card(data.athletics 
   ));
   else if (latest757Card) cards.push(latest757Card);
   if (a.sharksActive) cards.push(renderSharksCard(a));
+
+  return cards.filter(Boolean);
+}
+
+function renderAthletics(data, latest757Card = safeLatest757Card(data.athletics || {})) {
+  const a = data.athletics || {};
+  const cards = athleticsCards(a, latest757Card);
 
   // The Spotlight presentation and the ordinary presentation both fill the
   // panel's content box exactly, so the Athletics footprint is identical in
