@@ -199,18 +199,28 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     assert.equal(await mark.locator('svg').evaluate(node => getComputedStyle(node).visibility), 'visible');
   });
 
-  it('shows W&M and Stonehouse logos alone, with fallback only after image failure', async () => {
-    for (const title of ['W&M Football vs. Elon', 'Stonehouse Back to School Night']) {
+  it('shows W&M, iDance and Stonehouse logos alone without :has support, restoring failed-image fallbacks', async () => {
+    for (const title of ['W&M Football vs. Elon', 'iDance Hip Hop', 'Stonehouse Back to School Night']) {
       await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data,
         upcomingEvents: [{ title, subtitle: '', raw: { start: { date: '2026-06-10' } } }],
       }), { waitUntil: 'load' });
+      // Simulate Chromium 88 ignoring :has rules even in a modern test browser.
+      await page.evaluate(() => {
+        for (const sheet of document.styleSheets) {
+          for (let i = sheet.cssRules.length - 1; i >= 0; i--) {
+            if (sheet.cssRules[i].selectorText?.includes(':has(')) sheet.deleteRule(i);
+          }
+        }
+      });
       const mark = page.locator('.upcoming-panel .activity-visual');
       assert.equal(await mark.count(), 1);
       assert.ok(await mark.locator('img').evaluate(node => node.complete && node.naturalWidth > 0));
       assert.equal(await mark.locator('svg').evaluate(node => getComputedStyle(node).visibility), 'hidden');
       assert.equal(await mark.evaluate(node => getComputedStyle(node).backgroundColor), 'rgba(0, 0, 0, 0)');
-      await mark.locator('img').evaluate(node => node.dispatchEvent(new Event('error')));
+      await mark.locator('img').evaluate(node => { node.src = 'data:image/png;base64,broken'; });
+      await mark.locator('img').waitFor({ state: 'detached' });
       assert.equal(await mark.locator('svg').evaluate(node => getComputedStyle(node).visibility), 'visible');
+      assert.notEqual(await mark.evaluate(node => getComputedStyle(node).backgroundColor), 'rgba(0, 0, 0, 0)');
     }
   });
 

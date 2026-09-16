@@ -627,7 +627,7 @@ describe('real-data resilience policies', () => {
     });
     assert.match(html, /\.activity-visual img\{[^}]*background:transparent/);
     assert.doesNotMatch(html, /\.activity-visual img\{[^}]*background:#e9dfcc/);
-    assert.match(html, /class="upcoming-logo semantic-icon activity-visual category-sports"/);
+    assert.match(html, /class="upcoming-logo semantic-icon activity-visual has-logo category-sports"/);
   });
 });
 
@@ -870,9 +870,9 @@ describe('family spotlight — in-panel treatment', () => {
 
   it('layers the official logo over the semantic sports mark so failure reveals it', () => {
     const html = renderDashboardV2(spotlight('2026-09-11T17:00:00-04:00'));
-    const layered = html.match(/class="spotlight-mark semantic-icon category-sports activity-visual"/g) || [];
+    const layered = html.match(/class="spotlight-mark semantic-icon category-sports activity-visual has-logo"/g) || [];
     assert.equal(layered.length, 2, 'both children layer an embedded logo over the fallback');
-    assert.ok((html.match(/onerror="this\.remove\(\)"/g) || []).length >= 2);
+    assert.ok((html.match(/onerror="this\.parentElement\.classList\.remove\(\x27has-logo\x27\);this\.remove\(\)"/g) || []).length >= 2);
   });
 
   it('falls back to the semantic mark, retaining all text, when a logo resolves to nothing', () => {
@@ -889,7 +889,7 @@ describe('family spotlight — in-panel treatment', () => {
     );
     const marks = html.match(/class="spotlight-mark semantic-icon category-sports"/g) || [];
     assert.equal(marks.length, 2, 'fallback-only marks render');
-    assert.doesNotMatch(html, /class="spotlight-mark semantic-icon category-sports activity-visual"/);
+    assert.doesNotMatch(html, /class="spotlight-mark semantic-icon category-sports activity-visual has-logo"/);
     for (const copy of ['OPHELIA', 'MYLES', '757SWIM KICK-OFF', 'SHARKS SEASON OPENER',
       'Team pic 12:30 · Intrasquad 1:00', 'vs VIP United · 1:15 · Blayton']) {
       assert.ok(html.includes(copy), `text lost with logo: ${copy}`);
@@ -960,6 +960,10 @@ describe('special-event migration — byte equality with the legacy Family Spotl
     // and the approved compact matchup for this one frozen fixture.
     // The current name, inline date and omitted venue are tested separately.
     return html.slice(start, close)
+      // The approved Chromium 88 fallback fix adds explicit image state; retain
+      // the historical Spotlight fixture while browser tests check that state.
+      .replace(/activity-visual has-logo/g, 'activity-visual')
+      .replace(/this\.parentElement\.classList\.remove\('has-logo'\);this\.remove\(\)/g, 'this.remove()')
       .replace(/<div class="athletic-ribbon">(<span>[^<]*<\/span>)<\/div>\n    <div class="athletic-summary">(<div class="record">[^<]*<\/div>)(<img class="athletic-logo"[^>]*>)<\/div>/g,
         '<div class="athletic-ribbon">$3$1</div>\n    $2')
       .replace('<div class="next-box"><b>Next game</b><span>vs. VIP United Red · <time>Sat, Sep 12 · 1:15 PM</time></span></div>', '<div class="next-box"><b>Next match</b><span>vs. VIP United TASL B2015/2016 Red (VA)</span><strong>Sat, Sep 12 · 1:15 PM</strong><small>Blayton Elem School - BLAY 3</small></div>')
