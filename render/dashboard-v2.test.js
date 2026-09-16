@@ -23,6 +23,10 @@ import {
 import { readFileSync } from 'node:fs';
 import { familySpotlightSampleData, sampleDashboardV2Data, specialEventsSampleData } from './dashboard-v2.sample-data.js';
 
+const latest757Fixture = { meet: 'Test meet', startDate: '2026-09-12', endDate: '2026-09-12', dates: ['2026-09-12'], races: [
+  { event: '25y Freestyle', distance: 25, course: 'SCY', date: '2026-09-12', seconds: 30, dq: false, personalBest: null, isPersonalBest: false },
+] };
+
 describe('approved NOW/NEXT rendering contract', () => {
   for (const state of [
     { signal: 'Leave in 10 min', subject: 'Myles — Sharks Practice', context: ['Practice 6:00', 'Warhill today'] },
@@ -386,7 +390,7 @@ describe('real-data resilience policies', () => {
     const html = renderUpcoming({
       today,
       upcomingEvents: events,
-      athletics: { sharksActive: true, swim757Active: true },
+      athletics: { sharksActive: true, swim757Active: true, opheliaLatest757Meet: latest757Fixture },
     });
     assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 10);
     assert.match(html, /\+4 later in the two-week window/);
@@ -431,7 +435,7 @@ describe('real-data resilience policies', () => {
     assert.match(sharks, /<span>Tidewater Sharks<\/span>/);
     assert.doesNotMatch(sharks, /Myles .* Tidewater Sharks/);
 
-    const swim757 = renderDashboardV2({ ...sampleDashboardV2Data, athletics: { swim757Active: true, opheliaPBRows: [] } });
+    const swim757 = renderDashboardV2({ ...sampleDashboardV2Data, athletics: { swim757Active: true, opheliaPBRows: [], opheliaLatest757Meet: latest757Fixture } });
     assert.match(swim757, /<span>757 Swim<\/span>/);
     assert.doesNotMatch(swim757, /Ophelia .* 757 Swim/);
 

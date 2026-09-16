@@ -523,11 +523,11 @@ function renderToday(data) {
   </section>`;
 }
 
-function athleticsCardCount(data) {
+function athleticsCardCount(data, latest757Card = safeLatest757Card(data.athletics || {})) {
   const a = data.athletics || {};
   return Number(Boolean(a.flagFootballActive))
     + Number(Boolean(a.wavesActive)) * 3
-    + Number(Boolean(!a.wavesActive && a.swim757Active))
+    + Number(Boolean(latest757Card))
     + Number(Boolean(a.sharksActive));
 }
 
@@ -727,10 +727,10 @@ function renderUpcomingEvent(item, accents) {
     </div>`;
 }
 
-function renderUpcoming(data) {
+function renderUpcoming(data, latest757Card = safeLatest757Card(data.athletics || {})) {
   const accents = eventRowAccents(data);
   const allItems = collapseUpcomingEvents(data.upcomingEvents, data.today);
-  const eventTarget = athleticsCardCount(data) === 1 ? 14 : 10;
+  const eventTarget = athleticsCardCount(data, latest757Card) === 1 ? 14 : 10;
   const grouped = new Map();
   for (const item of allItems) {
     if (!grouped.has(item.startKey)) grouped.set(item.startKey, []);
@@ -800,6 +800,72 @@ function renderSwimmerCard(organization, logoAsset, tone, rows, season, footer) 
     <div class="athletic-summary"><div class="season-tag">${esc(season || 'Season')}</div>${logo(logoAsset, 'athletic-logo')}</div>
     <div class="swim-rows">${rendered || '<div class="empty-state">No results yet.</div>'}</div>
     ${footer ? `<div class="athletic-footer">${esc(footer)}</div>` : ''}
+  </article>`;
+}
+
+function swimMeetDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+  const date = new Date(`${value}T12:00:00Z`);
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) return '';
+  return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+}
+
+function swimResultTime(seconds) {
+  if (seconds == null) return '—';
+  const hundredths = Math.round(seconds * 100);
+  const minutes = Math.floor(hundredths / 6000);
+  const remainder = ((hundredths % 6000) / 100).toFixed(2);
+  return minutes ? `${minutes}:${remainder.padStart(5, '0')}` : remainder;
+}
+
+function safeLatest757Card(a) {
+  try {
+    if (a.wavesActive || !a.swim757Active) return '';
+    const meet = a.opheliaLatest757Meet;
+    if (!meet || !Array.isArray(meet.races) || !meet.races.length ||
+        !Array.isArray(meet.dates) || !meet.dates.length ||
+        !swimMeetDate(meet.startDate) || !swimMeetDate(meet.endDate) ||
+        meet.dates.some(date => !swimMeetDate(date)) ||
+        meet.races.some(race => !race || typeof race.event !== 'string' || !race.event.trim() ||
+          (race.personalBest != null && !swimMeetDate(race.personalBest.date)))) return '';
+    return renderLatest757Card(a, meet);
+  } catch {
+    return '';
+  }
+}
+
+function renderLatest757Card(a, meet) {
+  // Household preference, 2026-09-15. Keep the producer's array unchanged;
+  // stable sorting retains its order for repeated races and unknown strokes.
+  const strokeRank = race => {
+    const stroke = race.event.replace(/^\d+\s*[ym]\s*/i, '').toLowerCase();
+    return ({ freestyle: 0, free: 0, breaststroke: 1, breast: 1, backstroke: 2, back: 2, butterfly: 3, fly: 3 })[stroke] ?? 4;
+  };
+  const races = [...meet.races].sort((a, b) =>
+    ((a.distance ?? Infinity) - (b.distance ?? Infinity)) || strokeRank(a) - strokeRank(b));
+  const date = meet.dates.length > 1
+    ? `${swimMeetDate(meet.startDate)} – ${swimMeetDate(meet.endDate)}`
+    : swimMeetDate(meet.startDate);
+  const rows = races.slice(0, 5).map(race => {
+    const pb = race.personalBest;
+    const isPB = !race.dq && race.isPersonalBest;
+    const pbDate = pb ? swimMeetDate(pb.date) : '';
+    return `<div class="swim-row latest-757-race">
+      <span>${esc(race.event)} <small>${esc(race.course || '')}</small></span>
+      <strong>${race.dq ? 'DQ' : esc(swimResultTime(race.seconds))}</strong>
+      ${isPB ? '<em>PB</em>' : '<em></em>'}
+      ${isPB ? '' : `<div class="latest-757-pb">${pb ? `PB ${esc(swimResultTime(pb.seconds))} · ${esc(pb.meet)}${pbDate ? ` · ${esc(pbDate)}` : ''}` : 'PB not recorded'}</div>`}
+    </div>`;
+  }).join('');
+  return `<article class="athletic-card tone-purple latest-757-card${races.length >= 5 ? ' latest-757-dense' : ''}">
+    <div class="athletic-ribbon"><span>757 Swim</span></div>
+    <div class="athletic-summary"><div class="season-tag">${esc(a.opheliaSeason || 'Season')}</div>${logo(V2_LOGOS.swim757, 'athletic-logo')}</div>
+    <div class="latest-757-results">
+      <div class="latest-757-meet"><strong>${esc(meet.meet)}</strong><span>${esc(date)}</span></div>
+      <div class="swim-rows">${rows}</div>
+      ${races.length > 5 ? `<div class="latest-757-more">+${races.length - 5} more races</div>` : ''}
+    </div>
+    ${a.opheliaFooter ? `<div class="athletic-footer">${esc(a.opheliaFooter)}</div>` : ''}
   </article>`;
 }
 
@@ -882,13 +948,13 @@ function renderFlagFootballCard(a) {
   </article>`;
 }
 
-function renderAthletics(data) {
+function renderAthletics(data, latest757Card = safeLatest757Card(data.athletics || {})) {
   const a = data.athletics || {};
   const cards = [];
   if (a.flagFootballActive) cards.push(renderFlagFootballCard(a));
   if (a.wavesActive) cards.push(renderWavesCard(a));
   if (a.wavesActive) cards.push(renderSwimmerCard('Wellington Waves', V2_LOGOS.waves, 'red', a.mylesPBRows, a.mylesSeason, a.mylesFooter));
-  if (a.wavesActive || a.swim757Active) cards.push(renderSwimmerCard(
+  if (a.wavesActive) cards.push(renderSwimmerCard(
     a.wavesActive ? 'Wellington Waves' : '757 Swim',
     a.wavesActive ? V2_LOGOS.waves : V2_LOGOS.swim757,
     'purple',
@@ -896,6 +962,7 @@ function renderAthletics(data) {
     a.opheliaSeason,
     a.opheliaFooter,
   ));
+  else if (latest757Card) cards.push(latest757Card);
   if (a.sharksActive) cards.push(renderSharksCard(a));
 
   // The Spotlight presentation and the ordinary presentation both fill the
@@ -914,10 +981,8 @@ function renderAthletics(data) {
     <div class="athletics-grid${marker} count-${cards.length}">${cards.join('') || '<div class="empty-state">Athletics are between seasons.</div>'}</div>`;
 
   // A feature-slot Spotlight replaces only the panel's contents.
-  // athleticsCardCount() is deliberately untouched, so `.athletics-one` /
-  // `.athletics-multi` and the 26% / 40% panel heights resolve exactly as they
-  // would with no Spotlight. The Athletics panel *is* the feature slot; its
-  // ordinary occupant is Athletics and its geometry never varies.
+  // Counts now include 757 only when its guarded render succeeds. Spotlight
+  // still uses the same ordinary-card count and panel geometry.
   let spotlight = null;
   try { spotlight = selectFeatureSlotSpotlight(data, { now: data.now }); }
   catch { spotlight = null; }
@@ -1560,6 +1625,14 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .spotlight-title{font-family:"Roboto Slab",Georgia,serif;font-size:24px;line-height:1.05;font-weight:600;color:${COLORS.ink};margin-top:8px}
 .spotlight-detail{font-size:19px;line-height:1.15;font-weight:500;color:var(--secondary);margin-top:6px}
 /* Prominent team artwork below the kid-colored ribbon. */
+.latest-757-meet{display:flex;flex-direction:column;margin:2px 0 6px;line-height:1.1}.latest-757-meet strong{font-size:20px}.latest-757-meet span{font-size:16px;color:var(--secondary)}
+.latest-757-race{grid-template-columns:minmax(0,1fr) auto 32px;gap:2px 8px;padding:3px 0}.latest-757-race>span{font-size:18px}.latest-757-pb{grid-column:1/-1;font-size:14px;line-height:1.15;color:var(--secondary);overflow-wrap:anywhere}
+.card-count-1 .latest-757-results{grid-column:2;grid-row:2/4}.card-count-1 .latest-757-results .swim-rows{display:block}
+.card-count-1 .latest-757-race{grid-template-columns:minmax(0,1fr) 90px 32px minmax(0,1.6fr)}.card-count-1 .latest-757-pb{grid-column:4}
+.latest-757-more{font-size:14px;line-height:1.1;margin-top:3px;color:var(--secondary)}
+.latest-757-dense .latest-757-race{padding:0;row-gap:1px}.latest-757-dense .latest-757-race>strong{font-size:22px}
+.latest-757-dense .latest-757-meet{margin-bottom:2px}.latest-757-dense .latest-757-more{margin-top:1px}
+.latest-757-dense .latest-757-results{padding-bottom:4px}
 .athletic-summary{display:flex;align-items:center;justify-content:space-between;min-height:96px;flex-shrink:0;gap:12px}
 .athletic-summary>.record{margin-top:0}
 .athletic-summary>.season-tag{max-width:calc(100% - 116px)}
@@ -1705,7 +1778,8 @@ function renderDashboardV2(digestData) {
   const holidayAttributes = activeTheme
     ? ` data-holiday-id="${esc(activeTheme.id)}" data-holiday-renderer="${esc(activeTheme.renderer)}" data-holiday-state="ordinary" data-holiday-activate-at="${activeTheme.activateAt}" data-holiday-expire-at="${activeTheme.expireAt}"`
     : '';
-  const cardCount = athleticsCardCount(data);
+  const latest757Card = safeLatest757Card(data.athletics || {});
+  const cardCount = athleticsCardCount(data, latest757Card);
   const paletteSetting = ['day', 'evening'].includes(data.paletteMode) ? data.paletteMode : 'auto';
   const initialPalette = paletteSetting === 'auto' ? paletteModeForDate(data.now ? new Date(data.now) : new Date()) : paletteSetting;
   const classes = `dashboard${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'} athletics-${cardCount === 1 ? 'one' : 'multi'} palette-${initialPalette}`;
@@ -1723,8 +1797,8 @@ ${fontCss}
 <main class="${classes}" data-palette="${paletteSetting}" data-sports-url="${esc(data.sportsFeedUrl || '')}" data-household-generated-at="${esc(data.householdGeneratedAt || '')}" data-release-manifest-url="${esc(data.releaseManifestUrl || '')}" data-first-day-coda-url="${esc(data.firstDayLevel3CodaUrl || '')}" data-first-day-coda-start="${esc(data.firstDayLevel3CodaStart || '')}" data-first-day-coda-end="${esc(data.firstDayLevel3CodaEnd || '')}"${holidayAttributes} style="${styleVars}">
   ${renderMasthead(data)}
   ${renderToday(data)}
-  ${renderUpcoming(data)}
-  ${renderAthletics(data)}
+  ${renderUpcoming(data, latest757Card)}
+  ${renderAthletics(data, latest757Card)}
   ${renderAlerts(data.flags)}
   ${renderRightRail(data)}
   ${renderTicker(data)}

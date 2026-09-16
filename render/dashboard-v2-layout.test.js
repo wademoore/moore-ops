@@ -262,7 +262,10 @@ describe('dashboard v2 2560x1440 layout verification', () => {
       ...sampleDashboardV2Data,
       today: new Date(2026, 7, 29),
       upcomingEvents,
-      athletics: { swim757Active: true, opheliaPBRows: [] },
+      athletics: { swim757Active: true, opheliaPBRows: [], opheliaLatest757Meet: {
+        meet: 'Test meet', startDate: '2026-08-28', endDate: '2026-08-28', dates: ['2026-08-28'],
+        races: [{ event: '25y Freestyle', distance: 25, course: 'SCY', date: '2026-08-28', seconds: 30, dq: false, personalBest: null, isPersonalBest: false }],
+      } },
     }), { waitUntil: 'load' });
     await page.evaluate(() => document.fonts.ready);
     const result = await page.evaluate(() => {
