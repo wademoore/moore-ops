@@ -8,13 +8,16 @@
  *
  * Pure: no I/O and no `new Date()` of its own, and nothing exported throws on a
  * malformed input — it runs inside the daily digest, where a throw costs the
- * whole run. That holds by two different mechanisms, which is worth separating
- * rather than summarising: the two table builders wrap their whole body in a
- * try and degrade to an unavailable table, while `buildSoccerAliasIndex` is not
- * wrapped and instead guards its one iterable argument and returns a failure
- * result. An earlier version of this paragraph claimed no exported path skipped
- * the wrapper, which was false of that function on the very commit that wrote
- * the claim.
+ * whole run. How that is achieved differs by export and is not summarised into
+ * one mechanism here: the two table builders wrap their whole body in a try and
+ * degrade to an unavailable table, `buildSoccerAliasIndex` guards its one
+ * iterable argument and returns a failure result instead, and `unavailableTable`
+ * is a plain object literal with nothing in it that can throw.
+ *
+ * Two earlier versions of this paragraph were falsified by their own commit —
+ * first for claiming no exported path skipped the wrapper, which was untrue of
+ * the alias index, and then for counting the mechanisms while leaving an export
+ * out of the count. Do not restate this as a number.
  *
  * The export surface is otherwise deliberately narrow: the ranking core, the two
  * comparators and the two scoring helpers are module-private.

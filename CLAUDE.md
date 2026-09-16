@@ -759,9 +759,11 @@ test is what makes that edit hard to forget.
   Field-level contract in its own header. **Reading the data file it derives from now puts a
   line on the wall that was previously suppressed:** `sharksParser.js`'s legacy
   `divisionStanding` returns null while every stored standings row shows zero points, and the
-  refreshed 2026-09-16 check fixture has real points, so Dashboard v2's Sharks card gains its
-  `.standing-line`. v2 prints the rank bare and frozen v1 applies an ordinal suffix, so the
-  two surfaces word it differently — a pre-existing asymmetry, newly visible.
+  refreshed 2026-09-16 check fixture has real points, so every surface reading that field now
+  shows a standing it previously suppressed — Dashboard v2's `.standing-line`, and the same
+  line on mobile, both printing the rank bare, while frozen v1 applies an ordinal suffix. A
+  pre-existing asymmetry in wording, newly visible. (An earlier version of this entry named
+  v2 and v1 and missed mobile; `grep -n sharksDivisionStanding render/` is the check.)
 - `digest/sportsConfig.js` — exports only `isSeasonActive(sport, referenceDate)` (pure function — no data)
 
 ### Swim data conventions

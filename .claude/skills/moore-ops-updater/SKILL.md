@@ -402,15 +402,27 @@ guessed at. So when the league edits a team's name, ADD the new string to `alias
 update `name`; never replace an alias, because the old string is still sitting in the match
 rows it was entered with.
 
-**Four things blank the derived table for a sport, and all four are things a hand entry can
-cause.** The table goes `unavailable` — no rows at all, not a partial table — when:
+**A hand entry can blank the derived table for a sport, and there is more than one way to do
+it.** When it happens the table goes `unavailable` — no rows at all, never a partial table.
+The authoritative set of causes is `STANDINGS_UNAVAILABLE_REASON` in
+`digest/divisionStandings.js`; read it there rather than trusting a list here, which is prose
+and rots. The ones an entry to these files can reach:
 
 | condition | applies to |
 |---|---|
 | a team string matching no alias | `sharks-soccer.json` |
 | a team string two teams both claim | `sharks-soccer.json` |
+| a `games[]` row naming a team absent from `teams[]` | `flag-football.json` |
 | a fixture `date` that is not `YYYY-MM-DD` | **both** this file and `flag-football.json` |
 | a team carrying no identifier (`teamId`, or `abbr` in an older flag football season) | **both** |
+| a duplicated `teamId` | **both** |
+| a `myTeamId` / `myTeamAbbr` naming no team in the division | **both** |
+| both sides of one fixture resolving to the same team | **both** |
+| `divisionTeams` (soccer) or `teams` (flag football) absent or empty | **both** |
+
+⚠ **This table gave a count and called it closed until a Reviewer round falsified it**, on a
+list that omitted the mistyped `myTeamId` the section six lines above tells you to author. A
+count here is a claim about code that lives somewhere else; the enum is the claim.
 
 The date one is the easy mistake and the least obvious: writing `29 Aug 2026` instead of
 `2026-08-29` on one row silently removes that whole sport's derived standings, because every
@@ -518,11 +530,16 @@ enumerates the readers of this file that were checked, and names this key alongs
 rather than covering `note` alone.
 
 ⚠ **This sentence read "No parser and no test reads it" until 2026-09-16, and the change
-that added that test also edited the paragraph directly above it without noticing.** The
-same commit that is cited above for merging a self-falsifying claim about this very key is
-`fe684df`; this is the second time a sentence about `forfeit` has been falsified by the
-commit editing its own neighbourhood. When you add a reader of any key in this file, grep
-this file for the key before you finish.
+that added that test also edited the paragraph directly above it without noticing.** It is
+not the first sentence about this key to be falsified by a commit editing its own
+neighbourhood — the retraction further down this subsection is another. When you add a
+reader of any key in this file, grep this file for the key before you finish.
+
+No commit is named here on purpose. An earlier version of this paragraph named one, as the
+commit that had merged a self-falsifying claim about `forfeit`; that commit is the one that
+**deleted** such a claim, the attribution was backwards, and nothing above this sentence
+cited it, so the words "cited above" pointed at nothing. The subsection below already names
+the commit that matters for the claim it retracts.
 
 ⚠ **This paragraph used to state the result of running `git grep -w forfeit` across the
 repository, and the commit that wrote that statement falsified it in the act of making it.**
