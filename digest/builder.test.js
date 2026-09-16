@@ -1178,8 +1178,23 @@ describe('buildDigest — flag football event identity', () => {
 
   it('carries identity through NOW/NEXT onto the featured block', async () => {
     const result = await run();
+    // The flag set is emptied deliberately, and the case is weaker without it.
+    // problemCandidates() admits every non-bannerOnly red/amber flag at
+    // UNRESOLVED_PROBLEM's priority 700 — above every event — and a
+    // flag-sourced featured block correctly carries flagFootball: null,
+    // because no event sits behind it. Which flags buildDigest produces is a
+    // property of the run date, not of this fixture: measured on the real
+    // data files, backpack-reminder fires on a Media eve and no-menu-sunday on
+    // a Sunday, so the featured block was the flag on 2026-09-13, 09-16, 09-20
+    // and 10-04 and the practice on 09-15 — this case passed or failed by
+    // calendar date while production behaviour was right on every one of them.
+    // Emptying the flags leaves exactly the question the case is named for:
+    // whether the identity buildDigest attached survives the projection onto
+    // the featured block. It cannot go vacuous — with no candidate carrying
+    // identity the block falls back to ALL_CLEAR, whose flagFootball is null,
+    // and the assertion below fails.
     // 60 minutes before the practice, which puts it inside the imminent window.
-    const nowNext = selectNowNext(result, { now: new Date(`${isoDate(PRACTICE_IN)}T10:00:00Z`) });
+    const nowNext = selectNowNext({ ...result, flags: [] }, { now: new Date(`${isoDate(PRACTICE_IN)}T10:00:00Z`) });
     nodeAssert.ok(nowNext.flagFootball, 'expected the featured block to carry identity');
     nodeAssert.equal(nowNext.flagFootball.team.teamId, MOORE);
   });
