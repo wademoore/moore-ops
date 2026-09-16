@@ -2337,14 +2337,17 @@ card; the producer's contract and existing per-configured-event rows are unchang
 The 757 card uses the Waves swimmer card's purple ribbon, logo, season label,
 race rows and footer styling. It adds the meet name and calendar date/range
 above the races, and PB meet/date provenance under each result. A current-race
-PB is marked PB without repeating its time. DQs show DQ without a result time;
+PB is marked PB without repeating its time or provenance line. Other PBs retain
+their meet and date; missing or malformed PB dates are omitted without throwing.
+DQ races show DQ without a result time;
 a missing non-DQ time shows a dash. A missing PB entry says “PB not recorded.”
 
 The card sorts a copy of the view by distance ascending, then Free, Breast,
 Back, Fly, then other strokes. Unknown distances go last; ties retain the
 producer's order. This is the September 15 household preference, not a change
-to the digest's ordering contract. No rows are truncated or replaced by older
-configured-event swims. When the view is absent, the card is absent, including
+to the digest's ordering contract. The first five sorted races are shown, with
+a compact “+N more races” notice for the rest. Older configured-event swims never
+replace these results. When the view is absent, the card is absent, including
 from layout counts. Waves and off-season gates continue to apply.
 
 The compact single-card layout puts PB provenance beside the race; multi-card
@@ -2352,6 +2355,11 @@ layouts place it beneath. Tests cover the KickOff PBs, the April SCM meet's DQ,
 the household order, missing data, multi-day dates, and both real examples in
 one-, two-, and three-card browser layouts. The frozen v1 renderer, mobile
 renderer, digest modules, data files, and field contract are unchanged.
+During 757 season, this card replaces the configured-event 757 card on Dashboard
+v2 (household decision, September 15, 2026). Mobile and v1 continue to render the
+unchanged configured-event rows. Seven-race layout fixtures verify the five-row
+cap and overflow notice clear the athletics panel and footer at 2560×1440 in
+both one- and three-card layouts.
 
 **The field-level contract lives in `digest/athleticsParser.js`'s header**, not
 here and not in `render/dashboard.js`. That renderer holds the repo's only

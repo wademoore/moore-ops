@@ -19,6 +19,7 @@ describe('latest 757 meet card', () => {
     assert.deepEqual(titles(html), ['25y Breaststroke', '25y Butterfly', '50y Backstroke']);
     for (const value of ['33.37', '34.44', '1:09.08']) assert.equal(html.split(value).length - 1, 1);
     assert.equal((html.match(/<em>PB<\/em>/g) || []).length, 3);
+    assert.doesNotMatch(html, /class="latest-757-pb"/);
     assert.doesNotMatch(html, /Old configured event|30.46|30.87/);
   });
 
@@ -35,7 +36,8 @@ describe('latest 757 meet card', () => {
     const names = ['50y Freestyle', '25y Individual Medley', '25y Butterfly', '25y Backstroke', '25y Breaststroke', '25y Freestyle', '100y Freestyle'];
     const meet = view(names.map(event => race({ event, distance: Number(event.match(/^\d+/)[0]) })));
     const before = structuredClone(meet);
-    assert.deepEqual(titles(render(meet)), ['25y Freestyle', '25y Breaststroke', '25y Backstroke', '25y Butterfly', '25y Individual Medley', '50y Freestyle', '100y Freestyle']);
+    assert.deepEqual(titles(render(meet)), ['25y Freestyle', '25y Breaststroke', '25y Backstroke', '25y Butterfly', '25y Individual Medley']);
+    assert.match(render(meet), /\+2 more races/);
     assert.deepEqual(meet, before);
   });
 
@@ -47,6 +49,20 @@ describe('latest 757 meet card', () => {
 
   it('shows the standing PB with its meet and date separately from the result', () => {
     assert.match(render(view()), /PB 1:05.12 · Earlier meet · Jan 10, 2026/);
+  });
+
+  for (const date of ['', 'not-a-date', '2026-02-30', undefined]) {
+    it(`renders the whole dashboard without an invalid PB date: ${String(date)}`, () => {
+      const html = renderDashboardV2({ today: new Date('2026-09-15T12:00:00'), athletics: { swim757Active: true,
+        opheliaLatest757Meet: view([race({ personalBest: { seconds: 65.12, meet: 'Earlier meet', date } })]),
+      } });
+      assert.match(html, /PB 1:05.12 · Earlier meet<\/div>/);
+      assert.match(html, /1:09.08/);
+    });
+  }
+
+  it('does not show an overflow line at exactly five races', () => {
+    assert.doesNotMatch(render(view(Array.from({ length: 5 }, () => race()))), /more races/);
   });
 
   it('uses the DQ flag even if an inconsistent payload carries a numeric time', () => {

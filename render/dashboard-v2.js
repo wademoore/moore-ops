@@ -804,7 +804,10 @@ function renderSwimmerCard(organization, logoAsset, tone, rows, season, footer) 
 }
 
 function swimMeetDate(value) {
-  return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(`${value}T12:00:00Z`));
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+  const date = new Date(`${value}T12:00:00Z`);
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) return '';
+  return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' }).format(date);
 }
 
 function swimResultTime(seconds) {
@@ -828,22 +831,24 @@ function renderLatest757Card(a) {
   const date = meet.dates.length > 1
     ? `${swimMeetDate(meet.startDate)} – ${swimMeetDate(meet.endDate)}`
     : swimMeetDate(meet.startDate);
-  const rows = races.map(race => {
+  const rows = races.slice(0, 5).map(race => {
     const pb = race.personalBest;
     const isPB = !race.dq && race.isPersonalBest;
+    const pbDate = pb ? swimMeetDate(pb.date) : '';
     return `<div class="swim-row latest-757-race">
       <span>${esc(race.event)} <small>${esc(race.course || '')}</small></span>
       <strong>${race.dq ? 'DQ' : esc(swimResultTime(race.seconds))}</strong>
       ${isPB ? '<em>PB</em>' : '<em></em>'}
-      <div class="latest-757-pb">${pb ? `${isPB ? 'PB' : `PB ${esc(swimResultTime(pb.seconds))}`} · ${esc(pb.meet)} · ${esc(swimMeetDate(pb.date))}` : 'PB not recorded'}</div>
+      ${isPB ? '' : `<div class="latest-757-pb">${pb ? `PB ${esc(swimResultTime(pb.seconds))} · ${esc(pb.meet)}${pbDate ? ` · ${esc(pbDate)}` : ''}` : 'PB not recorded'}</div>`}
     </div>`;
   }).join('');
-  return `<article class="athletic-card tone-purple latest-757-card">
+  return `<article class="athletic-card tone-purple latest-757-card${races.length >= 5 ? ' latest-757-dense' : ''}">
     <div class="athletic-ribbon"><span>757 Swim</span></div>
     <div class="athletic-summary"><div class="season-tag">${esc(a.opheliaSeason || 'Season')}</div>${logo(V2_LOGOS.swim757, 'athletic-logo')}</div>
     <div class="latest-757-results">
       <div class="latest-757-meet"><strong>${esc(meet.meet)}</strong><span>${esc(date)}</span></div>
       <div class="swim-rows">${rows}</div>
+      ${races.length > 5 ? `<div class="latest-757-more">+${races.length - 5} more races</div>` : ''}
     </div>
     ${a.opheliaFooter ? `<div class="athletic-footer">${esc(a.opheliaFooter)}</div>` : ''}
   </article>`;
@@ -1611,6 +1616,10 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .latest-757-race{grid-template-columns:minmax(0,1fr) auto 32px;gap:2px 8px;padding:3px 0}.latest-757-race>span{font-size:18px}.latest-757-pb{grid-column:1/-1;font-size:14px;line-height:1.15;color:var(--secondary);overflow-wrap:anywhere}
 .card-count-1 .latest-757-results{grid-column:2;grid-row:2/4}.card-count-1 .latest-757-results .swim-rows{display:block}
 .card-count-1 .latest-757-race{grid-template-columns:minmax(0,1fr) 90px 32px minmax(0,1.6fr)}.card-count-1 .latest-757-pb{grid-column:4}
+.latest-757-more{font-size:14px;line-height:1.1;margin-top:3px;color:var(--secondary)}
+.latest-757-dense .latest-757-race{padding:0;row-gap:1px}.latest-757-dense .latest-757-race>strong{font-size:22px}
+.latest-757-dense .latest-757-meet{margin-bottom:2px}.latest-757-dense .latest-757-more{margin-top:1px}
+.latest-757-dense .latest-757-results{padding-bottom:4px}
 .athletic-summary{display:flex;align-items:center;justify-content:space-between;min-height:96px;flex-shrink:0;gap:12px}
 .athletic-summary>.record{margin-top:0}
 .athletic-summary>.season-tag{max-width:calc(100% - 116px)}
