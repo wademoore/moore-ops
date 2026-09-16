@@ -274,20 +274,77 @@ Structure:
 
 ## flag-football.json conventions
 
-Games live under `seasons[n].games`. Each game:
-```json
-{
-  "date": "2026-06-07",
-  "opponent": "Ravens",
-  "result": "W",
-  "score": "28-14",
-  "location": "WCA"
-}
-```
+Seasons live under `seasons[n]`; match one on `seasons[n].seasonId` (e.g. `"fall-2026"`).
+Games live under `seasons[n].games`.
 
-- `result` is `"W"`, `"L"`, or `"T"`
-- `score` is `"our-theirs"` format
-- Match the season by checking `seasons[n].year` and `seasons[n].league`
+### Identifying the two sides
+
+Read from `data/flag-football.json` and from `parseFlagFootball()` in
+`digest/flagFootballParser.js`.
+
+A fixture's sides are `away` and `home`. In the current season they are **numeric league
+team ids**, matching `seasons[n].teams[].teamId`; our own team is `seasons[n].myTeamId`.
+Older seasons (`fall-2025`, `spring-2026`) use string abbreviations instead, matching
+`seasons[n].teams[].abbr` and `seasons[n].myTeamAbbr`. A season uses one form throughout.
+
+**Never identify a team by mascot.** `seasons[n].teams[].teamName` is a display name and is
+not unique: `fall-2026` contains two teams named `Cowboys` — ours (`8009182`, `leagueName`
+`"Moore – Cowboys"`) and `8057461` (`"Watkins - Cowboys"`). Resolve every id through
+`teams[]` before writing it. This is the opposite of `sharks-soccer.json`, where fuzzy
+mascot matching is correct.
+
+### Recording a result
+
+Four fields on the row, read from the eligibility filter and the record/standings loops in
+`parseFlagFootball()`:
+
+| field | meaning |
+|---|---|
+| `homeScore` | points scored by the `home` side — a number |
+| `awayScore` | points scored by the `away` side — a number |
+| `status` | `"final"` marks the result as recorded; `"scheduled"` and `"rescheduled"` are the other values in the file |
+| `type` | `"regular"` is what the record and the standings count |
+
+A game counts toward `seasonRecord` and `standings` only when `type` is `"regular"`,
+`status` is `"final"`, and **both** scores are numbers. A `"final"` row with a null score is
+skipped rather than counted as a draw, so leave `status` at `"scheduled"` until you have
+both numbers.
+
+Scores are per side, not per team-of-ours: write the score against whichever of `home` /
+`away` that team is on. Do not add a `result`, `score`, `opponent` or W/L field — win, loss
+and tie are derived from the two scores.
+
+`"rescheduled"` marks a row the league moved; such rows carry null scores and are excluded
+from `seasonComplete`.
+
+### Practice rows and our own rows
+
+- A practice row has `type: "practice"`, `away: null`, and a `label` (e.g. `"Meet & Greet"`).
+  `NON_GAME_TYPES` in `digest/flagFootballParser.js` keeps it out of the next-game box and
+  the season-milestone resolver; the record and standings exclude it by `type === "regular"`.
+  A practice never takes a score.
+- `practiceTime` appears only on rows our team plays in — the league publishes no other
+  team's practice time. Do not add one to another fixture.
+- Otherwise our rows carry the same fields as every other fixture: `week`, `date`, `time`,
+  `field`, `away`/`home`, `awayScore`/`homeScore`, `type`, `status`.
+
+### Entering a week's results (decided with Wade, 2026-09-16)
+
+These two are decisions taken on that date, not pre-existing repo practice.
+
+- **Record every division fixture for the week in one pass, never our game alone.**
+  `standings` in `parseFlagFootball()` tallies every team from the same `games[]` rows, so a
+  partial week produces a standings table built from an incomplete week.
+- **Results arrive as scores Wade pastes from LeagueApps, which lists each game as
+  "AWAY at HOME".** The first team named is `away`, the second is `home`; write each score
+  to the matching side.
+
+### Unsupported
+
+A **forfeit** has no representation in this file. `sharks-soccer.json` carries a `forfeit`
+key; `flag-football.json` has no equivalent on any row, and nothing in
+`digest/flagFootballParser.js` reads one. A forfeit recorded as an ordinary score is
+indistinguishable from a played result. Stop and ask before entering one.
 
 ---
 
@@ -489,5 +546,5 @@ These are the recurring task types. The user will typically invoke one of these:
 **PB correction:**
 > "Correct Ophelia's 25m Back PB — it should be 27.4 from the June 22 meet"
 
-**Flag football result:**
-> "Add Cowboys game result: vs Ravens [date], W 28-14 at WCA"
+**Flag football results:**
+> "Record flag football Week [N], [date] — all division games. From LeagueApps (away at home): [list]"
