@@ -1742,7 +1742,13 @@ Cowboys exists), and that a team-less season still resolves.
 ### Three further consequences of loading the division schedule (Sept 16, 2026)
 
 All three were found by a Reviewer round rather than at authoring time, and all three are
-recorded rather than fixed — two are presentation, one is a behaviour change with no owner yet.
+recorded rather than fixed: **one is presentation and two are behaviour changes.** ⚠ That split
+read "two are presentation, one is a behaviour change" for two rounds, which is unsatisfiable
+against the items beneath it — the second and third both describe themselves as changes in
+behaviour, so no assignment satisfies it. The same defect as the "Five/Three" count two sections
+below, in the section added to record consequences. A Reviewer round caught it. The trailing ⚠
+note about the Frozen-surfaces sentence is a note, not a fourth consequence; the heading counts
+the three bolded items.
 
 **Two standings rows now read "Cowboys", with identical artwork, on two live surfaces.**
 `parseFlagFootball` sets `standings[].team = team.teamName`, and both 8009182 (ours) and
@@ -3016,6 +3022,11 @@ columns…` and `never selects a later week of the shipped season` (both
 
 ⚠ **Three attempts at this paragraph have now been falsified, twice by the very commit that
 wrote them, and the third form answers the mechanism rather than the individual errors.**
+⚠ **"Round 1" and "Round 2" here number attempts at *this paragraph*, and are offset by one
+from the branch's commit subjects**, which call `6768dc0` "Reviewer round 1" and `10a1274`
+"Reviewer round 2". The attempts are `e346784`, `6768dc0`, `10a1274`. Stated because a future
+reader meets both namings side by side in `git log`.
+
 Round 1 said "four" against its own enumeration, and said a `numstat` command "reports two
 files" when it reports three. Round 2 fixed the wording and pasted that command's output as
 proof — and the same commit's other edit moved one of the pasted line counts, so the "verbatim"
@@ -3029,7 +3040,7 @@ in this file can change either answer:
 
 ```
 git diff --name-only afe1876..HEAD -- 'test/' 'digest/*.test.js' 'render/*.test.js'
-git diff afe1876..HEAD -- 'test/' 'digest/*.test.js' | grep -E '^[-+].*\bit\('
+git diff afe1876..HEAD -- 'test/' 'digest/*.test.js' 'render/*.test.js' | grep -E '^[-+].*\bit\('
 ```
 
 The first names the three files. The second is the whole record of `it()` churn: one removed
@@ -3079,10 +3090,12 @@ on this tree, against a file holding 20 `it()` and 4 `describe()`:
 
 ```
 $ node --experimental-vm-modules --test test/current-season-athletics.test.js
+… TAP body elided …
 # tests 20
 # suites 4
 # pass 20
 # fail 0
+… # cancelled / # skipped / # todo / # duration_ms elided …
 ```
 
 Candidates a future reader can check: a `test()` carrying subtests (node counts those as tests,
