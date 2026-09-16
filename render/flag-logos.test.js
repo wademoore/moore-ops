@@ -37,6 +37,6 @@ it('uses the scheduled next-game date without borrowing a time from another occu
   assert.deepEqual(flagNextGame(a), { opponent: 'Ravens', detail: 'Sun, Sep 20' });
   assert.deepEqual(flagNextGame({ nextFlagGame: { ...a.nextFlagGame, time: '12:00' } }),
     { opponent: 'Ravens', detail: 'Sun, Sep 20 · 12:00 PM' });
-  assert.deepEqual(flagNextGame({ ...a, thisWeekOpponent: 'Bears' }), { opponent: 'Bears', detail: '2:00 PM' });
+  assert.deepEqual(flagNextGame({ ...a, thisWeekOpponent: 'Bears' }), { opponent: 'Ravens', detail: 'Sun, Sep 20' });
   assert.equal(flagNextGame({}), null);
 });

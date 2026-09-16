@@ -122,6 +122,7 @@ const V2_LOGOS = {
   tennessee: optionalAssetDataUrl('logo-tennessee.png'),
   tribe: optionalAssetDataUrl('logo-wm.webp'),
   wm: optionalAssetDataUrl('logo-wm.webp'),
+  stonehouse: optionalAssetDataUrl('logo-stonehouse.png'),
 };
 
 function esc(value) {
@@ -229,6 +230,8 @@ function activityLogo(event) {
   if (/\bsharks\b/.test(text) || mylesGoalkeeping) return V2_LOGOS.sharks;
   if (/757/.test(text)) return V2_LOGOS.swim757;
   if (/\bidance\b|institute for dance/.test(text)) return V2_LOGOS.idance;
+  if (/\bw\s*&\s*m\b|\bwilliam\s*(?:&|and)\s*mary\b/.test(text)) return V2_LOGOS.wm;
+  if (/\bstonehouse\b/.test(`${text} ${(event?.raw?.location || '').toLowerCase()}`)) return V2_LOGOS.stonehouse;
   return '';
 }
 
@@ -831,6 +834,8 @@ function safeLatest757Card(a) {
 }
 
 function renderLatest757Card(a, meet, cardCount) {
+  // The shared footer currently contains a Waves award, not a 757 award.
+  const footer = /2025 Most Improved Swimmer/i.test(a.opheliaFooter || '') ? '' : a.opheliaFooter;
   // Household preference, 2026-09-15. Keep the producer's array unchanged;
   // stable sorting retains its order for repeated races and unknown strokes.
   const strokeRank = race => {
@@ -863,7 +868,7 @@ function renderLatest757Card(a, meet, cardCount) {
       <div class="swim-rows">${rows}</div>
       ${races.length > rowLimit ? `<div class="latest-757-more">+${races.length - rowLimit} more races</div>` : ''}
     </div>
-    ${a.opheliaFooter ? `<div class="athletic-footer">${esc(a.opheliaFooter)}</div>` : ''}
+    ${footer ? `<div class="athletic-footer">${esc(footer)}</div>` : ''}
   </article>`;
 }
 
@@ -880,6 +885,27 @@ function conversationalMatchDate(dateValue, timeValue) {
   return time ? `${label} · ${time}` : label;
 }
 
+function renderNextGame({ opponent, prefix = 'vs.', mark = '', detail = '' }) {
+  return `<div class="next-box"><b>Next game</b><span>${mark}${esc(prefix)} ${esc(opponent)}${detail ? ` · <time>${esc(detail)}</time>` : ''}</span></div>`;
+}
+
+// Display aliases only: never used to match fixtures or calculate standings.
+function soccerOpponentLabel(name) {
+  const labels = {
+    'Beach FC B2015/16 Anderson Waves': 'Beach FC · Anderson Waves',
+    'Beach FC B2015/16 Perkins Dragons': 'Beach FC · Perkins Dragons',
+    'Beach FC B2015/16 Brammer Breakers': 'Beach FC · Brammer Breakers',
+    'VIP United TASL B2015/2016 Red (VA)': 'VIP United Red',
+    'VA Rush Soccer Club VAR U11B Coastal Strikers': 'VA Rush · Coastal Strikers',
+    'VA Rush Soccer Club VAR U11B Killer Bees': 'VA Rush · Killer Bees',
+    'Chesapeake United SC 2015/2016B Reapers': 'Chesapeake Utd · Reapers',
+    'Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)': 'Chesapeake SC · Galaxy Gold',
+    'Carolina United (CUSA) Lightning - U11B (Daniels)': 'CUSA · Lightning (Daniels)',
+    'Baystars FC TASL B2015/16 Tsunami': 'Baystars · Tsunami',
+  };
+  return Object.hasOwn(labels, name) ? labels[name] : name;
+}
+
 function renderSharksCard(a) {
   const next = a.sharksNextGame;
   return `<article class="athletic-card tone-red">
@@ -887,7 +913,7 @@ function renderSharksCard(a) {
     <div class="athletic-summary"><div class="record">${esc(a.sharksRecord || '0-0-0')}</div>${logo(V2_LOGOS.sharks, 'athletic-logo')}</div>
     <small>${esc(a.sharksDivisionLabel || 'U11 Premier')}</small>
     ${a.sharksLastResult ? `<div class="result-line"><b>${esc(a.sharksLastResult)}</b><span>Latest result</span></div>` : ''}
-    ${next ? `<div class="next-box"><b>Next match</b><span>${next.homeAway === 'away' ? '@' : 'vs.'} ${esc(next.opponent)}</span><strong>${esc(conversationalMatchDate(next.date, next.time))}</strong><small>${esc(next.venue || '')}</small></div>` : ''}
+    ${next ? renderNextGame({ opponent: soccerOpponentLabel(next.opponent), prefix: next.homeAway === 'away' ? '@' : 'vs.', detail: conversationalMatchDate(next.date, next.time) }) : ''}
     ${a.sharksDivisionStanding ? `<div class="standing-line">${esc(a.sharksDivisionStanding.rank)} of ${esc(a.sharksDivisionStanding.of)} · ${esc(a.sharksDivisionStanding.pts)} pts</div>` : ''}
   </article>`;
 }
@@ -923,12 +949,12 @@ function flagLogoMark(teamName) {
 }
 
 function flagNextGame(a) {
-  if (a.thisWeekOpponent) return { opponent: a.thisWeekOpponent, detail: a.thisWeekTime || '' };
   if (a.nextFlagGame?.opponent) return {
     opponent: a.nextFlagGame.opponent,
     // Do not attach a calendar time to a different, data-selected fixture.
     detail: conversationalMatchDate(a.nextFlagGame.date, a.nextFlagGame.time),
   };
+  if (a.thisWeekOpponent) return { opponent: a.thisWeekOpponent, detail: a.thisWeekTime || '' };
   return null;
 }
 
@@ -941,7 +967,7 @@ function renderFlagFootballCard(a) {
     <div class="athletic-summary"><div class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</div>${logo(flagTeamLogo(teamName), 'athletic-logo')}</div>
     <small>${esc(a.seasonLabel || 'Season')}</small>
     ${a.lastResult ? `<div class="result-line"><b>${esc(a.lastResult)}</b><span>Latest result</span></div>` : ''}
-    ${next ? `<div class="next-box"><b>Next game</b><span>${flagLogoMark(next.opponent)}vs. ${esc(next.opponent)}${next.detail ? ` · ${esc(next.detail)}` : ''}</span></div>` : ''}
+    ${next ? renderNextGame({ ...next, mark: flagLogoMark(next.opponent) }) : ''}
     <table><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${renderStandingRows(a.standings, ['team', 'w', 'l'], true)}</tbody></table>
   </article>`;
 }
@@ -1586,7 +1612,8 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .card-count-1 .athletics-grid{display:block}.card-count-1 .athletic-card{height:100%;padding-right:0;border-right:0;display:grid;grid-template-columns:150px minmax(0,1fr);grid-template-rows:44px auto 1fr;column-gap:22px}.card-count-1 .athletic-ribbon{grid-column:1/3}.card-count-1 .record{grid-column:1;grid-row:2/4;font-size:58px;margin-top:16px}.card-count-1 .athletic-card>small{grid-column:1;grid-row:3;margin-top:80px;font-size:18px}.card-count-1 .next-box{grid-column:2;grid-row:2/4;margin:12px 0 0;padding:12px 16px;justify-content:center}.card-count-1 .next-box b{font-size:16px}.card-count-1 .next-box span{font-size:25px;line-height:1}.card-count-1 .next-box strong{font-family:"Roboto Slab",Georgia,serif;font-size:27px;line-height:1.15;margin-top:7px}.card-count-1 .next-box small{font-size:18px;margin-top:5px}.card-count-1 .result-line,.card-count-1 .standing-line{display:none}
 .flag-team-mark{width:20px;height:20px;object-fit:contain;vertical-align:middle;margin-right:5px}.next-box .flag-team-mark{width:24px;height:24px}.athletic-ribbon .athletic-logo{width:36px;height:36px;background:transparent;border-radius:0;padding:0}
 .flag-event-mark{width:1em;height:1em;object-fit:contain;vertical-align:-.12em;margin-right:.25em}
-.flag-activity-visual:has(img)>svg{visibility:hidden}
+.activity-visual:has(img)>svg{visibility:hidden}
+.activity-visual:has(img){background:transparent}
 .card-count-1 .flag-football-card{grid-template-columns:170px minmax(0,1fr) 400px}.card-count-1 .flag-football-card .athletic-ribbon{grid-column:1/4}.card-count-1 .flag-football-card table{grid-column:3;grid-row:2/4;align-self:start;margin-top:12px;line-height:1}.card-count-1 .flag-football-card .record{grid-row:2;margin-top:16px}.card-count-1 .flag-football-card>small{margin-top:0}.card-count-1 .flag-football-card .next-box{align-self:start}.card-count-1 .flag-football-card td{padding:1px 0}
 .next-up-card{display:flex;flex-direction:column}.next-up-card:before{display:none}.next-up-label{flex:0 0 38px;width:100%}.next-up-list{flex:1;display:grid;grid-template-rows:repeat(3,minmax(0,1fr));min-height:0}.next-up-item{position:relative;display:grid;grid-template-columns:58px minmax(0,1fr);gap:8px;padding:6px 2px 6px 9px;border-bottom:1px solid rgba(20,40,31,.14);min-height:0}.next-up-item:last-child{border-bottom:0}.next-up-item:before{content:"";position:absolute;left:-3px;top:7px;bottom:7px;width:5px;background:${COLORS.green}}.next-up-item.person-myles:before{background:${COLORS.red}}.next-up-item.person-ophelia:before{background:${COLORS.purple}}.next-up-item.person-both:before{background:linear-gradient(${COLORS.red} 0 50%,${COLORS.purple} 50%)}.next-up-item .next-up-date b{font-size:34px}.next-up-item .next-up-date span{font-size:11px}.next-up-item .next-up-copy strong{font-size:18px;line-height:1}.next-up-item .next-up-copy small{font-size:13px;line-height:1;margin-top:3px}
 /* TV readability tokens. Day is intentionally oatmeal; evening is a restrained warm reduction, not dark mode. */
@@ -1641,7 +1668,9 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .athletic-summary>.record{margin-top:0}
 .athletic-summary>.season-tag{max-width:calc(100% - 116px)}
 .athletic-summary>.athletic-logo{width:96px;height:96px;flex:0 0 96px;object-fit:contain;background:transparent;border-radius:0;padding:0;margin-right:12px}
-.athletic-card .athletic-ribbon{padding-left:20px;flex-shrink:0}
+.athletic-card .athletic-ribbon{padding-left:48px;flex-shrink:0}
+.next-box time{white-space:nowrap;font:inherit}
+.flag-football-card table{line-height:1}.flag-football-card td .flag-team-mark{vertical-align:top}
 .flag-football-card td{padding:1px 0}
 .card-count-1 .athletic-card{grid-template-columns:290px minmax(0,1fr);grid-template-rows:46px auto 1fr}
 .card-count-1 .athletic-summary{grid-column:1;grid-row:2;align-self:start}

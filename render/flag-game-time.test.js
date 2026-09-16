@@ -11,7 +11,7 @@ for (const time of [null, undefined, '', '12:00 PM', '2:00 PM']) {
       thisWeekOpponent: 'Langston-Ravens', thisWeekTime: time,
     } };
     const wall = renderDashboardV2(data);
-    assert.ok(wall.includes(`<b>Next game</b><span>vs. Langston-Ravens${time ? ` · ${time}` : ''}</span>`));
+    assert.ok(wall.includes(`<b>Next game</b><span>vs. Langston-Ravens${time ? ` · <time>${time}</time>` : ''}</span>`));
     const mobile = renderDashboardMobile(data);
     assert.ok(mobile.includes('<h3>Next game · Langston-Ravens</h3>'));
     assert.doesNotMatch(mobile, /<p class="note"><\/p>/);
