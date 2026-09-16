@@ -1741,14 +1741,20 @@ Cowboys exists), and that a team-less season still resolves.
 
 ### Three further consequences of loading the division schedule (Sept 16, 2026)
 
-All three were found by a Reviewer round rather than at authoring time, and all three are
-recorded rather than fixed: **one is presentation and two are behaviour changes.** ⚠ That split
-read "two are presentation, one is a behaviour change" for two rounds, which is unsatisfiable
-against the items beneath it — the second and third both describe themselves as changes in
-behaviour, so no assignment satisfies it. The same defect as the "Five/Three" count two sections
-below, in the section added to record consequences. A Reviewer round caught it. The trailing ⚠
-note about the Frozen-surfaces sentence is a note, not a fourth consequence; the heading counts
-the three bolded items.
+The three are the two duplicate "Cowboys" standings rows, `seasonComplete`'s denominator, and
+the abbr-keyed seasons' milestones. Named rather than counted by formatting: the ⚠ paragraphs
+are corrections to their neighbours rather than further consequences, and one of them wraps onto
+a line that also begins in bold, so "count the bold openers" would miscount. All three were found
+by a Reviewer round rather than at authoring time, and all three are recorded rather than fixed.
+By mechanism: **the first is presentation, the second and third change a computed value.**
+
+⚠ **That split read "two are presentation, one is a behaviour change" until a Reviewer round
+found it unsatisfiable against the items beneath it.** A first correction then justified itself
+by saying the second and third items "both describe themselves as changes in behaviour"; a
+further round showed the second does not — it calls itself "a rendered consequence", which is
+presentation-flavoured language, and only the third uses the word. The conclusion held on
+mechanism and the stated reason did not, so the reason is now the mechanism rather than the
+items' own wording.
 
 **Two standings rows now read "Cowboys", with identical artwork, on two live surfaces.**
 `parseFlagFootball` sets `standings[].team = team.teamName`, and both 8009182 (ours) and
@@ -3020,8 +3026,10 @@ columns…` and `never selects a later week of the shipped season` (both
 `test/flagFootballParser.test.js`), and `never fires on any later week of the season`
 (`digest/specialEventAccents.test.js`). One `it()` was added and none removed.
 
-⚠ **Three attempts at this paragraph have now been falsified, twice by the very commit that
-wrote them, and the third form answers the mechanism rather than the individual errors.**
+⚠ **Earlier forms of this paragraph were falsified twice, each by the very commit that wrote
+it, so what follows answers the mechanism rather than the individual errors.** No count of
+attempts is given: a paragraph that numbers its own revisions is falsified by its next revision,
+which is the failure being described.
 ⚠ **"Round 1" and "Round 2" here number attempts at *this paragraph*, and are offset by one
 from the branch's commit subjects**, which call `6768dc0` "Reviewer round 1" and `10a1274`
 "Reviewer round 2". The attempts are `e346784`, `6768dc0`, `10a1274`. Stated because a future
