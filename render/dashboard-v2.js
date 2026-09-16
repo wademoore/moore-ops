@@ -840,7 +840,7 @@ function renderLatest757Card(a, meet, cardCount) {
   const races = [...meet.races].sort((a, b) =>
     ((a.distance ?? Infinity) - (b.distance ?? Infinity)) || strokeRank(a) - strokeRank(b));
   // Use the same rendered card list as the panel and layout count.
-  const rowLimit = cardCount >= 3 ? 4 : 5;
+  const rowLimit = cardCount > 1 ? 4 : 5;
   const date = meet.dates.length > 1
     ? `${swimMeetDate(meet.startDate)} – ${swimMeetDate(meet.endDate)}`
     : swimMeetDate(meet.startDate);

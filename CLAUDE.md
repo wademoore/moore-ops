@@ -2349,7 +2349,7 @@ The card sorts a copy of the view by distance ascending, then Free, Breast,
 Back, Fly, then other strokes. Unknown distances go last; ties retain the
 producer's order. This is the September 15 household preference, not a change
 to the digest's ordering contract. The first four sorted races are shown when
-the rendered athletics list contains three or more cards; other layouts
+the rendered athletics list contains two or more cards; single-card layouts
 show up to five. This reserves room for the footer in the narrow card, with
 a compact “+N more races” notice for the rest. Older configured-event swims never
 replace these results. When the view is absent, the card is absent, including
@@ -2364,7 +2364,7 @@ During 757 season, this card replaces the configured-event 757 card on Dashboard
 v2 (household decision, September 15, 2026). Mobile and v1 continue to render the
 unchanged configured-event rows. Layout fixtures with every race count from 1 through 6, plus 10, verify
 the visible household order, exact overflow count, and footer bounds against
-both its card and the athletics panel at 2560×1440 in one- and three-card layouts.
+both its card and the athletics panel at 2560×1440 in one-, two-, and three-card layouts.
 The footer itself must have nonzero height, visible text and no internal clipping.
 
 The footer regression test was run against unchanged renderer `13ad7f5` before
@@ -2378,7 +2378,12 @@ The PR #90 follow-up reproduced four-race clipping against `2e4707a`: the
 now starts at four races instead of five, retaining four visible races without
 clipping. A shared rendered-card list supplies both layout counts and the row
 cap, filtering omitted cards instead of counting active seasons. The expanded
-757 unit/layout suite passes 41/41 locally.
+757 unit/layout suite passed 41/41 locally.
+The next PR #90 follow-up reproduced the two-card/five-race failure against
+`5bc63dc`: footer bottom 1217.46875px exceeded card bottom 1210px. Both multi-card
+layouts now cap at four rows; the single-card layout retains five. The footer
+matrix includes all 21 combinations of 1/2/3 cards and 1–6/10 races, with literal
+expected visible-row counts per case (not derived from the renderer's rule).
 
 **The field-level contract lives in `digest/athleticsParser.js`'s header**, not
 here and not in `render/dashboard.js`. That renderer holds the repo's only

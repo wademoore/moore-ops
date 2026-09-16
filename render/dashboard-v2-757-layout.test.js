@@ -12,7 +12,13 @@ let browser;
 before(async () => { browser = await chromium.launch({ headless: true, executablePath: resolveBrowserPath(process.env.DASHBOARD_BROWSER_PATH) }); });
 after(async () => { await browser?.close(); });
 
-for (const count of [1, 3]) for (const raceCount of [1, 2, 3, 4, 5, 6, 10]) {
+// Explicit acceptance cases: [rendered cards, available races, visible rows].
+const footerCases = [
+  [1, 1, 1], [1, 2, 2], [1, 3, 3], [1, 4, 4], [1, 5, 5], [1, 6, 5], [1, 10, 5],
+  [2, 1, 1], [2, 2, 2], [2, 3, 3], [2, 4, 4], [2, 5, 4], [2, 6, 4], [2, 10, 4],
+  [3, 1, 1], [3, 2, 2], [3, 3, 3], [3, 4, 4], [3, 5, 4], [3, 6, 4], [3, 10, 4],
+];
+for (const [count, raceCount, visibleCount] of footerCases) {
   it(`keeps the footer and ${raceCount} races within the ${count}-card panel`, async () => {
     const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
     const races = ['25y Butterfly', '25y Backstroke', '25y Breaststroke', '25y Freestyle', '50y Freestyle', '50y Breaststroke', '50y Backstroke', '50y Butterfly', '100y Freestyle', '100y Breaststroke'].slice(0, raceCount).map(event => ({
@@ -20,7 +26,7 @@ for (const count of [1, 3]) for (const raceCount of [1, 2, 3, 4, 5, 6, 10]) {
       personalBest: { seconds: 60, meet: '2026 VPSU Championship Meet', date: '2026-08-01' },
     }));
     await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
-      ...sampleDashboardV2Data.athletics, wavesActive: false, swim757Active: true, flagFootballActive: count === 3, sharksActive: count === 3,
+      ...sampleDashboardV2Data.athletics, wavesActive: false, swim757Active: true, flagFootballActive: count === 3, sharksActive: count >= 2,
       opheliaLatest757Meet: { meet: 'Latest race meet', startDate: '2026-09-12', endDate: '2026-09-12', dates: ['2026-09-12'], races },
     } }));
     await page.evaluate(() => document.fonts.ready);
@@ -49,7 +55,6 @@ for (const count of [1, 3]) for (const raceCount of [1, 2, 3, 4, 5, 6, 10]) {
     });
     assert.ok(result.footer.height > 0 && result.footer.bottom <= Math.min(result.footer.panelBottom, result.footer.cardBottom) && result.footer.textVisible && result.footer.unclipped, `Footer clipped: ${JSON.stringify(result.footer)}`);
     assert.equal(result.cardCount, count);
-    const visibleCount = Math.min(raceCount, result.cardCount >= 3 ? 4 : 5);
     assert.equal(result.count, visibleCount);
     assert.deepEqual(result.titles, ['25y Freestyle', '25y Breaststroke', '25y Backstroke', '25y Butterfly', '50y Freestyle'].filter(event => races.some(race => race.event === event)).slice(0, visibleCount));
     assert.equal(result.more, raceCount > visibleCount ? `+${raceCount - visibleCount} more races` : '');
