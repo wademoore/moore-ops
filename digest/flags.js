@@ -306,19 +306,6 @@ const EVALUATORS = [
     };
   },
 
-  // ── 757 Swim fall assessment monitoring ─────────────────────────────────
-  (ctx) => {
-    if (!inWindow(ctx.today, '2026-08-01', '2026-09-30')) return null;
-    return {
-      id: '757-fall-assessment',
-      level: 'blue',
-      title: '🔵 757 Swim Fall Assessment — Monitor',
-      body: 'Check gomotionapp.com/team/va757 and notifications+va757@gomotionapp.com for fall tryout/assessment dates for Ophelia.',
-      owner: ['wade', 'robyn'],
-      persist: true,
-    };
-  },
-
   // ── Monday trash reminder ────────────────────────────────────────────────
   // Surface even if not on calendar (it's every Monday).
   (ctx) => {
