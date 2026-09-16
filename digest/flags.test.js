@@ -696,7 +696,7 @@ describe('computeFlags — flag football schedule gap', () => {
 describe('757 Swim fall assessment reminder — retired', () => {
   // The evaluator emitted this reminder on every date in [2026-08-01,
   // 2026-09-30] inclusive. It was removed from EVALUATORS in digest/flags.js.
-  // Both window edges and an interior date are pinned here so a reinstatement
+  // Both window edges and two interior dates are pinned here so a reinstatement
   // fails rather than passing on the dates nobody checks.
   const FORMER_WINDOW = ['2026-08-01', '2026-08-03', '2026-09-16', '2026-09-30'];
 
@@ -707,10 +707,12 @@ describe('757 Swim fall assessment reminder — retired', () => {
     });
   }
 
-  // The removed flag sat between other flags in the returned array — after
-  // saturday-board-game on 2026-08-01, before trash-monday on 2026-08-03.
-  // These pin the full surviving id list on those two dates, so removing it
-  // cannot have dropped or reordered a neighbour.
+  // The removed flag was adjacent to a surviving flag in the returned array on
+  // each of these two dates — after saturday-board-game on 2026-08-01, before
+  // trash-monday on 2026-08-03. It was never between two flags: the returned
+  // array held at most two entries on any date in the window. These pin the
+  // full surviving id list on both dates, so removing it cannot have dropped a
+  // neighbour or reordered the survivors relative to each other.
   it('leaves the Saturday flag that preceded it untouched on 2026-08-01', () => {
     const ids = computeFlags(ctx({ today: d('2026-08-01') })).map(f => f.id);
     assert.deepEqual(ids, ['saturday-board-game']);
