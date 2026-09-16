@@ -110,6 +110,7 @@ const V2_LOGOS = {
   cowboys: optionalAssetDataUrl('logo-cowboys.png'),
   ravens: optionalAssetDataUrl('logo-ravens.png'),
   bears: optionalAssetDataUrl('logo-bears.png'),
+  browns: optionalAssetDataUrl('logo-browns.png'),
   broncos: optionalAssetDataUrl('logo-broncos.png'),
   texans: optionalAssetDataUrl('logo-texans.png'),
   panthers: optionalAssetDataUrl('logo-panthers.png'),
@@ -768,7 +769,7 @@ function renderUpcoming(data, latest757Card = safeLatest757Card(data.athletics |
 
 function renderStandingRows(rows, columns = ['team', 'w', 'l'], flagLogos = false) {
   return (rows || []).map(row => `<tr class="${row.isMe ? 'is-me' : ''}">
-    ${columns.map((column, index) => `<td class="${index === 0 ? 'team-cell' : ''}">${flagLogos && index === 0 ? flagLogoMark(row[column] ?? row.mascot) : ''}${esc(row[column] ?? row.mascot ?? '')}${flagLogos && index === 0 && row.isMe ? ' · Us' : ''}</td>`).join('')}
+    ${columns.map((column, index) => `<td class="${index === 0 ? 'team-cell' : ''}">${flagLogos && index === 0 ? (flagLogoMark(row[column] ?? row.mascot) || '<span class="flag-team-mark flag-team-placeholder" aria-hidden="true"></span>') : ''}${esc(row[column] ?? row.mascot ?? '')}${flagLogos && index === 0 && row.isMe ? ' · Us' : ''}</td>`).join('')}
   </tr>`).join('');
 }
 
@@ -1665,7 +1666,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .athletic-summary>.athletic-logo{width:96px;height:96px;flex:0 0 96px;object-fit:contain;background:transparent;border-radius:0;padding:0;margin-right:12px}
 .athletic-card .athletic-ribbon{padding-left:48px;flex-shrink:0}
 .next-box time{white-space:nowrap;font:inherit}
-.flag-football-card table{line-height:1}.flag-football-card td .flag-team-mark{vertical-align:top}
+.flag-football-card table{line-height:1}.flag-football-card td .flag-team-mark{vertical-align:top}.flag-team-placeholder{display:inline-block}
 .flag-football-card td{padding:1px 0}
 .flag-football-card table.standings-dense{font-size:16px}
 .flag-football-card table.standings-dense td{padding:0}

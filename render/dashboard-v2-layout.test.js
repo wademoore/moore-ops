@@ -154,6 +154,31 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     }
   });
 
+  it('aligns standings text with known and missing logos at regular and dense sizes', async () => {
+    for (const count of [6, 8]) {
+      await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
+        flagFootballActive: true,
+        standings: Array.from({ length: count }, (_, i) => ({ team: i === 0 ? 'Unknown team' : i === 1 ? 'Browns' : 'Ravens', w: 0, l: 0 })),
+      } }), { waitUntil: 'load' });
+      await page.evaluate(() => document.fonts.ready);
+      const result = await page.locator('.flag-football-card tbody').evaluate(tbody => {
+        const cells = [...tbody.querySelectorAll('.team-cell')];
+        return {
+          left: cells.map(cell => {
+            const range = document.createRange();
+            range.selectNodeContents([...cell.childNodes].find(node => node.nodeType === Node.TEXT_NODE));
+            return range.getBoundingClientRect().left;
+          }),
+          unknownImages: cells[0].querySelectorAll('img').length,
+          brownsLoaded: cells[1].querySelector('img').naturalWidth > 0,
+        };
+      });
+      assert.ok(result.left.every(left => Math.abs(left - result.left[0]) < 0.1));
+      assert.equal(result.unknownImages, 0);
+      assert.equal(result.brownsLoaded, true);
+    }
+  });
+
   it('shows the transparent calendar star alone and restores its fallback on image failure', async () => {
     const event = { title: 'Flag Football: Week 1 — Meet & Greet', subtitle: 'Myles', owner: [],
       raw: { id: 'flag-practice', start: { dateTime: '2026-09-13T11:00:00-04:00' } },

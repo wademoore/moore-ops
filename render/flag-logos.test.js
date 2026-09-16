@@ -5,7 +5,7 @@ import { renderDashboardMobile } from './dashboard-mobile.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
 
 it('has local artwork for every known fall mascot and leaves unknown names alone', () => {
-  for (const name of ['Cowboys', 'Ravens', 'Bears', 'Broncos', 'Texans', 'Panthers']) {
+  for (const name of ['Cowboys', 'Ravens', 'Bears', 'Broncos', 'Texans', 'Panthers', 'Browns']) {
     assert.match(flagTeamLogo(name), /^data:image\/png;base64,/);
   }
   assert.equal(flagTeamLogo('Langston-Ravens'), '');
@@ -67,4 +67,10 @@ it('preserves the Waves table six-row limit when the shared row helper becomes u
   assert.equal((wall.match(/<tr class=/g) || []).length, 6);
   assert.match(wall, /WaveTeam6/);
   assert.doesNotMatch(wall, /WaveTeam7|WaveTeam8/);
+});
+
+it('reserves the standings logo slot for unknown teams without inventing artwork', () => {
+  const html = renderAthletics({ athletics: { flagFootballActive: true,
+    standings: [{ team: 'Unknown team', w: 0, l: 0 }] } });
+  assert.match(html, /<span class="flag-team-mark flag-team-placeholder" aria-hidden="true"><\/span>Unknown team/);
 });
