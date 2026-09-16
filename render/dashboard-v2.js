@@ -527,7 +527,7 @@ function athleticsCardCount(data) {
   const a = data.athletics || {};
   return Number(Boolean(a.flagFootballActive))
     + Number(Boolean(a.wavesActive)) * 3
-    + Number(Boolean(!a.wavesActive && a.swim757Active))
+    + Number(Boolean(!a.wavesActive && a.swim757Active && a.opheliaLatest757Meet))
     + Number(Boolean(a.sharksActive));
 }
 
@@ -803,6 +803,57 @@ function renderSwimmerCard(organization, logoAsset, tone, rows, season, footer) 
   </article>`;
 }
 
+function swimMeetDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return '';
+  const date = new Date(`${value}T12:00:00Z`);
+  if (!Number.isFinite(date.getTime()) || date.toISOString().slice(0, 10) !== value) return '';
+  return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' }).format(date);
+}
+
+function swimResultTime(seconds) {
+  if (seconds == null) return '—';
+  const hundredths = Math.round(seconds * 100);
+  const minutes = Math.floor(hundredths / 6000);
+  const remainder = ((hundredths % 6000) / 100).toFixed(2);
+  return minutes ? `${minutes}:${remainder.padStart(5, '0')}` : remainder;
+}
+
+function renderLatest757Card(a) {
+  const meet = a.opheliaLatest757Meet;
+  // Household preference, 2026-09-15. Keep the producer's array unchanged;
+  // stable sorting retains its order for repeated races and unknown strokes.
+  const strokeRank = race => {
+    const stroke = race.event.replace(/^\d+\s*[ym]\s*/i, '').toLowerCase();
+    return ({ freestyle: 0, free: 0, breaststroke: 1, breast: 1, backstroke: 2, back: 2, butterfly: 3, fly: 3 })[stroke] ?? 4;
+  };
+  const races = [...meet.races].sort((a, b) =>
+    ((a.distance ?? Infinity) - (b.distance ?? Infinity)) || strokeRank(a) - strokeRank(b));
+  const date = meet.dates.length > 1
+    ? `${swimMeetDate(meet.startDate)} – ${swimMeetDate(meet.endDate)}`
+    : swimMeetDate(meet.startDate);
+  const rows = races.slice(0, 5).map(race => {
+    const pb = race.personalBest;
+    const isPB = !race.dq && race.isPersonalBest;
+    const pbDate = pb ? swimMeetDate(pb.date) : '';
+    return `<div class="swim-row latest-757-race">
+      <span>${esc(race.event)} <small>${esc(race.course || '')}</small></span>
+      <strong>${race.dq ? 'DQ' : esc(swimResultTime(race.seconds))}</strong>
+      ${isPB ? '<em>PB</em>' : '<em></em>'}
+      ${isPB ? '' : `<div class="latest-757-pb">${pb ? `PB ${esc(swimResultTime(pb.seconds))} · ${esc(pb.meet)}${pbDate ? ` · ${esc(pbDate)}` : ''}` : 'PB not recorded'}</div>`}
+    </div>`;
+  }).join('');
+  return `<article class="athletic-card tone-purple latest-757-card${races.length >= 5 ? ' latest-757-dense' : ''}">
+    <div class="athletic-ribbon"><span>757 Swim</span></div>
+    <div class="athletic-summary"><div class="season-tag">${esc(a.opheliaSeason || 'Season')}</div>${logo(V2_LOGOS.swim757, 'athletic-logo')}</div>
+    <div class="latest-757-results">
+      <div class="latest-757-meet"><strong>${esc(meet.meet)}</strong><span>${esc(date)}</span></div>
+      <div class="swim-rows">${rows}</div>
+      ${races.length > 5 ? `<div class="latest-757-more">+${races.length - 5} more races</div>` : ''}
+    </div>
+    ${a.opheliaFooter ? `<div class="athletic-footer">${esc(a.opheliaFooter)}</div>` : ''}
+  </article>`;
+}
+
 function conversationalMatchDate(dateValue, timeValue) {
   if (!dateValue) return String(timeValue || '').trim();
   const dateKey = String(dateValue).slice(0, 10);
@@ -888,7 +939,7 @@ function renderAthletics(data) {
   if (a.flagFootballActive) cards.push(renderFlagFootballCard(a));
   if (a.wavesActive) cards.push(renderWavesCard(a));
   if (a.wavesActive) cards.push(renderSwimmerCard('Wellington Waves', V2_LOGOS.waves, 'red', a.mylesPBRows, a.mylesSeason, a.mylesFooter));
-  if (a.wavesActive || a.swim757Active) cards.push(renderSwimmerCard(
+  if (a.wavesActive) cards.push(renderSwimmerCard(
     a.wavesActive ? 'Wellington Waves' : '757 Swim',
     a.wavesActive ? V2_LOGOS.waves : V2_LOGOS.swim757,
     'purple',
@@ -896,6 +947,7 @@ function renderAthletics(data) {
     a.opheliaSeason,
     a.opheliaFooter,
   ));
+  else if (a.swim757Active && a.opheliaLatest757Meet) cards.push(renderLatest757Card(a));
   if (a.sharksActive) cards.push(renderSharksCard(a));
 
   // The Spotlight presentation and the ordinary presentation both fill the
@@ -1560,6 +1612,14 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .spotlight-title{font-family:"Roboto Slab",Georgia,serif;font-size:24px;line-height:1.05;font-weight:600;color:${COLORS.ink};margin-top:8px}
 .spotlight-detail{font-size:19px;line-height:1.15;font-weight:500;color:var(--secondary);margin-top:6px}
 /* Prominent team artwork below the kid-colored ribbon. */
+.latest-757-meet{display:flex;flex-direction:column;margin:2px 0 6px;line-height:1.1}.latest-757-meet strong{font-size:20px}.latest-757-meet span{font-size:16px;color:var(--secondary)}
+.latest-757-race{grid-template-columns:minmax(0,1fr) auto 32px;gap:2px 8px;padding:3px 0}.latest-757-race>span{font-size:18px}.latest-757-pb{grid-column:1/-1;font-size:14px;line-height:1.15;color:var(--secondary);overflow-wrap:anywhere}
+.card-count-1 .latest-757-results{grid-column:2;grid-row:2/4}.card-count-1 .latest-757-results .swim-rows{display:block}
+.card-count-1 .latest-757-race{grid-template-columns:minmax(0,1fr) 90px 32px minmax(0,1.6fr)}.card-count-1 .latest-757-pb{grid-column:4}
+.latest-757-more{font-size:14px;line-height:1.1;margin-top:3px;color:var(--secondary)}
+.latest-757-dense .latest-757-race{padding:0;row-gap:1px}.latest-757-dense .latest-757-race>strong{font-size:22px}
+.latest-757-dense .latest-757-meet{margin-bottom:2px}.latest-757-dense .latest-757-more{margin-top:1px}
+.latest-757-dense .latest-757-results{padding-bottom:4px}
 .athletic-summary{display:flex;align-items:center;justify-content:space-between;min-height:96px;flex-shrink:0;gap:12px}
 .athletic-summary>.record{margin-top:0}
 .athletic-summary>.season-tag{max-width:calc(100% - 116px)}

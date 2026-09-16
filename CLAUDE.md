@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2680+ passing with a browser
+- Run npm test after changes — must stay at 2704+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row). **This line and the floor at the end of the current baseline
   entry are one figure in two places — move both or neither.** It has now gone
@@ -750,7 +750,7 @@ test is what makes that edit hard to forget.
 - `digest/athleticsParser.js` — thin coordinator; imports the three parsers above, sets season-active flags, assembles final athletics object
 - `digest/latest757Meet.js` — internal module, imported only from `swimParser.js`; selects Ophelia's
   most recent 757 meet and its individual races from `swim-results.json` + `pb-records.json`. Pure.
-  Read by no renderer — see "Latest 757 meet view"
+  Its athletics view is consumed by Dashboard v2 — see "Latest 757 meet view"
 - `digest/sportsConfig.js` — exports only `isSeasonActive(sport, referenceDate)` (pure function — no data)
 
 ### Swim data conventions
@@ -2329,8 +2329,37 @@ the email renderer, `data/flag-football.json`, `data/sports-config.json`,
 
 `athletics.opheliaLatest757Meet` — every individual race Ophelia swam at her most
 recent 757swim meet, with each race's course-scoped personal best beside it.
-Additive, read-only, and **read by no renderer**: presentation is a separate
-implementer's work, and this is the shape they build against.
+Additive and read-only. Dashboard v2 now consumes this view for Ophelia's 757
+card; the producer's contract and existing per-configured-event rows are unchanged.
+
+### Dashboard v2 presentation (household decision, September 15, 2026)
+
+The 757 card uses the Waves swimmer card's purple ribbon, logo, season label,
+race rows and footer styling. It adds the meet name and calendar date/range
+above the races, and PB meet/date provenance under each result. A current-race
+PB is marked PB without repeating its time or provenance line. Other PBs retain
+their meet and date; missing or malformed PB dates are omitted without throwing.
+DQ races show DQ without a result time;
+a missing non-DQ time shows a dash. A missing PB entry says “PB not recorded.”
+
+The card sorts a copy of the view by distance ascending, then Free, Breast,
+Back, Fly, then other strokes. Unknown distances go last; ties retain the
+producer's order. This is the September 15 household preference, not a change
+to the digest's ordering contract. The first five sorted races are shown, with
+a compact “+N more races” notice for the rest. Older configured-event swims never
+replace these results. When the view is absent, the card is absent, including
+from layout counts. Waves and off-season gates continue to apply.
+
+The compact single-card layout puts PB provenance beside the race; multi-card
+layouts place it beneath. Tests cover the KickOff PBs, the April SCM meet's DQ,
+the household order, missing data, multi-day dates, and both real examples in
+one-, two-, and three-card browser layouts. The frozen v1 renderer, mobile
+renderer, digest modules, data files, and field contract are unchanged.
+During 757 season, this card replaces the configured-event 757 card on Dashboard
+v2 (household decision, September 15, 2026). Mobile and v1 continue to render the
+unchanged configured-event rows. Seven-race layout fixtures verify the five-row
+cap and overflow notice clear the athletics panel and footer at 2560×1440 in
+both one- and three-card layouts.
 
 **The field-level contract lives in `digest/athleticsParser.js`'s header**, not
 here and not in `render/dashboard.js`. That renderer holds the repo's only
@@ -2803,7 +2832,7 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 - **`digest/routineAnchorsParser.js`** — see the Routine Anchors section above. No file I/O of its own; reads `data/routine-anchors.json` via `builder.js`'s standard `readDataFile()`. Two independent suppression checks — `isRoutineSuppressedByCalendar` (school-type, 🏫-calendar-title scan) and `isCaregiverAnchorSuppressed` (caregiver-type, checks `emmaUnavailabilityParser.js` blocks) — with the branching between them decided by `builder.js`, keyed on `anchor.caregiver` presence.
 - **`digest/latest757Meet.js`** — added Sept 2026. Pure selector behind `athletics.opheliaLatest757Meet`;
   identifies 757 rows by `team`, never by course, and groups meets on (name, consecutive-date run).
-  Nothing renders it yet. See "Latest 757 meet view".
+  Dashboard v2 renders its athletics view. See "Latest 757 meet view".
 - **`digest/generateTasks.js`** — derives today's task list from events and school strip.
 
 ## Key docs
@@ -2820,7 +2849,30 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 ## Test baseline
 
-### Current baseline — measured Sept 15, 2026 on the latest-757-meet-view branch
+### Current baseline — measured Sept 15, 2026 on PR #89's 757 card follow-up
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| GitHub CI `npm test`, browser enabled | 2704 | **2704** | **0** | **0** |
+
+Measured on commit `5abe76e`, branch `codex/757-meet-card`, in
+[CI run 35041169394](https://github.com/wademoore/moore-ops/actions/runs/35041169394).
+The UTC log date is September 16; the household date is September 15.
+The original card implementation measured 2697 passing in CI; the follow-up
+adds seven tests: four invalid/missing PB-date cases, one exactly-five-races
+boundary case, and two seven-race browser layouts. The PR as a whole adds 24
+tests to the prior 2680 baseline. Existing acceptance tests now assert omitted
+current-PB provenance and the capped household order.
+
+The local Windows `npm test` invocation discovers zero tests because of its
+single-quoted globs, so it is not the measurement above. Focused local checks
+passed; the full-suite baseline is the linked CI result. Waves athletics HTML
+was also compared byte-for-byte against `593476a` with both values of the 757
+season flag and was identical.
+
+**Coder mode must keep `npm test` at 2704+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 15, 2026 on the latest-757-meet-view branch
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
@@ -2912,7 +2964,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2680+ with no failures once a browser resolves.**
+**Previous floor: 2680 passing tests; superseded by the current baseline above.**
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was
 run, and quoting a figure that was not taken is exactly the unfalsifiable claim this
