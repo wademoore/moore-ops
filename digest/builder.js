@@ -37,6 +37,14 @@
  *   season row is reported as the amber `flag-football-schedule-gap` flag
  *   rather than resolving silently.
  *   athletics:       AthleticsData
+ *
+ *   AthleticsData gained one additive, read-only key on 2026-09-15:
+ *   `opheliaLatest757Meet`, every individual race Ophelia swam at her most
+ *   recent 757swim meet, or null. No renderer reads it yet. Its field-level
+ *   contract — field meanings, absent-vs-empty, DQ representation, race
+ *   order and season gating — is documented in the header of
+ *   digest/athleticsParser.js, which assembles AthleticsData; the grouping
+ *   and ordering rules are in digest/latest757Meet.js.
  *   menuEvent:       ResolvedEvent|null   today's dinner
  *   tomorrowMenu:    ResolvedEvent|null   tomorrow's dinner
  *   nationalsData:   null                 populated by index.js after sports fetch

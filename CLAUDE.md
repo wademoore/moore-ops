@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2642+ passing with a browser
+- Run npm test after changes — must stay at 2680+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row). **This line and the floor at the end of the current baseline
   entry are one figure in two places — move both or neither.** It has now gone
@@ -748,6 +748,9 @@ test is what makes that edit hard to forget.
 - `digest/swimParser.js` — internal module; derives PB rows, season labels from pb-records.json + sports-config.json
 - `digest/wavesParser.js` — internal module; derives division record, standings, last meet, next meet from waves-season.json
 - `digest/athleticsParser.js` — thin coordinator; imports the three parsers above, sets season-active flags, assembles final athletics object
+- `digest/latest757Meet.js` — internal module, imported only from `swimParser.js`; selects Ophelia's
+  most recent 757 meet and its individual races from `swim-results.json` + `pb-records.json`. Pure.
+  Read by no renderer — see "Latest 757 meet view"
 - `digest/sportsConfig.js` — exports only `isSeasonActive(sport, referenceDate)` (pure function — no data)
 
 ### Swim data conventions
@@ -757,7 +760,7 @@ test is what makes that edit hard to forget.
 - **UTF-8 BOM risk on JSON data files:** JSON files (not just CSVs) can carry a UTF-8 BOM. `league-results.json` was confirmed affected during a 2026 Week 3 append. Strip defensively on read in any script consuming files from `data/`.
 - **swim-results.json DQ convention (added July 2026, matching league-results.json's existing shape):** `dq: true` rows use `seconds: null`, `place: null`, `totalSwimmers: null`, `heat: null`, `totalHeats: null`, `heatPlace: null`. First applied to Ophelia's July 20, 2026 25m Butterfly DQ.
 - **`unofficial: true` marks a result that no sanctioning body will ever certify (added Sept 12, 2026).** First applied to Ophelia's three swims at the 757swim Season KickOff intrasquad, where administrative failures meant no Hy-Tek file was produced. The marker rides on the **row** in `swim-results.json`, on the **entry** in `pb-records.json`, and on the **overlay row** in `swim-annotations.json` — all three, deliberately, so it travels with the data instead of living only in a `note`. `pb-records.json`'s `{seconds, date, meet}` shape has nowhere else to say it, and a later Hy-Tek load that supersedes these rows needs to see that the standing PB came from an uncertified swim. Absent means official; nothing reads the key today, so it is a record for the next writer rather than behaviour. What an in-house result counts toward is a household decision recorded in `.claude/skills/moore-ops-updater/SKILL.md` → `unofficial: true`.
-  ⚠ **The consequence reaches the wall, and the marker does not travel with it.** `events757` already configures `25y Breast` and `25y Fly`, so `isNewPB` goes true for both and `renderSwimmerCard()` in `render/dashboard-v2.js` prints **`NEW PB!`** against each — **two new badges on the production v2 dashboard, sourced from an unofficial intrasquad, with nothing marking them unofficial.** `swimParser.js` projects only `{seconds, date, meet}` out of a PB entry, so `unofficial` is dropped before any renderer sees it. This is *in spec* — it is what "the fastest recorded time sets the best" means — but it is the single most visible effect of recording an unofficial meet and it went unrecorded through a first Reviewer round. If an unofficial PB should ever be badged differently, `swimParser.js`'s PB projection is the one line to change. (25y Free already showed `NEW PB!` before this change; it is unrelated.)
+  ⚠ **The consequence reaches the wall, and the marker does not travel with it.** `events757` already configures `25y Breast` and `25y Fly`, so `isNewPB` goes true for both and `renderSwimmerCard()` in `render/dashboard-v2.js` prints **`NEW PB!`** against each — **two new badges on the production v2 dashboard, sourced from an unofficial intrasquad, with nothing marking them unofficial.** `swimParser.js` projects only `{seconds, date, meet}` out of a PB entry, so `unofficial` is dropped before any renderer sees it. This is *in spec* — it is what "the fastest recorded time sets the best" means — but it is the single most visible effect of recording an unofficial meet and it went unrecorded through a first Reviewer round. If an unofficial PB should ever be badged differently, there are now **two** PB projections to change, not one: `swimParser.js`'s, and `digest/latest757Meet.js`'s `buildRace()`, which projects the same `{seconds, date, meet}` and likewise drops `unofficial`. This sentence read "the one line to change" until Sept 15, 2026, when the latest-757-meet view added the second projection and did not update it; a Reviewer round caught it. (25y Free already showed `NEW PB!` before this change; it is unrelated.)
 - **The `swim-annotations.json` rows for an SCY meet are written and read by nothing.** `.claude/skills/moore-ops-updater/SKILL.md` says "SCY/757swim results do not need annotation entries", and it is right about the mechanism: `swimParser.js` consults `annotationMap` **only inside** the `v2Results` branch, and `league-results-v2.json` is VPSU-only, so `Moore Ophelia|25y Breaststroke|2026-09-12` can never match. Retained `swim-results.json` rows carry their own `pb`/`note` instead. The three KickOff rows were written anyway, on request, because the overlay is the forward-looking home for pb/note and a later Hy-Tek load moving 757 onto a v2-style path would need them. SKILL.md says they are *not needed*, not that they are forbidden, so this is a redundancy rather than a contradiction — but it is invisible redundancy, and anyone adding a fourth should know no code path can read it.
 - **An unofficial 757 meet still takes `league: "USA Swimming"`.** It reads like a sanctioning claim and is not one — `league` is this file's *provenance discriminator*, separating the 757 side from `"VPSU Summer Swim"`, and `unofficial: true` on the same row carries the certification question instead.
 - **An intrasquad has no age bracket, so `ageGroup` is omitted rather than guessed.** The KickOff ran open girls events ("Girls 25 Yard Breast"); writing `"Girls 8 & Under"` would invent a bracket the meet did not have. Of the 107 pre-existing rows, **22 omit the key and a further 6 carry it as `null` — 28 with no usable value — and all 28 are SCM; every one of the 17 SCY rows carries a real bracket.** So the precedent is weaker than a bare count suggests and is recorded that way rather than rounded up. What makes the omission safe is not precedent but that every consumer guards it (`waves-champs-qualifier/helpers.js` returns false on a falsy `ageGroup`; `check.js` ternaries it) — and **the 6 explicit nulls are the proof that the falsy path is already exercised by production data** rather than only by the guard's existence. *(This first read "22 of 90", taking the SCM subtotal for the file total, and counted only absent keys — which reaches none of the 6 nulls.)*
@@ -2322,6 +2325,184 @@ left until that merges. Also untouched: `render/` in its entirety, Dashboard v1,
 the email renderer, `data/flag-football.json`, `data/sports-config.json`,
 `data/special-events.json`, and every kill switch.
 
+## Latest 757 meet view (digest, September 2026)
+
+`athletics.opheliaLatest757Meet` — every individual race Ophelia swam at her most
+recent 757swim meet, with each race's course-scoped personal best beside it.
+Additive, read-only, and **read by no renderer**: presentation is a separate
+implementer's work, and this is the shape they build against.
+
+**The field-level contract lives in `digest/athleticsParser.js`'s header**, not
+here and not in `render/dashboard.js`. That renderer holds the repo's only
+*complete* `AthleticsData` typedef and is a frozen surface, so it was deliberately
+not edited; `athleticsParser.js` is the module that assembles `AthleticsData`, which
+makes it the producer and the right home. `digest/builder.js`'s `OUTPUT —
+digestData` block carries a pointer to it, because that block is what CLAUDE.md
+sends a Designer to read. The grouping and ordering rules are in
+`digest/latest757Meet.js`.
+
+**Extend, never replace.** The existing per-configured-event rows in
+`opheliaPBRows` are untouched. Verified rather than assumed: `render/dashboard.js`
+— the frozen v1 surface — reads `opheliaPBRows` at lines 655 and 663, and
+`render/dashboard.test.js:93` fixtures it, so changing that output shape would
+break a frozen renderer and its tests.
+
+**Why it exists.** `events757` in `data/sports-config.json` configures four events;
+the 2026-09-12 KickOff included a `50y Backstroke`, which is not one of them. The
+per-configured-event rows can therefore never show every race she swam.
+
+### Identification is by team, never by course
+
+A 757 row is `swimmer === 'Ophelia' && team === '757 Swim' && !relay`. Measured on
+`data/swim-results.json`: of the 24 rows carrying that team, **20 are `SCY` and 4
+are `SCM`** — the 2026-04-25 `14 and Under Spring Challenge` was swum in a 25-metre
+pool. A course test partitions the wrong way in both directions, and a mutation
+that substitutes one reddens six cases.
+
+**Anchor for 24 / 20 / 4, and a warning.** They count rows in
+`data/swim-results.json` with `team: "757 Swim"`, so **every one of them moves the
+next time the Updater records a 757 meet** — which the 2026-27 season guarantees
+before April 2027. No test asserts any of the three, so they rot silently. The same
+figures appear in `digest/latest757Meet.js`'s header comment, which makes two places
+to correct. What the *argument* rests on is only that both courses are present, and
+that does not depend on the counts.
+
+Re-derive before quoting, with a command a read-only Reviewer can actually run —
+`node -e` is refused by `guard-readonly.mjs`, so the handle previously offered here
+could not be exercised by the role expected to check it:
+
+```
+grep -c '"757 Swim"' data/swim-results.json             # the 24
+grep -c '"team": "757 Swim"' data/swim-results.json     # also 24 — see below
+```
+
+The second command is what makes the first one's answer a **row** count rather than
+a line count: it shows the token occurs only ever as a `team` value, so no other
+field can inflate the total. Both return 24; if they ever disagree, the first one is
+no longer counting rows.
+
+The SCY/SCM split needs the rows themselves; `grep -n '"757 Swim"' data/swim-results.json`
+locates all of them, and the four SCM rows are the 2026-04-25 block.
+
+Rows are read from the **raw** `swimResults` array, not from `swimParser`'s merged
+`sortedResults`. `sortedResults` drops any `swim-results.json` row shadowed by a
+`league-results-v2.json` row on `(canonical swimmer, event, date)`, and
+`league-results-v2.json` is VPSU-only — so such a shadow would be a data error that
+silently deleted a 757 race. The two sources agree today (no 757 date falls in a
+VPSU month), so this buys robustness, not a behaviour difference.
+
+### Meet grouping — meet name plus a maximal run of consecutive dates
+
+`data/swim-results.json` carries **no meet identifier**. Its key set is `age,
+ageGroup, course, date, dq, event, heat, heatCount, heatNumber, heatPlace, league,
+meet, note, overallCount, overallPlace, pb, place, points, relay, seconds, swimmer,
+team, teamPoints, totalHeats, totalSwimmers, unofficial` — a name and nothing else.
+So an occurrence is *(meet name, maximal run of consecutive calendar days)*:
+
+| case | outcome |
+|---|---|
+| a multi-day meet | adjacent dates are one run → one meet |
+| the same name in two years | runs ~12 months apart → two meets |
+| two meets on one date | different names → two meets |
+
+Each has a test. Date arithmetic goes through `Date.UTC` on the parsed `YYYY-MM-DD`
+parts, so there is no DST boundary to land on — the same anchoring rule this file
+states for all-day date arithmetic.
+
+**The one case it cannot separate** is two genuinely different meets sharing a name
+on adjacent days. No rule can, from a name alone, and it is rarer than the
+recurring-year case a plain name key would get wrong.
+
+**Latest meet** is `endDate` desc, then `startDate` desc, then meet name ascending.
+The third key is an arbitrary but total tiebreak, stated as arbitrary: two meets
+that ended on the same day are not rankable from this data, and a deterministic
+arbitrary answer beats one that depends on the order rows sit in the file. A test
+reverses the input and asserts the same view.
+
+### Race order — date, then distance, then event name
+
+Not array order, and the data is what rules the alternatives out. `heat` is `2` on
+all three 2026-09-12 rows and the key is **absent** on all four 2026-04-25 rows, so
+it discriminates nothing. (**Anchor:** that is an observation of those seven rows as
+they stand, duplicated in `digest/latest757Meet.js`'s `compareRaces` comment, and a
+future meet may well record varied heats. It would not change the ordering rule —
+which is fixed and tested — only this particular argument for it.) `place` is a finish, so ordering by it would rank by
+performance rather than by programme. Distance ascending groups the sprints; the
+event-name key exists only to make the order total.
+
+The real data proves this is observably not array order: `data/swim-results.json`
+stores the April meet as Free, Breast, Back, Fly and the view emits Back, Breast,
+Fly, Free. It does **not** prove the distance key — the KickOff's three races sort
+identically with and without it, which is why a fixture case (`100y Freestyle`
+against `25y Backstroke`, where name-ascending puts the 100 first) carries that one.
+
+### DQ and personal best
+
+A DQ is emitted as a race with `dq: true` and `seconds: null`, always, and is never
+dropped and never given an older swim's time. `personalBest` still reports the
+standing record — for the April DQ that is `35.47` from `WT vs EH`, which must
+never become that race's result.
+
+`personalBest` is the `pb-records.json` entry at the verbatim key
+`Ophelia|<event>|<course>`. Applying `swimParser.js`'s `EVENT_NAME_MAP` here would
+be **wrong**, not merely unnecessary.
+
+⚠ **This paragraph asserted the opposite until a Reviewer round falsified it, and
+the error was in the same sentence in two files.** It read: *"measured, all 24 757
+rows and all 11 Ophelia PB keys already use full event names, so a mapping would be
+a no-op."* Both halves are false. All 24 757 rows are full-named, so the map is a
+no-op on every row this module can see — but **10 of the 11 Ophelia PB keys are
+full-named, not 11**. The eleventh is `Ophelia|100m IM|SCM`, and `100m IM` is the
+*abbreviated* form by that very map. Mapping before lookup builds
+`Ophelia|100m Individual Medley|SCM`, which is `undefined` in that file, while the
+verbatim key returns `{seconds: 156.89, date: "2026-07-20", meet: "WT vs WF"}`. So
+the map turns a hit into a miss for the one key where it applies at all. The
+shipped code was always the verbatim key and did not change; only the justification
+was wrong. **Anchor:** these counts are of `pb-records.json` keys beginning
+`Ophelia|` and of `swim-results.json` rows with `team: "757 Swim"`; both move the
+next time either file is edited, so re-derive rather than quote. A genuine mismatch
+fails closed to `null` rather than pointing at a different event. `isPersonalBest` requires the record to name
+this exact swim on **all three** of seconds, date and meet — date and meet alone
+would be ambiguous at a prelims-and-finals meet, where two rows share both and only
+the faster is the record.
+
+An event's first-ever swim is its own standing best, so it reports
+`isPersonalBest: true` rather than showing nothing. All three KickOff races do.
+
+⚠ **`isPersonalBest`'s `!dq` clause is redundant and could not be falsified.** The
+DQ branch guarantees a DQ has no seconds, so the `seconds !== null` clause already
+covers it and no single-point *weakening* of `!dq` reddens anything. (Precisely:
+replacing it with `true` is invisible. Replacing it with `false` would redden
+broadly — but that strengthens the guard into rejecting everything, which proves
+nothing about the clause. A Reviewer round caught the earlier wording, which said
+"no single-point mutation" and was therefore too strong.) It is kept as
+defence in depth and reported rather than deleted; a two-point mutation damaging
+both halves does redden, which is the evidence the pair is load-bearing rather than
+that both halves are dead.
+
+### Gating, and what this must never feed
+
+Present under exactly the condition that produces the existing per-configured-event
+757 rows — the 757 season active and the Waves season not. During Waves season it is
+`null`, because those rows are absent then too. The real config's two windows do not
+overlap, so the `!wavesActive` half of the gate is exercised only by a fixture
+config that widens the Waves window; without that case a mutation dropping it
+survives, which is how the gap was found.
+
+**The 2026-09-15 household decision** recorded in
+`.claude/skills/moore-ops-updater/SKILL.md` says in-house meet results count toward
+personal bests but **not** toward qualifying standards or champs targets. This view
+carries in-house results — the KickOff was an intrasquad — so **nothing here may
+ever feed qualifying, standards or champs logic.** No code in this repository
+enforces the second half of that rule; the only thing keeping it true is that this
+output is read by presentation and by nothing else. Both module headers say so.
+
+### Absent versus empty
+
+The key is `null` — never `{}`, never omitted — when the gate is closed or no 757
+rows exist. When non-null, `races` and `dates` are both non-empty. A mutation
+returning `{}` instead of `null` reddens.
+
 ## Activity-overlap flag demotion (September 14, 2026)
 
 The `activity-overlap` flag recites the always-on split-coverage rule — Wade takes Myles,
@@ -2620,6 +2801,9 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 - **`digest/flags.js`** — computes alert flags (gear reminders, bag-prep warnings, etc.) from resolved events. Added (Aug 2026) an Emma-unavailability evaluator reading `ctx.emmaUnavailableBlocks` — no I/O, pure. The kid-overlap evaluator is the one flag carrying `noteOnly: true` (Sept 2026) — see "Activity-overlap flag demotion".
 - **`digest/emmaUnavailabilityParser.js`** — added Aug 2026. Fetches and parses Emma's UTA reserve-duty / annual-tour-duty unavailability blocks from the "House Manager" calendar (`690a345d...@group.calendar.google.com`, intentionally excluded from `FAMILY_CALENDARS`). Exports pure helpers (`extractUnavailabilityType`, `exclusiveEndToInclusive`, `buildUnavailabilityBlock`, `parseEmmaUnavailabilityBlocks`) plus the async `fetchEmmaUnavailabilityBlocks(today)` entry point, which takes the caller's already ET-anchored `today` and never constructs `new Date()` itself.
 - **`digest/routineAnchorsParser.js`** — see the Routine Anchors section above. No file I/O of its own; reads `data/routine-anchors.json` via `builder.js`'s standard `readDataFile()`. Two independent suppression checks — `isRoutineSuppressedByCalendar` (school-type, 🏫-calendar-title scan) and `isCaregiverAnchorSuppressed` (caregiver-type, checks `emmaUnavailabilityParser.js` blocks) — with the branching between them decided by `builder.js`, keyed on `anchor.caregiver` presence.
+- **`digest/latest757Meet.js`** — added Sept 2026. Pure selector behind `athletics.opheliaLatest757Meet`;
+  identifies 757 rows by `team`, never by course, and groups meets on (name, consecutive-date run).
+  Nothing renders it yet. See "Latest 757 meet view".
 - **`digest/generateTasks.js`** — derives today's task list from events and school strip.
 
 ## Key docs
@@ -2636,7 +2820,123 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 ## Test baseline
 
-### Current baseline — measured Sept 14, 2026 on the activity-overlap demotion branch
+### Current baseline — measured Sept 15, 2026 on the latest-757-meet-view branch
+
+| Invocation | tests | pass | fail | cancelled | duration |
+|---|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2680 | **2680** | **0** | **0** | 45581.108427 ms |
+
+Anchor for every figure in this entry: it counts the tests `npm test`'s globs select
+on this branch with a browser resolving. It moves when a test file is added or
+removed, or when no browser resolves.
+
+**Re-measured after each of three Reviewer rounds**, whose corrections were
+documentation and comments only — `git diff` over `digest/` and `test/` across all
+of them contains no non-comment line. **The counts are identical on every run of
+this branch**, which is the part that means anything; the duration is the latest run
+and is recorded for completeness, not as a comparable figure.
+
+⚠ **Do not quote the duration as evidence of anything, and do not maintain a list of
+them.** Five runs of byte-identical code on this machine varied by about **15%** of
+the fastest — the same suite, the same inputs, no code change between them. An
+earlier version of this paragraph listed every duration and stated the spread
+between them; each documentation edit then added a run and falsified the spread, so
+the list was a figure that rotted on every commit that touched it. It is deliberately
+not reproduced. Both harnesses below were re-run on this tree and reported the same
+results.
+
+Measured on `claude/dazzling-einstein-x3jhzm`, branched from `origin/main` at
+**`777bb3f`**. `git fetch origin main` was run before deriving the merge base, per
+the standing warning; here it moved the ref `2d01027..777bb3f` and the branch was
+already at the new tip, so `HEAD == merge-base == origin/main`. The base was
+re-measured in this session, after `npm ci` and before any edit: **2644 / 2644 / 0 /
+0, 51781.15421 ms**. Note that is **not** the 2642 the Sept 14 entry records — main
+has since taken #85, #86 and #87. Re-measure; the run costs less than the correction.
+
+This change adds **+36**, all in one new file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/latest757Meet.test.js` | — (new) | 36 | +36 |
+
+2644 + 36 = 2680, and **2680 is the measured figure in the table above rather than
+that sum** — the agreement is reassuring and is not itself evidence.
+
+**No existing test was deleted, skipped, weakened, or updated, and none needed to
+be.** `git diff --numstat 777bb3f -- 'test/' 'digest/*.test.js' 'render/*.test.js'`
+returns exactly one row:
+
+```
+416	0	test/latest757Meet.test.js
+```
+
+That is the new file — 416 insertions, **0 deletions** — and **no other tracked test
+file appears at all**. The insertion count is the whole file's length, so it moves
+whenever this branch edits that file again; **0 deletions and the absence of every
+other path are the load-bearing parts**, and neither depends on the count. No
+`.skip` or `.todo` appears anywhere in the diff or in either new file. The change is
+purely additive: one new key, and nothing in the suite asserted an exhaustive
+athletics key set.
+
+⚠ **This paragraph has now been wrong twice, and the second time is the more
+instructive.** It first said the command "returns no rows at all" — true when
+written, because the file was still untracked and `git diff` against a commit cannot
+see an untracked file, and false the instant the change was committed. A Reviewer
+round ran it and got a row. The correction then quoted **406**, which was the count
+*before* that same correction commit appended a ten-line header to the very file it
+was measuring; a second Reviewer round caught it. The corrected figure is the one in
+the fenced block above and is deliberately not restated here — this file's own rule
+is that a retraction names the error and never repeats the live value, because a
+number inside a parenthetical nobody re-reads is one more place to rot. So the
+retraction was falsified by the commit carrying it.
+
+**Two rules come out of that, and they are worth more than the number.** A figure
+describing a commit must be taken **after** every edit in that commit, including the
+edits made while writing the figure down — it is not enough to measure after the
+last *code* edit if a documentation edit touches a file the figure counts. And a
+count of a file's own length is the most fragile anchor available: prefer the
+property (`0` deletions, no other path present) over the magnitude.
+
+**Three runs failed during development, all in the new tests, all before the
+freeze.** The mutation harness's first pass scored three rows SURVIVED — `!dq` in
+`isPersonalBest`, the distance key in the race order, and the `!wavesActive` half of
+the gate — because the real data cannot discriminate any of the three (the KickOff's
+races sort identically with and without the distance key; the config's Waves and 757
+windows do not overlap). Two were closed with fixture cases and one is reported as
+unfalsifiable; see the Latest 757 meet view section. That is the harness working,
+not a failure of the change.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2680+ with no failures once a browser resolves.**
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was
+run, and quoting a figure that was not taken is exactly the unfalsifiable claim this
+section exists to prevent.
+
+**Two companion harnesses were run and neither is committed**, because this task
+forbade writing scratch files into the repo tree — so unlike
+`scratch/enforcement-wiring/mutation-check.mjs` they are not re-runnable from the
+repo. Their results are in the pull request; the gap is recorded in Known open items.
+
+- A before/after comparison of the **whole** `parseAthleticsDoc` output over the real
+  data files at 14 dates (both Waves window edges, mid-season, both 757 window edges,
+  the KickOff, and two off-season dates), 39 athletics keys per date, with the new key
+  stripped. Both sides hash to `4984a1ea38ef4062…` — byte-identical. It was shown to
+  have teeth first: perturbing one comparison in `swimParser.js`'s shared season-best
+  path in a copy of the base tree produces 12 differing lines.
+- A mutation harness over the new guards: **23 of 24 mutations PROVEN**, 24 distinct
+  mutated trees, control green at 36 pass / 0 fail / 0 cancelled / exit 0. The one
+  survivor is the redundant `!dq` clause, analysed in the feature section. The harness
+  aborts on an anchor that no longer matches, on a duplicate mutated tree, and on a
+  mutation whose replacement equals its anchor (it fingerprints the control too), and
+  scores `# cancelled` and a non-zero runner exit as red.
+
+### Prior baseline — Sept 14, 2026, superseded; retained for its measurement table
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
@@ -2710,7 +3010,11 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2642+ with no failures once a browser resolves.**
+⚠ **This entry's Coder-mode floor line was removed on Sept 15, 2026**, when a newer
+baseline was added above it. A floor of `2642+` would license deleting the 36 tests
+that change added. The floor lives in exactly two places: the CODER MODE bullet and
+the end of the **current** baseline entry. A superseded entry keeps its measurement
+table and loses its floor.
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
 quoting a figure that was not taken is exactly the unfalsifiable claim this section exists
@@ -3093,6 +3397,67 @@ because the second attaches to the same source file and nothing else points at i
 abort behaviour is read from the two harnesses, not from the removed text.)*
 
 ## Known open items
+
+- **The next 757 meet entered will redden ten tests in `test/latest757Meet.test.js`
+  (Sept 15, 2026).** Five cases hard-assert the 2026-09-12 KickOff as the latest meet
+  and five reach the April meet by filtering `r.date !== '2026-09-12'`. The 2026-27
+  757 season runs to April 2027, so an **ordinary Updater data entry — not a code
+  change — turns them red.** That is the accepted cost of asserting against the real
+  files rather than a fixture copy that would drift, and it is the same standing
+  obligation shape as the flag-football clock-staleness item below. **The remedy is to
+  re-point both anchors at the new meet, never to relax the assertions** — a test that
+  stops naming a specific meet stops proving the selector picked the right one. Also
+  recorded in that file's header, so an Updater session meeting the red suite finds the
+  explanation at the failure rather than only here.
+
+- **`render/dashboard.js`'s `AthleticsData` typedef is now knowingly incomplete
+  (Sept 15, 2026).** It is the repo's only *complete* `AthleticsData` typedef — the
+  block in `digest/athleticsParser.js` documents one field, not the whole type — and
+  it does not list
+  `opheliaLatest757Meet`. `render/dashboard.js` is **frozen**, and the freeze's only
+  sanctioned exception is a failing v1 test, which this is not — v1's tests build their
+  own fixtures and are green. So the typedef is knowingly stale and left that way, with
+  the real contract in `digest/athleticsParser.js`'s header. This is the same shape as
+  the `StandingsRow` staleness recorded below, and is listed for the same reason: silent
+  rot on a frozen surface is the failure mode the freeze section exists to name. Fix it
+  whenever the freeze is next lifted, or when v1 is retired.
+
+  ⚠ **A related pointer disagreement, recorded rather than resolved.** CLAUDE.md's
+  DESIGNER MODE says `digest/builder.js`'s `OUTPUT — digestData` block "is the
+  field-level contract every surface renders from". For this key the field list lives in
+  `digest/athleticsParser.js`'s header, with a pointer from that block. The reasoning is
+  that `athleticsParser.js` assembles `AthleticsData` and the only complete typedef is
+  frozen — but the two statements now disagree about where the contract lives, and
+  whether `builder.js` should inline athletics fields or keep pointing is a decision
+  this entry does not make.
+
+- **The latest-757-meet change's two evidence harnesses are not committed and are not
+  re-runnable from the repo (Sept 15, 2026).** The task that produced them forbade
+  writing scratch or temporary files into the repository tree, so unlike
+  `scratch/enforcement-wiring/mutation-check.mjs` and its siblings they existed only
+  in that session's scratchpad. Their results are recorded in the pull request and in
+  the Sept 15 test-baseline entry: a whole-`parseAthleticsDoc` before/after comparison
+  at 14 dates hashing identically on both sides, and a 24-row mutation harness scoring
+  23 PROVEN with a green 36-case control. **Neither figure can be re-derived from this
+  repository**, which is exactly the standing this file rates below a committed
+  harness — see the enforcement-wiring entry, whose whole argument is that a
+  re-derivable measurement beats a quoted one. Re-creating them under `scratch/` is a
+  scoped follow-up; nothing depends on it, and until it happens both figures are
+  testimony rather than evidence.
+
+- **`seasonBestSeconds` for Ophelia's 757 rows is filtered by the *Waves* season start
+  (found Sept 15, 2026; out of scope, NOT fixed).** `swimParser.js` computes
+  `seasonResults` with `r.date >= wavesSeasonStart`, where `wavesSeasonStart` is
+  `config.wellingtonWaves.seasonStart`, and applies it to the 757 branch as well as the
+  Waves one. Measured at 2026-09-15 with `seasonStart: "2026-06-08"`: **17 of her 20
+  SCY 757 rows predate that date**, so `25y Back` and `25y Free` both report
+  `seasonBestSeconds: null` despite her having 757 times for each (30.01 on 2026-02-08
+  and 30.46 on 2026-03-20, which are also their standing PBs). `champsProgress` is
+  derived from `seasonBestSeconds`, so it is null for those rows too — harmless today
+  only because every `events757` entry has `champs: null`. The right window for a 757
+  row is `config.swim757.seasonStart`; fixing it changes rendered `opheliaPBRows`
+  output, which is why it was not done inside an additive change. `opheliaLatest757Meet`
+  does not read `seasonBestSeconds` and is unaffected.
 
 - **All four of the Reviewer gate's scratch hook copies have drifted from their wired
   originals, and the mutation harness's control is NOT GREEN as a result (Sept 15, 2026).**
