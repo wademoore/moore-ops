@@ -552,13 +552,13 @@ describe('real-data resilience policies', () => {
       ...sampleDashboardV2Data,
       days: [{ events: [todayEvent], tasks: [] }],
       schoolStrip: { myles: { center: '—' }, ophelia: { center: '' } },
-      flags: [{ level: 'blue', title: '🔵 757 Swim Fall Assessment', body: 'Monitor' }],
+      flags: [{ level: 'amber', title: '🎒 Backpack Prep', body: 'Pack for tomorrow' }],
     });
     assert.doesNotMatch(html, /School today/);
     assert.doesNotMatch(html, /9:00 AM · 9:00 AM/);
-    assert.doesNotMatch(html, /✈️|🔵/);
-    assert.equal((html.match(/class="alert-mark"/g) || []).length, 0);
-    assert.equal((html.match(/class="alert-identity"/g) || []).length, 1);
+    assert.doesNotMatch(html, /✈️|🎒/);
+    assert.equal((html.match(/class="alert-mark"/g) || []).length, 1);
+    assert.doesNotMatch(html, /alert-identity/);
     assert.equal(cleanDisplayText('🔵 757 Swim'), '757 Swim');
     assert.equal(activityCategory({ title: 'iDance Open House' }), 'arts');
     assert.equal(activityCategory({ title: 'Annual physical' }), 'appointment');

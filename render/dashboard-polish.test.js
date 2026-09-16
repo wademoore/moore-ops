@@ -3,6 +3,18 @@ import assert from 'node:assert/strict';
 import { renderDashboardV2, renderAthletics, V2_LOGOS } from './dashboard-v2.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
 
+it('keeps surviving 757-related alert text and severity without inferring organization branding', () => {
+  const html = renderDashboardV2({ ...sampleDashboardV2Data, flags: [{
+    id: 'backpack-reminder', level: 'amber', title: '🎒 Backpack Prep',
+    body: 'Pack for Ophelia 757swim practice tomorrow',
+  }] });
+  const alerts = html.match(/<section class="alerts-panel">([\s\S]*?)<\/section>/)[1];
+  assert.match(alerts, /alert-card level-amber/);
+  assert.match(alerts, /class="alert-mark"/);
+  assert.match(alerts, /Pack for Ophelia 757swim practice tomorrow/);
+  assert.doesNotMatch(alerts, /<img|alert-identity/);
+});
+
 it('shortens known soccer names, omits the venue, and preserves unknown names', () => {
   for (const [opponent, expected] of [
     ['Beach FC B2015/16 Anderson Waves', 'Beach FC · Anderson Waves'],
