@@ -1754,6 +1754,14 @@ This is *in spec* — the Frozen-surfaces rule says mascot lookup selects artwor
 identifies our row — but it is a new visible ambiguity that this data load created, and
 `leagueName` (`"Watkins - Cowboys"`) exists precisely to disambiguate it.
 
+⚠ **The two surfaces are not equivalent, and an earlier version of this paragraph described them
+as though they were.** It said both render identical artwork and are separated "only by the
+`isMe` styling and its '· Our team' suffix". Read from the code: the mark and the suffix are
+**mobile's alone**. Frozen `render/dashboard.js` emits `<td>${row.team}</td>` with no logo and no
+suffix, and marks our row with `class="me"` and nothing else. So on v1 the two Cowboys rows are
+distinguished by a CSS class alone — the ambiguity there is **worse** than the paragraph
+claimed, not better. A Reviewer round caught it.
+
 **`seasonComplete` moved from a 5-row denominator to a 20-row one.** `parseFlagFootball`
 computes `regularGames` over the whole season, unnarrowed, and requires every row to be
 `final`. That count went 5 → 20 with this load. `finalRecord` is `seasonComplete ?
@@ -1771,9 +1779,19 @@ team plays in. Harmless — `data/special-events.json` configures `seasonMilesto
 which is the direction worth recording rather than the reverse.
 
 ⚠ **`CLAUDE.md`'s Frozen-surfaces entry says the single flag-card layout "puts six standings
-rows beside the record and next matchup".** That was written when the division had six teams,
-so it read as a statement about the division; it is now a statement about `.slice(0, 6)`. Not
+rows beside the record and next matchup".** That was written when the *file listed*
+six of the division's eight teams — the division itself has always had eight, and
+`divisionTeamCount: 8` predates this change — so it read as a statement about what reaches the
+wall; it is now a statement about `.slice(0, 6)`. Not
 edited here — it describes a frozen surface — but it no longer means what it says.
+
+### Scope, identifiers and what the trade costs
+
+⚠ **These five paragraphs belong to `seasonMilestone` as a whole, not to the subsection above
+them.** They carried no heading of their own, so they sat under whichever `###` happened to
+precede them — `Dropping literal…` before Sept 16, 2026, and then the new consequences section,
+which made "No presentation change" read as a claim about the division-schedule load. The
+heading is added so they stop being re-parented by the next insertion.
 
 **Generalisation stops here, deliberately.** `SEASON_MILESTONE_SOURCES` has one entry.
 Flag football's rows carry a league `week`, a practice/fixture `type` and a per-row clock
@@ -2989,26 +3007,37 @@ This change adds **+1**, in one existing file:
 2744 + 1 = 2745, and **2745 is the measured figure in the table above rather than that sum** —
 the agreement is reassuring and is not itself evidence.
 
-**Five existing tests were updated and none was deleted, skipped or weakened.** ⚠ **Both
-figures in this sentence were wrong when first written and a Reviewer round caught both.** It
-said "four" while its own bullet below enumerated 1 + 1 + 2 + 1 = five, and it said the command
-reports "two files" when it reports three:
+**Five existing tests were updated and none was deleted, skipped or weakened.** The five are
+`resolves the current team by numeric league id, never by mascot` and `carries all six of our
+scheduled events…` (both `test/current-season-athletics.test.js`), `reads only immutable fixture
+columns…` and `never selects a later week of the shipped season` (both
+`test/flagFootballParser.test.js`), and `never fires on any later week of the season`
+(`digest/specialEventAccents.test.js`). One `it()` was added and none removed.
+
+⚠ **Three attempts at this paragraph have now been falsified, twice by the very commit that
+wrote them, and the third form answers the mechanism rather than the individual errors.**
+Round 1 said "four" against its own enumeration, and said a `numstat` command "reports two
+files" when it reports three. Round 2 fixed the wording and pasted that command's output as
+proof — and the same commit's other edit moved one of the pasted line counts, so the "verbatim"
+block was stale on arrival. Round 2 also wrote that `git diff -S".skip("` returns nothing;
+**that sentence contains `.skip(`, so it returns this file.** A Reviewer round caught all of it.
+
+**The rule this yields is sharper than "re-measure after the last edit".** A command whose
+answer depends on prose is not checkable from prose, and a magnitude the containing commit can
+move is not worth pasting. Both replacements below are scoped to test paths, so nothing written
+in this file can change either answer:
 
 ```
-$ git diff --numstat afe1876 -- 'test/' 'digest/*.test.js' 'render/*.test.js'
-15	3	digest/specialEventAccents.test.js
-38	11	test/current-season-athletics.test.js
-70	7	test/flagFootballParser.test.js
+git diff --name-only afe1876..HEAD -- 'test/' 'digest/*.test.js' 'render/*.test.js'
+git diff afe1876..HEAD -- 'test/' 'digest/*.test.js' | grep -E '^[-+].*\bit\('
 ```
 
-The five are: `resolves the current team by numeric league id, never by mascot` and `carries all
-six of our scheduled events…` (both `current-season-athletics`), `reads only immutable fixture
-columns…` and `never selects a later week of the shipped season` (both `flagFootballParser`), and
-`never fires on any later week of the season` (`specialEventAccents`). One `it()` was added and
-none removed — `git diff -S".skip(" --name-only` and `-S".todo("` both return nothing. Each update is recorded beside the assertion
+The first names the three files. The second is the whole record of `it()` churn: one removed
+and one added line for the single renamed title, plus the one added test. No line counts are
+quoted, because this commit changes them. Each update is recorded beside the assertion
 it changes, with its reasoning, and each falls into one of two kinds:
 
-- **Three were stale-shape assertions** whose premise the data change falsified: `teams.length
+- **Four were stale-shape assertions** whose premise the data change falsified: `teams.length
   === 6` ("only the 6 of 8 division teams whose league ids are published"), the six-row
   `games` enumeration, and two week-list assertions reading `games.map(g => g.week)`. All are
   now scoped to our own rows or to the new counts; the claims they make are unchanged.
@@ -3040,11 +3069,27 @@ is the other**. Re-derived by parsing each `not ok` line's own `location:`, leaf
 | `render/dashboard-v2-holiday.test.js` | 1 |
 | **total** | **49** |
 
-**`# fail 51` is the runner's figure and 49 is the leaf-case count; they are different
-measurements and neither is a decomposition of the other.** Both are stated rather than one
-being reconciled into the other, because node's `# fail` includes some non-leaf points and
-this file's own rule is to take a number from a run rather than from arithmetic. That is the
-guard working, not a fault in it.
+**`# fail 51` is the runner's figure, 49 is the leaf-case count, and the remaining 2 are
+unaccounted for.** Stating the gap is the honest form. A first correction instead asserted a
+cause — *"node's `# fail` includes some non-leaf points"* — written as fact in the same breath
+as admitting it had not been determined, and **measurably wrong for the obvious candidate**:
+node reports `describe` rollups in a separate counter, so suite rollups sit outside the
+`tests`/`pass`/`fail` population entirely and the red run's 14 rollups cannot be the 2. Measured
+on this tree, against a file holding 20 `it()` and 4 `describe()`:
+
+```
+$ node --experimental-vm-modules --test test/current-season-athletics.test.js
+# tests 20
+# suites 4
+# pass 20
+# fail 0
+```
+
+Candidates a future reader can check: a `test()` carrying subtests (node counts those as tests,
+not suites), or a leaf failure whose TAP block carried no `location:` and was dropped by the
+parse. **Not resolved here, and deliberately not papered over** — `51 − 49 = 2, cause not
+determined` is more honest and more useful than a reconciliation nobody measured. The
+regression the run caught is not in doubt; only this arithmetic is.
 
 Exact invocation:
 
@@ -3170,7 +3215,6 @@ Exact invocation:
 ```bash
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
-
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was
 run, and quoting a figure that was not taken is exactly the unfalsifiable claim this
