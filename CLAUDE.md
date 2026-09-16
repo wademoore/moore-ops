@@ -903,9 +903,9 @@ Dashboard v2 Athletics panel. It is not a page, host, origin, variant, or pipeli
 an in-panel content swap. First and currently only instance: "Big Sports Saturday",
 September 12, 2026.
 
-**Footprint is preserved by not touching what determines it.** `athleticsCardCount()` is
-deliberately unmodified, so `.athletics-one` / `.athletics-multi` and the 26% / 40% panel
-heights resolve exactly as they would with no Spotlight. The measured one-card footprint is
+`athleticsCardCount()` now counts the 757 card only when its guarded render succeeds,
+so an absent or malformed latest-meet view cannot reserve an empty card slot.
+The measured one-card footprint is
 **1473.83 × 315.63 px**, identical in every Spotlight state (proved numerically in
 `render/dashboard-v2-layout.test.js`).
 
@@ -1141,8 +1141,8 @@ could talk its way past, because there is no name it could write down.
 
 **The `feature-slot` is the lower-centre Athletics content area.** Its ordinary occupant is
 Athletics; a qualified Spotlight temporarily replaces the *contents* only.
-`athleticsCardCount()` is deliberately untouched, so `.athletics-one` / `.athletics-multi`
-and the 26% / 40% panel heights resolve exactly as they would with no treatment. Measured
+`athleticsCardCount()` shares the prepared 757 render with the card output, keeping
+the layout count consistent when malformed input causes that card to be omitted. Measured
 one-card footprint, identical in every state: **1473.83 × 315.63 px**.
 
 **Instance scoping matters, and getting it wrong is easy.** "One treatment per surface" and
@@ -2338,7 +2338,10 @@ The 757 card uses the Waves swimmer card's purple ribbon, logo, season label,
 race rows and footer styling. It adds the meet name and calendar date/range
 above the races, and PB meet/date provenance under each result. A current-race
 PB is marked PB without repeating its time or provenance line. Other PBs retain
-their meet and date; missing or malformed PB dates are omitted without throwing.
+their meet and date. Malformed latest-meet input, including missing or invalid PB
+dates, now omits the whole 757 card. Any exception during its render is caught;
+the rest of the dashboard continues. One prepared result drives rendering and
+card counts, preventing a failed card from reserving layout space.
 DQ races show DQ without a result time;
 a missing non-DQ time shows a dash. A missing PB entry says “PB not recorded.”
 

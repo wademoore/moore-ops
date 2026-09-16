@@ -523,11 +523,11 @@ function renderToday(data) {
   </section>`;
 }
 
-function athleticsCardCount(data) {
+function athleticsCardCount(data, latest757Card = safeLatest757Card(data.athletics || {})) {
   const a = data.athletics || {};
   return Number(Boolean(a.flagFootballActive))
     + Number(Boolean(a.wavesActive)) * 3
-    + Number(Boolean(!a.wavesActive && a.swim757Active && a.opheliaLatest757Meet))
+    + Number(Boolean(latest757Card))
     + Number(Boolean(a.sharksActive));
 }
 
@@ -727,10 +727,10 @@ function renderUpcomingEvent(item, accents) {
     </div>`;
 }
 
-function renderUpcoming(data) {
+function renderUpcoming(data, latest757Card = safeLatest757Card(data.athletics || {})) {
   const accents = eventRowAccents(data);
   const allItems = collapseUpcomingEvents(data.upcomingEvents, data.today);
-  const eventTarget = athleticsCardCount(data) === 1 ? 14 : 10;
+  const eventTarget = athleticsCardCount(data, latest757Card) === 1 ? 14 : 10;
   const grouped = new Map();
   for (const item of allItems) {
     if (!grouped.has(item.startKey)) grouped.set(item.startKey, []);
@@ -818,8 +818,23 @@ function swimResultTime(seconds) {
   return minutes ? `${minutes}:${remainder.padStart(5, '0')}` : remainder;
 }
 
-function renderLatest757Card(a) {
-  const meet = a.opheliaLatest757Meet;
+function safeLatest757Card(a) {
+  try {
+    if (a.wavesActive || !a.swim757Active) return '';
+    const meet = a.opheliaLatest757Meet;
+    if (!meet || !Array.isArray(meet.races) || !meet.races.length ||
+        !Array.isArray(meet.dates) || !meet.dates.length ||
+        !swimMeetDate(meet.startDate) || !swimMeetDate(meet.endDate) ||
+        meet.dates.some(date => !swimMeetDate(date)) ||
+        meet.races.some(race => !race || typeof race.event !== 'string' || !race.event.trim() ||
+          (race.personalBest != null && !swimMeetDate(race.personalBest.date)))) return '';
+    return renderLatest757Card(a, meet);
+  } catch {
+    return '';
+  }
+}
+
+function renderLatest757Card(a, meet) {
   // Household preference, 2026-09-15. Keep the producer's array unchanged;
   // stable sorting retains its order for repeated races and unknown strokes.
   const strokeRank = race => {
@@ -933,7 +948,7 @@ function renderFlagFootballCard(a) {
   </article>`;
 }
 
-function renderAthletics(data) {
+function renderAthletics(data, latest757Card = safeLatest757Card(data.athletics || {})) {
   const a = data.athletics || {};
   const cards = [];
   if (a.flagFootballActive) cards.push(renderFlagFootballCard(a));
@@ -947,7 +962,7 @@ function renderAthletics(data) {
     a.opheliaSeason,
     a.opheliaFooter,
   ));
-  else if (a.swim757Active && a.opheliaLatest757Meet) cards.push(renderLatest757Card(a));
+  else if (latest757Card) cards.push(latest757Card);
   if (a.sharksActive) cards.push(renderSharksCard(a));
 
   // The Spotlight presentation and the ordinary presentation both fill the
@@ -966,10 +981,8 @@ function renderAthletics(data) {
     <div class="athletics-grid${marker} count-${cards.length}">${cards.join('') || '<div class="empty-state">Athletics are between seasons.</div>'}</div>`;
 
   // A feature-slot Spotlight replaces only the panel's contents.
-  // athleticsCardCount() is deliberately untouched, so `.athletics-one` /
-  // `.athletics-multi` and the 26% / 40% panel heights resolve exactly as they
-  // would with no Spotlight. The Athletics panel *is* the feature slot; its
-  // ordinary occupant is Athletics and its geometry never varies.
+  // Counts now include 757 only when its guarded render succeeds. Spotlight
+  // still uses the same ordinary-card count and panel geometry.
   let spotlight = null;
   try { spotlight = selectFeatureSlotSpotlight(data, { now: data.now }); }
   catch { spotlight = null; }
@@ -1765,7 +1778,8 @@ function renderDashboardV2(digestData) {
   const holidayAttributes = activeTheme
     ? ` data-holiday-id="${esc(activeTheme.id)}" data-holiday-renderer="${esc(activeTheme.renderer)}" data-holiday-state="ordinary" data-holiday-activate-at="${activeTheme.activateAt}" data-holiday-expire-at="${activeTheme.expireAt}"`
     : '';
-  const cardCount = athleticsCardCount(data);
+  const latest757Card = safeLatest757Card(data.athletics || {});
+  const cardCount = athleticsCardCount(data, latest757Card);
   const paletteSetting = ['day', 'evening'].includes(data.paletteMode) ? data.paletteMode : 'auto';
   const initialPalette = paletteSetting === 'auto' ? paletteModeForDate(data.now ? new Date(data.now) : new Date()) : paletteSetting;
   const classes = `dashboard${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'} athletics-${cardCount === 1 ? 'one' : 'multi'} palette-${initialPalette}`;
@@ -1783,8 +1797,8 @@ ${fontCss}
 <main class="${classes}" data-palette="${paletteSetting}" data-sports-url="${esc(data.sportsFeedUrl || '')}" data-household-generated-at="${esc(data.householdGeneratedAt || '')}" data-release-manifest-url="${esc(data.releaseManifestUrl || '')}" data-first-day-coda-url="${esc(data.firstDayLevel3CodaUrl || '')}" data-first-day-coda-start="${esc(data.firstDayLevel3CodaStart || '')}" data-first-day-coda-end="${esc(data.firstDayLevel3CodaEnd || '')}"${holidayAttributes} style="${styleVars}">
   ${renderMasthead(data)}
   ${renderToday(data)}
-  ${renderUpcoming(data)}
-  ${renderAthletics(data)}
+  ${renderUpcoming(data, latest757Card)}
+  ${renderAthletics(data, latest757Card)}
   ${renderAlerts(data.flags)}
   ${renderRightRail(data)}
   ${renderTicker(data)}

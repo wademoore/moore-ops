@@ -56,8 +56,9 @@ describe('latest 757 meet card', () => {
       const html = renderDashboardV2({ today: new Date('2026-09-15T12:00:00'), athletics: { swim757Active: true,
         opheliaLatest757Meet: view([race({ personalBest: { seconds: 65.12, meet: 'Earlier meet', date } })]),
       } });
-      assert.match(html, /PB 1:05.12 · Earlier meet<\/div>/);
-      assert.match(html, /1:09.08/);
+      assert.doesNotMatch(html, /<article[^>]*latest-757-card/);
+      assert.match(html, /Tonight(?:'|&#39;)s Dinner/);
+      assert.match(html, /athletics-panel card-count-0/);
     });
   }
 
@@ -80,7 +81,7 @@ describe('latest 757 meet card', () => {
   });
 
   it('shows multi-day calendar dates without timezone shifts', () => {
-    assert.match(render(view([], { startDate: '2026-12-31', endDate: '2027-01-01', dates: ['2026-12-31', '2027-01-01'] })), /Dec 31, 2026 – Jan 1, 2027/);
+    assert.match(render(view([race()], { startDate: '2026-12-31', endDate: '2027-01-01', dates: ['2026-12-31', '2027-01-01'] })), /Dec 31, 2026 – Jan 1, 2027/);
   });
 
   it('hides the whole absent card and gives remaining cards the one-card layout', () => {
@@ -99,5 +100,37 @@ describe('latest 757 meet card', () => {
   it('escapes meet and race source text', () => {
     const html = render(view([race({ event: '<race>', personalBest: { seconds: 60, date: '2026-01-10', meet: '<pb>' } })], { meet: '<meet>' }));
     for (const text of ['meet', 'race', 'pb']) assert.ok(html.includes(`&lt;${text}&gt;`));
+  });
+
+  for (const [name, meet] of [
+    ['missing races', { ...view(), races: undefined }],
+    ['missing dates', { ...view(), dates: undefined }],
+    ['missing race event', view([race({ event: undefined })])],
+    ['throwing result formatting', view([race({ seconds: Symbol('bad time') })])],
+  ]) {
+    it(`omits the 757 card and agrees on one-card layout for ${name}`, () => {
+      const html = renderDashboardV2({ today: new Date('2026-09-15T12:00:00'), athletics: {
+        swim757Active: true, sharksActive: true, opheliaLatest757Meet: meet,
+      } });
+      assert.doesNotMatch(html, /<article[^>]*latest-757-card/);
+      assert.match(html, /athletics-panel card-count-1/);
+      assert.match(html, /class="dashboard[^"]*athletics-one/);
+      assert.match(html, /Tidewater Sharks/);
+      assert.match(html, /Tonight(?:'|&#39;)s Dinner/);
+    });
+  }
+
+  it('prepares the guarded 757 card only once for count, lookahead and render', () => {
+    let reads = 0;
+    const athletics = { swim757Active: true, get opheliaLatest757Meet() {
+      reads++;
+      if (reads > 1) throw new Error('second read');
+      return view();
+    } };
+    const html = renderDashboardV2({ today: new Date('2026-09-15T12:00:00'), athletics });
+    assert.equal(reads, 1);
+    assert.match(html, /<article[^>]*latest-757-card/);
+    assert.match(html, /athletics-panel card-count-1/);
+    assert.match(html, /class="dashboard[^"]*athletics-one/);
   });
 });
