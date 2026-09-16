@@ -2349,7 +2349,7 @@ The card sorts a copy of the view by distance ascending, then Free, Breast,
 Back, Fly, then other strokes. Unknown distances go last; ties retain the
 producer's order. This is the September 15 household preference, not a change
 to the digest's ordering contract. The first four sorted races are shown when
-757 shares the three-card layout with flag football and Sharks; other layouts
+the rendered athletics list contains three or more cards; other layouts
 show up to five. This reserves room for the footer in the narrow card, with
 a compact “+N more races” notice for the rest. Older configured-event swims never
 replace these results. When the view is absent, the card is absent, including
@@ -2362,7 +2362,7 @@ one-, two-, and three-card browser layouts. The frozen v1 renderer, mobile
 renderer, digest modules, data files, and field contract are unchanged.
 During 757 season, this card replaces the configured-event 757 card on Dashboard
 v2 (household decision, September 15, 2026). Mobile and v1 continue to render the
-unchanged configured-event rows. Layout fixtures with 5, 6 and 10 races verify
+unchanged configured-event rows. Layout fixtures with every race count from 1 through 6, plus 10, verify
 the visible household order, exact overflow count, and footer bounds against
 both its card and the athletics panel at 2560×1440 in one- and three-card layouts.
 The footer itself must have nonzero height, visible text and no internal clipping.
@@ -2372,7 +2372,13 @@ the fix: all three one-card cases passed and all three three-card cases failed.
 At five races the footer extended below its card; at six and ten it also extended
 below the athletics panel. The former test only checked race text against the
 footer and never checked whether the footer itself was clipped. With the
-four-row narrow-card limit, the 757 unit/layout suite passes 33/33 locally.
+initial four-row narrow-card limit, the 757 unit/layout suite passed 33/33 locally.
+The PR #90 follow-up reproduced four-race clipping against `2e4707a`: the
+17px footer ended at 1217.375px while the card ended at 1210px. Compact spacing
+now starts at four races instead of five, retaining four visible races without
+clipping. A shared rendered-card list supplies both layout counts and the row
+cap, filtering omitted cards instead of counting active seasons. The expanded
+757 unit/layout suite passes 41/41 locally.
 
 **The field-level contract lives in `digest/athleticsParser.js`'s header**, not
 here and not in `render/dashboard.js`. That renderer holds the repo's only

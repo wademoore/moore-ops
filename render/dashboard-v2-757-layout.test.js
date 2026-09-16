@@ -12,7 +12,7 @@ let browser;
 before(async () => { browser = await chromium.launch({ headless: true, executablePath: resolveBrowserPath(process.env.DASHBOARD_BROWSER_PATH) }); });
 after(async () => { await browser?.close(); });
 
-for (const count of [1, 3]) for (const raceCount of [5, 6, 10]) {
+for (const count of [1, 3]) for (const raceCount of [1, 2, 3, 4, 5, 6, 10]) {
   it(`keeps the footer and ${raceCount} races within the ${count}-card panel`, async () => {
     const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
     const races = ['25y Butterfly', '25y Backstroke', '25y Breaststroke', '25y Freestyle', '50y Freestyle', '50y Breaststroke', '50y Backstroke', '50y Butterfly', '100y Freestyle', '100y Breaststroke'].slice(0, raceCount).map(event => ({
@@ -33,6 +33,7 @@ for (const count of [1, 3]) for (const raceCount of [5, 6, 10]) {
       const footerText = [...footerRange.getClientRects()];
       const elements = [...document.querySelectorAll('.latest-757-card strong,.latest-757-card span,.latest-757-pb,.latest-757-more')];
       return {
+        cardCount: document.querySelectorAll('.athletics-grid > .athletic-card').length,
         count: document.querySelectorAll('.latest-757-race').length,
         titles: [...document.querySelectorAll('.latest-757-race>span')].map(element => element.firstChild.textContent.trim()),
         more: document.querySelector('.latest-757-more')?.textContent || '',
@@ -47,9 +48,10 @@ for (const count of [1, 3]) for (const raceCount of [5, 6, 10]) {
       };
     });
     assert.ok(result.footer.height > 0 && result.footer.bottom <= Math.min(result.footer.panelBottom, result.footer.cardBottom) && result.footer.textVisible && result.footer.unclipped, `Footer clipped: ${JSON.stringify(result.footer)}`);
-    const visibleCount = count === 3 ? 4 : 5;
+    assert.equal(result.cardCount, count);
+    const visibleCount = Math.min(raceCount, result.cardCount >= 3 ? 4 : 5);
     assert.equal(result.count, visibleCount);
-    assert.deepEqual(result.titles, ['25y Freestyle', '25y Breaststroke', '25y Backstroke', '25y Butterfly', '50y Freestyle'].slice(0, visibleCount));
+    assert.deepEqual(result.titles, ['25y Freestyle', '25y Breaststroke', '25y Backstroke', '25y Butterfly', '50y Freestyle'].filter(event => races.some(race => race.event === event)).slice(0, visibleCount));
     assert.equal(result.more, raceCount > visibleCount ? `+${raceCount - visibleCount} more races` : '');
     assert.deepEqual(result.clipped, []);
     await page.close();
