@@ -147,7 +147,29 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
       if (keyOf(g.home) === tKey) tally(g.homeScore, g.awayScore);
       else if (keyOf(g.away) === tKey) tally(g.awayScore, g.homeScore);
     }
-    return { team: team.teamName, w, l, t, pf, pa, isMe: tKey === myKey };
+    // `team` stays the mascot, unchanged, because every shipped surface reads it
+    // as the display name. The three additions beside it are what a consumer
+    // needs to tell two rows apart when that display name is shared: this
+    // division has two teams whose teamName is "Cowboys", and until now a row
+    // reached a renderer carrying neither an id nor a coach, so the only thing
+    // separating them was `isMe`.
+    //
+    // All three are read verbatim off the season's own `teams[]` entry and are
+    // null when that entry does not carry them — nothing is derived, defaulted
+    // or composed here. Which of them is populated varies by season and the
+    // parser cannot know which a consumer wants: the two legacy abbr-keyed
+    // seasons carry `coach` and no `teamId`/`leagueName`, while `fall-2026`
+    // carries all three. `teamId` is the league's numeric id and is the only
+    // one of the three that is an identity; `coach` and `leagueName` are
+    // disambiguating labels and must never be matched on.
+    return {
+      team: team.teamName,
+      teamId: team.teamId ?? null,
+      coach: team.coach ?? null,
+      leagueName: team.leagueName ?? null,
+      w, l, t, pf, pa,
+      isMe: tKey === myKey,
+    };
   }).sort((a, b) => b.w - a.w || a.l - b.l);
 
   // ── Snack family ─────────────────────────────────────────────────────────────
@@ -189,12 +211,29 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   if (scheduledGames.length > 0) {
     const nextGame   = scheduledGames[0];
     const oppAbbr    = keyOf(keyOf(nextGame.home) === myKey ? nextGame.away : nextGame.home);
+    // Which side of THIS fixture our team is listed on, read off the row's own
+    // `home`/`away` by team id — never from the mascot, the team name or the
+    // field. It reports the league's designation of the fixture and nothing
+    // more: every Fall 2026 fixture is at the same complex (the rows differ
+    // only by `field`), so this is not a travel cue and must not be presented
+    // as one. `sharksNextGame.homeAway` in sharksParser.js already carries the
+    // same two values, which is why the name matches it rather than inventing
+    // a third spelling.
+    //
+    // Null when the season declares no team of its own. `myKey` is then null,
+    // and a row carrying `away: null` would compare equal on its EMPTY side —
+    // so the answer would be an artefact of an absent value rather than a
+    // reading of the fixture. Both sides are tested explicitly for that reason
+    // rather than deriving 'away' as the negation of 'home'.
+    const sideOf = value => myKey !== null && keyOf(value) === myKey;
+    const homeAway = sideOf(nextGame.home) ? 'home' : sideOf(nextGame.away) ? 'away' : null;
     nextFlagGame = {
       opponent: teamsMap.get(oppAbbr) || oppAbbr,
       date:     nextGame.date,
       daysUntil: Math.ceil((new Date(nextGame.date) - refDate) / 86400000),
       time:     nextGame.time ?? null,
       friendly: !!nextGame.friendly,
+      homeAway,
     };
   }
 

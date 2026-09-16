@@ -113,7 +113,10 @@
  * league — every fixture is at the same complex — so it is not a travel cue
  * and must never be rendered or reasoned about as one. Structural absence
  * beats a rule a future reader could talk their way past: there is no field
- * in which a renderer could find it.
+ * ON THIS IDENTITY in which a renderer could find it. The unqualified form of
+ * that sentence stopped being true when `nextFlagGame.homeAway` landed in
+ * flagFootballParser.js, which states the side of the NEXT fixture off that
+ * row's own ids. What holds here is the absence from this projection.
  *
  * ─────────────────────────────────────────────────────────────────────────
  * IDENTITY IS THE NUMERIC LEAGUE TEAM ID, NEVER THE MASCOT
