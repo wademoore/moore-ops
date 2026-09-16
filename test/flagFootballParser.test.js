@@ -243,6 +243,119 @@ describe('parseFlagFootball', () => {
     assert.equal(parseFlagFootball(FIXTURE, MAY_1, CONFIG).seasonRecord, '3-0-0');
   });
 
+  // ── Standings identity and the shared display name ─────────────────────────
+  // ID_FIXTURE's teams[] carries leagueName but no coach. The real
+  // data/flag-football.json fall-2026 entry carries both, so the coaches are
+  // added here rather than the assertions being narrowed to the one field the
+  // smaller fixture happens to hold.
+  const COACHED = {
+    seasons: [{
+      ...ID_FIXTURE.seasons[0],
+      teams: [
+        { ...ID_FIXTURE.seasons[0].teams[0], coach: 'Moore'    },
+        { ...ID_FIXTURE.seasons[0].teams[1], coach: 'Watkins'  },
+        { ...ID_FIXTURE.seasons[0].teams[2], coach: 'Langston' },
+      ],
+    }],
+  };
+
+  it('the two Cowboys standings rows carry distinct ids and distinct disambiguating values', () => {
+    const rows = parseFlagFootball(COACHED, SEP_21, CONFIG).standings.filter(r => r.team === 'Cowboys');
+    assert.equal(rows.length, 2, 'the fixture must really put two rows under one display name');
+    assert.equal(rows[0].team, rows[1].team, 'the shared display name is the premise of this test');
+
+    assert.notEqual(rows[0].teamId, rows[1].teamId, 'the id is what separates them');
+    assert.notEqual(rows[0].coach, rows[1].coach);
+    assert.notEqual(rows[0].leagueName, rows[1].leagueName);
+
+    // Each value is the teams[] entry verbatim — nothing composed from the row.
+    const mine = rows.find(r => r.isMe);
+    assert.deepEqual(
+      { teamId: mine.teamId, coach: mine.coach, leagueName: mine.leagueName },
+      { teamId: 8009182, coach: 'Moore', leagueName: 'Moore - Cowboys' },
+    );
+    const theirs = rows.find(r => !r.isMe);
+    assert.deepEqual(
+      { teamId: theirs.teamId, coach: theirs.coach, leagueName: theirs.leagueName },
+      { teamId: 8888888, coach: 'Watkins', leagueName: 'Watkins - Cowboys' },
+    );
+  });
+
+  it('renaming either mascot leaves every standings id unchanged', () => {
+    const base = parseFlagFootball(COACHED, SEP_21, CONFIG).standings.map(r => r.teamId);
+    for (const target of [8009182, 8888888]) {
+      const renamed = { seasons: [{ ...COACHED.seasons[0],
+        teams: COACHED.seasons[0].teams.map(t => t.teamId === target ? { ...t, teamName: 'Longhorns' } : t) }] };
+      const after = parseFlagFootball(renamed, SEP_21, CONFIG).standings;
+      assert.ok(after.some(r => r.team === 'Longhorns'), `the rename of ${target} must reach the rows`);
+      assert.deepEqual(after.map(r => r.teamId), base, `renaming ${target} moved an id`);
+      assert.equal(after.find(r => r.isMe).teamId, 8009182, `renaming ${target} moved isMe`);
+    }
+  });
+
+  it('a legacy abbr season reports null for the three additions rather than inventing them', () => {
+    // FIXTURE's teams[] entries carry abbr and teamName only.
+    const mine = parseFlagFootball(FIXTURE, MAY_1, CONFIG).standings.find(r => r.isMe);
+    assert.deepEqual(
+      { teamId: mine.teamId, coach: mine.coach, leagueName: mine.leagueName },
+      { teamId: null, coach: null, leagueName: null },
+    );
+    assert.equal(mine.team, 'Cowboys', 'the display name is unaffected');
+  });
+
+  // ── Which side of the next fixture our team is listed on ───────────────────
+  // ID_FIXTURE's only scheduled row is Oct 4. Both variants below rewrite that
+  // one row's sides and leave every other row alone.
+  const withNextSides = (home, away) => ({ seasons: [{ ...ID_FIXTURE.seasons[0],
+    games: ID_FIXTURE.seasons[0].games.map(g => g.status === 'scheduled' ? { ...g, home, away } : g) }] });
+
+  it('nextFlagGame reports which side our team is listed on, home and away', () => {
+    const home = parseFlagFootball(withNextSides(8009182, 8070749), SEP_21, CONFIG).nextFlagGame;
+    assert.equal(home.homeAway, 'home');
+    assert.equal(home.opponent, 'Ravens', 'the opponent does not move with the side');
+
+    const away = parseFlagFootball(withNextSides(8070749, 8009182), SEP_21, CONFIG).nextFlagGame;
+    assert.equal(away.homeAway, 'away');
+    assert.equal(away.opponent, 'Ravens');
+  });
+
+  it('nextFlagGame.homeAway is read off the row ids, never off a mascot', () => {
+    // Both halves put the OTHER Cowboys on the home side and ours on the away
+    // side, so every name-based reading has the wrong answer available first.
+    //
+    // Unrenamed: our mascot is still "Cowboys", which is exactly the real
+    // division, so "the side whose teamName is ours" is ambiguous and resolves
+    // to the home row. Renamed: only the teams[] entry changes and the
+    // season-level teamName stays "Cowboys", so a reading keyed on THAT now
+    // names the opponent outright. Both must still answer 'away'.
+    const sidesSwapped = season => ({ seasons: [{ ...season,
+      games: season.games.map(g => g.status === 'scheduled'
+        ? { ...g, home: 8888888, away: 8009182 } : g) }] });
+
+    const shared = parseFlagFootball(sidesSwapped(ID_FIXTURE.seasons[0]), SEP_21, CONFIG).nextFlagGame;
+    assert.equal(shared.homeAway, 'away', 'two teams named Cowboys — only the id separates the sides');
+    assert.equal(shared.opponent, 'Cowboys');
+
+    const renamed = parseFlagFootball(sidesSwapped({ ...ID_FIXTURE.seasons[0],
+      teams: ID_FIXTURE.seasons[0].teams.map(t => t.teamId === 8009182 ? { ...t, teamName: 'Longhorns' } : t),
+    }), SEP_21, CONFIG).nextFlagGame;
+    assert.equal(renamed.homeAway, 'away', 'renaming our mascot must not move the side');
+    assert.equal(renamed.opponent, 'Cowboys', 'the opponent is the team still called Cowboys');
+  });
+
+  it('nextFlagGame.homeAway is null when the season declares no team of its own', () => {
+    // myKey is null there, and this row carries away: null — so a comparison
+    // that did not test for it would match the EMPTY side and report a side
+    // the fixture does not state.
+    const teamless = { seasons: [{ ...ID_FIXTURE.seasons[0],
+      myTeamId: undefined,
+      games: [{ type: 'regular', status: 'scheduled', date: '2026-10-04',
+        home: 8070749, away: null, homeScore: null, awayScore: null }] }] };
+    const next = parseFlagFootball(teamless, SEP_21, CONFIG).nextFlagGame;
+    assert.ok(next !== null, 'the row must really be selected, or this asserts nothing');
+    assert.equal(next.homeAway, null);
+  });
+
   // ── Practices ──────────────────────────────────────────────────────────────
   it('a practice never reaches the record, the standings, or nextFlagGame', () => {
     const withPractice = { seasons: [{ ...ID_FIXTURE.seasons[0], games: [

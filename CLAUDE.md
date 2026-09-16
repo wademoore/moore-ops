@@ -2426,9 +2426,13 @@ are not projected, so identity cannot move when a score is entered — the rule
 `sportsFixture` already follows, enforced structurally. **`home`/`away` are
 absent by design**: home/away is nominal in this league (every fixture is at the
 same complex) and must never be rendered or reasoned about as a travel cue.
-There is no field in which a renderer could find it, and a test asserts the home
-and away fixtures project the identical key set so the side is not recoverable
-from the shape either.
+There is no field on THIS identity in which a renderer could find it, and a test
+asserts the home and away fixtures project the identical key set so the side is
+not recoverable from the shape either. The unqualified form of that sentence
+stopped being true in Sept 2026: `nextFlagGame.homeAway` in
+`digest/flagFootballParser.js` states which side our team is listed on for the
+next fixture, read off that row's own `home`/`away` by team id. What holds here
+is the structural absence from this projection, not a claim about the tree.
 
 `fixtureType` is the row's own `type` passed through unchanged — it **reports**
 the classification the data already carries and never computes one. Nothing here
@@ -4292,7 +4296,7 @@ New parked work is recorded in `BACKLOG.md` at the repository root, not here.
 - **The frozen v1 dashboard's `StandingsRow` JSDoc is now wrong, deliberately unfixed
   (Sept 10, 2026).** `render/dashboard.js:89` documents `StandingsRow { team, w, l, pf, pa, isMe }`
   and line 47 documents `seasonRecord: string   e.g. "3-0"`. The shipped shape is now
-  `{ team, w, l, t, pf, pa, isMe }` and the record is `W-L-T`. `render/dashboard.js` is **frozen**
+  `{ team, teamId, coach, leagueName, w, l, t, pf, pa, isMe }` and the record is `W-L-T`. `render/dashboard.js` is **frozen**
   — "do not iterate, improve, refactor, or debug it unless Wade explicitly asks" — and the only
   sanctioned exception is a failing v1 test, which this is not: v1's 81 tests are green because
   they build their own fixtures and never call the parser. So the comment is knowingly stale and
