@@ -552,13 +552,13 @@ describe('real-data resilience policies', () => {
       ...sampleDashboardV2Data,
       days: [{ events: [todayEvent], tasks: [] }],
       schoolStrip: { myles: { center: '—' }, ophelia: { center: '' } },
-      flags: [{ level: 'blue', title: '🔵 757 Swim Fall Assessment', body: 'Monitor' }],
+      flags: [{ level: 'amber', title: '🎒 Backpack Prep', body: 'Pack for tomorrow' }],
     });
     assert.doesNotMatch(html, /School today/);
     assert.doesNotMatch(html, /9:00 AM · 9:00 AM/);
-    assert.doesNotMatch(html, /✈️|🔵/);
-    assert.equal((html.match(/class="alert-mark"/g) || []).length, 0);
-    assert.equal((html.match(/class="alert-identity"/g) || []).length, 1);
+    assert.doesNotMatch(html, /✈️|🎒/);
+    assert.equal((html.match(/class="alert-mark"/g) || []).length, 1);
+    assert.doesNotMatch(html, /alert-identity/);
     assert.equal(cleanDisplayText('🔵 757 Swim'), '757 Swim');
     assert.equal(activityCategory({ title: 'iDance Open House' }), 'arts');
     assert.equal(activityCategory({ title: 'Annual physical' }), 'appointment');
@@ -956,10 +956,13 @@ describe('special-event migration — byte equality with the legacy Family Spotl
     const alerts = html.indexOf('<section class="alerts-panel');
     const close = html.lastIndexOf('</section>', alerts) + '</section>'.length;
     // Keep the original Spotlight migration baseline: normalize only the later,
-    // approved move of team artwork from the ribbon into the summary row.
+    // approved move of team artwork from the ribbon into the summary row,
+    // and the approved compact matchup for this one frozen fixture.
+    // The current name, inline date and omitted venue are tested separately.
     return html.slice(start, close)
       .replace(/<div class="athletic-ribbon">(<span>[^<]*<\/span>)<\/div>\n    <div class="athletic-summary">(<div class="record">[^<]*<\/div>)(<img class="athletic-logo"[^>]*>)<\/div>/g,
         '<div class="athletic-ribbon">$3$1</div>\n    $2')
+      .replace('<div class="next-box"><b>Next game</b><span>vs. VIP United Red · <time>Sat, Sep 12 · 1:15 PM</time></span></div>', '<div class="next-box"><b>Next match</b><span>vs. VIP United TASL B2015/2016 Red (VA)</span><strong>Sat, Sep 12 · 1:15 PM</strong><small>Blayton Elem School - BLAY 3</small></div>')
       .replace(/src="data:[^"]*"/g, 'src="<asset>"');
   };
 

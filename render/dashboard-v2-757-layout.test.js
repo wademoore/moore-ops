@@ -26,7 +26,7 @@ for (const [count, raceCount, visibleCount] of footerCases) {
       personalBest: { seconds: 60, meet: '2026 VPSU Championship Meet', date: '2026-08-01' },
     }));
     await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
-      ...sampleDashboardV2Data.athletics, wavesActive: false, swim757Active: true, flagFootballActive: count === 3, sharksActive: count >= 2,
+      ...sampleDashboardV2Data.athletics, opheliaFooter: '757 season note', wavesActive: false, swim757Active: true, flagFootballActive: count === 3, sharksActive: count >= 2,
       opheliaLatest757Meet: { meet: 'Latest race meet', startDate: '2026-09-12', endDate: '2026-09-12', dates: ['2026-09-12'], races },
     } }));
     await page.evaluate(() => document.fonts.ready);
@@ -69,7 +69,7 @@ for (const april of [false, true]) for (const count of [1, 2, 3]) {
     const swim = parseSwim(read('pb-records'), rows, new Date('2026-09-15T12:00:00'), read('sports-config'));
     const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
     await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, now: new Date('2026-09-15T12:00:00-04:00'), athletics: {
-      ...sampleDashboardV2Data.athletics, ...swim, wavesActive: false, swim757Active: true,
+      ...sampleDashboardV2Data.athletics, ...swim, opheliaFooter: '757 season note', wavesActive: false, swim757Active: true,
       flagFootballActive: count === 3, sharksActive: count >= 2,
     } }));
     await page.evaluate(() => document.fonts.ready);

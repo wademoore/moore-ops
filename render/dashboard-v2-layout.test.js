@@ -125,9 +125,25 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     const mark = page.locator('.upcoming-panel .flag-activity-visual');
     assert.equal(await mark.count(), 1);
     assert.equal(await mark.locator('svg').evaluate(node => getComputedStyle(node).visibility), 'hidden');
+    assert.equal(await mark.evaluate(node => getComputedStyle(node).backgroundColor), 'rgba(0, 0, 0, 0)');
     assert.ok(await mark.locator('img').evaluate(node => node.complete && node.naturalWidth > 0));
     await mark.locator('img').evaluate(node => node.dispatchEvent(new Event('error')));
     assert.equal(await mark.locator('svg').evaluate(node => getComputedStyle(node).visibility), 'visible');
+  });
+
+  it('shows W&M and Stonehouse logos alone, with fallback only after image failure', async () => {
+    for (const title of ['W&M Football vs. Elon', 'Stonehouse Back to School Night']) {
+      await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data,
+        upcomingEvents: [{ title, subtitle: '', raw: { start: { date: '2026-06-10' } } }],
+      }), { waitUntil: 'load' });
+      const mark = page.locator('.upcoming-panel .activity-visual');
+      assert.equal(await mark.count(), 1);
+      assert.ok(await mark.locator('img').evaluate(node => node.complete && node.naturalWidth > 0));
+      assert.equal(await mark.locator('svg').evaluate(node => getComputedStyle(node).visibility), 'hidden');
+      assert.equal(await mark.evaluate(node => getComputedStyle(node).backgroundColor), 'rgba(0, 0, 0, 0)');
+      await mark.locator('img').evaluate(node => node.dispatchEvent(new Event('error')));
+      assert.equal(await mark.locator('svg').evaluate(node => getComputedStyle(node).visibility), 'visible');
+    }
   });
 
   it('fits associated flag logos in featured and supporting Now/Next copy', async () => {
@@ -176,6 +192,32 @@ describe('dashboard v2 2560x1440 layout verification', () => {
       assert.deepEqual(size, { width: 1473.83, height: 315.63 });
       assert.equal(await page.locator('.next-box span').textContent(),
         `vs. Langston-Ravens${thisWeekTime ? ` · ${thisWeekTime}` : ''}`);
+      assert.equal(await page.locator('.next-box time').count(), thisWeekTime ? 1 : 0);
+      if (thisWeekTime) assert.equal(await page.locator('.next-box time').textContent(), thisWeekTime);
+    }
+  });
+
+  it('fits every current soccer opponent and date on one line in a three-card panel', async () => {
+    const source = JSON.parse(readFileSync(new URL('../data/sharks-soccer.json', import.meta.url), 'utf8'));
+    const opponents = [...new Set(source.seasons[0].divisionSchedule.matches.flatMap(match => [match.homeTeam, match.awayTeam]))]
+      .filter(name => name !== 'Tidewater Sharks Premier White');
+    for (const opponent of opponents) {
+      await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
+        flagFootballActive: true, sharksActive: true, swim757Active: true,
+        opheliaLatest757Meet: { meet: 'Meet', dates: ['2026-09-12'], startDate: '2026-09-12', endDate: '2026-09-12',
+          races: [{ event: '25y Butterfly', course: 'SCY', seconds: 34.44 }] },
+        sharksNextGame: { opponent, date: '2026-09-19', time: '10:30', homeAway: 'home', venue: 'Omitted venue' },
+      } }), { waitUntil: 'load' });
+      await page.evaluate(() => document.fonts.ready);
+      assert.equal(await page.locator('.athletics-grid>.athletic-card').count(), 3);
+      const line = page.locator('.athletic-card:last-child .next-box>span');
+      const size = await line.evaluate(node => {
+        const range = document.createRange(); range.selectNodeContents(node);
+        const boxes = [...range.getClientRects()];
+        return { height: range.getBoundingClientRect().height, overflow: boxes.some(box => box.right > node.getBoundingClientRect().right + 1) };
+      });
+      assert.ok(size.height <= 24 && !size.overflow, `${opponent}: ${JSON.stringify(size)}`);
+      assert.equal(await page.locator('.athletic-card:last-child .next-box small').count(), 0);
     }
   });
 
