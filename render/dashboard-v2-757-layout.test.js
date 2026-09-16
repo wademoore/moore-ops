@@ -12,25 +12,33 @@ let browser;
 before(async () => { browser = await chromium.launch({ headless: true, executablePath: resolveBrowserPath(process.env.DASHBOARD_BROWSER_PATH) }); });
 after(async () => { await browser?.close(); });
 
-for (const count of [1, 3]) {
-  it(`keeps five visible races and overflow notice inside the ${count}-card panel`, async () => {
+for (const count of [1, 3]) for (const raceCount of [5, 6, 10]) {
+  it(`keeps the footer and ${raceCount} races within the ${count}-card panel`, async () => {
     const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
-    const races = ['100y Freestyle', '25y Butterfly', '25y Backstroke', '25y Breaststroke', '25y Freestyle', '50y Freestyle', '50y Breaststroke'].map(event => ({
+    const races = ['25y Butterfly', '25y Backstroke', '25y Breaststroke', '25y Freestyle', '50y Freestyle', '50y Breaststroke', '50y Backstroke', '50y Butterfly', '100y Freestyle', '100y Breaststroke'].slice(0, raceCount).map(event => ({
       event, distance: Number(event.match(/^\d+/)[0]), course: 'SCY', date: '2026-09-12', seconds: 65, dq: false, isPersonalBest: false,
       personalBest: { seconds: 60, meet: '2026 VPSU Championship Meet', date: '2026-08-01' },
     }));
     await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
       ...sampleDashboardV2Data.athletics, wavesActive: false, swim757Active: true, flagFootballActive: count === 3, sharksActive: count === 3,
-      opheliaLatest757Meet: { meet: 'Seven race meet', startDate: '2026-09-12', endDate: '2026-09-12', dates: ['2026-09-12'], races },
+      opheliaLatest757Meet: { meet: 'Latest race meet', startDate: '2026-09-12', endDate: '2026-09-12', dates: ['2026-09-12'], races },
     } }));
     await page.evaluate(() => document.fonts.ready);
     const result = await page.evaluate(() => {
       const panel = document.querySelector('.athletics-panel').getBoundingClientRect();
+      const card = document.querySelector('.latest-757-card').getBoundingClientRect();
       const footer = document.querySelector('.latest-757-card .athletic-footer').getBoundingClientRect();
+      const footerElement = document.querySelector('.latest-757-card .athletic-footer');
+      const footerRange = document.createRange(); footerRange.selectNodeContents(footerElement);
+      const footerText = [...footerRange.getClientRects()];
       const elements = [...document.querySelectorAll('.latest-757-card strong,.latest-757-card span,.latest-757-pb,.latest-757-more')];
       return {
         count: document.querySelectorAll('.latest-757-race').length,
-        more: document.querySelector('.latest-757-more').textContent,
+        titles: [...document.querySelectorAll('.latest-757-race>span')].map(element => element.firstChild.textContent.trim()),
+        more: document.querySelector('.latest-757-more')?.textContent || '',
+        footer: { height: footer.height, bottom: footer.bottom, panelBottom: panel.bottom, cardBottom: card.bottom,
+          textVisible: footerText.length > 0 && footerText.every(box => box.left >= panel.left && box.right <= panel.right && box.top >= panel.top && box.bottom <= panel.bottom && box.bottom <= footer.bottom + 1),
+          unclipped: footerElement.scrollHeight <= footerElement.clientHeight + 1 },
         clipped: elements.flatMap(element => {
           const range = document.createRange(); range.selectNodeContents(element);
           return [...range.getClientRects()].some(box => box.left < panel.left || box.right > panel.right || box.top < panel.top || box.bottom > panel.bottom ||
@@ -38,8 +46,11 @@ for (const count of [1, 3]) {
         }),
       };
     });
-    assert.equal(result.count, 5);
-    assert.equal(result.more, '+2 more races');
+    assert.ok(result.footer.height > 0 && result.footer.bottom <= Math.min(result.footer.panelBottom, result.footer.cardBottom) && result.footer.textVisible && result.footer.unclipped, `Footer clipped: ${JSON.stringify(result.footer)}`);
+    const visibleCount = count === 3 ? 4 : 5;
+    assert.equal(result.count, visibleCount);
+    assert.deepEqual(result.titles, ['25y Freestyle', '25y Breaststroke', '25y Backstroke', '25y Butterfly', '50y Freestyle'].slice(0, visibleCount));
+    assert.equal(result.more, raceCount > visibleCount ? `+${raceCount - visibleCount} more races` : '');
     assert.deepEqual(result.clipped, []);
     await page.close();
   });

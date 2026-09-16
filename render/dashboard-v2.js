@@ -843,10 +843,13 @@ function renderLatest757Card(a, meet) {
   };
   const races = [...meet.races].sort((a, b) =>
     ((a.distance ?? Infinity) - (b.distance ?? Infinity)) || strokeRank(a) - strokeRank(b));
+  // Beside both other active sports the narrow card needs room for its footer
+  // and overflow notice. Waves cannot be active on this guarded render path.
+  const rowLimit = a.flagFootballActive && a.sharksActive ? 4 : 5;
   const date = meet.dates.length > 1
     ? `${swimMeetDate(meet.startDate)} – ${swimMeetDate(meet.endDate)}`
     : swimMeetDate(meet.startDate);
-  const rows = races.slice(0, 5).map(race => {
+  const rows = races.slice(0, rowLimit).map(race => {
     const pb = race.personalBest;
     const isPB = !race.dq && race.isPersonalBest;
     const pbDate = pb ? swimMeetDate(pb.date) : '';
@@ -863,7 +866,7 @@ function renderLatest757Card(a, meet) {
     <div class="latest-757-results">
       <div class="latest-757-meet"><strong>${esc(meet.meet)}</strong><span>${esc(date)}</span></div>
       <div class="swim-rows">${rows}</div>
-      ${races.length > 5 ? `<div class="latest-757-more">+${races.length - 5} more races</div>` : ''}
+      ${races.length > rowLimit ? `<div class="latest-757-more">+${races.length - rowLimit} more races</div>` : ''}
     </div>
     ${a.opheliaFooter ? `<div class="athletic-footer">${esc(a.opheliaFooter)}</div>` : ''}
   </article>`;
