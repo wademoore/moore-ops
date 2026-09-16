@@ -102,6 +102,38 @@
  * per-configured-event 757 rows in `opheliaPBRows`: the 757 season active and
  * the Waves season not. During Waves season it is null, because the 757 rows
  * are absent then too.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * AthleticsData.sharksDivisionTable / .flagFootballDivisionTable
+ * ─────────────────────────────────────────────────────────────────────────
+ * Added 2026-09-16. One shape for both sports, so a consumer that can draw a
+ * division table can draw either without knowing which sport it holds. Both
+ * are DERIVED from recorded results; neither ingests a published table.
+ *
+ * Additive and read-only. NO renderer consumes them today. The fields they do
+ * not replace keep their names, their meanings and their values:
+ * `standings` (flag football) and `sharksDivisionStanding` are untouched, so
+ * every surface reading those keeps working until it migrates. Retiring them
+ * is a later change.
+ *
+ * The FIELD-LEVEL CONTRACT — every key, what it holds, and what absent means —
+ * lives in the header of digest/divisionStandings.js, which is the module that
+ * builds the shape. It is documented there rather than duplicated here for the
+ * same reason opheliaLatest757Meet's grouping rules live in
+ * digest/latest757Meet.js: one home per contract.
+ *
+ * The three things worth knowing at this level:
+ *
+ *   - `status` is 'available', 'preseason' or 'unavailable', and PRESEASON AND
+ *     UNAVAILABLE ARE DIFFERENT. Preseason means the data is fine and no result
+ *     has been recorded; it carries every team at zero, all sharing rank one.
+ *     Unavailable means the data is missing or unusable; it carries no rows and
+ *     a `reason`. Do not collapse them.
+ *   - `unpostedCount` is how many fixtures dated on or before `asOfDate` carry
+ *     no result, so a consumer can say some scores are not yet posted. The
+ *     count is the contract's; the wording is the renderer's.
+ *   - Teams level after the sport's ordering rules SHARE a rank and are marked
+ *     `rankShared`. The order they sit in within that group means nothing.
  */
 
 import { isSeasonActive }     from './sportsConfig.js';
@@ -109,6 +141,12 @@ import { parseFlagFootball }  from './flagFootballParser.js';
 import { parseSwim }          from './swimParser.js';
 import { parseWaves }         from './wavesParser.js';
 import { parseSharks }        from './sharksParser.js';
+import {
+  unavailableTable,
+  STANDINGS_UNAVAILABLE_REASON,
+  SOCCER_SOURCE,
+  FLAG_FOOTBALL_SOURCE,
+} from './divisionStandings.js';
 
 // ---------------------------------------------------------------------------
 // PUBLIC EXPORTS
@@ -206,6 +244,12 @@ export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootba
     sharksDivisionStanding:   sharks.divisionStanding,
     sharksDivisionLabel:      sharks.divisionLabel,
     sharksLastResultDetail:   sharks.lastResult,
+
+    // Derived division tables, one shape for both sports. See the
+    // DivisionTable block in this file's header, and digest/divisionStandings.js
+    // for the field-level contract.
+    sharksDivisionTable:        sharks.divisionTable,
+    flagFootballDivisionTable:  ff.divisionTable,
   };
 }
 
@@ -240,5 +284,14 @@ export function buildEmptyAthletics() {
     sharksRecord: '0-0-0', sharksLastResult: '', sharksNextOpponent: null,
     sharksNextTime: null, sharksNextGame: null, sharksDivisionStanding: null,
     sharksDivisionLabel: null, sharksLastResultDetail: null,
+
+    // Unavailable rather than preseason: with no athletics data at all, the
+    // reason a table cannot be drawn is that the data is missing, which is not
+    // the same statement as "the season has not started". Keeping the two
+    // apart here is the whole point of having three statuses.
+    sharksDivisionTable: unavailableTable(
+      'soccer', STANDINGS_UNAVAILABLE_REASON.NO_DATA, null, null, SOCCER_SOURCE),
+    flagFootballDivisionTable: unavailableTable(
+      'flag-football', STANDINGS_UNAVAILABLE_REASON.NO_DATA, null, null, FLAG_FOOTBALL_SOURCE),
   };
 }

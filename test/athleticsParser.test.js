@@ -163,6 +163,20 @@ describe('buildEmptyAthletics()', () => {
     assert.equal(result.sharksDivisionLabel,    null);
     assert.equal(result.sharksLastResultDetail, null);
   });
+
+  it('both division tables default to unavailable with a reason, never to preseason', () => {
+    // With no athletics data at all the reason a table cannot be drawn is that
+    // the data is missing — not that the season has not started. The two must
+    // stay distinguishable, which is the whole point of having three statuses.
+    const result = buildEmptyAthletics();
+    for (const table of [result.sharksDivisionTable, result.flagFootballDivisionTable]) {
+      assert.equal(table.status, 'unavailable');
+      assert.equal(table.reason, 'no-data');
+      assert.deepEqual(table.rows, []);
+    }
+    assert.equal(result.sharksDivisionTable.sport, 'soccer');
+    assert.equal(result.flagFootballDivisionTable.sport, 'flag-football');
+  });
 });
 
 // ── parseAthleticsDoc — coordinator behavior ──────────────────────────────────
@@ -263,5 +277,21 @@ describe('parseAthleticsDoc — coordinator', () => {
     assert.ok(result.sharksNextGame !== null);
     assert.equal(result.sharksNextGame.opponent, 'VIP United Red');
     assert.equal(result.sharksDivisionLabel, 'TASL U11 Boys Sky Division');
+  });
+
+  it('surfaces a division table for each sport, additively', () => {
+    const result = parseAthleticsDoc(
+      new Date('2026-08-10T12:00:00'), FIXTURE_CONFIG, FIXTURE_FLAG_FOOTBALL, {}, [],
+      null, null, null, null, FIXTURE_SHARKS
+    );
+    assert.equal(result.flagFootballDivisionTable.sport, 'flag-football');
+    assert.equal(result.sharksDivisionTable.sport, 'soccer');
+    // This soccer fixture declares no divisionTeams, so the table cannot be
+    // derived and says so rather than guessing at the teams from the match
+    // strings. The flat sharks fields above are unaffected, which is what
+    // "additive" has to mean.
+    assert.equal(result.sharksDivisionTable.status, 'unavailable');
+    assert.equal(result.sharksDivisionTable.reason, 'no-division-teams');
+    assert.equal(result.sharksRecord, '1-0-0');
   });
 });

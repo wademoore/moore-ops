@@ -373,6 +373,67 @@ then, do not invent an id and do not write a null side.
 Matches live under `seasons[n].divisionSchedule.matches`. See the table above for the
 standings-vs-schedule team-name wording caveat.
 
+### `divisionTeams` and `myTeamId` — the division's teams and their exact aliases (added Sept 16, 2026)
+
+Decided in conversation with Wade on this date; this paragraph is the first and only place it
+is written down. Not a pre-existing repo-wide convention — do not cite it as one.
+
+`seasons[n].divisionTeams` lists every team in the division. Each entry carries:
+
+| field | meaning |
+|---|---|
+| `teamId` | a stable identifier for the team. This league publishes no team ids, so it is authored here. Once written it never changes — the strings change, the id does not. |
+| `name` | the team's full name, as the league most recently published it |
+| `shortName` | a short display name, which MUST be an exact substring of `name` |
+| `aliases` | every string ever observed for this team, verbatim |
+
+`seasons[n].myTeamId` names our own team's `teamId`.
+
+**`aliases` must cover every team string anywhere in this file** — both sides of every match
+row, every `standings.teams` row, and `team.name` and `team.displayName`. Resolution in
+`digest/divisionStandings.js` is exact-string and nothing else: a string that matches no
+alias, or that two teams both claim, makes the whole table unavailable rather than being
+guessed at. So when the league edits a team's name, ADD the new string to `aliases` and
+update `name`; never replace an alias, because the old string is still sitting in the match
+rows it was entered with.
+
+**A `shortName` may shorten; it may never say something the full name does not.** That is why
+it has to be a substring — the same rule the Family Spotlight's display overrides already
+keep. A test asserts it, along with every observed string resolving.
+
+This is the opposite discipline from `isSharksTeam()` in `digest/sharksParser.js`, which is a
+substring test and stays one. That function answers one question — is this our own team — on a
+name that is unique in this division. Which of eleven teams a string names is a different
+question, and the same tool does not answer both. Do not extend the substring test to
+opponents.
+
+### `standings` is a dated check fixture, not a display source (decided Sept 16, 2026)
+
+Decided in conversation with Wade on this date; this paragraph is the first and only place it
+is written down. Not a pre-existing repo-wide convention — do not cite it as one.
+
+Standings are DERIVED from recorded results by `digest/divisionStandings.js`. A published table
+is never ingested for display. `seasons[n].standings` holds the league's published table anyway,
+as a check the derivation is compared against, and carries two dates for that purpose:
+
+| field | meaning |
+|---|---|
+| `asOf` | the date the table was captured from the league's page |
+| `resultsThrough` | the date the results behind that table run through |
+
+They are not the same date and both matter. `test/divisionStandings.test.js` filters the match
+rows on `resultsThrough` before deriving, which is what lets the reproduction case keep passing
+as later results are entered.
+
+**Replacing the block is a whole-block replacement**: every row of the published table, in the
+league's own rank order, with both dates and a `source` saying where it came from. Do not patch
+individual rows into a stale table. Any team string appearing here must already be an alias in
+`divisionTeams` — a test fails if it is not.
+
+`digest/sharksParser.js`'s legacy `divisionStanding` field still reads this block, so replacing
+it changes what that field reports. That is expected: it is the point of refreshing a stale
+snapshot. Retiring that field is a separate, later change.
+
 ### `unverified: true` — a result entered before the league posted it (added Sept 14, 2026)
 
 Decided in conversation with Wade on this date; this paragraph is the first and only place
@@ -405,10 +466,20 @@ Set it on a match object whose `homeScore`/`awayScore` were awarded because a si
 field a team, rather than scored in play. **Absence means the result was played** — do not
 write `forfeit: false` on an ordinary row.
 
-Why carry it at all: an awarded score is an administrative outcome, not a scoreline, so
-anything that eventually derives standings from these rows needs to be able to keep it out
-of played-result arithmetic — goals for/against in particular. That is the forward-looking
-reason. It is **not** a live defect today: `digest/sharksParser.js` derives `seasonRecord`
+Why carry it at all: an awarded score is an administrative outcome rather than a scoreline,
+so it is worth being able to tell one from the other when reading the data later. It is
+provenance, not an input.
+
+⚠ **The forward-looking reason this paragraph used to give was the opposite of what the
+league does, and it was settled by measurement on 2026-09-16.** It said that anything
+deriving standings from these rows would need to keep an awarded score out of played-result
+arithmetic, goals for and against in particular. The league's own published division table
+for that date counts this very row both ways: the Reapers' goals-for and the Killer Bees'
+goals-against each include its awarded scoreline. Wade's decision of 2026-09-16 is therefore
+that a forfeit counts at its recorded scoreline for points and for goals alike, matching the
+published table, and `digest/divisionStandings.js` does not read this key at all. Excluding it
+would make the derivation disagree with the league. Clearing the flag on that row changes
+nothing in the derived table, which is asserted rather than claimed. It is **not** a live defect today: `digest/sharksParser.js` derives `seasonRecord`
 only from rows where `isSharksTeam()` matches one side, and the one row carrying the flag is
 between two other clubs. The `divisionStanding` that same parser returns is read straight
 out of this file's own `standings.teams` block, not computed from the match rows at all.

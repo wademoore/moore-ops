@@ -7,6 +7,8 @@
  * on the athletics object.
  */
 
+import { buildFlagFootballDivisionTable } from './divisionStandings.js';
+
 // Game types that are scheduled calendar entries but are not fixtures: they
 // have no opponent. Two consumers read it: nextFlagGame below, and the
 // `first-game` branch of selectSeasonMilestone(). The record and the standings
@@ -278,6 +280,12 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
     seasonLabel:  season.label,
     teamName:     seasonTeamName,
     nextFlagGame,
+    // The derived division table, built from the SAME season this function
+    // already selected, so the two cannot disagree about which season is
+    // current. Additive and independent of `standings` above, which keeps its
+    // shape and its values so the surfaces reading it keep working until they
+    // migrate. See digest/divisionStandings.js for the contract.
+    divisionTable: buildFlagFootballDivisionTable(season),
   };
 }
 
