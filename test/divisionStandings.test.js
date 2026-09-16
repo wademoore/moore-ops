@@ -209,6 +209,19 @@ describe('soccer — team strings resolve by exact alias, never by substring', (
     assert.equal(new Set(shorts).size, shorts.length);
   });
 
+  it('the alias index returns a failure on a non-array rather than throwing, called directly', () => {
+    // It is exported, so it can be reached with anything, and its one caller
+    // already checks the shape — which is why this guard was missing: a guard
+    // that only ever runs behind another guard is untested until something
+    // calls the function directly. Nothing exported from this module throws,
+    // and that claim is only worth making if it is exercised here.
+    for (const bad of [undefined, null, 42, 'teams', {}]) {
+      const built = buildSoccerAliasIndex(bad);
+      assert.equal(built.ok, false);
+      assert.equal(built.reason, STANDINGS_UNAVAILABLE_REASON.NO_DIVISION_TEAMS);
+    }
+  });
+
   it('a string that resolves to no team makes the table unavailable, and does not throw', () => {
     const season = clone(soccerSeason);
     // A near-miss a substring test would happily swallow: it contains the whole
@@ -256,7 +269,7 @@ describe('soccer — team strings resolve by exact alias, never by substring', (
     season.divisionSchedule.matches[0].date = '29 Aug 2026';
     const table = buildSoccerDivisionTable(season);
     assert.equal(table.status, STANDINGS_STATUS.UNAVAILABLE);
-    assert.equal(table.reason, STANDINGS_UNAVAILABLE_REASON.MALFORMED_DATE);
+    assert.equal(table.reason, STANDINGS_UNAVAILABLE_REASON.MALFORMED_FIXTURE_DATE);
   });
 
   it('a division team carrying no identifier says so, rather than reporting no teams at all', () => {
@@ -426,14 +439,15 @@ describe('flag football division table — the shipped season', () => {
   });
 
   it('a fixture whose date cannot be read makes the table unavailable, exactly as in soccer', () => {
-    // The two sports used to differ here — soccer resolved teams before testing
-    // the date and flag football after — so one malformed row failed closed in
-    // one sport and vanished in the other.
+    // The two sports used to test this at different points — soccer after
+    // resolving teams, flag football before. Both ended in a silent drop, so an
+    // ordinary malformed row vanished in both alike; the position is matched so
+    // they cannot diverge, not to repair a divergence in the ordinary case.
     const season = clone(fallSeason);
     season.games.find(g => g.type === 'regular').date = 'Sept 20';
     const table = buildFlagFootballDivisionTable(season);
     assert.equal(table.status, STANDINGS_STATUS.UNAVAILABLE);
-    assert.equal(table.reason, STANDINGS_UNAVAILABLE_REASON.MALFORMED_DATE);
+    assert.equal(table.reason, STANDINGS_UNAVAILABLE_REASON.MALFORMED_FIXTURE_DATE);
     assert.deepEqual(table.rows, []);
   });
 

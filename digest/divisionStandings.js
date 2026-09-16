@@ -6,12 +6,18 @@
  * which each hand it a season they have already selected, so there is no second
  * season selector here to drift from theirs.
  *
- * Pure: no I/O and no `new Date()` of its own. Every exported entry point that
- * builds a table wraps its body and degrades to an unavailable table rather than
- * throwing, because this runs inside the daily digest and a throw there costs
- * the whole run. The export surface is deliberately narrow — the ranking core,
- * the two comparators and the two scoring helpers are module-private, so there
- * is no exported path that skips that wrapper.
+ * Pure: no I/O and no `new Date()` of its own, and nothing exported throws on a
+ * malformed input — it runs inside the daily digest, where a throw costs the
+ * whole run. That holds by two different mechanisms, which is worth separating
+ * rather than summarising: the two table builders wrap their whole body in a
+ * try and degrade to an unavailable table, while `buildSoccerAliasIndex` is not
+ * wrapped and instead guards its one iterable argument and returns a failure
+ * result. An earlier version of this paragraph claimed no exported path skipped
+ * the wrapper, which was false of that function on the very commit that wrote
+ * the claim.
+ *
+ * The export surface is otherwise deliberately narrow: the ranking core, the two
+ * comparators and the two scoring helpers are module-private.
  *
  * ─────────────────────────────────────────────────────────────────────────
  * WHY ONE MODULE FOR TWO SPORTS
@@ -125,7 +131,7 @@ export const STANDINGS_UNAVAILABLE_REASON = Object.freeze({
   NO_SEASON:           'no-season',
   NO_DIVISION_TEAMS:   'no-division-teams',
   TEAM_WITHOUT_ID:     'team-without-id',
-  MALFORMED_DATE:      'malformed-fixture-date',
+  MALFORMED_FIXTURE_DATE: 'malformed-fixture-date',
   DUPLICATE_TEAM_ID:   'duplicate-team-id',
   ALIAS_COLLISION:     'alias-collision',
   UNRESOLVED_TEAM:     'unresolved-team',
@@ -307,6 +313,14 @@ function soccerCompare(a, b) {
  * @returns {{ok: true, index: Map}|{ok: false, reason: string, detail: string}}
  */
 export function buildSoccerAliasIndex(divisionTeams) {
+  // Guarded here rather than only at the call site: this is exported, so it can
+  // be reached with anything, and `for (const x of undefined)` throws. The one
+  // caller already checks, which is exactly why this was missed — a guard that
+  // only ever runs behind another guard is untested until someone calls the
+  // function directly.
+  if (!Array.isArray(divisionTeams)) {
+    return { ok: false, reason: STANDINGS_UNAVAILABLE_REASON.NO_DIVISION_TEAMS, detail: null };
+  }
   const index = new Map();
   const seenIds = new Set();
   for (const team of divisionTeams) {
@@ -395,7 +409,7 @@ export function buildSoccerDivisionTable(season) {
       // missing a played fixture, while parseSharks's own seasonRecord applies
       // no date check and would still count it. Two derivations of the same
       // season disagreeing with no signal is exactly what this refuses.
-      if (!DATE_KEY.test(String(match?.date ?? ''))) return fail(STANDINGS_UNAVAILABLE_REASON.MALFORMED_DATE, String(match?.matchNumber ?? ''));
+      if (!DATE_KEY.test(String(match?.date ?? ''))) return fail(STANDINGS_UNAVAILABLE_REASON.MALFORMED_FIXTURE_DATE, String(match?.matchNumber ?? ''));
 
       const hasResult = match.played === true && isScore(match.homeScore) && isScore(match.awayScore);
       fixtures.push({
@@ -457,14 +471,23 @@ function flagFootballCompare(a, b) {
  * numbers. That is the same eligibility predicate, so on any row both can read
  * the two agree about which games have been played.
  *
- * They are NOT the same filter, and the difference is worth naming rather than
- * rounding off. This one additionally requires a readable date, and fails the
- * whole table closed when a row lacks one, where parseFlagFootball's filter has
- * no date check and counts that row. So a season carrying a malformed date
- * yields a legacy `standings` array and NO derived table — visibly different
- * rather than quietly different, which is the point of failing closed. An
- * earlier version of this paragraph said the two "can never disagree"; that was
- * an unfalsifiable claim about code that had a gate the other side lacked.
+ * They are NOT the same filter, and both differences are worth naming rather
+ * than rounding off — an earlier version of this paragraph named one of them
+ * and called it "the" difference.
+ *
+ * First, this one requires a readable date and fails the whole table closed
+ * when a row lacks one, where parseFlagFootball's filter has no date check and
+ * counts that row. So a season carrying a malformed date yields a legacy
+ * `standings` array and NO derived table — visibly different rather than
+ * quietly different, which is the point of failing closed.
+ *
+ * Second, `isScore` here requires Number.isFinite where that filter requires
+ * only `typeof === 'number'`. A NaN score is a recorded result to the parser,
+ * which compares it and falls to its tie branch, and an unposted fixture here.
+ * Unreachable from JSON, reachable from a hand-built season object.
+ *
+ * A yet earlier version said the two "can never disagree", which was an
+ * unfalsifiable claim about code that already had a gate the other side lacked.
  *
  * Identity is the league's numeric team id, falling back to the legacy string
  * abbr for the two older seasons that predate the ids. Never the mascot: this
@@ -512,12 +535,18 @@ export function buildFlagFootballDivisionTable(season) {
       const away = keyOf(game.away);
       if (home === null || !seen.has(home)) return fail(STANDINGS_UNAVAILABLE_REASON.UNRESOLVED_TEAM, game.home ?? null);
       if (away === null || !seen.has(away)) return fail(STANDINGS_UNAVAILABLE_REASON.UNRESOLVED_TEAM, game.away ?? null);
-      if (home === away) return fail(STANDINGS_UNAVAILABLE_REASON.AMBIGUOUS_FIXTURE, String(game.date));
-      // Same gate, same position, same outcome as the soccer branch above. The
-      // two used to differ — soccer resolved teams first and flag football
-      // tested the date first — so one malformed row failed closed in one sport
-      // and vanished in the other.
-      if (!DATE_KEY.test(String(game?.date ?? ''))) return fail(STANDINGS_UNAVAILABLE_REASON.MALFORMED_DATE, String(game?.week ?? ''));
+      if (home === away) return fail(STANDINGS_UNAVAILABLE_REASON.AMBIGUOUS_FIXTURE, String(game.week ?? ''));
+      // Same gate, same position, same outcome as the soccer branch above.
+      //
+      // The two used to sit at different points — soccer resolved teams first,
+      // flag football tested the date first. What that cost is narrower than an
+      // earlier version of this comment said: BOTH branches ended in `continue`,
+      // so an ordinary malformed row vanished in both sports alike. The
+      // ordering only diverged for a row that was ALSO unresolved or
+      // self-fixtured, where soccer reported that instead. The position is
+      // matched here so the two cannot diverge again, not to repair a
+      // divergence in what they reported for the ordinary case.
+      if (!DATE_KEY.test(String(game?.date ?? ''))) return fail(STANDINGS_UNAVAILABLE_REASON.MALFORMED_FIXTURE_DATE, String(game?.week ?? ''));
 
       const hasResult = game.status === 'final' && isScore(game.homeScore) && isScore(game.awayScore);
       fixtures.push({

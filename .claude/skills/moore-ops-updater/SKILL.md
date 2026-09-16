@@ -402,6 +402,23 @@ guessed at. So when the league edits a team's name, ADD the new string to `alias
 update `name`; never replace an alias, because the old string is still sitting in the match
 rows it was entered with.
 
+**Four things blank the derived table for a sport, and all four are things a hand entry can
+cause.** The table goes `unavailable` — no rows at all, not a partial table — when:
+
+| condition | applies to |
+|---|---|
+| a team string matching no alias | `sharks-soccer.json` |
+| a team string two teams both claim | `sharks-soccer.json` |
+| a fixture `date` that is not `YYYY-MM-DD` | **both** this file and `flag-football.json` |
+| a team carrying no identifier (`teamId`, or `abbr` in an older flag football season) | **both** |
+
+The date one is the easy mistake and the least obvious: writing `29 Aug 2026` instead of
+`2026-08-29` on one row silently removes that whole sport's derived standings, because every
+date comparison in `digest/divisionStandings.js` is a string comparison and a malformed date
+would sort wrongly rather than error. It fails closed on purpose — a table missing one
+played fixture looks right and is wrong — but nothing on screen will say which row did it.
+The `reasonDetail` on the unavailable table names the fixture.
+
 **A `shortName` may shorten; it may never say something the full name does not.** That is why
 it has to be a substring — the same rule the Family Spotlight's display overrides already
 keep. A test asserts it, along with every observed string resolving.
@@ -492,9 +509,20 @@ between two other clubs. The `divisionStanding` that same parser returns is read
 of this file's own `standings.teams` block, not computed from the match rows at all.
 
 One row carries it as of this writing — match 637 (2026-08-29, Chesapeake United Reapers
-3–0 VA Rush Killer Bees), entered in commit `b4dc214` (PR #77). No parser and no test reads
-it — the `note` subsection below enumerates the readers of this file that were checked, and
-names this key alongside `note` rather than covering `note` alone.
+3–0 VA Rush Killer Bees), entered in commit `b4dc214` (PR #77). No parser reads it. A test
+now does: `test/divisionStandings.test.js` asserts that this row still carries the flag, and
+clears the flag on a copy to prove the derived table counts the row identically either way.
+That is the assertion the paragraph above refers to, and it reads the key in order to prove
+nothing depends on it — which is the opposite of a consumer. The `note` subsection below
+enumerates the readers of this file that were checked, and names this key alongside `note`
+rather than covering `note` alone.
+
+⚠ **This sentence read "No parser and no test reads it" until 2026-09-16, and the change
+that added that test also edited the paragraph directly above it without noticing.** The
+same commit that is cited above for merging a self-falsifying claim about this very key is
+`fe684df`; this is the second time a sentence about `forfeit` has been falsified by the
+commit editing its own neighbourhood. When you add a reader of any key in this file, grep
+this file for the key before you finish.
 
 ⚠ **This paragraph used to state the result of running `git grep -w forfeit` across the
 repository, and the commit that wrote that statement falsified it in the act of making it.**
