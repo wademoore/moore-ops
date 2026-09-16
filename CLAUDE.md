@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2680+ passing with a browser
+- Run npm test after changes — must stay at 2704+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row). **This line and the floor at the end of the current baseline
   entry are one figure in two places — move both or neither.** It has now gone
@@ -2849,7 +2849,30 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 ## Test baseline
 
-### Current baseline — measured Sept 15, 2026 on the latest-757-meet-view branch
+### Current baseline — measured Sept 15, 2026 on PR #89's 757 card follow-up
+
+| Invocation | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| GitHub CI `npm test`, browser enabled | 2704 | **2704** | **0** | **0** |
+
+Measured on commit `5abe76e`, branch `codex/757-meet-card`, in
+[CI run 35041169394](https://github.com/wademoore/moore-ops/actions/runs/35041169394).
+The UTC log date is September 16; the household date is September 15.
+The original card implementation measured 2697 passing in CI; the follow-up
+adds seven tests: four invalid/missing PB-date cases, one exactly-five-races
+boundary case, and two seven-race browser layouts. The PR as a whole adds 24
+tests to the prior 2680 baseline. Existing acceptance tests now assert omitted
+current-PB provenance and the capped household order.
+
+The local Windows `npm test` invocation discovers zero tests because of its
+single-quoted globs, so it is not the measurement above. Focused local checks
+passed; the full-suite baseline is the linked CI result. Waves athletics HTML
+was also compared byte-for-byte against `593476a` with both values of the 757
+season flag and was identical.
+
+**Coder mode must keep `npm test` at 2704+ with no failures once a browser resolves.**
+
+### Previous baseline — measured Sept 15, 2026 on the latest-757-meet-view branch
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
@@ -2941,7 +2964,7 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2680+ with no failures once a browser resolves.**
+**Previous floor: 2680 passing tests; superseded by the current baseline above.**
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was
 run, and quoting a figure that was not taken is exactly the unfalsifiable claim this
