@@ -290,8 +290,13 @@ Older seasons (`fall-2025`, `spring-2026`) use string abbreviations instead, mat
 **Never identify a team by mascot.** `seasons[n].teams[].teamName` is a display name and is
 not unique: `fall-2026` contains two teams named `Cowboys` — ours (`8009182`, `leagueName`
 `"Moore – Cowboys"`) and `8057461` (`"Watkins - Cowboys"`). Resolve every id through
-`teams[]` before writing it. This is the opposite of `sharks-soccer.json`, where fuzzy
-mascot matching is correct.
+`teams[]` before writing it. This is the opposite of `sharks-soccer.json` in ONE narrow
+respect only: there, `isSharksTeam()` identifies **our own team** by substring, because
+"Tidewater Sharks" appears in no other club's name in that division. That is not a general
+convention for that file, and as of 2026-09-16 it is explicitly not how the division is
+resolved — see `divisionTeams` above, where every team's every observed string is an exact
+alias and nothing matches loosely. Do not extend the substring test to opponents in either
+file.
 
 ### Recording a result
 
@@ -373,6 +378,96 @@ then, do not invent an id and do not write a null side.
 Matches live under `seasons[n].divisionSchedule.matches`. See the table above for the
 standings-vs-schedule team-name wording caveat.
 
+### `divisionTeams` and `myTeamId` — the division's teams and their exact aliases (added Sept 16, 2026)
+
+Decided in conversation with Wade on this date; this paragraph is the first and only place it
+is written down. Not a pre-existing repo-wide convention — do not cite it as one.
+
+`seasons[n].divisionTeams` lists every team in the division. Each entry carries:
+
+| field | meaning |
+|---|---|
+| `teamId` | a stable identifier for the team. This league publishes no team ids, so it is authored here. Once written it never changes — the strings change, the id does not. |
+| `name` | the team's full name, as the league most recently published it |
+| `shortName` | a short display name, which MUST be an exact substring of `name` |
+| `aliases` | every string ever observed for this team, verbatim |
+
+`seasons[n].myTeamId` names our own team's `teamId`.
+
+**`aliases` must cover every team string anywhere in this file** — both sides of every match
+row, every `standings.teams` row, and `team.name` and `team.displayName`. Resolution in
+`digest/divisionStandings.js` is exact-string and nothing else: a string that matches no
+alias, or that two teams both claim, makes the whole table unavailable rather than being
+guessed at. So when the league edits a team's name, ADD the new string to `aliases` and
+update `name`; never replace an alias, because the old string is still sitting in the match
+rows it was entered with.
+
+**A hand entry can blank the derived table for a sport, and there is more than one way to do
+it.** When it happens the table goes `unavailable` — no rows at all, never a partial table.
+The authoritative set of causes is `STANDINGS_UNAVAILABLE_REASON` in
+`digest/divisionStandings.js`; read it there rather than trusting a list here, which is prose
+and rots. The ones an entry to these files can reach:
+
+| condition | applies to |
+|---|---|
+| a team string matching no alias | `sharks-soccer.json` |
+| a team string two teams both claim | `sharks-soccer.json` |
+| a `games[]` row naming a team absent from `teams[]` | `flag-football.json` |
+| a fixture `date` that is not `YYYY-MM-DD` | **both** this file and `flag-football.json` |
+| a team carrying no identifier (`teamId`, or `abbr` in an older flag football season) | **both** |
+| a duplicated `teamId` | **both** |
+| a `myTeamId` / `myTeamAbbr` naming no team in the division | **both** |
+| both sides of one fixture resolving to the same team | **both** |
+| `divisionTeams` (soccer) or `teams` (flag football) absent or empty | **both** |
+
+⚠ **This table gave a count and called it closed until a Reviewer round falsified it**, on a
+list that omitted the mistyped `myTeamId` the section six lines above tells you to author. A
+count here is a claim about code that lives somewhere else; the enum is the claim.
+
+The date one is the easy mistake and the least obvious: writing `29 Aug 2026` instead of
+`2026-08-29` on one row silently removes that whole sport's derived standings, because every
+date comparison in `digest/divisionStandings.js` is a string comparison and a malformed date
+would sort wrongly rather than error. It fails closed on purpose — a table missing one
+played fixture looks right and is wrong — but nothing on screen will say which row did it.
+The `reasonDetail` on the unavailable table names the fixture.
+
+**A `shortName` may shorten; it may never say something the full name does not.** That is why
+it has to be a substring — the same rule the Family Spotlight's display overrides already
+keep. A test asserts it, along with every observed string resolving.
+
+This is the opposite discipline from `isSharksTeam()` in `digest/sharksParser.js`, which is a
+substring test and stays one. That function answers one question — is this our own team — on a
+name that is unique in this division. Which of eleven teams a string names is a different
+question, and the same tool does not answer both. Do not extend the substring test to
+opponents.
+
+### `standings` is a dated check fixture, not a display source (decided Sept 16, 2026)
+
+Decided in conversation with Wade on this date; this paragraph is the first and only place it
+is written down. Not a pre-existing repo-wide convention — do not cite it as one.
+
+Standings are DERIVED from recorded results by `digest/divisionStandings.js`. A published table
+is never ingested for display. `seasons[n].standings` holds the league's published table anyway,
+as a check the derivation is compared against, and carries two dates for that purpose:
+
+| field | meaning |
+|---|---|
+| `asOf` | the date the table was captured from the league's page |
+| `resultsThrough` | the date the results behind that table run through |
+
+They are not the same date and both matter. `test/divisionStandings.test.js` filters the match
+rows on `resultsThrough` before deriving, which is what lets the reproduction case keep passing
+as later results are entered.
+
+**Replacing the block is a whole-block replacement**: every row of the published table, in the
+league's own rank order, with both dates and a `source` saying where it came from. Do not patch
+individual rows into a stale table. Any team string appearing here must already be an alias in
+`divisionTeams` — a test fails if it is not.
+
+`digest/sharksParser.js`'s legacy `divisionStanding` field still reads this block, so replacing
+it changes what that field reports. That is expected: it is the point of refreshing a stale
+snapshot. Retiring that field is a separate, later change.
+
 ### `unverified: true` — a result entered before the league posted it (added Sept 14, 2026)
 
 Decided in conversation with Wade on this date; this paragraph is the first and only place
@@ -405,18 +500,46 @@ Set it on a match object whose `homeScore`/`awayScore` were awarded because a si
 field a team, rather than scored in play. **Absence means the result was played** — do not
 write `forfeit: false` on an ordinary row.
 
-Why carry it at all: an awarded score is an administrative outcome, not a scoreline, so
-anything that eventually derives standings from these rows needs to be able to keep it out
-of played-result arithmetic — goals for/against in particular. That is the forward-looking
-reason. It is **not** a live defect today: `digest/sharksParser.js` derives `seasonRecord`
-only from rows where `isSharksTeam()` matches one side, and the one row carrying the flag is
-between two other clubs. The `divisionStanding` that same parser returns is read straight
-out of this file's own `standings.teams` block, not computed from the match rows at all.
+Why carry it at all: an awarded score is an administrative outcome rather than a scoreline,
+so it is worth being able to tell one from the other when reading the data later. It is
+provenance, not an input.
+
+⚠ **The forward-looking reason this paragraph used to give was the opposite of what the
+league does, and it was settled by measurement on 2026-09-16.** It said that anything
+deriving standings from these rows would need to keep an awarded score out of played-result
+arithmetic, goals for and against in particular. The league's own published division table
+for that date counts this very row both ways: the Reapers' goals-for and the Killer Bees'
+goals-against each include its awarded scoreline. Wade's decision of 2026-09-16 is therefore
+that a forfeit counts at its recorded scoreline for points and for goals alike, matching the
+published table, and `digest/divisionStandings.js` does not read this key at all. Excluding it
+would make the derivation disagree with the league. Clearing the flag on that row changes
+nothing in the derived table, which is asserted rather than claimed.
+
+Nothing else reads the key either. `digest/sharksParser.js` derives `seasonRecord` only from
+rows where `isSharksTeam()` matches exactly one side, and the one row carrying the flag is
+between two other clubs. The `divisionStanding` that same parser returns is read straight out
+of this file's own `standings.teams` block, not computed from the match rows at all.
 
 One row carries it as of this writing — match 637 (2026-08-29, Chesapeake United Reapers
-3–0 VA Rush Killer Bees), entered in commit `b4dc214` (PR #77). No parser and no test reads
-it — the `note` subsection below enumerates the readers of this file that were checked, and
-names this key alongside `note` rather than covering `note` alone.
+3–0 VA Rush Killer Bees), entered in commit `b4dc214` (PR #77). No parser reads it. A test
+now does: `test/divisionStandings.test.js` asserts that this row still carries the flag, and
+clears the flag on a copy to prove the derived table counts the row identically either way.
+That is the assertion the paragraph above refers to, and it reads the key in order to prove
+nothing depends on it — which is the opposite of a consumer. The `note` subsection below
+enumerates the readers of this file that were checked, and names this key alongside `note`
+rather than covering `note` alone.
+
+⚠ **This sentence read "No parser and no test reads it" until 2026-09-16, and the change
+that added that test also edited the paragraph directly above it without noticing.** It is
+not the first sentence about this key to be falsified by a commit editing its own
+neighbourhood — the retraction further down this subsection is another. When you add a
+reader of any key in this file, grep this file for the key before you finish.
+
+No commit is named here on purpose. An earlier version of this paragraph named one, as the
+commit that had merged a self-falsifying claim about `forfeit`; that commit is the one that
+**deleted** such a claim, the attribution was backwards, and nothing above this sentence
+cited it, so the words "cited above" pointed at nothing. The subsection below already names
+the commit that matters for the claim it retracts.
 
 ⚠ **This paragraph used to state the result of running `git grep -w forfeit` across the
 repository, and the commit that wrote that statement falsified it in the act of making it.**

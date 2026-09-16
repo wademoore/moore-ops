@@ -12,6 +12,13 @@
  * already scoped to one team).
  */
 
+import {
+  buildSoccerDivisionTable,
+  unavailableTable,
+  STANDINGS_UNAVAILABLE_REASON,
+  SOCCER_SOURCE,
+} from './divisionStandings.js';
+
 /**
  * Matches Sharks identity by substring, never exact string equality —
  * standings.teams and divisionSchedule.matches/team.name use different
@@ -57,6 +64,8 @@ export function parseSharks(sharksSoccerData, referenceDate) {
     divisionStanding:  null,
     divisionLabel:     null,
     teamName:          null,
+    divisionTable:     unavailableTable(
+      'soccer', STANDINGS_UNAVAILABLE_REASON.NO_DATA, null, null, SOCCER_SOURCE),
   };
 
   if (!sharksSoccerData) return NULL_RESULT;
@@ -87,8 +96,20 @@ export function parseSharks(sharksSoccerData, referenceDate) {
     .filter(Boolean)
     .join(' ');
 
+  // Exactly one side must be ours. A row where BOTH sides or NEITHER side
+  // resolves as the Sharks cannot have a result attributed to "our" side, so it
+  // is rejected rather than falling through to `isHome ? home : away` and
+  // silently reporting the away team's score as ours. This is the rule the two
+  // sibling call sites already apply — findFixture() in
+  // digest/specialEventQualify.js and in digest/familySpotlightSelector.js both
+  // reject a row where isSharksTeam() gives the same answer on both sides.
+  //
+  // Behaviour on the shipped data is unchanged: no row names the Sharks twice,
+  // and the previous OR filter already excluded rows naming them on neither
+  // side. What changes is that a future Sharks-vs-Sharks row is dropped instead
+  // of counted once for each side of itself.
   const sharksMatches = matches.filter(
-    m => isSharksTeam(m.homeTeam) || isSharksTeam(m.awayTeam)
+    m => isSharksTeam(m.homeTeam) !== isSharksTeam(m.awayTeam)
   );
 
   // ── seasonRecord ─────────────────────────────────────────────────────────
@@ -170,5 +191,11 @@ export function parseSharks(sharksSoccerData, referenceDate) {
     divisionStanding,
     divisionLabel: divisionLabel || null,
     teamName: season.team?.displayName || season.team?.name || null,
+    // The derived division table. Additive and independent of divisionStanding
+    // above, which keeps reading the file's own standings block so the
+    // renderers that already read it keep working until they migrate. See
+    // digest/divisionStandings.js for the contract and for why the all-zero
+    // suppression that field applies is not carried into it.
+    divisionTable: buildSoccerDivisionTable(season),
   };
 }

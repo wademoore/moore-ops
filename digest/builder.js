@@ -45,6 +45,16 @@
  *   order and season gating — is documented in the header of
  *   digest/athleticsParser.js, which assembles AthleticsData; the grouping
  *   and ordering rules are in digest/latest757Meet.js.
+ *
+ *   AthleticsData gained two more additive, read-only keys on 2026-09-16:
+ *   `sharksDivisionTable` and `flagFootballDivisionTable`, the division
+ *   standings for each sport DERIVED from recorded results — one shape, so a
+ *   consumer that can draw one can draw the other. No renderer reads either
+ *   yet, and the fields they sit beside (`standings`, `sharksDivisionStanding`)
+ *   are unchanged. Their field-level contract — every key, the three statuses,
+ *   what a shared rank means and what absent means — is in the header of
+ *   digest/divisionStandings.js, which builds the shape; digest/athleticsParser.js
+ *   carries the summary and the pointer.
  *   menuEvent:       ResolvedEvent|null   today's dinner
  *   tomorrowMenu:    ResolvedEvent|null   tomorrow's dinner
  *   nationalsData:   null                 populated by index.js after sports fetch

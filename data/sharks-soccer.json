@@ -9,6 +9,20 @@
         "displayName": "Tidewater Sharks U11 Premier White",
         "headCoach": "Kyle Grizzard"
       },
+      "myTeamId": "tidewater-sharks-premier-white",
+      "divisionTeams": [
+        { "teamId": "var-coastal-strikers", "name": "VA Rush Soccer Club VAR U11B Coastal Strikers", "shortName": "Coastal Strikers", "aliases": ["VA Rush Soccer Club VAR U11B Coastal Strikers"] },
+        { "teamId": "vip-united-red", "name": "VIP United FC TASL B2015/2016 Red (VA)", "shortName": "VIP United", "aliases": ["VIP United FC TASL B2015/2016 Red (VA)", "VIP United TASL B2015/2016 Red (VA)"] },
+        { "teamId": "chesapeake-united-reapers", "name": "Chesapeake United SC 2015/2016B Reapers", "shortName": "Reapers", "aliases": ["Chesapeake United SC 2015/2016B Reapers"] },
+        { "teamId": "cusa-lightning", "name": "Carolina United SA (CUSA) Lightning - U11 B (Daniels)", "shortName": "Lightning", "aliases": ["Carolina United SA (CUSA) Lightning - U11 B (Daniels)", "Carolina United (CUSA) Lightning - U11B (Daniels)", "Carolina United SA Carolina United (CUSA) Lightning - U11 B (Daniels)"] },
+        { "teamId": "baystars-tsunami", "name": "Baystars FC TASL B2015/16 Tsunami", "shortName": "Tsunami", "aliases": ["Baystars FC TASL B2015/16 Tsunami"] },
+        { "teamId": "beach-brammer-breakers", "name": "Beach FC B2015/16 Brammer Breakers", "shortName": "Brammer Breakers", "aliases": ["Beach FC B2015/16 Brammer Breakers"] },
+        { "teamId": "chesapeake-galaxy-gold", "name": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "shortName": "Galaxy Gold", "aliases": ["Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)"] },
+        { "teamId": "beach-perkins-dragons", "name": "Beach FC B2015/16 Perkins Dragons", "shortName": "Perkins Dragons", "aliases": ["Beach FC B2015/16 Perkins Dragons"] },
+        { "teamId": "var-killer-bees", "name": "VA Rush Soccer Club VAR U11B Killer Bees", "shortName": "Killer Bees", "aliases": ["VA Rush Soccer Club VAR U11B Killer Bees"] },
+        { "teamId": "tidewater-sharks-premier-white", "name": "Tidewater Sharks B2015/16 Premier White", "shortName": "Tidewater Sharks", "aliases": ["Tidewater Sharks B2015/16 Premier White", "Tidewater Sharks Premier White", "Tidewater Sharks U11 Premier White"] },
+        { "teamId": "beach-anderson-waves", "name": "Beach FC B2015/16 Anderson Waves", "shortName": "Anderson Waves", "aliases": ["Beach FC B2015/16 Anderson Waves"] }
+      ],
       "divisionSchedule": {
         "division": "U11 Boys Sky Division",
         "bracket": "Bracket A",
@@ -70,21 +84,22 @@
         ]
       },
       "standings": {
-        "asOf": "2026-08-10",
+        "asOf": "2026-09-16",
+        "resultsThrough": "2026-09-12",
         "bracket": "Bracket A",
-        "source": "manual paste from GotSport division page (automated fetch blocked, same as TASL schedule pages)",
+        "source": "Check fixture, not a display source for the derived contract: the league's published GotSport division table, captured by Wade on 2026-09-16 and reflecting results through 2026-09-12. It is kept so the table derived from divisionSchedule.matches can be compared against what the league itself published on that date.",
         "teams": [
-          { "rank": 1, "team": "Beach FC B2015/16 Anderson Waves", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
-          { "rank": 2, "team": "VIP United TASL B2015/2016 Red (VA)", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
-          { "rank": 3, "team": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
-          { "rank": 4, "team": "Beach FC B2015/16 Perkins Dragons", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
-          { "rank": 5, "team": "VA Rush Soccer Club VAR U11B Killer Bees", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
-          { "rank": 6, "team": "Baystars FC TASL B2015/16 Tsunami", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
-          { "rank": 7, "team": "Chesapeake United SC 2015/2016B Reapers", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
-          { "rank": 8, "team": "VA Rush Soccer Club VAR U11B Coastal Strikers", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
-          { "rank": 9, "team": "Tidewater Sharks B2015/16 Premier White", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
-          { "rank": 10, "team": "Beach FC B2015/16 Brammer Breakers", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 },
-          { "rank": 11, "team": "Carolina United SA Carolina United (CUSA) Lightning - U11 B (Daniels)", "mp": 0, "w": 0, "l": 0, "d": 0, "gf": 0, "ga": 0, "gd": 0, "pts": 0 }
+          { "rank": 1, "team": "VA Rush Soccer Club VAR U11B Coastal Strikers", "mp": 3, "w": 3, "l": 0, "d": 0, "gf": 9, "ga": 3, "gd": 6, "pts": 9 },
+          { "rank": 2, "team": "VIP United FC TASL B2015/2016 Red (VA)", "mp": 2, "w": 2, "l": 0, "d": 0, "gf": 19, "ga": 3, "gd": 16, "pts": 6 },
+          { "rank": 3, "team": "Chesapeake United SC 2015/2016B Reapers", "mp": 2, "w": 2, "l": 0, "d": 0, "gf": 8, "ga": 2, "gd": 6, "pts": 6 },
+          { "rank": 4, "team": "Carolina United SA (CUSA) Lightning - U11 B (Daniels)", "mp": 2, "w": 1, "l": 1, "d": 0, "gf": 12, "ga": 4, "gd": 8, "pts": 3 },
+          { "rank": 5, "team": "Baystars FC TASL B2015/16 Tsunami", "mp": 1, "w": 1, "l": 0, "d": 0, "gf": 6, "ga": 3, "gd": 3, "pts": 3 },
+          { "rank": 6, "team": "Beach FC B2015/16 Brammer Breakers", "mp": 2, "w": 1, "l": 1, "d": 0, "gf": 6, "ga": 12, "gd": -6, "pts": 3 },
+          { "rank": 7, "team": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "mp": 1, "w": 0, "l": 1, "d": 0, "gf": 2, "ga": 4, "gd": -2, "pts": 0 },
+          { "rank": 8, "team": "Beach FC B2015/16 Perkins Dragons", "mp": 2, "w": 0, "l": 2, "d": 0, "gf": 2, "ga": 6, "gd": -4, "pts": 0 },
+          { "rank": 9, "team": "VA Rush Soccer Club VAR U11B Killer Bees", "mp": 2, "w": 0, "l": 2, "d": 0, "gf": 3, "ga": 9, "gd": -6, "pts": 0 },
+          { "rank": 10, "team": "Tidewater Sharks B2015/16 Premier White", "mp": 1, "w": 0, "l": 1, "d": 0, "gf": 1, "ga": 10, "gd": -9, "pts": 0 },
+          { "rank": 11, "team": "Beach FC B2015/16 Anderson Waves", "mp": 2, "w": 0, "l": 2, "d": 0, "gf": 3, "ga": 15, "gd": -12, "pts": 0 }
         ]
       }
     }

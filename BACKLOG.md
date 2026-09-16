@@ -95,17 +95,6 @@ stays green.
 Merges that touch no Lambda code trigger full deploys, and the deploy zip
 includes the worker and infrastructure trees.
 
-### Add the XOR guard to parseSharks
-
-Sibling call sites reject a row where both or neither team is the Sharks;
-parseSharks does not.
-
-### Sharks standings derivation
-
-Parked until weekly results are complete. Derive from results, reproduce
-TASL's published table exactly, keep forfeits out of goal differential,
-and key teams on exact published strings with an alias map.
-
 ### Investigate the workerd runtime test flake
 
 Under full-suite load, workerd's nodejs_compat deprecation warning

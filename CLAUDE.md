@@ -659,7 +659,7 @@ W&M football is a Patriot League associate member beginning with the 2026 season
 - `waves-team-records.json` — Wellington Waves all-time team records by age group and event; Updater-managed
 - `waves-awards.json` — Wellington Waves end-of-season banquet awards; Updater-managed. Schema: `awards` array with `year`, `awardName`, `ageGroup`, `recipient` (First Last format), `team`. Currently seeded with Moore family entries only (Myles and Ophelia, 2025 Most Improved), by Wade's explicit choice — schema supports any swimmer. **Not yet read by any code** — dashboard integration is a future task, not yet scoped.
 - `waves-champs-team-scores.json` — combined team standings for VPSU Championship meets; Updater-managed manual entry from a one-page source PDF (not part of the `pdf-reload-parser.mjs` pipeline). Schema: `champsTeamScores` array, one entry per Championship meet, with `year`, `meet`, `date`, `throughEvent`, `teamTotal`, and `standings` (array of `{ rank, team, teamName, points }` — one row per competing team; 18 rows for the 2026 Championship Meet). Current and authoritative for the meet(s) it covers. Not yet read by any committed skill or by `digest/builder.js` — currently queried ad hoc by the Editorial Meeting artifact only.
-- `sharks-soccer.json` — Tidewater Sharks U11 soccer (Fall 2026, TASL U11 Boys Sky Division); Updater-managed manual entry from GotSport/TASL schedule and standings screenshots (automated fetch blocked, same as VPSU rankings). Schema: `seasons` array, each with `team` (name/displayName/headCoach), `divisionSchedule.matches` (the **full 11-team division schedule**, not a Sharks-only list — filtered at read time by `digest/sharksParser.js`), and `standings.teams` (full division standings; the Sharks row is worded differently there — `"Tidewater Sharks B2015/16 Premier White"` — than in `divisionSchedule.matches`/`team.name` — `"Tidewater Sharks Premier White"` — so any lookup must fuzzy-match, never exact-match). Read by `digest/builder.js` → `digest/athleticsParser.js` → `digest/sharksParser.js`, same path as `flag-football.json`/`waves-season.json`.
+- `sharks-soccer.json` — Tidewater Sharks U11 soccer (Fall 2026, TASL U11 Boys Sky Division); Updater-managed manual entry from GotSport/TASL schedule and standings screenshots (automated fetch blocked, same as VPSU rankings). Schema: `seasons` array, each with `team` (name/displayName/headCoach), `divisionSchedule.matches` (the **full 11-team division schedule**, not a Sharks-only list — filtered at read time by `digest/sharksParser.js`), and `standings.teams` (full division standings; the Sharks row is worded differently there — `"Tidewater Sharks B2015/16 Premier White"` — than in `divisionSchedule.matches`/`team.name` — `"Tidewater Sharks Premier White"` — so `isSharksTeam()` answers "is this our own team" by substring. That is a test for one team whose name is unique in the division, and it is not how the division is resolved: `divisionTeams[]` records every observed string for every team as an exact alias, and `digest/divisionStandings.js` resolves by exact string only). Read by `digest/builder.js` → `digest/athleticsParser.js` → `digest/sharksParser.js`, same path as `flag-football.json`/`waves-season.json`.
 
 The current files above are read directly by `digest/builder.js` via `fs.readFile` — no Drive fetch. To update them, edit the files in the repo and redeploy, or use the Updater agent to push new versions.
 
@@ -751,6 +751,19 @@ test is what makes that edit hard to forget.
 - `digest/latest757Meet.js` — internal module, imported only from `swimParser.js`; selects Ophelia's
   most recent 757 meet and its individual races from `swim-results.json` + `pb-records.json`. Pure.
   Its athletics view is consumed by Dashboard v2 — see "Latest 757 meet view"
+- `digest/divisionStandings.js` — internal module, imported from `sharksParser.js` and
+  `flagFootballParser.js`, which each hand it a season they have already selected. Derives a
+  division standings table for either sport from recorded results only; a published table is
+  never ingested for display. One shape for both sports, surfaced on athletics as
+  `sharksDivisionTable` / `flagFootballDivisionTable`. Pure, and nothing exported throws.
+  Field-level contract in its own header. **Reading the data file it derives from now puts a
+  line on the wall that was previously suppressed:** `sharksParser.js`'s legacy
+  `divisionStanding` returns null while every stored standings row shows zero points, and the
+  refreshed 2026-09-16 check fixture has real points, so every surface reading that field now
+  shows a standing it previously suppressed — Dashboard v2's `.standing-line`, and the same
+  line on mobile, both printing the rank bare, while frozen v1 applies an ordinal suffix. A
+  pre-existing asymmetry in wording, newly visible. (An earlier version of this entry named
+  v2 and v1 and missed mobile; `grep -n sharksDivisionStanding render/` is the check.)
 - `digest/sportsConfig.js` — exports only `isSeasonActive(sport, referenceDate)` (pure function — no data)
 
 ### Swim data conventions
