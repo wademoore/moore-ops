@@ -216,7 +216,7 @@ test('every legacy child logo still produces its layered mark in the artifact', 
   const withLogo = legacy.children.filter(child => child.logoKey).length;
   assert.equal(withLogo, legacy.children.length, 'the frozen config declares a logo for every child');
   assert.equal(
-    (html.match(/class="spotlight-mark semantic-icon category-sports activity-visual"/g) || []).length,
+    (html.match(/class="spotlight-mark semantic-icon category-sports activity-visual has-logo"/g) || []).length,
     withLogo,
   );
 });
