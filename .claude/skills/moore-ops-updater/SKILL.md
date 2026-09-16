@@ -295,8 +295,7 @@ mascot matching is correct.
 
 ### Recording a result
 
-Four fields on the row, read from the eligibility filter and the record/standings loops in
-`parseFlagFootball()`:
+Read from the eligibility filter and the record/standings loops in `parseFlagFootball()`:
 
 | field | meaning |
 |---|---|
@@ -305,10 +304,12 @@ Four fields on the row, read from the eligibility filter and the record/standing
 | `status` | `"final"` marks the result as recorded; `"scheduled"` and `"rescheduled"` are the other values in the file |
 | `type` | `"regular"` is what the record and the standings count |
 
-A game counts toward `seasonRecord` and `standings` only when `type` is `"regular"`,
-`status` is `"final"`, and **both** scores are numbers. A `"final"` row with a null score is
-skipped rather than counted as a draw, so leave `status` at `"scheduled"` until you have
-both numbers.
+The filter in `parseFlagFootball()` admits a game only when `type` is `"regular"`, `status`
+is `"final"`, the row is not marked `friendly`, and **both** scores are numbers. A
+`"final"` row with a null score is skipped rather than counted as a draw, so leave `status`
+at `"scheduled"` until you have both numbers. `friendly: true` marks a scrimmage the parser
+keeps out of the record and the standings; no row in this file carries it, so do not add one
+to an ordinary fixture.
 
 Scores are per side, not per team-of-ours: write the score against whichever of `home` /
 `away` that team is on. Do not add a `result`, `score`, `opponent` or W/L field — win, loss
@@ -320,17 +321,19 @@ from `seasonComplete`.
 ### Practice rows and our own rows
 
 - A practice row has `type: "practice"`, `away: null`, and a `label` (e.g. `"Meet & Greet"`).
-  `NON_GAME_TYPES` in `digest/flagFootballParser.js` keeps it out of the next-game box and
-  the season-milestone resolver; the record and standings exclude it by `type === "regular"`.
-  A practice never takes a score.
+  `NON_GAME_TYPES` in `digest/flagFootballParser.js` keeps it out of `nextFlagGame` and out
+  of the `first-game` milestone; the `season-opener` milestone resolves TO it when the season
+  opens with one. The record and standings exclude it by `type === "regular"`. A practice
+  never takes a score.
 - `practiceTime` appears only on rows our team plays in — the league publishes no other
   team's practice time. Do not add one to another fixture.
-- Otherwise our rows carry the same fields as every other fixture: `week`, `date`, `time`,
-  `field`, `away`/`home`, `awayScore`/`homeScore`, `type`, `status`.
+- Otherwise our rows carry the same fields as every other fixture in the same season — in
+  `fall-2026`: `week`, `date`, `time`, `field`, `away`/`home`, `awayScore`/`homeScore`,
+  `type`, `status`.
 
 ### Entering a week's results (decided with Wade, 2026-09-16)
 
-These two are decisions taken on that date, not pre-existing repo practice.
+Decisions taken on that date, not pre-existing repo practice.
 
 - **Record every division fixture for the week in one pass, never our game alone.**
   `standings` in `parseFlagFootball()` tallies every team from the same `games[]` rows, so a
@@ -338,6 +341,12 @@ These two are decisions taken on that date, not pre-existing repo practice.
 - **Results arrive as scores Wade pastes from LeagueApps, which lists each game as
   "AWAY at HOME".** The first team named is `away`, the second is `home`; write each score
   to the matching side.
+
+The first `fall-2026` result entered reddens `test/current-season-athletics.test.js`, which
+asserts against the real data file that this season's `seasonRecord` is `"0-0-0"` and its
+`lastResult` is empty. That is the expected consequence of entering a result, not a mistake
+in the entry. Re-pointing those assertions at the entered results — never relaxing them — is
+a code change outside this skill's file authority: report it rather than making it.
 
 ### Unsupported
 
