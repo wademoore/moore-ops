@@ -3474,6 +3474,8 @@ abort behaviour is read from the two harnesses, not from the removed text.)*
 
 ## Known open items
 
+New parked work is recorded in `BACKLOG.md` at the repository root, not here.
+
 - **The next 757 meet entered will redden ten tests in `test/latest757Meet.test.js`
   (Sept 15, 2026).** Five cases hard-assert the 2026-09-12 KickOff as the latest meet
   and five reach the April meet by filtering `r.date !== '2026-09-12'`. The 2026-27
