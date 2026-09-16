@@ -103,15 +103,17 @@ describe('discovery route', () => {
   });
 
   it('answers without transferring the document', async () => {
-    // The whole reason the route exists: the document is close to a megabyte
-    // and a poll must not pay for it. Asserting the store never saw the
+    // The document is much larger than its discovery manifest, even after
+    // logo optimization, and a poll must not pay for it. The store never seeing the
     // document key is what makes that falsifiable.
     const { call, store, manifest } = await scenario({ state: 'everyday' });
-    await call(`/${MOBILE_DISCOVERY_MANIFEST_PATH}`);
+    const response = await call(`/${MOBILE_DISCOVERY_MANIFEST_PATH}`);
     assert.deepEqual(store.requestedKeys, [MOBILE_MANIFEST_KEY]);
     assert.ok(!store.requestedKeys.includes(manifest.artifact.key));
     const documentBytes = manifest.artifact.size;
-    assert.ok(documentBytes > 500_000, `sanity: the document really is large (${documentBytes} bytes)`);
+    const discoveryBytes = Buffer.byteLength(await response.text());
+    assert.ok(documentBytes > discoveryBytes * 100,
+      `discovery must stay over 100x smaller than the document (${discoveryBytes} vs ${documentBytes} bytes)`);
   });
 
   it('serves the publisher’s own bytes rather than a re-serialisation', async () => {
