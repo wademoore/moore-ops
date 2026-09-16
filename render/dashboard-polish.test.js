@@ -3,16 +3,12 @@ import assert from 'node:assert/strict';
 import { renderDashboardV2, renderAthletics, V2_LOGOS } from './dashboard-v2.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
 
-it('keeps surviving 757-related alert text and severity without inferring organization branding', () => {
+it('omits even surviving 757-related flags after the wall strip is retired', () => {
   const html = renderDashboardV2({ ...sampleDashboardV2Data, flags: [{
-    id: 'backpack-reminder', level: 'amber', title: '🎒 Backpack Prep',
+    id: 'backpack-reminder', level: 'amber', title: 'Backpack Prep',
     body: 'Pack for Ophelia 757swim practice tomorrow',
   }] });
-  const alerts = html.match(/<section class="alerts-panel">([\s\S]*?)<\/section>/)[1];
-  assert.match(alerts, /alert-card level-amber/);
-  assert.match(alerts, /class="alert-mark"/);
-  assert.match(alerts, /Pack for Ophelia 757swim practice tomorrow/);
-  assert.doesNotMatch(alerts, /<img|alert-identity/);
+  assert.doesNotMatch(html, /alerts-panel|alert-mark|Pack for Ophelia 757swim practice tomorrow/);
 });
 
 it('shortens known soccer names, omits the venue, and preserves unknown names', () => {

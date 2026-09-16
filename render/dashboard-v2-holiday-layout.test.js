@@ -22,7 +22,7 @@ const GENERATED_AT = Date.parse('2026-10-23T16:10:00Z');
  * something, so they are measured rather than assumed.
  */
 const MEASURED = [
-  '.dashboard', '.today-panel', '.upcoming-panel', '.athletics-panel', '.alerts-panel',
+  '.dashboard', '.today-panel', '.upcoming-panel', '.athletics-panel',
   '.right-rail', '.sports-ticker', '.now-next', '.centers-block', '.horizon-card',
   '.weather-label', '.forecast-heading', '.horizon-label', '.upcoming-list',
 ];
@@ -182,8 +182,8 @@ describe('holiday theme 2560x1440 skin, geometry and clock transitions', () => {
 
   it('keeps the Athletics panel footprint exactly, in both card counts', async () => {
     for (const [athletics, expected] of [
-      [{ flagFootballActive: false, wavesActive: false, swim757Active: false, sharksActive: true }, 315.63],
-      [{ flagFootballActive: true, wavesActive: true, swim757Active: false, sharksActive: true }, 485.59],
+      [{ flagFootballActive: false, wavesActive: false, swim757Active: false, sharksActive: true }, 395.63],
+      [{ flagFootballActive: true, wavesActive: true, swim757Active: false, sharksActive: true }, 565.59],
     ]) {
       const probe = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
       const data = holidayThemeSampleData({ now: GENERATED_AT, holidayThemesConfig: HOLIDAY_REGISTRY });
