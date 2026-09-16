@@ -115,6 +115,45 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     }
   });
 
+  it('fits all eight flag standings with our last-place team in one, two, and three cards', async () => {
+    const teams = ['Ravens', 'Bears', 'Broncos', 'Texans', 'Panthers', 'Cowboys', 'Browns', 'Cowboys'];
+    for (const active of [{}, { swim757Active: true }, { swim757Active: true, sharksActive: true }]) {
+      await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
+        ...sampleDashboardV2Data.athletics,
+        wavesActive: false, flagFootballActive: true, swim757Active: false, sharksActive: false,
+        ...active, opheliaLatest757Meet: { meet: 'Meet', dates: ['2026-09-12'], startDate: '2026-09-12', endDate: '2026-09-12',
+          races: [{ event: '25y Butterfly', course: 'SCY', seconds: 34.44 }] },
+        flagTeamName: 'Cowboys', seasonRecord: '0-7', seasonLabel: 'Fall 2026',
+        lastResult: 'L 6-20 vs. Ravens',
+        nextFlagGame: { opponent: 'Ravens', date: '2026-09-20', time: '12:00 PM' },
+        standings: teams.map((team, i) => ({ team, w: 7 - i, l: i, isMe: i === 7 })),
+      } }), { waitUntil: 'load' });
+      await page.evaluate(() => document.fonts.ready);
+      assert.equal(await page.locator('.athletics-grid>.athletic-card').count(), 1 + Number(Boolean(active.swim757Active)) + Number(Boolean(active.sharksActive)));
+      const layout = await page.locator('.flag-football-card').evaluate(card => {
+        const bounds = card.getBoundingClientRect();
+        const rows = [...card.querySelectorAll('tbody tr')];
+        const next = card.querySelector('.next-box').getBoundingClientRect();
+        return {
+          teams: rows.map(row => row.cells[0].textContent.trim()),
+          ours: rows.at(-1).classList.contains('is-me'),
+          contained: rows.every(row => {
+            const box = row.getBoundingClientRect();
+            return box.top >= bounds.top && box.bottom <= bounds.bottom + 1 && box.right <= bounds.right + 1;
+          }),
+          overflow: card.scrollHeight > card.clientHeight + 1,
+          overlapsNext: rows.some(row => {
+            const box = row.getBoundingClientRect();
+            return box.left < next.right && box.right > next.left && box.top < next.bottom && box.bottom > next.top;
+          }),
+          columns: [...card.querySelectorAll('th')].map(th => th.textContent),
+        };
+      });
+      assert.deepEqual(layout, { teams: teams.map((team, i) => i === 7 ? team + ' · Us' : team),
+        ours: true, contained: true, overflow: false, overlapsNext: false, columns: ['Team', 'W', 'L'] }, JSON.stringify(active));
+    }
+  });
+
   it('shows the transparent calendar star alone and restores its fallback on image failure', async () => {
     const event = { title: 'Flag Football: Week 1 — Meet & Greet', subtitle: 'Myles', owner: [],
       raw: { id: 'flag-practice', start: { dateTime: '2026-09-13T11:00:00-04:00' } },

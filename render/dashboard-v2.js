@@ -767,7 +767,7 @@ function renderUpcoming(data, latest757Card = safeLatest757Card(data.athletics |
 }
 
 function renderStandingRows(rows, columns = ['team', 'w', 'l'], flagLogos = false) {
-  return (rows || []).slice(0, 6).map(row => `<tr class="${row.isMe ? 'is-me' : ''}">
+  return (rows || []).map(row => `<tr class="${row.isMe ? 'is-me' : ''}">
     ${columns.map((column, index) => `<td class="${index === 0 ? 'team-cell' : ''}">${flagLogos && index === 0 ? flagLogoMark(row[column] ?? row.mascot) : ''}${esc(row[column] ?? row.mascot ?? '')}${flagLogos && index === 0 && row.isMe ? ' · Us' : ''}</td>`).join('')}
   </tr>`).join('');
 }
@@ -778,7 +778,7 @@ function renderWavesCard(a) {
     <div class="athletic-summary"><div class="record">${esc(a.wavesRecord || '0-0')}</div>${logo(V2_LOGOS.waves, 'athletic-logo')}</div>
     <small>${esc(a.wavesSeasonYear || 2026)} season</small>
     ${a.wavesNextMeet ? `<div class="next-box"><b>Next meet</b><span>vs. ${esc(a.wavesNextMeet.opponent)} · ${esc(a.wavesNextMeet.date)}</span></div>` : ''}
-    <table><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${renderStandingRows(a.wavesStandings)}</tbody></table>
+    <table><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${renderStandingRows((a.wavesStandings || []).slice(0, 6))}</tbody></table>
   </article>`;
 }
 
@@ -968,7 +968,7 @@ function renderFlagFootballCard(a) {
     <small>${esc(a.seasonLabel || 'Season')}</small>
     ${a.lastResult ? `<div class="result-line"><b>${esc(a.lastResult)}</b><span>Latest result</span></div>` : ''}
     ${next ? renderNextGame({ ...next, mark: flagLogoMark(next.opponent) }) : ''}
-    <table><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${renderStandingRows(a.standings, ['team', 'w', 'l'], true)}</tbody></table>
+    <table${a.standings?.length > 6 ? ' class="standings-dense"' : ''}><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${renderStandingRows(a.standings, ['team', 'w', 'l'], true)}</tbody></table>
   </article>`;
 }
 
@@ -1667,6 +1667,9 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .next-box time{white-space:nowrap;font:inherit}
 .flag-football-card table{line-height:1}.flag-football-card td .flag-team-mark{vertical-align:top}
 .flag-football-card td{padding:1px 0}
+.flag-football-card table.standings-dense{font-size:16px}
+.flag-football-card table.standings-dense td{padding:0}
+.flag-football-card table.standings-dense .flag-team-mark{width:16px;height:16px}
 .card-count-1 .athletic-card{grid-template-columns:290px minmax(0,1fr);grid-template-rows:46px auto 1fr}
 .card-count-1 .athletic-summary{grid-column:1;grid-row:2;align-self:start}
 .card-count-1 .athletic-summary>.record{font-size:58px;margin-top:0}

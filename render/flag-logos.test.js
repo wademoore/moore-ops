@@ -40,3 +40,31 @@ it('uses the scheduled next-game date without borrowing a time from another occu
   assert.deepEqual(flagNextGame({ ...a, thisWeekOpponent: 'Bears' }), { opponent: 'Ravens', detail: 'Sun, Sep 20' });
   assert.equal(flagNextGame({}), null);
 });
+
+
+it('renders every supplied flag standing in order, including our last-place row, like mobile', () => {
+  for (const count of [8, 9]) {
+    const standings = Array.from({ length: count }, (_, i) => ({
+      team: i === count - 1 ? 'Cowboys' : `Opponent ${i + 1}`,
+      w: count - i - 1, l: i, isMe: i === count - 1,
+    }));
+    const data = { ...sampleDashboardV2Data, athletics: { flagFootballActive: true, standings } };
+    const wall = renderAthletics(data);
+    const rows = [...wall.matchAll(/<tr class="([^"]*)">([\s\S]*?)<\/tr>/g)];
+    assert.equal(rows.length, count);
+    rows.forEach((row, i) => assert.ok(row[2].includes(standings[i].team)));
+    assert.equal(rows.at(-1)[1], 'is-me');
+    assert.match(rows.at(-1)[2], /Cowboys · Us/);
+    const mobile = renderDashboardMobile(data);
+    assert.match(mobile, /Cowboys · Our team/);
+    for (const row of standings) assert.ok(mobile.includes(row.team));
+  }
+});
+
+it('preserves the Waves table six-row limit when the shared row helper becomes uncapped', () => {
+  const wavesStandings = Array.from({ length: 8 }, (_, i) => ({ team: `WaveTeam${i + 1}`, w: 7 - i, l: i }));
+  const wall = renderAthletics({ ...sampleDashboardV2Data, athletics: { wavesActive: true, wavesStandings } });
+  assert.equal((wall.match(/<tr class=/g) || []).length, 6);
+  assert.match(wall, /WaveTeam6/);
+  assert.doesNotMatch(wall, /WaveTeam7|WaveTeam8/);
+});
