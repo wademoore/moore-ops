@@ -400,9 +400,21 @@ describe('event-row accents — what a seasonMilestone accent DOES fail closed o
     // and the assertion is on the set of occurrences that get accented across
     // the whole season, so a milestone landing on the wrong week is caught by
     // this case rather than only by its neighbours.
+    //
+    // Scoped to OUR rows (Sept 2026). This read the whole `games` array until the
+    // league's full division schedule was loaded, when it grew from our six rows
+    // to twenty-one. The other fifteen are fixtures between teams Myles does not
+    // play in, so they have no calendar occurrence on his calendar to accent and
+    // nothing here should synthesise one: `rowFor()` would key four rows per week
+    // to one `wk${week}` occurrence id and read a `practiceTime` those rows do not
+    // carry. The claim being made — no later week of HIS season is ever accented —
+    // is unchanged, and weeks 3-6 are still present to prove it against.
     const season = FLAG_SEASON.seasons.find(s => s.seasonId === 'fall-2026');
-    assert.deepEqual(season.games.map(g => g.week), [1, 2, 3, 4, 5, 6],
+    const myGames = season.games.filter(g => g.home === season.myTeamId || g.away === season.myTeamId);
+    assert.deepEqual(myGames.map(g => g.week), [1, 2, 3, 4, 5, 6],
       'the season must actually have later weeks to prove this against');
+    assert.ok(season.games.length > myGames.length,
+      'and the season file really does also carry other teams\u2019 fixtures');
 
     const rowFor = game => timed({
       id: `wk${game.week}`, calendar: 'Myles',
@@ -412,7 +424,7 @@ describe('event-row accents — what a seasonMilestone accent DOES fail closed o
     });
     // Week 1 and week 2 keep the real occurrence ids, because those are the two
     // rows the treatments are supposed to find.
-    const everyWeek = season.games.map(game => (
+    const everyWeek = myGames.map(game => (
       game.week === 1 ? OPENER : game.week === 2 ? GAME : rowFor(game)));
 
     const accentedRefs = new Set();
@@ -426,7 +438,7 @@ describe('event-row accents — what a seasonMilestone accent DOES fail closed o
     ].sort(), 'exactly two occurrences may ever be accented across the whole season');
 
     // And stated the other way round, so a reader sees the criterion directly.
-    for (const game of season.games.filter(g => g.week >= 3)) {
+    for (const game of myGames.filter(g => g.week >= 3)) {
       assert.ok(![...accentedRefs].some(ref => ref.includes(`wk${game.week}`)),
         `week ${game.week} must never be accented`);
     }

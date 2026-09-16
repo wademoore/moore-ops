@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2704+ passing with a browser
+- Run npm test after changes — must stay at 2745+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row). **This line and the floor at the end of the current baseline
   entry are one figure in two places — move both or neither.** It has now gone
@@ -1697,6 +1697,48 @@ reachable title crosses the bar rather than eating into slack, and what `literal
 exchange was a treatment silently dead on every rename. The swim accent keeps `literal` and keeps its fail-closed behaviour, because its
 calendar entry *is* the authoritative record: there is no season file behind it.
 
+### Milestones resolve from OUR fixtures only (Sept 16, 2026)
+
+`selectSeasonMilestone()` narrows `games[]` to rows our team plays in **before** taking the
+earliest date and **before** judging ambiguity. Compared by the league's numeric team id (or
+the legacy string abbr), never by mascot. A season declaring neither id nor abbr is left
+unrestricted, which keeps a team-less season file resolving as it did — and avoids a subtler
+failure: `myKey` would otherwise be `null`, and a practice row carries `away: null`, so a
+null-keyed comparison would match the practice **on its empty side**, selecting a row for the
+wrong reason rather than failing closed.
+
+**This was forced by loading the division schedule, and the suite is what caught it.** Four
+teams play on the season's opening Sunday. An unrestricted scan tied four `regular` rows on the
+earliest date, so `first-game` returned `milestone-ambiguous` and the approved
+`myles-flag-football-week-2-first-game-2026-09-20` accent failed closed — on a fixture that had
+not changed at all. **51 tests red**, in six files. Measured before and after on the real data:
+`first-game` goes `{ok:true, week 2, 2026-09-20}` → `{ok:false, milestone-ambiguous}` → back to
+`{ok:true, week 2, 2026-09-20}`. `season-opener` resolves to the Week 1 practice throughout and
+was never affected — only one row sits on 2026-09-13.
+
+**This is the discipline `flagFootballIdentity.js` already had, arriving late in its sibling.**
+`findFixtureByDate()` was written with exactly this narrowing and a comment explaining it,
+against a case that was then unreachable. `selectSeasonMilestone()` was not. One file's foresight
+does not protect another's, and "unreachable in current data" is a statement about the data, not
+about the code.
+
+⚠ **It changed a documented, tested invariant, and that is recorded rather than smoothed over.**
+`selectSeasonMilestone()` now READS `home`/`away`. `test/flagFootballParser.test.js`'s *reads
+only immutable fixture columns* mutated them alongside the scores to prove they were not read;
+that mutation set now excludes them, and the test asserts instead that they stay unreachable
+**from the returned projection**. The two claims are different and only the second was ever the
+one worth keeping: `home`/`away` are not result-bearing (which two teams are scheduled does not
+change when the game is played), so reading them costs nothing against the "resolves identically
+mid-event" rule, and `sportsFixture` likewise reads teams while refusing `played` and the scores.
+What keeps them out of `MILESTONE_FIXTURE_FIELDS` is that home/away is **nominal** in this
+league — every fixture is at the same complex — and must never reach a renderer as a travel cue.
+Reading a column to find our row and exposing it to a surface are different questions.
+
+**The narrowing is asserted, not assumed.** `narrows to our own fixtures before judging
+ambiguity` pins that four rows really do sit on 2026-09-20 and exactly one is ours (so the tie is
+real rather than hypothetical), that renaming our mascot does not move the milestone (a second
+Cowboys exists), and that a team-less season still resolves.
+
 **Generalisation stops here, deliberately.** `SEASON_MILESTONE_SOURCES` has one entry.
 Flag football's rows carry a league `week`, a practice/fixture `type` and a per-row clock
 together; `sharks-soccer.json` has none of the three (no week, no type — every row is a
@@ -2250,10 +2292,18 @@ exists and still renders it; what it cannot say is which fixture it is. That is
 partial knowledge, not blindness.
 
 **This is not hypothetical — it fires in production.** The Myles calendar carries
-**seven** flag football occurrences and `fall-2026` holds **six** rows. The
-seventh, `2026-10-25` "Flag Football: Week 6 — Practice + Game / Playoffs
-(Yorktown)", has no season row, because Oct 18 is the last week the league has
-posted. The gap sweep's reach is the calendar pull's own reach — `getCalendarEvents()`
+**seven** flag football occurrences and `fall-2026` holds **six rows Myles plays
+in** (of 21 rows in total since the division schedule was loaded on Sept 16,
+2026 — the other 15 are fixtures between teams he does not play in, and
+`findFixtureByDate()` narrows them away before judging ambiguity, which is
+exactly the case the comment quoted below anticipated). The seventh occurrence,
+`2026-10-25` "Flag Football: Week 6 — Practice + Game / Playoffs (Yorktown)",
+still has no season row. ⚠ **The reason changed on Sept 16 and the conclusion did
+not.** It used to be that Oct 18 was the last week the league had posted; the
+Oct 25 postseason *is* now posted — five slots: two consolations, two semifinals
+and a championship — but every participant is TBD, and this file has no way to
+express a scheduled slot with unknown participants without inventing teams. So
+the row is still absent, now deliberately rather than for want of a source. The gap sweep's reach is the calendar pull's own reach — `getCalendarEvents()`
 is 72 hours and `pull14Days()` is 14 days ahead **plus seven days of history** —
 so that occurrence starts raising the flag on **2026-10-11** and keeps raising it
 until the row is entered or the calendar entry removed.
@@ -2272,10 +2322,16 @@ naming our team with `opponent: null` — indistinguishable from the legitimate
 Sept 13 practice shape, so `opponent === null` could not be used to detect it.
 Judging ambiguity first would break the same case the other way: a full division
 schedule puts several rows on every date, so every occurrence would fail closed
-on a crowd even though exactly one row is ours. Both are unreachable while
-`fall-2026.games` holds only our six fixtures — but `fall-2025` in the same file
-already stores the whole division schedule, and a Known open item contemplates
-loading one for this season.
+on a crowd even though exactly one row is ours. ⚠ **Both were described here as
+unreachable until Sept 16, 2026, and both are now live.** `fall-2026.games`
+carries the whole published division schedule — 20 regular-season fixtures, four
+on every fixture Sunday — so the second case is exercised on every one of Myles's
+game dates, and the narrowing is what makes them resolve instead of failing
+closed. The foresight was load-bearing rather than decorative: the sibling
+resolver in `flagFootballParser.js` had **not** been written this way, and
+loading the schedule turned `selectSeasonMilestone('first-game')` ambiguous and
+reddened 51 tests until it was given the same narrowing. See "Season-derived
+treatments" below.
 
 ### The field
 
@@ -2873,7 +2929,67 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 ## Test baseline
 
-### Current baseline — measured Sept 15, 2026 on PR #89's 757 card follow-up
+### Current baseline — measured Sept 16, 2026 on the flag-football division-schedule branch
+
+| Invocation | tests | pass | fail | cancelled | duration |
+|---|---|---|---|---|---|
+| `npm test` with `DASHBOARD_BROWSER_PATH` set | 2745 | **2745** | **0** | **0** | 62721.017631 ms |
+
+Measured on `claude/hopeful-dirac-nsnbp1`, branched from `origin/main` at **`afe1876`**.
+`git fetch origin main` was run before deriving the base, per the standing warning, and it
+mattered: the ref was stale at `13ad7f5` and the fetch moved it to `afe1876`. `HEAD ==
+merge-base == origin/main`.
+
+**The base was re-measured in this session, after `npm ci` and before any edit: 2744 / 2744 /
+0 / 0, 64665.062329 ms.** That is NOT the 2704 the superseded entry records — `main` has taken
+#102 and #103 since. Re-measure; the run costs less than the correction.
+
+This change adds **+1**, in one existing file:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/flagFootballParser.test.js` | 48 | 49 | +1 |
+
+2744 + 1 = 2745, and **2745 is the measured figure in the table above rather than that sum** —
+the agreement is reassuring and is not itself evidence.
+
+**Four existing tests were updated and none was deleted, skipped or weakened.** `git diff
+--numstat afe1876 -- 'test/' 'digest/*.test.js' 'render/*.test.js'` reports two files; no
+`.skip` or `.todo` appears anywhere in the diff. Each update is recorded beside the assertion
+it changes, with its reasoning, and each falls into one of two kinds:
+
+- **Three were stale-shape assertions** whose premise the data change falsified: `teams.length
+  === 6` ("only the 6 of 8 division teams whose league ids are published"), the six-row
+  `games` enumeration, and two week-list assertions reading `games.map(g => g.week)`. All are
+  now scoped to our own rows or to the new counts; the claims they make are unchanged.
+- **One was a genuine invariant change**, `reads only immutable fixture columns`. It mutated
+  `home`/`away` alongside the scores to prove they were not read. They are read now — see
+  below — so the mutation set drops those two columns and the test asserts instead that they
+  stay unreachable from the returned projection, which is the claim worth keeping.
+
+**Three runs failed during development and all three were the same real regression, caught by
+the suite rather than by inspection.** Loading the division schedule put four regular-type
+rows on the season's earliest fixture date, and `selectSeasonMilestone()` scanned every row in
+the season, so `first-game` tied and failed closed as `milestone-ambiguous` — silently
+retiring the approved Sept 20 FIRST GAME accent. **51 tests red**, across
+`digest/specialEventAccents.test.js` (34), `render/dashboard-v2-accent.test.js` (12),
+`test/flagFootballParser.test.js` (5), `render/dashboard-v2-layout.test.js` (5),
+`test/current-season-athletics.test.js` (3) and `render/dashboard-v2-holiday.test.js` (2).
+That is the guard working, not a fault in it.
+
+Exact invocation:
+
+```bash
+DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
+```
+
+**Coder mode must keep `npm test` at 2745+ with no failures once a browser resolves.**
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
+quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
+prevent.
+
+### Superseded baseline — measured Sept 15, 2026 on PR #89's 757 card follow-up
 
 | Invocation | tests | pass | fail | cancelled |
 |---|---|---|---|---|
@@ -2894,9 +3010,7 @@ passed; the full-suite baseline is the linked CI result. Waves athletics HTML
 was also compared byte-for-byte against `593476a` with both values of the 757
 season flag and was identical.
 
-**Coder mode must keep `npm test` at 2704+ with no failures once a browser resolves.**
-
-### Previous baseline — measured Sept 15, 2026 on the latest-757-meet-view branch
+### Superseded baseline — measured Sept 15, 2026 on the latest-757-meet-view branch
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
@@ -4003,27 +4117,30 @@ New parked work is recorded in `BACKLOG.md` at the repository root, not here.
   keys on a calendar id, and `aliases.js:302` gates the menu card on a calendar *name*.
 
 
-- **Fall 2026 flag football standings are not a division table, and the new tie column is
-  produced but displayed nowhere (Sept 10, 2026).** Both raised by a round-2 Reviewer pass, and
-  both are consequences of the season that was just added rather than pre-existing defects.
-  Recorded here because each becomes *visible output* on Sept 20, the first game day, and the
-  only place either was written down was a JSON `note` that no code reads.
-  (1) **`data/flag-football.json`'s `fall-2026.games` holds only our six fixtures**, because the
-  league publishes only our team's weeks — unlike `fall-2025`, which carries the whole division
-  schedule and whose standings are therefore genuinely computable. Once results are entered,
-  `renderStandingRows` will draw a `Team | W | L` table in which each of the five listed
-  opponents has played exactly one game, ours, under a heading a viewer reads as a division
-  table. Today every row is 0/0 so nothing is misleading. (2) **`parseFlagFootball` now emits a
-  `t` (ties) field on every standings row and no renderer displays it** — v2 and mobile head
-  their tables `Team | W | L`, frozen v1 heads its `Team | W | L | PF | PA`, and the email
-  renders no standings at all — so a team at `3-0-1` will show `seasonRecord: "3-0-1"` above a
-  standings row reading `3 / 0`: four games, three shown. Flag football ending level is the
-  stated premise of the tie fix, so this is reachable rather than hypothetical.
-  **Both are presentation decisions on surfaces Codex owns**, which is why neither was fixed
-  here; the options are a tie column, a caption distinguishing our-results-only from a division
-  table, or suppressing the table for a season whose `games` are my-team-only. Getting the full
-  division schedule would resolve (1) at the data layer instead, and is an Updater task if the
-  league ever publishes it.
+- **✓ (1) RESOLVED Sept 16, 2026 — the full division schedule was published and loaded.
+  (2) the tie column is still produced and displayed nowhere.** Both were raised by a round-2
+  Reviewer pass on Sept 10 as consequences of the season that had just been added. Recorded
+  because each becomes *visible output* on Sept 20, the first game day.
+
+  **(1) is closed by the data, exactly as this item predicted it would be.** It said "getting
+  the full division schedule would resolve (1) at the data layer instead, and is an Updater
+  task if the league ever publishes it" — the league published it, and that is what happened.
+  `fall-2026.games` now carries all 20 regular-season fixtures (5 per team, 8 teams), so
+  `renderStandingRows` draws a genuine division table rather than one in which each opponent
+  has played a single game against us. The season `note` records the source and capture date.
+
+  **(2) is unchanged and still open.** `parseFlagFootball` emits a `t` (ties) field on every
+  standings row and no renderer displays it — v2 and mobile head their tables `Team | W | L`,
+  frozen v1 heads its `Team | W | L | PF | PA`, and the email renders no standings at all — so
+  a team at `3-0-1` will show `seasonRecord: "3-0-1"` above a standings row reading `3 / 0`:
+  four games, three shown. Flag football ending level is the stated premise of the tie fix, so
+  this is reachable rather than hypothetical. It is a presentation decision on a surface Codex
+  owns, which is why it is still not fixed here; the option is a tie column.
+
+  ⚠ **Closing (1) made (2) worse, and that is worth stating rather than leaving implicit.**
+  While the table held only our own results, a hidden tie column cost one row its fourth game.
+  A real 8-team division table with 20 fixtures can now disagree with itself in eight rows at
+  once, under a heading a viewer reads as authoritative.
 
 - **The frozen v1 dashboard's `StandingsRow` JSDoc is now wrong, deliberately unfixed
   (Sept 10, 2026).** `render/dashboard.js:89` documents `StandingsRow { team, w, l, pf, pa, isMe }`

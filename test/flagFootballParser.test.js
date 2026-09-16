@@ -528,19 +528,71 @@ describe('selectSeasonMilestone', () => {
     // The treatment must stay valid mid-event. Mutating every result-bearing
     // column must not move either milestone — the same rule sportsFixture
     // already follows for the Sharks schedule.
+    //
+    // `home`/`away` were dropped from this mutation set when the full division
+    // schedule was loaded (Sept 2026). They are NOT result-bearing: which two
+    // teams are scheduled does not change when the game is played, so reassigning
+    // them was never an instance of "a played game". It stood in for a second,
+    // different claim — that the resolver does not read them at all — and that
+    // claim is now deliberately false: selectSeasonMilestone() narrows to our own
+    // fixtures before judging ambiguity, because four teams play on the season's
+    // opening Sunday and an unrestricted scan ties on the earliest date.
+    //
+    // The claim worth keeping is that home/away stay UNREACHABLE FROM THE
+    // PROJECTION — home/away is nominal in this league and must never reach a
+    // renderer as a travel cue — and that is asserted below, and again by the
+    // MILESTONE_FIXTURE_FIELDS test above. Reading a column to find our row and
+    // exposing it to a surface are different questions.
     const played = JSON.parse(JSON.stringify(REAL));
     for (const season of played.seasons) {
       for (const game of season.games || []) {
-        Object.assign(game, { status: 'final', homeScore: 21, awayScore: 7, home: 1, away: 2, field: 'X', label: 'changed' });
+        Object.assign(game, { status: 'final', homeScore: 21, awayScore: 7, field: 'X', label: 'changed' });
       }
     }
     for (const milestone of SEASON_MILESTONES) {
-      assert.deepEqual(
-        selectSeasonMilestone(played, 'fall-2026', milestone).row.week,
-        selectSeasonMilestone(REAL, 'fall-2026', milestone).row.week,
-        milestone,
-      );
+      const from = selectSeasonMilestone(played, 'fall-2026', milestone);
+      assert.deepEqual(from.row.week, selectSeasonMilestone(REAL, 'fall-2026', milestone).row.week, milestone);
+      // The mutation is not vacuous: the source rows really do carry these.
+      for (const mutable of ['status', 'homeScore', 'awayScore', 'home', 'away']) {
+        assert.ok(!(mutable in from.row), `${mutable} must not be reachable from a milestone row`);
+      }
     }
+  });
+
+  it('narrows to our own fixtures before judging ambiguity', () => {
+    // The guard the full division schedule made load-bearing. fall-2026 now
+    // carries all 20 published regular-season fixtures, four of them on
+    // 2026-09-20, and only one of those four is ours. An unrestricted scan would
+    // tie on the earliest date and fail closed as `milestone-ambiguous`.
+    const season = REAL.seasons.find(s => s.seasonId === 'fall-2026');
+    const openingSunday = season.games.filter(g => g.date === '2026-09-20');
+    assert.equal(openingSunday.length, 4, 'four teams play on the opening Sunday, so the tie is real');
+    assert.equal(
+      openingSunday.filter(g => g.home === season.myTeamId || g.away === season.myTeamId).length, 1,
+      'exactly one of them is ours',
+    );
+    const result = selectSeasonMilestone(REAL, 'fall-2026', 'first-game');
+    assert.equal(result.ok, true, 'must resolve despite the three same-day fixtures we are not in');
+    assert.equal(result.row.date, '2026-09-20');
+    assert.equal(result.row.week, 2);
+
+    // Identity is the numeric id, never the mascot: this division contains a
+    // second Cowboys (Watkins - Cowboys, 8057461). Renaming our mascot must not
+    // move the milestone.
+    const renamed = JSON.parse(JSON.stringify(REAL));
+    const rs = renamed.seasons.find(s => s.seasonId === 'fall-2026');
+    rs.teamName = 'Renamed';
+    for (const t of rs.teams) if (t.teamId === rs.myTeamId) t.teamName = 'Renamed';
+    assert.equal(selectSeasonMilestone(renamed, 'fall-2026', 'first-game').row.week, 2);
+
+    // A season declaring no team at all is left unrestricted rather than reduced
+    // to nothing, so a team-less season file resolves exactly as it did before.
+    const anon = { seasons: [{ seasonId: 's', games: [
+      { week: 1, date: '2026-09-13', type: 'practice', practiceTime: '11:00' },
+      { week: 2, date: '2026-09-20', type: 'regular', time: '12:00' },
+    ] }] };
+    assert.equal(selectSeasonMilestone(anon, 's', 'season-opener').row.week, 1);
+    assert.equal(selectSeasonMilestone(anon, 's', 'first-game').row.week, 2);
   });
 
   it('derives the clock from the practice when there is one and the game otherwise', () => {
@@ -597,8 +649,19 @@ describe('selectSeasonMilestone', () => {
   });
 
   it('never selects a later week of the shipped season', () => {
-    const weeks = REAL.seasons.find(s => s.seasonId === 'fall-2026').games.map(g => g.week);
+    // Scoped to OUR rows. This read the whole `games` array until the full
+    // published division schedule was loaded (Sept 2026), when it grew from our
+    // six rows to twenty-one. The assertion it was making — that the milestones
+    // are drawn from weeks 1-6 and land on 1 and 2 — is unchanged; only the set
+    // it reads them from is now stated explicitly rather than being every row in
+    // the season by coincidence.
+    const season = REAL.seasons.find(s => s.seasonId === 'fall-2026');
+    const weeks = season.games
+      .filter(g => g.home === season.myTeamId || g.away === season.myTeamId)
+      .map(g => g.week)
+      .sort((a, b) => a - b);
     assert.deepEqual(weeks, [1, 2, 3, 4, 5, 6]);
+    assert.equal(season.games.length, 21, 'and the season really does carry other teams\' rows too');
     const selected = SEASON_MILESTONES.map(m => selectSeasonMilestone(REAL, 'fall-2026', m).row.week);
     assert.deepEqual(selected, [1, 2]);
     for (const week of [3, 4, 5, 6]) assert.ok(!selected.includes(week), `week ${week} must never be a milestone`);
