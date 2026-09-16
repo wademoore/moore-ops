@@ -19,6 +19,18 @@
 export const NON_GAME_TYPES = new Set(['practice']);
 
 /**
+ * Fold a team reference to a comparable key: the league's numeric team id when
+ * a season declares one, the legacy string abbr otherwise. Null and undefined
+ * both collapse to null so an absent side never compares equal to a real one.
+ *
+ * Module-scoped because BOTH resolvers in this file key on it — parseFlagFootball()
+ * for the record and the standings, selectSeasonMilestone() for the milestone
+ * narrowing — and two identical local copies is how they would eventually drift
+ * apart, the same argument this repo already made for OWNER_TONE.
+ */
+const keyOf = value => (value === null || value === undefined ? null : String(value));
+
+/**
  * @param {object} flagFootballData  Parsed flag-football.json
  * @param {Date}   referenceDate
  * @param {object} config            sports-config.json (unused — season identity comes from season data)
@@ -43,7 +55,6 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   // opposite of sharksParser.js, where the mascot IS unique and only the
   // wording of the team string varies between the schedule and the standings,
   // which is why fuzzy matching is right there and wrong here.
-  const keyOf   = v => (v === null || v === undefined ? null : String(v));
   const teamKey = t => keyOf(t.teamId ?? t.abbr);
   const myKey    = keyOf(season.myTeamId ?? season.myTeamAbbr);
   const teamsMap = new Map(season.teams.map(t => [teamKey(t), t.teamName]));
@@ -264,6 +275,18 @@ export const SEASON_MILESTONES = Object.freeze(['season-opener', 'first-game']);
  * and after the game is played, which is the same rule the special-event
  * framework's `sportsFixture` node already follows.
  *
+ * `home`/`away` are absent for a SECOND and different reason, and the
+ * distinction matters since Sept 2026, when the full division schedule was
+ * loaded and selectSeasonMilestone() began READING them to narrow candidates to
+ * our own fixtures. They are not result-bearing — which two teams are scheduled
+ * does not change when the game is played — so reading them costs nothing
+ * against the rule above, and `sportsFixture` likewise reads teams while
+ * refusing `played` and the scores. What keeps them off this list is that
+ * home/away is NOMINAL in this league (every fixture is at the same complex) and
+ * must never reach a renderer as a travel cue. Reading a column to FIND our row
+ * and exposing it to a surface are different questions; this list governs only
+ * the second.
+ *
  * This list is applied, not merely documented: selectSeasonMilestone() returns
  * a projection limited to these fields, so a caller CANNOT read a mutable
  * column even by accident. An earlier version exported the list with a comment
@@ -313,7 +336,51 @@ export function selectSeasonMilestone(flagFootballData, seasonId, milestone) {
   // cannot identify. Picking the first of two would be an array-order decision.
   if (matching.length !== 1) return { ok: false, reason: 'season-not-found' };
 
-  const rows = (matching[0].games || []).filter(row => DATE_KEY.test(String(row?.date ?? '')));
+  // Candidates are restricted to rows OUR TEAM plays in, BEFORE the earliest
+  // date is taken and before ambiguity is judged. Every caller of this function
+  // anchors a treatment on one of Myles's own calendar rows, so "the season's
+  // first event" has always meant his first event; while `fall-2026.games` held
+  // only our six fixtures the distinction was invisible, because every row was
+  // ours.
+  //
+  // Loading the full published division schedule makes it load-bearing. Four
+  // teams play on the season's opening Sunday, so an unrestricted scan ties
+  // four rows on the earliest date and fails closed as `milestone-ambiguous` —
+  // silently retiring the approved FIRST GAME accent on a fixture that had not
+  // changed at all.
+  //
+  // This is the same ordering discipline flagFootballIdentity.js's
+  // findFixtureByDate() already applies, for the same reason and in the same
+  // words: narrow to our own fixtures first, so a full division schedule
+  // resolves correctly rather than failing closed on a crowd.
+  //
+  // Compared by the league's numeric team id (or the legacy string abbr for an
+  // abbr-keyed season), NEVER by mascot: this division contains two teams whose
+  // mascot is Cowboys — Moore - Cowboys (ours) and Watkins - Cowboys.
+  //
+  // A season declaring neither id nor abbr is left unrestricted rather than
+  // reduced to nothing. That keeps a season file that names no team resolving
+  // exactly as it did before, and it matters for a second reason: `myKey` would
+  // otherwise be null, and a practice row carries `away: null`, so a null-keyed
+  // comparison would match the practice on its EMPTY side — selecting a row for
+  // the wrong reason instead of failing closed.
+  //
+  // `home`/`away` stay out of the returned projection (MILESTONE_FIXTURE_FIELDS
+  // is unchanged). Reading a column to FIND our row and exposing it to a
+  // renderer are different questions: home/away is nominal in this league and
+  // must never be rendered as a travel cue, which is what that projection
+  // guards. Using it to select is consistent with the special-event framework's
+  // `sportsFixture` node, which likewise reads teams while refusing `played`
+  // and the scores.
+  const season = matching[0];
+  const myKey = keyOf(season.myTeamId ?? season.myTeamAbbr);
+  const isMine = row => myKey === null
+    || keyOf(row.home) === myKey
+    || keyOf(row.away) === myKey;
+
+  const rows = (season.games || [])
+    .filter(row => DATE_KEY.test(String(row?.date ?? '')))
+    .filter(isMine);
   const eligible = milestone === 'first-game'
     ? rows.filter(row => !NON_GAME_TYPES.has(row.type))
     : rows;

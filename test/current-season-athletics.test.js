@@ -268,8 +268,22 @@ describe('flag football team identity', () => {
     assert.ok(/Cowboys/.test(fall.note) && /sharks-soccer/.test(fall.note),
       'the note must record why an id is used here and why Sharks-style fuzzy matching is not');
     assert.equal(fall.divisionTeamCount, 8);
-    assert.equal(fall.teams.length, 6,
-      'only the 6 of 8 division teams whose league ids are published are listed; the rest are not invented');
+    // Was 6 until the league published the full schedule (read 2026-09-16,
+    // LeagueApps program 5025209). The assertion's premise — "only the teams
+    // whose league ids are published are listed; the rest are not invented" —
+    // is unchanged and still the point; what changed is that all eight ids are
+    // now published, so the roster is complete rather than partial.
+    assert.equal(fall.teams.length, 8,
+      'all 8 division teams are listed, each keyed on its published league id');
+    assert.equal(fall.teams.length, fall.divisionTeamCount,
+      'the roster now accounts for every team the division declares');
+
+    // Two teams share the Cowboys mascot, which is the whole reason identity is
+    // the numeric id. Pinned so a future roster edit cannot quietly make the
+    // mascot unique again and hide the ambiguity this file guards against.
+    const cowboys = fall.teams.filter(t => t.teamName === 'Cowboys').map(t => t.teamId).sort();
+    assert.deepEqual(cowboys, [8009182, 8057461],
+      'Moore - Cowboys and Watkins - Cowboys both exist, so the mascot is not an identifier');
   });
 
   it('evaluates flag football as active today from the window alone, with no results present', async () => {
@@ -299,12 +313,19 @@ describe('flag football team identity', () => {
     assert.equal(athletics.lastResult, '', 'no game has been played, so there is no last result');
   });
 
-  it('carries all six scheduled events, with Week 1 typed so it cannot affect the record', async () => {
+  it('carries all six of our scheduled events, with Week 1 typed so it cannot affect the record', async () => {
     const data = await readJson('data/flag-football.json');
     const fall = data.seasons.find(s => s.seasonId === 'fall-2026');
     const MY = 8009182;
 
-    const rows = fall.games.map(g => ({
+    // Filtered to OUR rows. This mapped the whole `games` array until the full
+    // published division schedule was loaded (read 2026-09-16, LeagueApps
+    // program 5025209), when it grew from our six rows to twenty-one. Every
+    // value below is unchanged EXCEPT homeAway, which is corrected in all five
+    // fixtures: the league lists each game as "AWAY at HOME" and the original
+    // entry read those sides the wrong way round. Date, time, field and week are
+    // byte-identical to what this test asserted before.
+    const rows = fall.games.filter(g => g.home === MY || g.away === MY).map(g => ({
       week: g.week, date: g.date, time: g.time, type: g.type, field: g.field,
       homeAway: g.home === MY ? 'H' : g.away === MY ? 'A' : null,
       opponent: g.home === MY ? g.away : g.home,
@@ -312,11 +333,11 @@ describe('flag football team identity', () => {
 
     assert.deepEqual(rows, [
       { week: 1, date: '2026-09-13', time: null,    type: 'practice', field: '4D', homeAway: 'H', opponent: null    },
-      { week: 2, date: '2026-09-20', time: '12:00', type: 'regular',  field: '4B', homeAway: 'H', opponent: 8070749 },
-      { week: 3, date: '2026-09-27', time: '14:00', type: 'regular',  field: '4A', homeAway: 'A', opponent: 8113277 },
-      { week: 4, date: '2026-10-04', time: '14:00', type: 'regular',  field: '3B', homeAway: 'H', opponent: 8069066 },
-      { week: 5, date: '2026-10-11', time: '12:00', type: 'regular',  field: '3A', homeAway: 'A', opponent: 8108154 },
-      { week: 6, date: '2026-10-18', time: '14:00', type: 'regular',  field: '3B', homeAway: 'H', opponent: 8088488 },
+      { week: 2, date: '2026-09-20', time: '12:00', type: 'regular',  field: '4B', homeAway: 'A', opponent: 8070749 },
+      { week: 3, date: '2026-09-27', time: '14:00', type: 'regular',  field: '4A', homeAway: 'H', opponent: 8113277 },
+      { week: 4, date: '2026-10-04', time: '14:00', type: 'regular',  field: '3B', homeAway: 'A', opponent: 8069066 },
+      { week: 5, date: '2026-10-11', time: '12:00', type: 'regular',  field: '3A', homeAway: 'H', opponent: 8108154 },
+      { week: 6, date: '2026-10-18', time: '14:00', type: 'regular',  field: '3B', homeAway: 'A', opponent: 8088488 },
     ]);
 
     // Week 1 is a practice, not a game. Typed so it is excluded structurally
@@ -325,8 +346,14 @@ describe('flag football team identity', () => {
     const wk1 = fall.games.find(g => g.week === 1);
     assert.equal(wk1.type, 'practice');
     assert.equal(wk1.away, null, 'a practice has no opponent');
-    assert.equal(fall.games.filter(g => g.type === 'regular').length, 5,
-      'exactly five of the six events are fixtures');
+    assert.equal(
+      fall.games.filter(g => g.type === 'regular' && (g.home === MY || g.away === MY)).length, 5,
+      'exactly five of our six events are fixtures');
+    // The rest of the division, now that the league has published it.
+    assert.equal(fall.games.length, 21, 'one practice plus all 20 published regular-season fixtures');
+    assert.equal(fall.games.filter(g => g.type === 'regular').length, 20);
+    assert.equal(fall.games.filter(g => g.type === 'practice').length, 1,
+      'only our own Meet & Greet; the league publishes no other team\u2019s practices');
 
     // Every event is at the one complex, so home/away is a label only.
     assert.equal(fall.location, 'McReynolds Athletic Complex, 412 Sportsway, Yorktown VA');
