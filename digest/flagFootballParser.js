@@ -54,9 +54,15 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   // division contains TWO teams whose teamName is "Cowboys" — Moore - Cowboys
   // (ours) and Watkins - Cowboys. Mascot is not a unique identifier there, so
   // matching on it (exactly or fuzzily) is ambiguous. This is deliberately the
-  // opposite of sharksParser.js, where the mascot IS unique and only the
-  // wording of the team string varies between the schedule and the standings,
-  // which is why fuzzy matching is right there and wrong here.
+  // opposite of ONE thing sharksParser.js does: isSharksTeam() finds OUR OWN
+  // team by substring, because "Tidewater Sharks" appears in no other club's
+  // name in that division and only the wording around it varies. That is not
+  // how soccer resolves its division — since 2026-09-16 every team's every
+  // observed string is an exact alias in data/sharks-soccer.json and
+  // digest/divisionStandings.js matches nothing loosely. So the contrast is
+  // narrower than "fuzzy there, exact here": loose matching is right for one
+  // team whose name is unique, and wrong for picking one team out of a
+  // division, in either sport.
   const teamKey = t => keyOf(t.teamId ?? t.abbr);
   const myKey    = keyOf(season.myTeamId ?? season.myTeamAbbr);
   const teamsMap = new Map(season.teams.map(t => [teamKey(t), t.teamName]));

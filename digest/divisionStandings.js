@@ -6,9 +6,12 @@
  * which each hand it a season they have already selected, so there is no second
  * season selector here to drift from theirs.
  *
- * Pure: no I/O, no `new Date()` of its own, and it never throws. Every entry
- * point wraps its body and degrades to an unavailable table, because this runs
- * inside the daily digest and a throw there costs the whole run.
+ * Pure: no I/O and no `new Date()` of its own. Every exported entry point that
+ * builds a table wraps its body and degrades to an unavailable table rather than
+ * throwing, because this runs inside the daily digest and a throw there costs
+ * the whole run. The export surface is deliberately narrow — the ranking core,
+ * the two comparators and the two scoring helpers are module-private, so there
+ * is no exported path that skips that wrapper.
  *
  * ─────────────────────────────────────────────────────────────────────────
  * WHY ONE MODULE FOR TWO SPORTS
@@ -121,6 +124,8 @@ export const STANDINGS_UNAVAILABLE_REASON = Object.freeze({
   NO_DATA:             'no-data',
   NO_SEASON:           'no-season',
   NO_DIVISION_TEAMS:   'no-division-teams',
+  TEAM_WITHOUT_ID:     'team-without-id',
+  MALFORMED_DATE:      'malformed-fixture-date',
   DUPLICATE_TEAM_ID:   'duplicate-team-id',
   ALIAS_COLLISION:     'alias-collision',
   UNRESOLVED_TEAM:     'unresolved-team',
@@ -175,8 +180,16 @@ export function unavailableTable(sport, reason, detail = null, divisionLabel = n
  * do, and `rankShared` is what says not to read one into it.
  */
 function rankRows(rows, compare) {
-  const sorted = [...rows].sort((a, b) => compare(a, b)
-    || String(a.teamId).localeCompare(String(b.teamId)));
+  const sorted = [...rows].sort((a, b) => {
+    const ordered = compare(a, b);
+    if (ordered !== 0) return ordered;
+    // Plain code-unit comparison, not localeCompare: the answer must not depend
+    // on the machine's locale. It carries no meaning either way — rankShared is
+    // what says so — but a deterministic order should be deterministic
+    // everywhere, not only on this machine.
+    const [x, y] = [String(a.teamId), String(b.teamId)];
+    return x < y ? -1 : x > y ? 1 : 0;
+  });
   let rank = 0;
   return sorted.map((row, index) => {
     const tiedWithPrevious = index > 0 && compare(sorted[index - 1], row) === 0;
@@ -201,7 +214,7 @@ function rankRows(rows, compare) {
  * @param {Function} spec.decorate  row => extra fields (leaguePoints/winPercentage)
  * @param {Function} spec.compare   (a, b) => negative when a ranks ahead of b
  */
-export function buildDivisionTable({ sport, divisionLabel, source, teams, fixtures, decorate, compare }) {
+function buildDivisionTable({ sport, divisionLabel, source, teams, fixtures, decorate, compare }) {
   const tallies = new Map(teams.map(team => [keyOf(team.teamId), {
     played: 0, wins: 0, losses: 0, drawn: 0, scoreFor: 0, scoreAgainst: 0,
   }]));
@@ -266,10 +279,10 @@ export function buildDivisionTable({ sport, divisionLabel, source, teams, fixtur
 // ── Soccer ──────────────────────────────────────────────────────────────────
 
 /** Three for a win, one for a draw. */
-export const soccerPoints = row => row.wins * 3 + row.drawn;
+const soccerPoints = row => row.wins * 3 + row.drawn;
 
 /** Points, then goal difference, then goals scored. Decision 2, 2026-09-16. */
-export function soccerCompare(a, b) {
+function soccerCompare(a, b) {
   return (b.leaguePoints - a.leaguePoints)
     || (b.scoreDifference - a.scoreDifference)
     || (b.scoreFor - a.scoreFor);
@@ -298,7 +311,7 @@ export function buildSoccerAliasIndex(divisionTeams) {
   const seenIds = new Set();
   for (const team of divisionTeams) {
     const id = keyOf(team?.teamId);
-    if (!id) return { ok: false, reason: STANDINGS_UNAVAILABLE_REASON.NO_DIVISION_TEAMS, detail: 'a division team carries no teamId' };
+    if (!id) return { ok: false, reason: STANDINGS_UNAVAILABLE_REASON.TEAM_WITHOUT_ID, detail: team?.name ?? null };
     if (seenIds.has(id)) return { ok: false, reason: STANDINGS_UNAVAILABLE_REASON.DUPLICATE_TEAM_ID, detail: id };
     seenIds.add(id);
     const aliases = Array.isArray(team.aliases) ? team.aliases : [];
@@ -374,7 +387,15 @@ export function buildSoccerDivisionTable(season) {
       if (home === undefined) return fail(STANDINGS_UNAVAILABLE_REASON.UNRESOLVED_TEAM, match?.homeTeam ?? null);
       if (away === undefined) return fail(STANDINGS_UNAVAILABLE_REASON.UNRESOLVED_TEAM, match?.awayTeam ?? null);
       if (home === away) return fail(STANDINGS_UNAVAILABLE_REASON.AMBIGUOUS_FIXTURE, String(match?.matchNumber ?? ''));
-      if (!DATE_KEY.test(String(match?.date ?? ''))) continue;
+      // A row whose date cannot be read fails the table closed for the same
+      // reason as the two above, and this is the whole of why: every date
+      // comparison here — the as-of date, the unposted count — is a string
+      // comparison, so a malformed date would silently sort wrong rather than
+      // error. Dropping such a row would leave a table that looks right and is
+      // missing a played fixture, while parseSharks's own seasonRecord applies
+      // no date check and would still count it. Two derivations of the same
+      // season disagreeing with no signal is exactly what this refuses.
+      if (!DATE_KEY.test(String(match?.date ?? ''))) return fail(STANDINGS_UNAVAILABLE_REASON.MALFORMED_DATE, String(match?.matchNumber ?? ''));
 
       const hasResult = match.played === true && isScore(match.homeScore) && isScore(match.awayScore);
       fixtures.push({
@@ -408,7 +429,7 @@ export function buildSoccerDivisionTable(season) {
  * as half a win. A team that has played nothing is 0, which puts it level with
  * a team that has lost everything and lets point differential separate them.
  */
-export function flagFootballWinFraction(row) {
+function flagFootballWinFraction(row) {
   if (row.played === 0) return [0, 1];
   return [row.wins * 2 + row.drawn, row.played * 2];
 }
@@ -422,7 +443,7 @@ export function flagFootballWinFraction(row) {
  * different quotients, which is a tie-break decided by arithmetic noise. The
  * `winPercentage` a row exposes is for display and is not what ranks it.
  */
-export function flagFootballCompare(a, b) {
+function flagFootballCompare(a, b) {
   const [an, ad] = flagFootballWinFraction(a);
   const [bn, bd] = flagFootballWinFraction(b);
   return (bn * ad - an * bd) || (b.scoreDifference - a.scoreDifference);
@@ -431,11 +452,19 @@ export function flagFootballCompare(a, b) {
 /**
  * The flag football division table, derived from the season's own game rows.
  *
- * Fixture scope matches parseFlagFootball()'s standings loop exactly: regular,
- * non-friendly rows. A result is recorded when the row is final and carries two
- * numbers — the same eligibility that parser already applies, so the derived
- * table and the legacy `standings` array can never disagree about which games
- * have been played.
+ * Fixture scope matches parseFlagFootball()'s standings loop: regular,
+ * non-friendly rows, a result recorded when the row is final and carries two
+ * numbers. That is the same eligibility predicate, so on any row both can read
+ * the two agree about which games have been played.
+ *
+ * They are NOT the same filter, and the difference is worth naming rather than
+ * rounding off. This one additionally requires a readable date, and fails the
+ * whole table closed when a row lacks one, where parseFlagFootball's filter has
+ * no date check and counts that row. So a season carrying a malformed date
+ * yields a legacy `standings` array and NO derived table — visibly different
+ * rather than quietly different, which is the point of failing closed. An
+ * earlier version of this paragraph said the two "can never disagree"; that was
+ * an unfalsifiable claim about code that had a gate the other side lacked.
  *
  * Identity is the league's numeric team id, falling back to the legacy string
  * abbr for the two older seasons that predate the ids. Never the mascot: this
@@ -460,7 +489,7 @@ export function buildFlagFootballDivisionTable(season) {
     const seen = new Set();
     for (const team of seasonTeams) {
       const id = keyOf(identityOf(team));
-      if (!id) return fail(STANDINGS_UNAVAILABLE_REASON.NO_DIVISION_TEAMS, 'a team carries neither teamId nor abbr');
+      if (!id) return fail(STANDINGS_UNAVAILABLE_REASON.TEAM_WITHOUT_ID, team?.teamName ?? null);
       if (seen.has(id)) return fail(STANDINGS_UNAVAILABLE_REASON.DUPLICATE_TEAM_ID, id);
       seen.add(id);
     }
@@ -479,12 +508,16 @@ export function buildFlagFootballDivisionTable(season) {
     const fixtures = [];
     for (const game of season.games || []) {
       if (game?.type !== 'regular' || game.friendly) continue;
-      if (!DATE_KEY.test(String(game?.date ?? ''))) continue;
       const home = keyOf(game.home);
       const away = keyOf(game.away);
       if (home === null || !seen.has(home)) return fail(STANDINGS_UNAVAILABLE_REASON.UNRESOLVED_TEAM, game.home ?? null);
       if (away === null || !seen.has(away)) return fail(STANDINGS_UNAVAILABLE_REASON.UNRESOLVED_TEAM, game.away ?? null);
       if (home === away) return fail(STANDINGS_UNAVAILABLE_REASON.AMBIGUOUS_FIXTURE, String(game.date));
+      // Same gate, same position, same outcome as the soccer branch above. The
+      // two used to differ — soccer resolved teams first and flag football
+      // tested the date first — so one malformed row failed closed in one sport
+      // and vanished in the other.
+      if (!DATE_KEY.test(String(game?.date ?? ''))) return fail(STANDINGS_UNAVAILABLE_REASON.MALFORMED_DATE, String(game?.week ?? ''));
 
       const hasResult = game.status === 'final' && isScore(game.homeScore) && isScore(game.awayScore);
       fixtures.push({

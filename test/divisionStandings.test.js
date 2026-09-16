@@ -247,6 +247,31 @@ describe('soccer — team strings resolve by exact alias, never by substring', (
     assert.equal(table.reason, STANDINGS_UNAVAILABLE_REASON.AMBIGUOUS_FIXTURE);
   });
 
+  it('a fixture whose date cannot be read makes the table unavailable, never dropped', () => {
+    // Dropping it would leave a table that looks right and is missing a played
+    // fixture, while parseSharks's own seasonRecord applies no date check and
+    // would still count that row — two derivations of one season disagreeing
+    // with no signal anywhere.
+    const season = clone(soccerSeason);
+    season.divisionSchedule.matches[0].date = '29 Aug 2026';
+    const table = buildSoccerDivisionTable(season);
+    assert.equal(table.status, STANDINGS_STATUS.UNAVAILABLE);
+    assert.equal(table.reason, STANDINGS_UNAVAILABLE_REASON.MALFORMED_DATE);
+  });
+
+  it('a division team carrying no identifier says so, rather than reporting no teams at all', () => {
+    const season = clone(soccerSeason);
+    delete season.divisionTeams[3].teamId;
+    const table = buildSoccerDivisionTable(season);
+    assert.equal(table.status, STANDINGS_STATUS.UNAVAILABLE);
+    assert.equal(table.reason, STANDINGS_UNAVAILABLE_REASON.TEAM_WITHOUT_ID);
+    // The code names the condition and the detail names the team, so neither a
+    // renderer branching on the code nor a human reading the detail is misled
+    // into thinking the division is empty.
+    assert.notEqual(table.reason, STANDINGS_UNAVAILABLE_REASON.NO_DIVISION_TEAMS);
+    assert.equal(table.reasonDetail, soccerSeason.divisionTeams[3].name);
+  });
+
   it('never throws on malformed input, whatever shape it takes', () => {
     for (const bad of [null, {}, { divisionTeams: [] }, { divisionTeams: 'no' },
       { divisionTeams: [{}] }, { divisionTeams: [{ teamId: 'a' }], myTeamId: 'a', divisionSchedule: { matches: 'no' } }]) {
@@ -398,6 +423,27 @@ describe('flag football division table — the shipped season', () => {
     assert.deepEqual([...new Set(cowboys.map(r => r.name))].length, 2);
     // Identity is the id, never the mascot: one of them is ours and one is not.
     assert.deepEqual(cowboys.map(r => r.isMe).sort(), [false, true]);
+  });
+
+  it('a fixture whose date cannot be read makes the table unavailable, exactly as in soccer', () => {
+    // The two sports used to differ here — soccer resolved teams before testing
+    // the date and flag football after — so one malformed row failed closed in
+    // one sport and vanished in the other.
+    const season = clone(fallSeason);
+    season.games.find(g => g.type === 'regular').date = 'Sept 20';
+    const table = buildFlagFootballDivisionTable(season);
+    assert.equal(table.status, STANDINGS_STATUS.UNAVAILABLE);
+    assert.equal(table.reason, STANDINGS_UNAVAILABLE_REASON.MALFORMED_DATE);
+    assert.deepEqual(table.rows, []);
+  });
+
+  it('a team carrying neither a league id nor an abbr says so', () => {
+    const season = clone(fallSeason);
+    delete season.teams[2].teamId;
+    const table = buildFlagFootballDivisionTable(season);
+    assert.equal(table.status, STANDINGS_STATUS.UNAVAILABLE);
+    assert.equal(table.reason, STANDINGS_UNAVAILABLE_REASON.TEAM_WITHOUT_ID);
+    assert.equal(table.reasonDetail, fallSeason.teams[2].teamName);
   });
 
   it('the two Cowboys stay distinct once results are recorded', () => {

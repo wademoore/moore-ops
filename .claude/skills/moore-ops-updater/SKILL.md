@@ -290,8 +290,13 @@ Older seasons (`fall-2025`, `spring-2026`) use string abbreviations instead, mat
 **Never identify a team by mascot.** `seasons[n].teams[].teamName` is a display name and is
 not unique: `fall-2026` contains two teams named `Cowboys` — ours (`8009182`, `leagueName`
 `"Moore – Cowboys"`) and `8057461` (`"Watkins - Cowboys"`). Resolve every id through
-`teams[]` before writing it. This is the opposite of `sharks-soccer.json`, where fuzzy
-mascot matching is correct.
+`teams[]` before writing it. This is the opposite of `sharks-soccer.json` in ONE narrow
+respect only: there, `isSharksTeam()` identifies **our own team** by substring, because
+"Tidewater Sharks" appears in no other club's name in that division. That is not a general
+convention for that file, and as of 2026-09-16 it is explicitly not how the division is
+resolved — see `divisionTeams` above, where every team's every observed string is an exact
+alias and nothing matches loosely. Do not extend the substring test to opponents in either
+file.
 
 ### Recording a result
 
@@ -479,10 +484,12 @@ goals-against each include its awarded scoreline. Wade's decision of 2026-09-16 
 that a forfeit counts at its recorded scoreline for points and for goals alike, matching the
 published table, and `digest/divisionStandings.js` does not read this key at all. Excluding it
 would make the derivation disagree with the league. Clearing the flag on that row changes
-nothing in the derived table, which is asserted rather than claimed. It is **not** a live defect today: `digest/sharksParser.js` derives `seasonRecord`
-only from rows where `isSharksTeam()` matches one side, and the one row carrying the flag is
-between two other clubs. The `divisionStanding` that same parser returns is read straight
-out of this file's own `standings.teams` block, not computed from the match rows at all.
+nothing in the derived table, which is asserted rather than claimed.
+
+Nothing else reads the key either. `digest/sharksParser.js` derives `seasonRecord` only from
+rows where `isSharksTeam()` matches exactly one side, and the one row carrying the flag is
+between two other clubs. The `divisionStanding` that same parser returns is read straight out
+of this file's own `standings.teams` block, not computed from the match rows at all.
 
 One row carries it as of this writing — match 637 (2026-08-29, Chesapeake United Reapers
 3–0 VA Rush Killer Bees), entered in commit `b4dc214` (PR #77). No parser and no test reads
