@@ -342,11 +342,14 @@ Decisions taken on that date, not pre-existing repo practice.
   "AWAY at HOME".** The first team named is `away`, the second is `home`; write each score
   to the matching side.
 
-The first `fall-2026` result entered reddens `test/current-season-athletics.test.js`, which
-asserts against the real data file that this season's `seasonRecord` is `"0-0-0"` and its
-`lastResult` is empty. That is the expected consequence of entering a result, not a mistake
-in the entry. Re-pointing those assertions at the entered results — never relaxing them — is
-a code change outside this skill's file authority: report it rather than making it.
+Entering a `fall-2026` result reddens `test/current-season-athletics.test.js`. Its
+`season record is 0-0-0 with no games played` case asserts against the real data file that
+this season's `seasonRecord` is `"0-0-0"` and its `lastResult` is empty. Marking our
+own Week 2 row `"final"` additionally reddens `nextFlagGame is the Week 2 fixture, never the
+Week 1 practice`: `nextFlagGame` selects only rows still `"scheduled"`, so it advances to
+Week 3. Each is the expected consequence of entering a result, not a mistake in the entry.
+Re-pointing those assertions at the entered results — never relaxing them — is a code change
+outside this skill's file authority: report it rather than making it.
 
 ### Unsupported
 
@@ -354,6 +357,14 @@ A **forfeit** has no representation in this file. `sharks-soccer.json` carries a
 key; `flag-football.json` has no equivalent on any row, and nothing in
 `digest/flagFootballParser.js` reads one. A forfeit recorded as an ordinary score is
 indistinguishable from a played result. Stop and ask before entering one.
+
+A **fixture whose participants are not yet known** has no representation either. Per the
+`fall-2026` season `note` in `data/flag-football.json`, every `games[]` row resolves both
+sides to a known id, and the one null side in the file means "a practice has no opponent",
+not "opponent undetermined" — which is why the published Oct 25 postseason slots are absent
+rather than invented. Once the league names the participants a row can be written, with
+`type` `"playoff"` or `"consolation"` as the file already uses for prior seasons. Until
+then, do not invent an id and do not write a null side.
 
 ---
 
