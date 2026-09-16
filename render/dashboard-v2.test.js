@@ -426,7 +426,7 @@ describe('real-data resilience policies', () => {
     assert.match(html, /athletics-one/);
     assert.match(html, /card-count-1/);
     assert.match(html, /Sat, Sep 12 · 1:15 PM/);
-    assert.match(html, /\.dashboard\.athletics-one \.upcoming-panel\{height:72%\}/);
+    assert.match(html, /\.dashboard\.athletics-one \.upcoming-panel\{height:calc\(72% - 50\.6px\)\}/);
     assert.equal(conversationalMatchDate('2026-09-12', '13:15'), 'Sat, Sep 12 · 1:15 PM');
   });
 
@@ -557,7 +557,7 @@ describe('real-data resilience policies', () => {
     assert.doesNotMatch(html, /School today/);
     assert.doesNotMatch(html, /9:00 AM · 9:00 AM/);
     assert.doesNotMatch(html, /✈️|🎒/);
-    assert.equal((html.match(/class="alert-mark"/g) || []).length, 1);
+    assert.equal((html.match(/class="alert-mark"/g) || []).length, 0);
     assert.doesNotMatch(html, /alert-identity/);
     assert.equal(cleanDisplayText('🔵 757 Swim'), '757 Swim');
     assert.equal(activityCategory({ title: 'iDance Open House' }), 'arts');
@@ -651,8 +651,8 @@ describe('television readability and horizon policies', () => {
   });
 
   it('uses tokenized oatmeal surfaces without a bright alert exception', () => {
-    assert.match(renderDashboardV2(sampleDashboardV2Data), /\.paper-panel,\.rail-card,\.alert-card\{background:var\(--surface-panel\)/);
-    assert.match(renderDashboardV2(sampleDashboardV2Data), /\.alert-card,\.alert-card\.calm\{background:var\(--surface-alt\)/);
+    assert.match(renderDashboardV2(sampleDashboardV2Data), /\.paper-panel,\.rail-card\{background:var\(--surface-panel\)/);
+    assert.doesNotMatch(renderDashboardV2(sampleDashboardV2Data), /alert-card/);
   });
 
   it('retains exactly five visible priorities at the larger television size', () => {
@@ -953,8 +953,8 @@ describe('special-event migration — byte equality with the legacy Family Spotl
 
   const panelOf = html => {
     const start = html.indexOf('<section class="paper-panel athletics-panel');
-    const alerts = html.indexOf('<section class="alerts-panel');
-    const close = html.lastIndexOf('</section>', alerts) + '</section>'.length;
+    const rail = html.indexOf('<aside class="right-rail');
+    const close = html.lastIndexOf('</section>', rail) + '</section>'.length;
     // Keep the original Spotlight migration baseline: normalize only the later,
     // approved move of team artwork from the ribbon into the summary row,
     // and the approved compact matchup for this one frozen fixture.
@@ -1018,91 +1018,30 @@ describe('special-event migration — byte equality with the legacy Family Spotl
   });
 });
 
-// ---------------------------------------------------------------------------
-// Alerts panel — the noteOnly tier
-//
-// `noteOnly` is standing household context rather than an open alert, so it is
-// kept out of the three .alert-card positions and shown as a compact
-// .alert-note at the end of the band. Only digest/flags.js's kid-overlap
-// evaluator sets it today. Nothing here changes how any other flag is placed:
-// every case below pins the card positions as well as the note.
-// ---------------------------------------------------------------------------
-
-describe('dashboard v2 alerts panel — noteOnly flags', () => {
-  const note = { id: 'activity-overlap', level: 'blue', noteOnly: true, title: 'Overlapping Activities — Standard Split Coverage', body: 'A (Myles) + B (Ophelia). Standing default: Wade takes Myles, Robyn takes Ophelia.' };
+// Wade retired the entire wall strip on 2026-09-16. Keep coverage of every
+// former tier/cap combination, now asserting that none reserves or renders UI.
+describe('dashboard v2 omits the retired alert strip', () => {
+  const note = n => ({ id: `note-${n}`, noteOnly: true, level: 'blue', title: `Note ${n}`, body: 'Standing coverage' });
   const alert = n => ({ id: `alert-${n}`, level: 'amber', title: `Alert ${n}`, body: `Body ${n}` });
-  const render = flags => renderDashboardV2({ ...sampleDashboardV2Data, flags });
-  const panel = flags => render(flags).match(/<section class="alerts-panel">[\s\S]*?<\/section>/)[0];
-  const cards = flags => (panel(flags).match(/class="alert-card/g) || []).length;
-  const notes = flags => (panel(flags).match(/class="alert-note/g) || []).length;
-
-  it('does not render a noteOnly flag as an alert card', () => {
-    assert.equal(cards([note]), 1, 'the one card is the all-clear card, not the note');
-    assert.match(panel([note]), /class="alert-card calm"/);
-  });
-
-  it('renders a noteOnly flag as a note, so it stays visible', () => {
-    assert.equal(notes([note]), 1);
-    assert.match(panel([note]), /Overlapping Activities — Standard Split Coverage/);
-    assert.match(panel([note]), /Standing default: Wade takes Myles/);
-  });
-
-  it('carries the flag level onto the note, so the level mark keeps its colour', () => {
-    assert.match(panel([note]), /class="alert-note level-blue"/);
-  });
-
-  it('does not spend a card position: three alerts plus a note still render three cards', () => {
-    assert.equal(cards([alert(1), alert(2), alert(3), note]), 3);
-    assert.equal(notes([alert(1), alert(2), alert(3), note]), 1);
-  });
-
-  it('still caps the cards at three when a note is present', () => {
-    // The .slice(0, 3) applies to the non-note flags, so a note can neither
-    // displace a card nor let a fourth alert through.
-    assert.equal(cards([alert(1), alert(2), alert(3), alert(4), note]), 3);
-    assert.doesNotMatch(panel([alert(1), alert(2), alert(3), alert(4), note]), /Alert 4/);
-  });
-
-  it('keeps the all-clear card when a note is the only flag, because a note is not an open alert', () => {
-    assert.match(panel([note]), /All clear/);
-  });
-
-  it('renders the panel byte-identically to the pre-change output when no note flag is present', () => {
-    // The noteOnly branch must be inert on an ordinary day. sampleDashboardV2Data
-    // ships three ordinary flags; this is the markup the renderer produced before
-    // the tier existed.
-    assert.equal(
-      panel(sampleDashboardV2Data.flags),
-      '<section class="alerts-panel"><div class="alert-card level-red">\n    <span class="alert-mark" aria-hidden="true"></span>\n    <div><b>Backpack Prep — Wade Action Required</b><span>Ophelia has Library — pack book tonight.</span></div>\n  </div><div class="alert-card level-amber">\n    <span class="alert-mark" aria-hidden="true"></span>\n    <div><b>Waves Pool Party — Pizza Order Due</b><span>Order + pay before the end of practice Thursday.</span></div>\n  </div><div class="alert-card level-blue">\n    <span class="alert-mark" aria-hidden="true"></span>\n    <div><b>Emma Onboarding — Tasks Open</b><span>Add Emma to Rec Connect pickup + print binder.</span></div>\n  </div></section>',
-    );
-  });
-
-  it('still hides bannerOnly flags entirely — the note tier is a separate thing', () => {
-    const banner = { id: 'b', level: 'blue', bannerOnly: true, title: 'Banner', message: 'Celebration' };
-    assert.equal(notes([banner]), 0);
-    assert.doesNotMatch(panel([banner]), /Celebration/);
-  });
-});
-
-describe('dashboard v2 alerts panel — note capacity', () => {
-  // The cards are capped at three; the notes were capped at nothing. Unreachable
-  // today (one flag sets noteOnly) but the tier is generic, and the band is a
-  // fixed-height flex row with no wrap, so an uncapped list would be the next
-  // adopter's problem rather than a decision anyone took.
-  const note = n => ({ id: `note-${n}`, level: 'blue', noteOnly: true, title: `Note ${n}`, body: `Body ${n}` });
-  const panel = flags => renderDashboardV2({ ...sampleDashboardV2Data, flags })
-    .match(/<section class="alerts-panel">[\s\S]*?<\/section>/)[0];
-
-  it('renders at most two notes', () => {
-    const rendered = panel([note(1), note(2), note(3)]);
-    assert.equal((rendered.match(/class="alert-note/g) || []).length, 2);
-    assert.doesNotMatch(rendered, /Note 3/);
-  });
-
-  it('caps the notes without disturbing the three card positions', () => {
-    const alert = n => ({ id: `alert-${n}`, level: 'amber', title: `Alert ${n}`, body: `Body ${n}` });
-    const rendered = panel([alert(1), alert(2), alert(3), note(1), note(2), note(3)]);
-    assert.equal((rendered.match(/class="alert-card/g) || []).length, 3);
-    assert.equal((rendered.match(/class="alert-note/g) || []).length, 2);
+  const cases = [
+    ['note does not create an alert card', [note(1)]],
+    ['note text is no longer visible', [{ ...note(1), body: 'Wade takes Myles' }]],
+    ['note severity does not create a mark', [{ ...note(1), level: 'red' }]],
+    ['three alerts plus a note create no strip', [alert(1), alert(2), alert(3), note(1)]],
+    ['four alerts plus a note create no strip', [alert(1), alert(2), alert(3), alert(4), note(1)]],
+    ['empty flags do not create an all-clear card', []],
+    ['ordinary sample flags no longer render their frozen strip markup', sampleDashboardV2Data.flags],
+    ['banner-only flags remain absent', [{ id: 'b', bannerOnly: true, title: 'Banner', message: 'Celebration' }]],
+    ['three notes do not create a note container', [note(1), note(2), note(3)]],
+    ['mixed former capacities create no reserved UI', [alert(1), alert(2), alert(3), note(1), note(2), note(3)]],
+    ['calendar-fetch failure has no visible wall indicator', [{ id: 'calendar-fetch-failed', level: 'red', title: 'Calendar fetch failed' }]],
+  ];
+  for (const [name, flags] of cases) it(name, () => {
+    const data = { ...sampleDashboardV2Data, flags };
+    const before = structuredClone(flags);
+    const html = renderDashboardV2(data);
+    assert.doesNotMatch(html, /alerts-panel|alert-card|alert-note|alert-mark|No open operational alerts/);
+    assert.equal(html, renderDashboardV2({ ...data, flags: [] }));
+    assert.deepEqual(flags, before, 'digest flags remain intact for other surfaces');
   });
 });

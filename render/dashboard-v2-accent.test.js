@@ -249,12 +249,12 @@ describe('event-row accent — containment and fail-closed', () => {
     // assertion becomes vacuous.
     const regions = [...text.matchAll(/<(?:section|aside|header|footer) class="((?:paper-panel )?[a-z0-9-]+)/g)]
       .map(match => ({ name: match[1].replace(/^paper-panel /, ''), index: match.index }))
-      .filter(region => ['today-panel', 'upcoming-panel', 'athletics-panel', 'alerts-panel', 'right-rail', 'sports-ticker', 'masthead'].includes(region.name));
+      .filter(region => ['today-panel', 'upcoming-panel', 'athletics-panel', 'right-rail', 'sports-ticker', 'masthead'].includes(region.name));
 
     const protectedRegions = regions.filter(region => region.name !== 'upcoming-panel');
-    // The masthead is optional (this fixture renders `no-masthead`), so five
-    // is the full set here: today, athletics, alerts, right rail and ticker.
-    for (const required of ['today-panel', 'athletics-panel', 'alerts-panel', 'right-rail', 'sports-ticker']) {
+    // The masthead is optional (this fixture renders `no-masthead`), so four
+    // is the full set here: today, athletics, right rail and ticker.
+    for (const required of ['today-panel', 'athletics-panel', 'right-rail', 'sports-ticker']) {
       assert.ok(protectedRegions.some(region => region.name === required),
         `could not locate ${required}; found ${JSON.stringify(regions.map(r => r.name))}`);
     }

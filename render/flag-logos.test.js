@@ -74,3 +74,42 @@ it('reserves the standings logo slot for unknown teams without inventing artwork
     standings: [{ team: 'Unknown team', w: 0, l: 0 }] } });
   assert.match(html, /<span class="flag-team-mark flag-team-placeholder" aria-hidden="true"><\/span>Unknown team/);
 });
+
+
+it('disambiguates shared display names by numeric team id and supplied coach, never mascot', () => {
+  for (const name of ['Cowboys', 'Unfamiliar name']) {
+    const standings = [
+      { teamId: 42, team: name, coach: 'Watkins', w: 2, l: 0, isMe: false },
+      { teamId: 7, team: name, coach: 'Our coach', w: 0, l: 2, isMe: true },
+      { teamId: 19, team: 'Unique', coach: 'Unique coach', w: 1, l: 1, isMe: false },
+      { teamId: 99, team: name, coach: 'Other <coach>', w: 0, l: 2, isMe: false },
+    ];
+    for (const rows of [standings, [...standings].reverse()]) {
+      const before = structuredClone(rows);
+      const html = renderAthletics({ athletics: { flagFootballActive: true, standings: rows } });
+      const cells = [...html.matchAll(/<td class="team-cell">([\s\S]*?)<\/td>/g)].map(match => match[1].replace(/<[^>]*>/g, ''));
+      assert.deepEqual(cells, rows.map(row => row.isMe ? `${name} · Us` : row.teamId === 42 ? `${name} (Watkins)` : row.teamId === 99 ? `${name} (Other &lt;coach&gt;)` : 'Unique'));
+      assert.deepEqual(rows, before);
+    }
+  }
+});
+
+it('does not infer team identity for legacy missing ids or invent missing coach labels', () => {
+  for (const rows of [
+    [{ team: 'Same', coach: 'Coach A' }, { team: 'Same', coach: 'Coach B' }],
+    [{ teamId: 1, team: 'Same', coach: null }, { teamId: 2, team: 'Same', coach: '' }],
+    [{ teamId: 1, team: 'Same', coach: 'Coach A' }, { teamId: 1, team: 'Same', coach: 'Coach A' }],
+  ]) {
+    const html = renderAthletics({ athletics: { flagFootballActive: true, standings: rows } });
+    assert.doesNotMatch(html, /Same \(/);
+  }
+});
+
+for (const homeAway of ['home', 'away']) it(`uses vs. without any @ or travel cue for a ${homeAway} flag fixture`, () => {
+  const html = renderAthletics({ athletics: { flagFootballActive: true,
+    nextFlagGame: { opponent: 'Ravens', date: '2026-09-20', time: '12:00', homeAway },
+  } });
+  const next = html.match(/<div class="next-box">[\s\S]*?<\/div>/)[0];
+  assert.match(next, /vs\. Ravens/);
+  assert.doesNotMatch(next, /@|\baway\b|\bhome\b|travel/i);
+});
