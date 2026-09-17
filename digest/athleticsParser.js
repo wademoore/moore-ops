@@ -115,12 +115,33 @@
  *                                                  exists strictly before
  *                                                  this race
  *                                 'first-recorded' no valid comparable swim
- *                                                  anywhere in covered
- *                                                  history
- *                                 'undetermined'   this race is a DQ or has
- *                                                  no time, or a comparable
+ *                                                  BEFORE this race, and none
+ *                                                  on its own date to make the
+ *                                                  ordering ambiguous. It says
+ *                                                  "nothing before this",
+ *                                                  never "nothing at all": a
+ *                                                  comparable swim dated AFTER
+ *                                                  the race is neither a
+ *                                                  predecessor nor an
+ *                                                  ambiguity, and covered
+ *                                                  history can hold one —
+ *                                                  a Waves swim can postdate
+ *                                                  an early-season 757 race.
+ *                                 'undetermined'   the race cannot be placed
+ *                                                  against its own history.
+ *                                                  THREE paths reach it, not
+ *                                                  two: the race is a DQ or
+ *                                                  has no time; a comparable
  *                                                  swim on the SAME date
- *                                                  prevents ordering
+ *                                                  prevents ordering; or the
+ *                                                  race's own event name will
+ *                                                  not parse into a distance
+ *                                                  and stroke, or it carries
+ *                                                  no course. The third is a
+ *                                                  fail-closed path rather
+ *                                                  than a judgement, and is
+ *                                                  outside the approved
+ *                                                  contract's enumeration.
  *   priorBest:      object|null { seconds, date, meet, source } when the state
  *                                 is 'prior-best', else null. `source` names
  *                                 the data file the swim was taken from, so a

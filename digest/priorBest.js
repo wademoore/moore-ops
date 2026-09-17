@@ -324,14 +324,19 @@ function roundHundredths(value) {
  * predecessor nor an ambiguity, so it is correctly ignored — but it means
  * 'first-recorded' says "nothing before this", never "nothing at all".
  *
- * 'undetermined' covers two different situations deliberately kept together,
- * because both mean "no improvement figure can honestly be stated":
+ * 'undetermined' covers three situations deliberately kept together, because
+ * all three mean "no improvement figure can honestly be stated":
  *
  *   - the race is a disqualification, or carries no time, so there is nothing
  *     to compare;
  *   - a second comparable swim sits on the race's OWN date. Dates in this data
  *     have no clock attached, so two swims of one event on one day cannot be
- *     ordered, and calling the other one "previous" would be a guess.
+ *     ordered, and calling the other one "previous" would be a guess;
+ *   - the race's own event name will not parse into a distance and a stroke,
+ *     or it carries no course. That one is a fail-closed path rather than a
+ *     judgement about history, and it is outside the approved contract's
+ *     enumeration of this state — written down here because a caller meeting
+ *     it would otherwise have to discover it.
  *
  * The same-day test has to tell the race apart from a genuine second swim, and
  * it does so BY TIME rather than by counting. Covered history is built from the
@@ -356,7 +361,24 @@ function roundHundredths(value) {
  * commit that added this module no source in covered history disagreed with
  * another about the time of any shared swim, and times are recorded to
  * hundredths, so two genuinely different swims colliding on one time to the
- * hundredth on one day is the only case this cannot separate.
+ * hundredth on one day is the only case this rule cannot separate.
+ *
+ * ⚠ THAT PREMISE COVERS TIME AND DQ STATUS. IT DOES NOT COVER DATE, AND DATE
+ * IS WHAT DEDUPLICATION KEYS ON. If two sources disagree about the day a swim
+ * was swum, dedup sees two identities rather than one and covered history
+ * carries the swim twice. A phantom copy dated a day early lands in `earlier`
+ * and the race becomes its own prior best with an improvement of zero; dated a
+ * day late it is ignored. Both are silent.
+ *
+ * This is not hypothetical, and the branch that added this module sits one
+ * commit after the counterexample: the correction merged as #116 moved three of
+ * this swimmer's dates in swim-results.json to agree with the parser files,
+ * and before it they disagreed. The mechanism that produced that drift — a
+ * hand-entered file falling behind a parser file — is the same one cited above
+ * as a REASON to include the 757 source. Nothing here detects it. Closing it
+ * means either widening the premise to include date or letting dedup tolerate
+ * a one-day disagreement, and that is a design decision rather than an
+ * oversight to patch quietly.
  *
  * ── Comparable ─────────────────────────────────────────────────────────
  * Same swimmer (the history is already scoped to one), same distance, same

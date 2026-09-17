@@ -305,8 +305,8 @@ describe('priorBest — deduplication and source naming', () => {
       results757:  [parsed757({ date: '2026-09-12', seconds: 33.37 })],
       v2Results:   [],
     });
-    assert.notEqual(result.priorHistoryState, 'undetermined',
-      'one real swim recorded twice is still one swim');
+    assert.equal(result.priorHistoryState, 'first-recorded',
+      'one real swim recorded twice is still one swim, so nothing precedes it');
   });
 
   it('declares its sources in a fixed precedence order', () => {
@@ -390,6 +390,33 @@ describe('priorBest — the real files at referenceDate 2026-09-16', () => {
     // and still asks a different question; nothing here reconciles the two.
     assert.deepEqual(view().races.map(r => r.isPersonalBest), [true, true, true]);
     assert.deepEqual(view().races.map(r => r.personalBest.seconds), [33.37, 34.44, 69.08]);
+  });
+
+  it('changes exactly two values in the whole view when the 757 source is withheld', () => {
+    // priorBest.js and the packaging comment both make a WHOLE-VIEW claim:
+    // including league-results-757.json changes one race's priorBest.source
+    // and priorBest.meet and nothing else. Asserted over every race and every
+    // field rather than spot-checked on one race, so the claim cannot quietly
+    // stop being true.
+    const withExtras = parseSwim(
+      PB_RECORDS, SWIM_RESULTS, REFERENCE, CONFIG, null, V2_RESULTS, null, RESULTS_757,
+    ).opheliaLatest757Meet;
+    const withoutExtras = selectLatest757Meet(SWIM_RESULTS, PB_RECORDS);
+
+    const blank = view => view.races.map(r => ({
+      ...r, priorBest: r.priorBest ? { ...r.priorBest, source: null, meet: null } : null,
+    }));
+    assert.deepEqual(blank(withExtras), blank(withoutExtras),
+      'with source and meet blanked, every race is identical in both views');
+
+    assert.deepEqual(
+      withExtras.races.map(r => r.priorBest && [r.priorBest.source, r.priorBest.meet]),
+      [['swim-results.json', 'October Spooktacular'], null,
+       ['league-results-757.json', 'splash-and-dash']]);
+    assert.deepEqual(
+      withoutExtras.races.map(r => r.priorBest && [r.priorBest.source, r.priorBest.meet]),
+      [['swim-results.json', 'October Spooktacular'], null,
+       ['swim-results.json', 'Splash and Dash']]);
   });
 
   it('is unchanged when the extra sources are withheld, except for what they supply', () => {
