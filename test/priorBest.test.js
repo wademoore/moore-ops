@@ -90,8 +90,9 @@ describe('priorBest — the nine required behaviours', () => {
     // be able to tell "matched her best" from "did not beat it".
     const result = priorFor({ swimResults: [household({ date: '2026-01-05', seconds: 33.37 })] });
     assert.equal(result.priorHistoryState, 'prior-best');
+    // Exactly 0, which is a different answer from null: null means the race did
+    // not reach its prior best, and a tie did.
     assert.equal(result.improvementSeconds, 0);
-    assert.notEqual(result.improvementSeconds, null);
   });
 
   it('reports no improvement when the race is slower than its prior best', () => {

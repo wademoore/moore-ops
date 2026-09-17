@@ -83,7 +83,9 @@ test('the packaged data-file count matches the documented invariant', () => {
   //   lands before an Updater session hand-enters it, and because it is the
   //   only tier-2 source for that organization. On current data it changes two
   //   values in the whole view and no state, time or improvement — so this is
-  //   not a claim that omitting it would change answers. It is also the only
+  //   not a claim that omitting it would change answers. That comparison is
+  //   asserted by test/priorBest.test.js, 'changes exactly two values in the
+  //   whole view when the 757 source is withheld'. It is also the only
   //   source in covered history that keeps a time on a disqualified row, which
   //   makes including it the thing that puts that hazard in front of the
   //   dq-marker guard rather than the thing that removes it.

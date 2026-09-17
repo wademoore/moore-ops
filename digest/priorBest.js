@@ -69,7 +69,9 @@
 // swim-results.json or disqualifications: on the data at the commit that added
 // this module, including it changes exactly two values in the whole production
 // view — one race's priorBest.source and priorBest.meet — and no state, time or
-// improvement anywhere. Do not read the paragraph above as "the 757 file
+// improvement anywhere. That is asserted, not asserted-here-and-checked-nowhere:
+// test/priorBest.test.js, 'changes exactly two values in the whole view when the
+// 757 source is withheld', compares both views field by field. Do not read the paragraph above as "the 757 file
 // supplies swims the household file lacks". It does not, today.
 //
 // It is included for three reasons that are about the future and about
@@ -366,9 +368,18 @@ function roundHundredths(value) {
  * ⚠ THAT PREMISE COVERS TIME AND DQ STATUS. IT DOES NOT COVER DATE, AND DATE
  * IS WHAT DEDUPLICATION KEYS ON. If two sources disagree about the day a swim
  * was swum, dedup sees two identities rather than one and covered history
- * carries the swim twice. A phantom copy dated a day early lands in `earlier`
- * and the race becomes its own prior best with an improvement of zero; dated a
- * day late it is ignored. Both are silent.
+ * carries the swim twice. What that costs depends on WHICH swim is duplicated,
+ * and both cases are silent:
+ *
+ *   - a phantom of the RACE ITSELF, dated a day early, lands in `earlier`, so
+ *     the race becomes its own prior best with an improvement of zero; dated a
+ *     day late it is ignored entirely.
+ *   - a phantom of an EARLIER swim puts two copies in `earlier` carrying the
+ *     same time. The sort's `seconds` key ties, the `date` key breaks it, and
+ *     the older — possibly wrong — copy wins. `seconds` and
+ *     `improvementSeconds` stay right; `priorBest.date`, `.meet` and `.source`
+ *     name the wrong day and the wrong meet, which is exactly the provenance
+ *     line a surface draws under the race.
  *
  * This is not hypothetical, and the branch that added this module sits one
  * commit after the counterexample: the correction merged as #116 moved three of
