@@ -48,6 +48,38 @@ Targeted data changes only. You read data files, make the specific change reques
 
 ---
 
+## Source precedence when sources disagree about the same swim (decided Sept 16, 2026)
+
+Decided in conversation with Wade on this date; this paragraph is the first and only place
+it is written down. Not a pre-existing repo-wide convention — do not cite it as one.
+
+When two sources describe the same swim and disagree about it, the higher tier wins:
+
+| tier | source | examples |
+|---|---|---|
+| 1 — highest | **raw meet files** | the Hy-Tek `.hy3` / `.cl2` export pair under `data/sources/757/<date>-<slug>/` |
+| 2 | **parsed result files** | `league-results-757.json`, `league-results-v2.json`, `league-results-history-v2.json`, and the relay equivalents |
+| 3 — lowest | **hand-entered records** | `swim-results.json`, `pb-records.json`, `swim-annotations.json` |
+
+The rule applies field by field, not row by row: a swim's **time** and its **date** are each
+taken from the highest tier that holds that field. In the Hy-Tek pair the time is the `.hy3`
+`E2` time field and the `.cl2` `D01` final-time field, and the date is the `.cl2` `D01`
+per-event date — a multi-day meet gives different events different dates, so the meet's own
+start date is not a substitute for it.
+
+**A row with no higher-precedence source is left exactly as it stands.** Absence of a raw
+file is not evidence against a hand-entered row; an in-house meet that produced no Hy-Tek
+file has no tier-1 or tier-2 record by construction, and neither does a meet whose export
+was never added under `data/sources/`. Report such rows as uncorroborated rather than
+adjusting them toward a source that does not cover them.
+
+**This rule does not reach DQ, exhibition or `unofficial` markers.** Those are recorded
+under their own conventions elsewhere in this file, and a raw file carrying a time behind a
+`Q` suffix is not a reason to put that time on a `dq: true` row — see the
+`swim-results.json` DQ convention, where such a row takes `seconds: null`.
+
+---
+
 ## CRITICAL: pb-records.json key construction
 
 Wrong keys cause silent failures — the digest reads nothing and shows no error.
