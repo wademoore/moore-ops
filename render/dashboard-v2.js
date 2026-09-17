@@ -893,11 +893,17 @@ function renderLatest757Card(a, meet, cardCount) {
     const pb = race.personalBest;
     const isPB = !race.dq && race.isPersonalBest;
     const pbDate = pb ? swimMeetDate(pb.date) : '';
+    const hasPrior = race.priorHistoryState === 'prior-best' && race.priorBest != null;
+    const improvement = hasPrior && Number.isFinite(race.improvementSeconds)
+      ? (race.improvementSeconds === 0 ? 'Matched previous best' : `−${race.improvementSeconds.toFixed(2)}s`)
+      : race.priorHistoryState === 'first-recorded' ? 'First in our records' : '';
+    const comparison = hasPrior ? [improvement, 'Previous best ' + swimResultTime(race.priorBest.seconds)].filter(Boolean).join(' · ') : improvement;
     return `<div class="swim-row latest-757-race">
       <span>${esc(race.event)} <small>${esc(race.course || '')}</small></span>
       <strong>${race.dq ? 'DQ' : esc(swimResultTime(race.seconds))}</strong>
       ${isPB ? '<em>PB</em>' : '<em></em>'}
-      ${isPB ? '' : `<div class="latest-757-pb">${pb ? `PB ${esc(swimResultTime(pb.seconds))} · ${esc(pb.meet)}${pbDate ? ` · ${esc(pbDate)}` : ''}` : 'PB not recorded'}</div>`}
+      ${comparison ? `<div class="latest-757-improvement">${esc(comparison)}</div>` : ''}
+      ${isPB || hasPrior ? '' : `<div class="latest-757-pb">${pb ? `PB ${esc(swimResultTime(pb.seconds))} · ${esc(pb.meet)}${pbDate ? ` · ${esc(pbDate)}` : ''}` : 'PB not recorded'}</div>`}
     </div>`;
   }).join('');
   return `<article class="athletic-card tone-purple latest-757-card${races.length >= 4 ? ' latest-757-dense' : ''}">
@@ -1649,6 +1655,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .latest-757-race{grid-template-columns:minmax(0,1fr) auto 32px;gap:2px 8px;padding:3px 0}.latest-757-race>span{font-size:18px}.latest-757-pb{grid-column:1/-1;font-size:14px;line-height:1.15;color:var(--secondary);overflow-wrap:anywhere}
 .card-count-1 .latest-757-results{grid-column:2;grid-row:2/4}.card-count-1 .latest-757-results .swim-rows{display:block}
 .card-count-1 .latest-757-race{grid-template-columns:minmax(0,1fr) 90px 32px minmax(0,1.6fr)}.card-count-1 .latest-757-pb{grid-column:4}
+.latest-757-improvement{grid-column:1/-1;font-size:14px;line-height:1.15;color:var(--secondary)}
 .latest-757-more{font-size:14px;line-height:1.1;margin-top:3px;color:var(--secondary)}
 .latest-757-dense .latest-757-race{padding:0;row-gap:1px}.latest-757-dense .latest-757-race>strong{font-size:22px}
 .latest-757-dense .latest-757-meet{margin-bottom:2px}.latest-757-dense .latest-757-more{margin-top:1px}
