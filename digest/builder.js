@@ -40,11 +40,24 @@
  *
  *   AthleticsData gained one additive, read-only key on 2026-09-15:
  *   `opheliaLatest757Meet`, every individual race Ophelia swam at her most
- *   recent 757swim meet, or null. No renderer reads it yet. Its field-level
- *   contract — field meanings, absent-vs-empty, DQ representation, race
- *   order and season gating — is documented in the header of
- *   digest/athleticsParser.js, which assembles AthleticsData; the grouping
- *   and ordering rules are in digest/latest757Meet.js.
+ *   recent 757swim meet, or null. Its field-level contract — field meanings,
+ *   absent-vs-empty, DQ representation, race order and season gating — is
+ *   documented in the header of digest/athleticsParser.js, which assembles
+ *   AthleticsData; the grouping and ordering rules are in
+ *   digest/latest757Meet.js.
+ *
+ *   (This block said "No renderer reads it yet" until 2026-09-16. It was
+ *   already false: render/dashboard-v2.js reads the key and draws the card.
+ *   Corrected in passing rather than left standing.)
+ *
+ *   Each race gained four additive, read-only keys on 2026-09-16 —
+ *   `priorHistoryState`, `priorBest`, `improvementSeconds` and
+ *   `coveredHistorySince` — which report the previous comparable personal
+ *   best so a surface can show how much a swim improved. They are a separate
+ *   calculation from `personalBest`/`isPersonalBest` and are deliberately not
+ *   reconciled with them. Their field-level contract is in the same
+ *   digest/athleticsParser.js header; which result files make up covered
+ *   history, and how a swim is judged comparable, are in digest/priorBest.js.
  *
  *   AthleticsData gained two more additive, read-only keys on 2026-09-16:
  *   `sharksDivisionTable` and `flagFootballDivisionTable`, the division

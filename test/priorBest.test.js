@@ -171,12 +171,62 @@ describe('priorBest — the nine required behaviours', () => {
 });
 
 describe('priorBest — comparability and ordering', () => {
-  it('treats a swim on the race’s own date as not-before, never as a predecessor', () => {
-    // Strictly-before. With only a same-day swim present the state is
-    // undetermined; the point of this case is that it is never 'prior-best'.
+  it('treats a swim on the race’s own date as an ambiguity, never as a predecessor', () => {
+    // Strictly-before. A same-day swim at a DIFFERENT time is a second swim,
+    // so the state is undetermined - asserted exactly, not merely as
+    // "not prior-best". This case is what distinguishes the same-day rule
+    // from a bare count, so a loose assertion here would defeat it.
     const result = priorFor({ swimResults: [household({ date: '2026-09-12', seconds: 20.0 })] });
-    assert.notEqual(result.priorHistoryState, 'prior-best');
+    assert.equal(result.priorHistoryState, 'undetermined');
     assert.equal(result.priorBest, null);
+    assert.equal(result.improvementSeconds, null);
+  });
+
+  it('does not mask a same-day ambiguity when dedup hands the identity to another source', () => {
+    // The race's own row loses its identity to a higher-precedence source that
+    // holds a DIFFERENT swim on that date, so the race is dropped from history
+    // altogether. Counting swims on the date would find one and report
+    // 'prior-best'; matching on time finds a swim that is not this race.
+    const result = priorFor({
+      results757:  [parsed757({ date: '2026-09-12', seconds: 35.0 })],
+      swimResults: [
+        household({ date: '2026-09-12', seconds: 33.37 }),
+        household({ date: '2026-01-05', seconds: 41.09 }),
+      ],
+    });
+    assert.equal(result.priorHistoryState, 'undetermined');
+  });
+
+  it('counts an exhibition swim as valid comparable history', () => {
+    // An exhibition swim is a real swim that does not score for the team.
+    // Excluding it would let a swimmer beat her own recorded time and be told
+    // it was her first ever swim of the event.
+    const result = priorFor({
+      v2Results: [vpsu({ date: '2026-07-13', time: 35.47, exhibition: true })],
+    }, { event: '25m Breaststroke', course: 'SCM', seconds: 34.0 });
+    assert.equal(result.priorHistoryState, 'prior-best');
+    assert.equal(result.priorBest.seconds, 35.47);
+  });
+
+  it('counts an unofficial swim as valid comparable history', () => {
+    // `unofficial: true` marks a result no sanctioning body will certify - an
+    // in-house intrasquad. The household decision of 2026-09-15 says those
+    // count toward personal bests.
+    const result = priorFor({
+      swimResults: [household({ date: '2026-01-05', seconds: 41.09, unofficial: true })],
+    });
+    assert.equal(result.priorHistoryState, 'prior-best');
+    assert.equal(result.priorBest.seconds, 41.09);
+  });
+
+  it('excludes a relay even when its source carries no relay flag', () => {
+    // Two of the three sources have no `relay` key at all, so the event name
+    // has to carry the exclusion on its own.
+    const row = household({ event: '100y Freestyle Relay', date: '2026-01-05', seconds: 20.0 });
+    delete row.relay;
+    const result = priorFor({ swimResults: [row] },
+      { event: '100y Freestyle', distance: 100, seconds: 90.0 });
+    assert.equal(result.priorHistoryState, 'first-recorded');
   });
 
   it('excludes relay legs from comparable history', () => {
@@ -321,9 +371,10 @@ describe('priorBest — the real files at referenceDate 2026-09-16', () => {
 
   it('excludes the faster disqualified 25y Breaststroke swims that the 757 file still times', () => {
     // This is the DQ-with-time hazard on REAL data rather than on a fixture.
-    // league-results-757.json holds 25y Breaststroke disqualifications at
-    // 38.76 and 38.73 — both faster than the 41.09 that is the true prior
-    // best. A time-present test would report one of them.
+    // league-results-757.json holds three SCY 25-Breaststroke
+    // disqualifications for her: 41.83, 38.76 and 38.73. Two of them are
+    // faster than the 41.09 that is the true prior best, so a time-present
+    // test would report one of those two.
     const breast = view().races.find(r => r.event === '25y Breaststroke');
     assert.equal(breast.priorBest.seconds, 41.09);
     assert.ok(breast.priorBest.seconds > 38.76, 'a disqualified swim is not a personal best');

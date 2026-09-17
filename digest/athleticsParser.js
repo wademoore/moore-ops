@@ -129,8 +129,13 @@
  *                                 may be a parser SLUG rather than the
  *                                 household spelling — 'splash-and-dash', not
  *                                 'Splash and Dash' — because the swim and its
- *                                 label come from one place. Presentation may
- *                                 restyle it; this layer does not.
+ *                                 label come from one place, which keeps the
+ *                                 figure attributable. ⚠ THIS COLLIDES WITH
+ *                                 `personalBest.meet` ON THE SAME RACE OBJECT,
+ *                                 which is always the household spelling: a
+ *                                 card drawing both can show one meet under
+ *                                 two names. Presentation may restyle it; this
+ *                                 layer does not.
  *   improvementSeconds:
  *                   number|null Seconds faster than `priorBest`. Present ONLY
  *                                 when the race is at or below the prior best.

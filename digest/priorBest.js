@@ -54,15 +54,54 @@
 // measured at the commit that added this module they share zero swim
 // identities, so the tie never arises.
 //
-// league-results-history-v2.json (VPSU 2022-2025) is deliberately ABSENT.
-// Measured: 16 of its 17 rows for this swimmer are already carried by
-// swim-results.json and the seventeenth is a disqualification, so it
-// contributes no valid comparable swim at all — while costing 45 MB in the
-// Lambda package. It does not shorten covered history either; it and
-// swim-results.json begin on the same day. swim-757-results.json is absent
-// because CLAUDE.md documents it as deprecated and its rows for this swimmer
-// duplicate league-results-757.json's exactly.
+// league-results-history-v2.json (VPSU 2022-2025) is deliberately ABSENT. Every
+// one of its rows for this swimmer is either already carried by
+// swim-results.json or a disqualification, so it contributes no valid
+// comparable swim at all — while costing 45 MB in the Lambda package. It does
+// not shorten covered history either; it and swim-results.json begin on the
+// same day. swim-757-results.json is absent because CLAUDE.md documents it as
+// deprecated and its rows for this swimmer duplicate league-results-757.json's
+// exactly.
+//
+// ⚠ THAT SAME MEASUREMENT APPLIES TO league-results-757.json, WHICH IS
+// INCLUDED, and the asymmetry is a judgement rather than a measurement. Its
+// rows for this swimmer are likewise either already carried by
+// swim-results.json or disqualifications: on the data at the commit that added
+// this module, including it changes exactly two values in the whole production
+// view — one race's priorBest.source and priorBest.meet — and no state, time or
+// improvement anywhere. Do not read the paragraph above as "the 757 file
+// supplies swims the household file lacks". It does not, today.
+//
+// It is included for three reasons that are about the future and about
+// attribution rather than about today's output:
+//   - it is where a new 757 result LANDS FIRST. The parser writes it; an
+//     Updater session hand-enters swim-results.json from it afterwards. Between
+//     those two moments the household file is the stale one.
+//   - it is the only tier-2 source for the organization whose meet this view
+//     reports on, so decision 3's precedence would otherwise never apply to a
+//     757 swim at all.
+//   - it is the only source in covered history that keeps a time on a
+//     disqualified row, which makes the dq-marker discipline in isValidSwim a
+//     guard against real production data rather than against a fixture.
+// The cost is 9.2 MB parsed on every buildDigest, including runs that never
+// open the 757 gate. If that cost ever matters more than the three reasons
+// above, dropping this source is a one-line change here and the only visible
+// effect on current data is that a prior best is named by the household file
+// and its meet reads 'Splash and Dash' rather than 'splash-and-dash'.
 const SURNAME = 'Moore';
+
+// 'Moore, Ophelia A' — bounded so it cannot also match the other child, and
+// memoized because the matcher runs once per row of a file with tens of
+// thousands of them.
+const LAST_FIRST_RE = new Map();
+function lastFirstRe(swimmer) {
+  let re = LAST_FIRST_RE.get(swimmer);
+  if (re === undefined) {
+    re = new RegExp(`^${SURNAME}, ${swimmer}(\\b|$)`);
+    LAST_FIRST_RE.set(swimmer, re);
+  }
+  return re;
+}
 
 /**
  * Each source spells the same swimmer differently, so each carries its own
@@ -75,7 +114,7 @@ export const SOURCES = Object.freeze([
     id:      'league-results-757.json',
     // The full-roster 757swim parser output: 'Moore, Ophelia A'.
     matches: (row, swimmer) => typeof row.swimmer === 'string'
-      && new RegExp(`^${SURNAME}, ${swimmer}(\\b|$)`).test(row.swimmer),
+      && lastFirstRe(swimmer).test(row.swimmer),
     seconds: row => row.seconds,
   }),
   Object.freeze({
@@ -152,14 +191,20 @@ export function eventIdentity(event) {
  * are ordinary valid swims, so an absent marker must read as "not
  * disqualified" rather than as "unknown, discard".
  *
- * A relay leg is never comparable to an individual swim.
+ * A relay leg is never comparable to an individual swim. Two of the three
+ * sources carry no `relay` key at all, so the event name is checked as well:
+ * a hand-entered '100m Freestyle Relay' row with the flag missing would
+ * otherwise parse as a 100 Freestyle and could become a prior best.
  *
  * @param {object} row
  * @param {number|null|undefined} seconds  the source's own time field
  * @returns {boolean}
  */
+const RELAY_EVENT_RE = /\brelay\b/i;
+
 function isValidSwim(row, seconds) {
   return row.relay !== true
+    && !RELAY_EVENT_RE.test(String(row.event ?? ''))
     && row.dq !== true
     && typeof seconds === 'number'
     && Number.isFinite(seconds)
@@ -181,9 +226,12 @@ function isValidSwim(row, seconds) {
  * genuinely different swims on one identity and dropping either would be a
  * silent data loss.
  *
- * `coveredSince` is the earliest DATED row for this swimmer across the same
- * sources, disqualifications included. A DQ is still evidence that the record
- * reaches that day, and the field's whole job is to stop 'first recorded'
+ * `coveredSince` is the earliest dated row for this swimmer across the same
+ * sources — ANY row, including disqualifications, relays and rows whose event
+ * name will not parse. That is deliberate and wider than the comparable set:
+ * the field answers "how far back does the record go for her", not "how far
+ * back does it go for this event", and a DQ or a relay leg is still evidence
+ * that the record reaches that day. Its whole job is to stop 'first recorded'
  * being read as 'first ever'.
  *
  * @param {object} sources  { results757, v2Results, swimResults } — any may be
@@ -265,8 +313,16 @@ function roundHundredths(value) {
  *
  * ── The three states ────────────────────────────────────────────────────
  *   'prior-best'     a valid comparable swim exists strictly before the race
- *   'first-recorded' no valid comparable swim anywhere in covered history
+ *   'first-recorded' no valid comparable swim BEFORE the race, and none on its
+ *                    own date to make the ordering ambiguous
  *   'undetermined'   the race cannot be placed against its own history
+ *
+ * 'first-recorded' is scoped to what precedes the race, not to the whole of
+ * covered history, and the difference is reachable: covered history holds
+ * Wellington Waves swims, and a Waves swim can be dated AFTER a 757 race when
+ * the latest 757 meet is an early-season one. Such a swim is neither a
+ * predecessor nor an ambiguity, so it is correctly ignored — but it means
+ * 'first-recorded' says "nothing before this", never "nothing at all".
  *
  * 'undetermined' covers two different situations deliberately kept together,
  * because both mean "no improvement figure can honestly be stated":
@@ -277,12 +333,30 @@ function roundHundredths(value) {
  *     have no clock attached, so two swims of one event on one day cannot be
  *     ordered, and calling the other one "previous" would be a guess.
  *
- * The same-day test counts comparable swims dated exactly on the race's date
- * and asks whether there is more than one. One of them is this race itself —
- * covered history is built from the same files the race is — so a count above
- * one is the second swim. This assumes the race appears in covered history
- * exactly once, which deduplication guarantees for any source set that agrees
- * about the race's DQ status; none disagrees today.
+ * The same-day test has to tell the race apart from a genuine second swim, and
+ * it does so BY TIME rather than by counting. Covered history is built from the
+ * same files the race is, so the race is normally in it; a swim on that date
+ * whose time equals the race's is taken to be the race itself, and anything
+ * else on that date is a second swim.
+ *
+ * Counting instead — "more than one swim on this date" — was the first
+ * implementation and it was wrong in both directions, which is why the rule is
+ * written this way rather than the shorter way:
+ *
+ *   - it reported 'first-recorded' when history held a same-day swim and the
+ *     race itself was NOT in history, because the count was one. The contract
+ *     calls that case undetermined, and a fixture sat on it.
+ *   - it reported 'prior-best' when deduplication had handed the race's
+ *     identity to a higher-precedence source holding a DIFFERENT swim on that
+ *     date, dropping the race from history and masking a real ambiguity. The
+ *     time test is conservative there instead: the surviving swim's time does
+ *     not match the race's, so it counts as a second swim.
+ *
+ * Matching on time is sound because the sources agree about times: at the
+ * commit that added this module no source in covered history disagreed with
+ * another about the time of any shared swim, and times are recorded to
+ * hundredths, so two genuinely different swims colliding on one time to the
+ * hundredth on one day is the only case this cannot separate.
  *
  * ── Comparable ─────────────────────────────────────────────────────────
  * Same swimmer (the history is already scoped to one), same distance, same
@@ -322,7 +396,12 @@ export function selectPriorBest(history, race) {
     return none('undetermined');
   }
 
-  if (comparable.filter(s => s.date === race.date).length > 1) {
+  // One swim on this date is allowed to be the race itself, identified by its
+  // time. Every other same-day comparable swim is a second swim, and two swims
+  // of one event on one day cannot be ordered.
+  const sameDay    = comparable.filter(s => s.date === race.date);
+  const selfOnDay  = sameDay.some(s => s.seconds === race.seconds) ? 1 : 0;
+  if (sameDay.length - selfOnDay > 0) {
     return none('undetermined');
   }
 
