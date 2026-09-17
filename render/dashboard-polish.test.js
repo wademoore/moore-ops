@@ -1,7 +1,27 @@
 import { it } from 'node:test';
 import assert from 'node:assert/strict';
-import { renderDashboardV2, renderAthletics, V2_LOGOS } from './dashboard-v2.js';
+import { renderDashboardV2, renderAthletics, renderNowNext, V2_LOGOS } from './dashboard-v2.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
+
+it('formats NOW/NEXT flag owners with the shared owner badge without changing other copy', () => {
+  for (const owner of ['wade', 'robyn', 'Wade + Robyn']) {
+    const input = { tone: 'problem', signal: 'Backpack Prep', subject: 'Pack library book', qualifier: `Owner: ${owner}` };
+    const before = structuredClone(input);
+    const html = renderNowNext(input);
+    assert.ok(html.includes(`class="owner owner-${owner.toLowerCase()}"`));
+    assert.match(html, /Backpack Prep/);
+    assert.match(html, /Pack library book/);
+    assert.doesNotMatch(html, /Owner:/);
+    assert.deepEqual(input, before);
+  }
+  assert.match(renderNowNext({ qualifier: 'Bring <book>' }), /Bring &lt;book&gt;/);
+  assert.doesNotMatch(renderNowNext({}), /now-next-qualifier/);
+});
+
+it('leaves the full Sharks latest-result line unchanged pending digest identity', () => {
+  const result = 'L 1-10 vs VIP United TASL B2015/2016 Red (VA)';
+  assert.ok(renderAthletics({ athletics: { sharksActive: true, sharksLastResult: result } }).includes(result));
+});
 
 it('omits even surviving 757-related flags after the wall strip is retired', () => {
   const html = renderDashboardV2({ ...sampleDashboardV2Data, flags: [{

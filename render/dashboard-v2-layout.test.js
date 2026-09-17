@@ -72,6 +72,23 @@ function overlap(a, b) {
 }
 
 describe('dashboard v2 2560x1440 layout verification', () => {
+  it('matches NOW/NEXT owner badges to Weekly Priorities', async () => {
+    for (const owner of ['wade', 'robyn']) {
+      await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data,
+        nowNext: { tone: 'problem', signal: 'Backpack Prep', subject: 'Pack library book', qualifier: `Owner: ${owner}` },
+        weeklyPriorities: { active: [{ assignee: owner, title: 'Test priority' }] },
+      }));
+      await page.evaluate(() => document.fonts.ready);
+      const styles = await page.locator('.now-next .owner,.priorities .owner').evaluateAll(nodes => nodes.map(node => {
+        const s = getComputedStyle(node);
+        return { text: node.textContent, transform: s.textTransform, color: s.color, background: s.backgroundColor,
+          font: s.fontSize, radius: s.borderRadius, padding: s.padding };
+      }));
+      assert.equal(styles.length, 2);
+      assert.deepEqual(styles[0], styles[1]);
+      assert.equal(styles[0].transform, 'uppercase');
+    }
+  });
   it('fits full real division tables, including unposted notes and our last rows', async () => {
     for (const banner of [null, { title: 'Family day' }]) for (const only of [null, 'soccer', 'flag-football']) {
       const athletics = realDivisionAthletics();
@@ -96,6 +113,8 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         const next = card.querySelector('.next-box').getBoundingClientRect();
         const box = table.getBoundingClientRect();
         return { card: card.className, rows: rows.length, oursLast: rows.at(-1).classList.contains('is-me'),
+          textSize: getComputedStyle(table).fontSize,
+          rowHeights: rows.map(row => row.getBoundingClientRect().height),
           overflow: card.scrollHeight > card.clientHeight + 1,
           padding: bounds.bottom - note.bottom,
           overlapsNext: box.left < next.right && box.right > next.left && box.top < next.bottom && box.bottom > next.top,
@@ -105,6 +124,8 @@ describe('dashboard v2 2560x1440 layout verification', () => {
       for (const card of result) {
         assert.equal(card.rows, card.card.includes('sharks') ? 11 : 8);
         assert.equal(card.oursLast, true);
+        assert.equal(card.textSize, card.card.includes('sharks') ? '17px' : '18px');
+        assert.deepEqual(card.rowHeights, Array(card.rows).fill(card.card.includes('sharks') ? 20 : 23));
         assert.equal(card.overflow, false, JSON.stringify({ banner, only, card }));
         assert.ok(card.padding >= 9, JSON.stringify({ banner, only, card }));
         assert.equal(card.overlapsNext, false);
@@ -153,7 +174,8 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         const ribbon = card.querySelector('.athletic-ribbon').getBoundingClientRect();
         const style = getComputedStyle(mark);
         return [
-          logo.width !== 96 || logo.height !== 96 ? 'wrong logo size' : '',
+          logo.width !== 64 || logo.height !== 64 ? 'wrong logo size' : '',
+          card.querySelector('.record') && getComputedStyle(card.querySelector('.record')).fontSize !== '40px' ? 'wrong record size' : '',
           logo.top < ribbon.bottom - 1 ? 'logo overlaps ribbon' : '',
           style.backgroundColor !== 'rgba(0, 0, 0, 0)' || style.borderRadius !== '0px' ? 'logo backing' : '',
           card.scrollHeight > card.clientHeight + 1 ? 'card overflow' : '',
