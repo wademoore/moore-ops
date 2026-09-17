@@ -960,6 +960,11 @@ describe('special-event migration — byte equality with the legacy Family Spotl
     // and the approved compact matchup for this one frozen fixture.
     // The current name, inline date and omitted venue are tested separately.
     return html.slice(start, close)
+      // The frozen Spotlight fixture predates DivisionTable. Its missing new
+      // contract now renders unavailable instead of the old single standing;
+      // normalize only that fixture's intentional presentation migration.
+      .replace('athletic-card sharks-card tone-red', 'athletic-card tone-red')
+      .replace('<div class="division-standings"><div class="standings-note">Standings unavailable</div></div>', '<div class="standing-line">3rd of 11 · 6 pts</div>')
       // The approved Chromium 88 fallback fix adds explicit image state; retain
       // the historical Spotlight fixture while browser tests check that state.
       .replace(/activity-visual has-logo/g, 'activity-visual')

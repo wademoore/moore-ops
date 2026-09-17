@@ -772,23 +772,39 @@ function flagStandingLabels(rows = []) {
   const idsByName = new Map();
   for (const row of rows) {
     if (!Number.isFinite(row.teamId)) continue;
-    const name = row.team ?? row.mascot ?? '';
+    const name = row.shortName;
     if (!idsByName.has(name)) idsByName.set(name, new Set());
     idsByName.get(name).add(row.teamId);
   }
   return new Map(rows.filter(row => Number.isFinite(row.teamId)).map(row => {
-    const name = row.team ?? row.mascot ?? '';
+    const name = row.shortName;
     const coach = typeof row.coach === 'string' ? row.coach.trim() : '';
     return [row.teamId, !row.isMe && coach && idsByName.get(name)?.size > 1
       ? `${name} (${coach})` : name];
   }));
 }
 
-function renderStandingRows(rows, columns = ['team', 'w', 'l'], flagLogos = false) {
-  const labels = flagLogos ? flagStandingLabels(rows || []) : new Map();
+function renderStandingRows(rows, columns = ['team', 'w', 'l']) {
   return (rows || []).map(row => `<tr class="${row.isMe ? 'is-me' : ''}">
-    ${columns.map((column, index) => `<td class="${index === 0 ? 'team-cell' : ''}">${flagLogos && index === 0 ? (flagLogoMark(row[column] ?? row.mascot) || '<span class="flag-team-mark flag-team-placeholder" aria-hidden="true"></span>') : ''}${esc(flagLogos && index === 0 ? (labels.get(row.teamId) ?? row[column] ?? row.mascot ?? '') : (row[column] ?? row.mascot ?? ''))}${flagLogos && index === 0 && row.isMe ? ' · Us' : ''}</td>`).join('')}
+    ${columns.map((column, index) => `<td class="${index === 0 ? 'team-cell' : ''}">${esc(row[column] ?? row.mascot ?? '')}</td>`).join('')}
   </tr>`).join('');
+}
+
+// DivisionTable order, rank and statistics belong to the digest contract.
+function renderDivisionTable(table, sport) {
+  if (!table || table.status === 'unavailable') return '<div class="division-standings"><div class="standings-note">Standings unavailable</div></div>';
+  const flag = sport === 'flag-football';
+  const ranked = table.status === 'available';
+  const rows = table.rows;
+  const labels = flag ? flagStandingLabels(rows) : new Map();
+  const columns = flag ? [['wins', 'W'], ['losses', 'L'], ...(rows.some(row => row.drawn > 0) ? [['drawn', 'T']] : [])]
+    : [['played', 'P'], ['leaguePoints', 'Pts'], ['scoreDifference', 'GD']];
+  return `<div class="division-standings"><table class="division-table" aria-label="${flag ? 'Flag football' : 'Soccer'} division standings">
+    <thead><tr>${ranked ? '<th class="rank-cell" scope="col">Rank</th>' : ''}<th class="team-cell" scope="col">Team</th>${columns.map(([, label]) => `<th scope="col">${label}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(row => `<tr class="${row.isMe ? 'is-me' : ''}" data-team-id="${esc(row.teamId)}">
+      ${ranked ? `<td class="rank-cell">${row.rankShared ? 'T-' : ''}${esc(row.rank)}</td>` : ''}<td class="team-cell">${flag ? (flagLogoMark(row.shortName) || '<span class="flag-team-mark flag-team-placeholder" aria-hidden="true"></span>') : ''}${esc(labels.get(row.teamId) ?? row.shortName)}${flag && row.isMe ? ' · Us' : ''}</td>${columns.map(([key]) => `<td>${esc(row[key])}</td>`).join('')}
+    </tr>`).join('')}</tbody></table>
+    ${ranked && table.unpostedCount > 0 ? '<div class="standings-note">Some scores are not yet posted.</div>' : ''}</div>`;
 }
 
 function renderWavesCard(a) {
@@ -927,13 +943,13 @@ function soccerOpponentLabel(name) {
 
 function renderSharksCard(a) {
   const next = a.sharksNextGame;
-  return `<article class="athletic-card tone-red">
+  return `<article class="athletic-card sharks-card tone-red">
     <div class="athletic-ribbon"><span>Tidewater Sharks</span></div>
     <div class="athletic-summary"><div class="record">${esc(a.sharksRecord || '0-0-0')}</div>${logo(V2_LOGOS.sharks, 'athletic-logo')}</div>
     <small>${esc(a.sharksDivisionLabel || 'U11 Premier')}</small>
     ${a.sharksLastResult ? `<div class="result-line"><b>${esc(a.sharksLastResult)}</b><span>Latest result</span></div>` : ''}
     ${next ? renderNextGame({ opponent: soccerOpponentLabel(next.opponent), prefix: next.homeAway === 'away' ? '@' : 'vs.', detail: conversationalMatchDate(next.date, next.time) }) : ''}
-    ${a.sharksDivisionStanding ? `<div class="standing-line">${esc(a.sharksDivisionStanding.rank)} of ${esc(a.sharksDivisionStanding.of)} · ${esc(a.sharksDivisionStanding.pts)} pts</div>` : ''}
+    ${renderDivisionTable(a.sharksDivisionTable, 'soccer')}
   </article>`;
 }
 
@@ -987,7 +1003,7 @@ function renderFlagFootballCard(a) {
     <small>${esc(a.seasonLabel || 'Season')}</small>
     ${a.lastResult ? `<div class="result-line"><b>${esc(a.lastResult)}</b><span>Latest result</span></div>` : ''}
     ${next ? renderNextGame({ ...next, prefix: 'vs.', mark: flagLogoMark(next.opponent) }) : ''}
-    <table><thead><tr><th>Team</th><th>W</th><th>L</th></tr></thead><tbody>${renderStandingRows(a.standings, ['team', 'w', 'l'], true)}</tbody></table>
+    ${renderDivisionTable(a.flagFootballDivisionTable, 'flag-football')}
   </article>`;
 }
 
@@ -1649,6 +1665,26 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .card-count-1 .athletic-footer{grid-column:1;grid-row:3}
 .card-count-1 .athletic-card:not(.flag-football-card)>table{grid-column:2;grid-row:3;align-self:end}
 .card-count-1 .athletic-card:has(>table):not(.flag-football-card)>.next-box{grid-row:2}
+.sharks-card{padding-bottom:10px}
+.division-standings{margin-top:auto;flex-shrink:0;min-width:0}
+.division-table{margin:0;font-size:18px;line-height:20px;table-layout:auto}
+.division-table th{font-size:14px;line-height:16px;white-space:nowrap}
+.division-table td{padding:1px 0;height:23px;white-space:nowrap}
+.division-table .team-cell{text-align:left}
+.division-table .rank-cell{width:38px;text-align:left;font-size:15px}
+.division-table th:not(:first-child),.division-table td:not(:first-child){padding-left:6px}
+.sharks-card .division-table{font-size:17px;line-height:16px}
+.sharks-card .division-table td{height:17px;padding-top:0;padding-bottom:0}
+/* The optional masthead needs 20px more athletics height for full tables plus a note. */
+.dashboard.has-masthead.athletics-multi.has-division-table .upcoming-panel{height:calc(58% - 88px)}
+.dashboard.has-masthead.athletics-multi.has-division-table .athletics-panel{height:calc(40% + 90px)}
+.dashboard.has-masthead.athletics-one.has-division-table .upcoming-panel{height:calc(72% - 70.6px)}
+.dashboard.has-masthead.athletics-one.has-division-table .athletics-panel{height:calc(26% + 72.7px)}
+.standings-note{font-size:14px;line-height:16px;color:var(--secondary);margin-top:4px}
+.card-count-1 .flag-football-card .division-standings,.card-count-1 .sharks-card .division-standings{grid-column:3;grid-row:2/4;align-self:start;margin-top:12px}
+.card-count-1 .flag-football-card .division-table{margin-top:0}
+.card-count-1 .sharks-card{grid-template-columns:250px minmax(0,1fr) 560px}
+.card-count-1 .sharks-card .athletic-ribbon{grid-column:1/4}
 
 /* ── Holiday Theme — ambient skin (holiday-theme-v1) ────────────────────────
    A skin, never a layout. Every rule in this block is scoped to
@@ -1783,7 +1819,9 @@ function renderDashboardV2(digestData) {
   const cardCount = athleticsCardCount(data, latest757Card);
   const paletteSetting = ['day', 'evening'].includes(data.paletteMode) ? data.paletteMode : 'auto';
   const initialPalette = paletteSetting === 'auto' ? paletteModeForDate(data.now ? new Date(data.now) : new Date()) : paletteSetting;
-  const classes = `dashboard${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'} athletics-${cardCount === 1 ? 'one' : 'multi'} palette-${initialPalette}`;
+  const divisionTable = (data.athletics?.sharksActive && ['available', 'preseason'].includes(data.athletics?.sharksDivisionTable?.status))
+    || (data.athletics?.flagFootballActive && ['available', 'preseason'].includes(data.athletics?.flagFootballDivisionTable?.status));
+  const classes = `dashboard${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'} athletics-${cardCount === 1 ? 'one' : 'multi'} palette-${initialPalette}${divisionTable ? ' has-division-table' : ''}`;
 
   return `<!DOCTYPE html>
 <html lang="en">
