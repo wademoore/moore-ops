@@ -125,9 +125,12 @@ const EVENT_NAME_MAP = {
  * @param {object|null}   vpsuRankings  vpsu-rankings.json parsed object, or null
  * @param {object[]|null} v2Results     league-results-v2.json rows (authoritative for Moore Waves); or null
  * @param {object[]|null} annotations   swim-annotations.json rows (pb/note overlay for v2 rows); or null
+ * @param {object[]|null} results757    league-results-757.json rows; covered-history input for the
+ *                                      latest-757-meet prior-best fields ONLY. Not used by the
+ *                                      per-configured-event rows below.
  * @returns {object}
  */
-export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRankings = null, v2Results = null, annotations = null) {
+export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRankings = null, v2Results = null, annotations = null, results757 = null) {
   const records       = pbRecords || {};
   const wavesActive   = isSeasonActive(config.wellingtonWaves, referenceDate);
   const swim757Active = isSeasonActive(config.swim757, referenceDate);
@@ -370,8 +373,13 @@ export function parseSwim(pbRecords, swimResults, referenceDate, config, vpsuRan
   // shadowed by a league-results-v2.json row and league-results-v2.json is
   // VPSU-only — such a shadow would be a data error that silently deleted a
   // 757 race from the view.
+  //
+  // The third argument is the prior-best module's extra covered-history input.
+  // It is passed the RAW source arrays for the same reason swimResults is:
+  // sortedResults has already merged, shadowed and renamed rows, and a prior
+  // best has to name the file it came from.
   const opheliaLatest757Meet = (!wavesActive && swim757Active)
-    ? selectLatest757Meet(swimResults || [], records)
+    ? selectLatest757Meet(swimResults || [], records, { results757, v2Results })
     : null;
 
   return {

@@ -74,10 +74,27 @@ test('the temporary compatibility shim is declared while it is still imported', 
 test('the packaged data-file count matches the documented invariant', () => {
   // 10 → 11 with data/holiday-themes.json, the ambient Holiday Theme registry.
   // 11 → 12 with data/kids-profile.json, previously a known-unpackaged gap.
+  // 12 → 13 with data/league-results-757.json, the full-roster 757swim parser
+  //   output. digest/builder.js now reads it as covered-history input for the
+  //   prior-best fields on athletics.opheliaLatest757Meet (2026-09-16), so it
+  //   would otherwise resolve to null in production while local tests passed —
+  //   the exact failure this file exists to prevent.
+  //   It is packaged rather than excluded because it is where a new 757 result
+  //   lands before an Updater session hand-enters it, and because it is the
+  //   only tier-2 source for that organization. On current data it changes two
+  //   values in the whole view and no state, time or improvement — so this is
+  //   not a claim that omitting it would change answers. That comparison is
+  //   asserted by test/priorBest.test.js, 'changes exactly two values in the
+  //   whole view when the 757 source is withheld'. It is also the only
+  //   source in covered history that keeps a time on a disqualified row, which
+  //   makes including it the thing that puts that hazard in front of the
+  //   dq-marker guard rather than the thing that removes it.
+  //   See digest/priorBest.js for the full rationale, and for why
+  //   league-results-history-v2.json is deliberately NOT packaged alongside it.
   // This number is a deliberate tripwire, not a fact about the world: it is
   // meant to fail when a data file is added, so that adding one is a reviewed
   // change rather than a quiet one. Updated here on purpose, and reported.
-  assert.equal(PACKAGE_INPUTS.dataFiles.length, 12);
+  assert.equal(PACKAGE_INPUTS.dataFiles.length, 13);
   assert.equal(new Set(PACKAGE_INPUTS.dataFiles).size, PACKAGE_INPUTS.dataFiles.length, 'no duplicates');
 });
 

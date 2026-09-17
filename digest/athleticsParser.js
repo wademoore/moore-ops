@@ -92,6 +92,87 @@
  *                                 best is that swim — so a renderer marks it
  *                                 as the best rather than showing nothing.
  *                                 Always false for a DQ.
+ *
+ *   ── The prior-best fields, added 2026-09-16 ──────────────────────────
+ *   A SEPARATE calculation from `personalBest` / `isPersonalBest` above, and
+ *   deliberately not reconciled with them. Those two read pb-records.json and
+ *   ask "is the standing record this swim?". These read the RESULT FILES and
+ *   ask "what did she have to beat?". pb-records.json is hand-maintained and
+ *   is not among the sources below, so the two can disagree — and a
+ *   disagreement is a signal about the stored record, not a bug to resolve in
+ *   the renderer. They are also NOT swimParser.js's `previousPbSeconds`, which
+ *   is scoped to sports-config.json's configured `events757` list and is
+ *   untouched by this.
+ *
+ *   The rules — which sources make up covered history, how a swim is judged
+ *   comparable, and why a disqualification is detected by its source's own
+ *   marker rather than by a missing time — live in digest/priorBest.js's
+ *   header. One home per contract, the same convention this block already
+ *   follows for the grouping and ordering rules in digest/latest757Meet.js.
+ *
+ *   priorHistoryState: string   Exactly one of:
+ *                                 'prior-best'     a valid comparable swim
+ *                                                  exists strictly before
+ *                                                  this race
+ *                                 'first-recorded' no valid comparable swim
+ *                                                  BEFORE this race, and none
+ *                                                  on its own date to make the
+ *                                                  ordering ambiguous. It says
+ *                                                  "nothing before this",
+ *                                                  never "nothing at all": a
+ *                                                  comparable swim dated AFTER
+ *                                                  the race is neither a
+ *                                                  predecessor nor an
+ *                                                  ambiguity, and covered
+ *                                                  history can hold one —
+ *                                                  a Waves swim can postdate
+ *                                                  an early-season 757 race.
+ *                                 'undetermined'   the race cannot be placed
+ *                                                  against its own history.
+ *                                                  THREE paths reach it, not
+ *                                                  two: the race is a DQ or
+ *                                                  has no time; a comparable
+ *                                                  swim on the SAME date
+ *                                                  prevents ordering; or the
+ *                                                  race's own event name will
+ *                                                  not parse into a distance
+ *                                                  and stroke, or it carries
+ *                                                  no course. The third is a
+ *                                                  fail-closed path rather
+ *                                                  than a judgement, and is
+ *                                                  outside the approved
+ *                                                  contract's enumeration.
+ *   priorBest:      object|null { seconds, date, meet, source } when the state
+ *                                 is 'prior-best', else null. `source` names
+ *                                 the data file the swim was taken from, so a
+ *                                 figure is always attributable. `meet` is
+ *                                 that source's own name for the meet, which
+ *                                 may be a parser SLUG rather than the
+ *                                 household spelling — 'splash-and-dash', not
+ *                                 'Splash and Dash' — because the swim and its
+ *                                 label come from one place, which keeps the
+ *                                 figure attributable. ⚠ THIS COLLIDES WITH
+ *                                 `personalBest.meet` ON THE SAME RACE OBJECT,
+ *                                 which is always the household spelling: a
+ *                                 card drawing both can show one meet under
+ *                                 two names. Presentation may restyle it; this
+ *                                 layer does not.
+ *   improvementSeconds:
+ *                   number|null Seconds faster than `priorBest`. Present ONLY
+ *                                 when the race is at or below the prior best.
+ *                                 EXACTLY 0 when the two times are equal — a
+ *                                 tie counts as a personal best (decision 2 of
+ *                                 2026-09-16), and 0 and null are different
+ *                                 answers. NEVER negative: a slower swim
+ *                                 reports null while still naming its
+ *                                 `priorBest`.
+ *   coveredHistorySince:
+ *                   string|null Earliest date this swimmer's covered history
+ *                                 reaches, 'YYYY-MM-DD'. Constant across every
+ *                                 race in the view. It exists so
+ *                                 'first-recorded' is never read as 'first
+ *                                 ever': covered history is three result
+ *                                 files, not the whole of her swimming.
  * }
  *
  * ABSENT vs EMPTY. The key is `null` — never `{}` and never omitted — when
@@ -152,7 +233,7 @@ import {
 // PUBLIC EXPORTS
 // ---------------------------------------------------------------------------
 
-export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings = null, v2Results = null, annotations = null, sharksSoccerData = null) {
+export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings = null, v2Results = null, annotations = null, sharksSoccerData = null, results757 = null) {
   if (!config) throw new Error('[athleticsParser] config is required — ensure data/sports-config.json is present and valid');
   if (!flagFootballData) return buildEmptyAthletics();
 
@@ -171,7 +252,7 @@ export function parseAthleticsDoc(referenceDate = new Date(), config, flagFootba
   const waves = parseWaves(wavesSeasonData || null, referenceDate);
 
   // ── Swim fields ───────────────────────────────────────────────────────────
-  const swim = parseSwim(pbRecords || {}, swimResults || [], referenceDate, config, vpsuRankings, v2Results, annotations);
+  const swim = parseSwim(pbRecords || {}, swimResults || [], referenceDate, config, vpsuRankings, v2Results, annotations, results757);
 
   // ── Sharks soccer fields ─────────────────────────────────────────────────
   const sharks = parseSharks(sharksSoccerData || null, referenceDate);
