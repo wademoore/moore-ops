@@ -23,6 +23,8 @@
  * module's output is read by presentation and by nothing else.
  */
 
+import { buildCoveredHistory, selectPriorBest } from './priorBest.js';
+
 // The organization is identified by team affiliation and never by course.
 // Measured on data/swim-results.json at the commit that added this module:
 // of the 24 rows carrying this team, 20 are SCY and 4 are SCM, so a course
@@ -188,11 +190,20 @@ function compareRaces(a, b) {
  *
  * A disqualified race can never be a personal best, and never borrows a time.
  *
+ * ── The prior-best fields are a SEPARATE calculation ───────────────────────
+ * `personalBest` / `isPersonalBest` above read pb-records.json and ask "is the
+ * standing record this swim?". `priorBest` / `improvementSeconds` read the
+ * result files and ask "what did she have to beat?". They are deliberately not
+ * reconciled: pb-records.json is hand-maintained and is not in this module's
+ * covered history, so the two can disagree, and a disagreement is a signal
+ * about the stored record rather than a bug to paper over here.
+ *
  * @param {object} row
  * @param {object} records  pb-records.json, flat "Swimmer|Event|Course" keyed
+ * @param {{swims: object[], coveredSince: string|null}} history
  * @returns {object}
  */
-function buildRace(row, records) {
+function buildRace(row, records, history) {
   const dq      = row.dq === true;
   const seconds = dq ? null : (row.seconds ?? null);
   const entry   = records[`${SWIMMER}|${row.event}|${row.course}`] ?? null;
@@ -208,7 +219,7 @@ function buildRace(row, records) {
     && personalBest.date    === row.date
     && personalBest.meet    === row.meet;
 
-  return {
+  const race = {
     event:    row.event,
     distance: eventDistance(row.event),
     course:   row.course ?? null,
@@ -217,6 +228,15 @@ function buildRace(row, records) {
     dq,
     personalBest,
     isPersonalBest,
+  };
+
+  const prior = selectPriorBest(history, race);
+  return {
+    ...race,
+    priorHistoryState:   prior.priorHistoryState,
+    priorBest:           prior.priorBest,
+    improvementSeconds:  prior.improvementSeconds,
+    coveredHistorySince: history?.coveredSince ?? null,
   };
 }
 
@@ -227,11 +247,21 @@ function buildRace(row, records) {
  * The caller applies the season gate; this function does not know about
  * sports-config.json.
  *
+ * The third argument supplies the OTHER result files that make up covered
+ * history for the prior-best fields. It is optional and defaults to none, so
+ * every existing caller keeps working: with no extra sources the history is
+ * just swim-results.json, which is a smaller covered history rather than a
+ * different rule.
+ *
  * @param {object[]|null} swimResults  data/swim-results.json rows
  * @param {object|null}   pbRecords    data/pb-records.json
+ * @param {object|null}   moreSources  { results757, v2Results } — either may
+ *                                     be null; see priorBest.js for why
+ *                                     league-results-history-v2.json is not
+ *                                     among them
  * @returns {object|null}
  */
-export function selectLatest757Meet(swimResults, pbRecords) {
+export function selectLatest757Meet(swimResults, pbRecords, moreSources = null) {
   const records = pbRecords || {};
   const rows = (Array.isArray(swimResults) ? swimResults : []).filter(is757IndividualRace);
   if (rows.length === 0) return null;
@@ -269,12 +299,21 @@ export function selectLatest757Meet(swimResults, pbRecords) {
     return 0;
   });
 
+  // Covered history is built ONCE, from the raw source arrays, and is shared by
+  // every race. It deliberately includes this meet's own rows: the same-day
+  // ambiguity test in selectPriorBest depends on seeing them.
+  const history = buildCoveredHistory({
+    results757:  moreSources?.results757 ?? null,
+    v2Results:   moreSources?.v2Results  ?? null,
+    swimResults: Array.isArray(swimResults) ? swimResults : [],
+  }, SWIMMER);
+
   const latest = occurrences[0];
   return {
     meet:      latest.meet,
     startDate: latest.startDate,
     endDate:   latest.endDate,
     dates:     latest.dates,
-    races:     latest.rows.map(row => buildRace(row, records)).sort(compareRaces),
+    races:     latest.rows.map(row => buildRace(row, records, history)).sort(compareRaces),
   };
 }

@@ -74,10 +74,19 @@ test('the temporary compatibility shim is declared while it is still imported', 
 test('the packaged data-file count matches the documented invariant', () => {
   // 10 → 11 with data/holiday-themes.json, the ambient Holiday Theme registry.
   // 11 → 12 with data/kids-profile.json, previously a known-unpackaged gap.
+  // 12 → 13 with data/league-results-757.json, the full-roster 757swim parser
+  //   output. digest/builder.js now reads it as covered-history input for the
+  //   prior-best fields on athletics.opheliaLatest757Meet (2026-09-16), so it
+  //   would otherwise resolve to null in production while local tests passed —
+  //   the exact failure this file exists to prevent. It is the only parsed
+  //   757 source and the only one in covered history that keeps a time on a
+  //   disqualified row, so omitting it changes answers rather than just
+  //   shrinking history. See digest/priorBest.js for why
+  //   league-results-history-v2.json is deliberately NOT packaged alongside it.
   // This number is a deliberate tripwire, not a fact about the world: it is
   // meant to fail when a data file is added, so that adding one is a reviewed
   // change rather than a quiet one. Updated here on purpose, and reported.
-  assert.equal(PACKAGE_INPUTS.dataFiles.length, 12);
+  assert.equal(PACKAGE_INPUTS.dataFiles.length, 13);
   assert.equal(new Set(PACKAGE_INPUTS.dataFiles).size, PACKAGE_INPUTS.dataFiles.length, 'no duplicates');
 });
 

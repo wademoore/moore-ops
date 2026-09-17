@@ -217,11 +217,12 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object[]}     [params.swimResults]      Swim results array (data/swim-results.json)
  * @param {object}       [params.wavesSeasonData]  Waves season data (data/waves-season.json)
  * @param {object|null}  [params.vpsuRankings]     VPSU league rankings (data/vpsu-rankings.json); null on file error
+ * @param {object[]|null} [params.results757]      Full-roster 757swim parser output (data/league-results-757.json); null on file error. Covered-history input for athletics.opheliaLatest757Meet's prior-best fields only — see digest/priorBest.js.
  * @param {object|null}  [params.sharksData]       Tidewater Sharks soccer season data (data/sharks-soccer.json)
  * @param {object|null}  [params.routineAnchorsData] Routine anchors (data/routine-anchors.json); null on file error — see digest/routineAnchorsParser.js. School-type anchors suppressed on 🏫 No School / Early Release days; caregiver-type anchors (a `caregiver` field) suppressed by emmaUnavailabilityParser.js blocks. No early-dismissal time computation.
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, specialEventsData, holidayThemesData, centersActionCues = [], calendarFetchFailures }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, results757, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, specialEventsData, holidayThemesData, centersActionCues = [], calendarFetchFailures }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -243,6 +244,10 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   if (annotations      === undefined) {
     try { annotations  = await readDataFile('swim-annotations.json'); }
     catch { annotations = null; }
+  }
+  if (results757       === undefined) {
+    try { results757   = await readDataFile('league-results-757.json'); }
+    catch { results757 = null; }
   }
   if (routineAnchorsData === undefined) {
     try { routineAnchorsData = await readDataFile('routine-anchors.json'); }
@@ -381,7 +386,7 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   const activityComms = buildActivityCommsLines(emails, gmailHits);
 
   // ── 12. Athletics data ───────────────────────────────────────────────────
-  const athletics = parseAthleticsDoc(today, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData);
+  const athletics = parseAthleticsDoc(today, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, sharksData, results757);
 
   // Cross-reference calendar for flag game this week.
   // This sets ONLY hasGameThisWeek — "is there a flag game on the calendar in
