@@ -2,6 +2,7 @@ import { it } from 'node:test';
 import assert from 'node:assert/strict';
 import { flagNextGame, flagTeamLogo, renderAthletics, V2_LOGOS } from './dashboard-v2.js';
 import { renderDashboardMobile } from './dashboard-mobile.js';
+import { divisionFixture } from './division-table.fixtures.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
 
 it('has local artwork for every known fall mascot and leaves unknown names alone', () => {
@@ -21,7 +22,7 @@ it('decorates resolved rows without using the mascot to identify our team', () =
       { team: 'Cowboys', w: 0, l: 1, isMe: true },
       { team: 'Ravens', w: 0, l: 0, isMe: false }],
   } };
-  const wall = renderAthletics(data);
+  const wall = renderAthletics({ ...data, athletics: { ...data.athletics, flagFootballDivisionTable: divisionFixture(data.athletics.standings) } });
   assert.equal((wall.match(/class="is-me"/g) || []).length, 1);
   assert.equal((wall.match(/Cowboys · Us/g) || []).length, 1);
   assert.ok(wall.includes(V2_LOGOS.ravens));
@@ -49,8 +50,8 @@ it('renders every supplied flag standing in order, including our last-place row,
       w: count - i - 1, l: i, isMe: i === count - 1,
     }));
     const data = { ...sampleDashboardV2Data, athletics: { flagFootballActive: true, standings } };
-    const wall = renderAthletics(data);
-    const rows = [...wall.matchAll(/<tr class="([^"]*)">([\s\S]*?)<\/tr>/g)];
+    const wall = renderAthletics({ ...data, athletics: { ...data.athletics, flagFootballDivisionTable: divisionFixture(data.athletics.standings) } });
+    const rows = [...wall.matchAll(/<tr class="([^"]*)"[^>]*>([\s\S]*?)<\/tr>/g)];
     assert.equal(rows.length, count);
     rows.forEach((row, i) => assert.ok(row[2].includes(standings[i].team)));
     assert.equal(rows.at(-1)[1], 'is-me');
@@ -71,7 +72,7 @@ it('preserves the Waves table six-row limit when the shared row helper becomes u
 
 it('reserves the standings logo slot for unknown teams without inventing artwork', () => {
   const html = renderAthletics({ athletics: { flagFootballActive: true,
-    standings: [{ team: 'Unknown team', w: 0, l: 0 }] } });
+    flagFootballDivisionTable: divisionFixture([{ team: 'Unknown team', w: 0, l: 0 }]) } });
   assert.match(html, /<span class="flag-team-mark flag-team-placeholder" aria-hidden="true"><\/span>Unknown team/);
 });
 
@@ -86,7 +87,7 @@ it('disambiguates shared display names by numeric team id and supplied coach, ne
     ];
     for (const rows of [standings, [...standings].reverse()]) {
       const before = structuredClone(rows);
-      const html = renderAthletics({ athletics: { flagFootballActive: true, standings: rows } });
+      const html = renderAthletics({ athletics: { flagFootballActive: true, flagFootballDivisionTable: divisionFixture(rows, { preserveMissingIds: true }) } });
       const cells = [...html.matchAll(/<td class="team-cell">([\s\S]*?)<\/td>/g)].map(match => match[1].replace(/<[^>]*>/g, ''));
       assert.deepEqual(cells, rows.map(row => row.isMe ? `${name} · Us` : row.teamId === 42 ? `${name} (Watkins)` : row.teamId === 99 ? `${name} (Other &lt;coach&gt;)` : 'Unique'));
       assert.deepEqual(rows, before);
@@ -100,7 +101,7 @@ it('does not infer team identity for legacy missing ids or invent missing coach 
     [{ teamId: 1, team: 'Same', coach: null }, { teamId: 2, team: 'Same', coach: '' }],
     [{ teamId: 1, team: 'Same', coach: 'Coach A' }, { teamId: 1, team: 'Same', coach: 'Coach A' }],
   ]) {
-    const html = renderAthletics({ athletics: { flagFootballActive: true, standings: rows } });
+    const html = renderAthletics({ athletics: { flagFootballActive: true, flagFootballDivisionTable: divisionFixture(rows, { preserveMissingIds: true }) } });
     assert.doesNotMatch(html, /Same \(/);
   }
 });

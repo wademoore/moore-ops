@@ -5,10 +5,19 @@ import { renderDashboardV2 } from './dashboard-v2.js';
 import { readFileSync } from 'node:fs';
 import { ACCENT_OCCURRENCES, eventRowAccentSampleData, sampleDashboardV2Data, specialEventsSampleData } from './dashboard-v2.sample-data.js';
 import { resolveBrowserPath } from '../scripts/render-dashboard-v2-png.mjs';
+import { divisionFixture } from './division-table.fixtures.js';
+import { parseAthleticsDoc } from '../digest/athleticsParser.js';
 import { computeFlags } from '../digest/flags.js';
 
 let browser;
 let page;
+
+function realDivisionAthletics() {
+  const read = name => JSON.parse(readFileSync(new URL(`../data/${name}.json`, import.meta.url), 'utf8'));
+  return parseAthleticsDoc(new Date('2026-09-16T19:00:00-04:00'), read('sports-config'),
+    read('flag-football'), read('pb-records'), read('swim-results'), read('waves-season'),
+    null, null, null, read('sharks-soccer'));
+}
 
 before(async () => {
   // resolveBrowserPath()'s own error message documents DASHBOARD_BROWSER_PATH,
@@ -63,6 +72,46 @@ function overlap(a, b) {
 }
 
 describe('dashboard v2 2560x1440 layout verification', () => {
+  it('fits full real division tables, including unposted notes and our last rows', async () => {
+    for (const banner of [null, { title: 'Family day' }]) for (const only of [null, 'soccer', 'flag-football']) {
+      const athletics = realDivisionAthletics();
+      if (only) {
+        athletics.swim757Active = false;
+        athletics.sharksActive = only === 'soccer';
+        athletics.flagFootballActive = only === 'flag-football';
+      }
+      for (const table of [athletics.sharksDivisionTable, athletics.flagFootballDivisionTable]) {
+        table.status = 'available';
+        table.unpostedCount = 2;
+        table.rows = [...table.rows.filter(row => !row.isMe), ...table.rows.filter(row => row.isMe)];
+      }
+      athletics.flagFootballDivisionTable.rows[1].drawn = 1;
+      await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, banner, athletics }));
+      await page.evaluate(() => document.fonts.ready);
+      const result = await page.locator('.flag-football-card,.sharks-card').evaluateAll(cards => cards.map(card => {
+        const bounds = card.getBoundingClientRect();
+        const table = card.querySelector('table');
+        const rows = [...table.querySelectorAll('tbody tr')];
+        const note = card.querySelector('.standings-note').getBoundingClientRect();
+        const next = card.querySelector('.next-box').getBoundingClientRect();
+        const box = table.getBoundingClientRect();
+        return { card: card.className, rows: rows.length, oursLast: rows.at(-1).classList.contains('is-me'),
+          overflow: card.scrollHeight > card.clientHeight + 1,
+          padding: bounds.bottom - note.bottom,
+          overlapsNext: box.left < next.right && box.right > next.left && box.top < next.bottom && box.bottom > next.top,
+          clippedCells: [...table.querySelectorAll('td,th')].some(cell => cell.scrollWidth > cell.clientWidth + 1),
+        };
+      }));
+      for (const card of result) {
+        assert.equal(card.rows, card.card.includes('sharks') ? 11 : 8);
+        assert.equal(card.oursLast, true);
+        assert.equal(card.overflow, false, JSON.stringify({ banner, only, card }));
+        assert.ok(card.padding >= 9, JSON.stringify({ banner, only, card }));
+        assert.equal(card.overlapsNext, false);
+        assert.equal(card.clippedCells, false);
+      }
+    }
+  });
   it('keeps four today events and full schoolwork visible alongside NOW/NEXT', async () => {
     const data = structuredClone(sampleDashboardV2Data);
     data.days[0].events.push(...structuredClone(data.days[0].events));
@@ -94,7 +143,7 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         ...sampleDashboardV2Data.athletics,
         flagFootballActive: false, swim757Active: false, sharksActive: false, wavesActive: false,
         ...active, flagTeamName: 'Cowboys',
-        standings: ['Cowboys', 'Ravens', 'Bears', 'Broncos', 'Texans', 'Panthers'].map(team => ({ team, w: 0, l: 0 })),
+        flagFootballDivisionTable: divisionFixture(['Cowboys', 'Ravens', 'Bears', 'Broncos', 'Texans', 'Panthers'].map(team => ({ team, w: 0, l: 0 }))),
       } }), { waitUntil: 'load' });
       await page.evaluate(() => document.fonts.ready);
       const problems = await page.locator('.athletic-card').evaluateAll(cards => cards.flatMap(card => {
@@ -126,7 +175,7 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         flagTeamName: 'Cowboys', seasonRecord: '0-7', seasonLabel: 'Fall 2026',
         lastResult: 'L 6-20 vs. Ravens',
         nextFlagGame: { opponent: 'Ravens', date: '2026-09-20', time: '12:00 PM' },
-        standings: teams.map((team, i) => ({ team, teamId: 100 + i, coach: i === 5 ? 'Watkins' : 'Coach', w: 7 - i, l: i, isMe: i === 7 })),
+        flagFootballDivisionTable: divisionFixture(teams.map((team, i) => ({ team, teamId: 100 + i, coach: i === 5 ? 'Watkins' : 'Coach', w: 7 - i, l: i, isMe: i === 7 }))),
       } }), { waitUntil: 'load' });
       await page.evaluate(() => document.fonts.ready);
       assert.equal(await page.locator('.athletics-grid>.athletic-card').count(), 1 + Number(Boolean(active.swim757Active)) + Number(Boolean(active.sharksActive)));
@@ -135,7 +184,7 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         const rows = [...card.querySelectorAll('tbody tr')];
         const next = card.querySelector('.next-box').getBoundingClientRect();
         return {
-          teams: rows.map(row => row.cells[0].textContent.trim()),
+          teams: rows.map(row => row.querySelector('.team-cell').textContent.trim()),
           ours: rows.at(-1).classList.contains('is-me'),
           contained: rows.every(row => {
             const box = row.getBoundingClientRect();
@@ -154,7 +203,7 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         };
       });
       assert.deepEqual(layout, { teams: teams.map((team, i) => i === 7 ? team + ' · Us' : i === 5 ? team + ' (Watkins)' : team),
-        ours: true, contained: true, overflow: false, overlapsNext: false, columns: ['Team', 'W', 'L'], font: '18px', rowHeights: Array(8).fill(23), bottomPadding: true }, JSON.stringify({ active, banner }));
+        ours: true, contained: true, overflow: false, overlapsNext: false, columns: ['Rank', 'Team', 'W', 'L'], font: '18px', rowHeights: Array(8).fill(23), bottomPadding: true }, JSON.stringify({ active, banner }));
     }
   });
 
@@ -162,7 +211,7 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     for (const count of [6, 8]) {
       await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
         flagFootballActive: true,
-        standings: Array.from({ length: count }, (_, i) => ({ team: i === 0 ? 'Unknown team' : i === 1 ? 'Browns' : 'Ravens', w: 0, l: 0 })),
+        flagFootballDivisionTable: divisionFixture(Array.from({ length: count }, (_, i) => ({ team: i === 0 ? 'Unknown team' : i === 1 ? 'Browns' : 'Ravens', w: 0, l: 0 }))),
       } }), { waitUntil: 'load' });
       await page.evaluate(() => document.fonts.ready);
       const result = await page.locator('.flag-football-card tbody').evaluate(tbody => {
@@ -242,7 +291,7 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
       flagFootballActive: true, flagTeamName: 'Cowboys', swim757Active,
       nextFlagGame: { opponent: 'Ravens', date: '2026-09-20' },
-      standings: ['Cowboys', 'Ravens', 'Bears', 'Broncos', 'Texans', 'Panthers'].map((team, i) => ({team, w:0, l:0, isMe:i === 0})),
+      flagFootballDivisionTable: divisionFixture(['Cowboys', 'Ravens', 'Bears', 'Broncos', 'Texans', 'Panthers'].map((team, i) => ({team, w:0, l:0, isMe:i === 0}))),
     } }), { waitUntil: 'load' });
     await page.evaluate(() => document.fonts.ready);
     const layout = await page.locator('.flag-football-card').evaluate(card => {
