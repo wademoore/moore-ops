@@ -778,7 +778,7 @@ test is what makes that edit hard to forget.
 - **An unofficial 757 meet still takes `league: "USA Swimming"`.** It reads like a sanctioning claim and is not one — `league` is this file's *provenance discriminator*, separating the 757 side from `"VPSU Summer Swim"`, and `unofficial: true` on the same row carries the certification question instead.
 - **An intrasquad has no age bracket, so `ageGroup` is omitted rather than guessed.** The KickOff ran open girls events ("Girls 25 Yard Breast"); writing `"Girls 8 & Under"` would invent a bracket the meet did not have. Of the 107 pre-existing rows, **22 omit the key and a further 6 carry it as `null` — 28 with no usable value — and all 28 are SCM; every one of the 17 SCY rows carries a real bracket.** So the precedent is weaker than a bare count suggests and is recorded that way rather than rounded up. What makes the omission safe is not precedent but that every consumer guards it (`waves-champs-qualifier/helpers.js` returns false on a falsy `ageGroup`; `check.js` ternaries it) — and **the 6 explicit nulls are the proof that the falsy path is already exercised by production data** rather than only by the guard's existence. *(This first read "22 of 90", taking the SCM subtotal for the file total, and counted only absent keys — which reaches none of the 6 nulls.)*
 - **A within-club finish goes in `place`, never `overallPlace`.** `derivePlacementString()` in `swimParser.js` builds its placement string from `overallPlace`/`overallCount` and ignores `place` entirely, so `place` records the finish faithfully while keeping it off every rendered surface. Verified: the four `opheliaPBRows` that `events757` produces all report `placement: null`. (The count is of *configured PB rows*, not of SCY rows in the file, of which there are 20.) There is no `lane` field anywhere in `swim-results.json`, and no seed or entry-time field at all, so lane, entry time, round, event number and start clock have no home and are not stored. `heat`/`heatPlace` do have homes; `totalHeats`/`totalSwimmers` are written `null` because the source did not give them. **Two heat conventions coexist in this file** — 28 rows use `heat`/`totalHeats`/`heatPlace` alongside `place`/`totalSwimmers`, and 6 (the 2026-06-15 batch) use `heatNumber`/`heatCount` alongside `overallPlace`/`overallCount`. The KickOff rows take the first, which is both the majority and the one the DQ convention above names.
-  ⚠ **`place` does not mean the same thing on either side of this change, and it is not clear which meaning is right.** In `data/swim-757-results.json` the parser's `place` equals `totalSwimmers` on **17 of 17** non-DQ rows, and **14 of the 17 pre-existing SCY rows** correspond to one of those and carry the identical `place` — so for those 14 the value is either a field size mislabelled as a finish, or a genuine last place every single time, and the source cannot settle it from here. **The other 3 — the October Spooktacular rows, `place` 32, 31 and 17 — have no counterpart in either parser file, so for them an ordinary mid-field finish is a live third possibility and the disjunction above does not apply.** (11 of the 14 match on event and time; the remaining 3 are the 50-yard rows, which fail a time match only because of the +20.00 defect below and match on `place` regardless.) The KickOff rows put real finishes (8, 59, 11) in that column. Harmless today because **no consumer anywhere reads `place` off a swim row**, but do not aggregate or compare that column across the two eras without resolving this first.
+  ⚠ **`place` does not mean the same thing on either side of this change, and it is not clear which meaning is right.** In `data/swim-757-results.json` the parser's `place` equals `totalSwimmers` on **17 of 17** non-DQ rows, and **14 of the 17 pre-existing SCY rows** correspond to one of those and carry the identical `place` — so for those 14 the value is either a field size mislabelled as a finish, or a genuine last place every single time, and the source cannot settle it from here. **The other 3 — the October Spooktacular rows, `place` 32, 31 and 17 — have no counterpart in either parser file, so for them an ordinary mid-field finish is a live third possibility and the disjunction above does not apply.** (Once the +20.00 defect recorded below was corrected, the 50-yard rows among them match on time too, so every one of them now matches on event and time as well as on `place`.) The KickOff rows put real finishes (8, 59, 11) in that column. Harmless today because **no consumer anywhere reads `place` off a swim row**, but do not aggregate or compare that column across the two eras without resolving this first.
 - **VPSU name discrepancy:** Swimmer names in VPSU Top-50 data (`vpsu-rankings.json` league key) may differ from names in `league-results-v2.json` for the same swimmer. Confirmed 2026 case: "Ryland Fidler" (WT, Boys 7-8) in v2 = "Fidler, John" in VPSU — same swimmer, times match exactly. Do not silently correct VPSU-sourced data; preserve VPSU's name as ingested. Full caveat in `docs/editorial/05-editorial-evidence-guide.md` → `vpsu-rankings.json` Known caveats.
 - **757swim source files are Ophelia's meets; the full-field parser is full-roster.** Myles does not participate in 757swim (USA Swimming) in any capacity — these 15 meets are ones Ophelia attended. SCY rows (`course: "SCY"`) in `swim-results.json` are Ophelia's results exclusively; any code filtering `swim-results.json` for 757swim/SCY data should not expect Moore Myles rows. `scripts/parse-757swim-full.mjs` captures all swimmers who competed at those meets (not just Ophelia); `data/league-results-757.json` and `data/relay-results-757.json` are full-roster output files.
 - **`relay-results-history-v2.json` has a split ageGroup convention for the Open relay bracket (known inconsistency, July 2026):** The 2,071 pre-existing regular-season rows use `"Boys 9-18"`/`"Girls 9-18"` for the Open bracket, matching `relay-results-v2.json`. The 172 migrated Champs/Summer Awards rows use `"Men Open"`/`"Women Open"` for the same bracket, matching the `waves-team-records.json` relay record keys (and enabling correct record-progression matching). This inconsistency is intentional — the alternatives were either (a) use `"Boys/Girls 9-18"` and break record-key matching, or (b) retroactively rewrite 2,071 pre-existing history rows. Neither is obviously better, so the split was left as-is. **Future consumers of `relay-results-history-v2.json` must check for both conventions** in the ageGroup field when querying for Open-bracket relays — do not assume a single label covers all rows.
@@ -3886,15 +3886,15 @@ New parked work is recorded in `BACKLOG.md` at the repository root, not here.
   again, and re-run the harness expecting a green control and 25/25. Note also that nothing enforces the copies stay
   identical — `reviewer-gate.test.js`'s own header says so, and no test asserts parity.
 
-- **All three of Ophelia's 50-yard times in `swim-results.json` are recorded exactly 20.00s
-  slow, and `pb-records.json` carries one of them (found Sept 12, 2026; reported, NOT
-  corrected).** Found while recording the 757swim Season KickOff. Of the rows the two files
-  share, **all 14 sub-minute times agree exactly** and only the minute-format ones diverge —
-  each by precisely +20.00. *(An earlier draft said "every sub-minute time in the file agrees",
+- **✓ RESOLVED Sept 17, 2026 — Ophelia's 50-yard times in `swim-results.json` were recorded
+  exactly 20.00s slow, and `pb-records.json` carried one of them (found Sept 12, 2026;
+  corrected against the raw Hy-Tek meet files Sept 17, 2026).** Found while recording the
+  757swim Season KickOff. Of the rows the two files share, **all 14 sub-minute times agree
+  exactly** and only the minute-format ones diverged — each by precisely +20.00. *(An earlier draft said "every sub-minute time in the file agrees",
   which overstates it: the three October Spooktacular rows — 32.67, 35.74 and 41.09 — have no
   counterpart in either parser file, so they agree with nothing. A Reviewer round caught it.)*
 
-  | Row | `swim-results.json` | `swim-757-results.json` | Δ |
+  | Row | `swim-results.json` (as recorded, before the correction) | `swim-757-results.json` | Δ |
   |---|---|---|---|
   | 2025-12-06 50y Freestyle | 96.43 (1:36.43) | 76.43 (1:16.43) | +20.00 |
   | 2026-01-10 50y Backstroke | 89.23 (1:29.23) | 69.23 (1:09.23) | +20.00 |
@@ -3919,23 +3919,25 @@ New parked work is recorded in `BACKLOG.md` at the repository root, not here.
   and 1:09.23; the Fly was NT), so the seeds *suggest* the split rather than establish it. What
   carries it is the parser overlap, where the same split holds 14 sub-minute agreements to 3
   minute-format divergences.
-  One caveat on the corroboration: the two files also disagree on that swim's **date**
-  (`swim-results.json` 2026-01-10, `swim-757-results.json` 2026-01-11), so they are not
-  identical records of the same row in every field.
+  One caveat on the corroboration, since resolved: the two files also disagreed on that swim's
+  **date**, and the `.cl2` per-event date settled it at 2026-01-11 — the Splash and Dash export
+  runs Jan 9–11 and puts that swim on the last of them. The date was corrected with the time.
 
-  **Deliberately not fixed here.** It is three pre-existing rows plus
+  **Deliberately not fixed at the time.** It was three pre-existing rows plus
   `Ophelia|50y Backstroke|SCY`, unrelated to the meet being recorded, and the Updater rule is
   one logical update per commit. More to the point, correcting authoritative hand-maintained
   data on the strength of a **deprecated, never-integrated** parser output file that no code
-  reads is Wade's call. `pb-records.json`'s 50y Backstroke entry has since been overwritten by
-  the 69.08 KickOff swim, which is her fastest under either reading — so the live PB is right
-  either way and only the two 50y Freestyle rows and the history still carry the error.
+  reads is Wade's call. It was taken on Sept 16, 2026 — see the Updater skill's source-precedence
+  decision of that date — and the rows were corrected against the raw Hy-Tek files rather than
+  against that parser output. `pb-records.json`'s 50y Backstroke entry had already been
+  overwritten by the 69.08 KickOff swim, which is her fastest under either reading, so that key
+  needed no change; the stored 50y Freestyle personal best did, and was corrected.
 
-  **What it cost this change:** the 50y Backstroke note states no improvement figure at all,
-  because "20.15s" would have been built on the disputed value while the true drop is 0.15s.
-  Nothing renders it — `sports-config.json`'s `events757` has no `50y Back`, so that row reaches
-  no surface. Fix the two Freestyle rows and the Backstroke history row together, or decide the
-  parser is the one that is wrong; do not fix them one at a time.
+  **What it cost that change:** the 50y Backstroke note stated no improvement figure at all,
+  because "20.15s" would have been built on the disputed value. Nothing renders it —
+  `sports-config.json`'s `events757` has no `50y Back`, so that row reaches no surface. The note
+  now names the prior swim the meet file records, still without an improvement figure. The
+  Freestyle rows and the Backstroke row were corrected together, in one pass.
 
 - **The Waves/757 league separation is a single character in a string, and the Sept 12, 2026
   KickOff PBs made it consequential (found by a Reviewer round; pre-existing, not fixed).**
