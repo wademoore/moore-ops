@@ -414,12 +414,17 @@ function renderNowNext(nowNext) {
   const tone = ['calm', 'problem'].includes(nowNext.tone) ? nowNext.tone : 'normal';
   const context = (nowNext.context || []).filter(Boolean);
   const supporting = (nowNext.supporting || []).filter(item => item?.label && item?.lines?.length);
+  // The selector supplies flag ownership as this presentation-only qualifier.
+  const owners = /^Owner:\s*(.+)$/.exec(nowNext.qualifier || '');
+  const qualifier = owners
+    ? `<span class="owner owner-${esc(owners[1].toLowerCase())}">${esc(owners[1])}</span>`
+    : esc(nowNext.qualifier || '');
   return `<div class="now-next now-next-${tone}">
     ${renderSectionTitle('Now / Next', 'green', 'star')}
     <div class="now-next-hero">
       <h2>${esc(nowNext.signal || '')}</h2>
       ${nowNext.subject ? `<h3>${flagEventMark(nowNext)}${esc(cleanDisplayText(nowNext.subject))}</h3>` : ''}
-      ${nowNext.qualifier ? `<div class="now-next-qualifier">${esc(nowNext.qualifier)}</div>` : ''}
+      ${nowNext.qualifier ? `<div class="now-next-qualifier">${qualifier}</div>` : ''}
       ${context.length ? `<div class="now-next-context">${context.map(esc).join('<span aria-hidden="true">·</span>')}</div>` : ''}
     </div>
     ${supporting.length ? `<div class="now-next-support">${supporting.map(item => `<div class="now-next-support-block">
@@ -798,7 +803,7 @@ function renderDivisionTable(table, sport) {
   const rows = table.rows;
   const labels = flag ? flagStandingLabels(rows) : new Map();
   const columns = flag ? [['wins', 'W'], ['losses', 'L'], ...(rows.some(row => row.drawn > 0) ? [['drawn', 'T']] : [])]
-    : [['played', 'P'], ['leaguePoints', 'Pts'], ['scoreDifference', 'GD']];
+    : [['played', 'P'], ['scoreDifference', 'GD'], ['leaguePoints', 'Pts']];
   return `<div class="division-standings"><table class="division-table" aria-label="${flag ? 'Flag football' : 'Soccer'} division standings">
     <thead><tr>${ranked ? '<th class="rank-cell" scope="col">Rank</th>' : ''}<th class="team-cell" scope="col">Team</th>${columns.map(([, label]) => `<th scope="col">${label}</th>`).join('')}</tr></thead>
     <tbody>${rows.map(row => `<tr class="${row.isMe ? 'is-me' : ''}" data-team-id="${esc(row.teamId)}">
@@ -1610,7 +1615,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .today-event-copy span,.upcoming-event span,.task-row small,.athletic-card>small,.athletic-footer,.next-up-copy small,.forecast-fallback,.current-weather.weather-unavailable>span{color:var(--secondary)}
 .today-event,.upcoming-day,.priority-row,.task-row,.school-line,.subhead:after,.athletic-card,.swim-row,.horizon-item{border-color:var(--rule)}
 .paper-panel>.section-title{height:70px;margin-top:-31px;margin-bottom:8px}.paper-panel>.section-title:before{height:70px}.paper-panel>.section-title span{font-size:30px;padding-left:70px;letter-spacing:.045em}.doodle-calendar span{padding-left:84px!important}.dinner-block .section-title{height:54px}.dinner-block .section-title:before{height:54px}.dinner-block .section-title span{font-size:25px;line-height:1.2;padding-left:61px}
-.priority-row{font-size:24px;line-height:1.2;padding:6px 0;grid-template-columns:72px 1fr;gap:10px}.priority-row .owner{font-size:16px;line-height:1.05;padding:4px 8px;border-radius:14px}
+.priority-row{font-size:24px;line-height:1.2;padding:6px 0;grid-template-columns:72px 1fr;gap:10px}.priority-row .owner,.now-next-qualifier .owner{font-size:16px;line-height:1.05;padding:4px 8px;border-radius:14px}
 .priority-row.is-overdue{margin-left:0;margin-right:0}
 .today-panel.has-now-next{padding-top:9px}.now-next{flex:0 0 auto;padding-bottom:8px}.now-next .section-title{height:38px;margin-bottom:3px}.now-next .section-title:before{height:38px}.now-next .section-title span{line-height:1.2}.now-next-hero{position:relative;padding:4px 2px 9px}.now-next-hero h2{font-family:"Barlow Semi Condensed",sans-serif;font-size:39px;line-height:.94;letter-spacing:.005em;text-transform:uppercase;color:${COLORS.greenDark};max-width:620px}.now-next-hero h3{font-family:"Roboto Slab",Georgia,serif;font-size:21px;line-height:1.12;color:#172f27;margin-top:7px}.now-next-qualifier{font-size:19px;line-height:1.15;font-weight:700;color:${COLORS.red};margin-top:6px}.now-next-context{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:18px;font-weight:500;line-height:1.15;color:#40584e;margin-top:6px}.now-next-context span{opacity:.45}.now-next-support{border-top:1px solid var(--rule);padding-top:8px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.now-next-support-block{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px}.now-next-support-label{font-size:14px;font-weight:900;letter-spacing:.065em;text-transform:uppercase;color:${COLORS.greenDark}}.now-next-support-copy{font-size:17px;font-weight:500;line-height:1.2;color:#273d34}.now-next-support-block:last-child .now-next-support-label,.now-next-support-block:last-child .now-next-support-copy{color:#40584e}.now-next-problem .now-next-hero:before{content:"";position:absolute;left:-7px;top:3px;bottom:7px;width:4px;background:${COLORS.red};border-radius:4px}.now-next-problem .now-next-hero h2{font-size:35px}.now-next-calm .now-next-hero{padding:12px 2px 18px;text-align:left}.now-next-calm .now-next-hero h2{font-size:42px;max-width:none}.now-next-calm .now-next-hero h3{font-family:"Barlow Semi Condensed",sans-serif;font-size:20px;font-weight:500;color:#40584e;margin-top:7px}.has-now-next .subhead{margin-top:4px}.has-now-next .today-bottom{margin-top:auto}
 .centers-block{flex:0 0 auto}.centers-row{position:relative;display:grid;grid-template-columns:88px minmax(0,1fr);align-items:stretch;min-height:58px;border-bottom:1px solid var(--rule)}.centers-row:before{content:"";position:absolute;left:-10px;top:7px;bottom:7px;width:5px;background:${COLORS.green}}.centers-row.person-myles:before{background:${COLORS.red}}.centers-row.person-ophelia:before{background:${COLORS.purple}}.centers-child{display:flex;flex-direction:column;justify-content:center;padding-right:8px}.centers-child strong{font-size:20px;line-height:1;color:${COLORS.greenDark}}.person-myles .centers-child strong{color:${COLORS.red}}.person-ophelia .centers-child strong{color:${COLORS.purple}}.centers-child small{font-size:10px;line-height:1;margin-top:4px;color:var(--secondary);text-transform:uppercase;letter-spacing:.05em}.centers-days{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:4px 0}.center-day{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;padding:3px 2px;border:1px solid transparent;border-radius:7px;color:var(--secondary)}.center-day small{font-size:10px;line-height:1;font-weight:700;letter-spacing:.06em}.center-day span{max-width:100%;font-size:15px;line-height:1;font-weight:600;white-space:normal;text-align:center;overflow-wrap:anywhere}.center-day.is-today{background:rgba(212,154,24,.16);border-color:${COLORS.gold};color:${COLORS.greenDark};box-shadow:inset 0 0 0 1px rgba(255,255,255,.4)}.center-day.has-action{background:rgba(185,54,36,.11);border-color:${COLORS.red};color:${COLORS.greenDark}}.center-day b{max-width:100%;font-size:9px;line-height:1;color:${COLORS.red};white-space:normal;text-align:center;overflow-wrap:anywhere;margin-top:2px;text-transform:uppercase}.centers-missing{grid-column:2;grid-row:1;align-self:center;justify-self:center;font-size:15px;color:var(--secondary);font-style:italic;pointer-events:none}
@@ -1648,17 +1653,17 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .latest-757-dense .latest-757-race{padding:0;row-gap:1px}.latest-757-dense .latest-757-race>strong{font-size:22px}
 .latest-757-dense .latest-757-meet{margin-bottom:2px}.latest-757-dense .latest-757-more{margin-top:1px}
 .latest-757-dense .latest-757-results{padding-bottom:4px}
-.athletic-summary{display:flex;align-items:center;justify-content:space-between;min-height:96px;flex-shrink:0;gap:12px}
-.athletic-summary>.record{margin-top:0}
-.athletic-summary>.season-tag{max-width:calc(100% - 116px)}
-.athletic-summary>.athletic-logo{width:96px;height:96px;flex:0 0 96px;object-fit:contain;background:transparent;border-radius:0;padding:0;margin-right:12px}
+.athletic-summary{display:flex;align-items:center;justify-content:space-between;min-height:64px;flex-shrink:0;gap:12px}
+.athletic-summary>.record{margin-top:0;font-size:40px}
+.athletic-summary>.season-tag{max-width:calc(100% - 84px)}
+.athletic-summary>.athletic-logo{width:64px;height:64px;flex:0 0 64px;object-fit:contain;background:transparent;border-radius:0;padding:0;margin-right:12px}
 .athletic-card .athletic-ribbon{padding-left:48px;flex-shrink:0}
 .next-box time{white-space:nowrap;font:inherit}
 .flag-football-card{padding-bottom:10px}.flag-football-card table{line-height:1;font-size:18px;flex-shrink:0}.flag-football-card td .flag-team-mark{vertical-align:top}.flag-team-placeholder{display:inline-block}
 .flag-football-card td{padding:1px 0}
 .card-count-1 .athletic-card{grid-template-columns:290px minmax(0,1fr);grid-template-rows:46px auto 1fr}
 .card-count-1 .athletic-summary{grid-column:1;grid-row:2;align-self:start}
-.card-count-1 .athletic-summary>.record{font-size:58px;margin-top:0}
+.card-count-1 .athletic-summary>.record{font-size:40px;margin-top:0}
 .card-count-1 .athletic-card>small{margin-top:0}
 .card-count-1 .flag-football-card{grid-template-columns:290px minmax(0,1fr) 400px}
 .card-count-1 .swim-rows{grid-column:2;grid-row:2/4}
@@ -1674,7 +1679,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .division-table .rank-cell{width:38px;text-align:left;font-size:15px}
 .division-table th:not(:first-child),.division-table td:not(:first-child){padding-left:6px}
 .sharks-card .division-table{font-size:17px;line-height:16px}
-.sharks-card .division-table td{height:17px;padding-top:0;padding-bottom:0}
+.sharks-card .division-table td{height:20px;padding-top:0;padding-bottom:0}
 /* The optional masthead needs 20px more athletics height for full tables plus a note. */
 .dashboard.has-masthead.athletics-multi.has-division-table .upcoming-panel{height:calc(58% - 88px)}
 .dashboard.has-masthead.athletics-multi.has-division-table .athletics-panel{height:calc(40% + 90px)}
@@ -1684,7 +1689,8 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .card-count-1 .flag-football-card .division-standings,.card-count-1 .sharks-card .division-standings{grid-column:3;grid-row:2/4;align-self:start;margin-top:12px}
 .card-count-1 .flag-football-card .division-table{margin-top:0}
 .card-count-1 .sharks-card{grid-template-columns:250px minmax(0,1fr) 560px}
-.card-count-1 .sharks-card .athletic-ribbon{grid-column:1/4}
+.card-count-1 .sharks-card .athletic-ribbon{grid-column:1/3}
+.card-count-1 .sharks-card .division-standings{grid-row:1/4;margin-top:0}
 
 /* ── Holiday Theme — ambient skin (holiday-theme-v1) ────────────────────────
    A skin, never a layout. Every rule in this block is scoped to

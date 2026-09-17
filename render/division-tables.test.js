@@ -71,7 +71,7 @@ it('soccer columns use contract short names, played, points and goal difference'
   value.rows[0].shortName = 'Contract name';
   const html = render('soccer', value);
   assert.match(html, /Contract name/);
-  for (const column of ['Team', 'P', 'Pts', 'GD']) assert.ok(html.includes(`scope="col">${column}<`));
+  assert.deepEqual([...html.matchAll(/<th[^>]*>([^<]*)<\/th>/g)].map(match => match[1]), ['Rank', 'Team', 'P', 'GD', 'Pts']);
   assert.doesNotMatch(html, /Beach FC/);
 });
 it('v2 never reads legacy standings fields', () => {

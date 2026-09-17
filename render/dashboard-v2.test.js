@@ -659,7 +659,7 @@ describe('television readability and horizon policies', () => {
     const html = renderDashboardV2(sampleDashboardV2Data);
     assert.equal((html.match(/class="priority-row/g) || []).length, 5);
     assert.match(html, /\.priority-row\{font-size:24px;line-height:1\.2/);
-    assert.match(html, /\.priority-row \.owner\{font-size:16px/);
+    assert.match(html, /\.priority-row \.owner,\.now-next-qualifier \.owner\{font-size:16px/);
     assert.match(html, /\.priority-row\.is-overdue\{margin-left:0;margin-right:0\}/);
   });
 
