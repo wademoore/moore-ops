@@ -24,6 +24,7 @@ for (const [count, raceCount, visibleCount] of footerCases) {
     const races = ['25y Butterfly', '25y Backstroke', '25y Breaststroke', '25y Freestyle', '50y Freestyle', '50y Breaststroke', '50y Backstroke', '50y Butterfly', '100y Freestyle', '100y Breaststroke'].slice(0, raceCount).map(event => ({
       event, distance: Number(event.match(/^\d+/)[0]), course: 'SCY', date: '2026-09-12', seconds: 65, dq: false, isPersonalBest: false,
       personalBest: { seconds: 60, meet: '2026 VPSU Championship Meet', date: '2026-08-01' },
+      priorHistoryState: 'prior-best', priorBest: { seconds: 65, date: '2026-01-01', meet: 'Earlier meet', source: 'swim-results.json' }, improvementSeconds: 0,
     }));
     await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
       ...sampleDashboardV2Data.athletics, opheliaFooter: '757 season note', wavesActive: false, swim757Active: true, flagFootballActive: count === 3, sharksActive: count >= 2,
@@ -37,7 +38,7 @@ for (const [count, raceCount, visibleCount] of footerCases) {
       const footerElement = document.querySelector('.latest-757-card .athletic-footer');
       const footerRange = document.createRange(); footerRange.selectNodeContents(footerElement);
       const footerText = [...footerRange.getClientRects()];
-      const elements = [...document.querySelectorAll('.latest-757-card strong,.latest-757-card span,.latest-757-pb,.latest-757-more')];
+      const elements = [...document.querySelectorAll('.latest-757-card strong,.latest-757-card span,.latest-757-pb,.latest-757-improvement,.latest-757-more')];
       return {
         cardCount: document.querySelectorAll('.athletics-grid > .athletic-card').length,
         count: document.querySelectorAll('.latest-757-race').length,
@@ -77,7 +78,7 @@ for (const april of [false, true]) for (const count of [1, 2, 3]) {
       const panel = document.querySelector('.athletics-panel').getBoundingClientRect();
       const card = document.querySelector('.latest-757-card').getBoundingClientRect();
       const footer = document.querySelector('.latest-757-card .athletic-footer').getBoundingClientRect();
-      const elements = [...document.querySelectorAll('.latest-757-meet strong,.latest-757-meet span,.latest-757-race>span,.latest-757-race>strong,.latest-757-pb')];
+      const elements = [...document.querySelectorAll('.latest-757-meet strong,.latest-757-meet span,.latest-757-race>span,.latest-757-race>strong,.latest-757-pb,.latest-757-improvement')];
       return {
         rows: document.querySelectorAll('.latest-757-race').length,
         clipped: elements.flatMap(element => {
