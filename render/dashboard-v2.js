@@ -735,7 +735,7 @@ function renderUpcomingEvent(item, accents) {
 function renderUpcoming(data, latest757Card = safeLatest757Card(data.athletics || {})) {
   const accents = eventRowAccents(data);
   const allItems = collapseUpcomingEvents(data.upcomingEvents, data.today);
-  const eventTarget = athleticsCardCount(data, latest757Card) === 1 ? 14 : 10;
+  const eventTarget = athleticsCardCount(data, latest757Card) === 1 ? 14 : 12;
   const grouped = new Map();
   for (const item of allItems) {
     if (!grouped.has(item.startKey)) grouped.set(item.startKey, []);
@@ -765,7 +765,7 @@ function renderUpcoming(data, latest757Card = safeLatest757Card(data.athletics |
     </div>`;
   }).join('');
   const densityClass = visibleDays.length > 9 ? ' upcoming-dense' : '';
-  return `<section class="paper-panel upcoming-panel${densityClass}">
+  return `<section class="paper-panel upcoming-panel${densityClass}" data-later-count="${laterCount}">
     ${renderSectionTitle('Coming Up', 'green', 'calendar')}
     <div class="upcoming-list">${rows || '<div class="empty-state">No upcoming events.</div>'}</div>
     ${laterCount ? `<div class="upcoming-later">+${laterCount} later in the two-week window</div>` : ''}
@@ -895,14 +895,14 @@ function renderLatest757Card(a, meet, cardCount) {
     const pbDate = pb ? swimMeetDate(pb.date) : '';
     const hasPrior = race.priorHistoryState === 'prior-best' && race.priorBest != null;
     const improvement = hasPrior && Number.isFinite(race.improvementSeconds)
-      ? (race.improvementSeconds === 0 ? 'Matched previous best' : `−${race.improvementSeconds.toFixed(2)}s`)
+      ? (race.improvementSeconds === 0 ? 'Matched your best!' : `${race.improvementSeconds.toFixed(2)} seconds faster`)
       : race.priorHistoryState === 'first-recorded' ? 'First in our records' : '';
     const comparison = hasPrior ? [improvement, 'Previous best ' + swimResultTime(race.priorBest.seconds)].filter(Boolean).join(' · ') : improvement;
     return `<div class="swim-row latest-757-race">
       <span>${esc(race.event)} <small>${esc(race.course || '')}</small></span>
       <strong>${race.dq ? 'DQ' : esc(swimResultTime(race.seconds))}</strong>
       ${isPB ? '<em>PB</em>' : '<em></em>'}
-      ${comparison ? `<div class="latest-757-improvement">${esc(comparison)}</div>` : ''}
+      ${comparison ? `<div class="latest-757-improvement${hasPrior && Number.isFinite(race.improvementSeconds) ? ' is-improved' : ''}">${esc(comparison)}</div>` : ''}
       ${isPB || hasPrior ? '' : `<div class="latest-757-pb">${pb ? `PB ${esc(swimResultTime(pb.seconds))} · ${esc(pb.meet)}${pbDate ? ` · ${esc(pbDate)}` : ''}` : 'PB not recorded'}</div>`}
     </div>`;
   }).join('');
@@ -1318,6 +1318,54 @@ function renderTicker(data) {
 function browserScript() {
   return `<script>
   (() => {
+    // Fit complete calendar days after fonts settle; never split a busy day.
+    const fitUpcoming = () => {
+      const panel = document.querySelector('.upcoming-panel');
+      if (!panel) return;
+      const list = panel.querySelector('.upcoming-list');
+      let later = Number(panel.dataset.laterCount || 0);
+      const days = [...list.querySelectorAll('.upcoming-day')];
+      const limit = panel.getBoundingClientRect().bottom - 32 * (panel.getBoundingClientRect().width / panel.offsetWidth);
+      const hadDays = days.length > 0;
+      while (days.length > 0 && days[days.length - 1].getBoundingClientRect().bottom > limit) {
+        const day = days.pop();
+        later += day.querySelectorAll('.upcoming-event').length;
+        day.remove();
+      }
+      if (hadDays && !days.length) {
+        const message = document.createElement('div');
+        message.className = 'empty-state';
+        message.textContent = 'The next day’s schedule is too long to fit. See the calendar for details.';
+        list.appendChild(message);
+      }
+      let note = panel.querySelector('.upcoming-later');
+      if (later && !note) {
+        note = document.createElement('div');
+        note.className = 'upcoming-later';
+        panel.appendChild(note);
+      }
+      if (note) note.textContent = '+' + later + ' later in the two-week window';
+    };
+    const alignTeamCards = () => {
+      const cards = [...document.querySelectorAll('.athletics-multi .flag-football-card,.athletics-multi .sharks-card')];
+      if (cards.length !== 2) return;
+      cards.forEach(card => {
+        if (!card.querySelector('.result-line')) {
+          const spacer = document.createElement('div');
+          spacer.className = 'result-line result-placeholder';
+          spacer.setAttribute('aria-hidden', 'true');
+          card.querySelector('.athletic-summary').nextElementSibling.after(spacer);
+        }
+      });
+      for (const selector of ['.athletic-ribbon', '.athletic-summary', ':scope > small', '.result-line', '.next-box']) {
+        const sections = cards.map(card => card.querySelector(selector));
+        if (sections.some(section => !section)) continue;
+        const height = Math.max(...sections.map(section => section.offsetHeight));
+        sections.forEach(section => { section.style.height = height + 'px'; section.style.flexShrink = '0'; });
+      }
+    };
+    if (document.fonts) document.fonts.ready.then(() => { fitUpcoming(); alignTeamCards(); });
+    else fitUpcoming();
     const zone = 'America/New_York';
     const dashboard = document.querySelector('.dashboard');
     const clock = document.getElementById('live-clock');
@@ -1685,7 +1733,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .division-table .team-cell{text-align:left}
 .division-table .rank-cell{width:38px;text-align:left;font-size:15px}
 .division-table th:not(:first-child),.division-table td:not(:first-child){padding-left:6px}
-.sharks-card .division-table{font-size:17px;line-height:16px}
+.sharks-card .division-table{font-size:18px;line-height:16px}
 .sharks-card .division-table td{height:20px;padding-top:0;padding-bottom:0}
 /* The optional masthead needs 20px more athletics height for full tables plus a note. */
 .dashboard.has-masthead.athletics-multi.has-division-table .upcoming-panel{height:calc(58% - 88px)}
@@ -1699,6 +1747,21 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .card-count-1 .sharks-card .athletic-ribbon{grid-column:1/3}
 .card-count-1 .sharks-card .division-standings{grid-row:1/4;margin-top:0}
 
+.upcoming-panel{position:relative}
+/* Give the three-card panel more breathing room without enlarging type or logos. */
+.dashboard.athletics-multi .upcoming-panel{height:calc(58% - 132px)}
+.dashboard.athletics-multi .athletics-panel{height:calc(40% + 134px)}
+.dashboard.has-masthead.athletics-multi .upcoming-panel{height:calc(58% - 164px)}
+.dashboard.has-masthead.athletics-multi .athletics-panel{height:calc(40% + 166px)}
+.dashboard.has-masthead.athletics-multi.has-division-table .upcoming-panel{height:calc(58% - 184px)}
+.dashboard.has-masthead.athletics-multi.has-division-table .athletics-panel{height:calc(40% + 186px)}
+.athletics-multi .division-table td{height:27px}
+.athletics-multi .sharks-card .division-table td{height:27px;padding-top:1px;padding-bottom:1px}
+.athletics-multi .sharks-card .division-table{line-height:20px}
+.athletics-multi .flag-football-card .division-standings,.athletics-multi .sharks-card .division-standings{margin-top:12px}
+.athletics-multi .result-placeholder{min-height:22px}.latest-757-improvement.is-improved{color:#3f7c3f;font-weight:700}
+.athletics-multi .latest-757-race{padding-top:9px;padding-bottom:9px}
+.athletics-multi .latest-757-dense .latest-757-race{padding-top:3px;padding-bottom:3px}
 /* ── Holiday Theme — ambient skin (holiday-theme-v1) ────────────────────────
    A skin, never a layout. Every rule in this block is scoped to
    [data-holiday-state="active"], so an artifact with no theme, a staged theme,

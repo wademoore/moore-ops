@@ -114,6 +114,8 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         const box = table.getBoundingClientRect();
         return { card: card.className, rows: rows.length, oursLast: rows.at(-1).classList.contains('is-me'),
           textSize: getComputedStyle(table).fontSize,
+          cellPadding: getComputedStyle(rows[0].querySelector('td')).paddingTop,
+          tableGap: box.top - next.bottom,
           rowHeights: rows.map(row => row.getBoundingClientRect().height),
           overflow: card.scrollHeight > card.clientHeight + 1,
           padding: bounds.bottom - note.bottom,
@@ -124,8 +126,12 @@ describe('dashboard v2 2560x1440 layout verification', () => {
       for (const card of result) {
         assert.equal(card.rows, card.card.includes('sharks') ? 11 : 8);
         assert.equal(card.oursLast, true);
-        assert.equal(card.textSize, card.card.includes('sharks') ? '17px' : '18px');
-        assert.deepEqual(card.rowHeights, Array(card.rows).fill(card.card.includes('sharks') ? 20 : 23));
+        assert.equal(card.textSize, '18px');
+        if (!only) {
+          assert.equal(card.cellPadding, '1px');
+          if (card.card.includes('flag-football')) assert.equal(card.tableGap, 12);
+        }
+        assert.deepEqual(card.rowHeights, Array(card.rows).fill(card.card.includes('sharks') ? (only ? 20 : 27) : (only ? 23 : 27)));
         assert.equal(card.overflow, false, JSON.stringify({ banner, only, card }));
         assert.ok(card.padding >= 9, JSON.stringify({ banner, only, card }));
         assert.equal(card.overlapsNext, false);
@@ -225,7 +231,7 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         };
       });
       assert.deepEqual(layout, { teams: teams.map((team, i) => i === 7 ? team + ' · Us' : i === 5 ? team + ' (Watkins)' : team),
-        ours: true, contained: true, overflow: false, overlapsNext: false, columns: ['Rank', 'Team', 'W', 'L'], font: '18px', rowHeights: Array(8).fill(23), bottomPadding: true }, JSON.stringify({ active, banner }));
+        ours: true, contained: true, overflow: false, overlapsNext: false, columns: ['Rank', 'Team', 'W', 'L'], font: '18px', rowHeights: Array(8).fill(active.swim757Active ? 27 : 23), bottomPadding: true }, JSON.stringify({ active, banner }));
     }
   });
 
@@ -1136,4 +1142,53 @@ describe('retired alert strip does not reserve wall space', () => {
       assert.ok(Math.abs(today[1] + today[3] - athletics[1] - athletics[3]) < 1);
     }
   });
+});
+
+describe('balanced Coming Up space', () => {
+  for (const banner of [null, { title: 'Family day' }]) it(`fits whole days and counts deferred events (${banner ? 'masthead' : 'ordinary'})`, async () => {
+    const upcomingEvents = Array.from({ length: 14 }, (_, i) => ({
+      title: `Event ${i + 1}`, subtitle: '', raw: { start: { dateTime: `2026-09-${String(18 + Math.floor(i / 2)).padStart(2, '0')}T09:00:00-04:00` } },
+    }));
+    await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, today: new Date('2026-09-17T12:00:00-04:00'), banner, upcomingEvents, athletics: realDivisionAthletics() }));
+    await page.evaluate(() => document.fonts.ready);
+    const result = await page.evaluate(() => {
+      const panel = document.querySelector('.upcoming-panel').getBoundingClientRect();
+      const note = document.querySelector('.upcoming-later');
+      const days = [...document.querySelectorAll('.upcoming-day')];
+      return { counts: days.map(d => d.querySelectorAll('.upcoming-event').length), visible: document.querySelectorAll('.upcoming-event').length,
+        later: Number(note.textContent.match(/\d+/)[0]), noteInside: note.getBoundingClientRect().bottom <= panel.bottom,
+        contained: days.every(d => d.getBoundingClientRect().bottom <= note.getBoundingClientRect().top),
+        athleticsClear: panel.bottom < document.querySelector('.athletics-panel').getBoundingClientRect().top };
+    });
+    assert.ok(result.visible > 0 && result.visible <= 12);
+    assert.ok(result.counts.every(count => count === 2), JSON.stringify(result));
+    assert.equal(result.visible + result.later, 14);
+    assert.ok(result.contained && result.noteInside && result.athleticsClear, JSON.stringify(result));
+  });
+});
+
+it('defers an oversized first day whole rather than overflowing or skipping ahead', async () => {
+  const upcomingEvents = Array.from({ length: 35 }, (_, i) => ({ title: `Busy day event ${i + 1}`, subtitle: '', raw: { start: { date: '2026-09-18' } } }));
+  upcomingEvents.push({ title: 'Following day', subtitle: '', raw: { start: { date: '2026-09-19' } } });
+  await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, today: new Date('2026-09-17T12:00:00-04:00'), upcomingEvents, athletics: realDivisionAthletics() }));
+  await page.evaluate(() => document.fonts.ready);
+  assert.equal(await page.locator('.upcoming-event').count(), 0);
+  assert.match(await page.locator('.upcoming-list').textContent(), /next day’s schedule is too long to fit/);
+  assert.equal(await page.locator('.upcoming-later').textContent(), '+36 later in the two-week window');
+});
+
+it('aligns team-card sections despite missing results and matches swim comparison colors to their meaning', async () => {
+  for (const banner of [null, { title: 'Family day' }]) {
+    const athletics = realDivisionAthletics();
+    athletics.lastResult = '';
+    await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, banner, athletics }));
+    await page.evaluate(() => document.fonts.ready);
+    const alignment = await page.evaluate(() => ['.next-box', '.division-table', '.division-table tbody tr'].map(selector => {
+      return ['.flag-football-card', '.sharks-card'].map(card => document.querySelector(card + ' ' + selector).getBoundingClientRect().top);
+    }));
+    for (const [flag, sharks] of alignment) assert.ok(Math.abs(flag - sharks) <= 1, JSON.stringify(alignment));
+    const colors = await page.locator('.latest-757-improvement').evaluateAll(nodes => nodes.map(n => ({ text: n.textContent, color: getComputedStyle(n).color, improved: n.classList.contains('is-improved') })));
+    assert.ok(colors.some(n => n.text.includes('seconds faster') && n.improved && n.color === 'rgb(63, 124, 63)'));
+    assert.ok(colors.some(n => n.text.includes('First in our records') && !n.improved && n.color !== 'rgb(63, 124, 63)'));
+  }
 });
