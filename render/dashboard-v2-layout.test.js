@@ -1176,3 +1176,19 @@ it('defers an oversized first day whole rather than overflowing or skipping ahea
   assert.match(await page.locator('.upcoming-list').textContent(), /next day’s schedule is too long to fit/);
   assert.equal(await page.locator('.upcoming-later').textContent(), '+36 later in the two-week window');
 });
+
+it('aligns team-card sections despite missing results and matches swim comparison colors to their meaning', async () => {
+  for (const banner of [null, { title: 'Family day' }]) {
+    const athletics = realDivisionAthletics();
+    athletics.lastResult = '';
+    await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, banner, athletics }));
+    await page.evaluate(() => document.fonts.ready);
+    const alignment = await page.evaluate(() => ['.next-box', '.division-table', '.division-table tbody tr'].map(selector => {
+      return ['.flag-football-card', '.sharks-card'].map(card => document.querySelector(card + ' ' + selector).getBoundingClientRect().top);
+    }));
+    for (const [flag, sharks] of alignment) assert.ok(Math.abs(flag - sharks) <= 1, JSON.stringify(alignment));
+    const colors = await page.locator('.latest-757-improvement').evaluateAll(nodes => nodes.map(n => ({ text: n.textContent, color: getComputedStyle(n).color, improved: n.classList.contains('is-improved') })));
+    assert.ok(colors.some(n => n.text.includes('seconds faster') && n.improved && n.color === 'rgb(63, 124, 63)'));
+    assert.ok(colors.some(n => n.text.includes('First in our records') && !n.improved && n.color !== 'rgb(63, 124, 63)'));
+  }
+});

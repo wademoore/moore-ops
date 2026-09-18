@@ -895,14 +895,14 @@ function renderLatest757Card(a, meet, cardCount) {
     const pbDate = pb ? swimMeetDate(pb.date) : '';
     const hasPrior = race.priorHistoryState === 'prior-best' && race.priorBest != null;
     const improvement = hasPrior && Number.isFinite(race.improvementSeconds)
-      ? (race.improvementSeconds === 0 ? 'Matched previous best' : `−${race.improvementSeconds.toFixed(2)}s`)
+      ? (race.improvementSeconds === 0 ? 'Matched your best!' : `${race.improvementSeconds.toFixed(2)} seconds faster`)
       : race.priorHistoryState === 'first-recorded' ? 'First in our records' : '';
     const comparison = hasPrior ? [improvement, 'Previous best ' + swimResultTime(race.priorBest.seconds)].filter(Boolean).join(' · ') : improvement;
     return `<div class="swim-row latest-757-race">
       <span>${esc(race.event)} <small>${esc(race.course || '')}</small></span>
       <strong>${race.dq ? 'DQ' : esc(swimResultTime(race.seconds))}</strong>
       ${isPB ? '<em>PB</em>' : '<em></em>'}
-      ${comparison ? `<div class="latest-757-improvement">${esc(comparison)}</div>` : ''}
+      ${comparison ? `<div class="latest-757-improvement${hasPrior && Number.isFinite(race.improvementSeconds) ? ' is-improved' : ''}">${esc(comparison)}</div>` : ''}
       ${isPB || hasPrior ? '' : `<div class="latest-757-pb">${pb ? `PB ${esc(swimResultTime(pb.seconds))} · ${esc(pb.meet)}${pbDate ? ` · ${esc(pbDate)}` : ''}` : 'PB not recorded'}</div>`}
     </div>`;
   }).join('');
@@ -1346,7 +1346,25 @@ function browserScript() {
       }
       if (note) note.textContent = '+' + later + ' later in the two-week window';
     };
-    if (document.fonts) document.fonts.ready.then(fitUpcoming);
+    const alignTeamCards = () => {
+      const cards = [...document.querySelectorAll('.athletics-multi .flag-football-card,.athletics-multi .sharks-card')];
+      if (cards.length !== 2) return;
+      cards.forEach(card => {
+        if (!card.querySelector('.result-line')) {
+          const spacer = document.createElement('div');
+          spacer.className = 'result-line result-placeholder';
+          spacer.setAttribute('aria-hidden', 'true');
+          card.querySelector('.athletic-summary').nextElementSibling.after(spacer);
+        }
+      });
+      for (const selector of ['.athletic-ribbon', '.athletic-summary', ':scope > small', '.result-line', '.next-box']) {
+        const sections = cards.map(card => card.querySelector(selector));
+        if (sections.some(section => !section)) continue;
+        const height = Math.max(...sections.map(section => section.offsetHeight));
+        sections.forEach(section => { section.style.height = height + 'px'; section.style.flexShrink = '0'; });
+      }
+    };
+    if (document.fonts) document.fonts.ready.then(() => { fitUpcoming(); alignTeamCards(); });
     else fitUpcoming();
     const zone = 'America/New_York';
     const dashboard = document.querySelector('.dashboard');
@@ -1731,16 +1749,17 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 
 .upcoming-panel{position:relative}
 /* Give the three-card panel more breathing room without enlarging type or logos. */
-.dashboard.athletics-multi .upcoming-panel{height:calc(58% - 116px)}
-.dashboard.athletics-multi .athletics-panel{height:calc(40% + 118px)}
-.dashboard.has-masthead.athletics-multi .upcoming-panel{height:calc(58% - 148px)}
-.dashboard.has-masthead.athletics-multi .athletics-panel{height:calc(40% + 150px)}
-.dashboard.has-masthead.athletics-multi.has-division-table .upcoming-panel{height:calc(58% - 168px)}
-.dashboard.has-masthead.athletics-multi.has-division-table .athletics-panel{height:calc(40% + 170px)}
+.dashboard.athletics-multi .upcoming-panel{height:calc(58% - 132px)}
+.dashboard.athletics-multi .athletics-panel{height:calc(40% + 134px)}
+.dashboard.has-masthead.athletics-multi .upcoming-panel{height:calc(58% - 164px)}
+.dashboard.has-masthead.athletics-multi .athletics-panel{height:calc(40% + 166px)}
+.dashboard.has-masthead.athletics-multi.has-division-table .upcoming-panel{height:calc(58% - 184px)}
+.dashboard.has-masthead.athletics-multi.has-division-table .athletics-panel{height:calc(40% + 186px)}
 .athletics-multi .division-table td{height:27px}
 .athletics-multi .sharks-card .division-table td{height:27px;padding-top:1px;padding-bottom:1px}
 .athletics-multi .sharks-card .division-table{line-height:20px}
-.athletics-multi .flag-football-card .division-standings{margin-top:12px}
+.athletics-multi .flag-football-card .division-standings,.athletics-multi .sharks-card .division-standings{margin-top:12px}
+.athletics-multi .result-placeholder{min-height:22px}.latest-757-improvement.is-improved{color:#3f7c3f;font-weight:700}
 .athletics-multi .latest-757-race{padding-top:9px;padding-bottom:9px}
 .athletics-multi .latest-757-dense .latest-757-race{padding-top:3px;padding-bottom:3px}
 /* ── Holiday Theme — ambient skin (holiday-theme-v1) ────────────────────────

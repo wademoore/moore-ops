@@ -183,7 +183,7 @@ describe('holiday theme 2560x1440 skin, geometry and clock transitions', () => {
   it('keeps the Athletics panel footprint exactly, in both card counts', async () => {
     for (const [athletics, expected] of [
       [{ flagFootballActive: false, wavesActive: false, swim757Active: false, sharksActive: true }, 395.63],
-      [{ flagFootballActive: true, wavesActive: true, swim757Active: false, sharksActive: true }, 645.59],
+      [{ flagFootballActive: true, wavesActive: true, swim757Active: false, sharksActive: true }, 661.59],
     ]) {
       const probe = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
       const data = holidayThemeSampleData({ now: GENERATED_AT, holidayThemesConfig: HOLIDAY_REGISTRY });

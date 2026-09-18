@@ -139,29 +139,29 @@ describe('latest 757 prior history', () => {
   const priorBest = { seconds: 69.23, date: '2025-09-01', meet: 'Prior meet', source: 'swim-results.json' };
   it('shows the supplied improvement and retains the independent PB marker', () => {
     const html = render(view([race({ priorHistoryState: 'prior-best', priorBest, improvementSeconds: 0.15, isPersonalBest: true })]));
-    assert.match(html, /−0\.15s/);
+    assert.match(html, /0\.15 seconds faster/);
     assert.match(html, /<em>PB<\/em>/);
     assert.match(html, /<strong>1:09\.08<\/strong>/);
   });
   it('labels a zero improvement as a matched previous best', () => {
     const html = render(view([race({ priorHistoryState: 'prior-best', priorBest, improvementSeconds: 0 })]));
-    assert.match(html, /Matched previous best/);
-    assert.doesNotMatch(html, /0\.00s/);
+    assert.match(html, /Matched your best!/);
+    assert.doesNotMatch(html, /0\.00 seconds faster/);
   });
   it('limits the first-swim claim to our records', () => {
     const html = render(view([race({ priorHistoryState: 'first-recorded', priorBest: null, improvementSeconds: null })]));
     assert.match(html, /First in our records/);
-    assert.doesNotMatch(html, /first ever|−[\d.]+s/i);
+    assert.doesNotMatch(html, /first ever|seconds faster|is-improved/i);
   });
   it('leaves undetermined races unlabelled', () => {
     const html = render(view([race({ priorHistoryState: 'undetermined', priorBest: null, improvementSeconds: null })]));
     assert.match(html, /<strong>1:09\.08<\/strong>/);
-    assert.doesNotMatch(html, /latest-757-improvement|First in our records|Matched previous best/);
+    assert.doesNotMatch(html, /latest-757-improvement|First in our records|Matched your best!/);
   });
   it('does not invent an improvement for a slower swim', () => {
     const html = render(view([race({ priorHistoryState: 'prior-best', priorBest, improvementSeconds: null })]));
     assert.match(html, /Previous best 1:09\.23/);
-    assert.doesNotMatch(html, /−[\d.]+s|Matched previous best/);
+    assert.doesNotMatch(html, /seconds faster|Matched your best!|is-improved/);
   });
 });
 
