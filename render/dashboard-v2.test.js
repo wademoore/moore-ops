@@ -381,7 +381,7 @@ describe('real-data resilience policies', () => {
     assert.doesNotMatch(html, /later in the two-week window/);
   });
 
-  it('keeps the shorter multi-card Athletics layout at 10 events', () => {
+  it('offers up to 12 events in the multi-card layout before browser fitting', () => {
     const today = new Date(2026, 7, 13);
     const events = Array.from({ length: 14 }, (_, index) => event(
       `Event ${index + 1}`,
@@ -392,8 +392,8 @@ describe('real-data resilience policies', () => {
       upcomingEvents: events,
       athletics: { sharksActive: true, swim757Active: true, opheliaLatest757Meet: latest757Fixture },
     });
-    assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 10);
-    assert.match(html, /\+4 later in the two-week window/);
+    assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 12);
+    assert.match(html, /\+2 later in the two-week window/);
   });
 
   it('keeps near-term swim practices even when later practices share dates with higher-priority events', () => {
