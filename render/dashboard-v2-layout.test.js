@@ -124,7 +124,7 @@ describe('dashboard v2 2560x1440 layout verification', () => {
       for (const card of result) {
         assert.equal(card.rows, card.card.includes('sharks') ? 11 : 8);
         assert.equal(card.oursLast, true);
-        assert.equal(card.textSize, card.card.includes('sharks') ? '17px' : '18px');
+        assert.equal(card.textSize, '18px');
         assert.deepEqual(card.rowHeights, Array(card.rows).fill(card.card.includes('sharks') ? (only ? 20 : 26) : (only ? 23 : 27)));
         assert.equal(card.overflow, false, JSON.stringify({ banner, only, card }));
         assert.ok(card.padding >= 9, JSON.stringify({ banner, only, card }));

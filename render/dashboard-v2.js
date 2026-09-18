@@ -1715,7 +1715,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .division-table .team-cell{text-align:left}
 .division-table .rank-cell{width:38px;text-align:left;font-size:15px}
 .division-table th:not(:first-child),.division-table td:not(:first-child){padding-left:6px}
-.sharks-card .division-table{font-size:17px;line-height:16px}
+.sharks-card .division-table{font-size:18px;line-height:16px}
 .sharks-card .division-table td{height:20px;padding-top:0;padding-bottom:0}
 /* The optional masthead needs 20px more athletics height for full tables plus a note. */
 .dashboard.has-masthead.athletics-multi.has-division-table .upcoming-panel{height:calc(58% - 88px)}
