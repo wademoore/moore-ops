@@ -1738,7 +1738,9 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .dashboard.has-masthead.athletics-multi.has-division-table .upcoming-panel{height:calc(58% - 168px)}
 .dashboard.has-masthead.athletics-multi.has-division-table .athletics-panel{height:calc(40% + 170px)}
 .athletics-multi .division-table td{height:27px}
-.athletics-multi .sharks-card .division-table td{height:26px}
+.athletics-multi .sharks-card .division-table td{height:27px;padding-top:1px;padding-bottom:1px}
+.athletics-multi .sharks-card .division-table{line-height:20px}
+.athletics-multi .flag-football-card .division-standings{margin-top:12px}
 .athletics-multi .latest-757-race{padding-top:9px;padding-bottom:9px}
 .athletics-multi .latest-757-dense .latest-757-race{padding-top:3px;padding-bottom:3px}
 /* ── Holiday Theme — ambient skin (holiday-theme-v1) ────────────────────────

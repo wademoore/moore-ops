@@ -114,6 +114,8 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         const box = table.getBoundingClientRect();
         return { card: card.className, rows: rows.length, oursLast: rows.at(-1).classList.contains('is-me'),
           textSize: getComputedStyle(table).fontSize,
+          cellPadding: getComputedStyle(rows[0].querySelector('td')).paddingTop,
+          tableGap: box.top - next.bottom,
           rowHeights: rows.map(row => row.getBoundingClientRect().height),
           overflow: card.scrollHeight > card.clientHeight + 1,
           padding: bounds.bottom - note.bottom,
@@ -125,7 +127,11 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         assert.equal(card.rows, card.card.includes('sharks') ? 11 : 8);
         assert.equal(card.oursLast, true);
         assert.equal(card.textSize, '18px');
-        assert.deepEqual(card.rowHeights, Array(card.rows).fill(card.card.includes('sharks') ? (only ? 20 : 26) : (only ? 23 : 27)));
+        if (!only) {
+          assert.equal(card.cellPadding, '1px');
+          if (card.card.includes('flag-football')) assert.equal(card.tableGap, 12);
+        }
+        assert.deepEqual(card.rowHeights, Array(card.rows).fill(card.card.includes('sharks') ? (only ? 20 : 27) : (only ? 23 : 27)));
         assert.equal(card.overflow, false, JSON.stringify({ banner, only, card }));
         assert.ok(card.padding >= 9, JSON.stringify({ banner, only, card }));
         assert.equal(card.overlapsNext, false);
