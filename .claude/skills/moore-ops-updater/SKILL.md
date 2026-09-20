@@ -512,11 +512,9 @@ you have just entered.** The whole value of the check is that `standings.teams` 
 its schedule — so a disagreement between them catches a mis-entered score. Back-filling the
 block from the rows makes the check compare the derivation against itself, and **no test in
 this repository can detect that**. This is the one part of a score entry with no automated
-guard, and it is why the entry is a transcription task rather than a calculation. It matters
-more since the Reviewer round was dropped for score entries — that human pass used to be the
-second thing standing here, and it no longer is. If you cannot see the league's own table,
-leave the block alone: a stale check fixture keeps working, because the comparison is scoped
-to its own `resultsThrough`.
+guard, and it is why the entry is a transcription task rather than a calculation. If you
+cannot see the league's own table, leave the block alone: a stale check fixture keeps
+working, because the comparison is scoped to its own `resultsThrough`.
 
 `digest/sharksParser.js`'s legacy `divisionStanding` field still reads this block, so replacing
 it changes what that field reports. That is expected: it is the point of refreshing a stale
@@ -721,29 +719,14 @@ it.
 2. **Run the suite once, after the edit** —
    `DASHBOARD_BROWSER_PATH=<chrome> npm test`, or `npm run test:baseline`, which resolves a
    browser itself.
-3. **Commit, push the branch, open the pull request.**
+3. **Commit, push the branch, get a Reviewer pass, and open the pull request** — see
+   *Commit and push protocol* below.
 
 **Do not:**
 
 - **Do not run the suite before the change.** A before-and-after pair exists to attribute a
   new failure to a code change. A score entry is not a code change, and one green run after
   it is the whole of the evidence needed.
-- **Do not run a Reviewer round.** There is no logic to review: the diff is scores in columns
-  that already existed, and the suite checks the derivation over them. The `Stop` gate in
-  `.claude/hooks/require-review.mjs` still asks for a verdict — ask Wade to say the override
-  phrase that hook defines (`MOORE-OPS-REVIEW-OVERRIDE`, its `OVERRIDE` constant) rather than
-  running a round to satisfy it.
-
-  ⚠ **This is a deliberate carve-out from `CLAUDE.md`, which says the opposite.** Its Key
-  learnings section says "Reviewer sign-off before push is non-negotiable, regardless of change
-  size or confidence", and its Branching policy says sign-off is required before the pull
-  request is merged. Neither sentence admitted an exception until this one, and each is now
-  followed by a note pointing at it; `CLAUDE.md`'s Key learnings states its scope. If the two
-  documents ever disagree again, the one naming a date and a reason is the later decision.
-
-  Do not extend this to anything but a score entry — the reason it is safe is that the suite
-  now covers the whole of what the diff can break, which is true of no other change this
-  skill authorises.
 - **Do not restate the spec.** The conventions are above. They do not need repeating into the
   pull request, the commit message, or the session.
 - **Do not edit documentation or a season `note`.** `CLAUDE.md`, the files under `docs/` and
@@ -770,9 +753,6 @@ Updater: record flag football Week 2, 2026-09-20
 
 **A feature branch and a pull request are the only route to `main`. Do not push to
 `main` — it cannot succeed, and an earlier version of this section told you to.**
-
-A pure score entry takes the shorter route above: step 5 does not apply to it. Everything
-else follows this.
 
 After every data change:
 
@@ -825,7 +805,6 @@ Updater: add Waves vs EH meet result 2026-06-22
 - [ ] All keys verified against naming conventions (not abbreviated)
 - [ ] All times converted to decimal seconds
 - [ ] Committed to a feature branch, branch pushed, Reviewer passed, PR opened, not merged
-      (a pure score entry skips the Reviewer — see *Recording a matchday is a cheap change*)
 - [ ] No logic files touched
 - [ ] User confirmed the changes look correct
 
