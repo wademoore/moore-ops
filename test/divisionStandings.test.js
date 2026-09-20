@@ -38,33 +38,21 @@ const fallSeason = flagSeasons.find(s => s.seasonId === 'fall-2026');
 /** Deep-clone so a mutation in one case cannot reach another. */
 const clone = value => JSON.parse(JSON.stringify(value));
 
-/** The soccer match the household watched, by number, and the fixture it plays. */
-const SHARKS_AT_ANDERSON_WAVES = 644;   // 2026-09-19, ours, away
-const TSUNAMI_V_PERKINS        = 647;   // 2026-09-19, neither side ours
-
 /**
- * The shipped season with one real, still-unplayed fixture moved INSIDE the
- * published window and given a household-observed result.
+ * The soccer match the household watched, by number, and the fixture it plays.
  *
- * Moving the date is the whole point of the construction. The league's own
- * check fixture is scoped by date, so an unverified result dated after it is
- * already out of the comparison and would prove nothing about the
- * verified-only filter. Dated on the last day the published table covers, the
- * only thing that can keep it out of that comparison is the filter itself —
- * which models the case this is really for: the league posts a matchday's
- * table before every fixture on it has been posted.
- *
- * No fixture is invented and no team string is made up; a real row is re-dated.
- * The scoreline is a test scoreline and is deliberately not written to
- * data/sharks-soccer.json, which this change does not touch.
+ * It is a SHIPPED unverified result, not a constructed one, and it is dated on
+ * the last day the check fixture covers. That is what the cases below are built
+ * on: the league posted its 2026-09-20 table with five of that matchday's six
+ * fixtures on it, so the date scoping cannot keep this one out of the
+ * comparison and only the verified-only filter can. Until 2026-09-19 no such
+ * row existed and these cases had to re-date one to manufacture it.
  */
-function seasonWithUnverifiedInsideWindow(homeScore = 5, awayScore = 0) {
-  const season = clone(soccerSeason);
-  const match = season.divisionSchedule.matches.find(m => m.matchNumber === TSUNAMI_V_PERKINS);
-  match.date = season.standings.resultsThrough;
-  Object.assign(match, { played: true, homeScore, awayScore, unverified: true });
-  return season;
-}
+const SHARKS_AT_ANDERSON_WAVES = 644;   // 2026-09-19, ours, away, unverified
+
+/** Still-unplayed fixtures, for the cases that need a row with no result. */
+const KILLER_BEES_V_PERKINS = 648;      // 2026-09-26, neither side ours
+const SHARKS_V_LIGHTNING    = 652;      // 2026-09-26, ours, home
 
 // ── The published table, reproduced ─────────────────────────────────────────
 
@@ -77,26 +65,26 @@ describe('soccer division table — reproduces the published table', () => {
   // to the fixture's own resultsThrough date, which today happens to sit before
   // every unverified result there could be — and stops doing so the first time
   // the league publishes a table covering a date on which one of our matches is
-  // still household-observed. The two guards are independent and both are
-  // exercised: seasonWithUnverifiedInsideWindow() below puts an unverified
-  // result inside the window, where only this option keeps it out.
+  // still household-observed. That is no longer hypothetical: match 644 is
+  // dated on the check fixture's own resultsThrough, so the date scoping
+  // includes it and only this option keeps it out.
   const VERIFIED_ONLY = { verifiedOnly: true };
 
   // Every column of every row of the league's GotSport table as Wade captured
-  // it on 2026-09-16, in the order the league ranked them. Written out here so
+  // it on 2026-09-20, in the order the league ranked them. Written out here so
   // the assertion compares against the published figures rather than against
   // the data file's own copy of them.
   const PUBLISHED = [
-    ['VA Rush Soccer Club VAR U11B Coastal Strikers', 3, 3, 0, 0, 9, 3, 6, 9],
-    ['VIP United FC TASL B2015/2016 Red (VA)', 2, 2, 0, 0, 19, 3, 16, 6],
-    ['Chesapeake United SC 2015/2016B Reapers', 2, 2, 0, 0, 8, 2, 6, 6],
-    ['Carolina United SA (CUSA) Lightning - U11 B (Daniels)', 2, 1, 1, 0, 12, 4, 8, 3],
-    ['Baystars FC TASL B2015/16 Tsunami', 1, 1, 0, 0, 6, 3, 3, 3],
-    ['Beach FC B2015/16 Brammer Breakers', 2, 1, 1, 0, 6, 12, -6, 3],
-    ['Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)', 1, 0, 1, 0, 2, 4, -2, 0],
-    ['Beach FC B2015/16 Perkins Dragons', 2, 0, 2, 0, 2, 6, -4, 0],
-    ['VA Rush Soccer Club VAR U11B Killer Bees', 2, 0, 2, 0, 3, 9, -6, 0],
+    ['VIP United FC TASL B2015/2016 Red (VA)', 3, 3, 0, 0, 30, 7, 23, 9],
+    ['Chesapeake United SC 2015/2016B Reapers', 3, 3, 0, 0, 16, 4, 12, 9],
+    ['VA Rush Soccer Club VAR U11B Coastal Strikers', 4, 3, 1, 0, 13, 14, -1, 9],
+    ['Carolina United SA (CUSA) Lightning - U11 B (Daniels)', 3, 2, 1, 0, 15, 5, 10, 6],
+    ['Baystars FC TASL B2015/16 Tsunami', 2, 1, 0, 1, 10, 7, 3, 4],
+    ['VA Rush Soccer Club VAR U11B Killer Bees', 3, 1, 2, 0, 7, 11, -4, 3],
+    ['Beach FC B2015/16 Brammer Breakers', 3, 1, 2, 0, 7, 15, -8, 3],
+    ['Beach FC B2015/16 Perkins Dragons', 3, 0, 2, 1, 6, 10, -4, 1],
     ['Tidewater Sharks B2015/16 Premier White', 1, 0, 1, 0, 1, 10, -9, 0],
+    ['Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)', 3, 0, 3, 0, 6, 16, -10, 0],
     ['Beach FC B2015/16 Anderson Waves', 2, 0, 2, 0, 3, 15, -12, 0],
   ];
 
@@ -116,8 +104,8 @@ describe('soccer division table — reproduces the published table', () => {
 
   it('the check fixture is dated and names where it came from', () => {
     const { standings } = soccerSeason;
-    assert.equal(standings.asOf, '2026-09-16');
-    assert.equal(standings.resultsThrough, '2026-09-12');
+    assert.equal(standings.asOf, '2026-09-20');
+    assert.equal(standings.resultsThrough, '2026-09-19');
     assert.match(standings.source, /GotSport/);
     assert.match(standings.source, /[Cc]heck fixture/);
   });
@@ -141,10 +129,14 @@ describe('soccer division table — reproduces the published table', () => {
     assert.deepEqual(table.rows.map(r => r.rankShared), Array(11).fill(false));
   });
 
-  it('reports the date of the latest recorded result and that no score is missing behind it', () => {
+  it('reports the date of the latest recorded result and counts the one score missing behind it', () => {
     const table = buildSoccerDivisionTable(seasonAsOfCheckFixture(), VERIFIED_ONLY);
-    assert.equal(table.asOfDate, '2026-09-12');
-    assert.equal(table.unpostedCount, 0);
+    assert.equal(table.asOfDate, '2026-09-19');
+    // Match 644, the one fixture of that matchday the league has not posted.
+    // Under the verified-only derivation it is not a result at all, so it is
+    // exactly what unpostedCount is for — and the league's own table says the
+    // same thing by leaving it out.
+    assert.equal(table.unpostedCount, 1);
     assert.equal(table.unverifiedCount, 0, 'a verified-only derivation counts no unverified result, by construction');
     assert.match(table.source, /derived from recorded results/);
     assert.equal(table.divisionLabel, 'TASL U11 Boys Sky Division');
@@ -154,14 +146,14 @@ describe('soccer division table — reproduces the published table', () => {
     // The guarantee the case is built for. A result recorded after the check
     // fixture's date must not change what that fixture is compared against.
     const season = clone(soccerSeason);
-    const later = season.divisionSchedule.matches.find(m => m.date > '2026-09-12');
+    const later = season.divisionSchedule.matches.find(m => m.date > '2026-09-19');
     Object.assign(later, { played: true, homeScore: 7, awayScore: 0 });
 
     const whole = buildSoccerDivisionTable(season);
-    assert.notEqual(whole.asOfDate, '2026-09-12');
+    assert.notEqual(whole.asOfDate, '2026-09-19');
 
     const asOf = clone(season);
-    asOf.divisionSchedule.matches = asOf.divisionSchedule.matches.filter(m => m.date <= '2026-09-12');
+    asOf.divisionSchedule.matches = asOf.divisionSchedule.matches.filter(m => m.date <= '2026-09-19');
     const table = buildSoccerDivisionTable(asOf, VERIFIED_ONLY);
     assert.deepEqual(
       table.rows.map(r => [r.name, r.played, r.wins, r.losses, r.drawn, r.scoreFor, r.scoreAgainst, r.scoreDifference, r.leaguePoints]),
@@ -174,7 +166,7 @@ describe('soccer division table — reproduces the published table', () => {
     const mine = table.rows.filter(r => r.isMe);
     assert.equal(mine.length, 1);
     assert.equal(mine[0].teamId, soccerSeason.myTeamId);
-    assert.equal(mine[0].rank, 10);
+    assert.equal(mine[0].rank, 9);
     assert.equal(mine[0].coach, soccerSeason.team.headCoach);
   });
 });
@@ -191,45 +183,43 @@ describe('soccer — a household-observed result counts for display, never for t
   // reproduces the league's figures, and a shared constant that both the
   // subject and the oracle drifted through together would not show that.
   const PUBLISHED_ORDER = [
-    'VA Rush Soccer Club VAR U11B Coastal Strikers',
     'VIP United FC TASL B2015/2016 Red (VA)',
     'Chesapeake United SC 2015/2016B Reapers',
+    'VA Rush Soccer Club VAR U11B Coastal Strikers',
     'Carolina United SA (CUSA) Lightning - U11 B (Daniels)',
     'Baystars FC TASL B2015/16 Tsunami',
-    'Beach FC B2015/16 Brammer Breakers',
-    'Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)',
-    'Beach FC B2015/16 Perkins Dragons',
     'VA Rush Soccer Club VAR U11B Killer Bees',
+    'Beach FC B2015/16 Brammer Breakers',
+    'Beach FC B2015/16 Perkins Dragons',
     'Tidewater Sharks B2015/16 Premier White',
+    'Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)',
     'Beach FC B2015/16 Anderson Waves',
   ];
 
   const rankOf = (table, shortName) => table.rows.find(r => r.shortName === shortName).rank;
 
   it('moves a team up the displayed table, and leaves the published-table check where it was', () => {
-    // The Tsunami beat the Perkins Dragons on the last day the league's table
-    // covers, and the league has not posted it. Six points with a goal
-    // difference of eight puts them third on the wall; the league still has
-    // them fifth, and the check has to agree with the league.
-    const season = seasonWithUnverifiedInsideWindow(5, 0);
+    // We beat the Anderson Waves 2-0 on the last day the league's table
+    // covers, and the league has not posted it. Three points with a goal
+    // difference of minus seven puts us seventh on the wall; the league still
+    // has us ninth, and the check has to agree with the league.
+    const displayed = buildSoccerDivisionTable(soccerSeason);
+    const checked   = buildSoccerDivisionTable(soccerSeason, { verifiedOnly: true });
 
-    const displayed = buildSoccerDivisionTable(season);
-    const checked   = buildSoccerDivisionTable(season, { verifiedOnly: true });
+    assert.equal(rankOf(displayed, 'Tidewater Sharks'), 7);
+    assert.equal(rankOf(checked,   'Tidewater Sharks'), 9);
 
-    assert.equal(rankOf(displayed, 'Tsunami'), 3);
-    assert.equal(rankOf(checked,   'Tsunami'), 5);
-
-    // Not only their own row: the teams they overtook move too, which is what
+    // Not only our own row: the teams we overtook move too, which is what
     // says the result was tallied rather than merely annotated.
-    assert.equal(rankOf(displayed, 'Reapers'),   4);
-    assert.equal(rankOf(checked,   'Reapers'),   3);
-    assert.equal(rankOf(displayed, 'Lightning'), 5);
-    assert.equal(rankOf(checked,   'Lightning'), 4);
+    assert.equal(rankOf(displayed, 'Brammer Breakers'), 8);
+    assert.equal(rankOf(checked,   'Brammer Breakers'), 7);
+    assert.equal(rankOf(displayed, 'Perkins Dragons'),  9);
+    assert.equal(rankOf(checked,   'Perkins Dragons'),  8);
 
     // And the beaten side really was tallied against, not just skipped.
     assert.deepEqual(
-      [displayed.rows.find(r => r.shortName === 'Perkins Dragons').played,
-       checked.rows.find(r => r.shortName === 'Perkins Dragons').played],
+      [displayed.rows.find(r => r.shortName === 'Anderson Waves').played,
+       checked.rows.find(r => r.shortName === 'Anderson Waves').played],
       [3, 2],
     );
   });
@@ -237,26 +227,27 @@ describe('soccer — a household-observed result counts for display, never for t
   it('the published-table check still reproduces the published table exactly, from verified results alone', () => {
     // The sharp case for the filter: the unverified result is dated INSIDE the
     // window the check fixture covers, so the date scoping cannot exclude it
-    // and the verified-only derivation is the only thing that can.
-    const checked = buildSoccerDivisionTable(seasonWithUnverifiedInsideWindow(5, 0), { verifiedOnly: true });
+    // and the verified-only derivation is the only thing that can. Since
+    // 2026-09-19 the shipped file supplies that case directly.
+    const checked = buildSoccerDivisionTable(soccerSeason, { verifiedOnly: true });
 
     assert.equal(checked.status, STANDINGS_STATUS.AVAILABLE);
     assert.deepEqual(checked.rows.map(r => r.name), PUBLISHED_ORDER);
     assert.deepEqual(checked.rows.map(r => r.rank), [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
     assert.deepEqual(checked.rows.map(r => r.rankShared), Array(11).fill(false));
 
-    // Every figure, not only the order. The league's published table for the
-    // Tsunami and the Dragons is what it was before the household watched
+    // Every figure, not only the order. The league's published table for us
+    // and for the Anderson Waves is what it was before the household watched
     // anything.
-    const tsunami = checked.rows.find(r => r.shortName === 'Tsunami');
-    const dragons = checked.rows.find(r => r.shortName === 'Perkins Dragons');
+    const sharks = checked.rows.find(r => r.shortName === 'Tidewater Sharks');
+    const waves  = checked.rows.find(r => r.shortName === 'Anderson Waves');
     assert.deepEqual(
-      [tsunami.played, tsunami.wins, tsunami.losses, tsunami.drawn, tsunami.scoreFor, tsunami.scoreAgainst, tsunami.scoreDifference, tsunami.leaguePoints],
-      [1, 1, 0, 0, 6, 3, 3, 3],
+      [sharks.played, sharks.wins, sharks.losses, sharks.drawn, sharks.scoreFor, sharks.scoreAgainst, sharks.scoreDifference, sharks.leaguePoints],
+      [1, 0, 1, 0, 1, 10, -9, 0],
     );
     assert.deepEqual(
-      [dragons.played, dragons.wins, dragons.losses, dragons.drawn, dragons.scoreFor, dragons.scoreAgainst, dragons.scoreDifference, dragons.leaguePoints],
-      [2, 0, 2, 0, 2, 6, -4, 0],
+      [waves.played, waves.wins, waves.losses, waves.drawn, waves.scoreFor, waves.scoreAgainst, waves.scoreDifference, waves.leaguePoints],
+      [2, 0, 2, 0, 3, 15, -12, 0],
     );
   });
 
@@ -267,9 +258,9 @@ describe('soccer — a household-observed result counts for display, never for t
     // case is here so adding results to the file stays safe rather than
     // becoming a thing anyone has to remember.
     const season = clone(soccerSeason);
-    const published = season.divisionSchedule.matches.find(m => m.matchNumber === TSUNAMI_V_PERKINS);
+    const published = season.divisionSchedule.matches.find(m => m.matchNumber === KILLER_BEES_V_PERKINS);
     Object.assign(published, { played: true, homeScore: 7, awayScore: 0 });
-    const watched = season.divisionSchedule.matches.find(m => m.matchNumber === SHARKS_AT_ANDERSON_WAVES);
+    const watched = season.divisionSchedule.matches.find(m => m.matchNumber === SHARKS_V_LIGHTNING);
     Object.assign(watched, { played: true, homeScore: 2, awayScore: 3, unverified: true });
 
     const asOf = clone(season);
@@ -277,32 +268,39 @@ describe('soccer — a household-observed result counts for display, never for t
     const checked = buildSoccerDivisionTable(asOf, { verifiedOnly: true });
 
     assert.deepEqual(checked.rows.map(r => r.name), PUBLISHED_ORDER);
-    assert.equal(checked.asOfDate, '2026-09-12');
+    assert.equal(checked.asOfDate, '2026-09-19');
     assert.equal(checked.unverifiedCount, 0);
   });
 
   it('the date the displayed table reflects accounts for an unverified result', () => {
     // The wall's complaint the marker exists to answer: a result the household
     // watched is the latest thing that happened, so it is what asOfDate names.
+    //
+    // The shipped unverified result shares its date with five published ones,
+    // so it cannot show this on its own — a later household-observed result is
+    // what separates the two dates.
     const season = clone(soccerSeason);
-    const watched = season.divisionSchedule.matches.find(m => m.matchNumber === SHARKS_AT_ANDERSON_WAVES);
+    const watched = season.divisionSchedule.matches.find(m => m.matchNumber === SHARKS_V_LIGHTNING);
     Object.assign(watched, { played: true, homeScore: 2, awayScore: 3, unverified: true });
 
-    assert.equal(buildSoccerDivisionTable(soccerSeason).asOfDate, '2026-09-12');
-    assert.equal(buildSoccerDivisionTable(season).asOfDate, '2026-09-19');
-    assert.equal(buildSoccerDivisionTable(season, { verifiedOnly: true }).asOfDate, '2026-09-12');
+    assert.equal(buildSoccerDivisionTable(soccerSeason).asOfDate, '2026-09-19');
+    assert.equal(buildSoccerDivisionTable(season).asOfDate, '2026-09-26');
+    assert.equal(buildSoccerDivisionTable(season, { verifiedOnly: true }).asOfDate, '2026-09-19');
 
     // And our own row carries it, which is the whole reason for the change.
     const mine = buildSoccerDivisionTable(season).rows.find(r => r.isMe);
-    assert.deepEqual([mine.played, mine.wins, mine.scoreFor, mine.scoreAgainst], [2, 1, 4, 12]);
+    assert.deepEqual([mine.played, mine.wins, mine.scoreFor, mine.scoreAgainst], [3, 1, 5, 13]);
   });
 
   it('a season with no unverified result is the table it was before the marker was read', () => {
-    // Nothing in the shipped file carries the marker, so the displayed table
-    // and the verified-only derivation are the same table in every respect —
-    // which is what says this change is inert on data that does not use it.
-    const plain = buildSoccerDivisionTable(soccerSeason);
-    assert.deepEqual(buildSoccerDivisionTable(soccerSeason, { verifiedOnly: true }), plain);
+    // With the shipped file's one marker cleared, the displayed table and the
+    // verified-only derivation are the same table in every respect — which is
+    // what says this change is inert on data that does not use it.
+    const posted = clone(soccerSeason);
+    delete posted.divisionSchedule.matches.find(m => m.matchNumber === SHARKS_AT_ANDERSON_WAVES).unverified;
+
+    const plain = buildSoccerDivisionTable(posted);
+    assert.deepEqual(buildSoccerDivisionTable(posted, { verifiedOnly: true }), plain);
     assert.equal(plain.unverifiedCount, 0);
 
     // Additive: one key added and nothing else renamed, removed or reordered
@@ -313,14 +311,9 @@ describe('soccer — a household-observed result counts for display, never for t
       'rows', 'source', 'sport', 'status', 'unpostedCount',
     ]);
 
-    // Clearing the marker from a season that has one gives back exactly the
-    // table that season would have had with the result published all along.
-    const watched = seasonWithUnverifiedInsideWindow(5, 0);
-    const posted = clone(watched);
-    delete posted.divisionSchedule.matches.find(m => m.matchNumber === TSUNAMI_V_PERKINS).unverified;
-    const asPosted = buildSoccerDivisionTable(posted);
-    assert.equal(asPosted.unverifiedCount, 0);
-    assert.deepEqual(asPosted.rows, buildSoccerDivisionTable(watched).rows);
+    // Clearing the marker gives back exactly the table that season would have
+    // had with the result published all along — same rows, one fewer caveat.
+    assert.deepEqual(plain.rows, buildSoccerDivisionTable(soccerSeason).rows);
   });
 });
 
@@ -328,14 +321,14 @@ describe('soccer — a household-observed result counts for display, never for t
 
 describe('soccer — a fixture with no result and a fixture with an unverified one are different things', () => {
   /**
-   * The shipped season with two fixtures moved inside the published window:
-   * one left unplayed, one given a household-observed result. Both are dated
-   * on the same day, so neither count can be reached by a date rule and only
-   * the presence of a result separates them.
+   * The shipped season — whose match 644 already carries a household-observed
+   * result — with one still-unplayed fixture moved inside the published window
+   * alongside it. Both are then dated on the same day, so neither count can be
+   * reached by a date rule and only the presence of a result separates them.
    */
   function seasonWithOneOfEach() {
-    const season = seasonWithUnverifiedInsideWindow(5, 0);
-    const pending = season.divisionSchedule.matches.find(m => m.matchNumber === SHARKS_AT_ANDERSON_WAVES);
+    const season = clone(soccerSeason);
+    const pending = season.divisionSchedule.matches.find(m => m.matchNumber === SHARKS_V_LIGHTNING);
     pending.date = season.standings.resultsThrough;
     return season;
   }
@@ -351,14 +344,17 @@ describe('soccer — a fixture with no result and a fixture with an unverified o
     // recorded has no result to be unconfirmed, so it is unposted — the one
     // case where reading the marker on its own would conflate the two counts.
     const season = clone(soccerSeason);
-    const pending = season.divisionSchedule.matches.find(m => m.matchNumber === SHARKS_AT_ANDERSON_WAVES);
+    const pending = season.divisionSchedule.matches.find(m => m.matchNumber === SHARKS_V_LIGHTNING);
     pending.date = season.standings.resultsThrough;
     pending.unverified = true;
 
+    // The 1 is match 644 alone — the shipped household-observed result, which
+    // does have a score. The row marked here adds nothing to that count and
+    // lands in the other one instead.
     const table = buildSoccerDivisionTable(season);
-    assert.equal(table.unverifiedCount, 0);
+    assert.equal(table.unverifiedCount, 1);
     assert.equal(table.unpostedCount, 1);
-    assert.equal(table.rows.find(r => r.isMe).played, 1, 'and it is certainly not tallied');
+    assert.equal(table.rows.find(r => r.isMe).played, 2, 'and it is certainly not tallied');
   });
 
   it('under the verified-only derivation the unverified result becomes an unposted one', () => {
@@ -950,10 +946,10 @@ describe('preseason and unavailable stay distinguishable', () => {
 
 describe('the parsers hand the table up', () => {
   it('parseSharks returns the derived table for the shipped season', () => {
-    const parsed = parseSharks({ seasons: [soccerSeason] }, new Date('2026-09-16T12:00:00'));
+    const parsed = parseSharks({ seasons: [soccerSeason] }, new Date('2026-09-20T12:00:00'));
     assert.equal(parsed.divisionTable.sport, 'soccer');
     assert.equal(parsed.divisionTable.status, STANDINGS_STATUS.AVAILABLE);
-    assert.equal(parsed.divisionTable.asOfDate, '2026-09-12');
+    assert.equal(parsed.divisionTable.asOfDate, '2026-09-19');
   });
 
   it('parseSharks reports an unavailable table rather than nothing when there is no data', () => {
@@ -1044,7 +1040,7 @@ describe('parseSharks — a result is attributed only to a fixture with exactly 
 
   it('leaves the shipped data unchanged — no row there names us twice or not at all', () => {
     const parsed = parseSharks({ seasons: [soccerSeason] }, REF);
-    assert.deepEqual(parsed.seasonRecord, { wins: 0, losses: 1, ties: 0 });
-    assert.equal(parsed.lastResult.date, '2026-09-12');
+    assert.deepEqual(parsed.seasonRecord, { wins: 1, losses: 1, ties: 0 });
+    assert.equal(parsed.lastResult.date, '2026-09-19');
   });
 });
