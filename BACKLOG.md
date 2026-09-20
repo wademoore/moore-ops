@@ -63,11 +63,28 @@ than a cap: for this one it falls between 54 and 55 characters. 41, 45 and 53
 characters all render one line and leave 15.59px below the note; 55 and 58 wrap
 and leave −6.41px.
 
-Both conditions are reachable together. The longest opponent string that can
-reach this line is the match-row alias `Carolina United (CUSA) Lightning - U11B
-(Daniels)` (49 characters; the canonical name in `divisionTeams` is longer but
-is not what `sharksLastResult` is built from), and we play them in fixture 652 on
-2026-09-26 — which yields the 58-character line above.
+Both conditions are reachable together. The string comes from the match row, not
+from `divisionTeams` — `sharksParser.js` takes `homeTeam`/`awayTeam` verbatim and
+`athleticsParser.js` composes `${result} ${a}–${b} vs ${opponent}`, a 9-character
+prefix, or 10 with a double-digit score. Do not take the figures below on trust;
+re-derive them, because a first version of this paragraph named the wrong fixture
+as the worst case:
+
+```
+node -e '
+const s=JSON.parse(require("fs").readFileSync("data/sharks-soccer.json","utf8")).seasons[0];
+const ours=n=>/Tidewater Sharks/i.test(String(n||""));
+console.log(s.divisionSchedule.matches
+  .filter(m=>ours(m.homeTeam)!==ours(m.awayTeam))
+  .map(m=>({d:m.date,n:m.matchNumber,o:ours(m.homeTeam)?m.awayTeam:m.homeTeam}))
+  .sort((a,b)=>b.o.length-a.o.length).slice(0,3)
+  .map(r=>`${r.o.length}  ${r.d}  #${r.n}  ${r.o}`).join("\n"));'
+```
+
+As of 2026-09-20 that reports `Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)`
+at 50 characters (match 635, 2026-10-17) ahead of `Carolina United (CUSA)
+Lightning - U11B (Daniels)` at 49 (match 652, 2026-09-26). So the worst reachable
+line is **59–60** characters and the earliest one that wraps is the 58 above.
 
 `unpostedCount` goes above zero when a fixture dated on or before the latest
 recorded result carries no score at all. **Not** when a result is marked

@@ -155,15 +155,17 @@ longer is, and it is no longer possible by accident. Three layers stand between 
   word `main`.
 
 The Reviewer gate is unchanged in substance and moved in position: Reviewer sign-off is still
-required before the pull request is merged (open it, or mark it ready, only after the pass)
-— with **one carve-out added 2026-09-20 for a pure score entry**, stated in full in Key
-learnings below and in `.claude/skills/moore-ops-updater/SKILL.md`. The pointer is here because
-this sentence reads unqualified on its own, and a session reaching it first would not know the
-exception exists,
+required before the pull request is merged (open it, or mark it ready, only after the pass),
 and Reviewer checklist item 7 now expects a pushed feature branch with a PR open or ready —
 not a pushed `main`. Pushing a feature branch is not a delivery; merging is. CI runs on every
 pull request, so the "free independent confirmation under UTC" that used to be the argument
 for escalating to a branch is now part of every change rather than a special case.
+
+⚠ **That sign-off requirement has one carve-out, added 2026-09-20: a pure score entry.** Key
+learnings below scopes it and `.claude/skills/moore-ops-updater/SKILL.md` → *Recording a
+matchday is a cheap change* decides it. Noted here rather than only there because the sentence
+above reads unqualified on its own, and a session reaching it first would not know the
+exception exists.
 
 **Known over-block in the push hook, accepted deliberately.** It matches `\bmain\b` anywhere
 in the command text whenever `git push` also appears, so a compound command that merely
@@ -3630,9 +3632,10 @@ enumerated under test, digest, and render directly to Node. No deployment.
 ⚠ **One carve-out, decided 2026-09-20: a pure score entry.** Writing scores onto fixture rows
 that already exist, marking them `final` or `played`, and — for soccer — replacing the
 `standings` check-fixture block whole: that skips the Reviewer round and the before-baseline
-run. The rule above and the Branching policy's
-"Reviewer sign-off is still required before the pull request is merged" are both stated without
-qualification and now both have this one exception; `.claude/skills/moore-ops-updater/SKILL.md`
+run. It is the only exception to this rule and to the Branching policy's
+"Reviewer sign-off is still required before the pull request is merged"; both sentences now
+carry a pointer to it, because an unqualified one that a session meets first is how an
+exception gets missed. `.claude/skills/moore-ops-updater/SKILL.md`
 → *Recording a matchday is a cheap change* holds the decision, its reasoning and its limits.
 **It extends to nothing else.** What makes it safe is that the suite covers the whole of what
 such a diff can break, which stopped being true of a score entry only when the division

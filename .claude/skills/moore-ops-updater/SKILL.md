@@ -737,8 +737,8 @@ it.
   ⚠ **This is a deliberate carve-out from `CLAUDE.md`, which says the opposite.** Its Key
   learnings section says "Reviewer sign-off before push is non-negotiable, regardless of change
   size or confidence", and its Branching policy says sign-off is required before the pull
-  request is merged. Both are unqualified. `CLAUDE.md` carries the same carve-out, pointing
-  here; if the two ever disagree again, the one naming a date and a reason is the later
+  request is merged. Neither sentence admitted an exception until this one; both now carry a
+  pointer to it, and `CLAUDE.md`'s Key learnings states its scope. if the two ever disagree again, the one naming a date and a reason is the later
   decision. Do not extend this to anything but a score entry — the reason it is safe is that
   the suite now covers the whole of what the diff can break, which is true of no other change
   this skill authorises.
