@@ -22,19 +22,37 @@ let page;
  * records, the latest-result and next-game lines, and the numbers in the table.
  *
  * Before that split this case rendered the shipped files whole, so its geometry
- * moved with the season, and `sharksLastResult` is the field that moves it: past
- * about 41 characters it wraps to a second line, and with the unposted note this
- * case forces on, that pushes the standings past the bottom of the sharks card.
- * The case then reports a failure about the length of one opponent's name while
- * measuring whether a full division table fits.
+ * moved with the season, and `sharksLastResult` is the field that moves it: long
+ * enough to wrap to a second line, and with the unposted note this case forces
+ * on, it pushes the standings past the bottom of the sharks card. The case then
+ * reports a failure about the length of one opponent's name while measuring
+ * whether a full division table fits.
  *
- * MEASURED, because a first version of this comment got the direction wrong and
- * a Reviewer round caught it. Recording the 2026-09-19 matchday made that string
- * SHORTER, 45 characters to 41 — `L 1–10 vs VIP United TASL B2015/2016 Red (VA)`
- * became `W 2–0 vs Beach FC B2015/16 Anderson Waves`. The 58-character case is
- * `W 2–0 vs Carolina United (CUSA) Lightning - U11B (Daniels)`, which arises from
- * the NEXT matchday (fixture 652, 2026-09-26) and was found by simulating it, not
- * by recording anything. Do not restate either figure without re-deriving it.
+ * MEASURED, and two Reviewer rounds were needed to get the measurement right —
+ * both corrections are recorded here rather than replaced, because this is the
+ * one comment in the file whose whole job is that a figure be checkable.
+ *
+ *   Round 1: recording the 2026-09-19 matchday made the string SHORTER, 45
+ *   characters to 41. `L 1–10 vs VIP United TASL B2015/2016 Red (VA)` became
+ *   `W 2–0 vs Beach FC B2015/16 Anderson Waves`. The first draft said it grew
+ *   41 → 58 and so blamed a past event for a simulated future one.
+ *
+ *   Round 2: the threshold is NOT "about 41 characters", which the round-1
+ *   correction then asserted. `main` itself falsifies it — at 874cb89 this case
+ *   ran on the real 45-character string with the note already forced on and
+ *   already asserting no overflow, and it was green. Binary search over this
+ *   string family puts the wrap between **54 and 55 characters** (54 → 22px,
+ *   one line; 55 → 44px, two), and 41, 45 and 53 all measure 22px.
+ *
+ * The threshold is a RENDERED WIDTH, not a character count, so 55 is a fact
+ * about this string rather than a cap anyone can apply — the same trap
+ * CLAUDE.md records for the event-row accent wash, where a title of repeated
+ * "il " and one of repeated "Wm " differ by 2.5× in the length they reach.
+ *
+ * The 58-character case that actually wraps is
+ * `W 2–0 vs Carolina United (CUSA) Lightning - U11B (Daniels)`, from the NEXT
+ * matchday (fixture 652, 2026-09-26), found by simulating it rather than by
+ * recording anything. Re-derive before restating any of these.
  *
  * The line is pinned at ONE rendered line, which is the state this case has
  * always measured. The two-line-plus-note combination overflows and is covered by
@@ -185,6 +203,12 @@ describe('dashboard v2 2560x1440 layout verification', () => {
           clippedCells: [...table.querySelectorAll('td,th')].some(cell => cell.scrollWidth > cell.clientWidth + 1),
         };
       }));
+      // How many cards were inspected, which nothing asserted: the selector is
+      // `.flag-football-card,.sharks-card`, so a renderer that stopped emitting
+      // the sharks card would leave this loop running once over the flag
+      // football card with every assertion passing. Same shape as the missing
+      // `.result-line` assertion below, one level up.
+      assert.equal(result.length, only ? 1 : 2, JSON.stringify({ banner, only }));
       for (const card of result) {
         assert.equal(card.rows, card.card.includes('sharks') ? 11 : 8);
         assert.equal(card.oursLast, true);

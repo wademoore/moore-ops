@@ -712,6 +712,12 @@ it.
    (*`unverified: true`* for soccer, where the league’s published result is
    authoritative and replaces a household-observed one; *Source precedence when sources
    disagree about the same swim* for swim data). They are what the entry is for.
+
+   ⚠ And for soccer, a fourth: **transcribe the `standings` block from the league’s
+   page, never compute it from the scorelines you have just entered** —
+   *`standings` is a dated check fixture* above says why, and it is the one part of a
+   score entry that **no test in this repository can check**. Restated here because
+   it is the rule a session following this short protocol would otherwise not meet.
 2. **Run the suite once, after the edit** —
    `DASHBOARD_BROWSER_PATH=<chrome> npm test`, or `npm run test:baseline`, which resolves a
    browser itself.

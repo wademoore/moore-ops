@@ -52,21 +52,32 @@ function or section names instead. Added by PR #88.
 ### Fix the sharks card overflow on a two-line latest result
 
 `renderSharksCard()` in `render/dashboard-v2.js` emits `sharksLastResult` in a
-`.result-line`. Past about 41 characters that wraps to a second line, and when
-the division table also shows its `Some scores are not yet posted.` note the
-standings run past the bottom of the card — which is `overflow:hidden`, so the
-last rows are clipped silently rather than spilling visibly.
+`.result-line`. Long enough and it wraps to a second line, and when the division
+table also shows its `Some scores are not yet posted.` note the standings run
+past the bottom of the card — which is `overflow:hidden`, so the last rows are
+clipped silently rather than spilling visibly.
 
-Measured at 2560×1440 in the three-card layout, varying only that string:
-41 chars leaves 15.59px below the note; 58 chars leaves −6.41px.
+Measured at 2560×1440 in the three-card layout, varying only that string. The
+wrap is a rendered WIDTH, so a character count is a fact about one string rather
+than a cap: for this one it falls between 54 and 55 characters. 41, 45 and 53
+characters all render one line and leave 15.59px below the note; 55 and 58 wrap
+and leave −6.41px.
 
-Both conditions are reachable together. The division's longest name is
-`Carolina United SA (CUSA) Lightning - U11 B (Daniels)`, we play them in
-fixture 652 on 2026-09-26, and `unpostedCount` goes above zero whenever a
-matchday is recorded with one fixture the league has not posted — which is what
-`unverified: true` exists for. It is not live as of 2026-09-20.
+Both conditions are reachable together. The longest opponent string that can
+reach this line is the match-row alias `Carolina United (CUSA) Lightning - U11B
+(Daniels)` (49 characters; the canonical name in `divisionTeams` is longer but
+is not what `sharksLastResult` is built from), and we play them in fixture 652 on
+2026-09-26 — which yields the 58-character line above.
 
-`soccerOpponentLabel()` in the same file already shortens that club to
+`unpostedCount` goes above zero when a fixture dated on or before the latest
+recorded result carries no score at all. **Not** when a result is marked
+`unverified: true` — the production path calls `buildSoccerDivisionTable` with no
+options, so an unverified row is a recorded result there and lands in
+`unverifiedCount` instead. An earlier version of this entry said the opposite.
+It is not live as of 2026-09-20: every fixture behind the latest result has a
+score, so the note does not render.
+
+`soccerOpponentLabel()` in the same file already maps that alias to
 `CUSA · Lightning (Daniels)` for the next-game box and is not applied to the
 latest-result line; the asymmetry looks unintended and is the likely fix.
 

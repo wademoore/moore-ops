@@ -48,10 +48,12 @@ const clone = value => JSON.parse(JSON.stringify(value));
  * is written here" guards.
  *
  * The qualifier matters and an earlier wording left it out. Two cases here do
- * assert figures read from the shipped file — the forfeit case pins match 637 at
- * 3–0, and the published-table check reads the league's own columns — and both
- * are deliberate, because neither figure moves when a later matchday is
- * recorded.
+ * assert figures read from the shipped file, and they are deliberate for
+ * different reasons. The forfeit case pins match 637 at 3–0, a played result
+ * that a later matchday cannot move. The published-table check reads the
+ * league's own columns, which DO move every time the check fixture is
+ * refreshed — what holds there is that they move on both sides of the
+ * comparison at once, so no test edit is needed.
  *
  * The split exists because recording one matchday turned thirteen cases in this
  * file red at once, every one of them pinning the data as it stood rather than
@@ -206,10 +208,11 @@ describe('soccer division table — reproduces the published table', () => {
     // ⚠ It does NOT make a genuinely tied published table pass, and a first
     // version of this comment claimed it did — citing a tie at ranks 5 and 6
     // that does not exist (those rows are 4 points and 3 points). A Reviewer
-    // round caught it. On a real tie the deepEqual above fails first: this
+    // round caught it. On a real tie the deepEqual above CAN fail first: this
     // derivation orders a tied group by `teamId` ascending, explicitly as a
     // meaningless-but-deterministic tiebreak, and the league orders it by its
-    // own rule. Do not read this as tie-tolerance it does not have.
+    // own rule — so it fails wherever those two orders differ, which is most
+    // ties but not all. Do not read this as tie-tolerance it does not have.
     const orderingKey = r => `${r.leaguePoints}|${r.scoreDifference}|${r.scoreFor}`;
     table.rows.forEach((row, i) => {
       const previous = table.rows[i - 1];
