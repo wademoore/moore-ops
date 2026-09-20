@@ -26,6 +26,14 @@ open rather than settling it implicitly. Decided in conversation on 2026-09-15.
 document that sessions cannot read, and were not checked against the repo when added.
 Some may already be fixed. Confirm an entry's premise before working on it.
 
+**A score entry keeps the Reviewer round.** The Updater skill's *Recording a
+matchday is a cheap change* section, decided the same day, drops the before-run,
+the restated spec, the documentation edits and the commentary from a score entry;
+its Do list still ends with a Reviewer pass before the pull request is opened.
+What that section makes cheap is the ceremony around the entry, not the review of
+it. Decided in conversation on 2026-09-20. That is a decision taken on that date,
+not a pre-existing convention being written down.
+
 ---
 
 ## Work
