@@ -12,11 +12,88 @@ import { computeFlags } from '../digest/flags.js';
 let browser;
 let page;
 
+/**
+ * The real division rosters, with every figure the two cards print supplied
+ * here rather than read.
+ *
+ * The TEAM NAMES are the real ones on purpose — they are the widest strings the
+ * cards have to fit, so the clipping and overlap checks below are only worth
+ * making against them. Everything a recorded score moves is pinned: the
+ * records, the latest-result and next-game lines, and the numbers in the table.
+ *
+ * Before that split this case rendered the shipped files whole, so its geometry
+ * moved with the season, and `sharksLastResult` is the field that moves it: long
+ * enough to wrap to a second line, and with the unposted note this case forces
+ * on, it pushes the standings past the bottom of the sharks card. The case then
+ * reports a failure about the length of one opponent's name while measuring
+ * whether a full division table fits.
+ *
+ * MEASURED, and two Reviewer rounds were needed to get the measurement right —
+ * both corrections are recorded here rather than replaced, because this is the
+ * one comment in the file whose whole job is that a figure be checkable.
+ *
+ *   Round 1: recording the 2026-09-19 matchday made the string SHORTER, 45
+ *   characters to 41. `L 1–10 vs VIP United TASL B2015/2016 Red (VA)` became
+ *   `W 2–0 vs Beach FC B2015/16 Anderson Waves`. The first draft said it grew
+ *   41 → 58 and so blamed a past event for a simulated future one.
+ *
+ *   Round 2: the threshold is NOT "about 41 characters", which the round-1
+ *   correction then asserted. `main` itself falsifies it — at 874cb89 this case
+ *   ran on the real 45-character string with the note already forced on and
+ *   already asserting no overflow, and it was green. Binary search over this
+ *   string family puts the wrap between **54 and 55 characters** (54 → 22px,
+ *   one line; 55 → 44px, two), and 41, 45 and 53 all measure 22px.
+ *
+ * The threshold is a RENDERED WIDTH, not a character count, so 55 is a fact
+ * about this string rather than a cap anyone can apply — the same trap
+ * CLAUDE.md records for the event-row accent wash, where a title of repeated
+ * "il " and one of repeated "Wm " differ by 2.5× in the length they reach.
+ *
+ * The 58-character case that actually wraps is
+ * `W 2–0 vs Carolina United (CUSA) Lightning - U11B (Daniels)`, from the NEXT
+ * matchday (fixture 652, 2026-09-26), found by simulating it rather than by
+ * recording anything. Re-derive before restating any of these.
+ *
+ * The line is pinned at ONE rendered line, which is the state this case has
+ * always measured. The two-line-plus-note combination overflows and is covered by
+ * nothing; it is a renderer margin, recorded in `BACKLOG.md` rather than fixed
+ * here, because `render/` is Codex's under Surface boundaries.
+ */
 function realDivisionAthletics() {
   const read = name => JSON.parse(readFileSync(new URL(`../data/${name}.json`, import.meta.url), 'utf8'));
-  return parseAthleticsDoc(new Date('2026-09-16T19:00:00-04:00'), read('sports-config'),
+  const athletics = parseAthleticsDoc(new Date('2026-09-16T19:00:00-04:00'), read('sports-config'),
     read('flag-football'), read('pb-records'), read('swim-results'), read('waves-season'),
     null, null, null, read('sharks-soccer'));
+
+  Object.assign(athletics, {
+    sharksRecord: '4-3-1',
+    // The real label, not renderSharksCard's 'U11 Premier' fallback: a
+    // geometry case must not measure a string 15 characters shorter than the
+    // one production renders. A recorded score does not move it.
+    sharksDivisionLabel: 'TASL U11 Boys Sky Division',
+    sharksLastResult: 'W 2–0 vs Beach FC B2015/16 Anderson Waves',
+    sharksNextGame: { opponent: 'Carolina United (CUSA) Lightning - U11B (Daniels)',
+      date: '2026-09-26', time: '11:00', homeAway: 'home' },
+    seasonRecord: '3-1-1',
+    seasonLabel: 'Fall 2026',
+    flagTeamName: 'Cowboys',
+    lastResult: 'W 20–6 at Ravens',
+    nextFlagGame: { opponent: 'Bears', date: '2026-09-27', time: '14:00' },
+    thisWeekOpponent: null,
+    thisWeekTime: null,
+  });
+
+  // Two-digit figures throughout, so the widest cell each column can hold is
+  // the one measured.
+  for (const table of [athletics.sharksDivisionTable, athletics.flagFootballDivisionTable]) {
+    table.rows.forEach((row, index) => Object.assign(row, {
+      played: 12, wins: 11 - index, losses: index, drawn: 0,
+      scoreFor: 30 - index, scoreAgainst: 10 + index,
+      scoreDifference: 20 - 2 * index, leaguePoints: table.sport === 'soccer' ? 33 - 3 * index : null,
+      rank: index + 1, rankShared: false,
+    }));
+  }
+  return athletics;
 }
 
 before(async () => {
@@ -112,7 +189,10 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         const note = card.querySelector('.standings-note').getBoundingClientRect();
         const next = card.querySelector('.next-box').getBoundingClientRect();
         const box = table.getBoundingClientRect();
+        const result = card.querySelector('.result-line');
         return { card: card.className, rows: rows.length, oursLast: rows.at(-1).classList.contains('is-me'),
+          resultText: result?.querySelector('b')?.textContent ?? null,
+          resultHeight: result ? Math.round(result.getBoundingClientRect().height) : null,
           textSize: getComputedStyle(table).fontSize,
           cellPadding: getComputedStyle(rows[0].querySelector('td')).paddingTop,
           tableGap: box.top - next.bottom,
@@ -123,9 +203,29 @@ describe('dashboard v2 2560x1440 layout verification', () => {
           clippedCells: [...table.querySelectorAll('td,th')].some(cell => cell.scrollWidth > cell.clientWidth + 1),
         };
       }));
+      // How many cards were inspected, which nothing asserted: the selector is
+      // `.flag-football-card,.sharks-card`, so a renderer that stopped emitting
+      // the sharks card would leave this loop running once over the flag
+      // football card with every assertion passing. Same shape as the missing
+      // `.result-line` assertion below, one level up.
+      assert.equal(result.length, only ? 1 : 2, JSON.stringify({ banner, only }));
       for (const card of result) {
         assert.equal(card.rows, card.card.includes('sharks') ? 11 : 8);
         assert.equal(card.oursLast, true);
+        // The latest-result line is the field whose LENGTH moves this card's
+        // geometry, so the case pins its value — which is worth nothing unless
+        // the value actually reaches the card. A mutation that stopped
+        // rendering the line altogether passed the whole file until this
+        // assertion existed. One rendered line at 22px is the state measured
+        // here in the multi-card layout; a wrapped two-line result is the
+        // uncovered case BACKLOG.md records. The compact single-card layout
+        // hides the line outright (`.card-count-1 .result-line{display:none}`),
+        // which is why the expected height branches — and pinning the 0 says
+        // that hiding is deliberate rather than the line having gone missing.
+        assert.equal(card.resultText, card.card.includes('sharks')
+          ? 'W 2–0 vs Beach FC B2015/16 Anderson Waves'
+          : 'W 20–6 at Ravens');
+        assert.equal(card.resultHeight, only ? 0 : 22, JSON.stringify({ banner, only, card }));
         assert.equal(card.textSize, '18px');
         if (!only) {
           assert.equal(card.cellPadding, '1px');

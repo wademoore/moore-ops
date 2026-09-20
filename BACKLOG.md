@@ -49,6 +49,68 @@ PR #87.
 Line numbers go stale when another commit edits the cited file. Use
 function or section names instead. Added by PR #88.
 
+### Fix the sharks card overflow on a two-line latest result
+
+`renderSharksCard()` in `render/dashboard-v2.js` emits `sharksLastResult` in a
+`.result-line`. Long enough and it wraps to a second line, and when the division
+table also shows its `Some scores are not yet posted.` note the standings run
+past the bottom of the card — which is `overflow:hidden`, so the last rows are
+clipped silently rather than spilling visibly.
+
+Measured at 2560×1440 in the three-card layout, varying only that string. The
+wrap is a rendered WIDTH, so a character count is a fact about one string rather
+than a cap: for this one it falls between 54 and 55 characters. 41, 45 and 53
+characters all render one line and leave 15.59px below the note; 55 and 58 wrap
+and leave −6.41px.
+
+Both conditions are reachable together. The string comes from the match row, not
+from `divisionTeams` — `sharksParser.js` takes `homeTeam`/`awayTeam` verbatim and
+`athleticsParser.js` composes `${result} ${a}–${b} vs ${opponent}`, so the prefix
+is `7 + len(a) + len(b)`: 9 characters at single-digit scores, 10 with one
+double-digit score, 11 with two. Do not take the figures below on trust;
+re-derive them, because a first version of this paragraph named the wrong fixture
+as the worst case. From the repository root:
+
+```bash
+node -e '
+const s=JSON.parse(require("fs").readFileSync("data/sharks-soccer.json","utf8")).seasons[0];
+const ours=n=>/Tidewater Sharks/i.test(String(n||""));
+console.log(s.divisionSchedule.matches
+  .filter(m=>ours(m.homeTeam)!==ours(m.awayTeam))
+  .map(m=>({d:m.date,n:m.matchNumber,o:ours(m.homeTeam)?m.awayTeam:m.homeTeam}))
+  .sort((a,b)=>b.o.length-a.o.length).slice(0,3)
+  .map(r=>`${r.o.length}  ${r.d}  #${r.n}  ${r.o}`).join("\n"));'
+```
+
+As of 2026-09-20 that prints three rows:
+
+```
+50  2026-10-17  #635  Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)
+49  2026-09-26  #652  Carolina United (CUSA) Lightning - U11B (Daniels)
+45  2026-10-17  #658  VA Rush Soccer Club VAR U11B Coastal Strikers
+```
+
+So the worst reachable line is **59 to 61** characters depending on the scores,
+and the earliest one that wraps is the 58 above — match 652, which is also the
+first of these three to be played.
+
+`unpostedCount` goes above zero when a fixture dated on or before the latest
+recorded result carries no score at all. **Not** when a result is marked
+`unverified: true` — the production path calls `buildSoccerDivisionTable` with no
+options, so an unverified row is a recorded result there and lands in
+`unverifiedCount` instead. An earlier version of this entry said the opposite.
+It is not live as of 2026-09-20: every fixture behind the latest result has a
+score, so the note does not render.
+
+`soccerOpponentLabel()` in the same file already maps that alias to
+`CUSA · Lightning (Daniels)` for the next-game box and is not applied to the
+latest-result line; the asymmetry looks unintended and is the likely fix.
+
+Presentation, so Codex's under Surface boundaries. `render/dashboard-v2-layout.test.js`
+→ `fits full real division tables` pins a one-line result and records this limit
+in a comment; nothing covers the two-line-plus-note case. Found while making that
+case independent of live data (PR #123), and raised in its review.
+
 ### Test the flag football + 757 two-card layout
 
 The 757 card footer test covers the two-card layout only as Sharks + 757.
