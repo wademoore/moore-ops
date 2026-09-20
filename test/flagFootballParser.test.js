@@ -267,9 +267,13 @@ describe('parseFlagFootball', () => {
   });
 
   it('a scored playoff or consolation game stays out of the regular-season record', () => {
-    // Not hypothetical: fall-2025 and spring-2026 both ship playoff and
-    // consolation rows that are final and carry two real scores, and fall-2026
-    // has a postseason scheduled. Only `type` keeps them out of the table.
+    // Not hypothetical, and the shape differs by season: fall-2025 ships two
+    // playoff rows AND two consolation rows, all four final and carrying two
+    // real scores; spring-2026 ships three playoff rows and no consolation row
+    // at all, two of the three scored. fall-2026 ships neither — the league has
+    // published its Oct 25 postseason, but every participant is TBD and the
+    // file deliberately records no row rather than inventing teams. So `type`
+    // is what keeps six live scored rows out of a regular-season table. Only `type` keeps them out of the table.
     const postseason = { seasons: [{ ...ID_FIXTURE.seasons[0],
       games: [
         { type: 'regular',     status: 'final', date: '2026-09-20', home: 8009182, away: 8070749, homeScore: 20, awayScore: 6 },

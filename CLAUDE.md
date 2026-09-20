@@ -3023,10 +3023,25 @@ Measured on `claude/standings-test-independence-17yba2`, branched from `origin/m
 warning; here the ref was already current, so `HEAD == merge-base == origin/main`.
 
 **The base was re-measured in this session, after `npm ci` and before any edit: 2884 / 2884 /
-0 / 0, 72066.624206 ms.** That is NOT the 2745 the entry below records — `main` has taken #117
-through #124 since, none of which moved the figure. Re-measure; the run costs less than the
-correction. *(That drift is the failure this section names: three merges changed the count and
-left the floor at `2745+`, which licenses deleting every test they added.)*
+0 / 0, 72066.624206 ms.** That is NOT the 2745 the entry below records, and the gap is larger
+than it looks. That entry was measured on the branch that merged as **#104** (`15e3da5`, whose
+parent is `afe1876` — the base the entry itself names), so **twenty commits have landed since:
+#105 through #124.** Fourteen of them touched a test file, two of those adding a whole new one
+(#111 `test/divisionStandings.test.js`, #113 `render/division-tables.test.js`), and the floor
+sat at `2745+` through all of it — which licensed deleting every test those twenty added. That
+is the drift this section exists to catch, and it ran for twenty commits rather than the
+handful a first draft of this paragraph guessed at. Re-derive the range rather than estimating
+it; neither figure below is arithmetic:
+
+```
+git rev-list --count 15e3da5..608bf70
+git log --oneline 15e3da5..608bf70 -- test/ 'digest/*.test.js' 'render/*.test.js' | wc -l
+```
+
+Both endpoints are pinned SHAs — `15e3da5` is #104 and `608bf70` is this entry's base — so the
+two answers are 20 and 14 permanently, rather than moving with whatever is checked out.
+
+Re-measure the count too; the run costs less than the correction.
 
 This change adds **+5**, across two existing files:
 
