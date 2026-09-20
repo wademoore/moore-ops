@@ -516,8 +516,28 @@ than *whether it's been checked*. `resultSource` was used once, on match 641, an
 removed from that row once the league posted its own confirmation (commit `d70f280`, PR
 #78). As of this writing, zero rows in this file carry either field.
 
-Nothing in `digest/sharksParser.js` or elsewhere reads this key — it is provenance for a
-human re-checking the data later, not an input to any parser.
+**This key is now read, as of 2026-09-19.** The sentence here used to say nothing read it,
+which was true when the convention was written and is not any more — `digest/divisionStandings.js`
+reads it when it derives the soccer division table. What follows is the decision Wade took on
+that date; it governs what you write, and it is not a pre-existing repo-wide convention either.
+
+- **A household-observed result is recorded as unverified, and it counts for display.** It is
+  tallied into the division table, it can move a team's position, and it is the latest result
+  and part of the season record just as a published one would be. Recording it is the point:
+  without the marker the alternative was not recording the match at all, which left the wall
+  showing an older result as the latest.
+- **The league's published result is authoritative.** When the league posts the match, replace
+  the recorded result with the published one — **including when the score differs** — and
+  remove the marker in the same edit. Do not keep both, and do not leave the marker on a row
+  whose score now came from the league.
+- **The published-table check derives from verified results only**, so an unverified result can
+  never make it fail. That is a property of the derivation, not something you have to arrange
+  by choosing what to record.
+
+`digest/sharksParser.js` still does not read the key: `seasonRecord` and `lastResult` count any
+played match either way, which is what makes an unverified result appear in them.
+
+Flag football has no equivalent. Do not write this marker into `data/flag-football.json`.
 
 ```json
 { "matchNumber": 641, "played": true, "homeScore": 1, "awayScore": 10, "unverified": true }

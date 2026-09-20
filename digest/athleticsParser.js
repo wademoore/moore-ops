@@ -213,7 +213,9 @@
  * same reason opheliaLatest757Meet's grouping rules live in
  * digest/latest757Meet.js: one home per contract.
  *
- * The three things worth knowing at this level:
+ * The things worth knowing at this level (this list said "three" until
+ * 2026-09-19, when a fourth was added; a count in the lead-in is one more place
+ * for the file to go stale, so it is gone rather than corrected):
  *
  *   - `status` is 'available', 'preseason' or 'unavailable', and PRESEASON AND
  *     UNAVAILABLE ARE DIFFERENT. Preseason means the data is fine and no result
@@ -223,8 +225,27 @@
  *   - `unpostedCount` is how many fixtures dated on or before `asOfDate` carry
  *     no result, so a consumer can say some scores are not yet posted. The
  *     count is the contract's; the wording is the renderer's.
+ *   - `unverifiedCount` is how many results the table counts that the league
+ *     has not published — the household watched the match and the score was
+ *     recorded ahead of the league posting it. Such a result counts for
+ *     display: it is tallied, it can move a rank, and it sets `asOfDate`. The
+ *     count is what lets a renderer say the table includes something the league
+ *     has not confirmed; again the wording is the renderer's, and no renderer
+ *     reads it today. It is NOT a subset of `unpostedCount` — a fixture with no
+ *     result is unposted, a fixture with an unverified result is not. Null on
+ *     `flagFootballDivisionTable` always: that sport records no verification
+ *     state and gains no unverified concept from this.
  *   - Teams level after the sport's ordering rules SHARE a rank and are marked
  *     `rankShared`. The order they sit in within that group means nothing.
+ *
+ * DECIDED WITH WADE, 2026-09-19 — not a pre-existing repo convention. The
+ * league's published result is authoritative: when it posts the match, the
+ * recorded result is replaced by the published one, score differences
+ * included, and the marker comes off. The check that this derivation
+ * reproduces the league's published table derives from verified results only,
+ * so an unverified result can never make that check fail. The data-side rules
+ * for writing the marker live in the Updater skill; the derivation rules live
+ * in digest/divisionStandings.js with the rest of the field-level contract.
  */
 
 import { isSeasonActive }     from './sportsConfig.js';

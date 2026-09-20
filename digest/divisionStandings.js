@@ -60,6 +60,32 @@
  *    already records it.
  *
  * ─────────────────────────────────────────────────────────────────────────
+ * DECIDED WITH WADE, 2026-09-19 — household-observed soccer results
+ * ─────────────────────────────────────────────────────────────────────────
+ * Also not pre-existing repo convention, and recorded as a decision of its own
+ * date rather than folded into the block above.
+ *
+ * a. A result the household watched but the league has not published is
+ *    recorded with the `unverified` marker data/sharks-soccer.json already
+ *    defines (see the Updater skill, which owns that convention). It COUNTS
+ *    FOR DISPLAY: it is tallied into the table, it can move a team's rank, and
+ *    it sets asOfDate when it is the latest thing recorded.
+ * b. The league's published result is authoritative. When the league posts the
+ *    match, the recorded result is replaced by the published one — including
+ *    when the score differs — and the marker is removed. Nothing here has to
+ *    reconcile the two, because only one is ever recorded at a time.
+ * c. The check that this derivation reproduces the league's published table
+ *    derives from VERIFIED RESULTS ONLY, through the verifiedOnly option on
+ *    buildSoccerDivisionTable. That is what makes "an unverified result can
+ *    never make that check fail" a property of the code rather than a
+ *    coincidence of dates: the check fixture is also date-scoped, so today an
+ *    unverified result happens to fall outside it, but that stops being true
+ *    the first time the league publishes a table covering a date on which one
+ *    of our own matches is still household-observed.
+ * d. Flag football has no unverified concept and gains none. Its builder reads
+ *    no verification field and its table reports unverifiedCount as null.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
  * DivisionTable — the one shape, both sports
  * ─────────────────────────────────────────────────────────────────────────
  * {
@@ -79,6 +105,20 @@
  *   unpostedCount: number|null   Fixtures dated on or before asOfDate carrying
  *                                no result. Null unless available — in
  *                                preseason there is no date to count against.
+ *                                An unverified result IS a result and is never
+ *                                counted here by the displayed table; see
+ *                                unverifiedCount.
+ *   unverifiedCount: number|null Recorded results this table counts that the
+ *                                league has not published — soccer's
+ *                                `unverified` match marker. Null unless
+ *                                available, and ALWAYS null for flag football,
+ *                                which records no verification state at all:
+ *                                the key is present on both sports only so the
+ *                                one shape holds, the same way leaguePoints and
+ *                                winPercentage are null on the sport that does
+ *                                not have them. Zero and null are different
+ *                                answers — zero means the sport records this
+ *                                and none is outstanding.
  *   divisionLabel: string|null
  *   rows:          Row[]         Rank order. Empty ONLY when unavailable: a
  *                                preseason table carries every team at zero.
@@ -169,6 +209,7 @@ export function unavailableTable(sport, reason, detail = null, divisionLabel = n
     asOfDate:      null,
     source,
     unpostedCount: null,
+    unverifiedCount: null,
     divisionLabel: divisionLabel ?? null,
     rows:          [],
   };
@@ -219,11 +260,15 @@ function rankRows(rows, compare) {
  * @param {string|null} spec.divisionLabel
  * @param {string} spec.source
  * @param {Array}  spec.teams     [{ teamId, name, shortName, coach, isMe }]
- * @param {Array}  spec.fixtures  [{ date, hasResult, sides: [{teamId, scored, conceded}] }]
+ * @param {Array}  spec.fixtures  [{ date, hasResult, unverified, sides: [{teamId, scored, conceded}] }]
  * @param {Function} spec.decorate  row => extra fields (leaguePoints/winPercentage)
  * @param {Function} spec.compare   (a, b) => negative when a ranks ahead of b
+ * @param {boolean} [spec.tracksVerification]  Whether the sport records
+ *        whether a result has been published. Only soccer does. When false,
+ *        unverifiedCount is null rather than zero — see the contract above for
+ *        why those are different answers.
  */
-function buildDivisionTable({ sport, divisionLabel, source, teams, fixtures, decorate, compare }) {
+function buildDivisionTable({ sport, divisionLabel, source, teams, fixtures, decorate, compare, tracksVerification = false }) {
   const tallies = new Map(teams.map(team => [keyOf(team.teamId), {
     played: 0, wins: 0, losses: 0, drawn: 0, scoreFor: 0, scoreAgainst: 0,
   }]));
@@ -250,6 +295,30 @@ function buildDivisionTable({ sport, divisionLabel, source, teams, fixtures, dec
   const unpostedCount = asOfDate === null
     ? null
     : fixtures.filter(fixture => !fixture.hasResult && fixture.date <= asOfDate).length;
+
+  // The two counts partition the fixtures this table can say anything about,
+  // and they must never overlap. `hasResult` is what separates them: a fixture
+  // with no result is unposted and is not unverified, because there is no
+  // result there to be unconfirmed; a fixture with an unverified result is
+  // counted here and NOT as unposted, because a result was recorded. A caller
+  // that summed them would be double-counting nothing, which is the property
+  // the tests pin.
+  //
+  // No date filter is needed or wanted. asOfDate is the maximum date over
+  // fixtures that have a result, so every fixture reaching this filter already
+  // sits on or before it. Adding `<= asOfDate` would read as a second rule and
+  // would be dead.
+  //
+  // `fixture.hasResult` here and `hasResult && unverified` where the fixture is
+  // built are a REDUNDANT PAIR, and that is recorded rather than tidied away:
+  // a mutation damaging either one alone leaves the suite green, and only a
+  // two-point mutation damaging both reddens the case that names this rule.
+  // Kept as defence in depth — the fixture flag is the shared core's only view
+  // of verification and should mean what it says on its own — but do not read
+  // either half as individually load-bearing.
+  const unverifiedCount = !tracksVerification || asOfDate === null
+    ? null
+    : fixtures.filter(fixture => fixture.hasResult && fixture.unverified).length;
 
   const bare = teams.map(team => {
     const tally = tallies.get(keyOf(team.teamId));
@@ -280,6 +349,7 @@ function buildDivisionTable({ sport, divisionLabel, source, teams, fixtures, dec
     asOfDate,
     source,
     unpostedCount,
+    unverifiedCount,
     divisionLabel: divisionLabel ?? null,
     rows:          rankRows(bare, compare),
   };
@@ -360,9 +430,24 @@ export function buildSoccerAliasIndex(divisionTeams) {
  * goals for and against, so excluding it from goal difference would make the
  * derivation disagree with the league.
  *
+ * `unverified` IS read, and how it is read differs from `played` on purpose.
+ * `played` is a positive claim about the world and is tested for exactly
+ * `true`, so a stray value cannot promote a half-entered row into a result.
+ * `unverified` is a guard whose whole job is to hold a row OUT of the
+ * published-table comparison, so any marker present honours that and only an
+ * absent or falsy value means published. The two gates fail in opposite
+ * directions because the cost of being wrong points opposite ways.
+ *
  * @param {object|null} season  one season of data/sharks-soccer.json
+ * @param {object}  [options]
+ * @param {boolean} [options.verifiedOnly=false]  Derive from published results
+ *        only, treating an unverified result as no result at all. The default
+ *        is the DISPLAYED table and includes unverified results; the published
+ *        -table check is the one caller that passes true. Deliberately an
+ *        option on this function rather than a second exported builder: one
+ *        derivation with one switch cannot grow two notions of a soccer table.
  */
-export function buildSoccerDivisionTable(season) {
+export function buildSoccerDivisionTable(season, { verifiedOnly = false } = {}) {
   const sport = 'soccer';
   try {
     if (!season) return unavailableTable(sport, STANDINGS_UNAVAILABLE_REASON.NO_SEASON, null, null, SOCCER_SOURCE);
@@ -414,10 +499,16 @@ export function buildSoccerDivisionTable(season) {
       // season disagreeing with no signal is exactly what this refuses.
       if (!DATE_KEY.test(String(match?.date ?? ''))) return fail(STANDINGS_UNAVAILABLE_REASON.MALFORMED_FIXTURE_DATE, String(match?.matchNumber ?? ''));
 
-      const hasResult = match.played === true && isScore(match.homeScore) && isScore(match.awayScore);
+      const unverified = !!match.unverified;
+      const recorded = match.played === true && isScore(match.homeScore) && isScore(match.awayScore);
+      // Under verifiedOnly an unverified result is not a result: it leaves the
+      // tallies, leaves asOfDate, and falls to unpostedCount — which is the
+      // honest answer there, because the league has published no score for it.
+      const hasResult = recorded && !(verifiedOnly && unverified);
       fixtures.push({
         date: match.date,
         hasResult,
+        unverified: hasResult && unverified,
         sides: hasResult
           ? [{ teamId: home, scored: match.homeScore, conceded: match.awayScore },
              { teamId: away, scored: match.awayScore, conceded: match.homeScore }]
@@ -433,6 +524,7 @@ export function buildSoccerDivisionTable(season) {
       fixtures,
       decorate: row => ({ leaguePoints: soccerPoints(row) }),
       compare:  soccerCompare,
+      tracksVerification: true,
     });
   } catch (error) {
     return unavailableTable(sport, STANDINGS_UNAVAILABLE_REASON.DERIVATION_FAILED, error?.message ?? null, null, SOCCER_SOURCE);
@@ -491,6 +583,10 @@ function flagFootballCompare(a, b) {
  *
  * A yet earlier version said the two "can never disagree", which was an
  * unfalsifiable claim about code that already had a gate the other side lacked.
+ *
+ * No verification field is read, and none exists in this sport's data. The
+ * `unverified` marker is soccer's alone, so this table reports unverifiedCount
+ * as null rather than zero — decision (d) of 2026-09-19 above.
  *
  * Identity is the league's numeric team id, falling back to the legacy string
  * abbr for the two older seasons that predate the ids. Never the mascot: this
