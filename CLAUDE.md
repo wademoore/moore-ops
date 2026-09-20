@@ -161,12 +161,6 @@ not a pushed `main`. Pushing a feature branch is not a delivery; merging is. CI 
 pull request, so the "free independent confirmation under UTC" that used to be the argument
 for escalating to a branch is now part of every change rather than a special case.
 
-⚠ **That sign-off requirement has one carve-out, added 2026-09-20: a pure score entry.** Key
-learnings below scopes it and `.claude/skills/moore-ops-updater/SKILL.md` → *Recording a
-matchday is a cheap change* decides it. Noted here rather than only there because the sentence
-above reads unqualified on its own, and a session reaching it first would not know the
-exception exists.
-
 **Known over-block in the push hook, accepted deliberately.** It matches `\bmain\b` anywhere
 in the command text whenever `git push` also appears, so a compound command that merely
 *mentions* `main` is refused: a heredoc quoting the deny rules above, `git log
@@ -3628,22 +3622,6 @@ enumerated under test, digest, and render directly to Node. No deployment.
 - **Champs/Summer Awards history migration: COMPLETE (August 2026).** Full project history: `docs/data-reload/champs-sa-migration-history.md`. Summary: 2024 Champs, 2025 Champs, and 2026 Summer Awards individual + relay results (3,844 individual + 172 relay rows) parsed and loaded into `league-results-history-v2.json`/`relay-results-history-v2.json`. Includes the wrong-file-write incident and correction that led to the current "current vs. archived" guard rail. Legacy files archived to `data/archive/` as part of this project.
 
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
-
-⚠ **One carve-out, decided 2026-09-20: a pure score entry.** Writing scores onto fixture rows
-that already exist, marking them `final` or `played`, and — for soccer — replacing the
-`standings` check-fixture block whole: that skips the Reviewer round and the before-baseline
-run. It is the only exception to this rule and to the Branching policy's
-"Reviewer sign-off is still required before the pull request is merged". Each of those two
-sentences is now followed by a note pointing at this one, because an unqualified sentence that
-a session meets first is how an exception gets missed. `.claude/skills/moore-ops-updater/SKILL.md`
-→ *Recording a matchday is a cheap change* holds the decision, its reasoning and its limits.
-**It extends to nothing else.** What makes it safe is that the suite covers the whole of what
-such a diff can break, which stopped being true of a score entry only when the division
-standings tests were given fixtures they build themselves (PR #123) — before that, recording a
-matchday reddened thirteen cases that were pinning data rather than derivation. The one part of
-a score entry with no automated guard is the standings block, which must be transcribed from
-the league's page and never computed from the scorelines just entered: that is the check the
-dropped Reviewer pass used to be, and SKILL.md says so at the point of entry.
 
 **The corollary is the part worth keeping.** Those three failures sat in this file for
 weeks described as "Chromium-environmental", one section below a correction warning about
