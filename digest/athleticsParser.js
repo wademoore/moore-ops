@@ -191,11 +191,21 @@
  * division table can draw either without knowing which sport it holds. Both
  * are DERIVED from recorded results; neither ingests a published table.
  *
- * Additive and read-only. NO renderer consumes them today. The fields they do
+ * Additive and read-only. render/dashboard-v2.js is the only renderer that
+ * consumes them: renderSharksCard and the flag football card each draw one
+ * through renderDivisionTable, and renderDashboardV2 keys its
+ * has-division-table page class on their status. render/dashboard.js,
+ * render/dashboard-mobile.js and render/email.js name neither field. The
+ * fields they do
  * not replace keep their names, their meanings and their values:
  * `standings` (flag football) and `sharksDivisionStanding` are untouched, so
  * every surface reading those keeps working until it migrates. Retiring them
  * is a later change.
+ *
+ * (This block said "NO renderer consumes them today" until 2026-09-17. It was
+ * true when #111 added these keys and was falsified by the next merge, #113,
+ * which added the renderer and touched neither this file nor digest/builder.js,
+ * where the same claim also stood.)
  *
  * The FIELD-LEVEL CONTRACT — every key, what it holds, and what absent means —
  * lives in the header of digest/divisionStandings.js, which is the module that
