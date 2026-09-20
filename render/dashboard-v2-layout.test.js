@@ -22,16 +22,24 @@ let page;
  * records, the latest-result and next-game lines, and the numbers in the table.
  *
  * Before that split this case rendered the shipped files whole, so its geometry
- * moved with the season. Recording one matchday lengthened `sharksLastResult`
- * from 41 characters to 58, which wraps to a second line and pushed the
- * standings past the bottom of the sharks card — a failure about the length of
- * one opponent's name, reported by a case that is measuring whether a full
- * division table fits.
+ * moved with the season, and `sharksLastResult` is the field that moves it: past
+ * about 41 characters it wraps to a second line, and with the unposted note this
+ * case forces on, that pushes the standings past the bottom of the sharks card.
+ * The case then reports a failure about the length of one opponent's name while
+ * measuring whether a full division table fits.
  *
- * Both lines are pinned at ONE rendered line, which is the state this case has
- * always measured. A two-line latest-result line, combined with the unposted
- * note the case forces on, really does overflow the sharks card; that is a
- * renderer margin, recorded in the pull request rather than fixed here.
+ * MEASURED, because a first version of this comment got the direction wrong and
+ * a Reviewer round caught it. Recording the 2026-09-19 matchday made that string
+ * SHORTER, 45 characters to 41 — `L 1–10 vs VIP United TASL B2015/2016 Red (VA)`
+ * became `W 2–0 vs Beach FC B2015/16 Anderson Waves`. The 58-character case is
+ * `W 2–0 vs Carolina United (CUSA) Lightning - U11B (Daniels)`, which arises from
+ * the NEXT matchday (fixture 652, 2026-09-26) and was found by simulating it, not
+ * by recording anything. Do not restate either figure without re-deriving it.
+ *
+ * The line is pinned at ONE rendered line, which is the state this case has
+ * always measured. The two-line-plus-note combination overflows and is covered by
+ * nothing; it is a renderer margin, recorded in `BACKLOG.md` rather than fixed
+ * here, because `render/` is Codex's under Surface boundaries.
  */
 function realDivisionAthletics() {
   const read = name => JSON.parse(readFileSync(new URL(`../data/${name}.json`, import.meta.url), 'utf8'));
@@ -41,7 +49,10 @@ function realDivisionAthletics() {
 
   Object.assign(athletics, {
     sharksRecord: '4-3-1',
-    sharksDivisionLabel: 'U11 Premier',
+    // The real label, not renderSharksCard's 'U11 Premier' fallback: a
+    // geometry case must not measure a string 15 characters shorter than the
+    // one production renders. A recorded score does not move it.
+    sharksDivisionLabel: 'TASL U11 Boys Sky Division',
     sharksLastResult: 'W 2–0 vs Beach FC B2015/16 Anderson Waves',
     sharksNextGame: { opponent: 'Carolina United (CUSA) Lightning - U11B (Daniels)',
       date: '2026-09-26', time: '11:00', homeAway: 'home' },
@@ -160,7 +171,10 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         const note = card.querySelector('.standings-note').getBoundingClientRect();
         const next = card.querySelector('.next-box').getBoundingClientRect();
         const box = table.getBoundingClientRect();
+        const result = card.querySelector('.result-line');
         return { card: card.className, rows: rows.length, oursLast: rows.at(-1).classList.contains('is-me'),
+          resultText: result?.querySelector('b')?.textContent ?? null,
+          resultHeight: result ? Math.round(result.getBoundingClientRect().height) : null,
           textSize: getComputedStyle(table).fontSize,
           cellPadding: getComputedStyle(rows[0].querySelector('td')).paddingTop,
           tableGap: box.top - next.bottom,
@@ -174,6 +188,20 @@ describe('dashboard v2 2560x1440 layout verification', () => {
       for (const card of result) {
         assert.equal(card.rows, card.card.includes('sharks') ? 11 : 8);
         assert.equal(card.oursLast, true);
+        // The latest-result line is the field whose LENGTH moves this card's
+        // geometry, so the case pins its value — which is worth nothing unless
+        // the value actually reaches the card. A mutation that stopped
+        // rendering the line altogether passed the whole file until this
+        // assertion existed. One rendered line at 22px is the state measured
+        // here in the multi-card layout; a wrapped two-line result is the
+        // uncovered case BACKLOG.md records. The compact single-card layout
+        // hides the line outright (`.card-count-1 .result-line{display:none}`),
+        // which is why the expected height branches — and pinning the 0 says
+        // that hiding is deliberate rather than the line having gone missing.
+        assert.equal(card.resultText, card.card.includes('sharks')
+          ? 'W 2–0 vs Beach FC B2015/16 Anderson Waves'
+          : 'W 20–6 at Ravens');
+        assert.equal(card.resultHeight, only ? 0 : 22, JSON.stringify({ banner, only, card }));
         assert.equal(card.textSize, '18px');
         if (!only) {
           assert.equal(card.cellPadding, '1px');

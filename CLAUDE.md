@@ -3623,6 +3623,20 @@ enumerated under test, digest, and render directly to Node. No deployment.
 
 **Reviewer sign-off before push is non-negotiable, regardless of change size or confidence.** On 2026-08-02, a Coder prompt explicitly instructed a direct-to-main push (skipping Reviewer) for the weeklyPrioritiesParser TZ fix (commit `d10b3df`) — the change was independently verified correct after the fact, but this was a process violation, not a validated shortcut. (Under the Sept 2026 branching policy "push" here means the merge to `main`: pushing a feature branch before review is expected, and is what Reviewer item 7 asks to see.)
 
+⚠ **One carve-out, decided 2026-09-20: a pure score entry.** Writing scores onto fixture rows
+that already exist — and, for soccer, replacing the `standings` check-fixture block whole —
+skips the Reviewer round and the before-baseline run. The rule above and the Branching policy's
+"Reviewer sign-off is still required before the pull request is merged" are both stated without
+qualification and now both have this one exception; `.claude/skills/moore-ops-updater/SKILL.md`
+→ *Recording a matchday is a cheap change* holds the decision, its reasoning and its limits.
+**It extends to nothing else.** What makes it safe is that the suite covers the whole of what
+such a diff can break, which stopped being true of a score entry only when the division
+standings tests were given fixtures they build themselves (PR #123) — before that, recording a
+matchday reddened thirteen cases that were pinning data rather than derivation. The one part of
+a score entry with no automated guard is the standings block, which must be transcribed from
+the league's page and never computed from the scorelines just entered: that is the check the
+dropped Reviewer pass used to be, and SKILL.md says so at the point of entry.
+
 **The corollary is the part worth keeping.** Those three failures sat in this file for
 weeks described as "Chromium-environmental", one section below a correction warning about
 exactly that mistake — a real defect recorded as an environment quirk. A standing set of

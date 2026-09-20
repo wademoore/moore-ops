@@ -49,6 +49,32 @@ PR #87.
 Line numbers go stale when another commit edits the cited file. Use
 function or section names instead. Added by PR #88.
 
+### Fix the sharks card overflow on a two-line latest result
+
+`renderSharksCard()` in `render/dashboard-v2.js` emits `sharksLastResult` in a
+`.result-line`. Past about 41 characters that wraps to a second line, and when
+the division table also shows its `Some scores are not yet posted.` note the
+standings run past the bottom of the card — which is `overflow:hidden`, so the
+last rows are clipped silently rather than spilling visibly.
+
+Measured at 2560×1440 in the three-card layout, varying only that string:
+41 chars leaves 15.59px below the note; 58 chars leaves −6.41px.
+
+Both conditions are reachable together. The division's longest name is
+`Carolina United SA (CUSA) Lightning - U11 B (Daniels)`, we play them in
+fixture 652 on 2026-09-26, and `unpostedCount` goes above zero whenever a
+matchday is recorded with one fixture the league has not posted — which is what
+`unverified: true` exists for. It is not live as of 2026-09-20.
+
+`soccerOpponentLabel()` in the same file already shortens that club to
+`CUSA · Lightning (Daniels)` for the next-game box and is not applied to the
+latest-result line; the asymmetry looks unintended and is the likely fix.
+
+Presentation, so Codex's under Surface boundaries. `render/dashboard-v2-layout.test.js`
+→ `fits full real division tables` pins a one-line result and records this limit
+in a comment; nothing covers the two-line-plus-note case. Found while making that
+case independent of live data (PR #123), and raised in its review.
+
 ### Test the flag football + 757 two-card layout
 
 The 757 card footer test covers the two-card layout only as Sharks + 757.

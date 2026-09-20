@@ -41,10 +41,17 @@ const clone = value => JSON.parse(JSON.stringify(value));
 /**
  * WHAT READS THE SHIPPED FILES, AND WHAT DOES NOT — decision of 2026-09-20.
  *
- * A case that asserts a FIGURE — a rank, a record, a count, a date — builds the
- * season it asserts against. A case that asserts something about the shipped
- * data itself reads the shipped data: the published-table check below, the
- * alias and identity guards, and the "no marker is written here" guards.
+ * A case that asserts a FIGURE THAT A RECORDED SCORE MOVES — a rank, a record,
+ * a count, an as-of date — builds the season it asserts against. A case that
+ * asserts something about the shipped data itself reads the shipped data: the
+ * published-table check below, the alias and identity guards, and the "no marker
+ * is written here" guards.
+ *
+ * The qualifier matters and an earlier wording left it out. Two cases here do
+ * assert figures read from the shipped file — the forfeit case pins match 637 at
+ * 3–0, and the published-table check reads the league's own columns — and both
+ * are deliberate, because neither figure moves when a later matchday is
+ * recorded.
  *
  * The split exists because recording one matchday turned thirteen cases in this
  * file red at once, every one of them pinning the data as it stood rather than
@@ -190,9 +197,19 @@ describe('soccer division table — reproduces the published table', () => {
     // pass even if every `rank` said 1. Ranks rise with position except where
     // the ordering keys genuinely tie, and a shared rank is marked as one.
     //
-    // Stated that way rather than as a literal 1..11 because the league does
-    // number a tie 5 and 6 where this derivation shares a 5, and a tie in a
-    // future published table is newer data, not wrong data.
+    // Written as the rule rather than as a literal 1..11 so the assertion does
+    // not also pin the division's size. On the current table the two are
+    // equivalent: all eleven published (points, goal difference, goals scored)
+    // triples are distinct, so every row takes rank index+1 and no rank is
+    // shared.
+    //
+    // ⚠ It does NOT make a genuinely tied published table pass, and a first
+    // version of this comment claimed it did — citing a tie at ranks 5 and 6
+    // that does not exist (those rows are 4 points and 3 points). A Reviewer
+    // round caught it. On a real tie the deepEqual above fails first: this
+    // derivation orders a tied group by `teamId` ascending, explicitly as a
+    // meaningless-but-deterministic tiebreak, and the league orders it by its
+    // own rule. Do not read this as tie-tolerance it does not have.
     const orderingKey = r => `${r.leaguePoints}|${r.scoreDifference}|${r.scoreFor}`;
     table.rows.forEach((row, i) => {
       const previous = table.rows[i - 1];

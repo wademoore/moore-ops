@@ -379,13 +379,17 @@ Decisions taken on that date, not pre-existing repo practice.
   "AWAY at HOME".** The first team named is `away`, the second is `home`; write each score
   to the matching side.
 
-**Entering a `fall-2026` result no longer reddens anything (2026-09-20).** It used to redden
-two cases in `test/current-season-athletics.test.js` — `season record is 0-0-0 with no games
-played` and `nextFlagGame is the Week 2 fixture, never the Week 1 practice` — because both
-asserted against the shipped file as it stood. Both now strip the scores whose absence they
-are claiming, so they assert the derivation rather than the week the season has reached. A
-red suite after a flag football entry is a finding again, not paperwork. See *Recording a
-matchday is a cheap change* below.
+**Entering a `fall-2026` result reddened two cases, and no longer does (2026-09-20).** They
+are `season record is 0-0-0 with no games played` and `nextFlagGame is the Week 2 fixture,
+never the Week 1 practice`, both in `test/current-season-athletics.test.js`, and both asserted
+against the shipped file as it stood. Both now strip the scores whose absence they are
+claiming, so they assert the derivation rather than the week the season has reached.
+
+Recording the whole 2026-09-20 matchday in a working tree and running the full suite then left
+it green, which is the evidence for the broader claim that nothing else in the suite is pinned
+to this season’s scoreboard. That simulation is not committed, so it is one measurement
+rather than a standing guard: a red suite after a flag football entry is a finding to
+investigate, not a result to assume is expected.
 
 ### Unsupported
 
@@ -501,6 +505,18 @@ together. It used to compare against a copy of the league's figures written insi
 which went stale on every capture. What still fails is what should: a block that disagrees
 with the recorded scorelines, and a half-done refresh that replaces the rows and leaves a
 date behind, because `source` has to name both `asOf` and `resultsThrough`.
+
+⚠ **So TRANSCRIBE this block from the league's page. Never compute it from the scorelines
+you have just entered.** The whole value of the check is that `standings.teams` and
+`divisionSchedule.matches` are two independent readings of GotSport — its standings page and
+its schedule — so a disagreement between them catches a mis-entered score. Back-filling the
+block from the rows makes the check compare the derivation against itself, and **no test in
+this repository can detect that**. This is the one part of a score entry with no automated
+guard, and it is why the entry is a transcription task rather than a calculation. It matters
+more since the Reviewer round was dropped for score entries — that human pass used to be the
+second thing standing here, and it no longer is. If you cannot see the league's own table,
+leave the block alone: a stale check fixture keeps working, because the comparison is scoped
+to its own `resultsThrough`.
 
 `digest/sharksParser.js`'s legacy `divisionStanding` field still reads this block, so replacing
 it changes what that field reports. That is expected: it is the point of refreshing a stale
@@ -691,7 +707,7 @@ it.
 1. **Enter the scores.** Three rules are unchanged and nothing here relaxes any of them:
    **identity** (*`divisionTeams` and `myTeamId`* for soccer, *Identifying the two sides*
    for flag football — the numeric id, never the mascot, and every team string an exact
-   alias); **whole matchdays** (*Entering a week’s results* — every division fixture
+   alias); **whole matchdays** (*Entering a week's results* — every division fixture
    for the week in one pass, never our own game alone); and **source precedence**
    (*`unverified: true`* for soccer, where the league’s published result is
    authoritative and replaces a household-observed one; *Source precedence when sources
@@ -711,6 +727,15 @@ it.
   `.claude/hooks/require-review.mjs` still asks for a verdict — ask Wade to say the override
   phrase that hook defines (`MOORE-OPS-REVIEW-OVERRIDE`, its `OVERRIDE` constant) rather than
   running a round to satisfy it.
+
+  ⚠ **This is a deliberate carve-out from `CLAUDE.md`, which says the opposite.** Its Key
+  learnings section says "Reviewer sign-off before push is non-negotiable, regardless of change
+  size or confidence", and its Branching policy says sign-off is required before the pull
+  request is merged. Both are unqualified. `CLAUDE.md` carries the same carve-out, pointing
+  here; if the two ever disagree again, the one naming a date and a reason is the later
+  decision. Do not extend this to anything but a score entry — the reason it is safe is that
+  the suite now covers the whole of what the diff can break, which is true of no other change
+  this skill authorises.
 - **Do not restate the spec.** The conventions are above. They do not need repeating into the
   pull request, the commit message, or the session.
 - **Do not edit documentation or a season `note`.** `CLAUDE.md`, the files under `docs/` and
