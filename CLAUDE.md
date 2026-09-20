@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2745+ passing with a browser
+- Run npm test after changes — must stay at 2889+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row). **This line and the floor at the end of the current baseline
   entry are one figure in two places — move both or neither.** It has now gone
@@ -3012,7 +3012,65 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 ## Test baseline
 
-### Current baseline — measured Sept 16, 2026 on the flag-football division-schedule branch
+### Current baseline — measured Sept 20, 2026 on the standings-test-coverage branch
+
+| Invocation | tests | pass | fail | cancelled | duration |
+|---|---|---|---|---|---|
+| `npm run test:baseline` (browser resolved) | 2889 | **2889** | **0** | **0** | 70084.368682 ms |
+
+Measured on `claude/standings-test-independence-17yba2`, branched from `origin/main` at
+**`608bf70`**. `git fetch origin main` was run before deriving the base, per the standing
+warning; here the ref was already current, so `HEAD == merge-base == origin/main`.
+
+**The base was re-measured in this session, after `npm ci` and before any edit: 2884 / 2884 /
+0 / 0, 72066.624206 ms.** That is NOT the 2745 the entry below records — `main` has taken #117
+through #124 since, none of which moved the figure. Re-measure; the run costs less than the
+correction. *(That drift is the failure this section names: three merges changed the count and
+left the floor at `2745+`, which licenses deleting every test they added.)*
+
+This change adds **+5**, across two existing files:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/divisionStandings.test.js` | 64 | 67 | +3 |
+| `test/flagFootballParser.test.js` | 55 | 57 | +2 |
+
+Both before-figures were measured on the unmodified tree in this session, via `git stash`.
+2884 + 5 = 2889, and **2889 is the measured figure in the table above rather than that sum** —
+the agreement is reassuring and is not itself evidence.
+
+**No existing test was deleted, skipped, weakened or updated, and none needed to be.** The change
+is purely additive — `git diff --numstat` over the two files reports `71 0` and `42 0`, zero
+deletions in both, and no `.skip` or `.todo` appears anywhere in the diff. Five `it()` lines are
+added and none removed, which is checkable without trusting this prose:
+
+```
+git diff --numstat 608bf70..HEAD -- 'test/'
+git diff 608bf70..HEAD -- 'test/' | grep -E '^[-+].*\bit\('
+```
+
+**Why the five exist.** They cover flag football derivation that **no shipped data can reach**:
+every fall-2026 game is still `scheduled`, so every division row is 0-0-0 and the ordering is
+degenerate. A mutation harness over the derivation scored **13/18** before them — the five
+survivors were the win-percentage primary sort key, the `played === 0` special case, and the
+`status === 'final'` and `type === 'regular'` eligibility gates in both
+`flagFootballParser.js` and `divisionStandings.js`. It scores **18/18** after. The harness is
+not committed; it lived in the session scratchpad, so those figures are testimony rather than
+evidence, the same standing this file gives the latest-757-meet harnesses.
+
+Exact invocation:
+
+```bash
+npm run test:baseline
+```
+
+**Coder mode must keep `npm test` at 2889+ with no failures once a browser resolves.**
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
+quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
+prevent.
+
+### Superseded baseline — measured Sept 16, 2026 on the flag-football division-schedule branch
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
@@ -3135,7 +3193,10 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2745+ with no failures once a browser resolves.**
+⚠ **This entry's Coder-mode floor line was removed when the entry below was superseded**, per the
+rule at the end of the Sept 11 entry: a floor of `2745+` licenses deleting every test added since.
+The floor lives in exactly two places — the CODER MODE bullet and the end of the **current**
+baseline entry.
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
 quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to

@@ -913,6 +913,77 @@ describe('flag football — recorded results', () => {
   });
 });
 
+describe('flag football — what orders the table', () => {
+  // Nothing in the shipped fall-2026 season can exercise any of this: every
+  // game is still `scheduled`, so every row is 0-0-0 and the ordering is
+  // degenerate. These are the rules that start doing real work on the first
+  // score week, so each case builds the records it is about.
+
+  it('win percentage outranks point differential, not the other way round', () => {
+    // Moore win one game by a single point. Watkins win one by fourteen and
+    // lose one by a point, so they hold much the better differential and much
+    // the worse record. The record is what must decide it.
+    const season = flagSeasonWith([
+      ['2026-09-20', 8070749, 6, MOORE, 7],
+      ['2026-09-20', 8108154, 0, WATKINS, 14],
+      ['2026-09-27', WATKINS, 0, 8117740, 1],
+    ]);
+    const table = buildFlagFootballDivisionTable(season);
+    const mine = table.rows.find(r => r.teamId === MOORE);
+    const theirs = table.rows.find(r => r.teamId === WATKINS);
+
+    // The premise: they really are the wrong way round on differential.
+    assert.equal(mine.winPercentage, 1);
+    assert.equal(theirs.winPercentage, 0.5);
+    assert.ok(theirs.scoreDifference > mine.scoreDifference,
+      'the case is only meaningful while the worse record holds the better differential');
+
+    assert.ok(mine.rank < theirs.rank,
+      'the better record ranks ahead however much the differential favours the other team');
+  });
+
+  it('a team that has not played ranks below one with a losing record, not above it', () => {
+    // Watkins are 1-1 on a negative differential. Five teams have played
+    // nothing at all. An unplayed team is 0, level with a team that has lost
+    // everything — never level with one that has won.
+    const season = flagSeasonWith([
+      ['2026-09-20', 8108154, 6, WATKINS, 20],
+      ['2026-09-27', WATKINS, 0, 8117740, 20],
+    ]);
+    const table = buildFlagFootballDivisionTable(season);
+    const theirs = table.rows.find(r => r.teamId === WATKINS);
+    const unplayed = table.rows.filter(r => r.played === 0);
+
+    assert.ok(unplayed.length >= 2, 'the case needs teams that have played nothing');
+    assert.deepEqual([...new Set(unplayed.map(r => r.winPercentage))], [0],
+      'no games played is nought, never a perfect record');
+    assert.deepEqual({ w: theirs.wins, l: theirs.losses }, { w: 1, l: 1 });
+    assert.ok(theirs.scoreDifference < 0,
+      'and it is only meaningful while their differential is worse than an unplayed nought');
+
+    for (const row of unplayed) {
+      assert.ok(theirs.rank < row.rank,
+        `a 1-1 record must rank ahead of unplayed ${row.shortName}`);
+    }
+  });
+
+  it('a fixture carrying two scores is not a result until it is final', () => {
+    // The score-week data-entry slip, at the table this time: the numbers are
+    // entered and the status is left alone.
+    const season = flagSeasonWith([['2026-09-20', 8070749, 6, MOORE, 20]]);
+    const later = season.games.find(g => g.date === '2026-09-27' && g.home === MOORE);
+    assert.ok(later && later.status !== 'final', 'the fixture to slip must still be scheduled');
+    Object.assign(later, { homeScore: 40, awayScore: 0 });
+
+    const table = buildFlagFootballDivisionTable(season);
+    const mine = table.rows.find(r => r.teamId === MOORE);
+    assert.equal(mine.played, 1, 'the scheduled row must not be tallied');
+    assert.deepEqual([mine.scoreFor, mine.scoreAgainst], [20, 6]);
+    assert.equal(table.asOfDate, '2026-09-20',
+      'nor may it drag the as-of date forward to a week the league has not posted');
+  });
+});
+
 describe('shared ranks — flag football', () => {
   it('level teams share a rank and the next rank skips past the whole group', () => {
     // Two teams at 1-0 with identical differentials, one at 0-1, the rest
