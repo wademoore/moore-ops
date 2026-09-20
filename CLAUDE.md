@@ -4336,19 +4336,22 @@ New parked work is recorded in `BACKLOG.md` at the repository root, not here.
   running headless in this sandbox had `git fetch origin main` and an env-prefixed
   `node --test` refused by the allowlist. See "The gate" → "Read-only role hooks live in
   agent frontmatter" for the two-copy table and why both copies coexist. **Still genuinely
-  open, and much narrower:** a Reviewer cannot run the browser-enabled suite at all, because
-  both allowlist entries refuse every route to it today. That does **not** mean a fix has to
+  open, and much narrower:** a Reviewer cannot name the browser on the command line, because
+  both allowlist entries refuse that route. That does **not** mean a fix has to
   touch both — relaxing either one's start anchor to tolerate an environment-variable prefix
   would open that route on its own, since the resulting command contains no shell
   metacharacter and would clear the composition check before reaching the allowlist. Both are
   start-anchored — `/^npm (test|run [a-z:-]+)$/` and `/^node( --[a-z-]+)* --test/` — so any
   environment-variable prefix defeats them: `DASHBOARD_BROWSER_PATH=… npm test` and
   `DASHBOARD_BROWSER_PATH=… node --test` are both refused. The `npm` entry is additionally
-  `$`-anchored, so no trailing argument can be appended either, and no `package.json` script
-  sets the variable internally. The Reviewer is therefore confined to the no-browser row,
-  which the Test baseline explicitly says is *not* the row to compare against — a real gap
-  in what a Reviewer can verify, and the reason three consecutive review rounds on this
-  branch reported tests as unverified.
+  `$`-anchored, so no trailing argument can be appended either. ⚠ **What this paragraph drew
+  from that stopped being true on 2026-09-17.** It read "and no `package.json` script sets the
+  variable internally. The Reviewer is therefore confined to the no-browser row, which the Test
+  baseline explicitly says is *not* the row to compare against" — and `npm run test:baseline`
+  now sets the variable internally, resolving the browser inside `scripts/test-baseline.mjs`.
+  That command matches `npm run [a-z:-]+`, so the browser-enabled row is reachable from a
+  Reviewer with no hook change. Every refusal stated above still holds; the allowlist itself
+  is untouched.
 
 - **Special-event foundation P5 cleanup — blocked on a real production cycle, deliberately (Aug 29, 2026).** Delete `digest/legacySpotlightCompat.js` together with the `familySpotlightConfig` line in `digest/builder.js`, its `requiredBundleInputs` entry and the `specialEventsSampleData` projection; then delete the four oracles (`data/family-spotlight.json`, `digest/familySpotlightSelector.js`, its test, `test/artifact/family-spotlight-contract.test.js`) and `test/fixtures/legacy-athletics-panels.json`. **Do not do this until the registry path has run at least one real production cycle** — the oracles are the only thing that can prove a regression, and deleting them early is how a migration bug becomes undetectable. A test asserts the shim's bundle-input declaration exists *exactly while* `builder.js` imports it, so a half-done removal fails rather than leaving a dangling path. Also open at P5: whether to rename `FAMILY_SPOTLIGHT_ENABLED`, and whether First Day Level-3 becomes registry-driven — the latter should be settled **before** any second Takeover (Christmas morning) is built, not after.
 - **The categorized 2026-27 future-event register is planning information, not configuration (Aug 29, 2026).** The approved categorization — Sept 19-20 swim and the first flag-football game as Accents, Oct 17 and Nov 7 as Spotlights, the Chesapeake Challenge Cup, Winter Champs and SE District 8&U Champs as Spotlights, the birthdays as Spotlights, Oct 31 Swim-a-Thon and Grandma's arrival as separate Accents, A Christmas Carol as a Family Spotlight, Christmas morning as a Family Takeover, Last Day of School as an Accent, and the Dec 12-13 swim meet as deliberately *not* qualifying because the Staunton trip is authoritative — **is not in `data/special-events.json` and must not be bulk-loaded into it.** Each entry needs its own scoping pass, most need facts that are still TBD, and every Accent additionally needs a Designer pass that does not exist. Adding them would activate treatments this foundation deliberately did not.

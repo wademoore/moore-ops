@@ -109,11 +109,6 @@ The commit it cites does not resolve.
 It is the one enforcement mechanism no test asserts. The out-of-tree
 harness pattern from the wiring tripwire is reusable.
 
-### Add a test:baseline npm script
-
-So the Reviewer can run the browser-enabled baseline its checklist names
-without an env-var prefix its allowlist refuses.
-
 ### Correct the v2 reload manifest count stated in documentation
 
 ### Correct kids-profile.json's internal note claiming it is unpackaged
@@ -173,6 +168,68 @@ The Reviewer found it overstates: it calls the flag filter unconditional
 when a second eligibility gate exists, attributes the date dependence only
 to the calendar when it also depends on the fixture having no menu events,
 and lists failing dates that depend on whether credentials are present.
+
+### Give the first-day takeover kill switch its deploy machinery
+
+`FirstDayLevel3Enabled` is declared in
+`infrastructure/dashboard-artifact-refresh/template.json` with a default of
+`"0"`, handed to the generator Lambda as `FIRST_DAY_LEVEL3_ENABLED`, and read
+by `dashboard-artifact/generator.js`.
+`.github/workflows/deploy-dashboard-v2-artifact.yml` does not mention it: no
+repository variable feeds it, no resolve step validates it, it is absent from
+the `--parameter-overrides` list, no read-back step re-reads it from the
+deployed stack, and no `test/deploy-workflow-*.test.js` file covers it. The
+Family Spotlight, Holiday Themes and mobile artifact switches each have every
+one of those.
+
+The consequence worth recording: because the deploy supplies no value for this
+parameter, SAM leaves it at whatever the stack already holds, so the AWS
+console remains the durable source of truth for this switch alone. CLAUDE.md's
+"Managing the kill switch" section records that the console stopped being
+durable for the others the moment the deploy began asserting them. Model the
+addition on whichever of the three reads most cleanly; the mobile artifact
+switch is the most recently added.
+
+### Reconcile the two meet-name spellings on a latest-757 race
+
+On `athletics.opheliaLatest757Meet`, a race's `priorBest.meet` and its
+`personalBest.meet` can spell a meet differently, because they come from
+different files. `personalBest` reads `data/pb-records.json`, which carries the
+household spelling. `priorBest` reads whichever source wins the precedence
+order in `digest/priorBest.js`, where a parsed result file outranks a
+hand-entered one, so `data/league-results-757.json`'s parser slug is what
+reaches the field.
+
+This is live in today's data. Ophelia's 50y Backstroke at the 2026-09-12
+KickOff resolves `priorBest.meet` to `splash-and-dash`; the same swim, same
+date, same time is recorded in `data/swim-results.json` under the household
+spelling `Splash and Dash`. `render/dashboard-v2.js` draws
+`priorBest.seconds` and not `priorBest.meet`, so nothing shows it yet — but a
+surface drawing both meet names would print one meet under two names. Decide
+whether the slug is normalised inside `priorBest.js`, mapped at the data layer,
+or deliberately never rendered.
+
+### Remove Dashboard v2's CSS for the standing line it no longer draws
+
+`render/dashboard-v2.js` stopped reading `sharksDivisionStanding` and stopped
+emitting an element with class `standing-line` when the division tables landed
+in PR #113. It still carries rules naming that class: a base rule in the
+athletics stylesheet block, and a `card-count-1` rule that hides it alongside
+`.result-line`. Nothing the renderer emits can match either. The mobile
+renderer and the frozen v1 renderer do still read `sharksDivisionStanding` and
+are not part of this. Presentation is Codex's, so this is a handoff rather
+than a loop task.
+
+### Add a committed evidence harness for the prior-best work
+
+Neither PR #117, which added `digest/priorBest.js`, nor PR #118, which rendered
+its output, created anything under `scratch/`, and no directory there names the
+work. This repository's own standard — argued in CLAUDE.md's enforcement-wiring
+section, and again in the Known open item about the latest-757-meet change — is
+that a harness a later session can re-run beats a figure quoted in a pull
+request body. Until one exists, the evidence for the prior-best calculation is
+testimony. The committed harnesses under `scratch/` are the pattern to copy;
+read the "Harden the mutation harnesses" entry above before adding another.
 
 ---
 
