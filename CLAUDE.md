@@ -3055,9 +3055,14 @@ Both before-figures were measured on the unmodified tree in this session, via `g
 the agreement is reassuring and is not itself evidence.
 
 **No existing test was deleted, skipped, weakened or updated, and none needed to be.** The change
-is purely additive — `git diff --numstat` over the two files reports `71 0` and `42 0`, zero
-deletions in both, and no `.skip` or `.todo` appears anywhere in the diff. Five `it()` lines are
-added and none removed, which is checkable without trusting this prose:
+is purely additive: `git diff --numstat` over the two files reports **zero in the deletions
+column for both**, no `.skip` or `.todo` appears anywhere in the diff, and five `it()` lines are
+added with none removed. **The insertion counts are deliberately not quoted here** — this
+paragraph pasted `71 0` and `42 0`, and the very next commit on this branch changed the second
+file by seven lines and left the pasted `42` behind, which a Reviewer round caught. That is the
+fourth time this file has recorded the same failure, so the rule it already derived is applied
+instead of restated: **a magnitude the containing commit can move is not worth pasting.** The
+property is what matters and the property is stable; the numbers are one command away:
 
 ```
 git diff --numstat 608bf70..HEAD -- 'test/'

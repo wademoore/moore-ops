@@ -273,7 +273,7 @@ describe('parseFlagFootball', () => {
     // at all, two of the three scored. fall-2026 ships neither — the league has
     // published its Oct 25 postseason, but every participant is TBD and the
     // file deliberately records no row rather than inventing teams. So `type`
-    // is what keeps six live scored rows out of a regular-season table. Only `type` keeps them out of the table.
+    // is what keeps six live scored rows out of a regular-season table.
     const postseason = { seasons: [{ ...ID_FIXTURE.seasons[0],
       games: [
         { type: 'regular',     status: 'final', date: '2026-09-20', home: 8009182, away: 8070749, homeScore: 20, awayScore: 6 },
