@@ -38,6 +38,19 @@ const readJson = async name =>
 // rather than to the run clock, so the suite states a fixed, checkable fact
 // instead of quietly changing what it asserts every day.
 const TODAY            = new Date('2026-09-10T12:00:00');
+
+/**
+ * The shipped flag football file with every score stripped — the schedule and
+ * the roster as they are, nothing played.
+ *
+ * Cases about a season that has not started must be given one. Reading the file
+ * as it stood made "with no games played" a claim about what the Updater had
+ * got to, so recording the first matchday reddened two cases here that had
+ * nothing to do with any derivation.
+ */
+const withoutResults = data => ({ ...data, seasons: data.seasons.map(s => ({
+  ...s, games: (s.games || []).map(g => ({ ...g, homeScore: null, awayScore: null, status: 'scheduled' })),
+})) });
 const FIRST_MEET       = new Date('2026-09-12T12:00:00');
 const SCHEDULE_DOC     = 'docs/data-reload/757swim-2026-27-schedule.md';
 
@@ -290,22 +303,22 @@ describe('flag football team identity', () => {
     const cfg = await readJson('data/sports-config.json');
     const data = await readJson('data/flag-football.json');
 
-    // Strip every score in the file. isSeasonActive reads `active` and the date
-    // window and nothing else, so visibility must survive this. If a results
-    // gate is ever introduced, this fails rather than the card silently hiding.
-    const noResults = { ...data, seasons: data.seasons.map(s => ({
-      ...s, games: (s.games || []).map(g => ({ ...g, homeScore: null, awayScore: null, status: 'scheduled' })),
-    })) };
-
+    // isSeasonActive reads `active` and the date window and nothing else, so
+    // visibility must survive every score being stripped. If a results gate is
+    // ever introduced, this fails rather than the card silently hiding.
     assert.equal(parseAthleticsDoc(TODAY, cfg, data, {}, [], null).flagFootballActive, true);
-    assert.equal(parseAthleticsDoc(TODAY, cfg, noResults, {}, [], null).flagFootballActive, true,
+    assert.equal(parseAthleticsDoc(TODAY, cfg, withoutResults(data), {}, [], null).flagFootballActive, true,
       'visibility must not depend on any game result');
   });
 
   it('season record is 0-0-0 with no games played', async () => {
     const cfg = await readJson('data/sports-config.json');
     const data = await readJson('data/flag-football.json');
-    const athletics = parseAthleticsDoc(TODAY, cfg, data, {}, [], null);
+    // The shipped schedule with every score stripped. The claim is about a
+    // season nobody has played yet, not about which week the file has reached —
+    // reading it as it stood meant recording the first result turned this red
+    // on a title that then described neither the input nor the assertion.
+    const athletics = parseAthleticsDoc(TODAY, cfg, withoutResults(data), {}, [], null);
 
     assert.equal(athletics.seasonRecord, '0-0-0');
     assert.equal(athletics.seasonComplete, false);
@@ -364,7 +377,10 @@ describe('flag football team identity', () => {
   it('nextFlagGame is the Week 2 fixture, never the Week 1 practice', async () => {
     const cfg = await readJson('data/sports-config.json');
     const data = await readJson('data/flag-football.json');
-    const next = parseAthleticsDoc(TODAY, cfg, data, {}, [], null).nextFlagGame;
+    // Scores stripped: which fixture is NEXT moves forward a week every time
+    // one is recorded, and the defect being pinned is about the practice, not
+    // about how far the season has got.
+    const next = parseAthleticsDoc(TODAY, cfg, withoutResults(data), {}, [], null).nextFlagGame;
 
     // On 2026-09-10 the practice (Sep 13) is chronologically first. Selecting it
     // would report `opponent: undefined`, which is the defect being pinned.

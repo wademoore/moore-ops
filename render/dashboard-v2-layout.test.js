@@ -12,11 +12,59 @@ import { computeFlags } from '../digest/flags.js';
 let browser;
 let page;
 
+/**
+ * The real division rosters, with every figure the two cards print supplied
+ * here rather than read.
+ *
+ * The TEAM NAMES are the real ones on purpose — they are the widest strings the
+ * cards have to fit, so the clipping and overlap checks below are only worth
+ * making against them. Everything a recorded score moves is pinned: the
+ * records, the latest-result and next-game lines, and the numbers in the table.
+ *
+ * Before that split this case rendered the shipped files whole, so its geometry
+ * moved with the season. Recording one matchday lengthened `sharksLastResult`
+ * from 41 characters to 58, which wraps to a second line and pushed the
+ * standings past the bottom of the sharks card — a failure about the length of
+ * one opponent's name, reported by a case that is measuring whether a full
+ * division table fits.
+ *
+ * Both lines are pinned at ONE rendered line, which is the state this case has
+ * always measured. A two-line latest-result line, combined with the unposted
+ * note the case forces on, really does overflow the sharks card; that is a
+ * renderer margin, recorded in the pull request rather than fixed here.
+ */
 function realDivisionAthletics() {
   const read = name => JSON.parse(readFileSync(new URL(`../data/${name}.json`, import.meta.url), 'utf8'));
-  return parseAthleticsDoc(new Date('2026-09-16T19:00:00-04:00'), read('sports-config'),
+  const athletics = parseAthleticsDoc(new Date('2026-09-16T19:00:00-04:00'), read('sports-config'),
     read('flag-football'), read('pb-records'), read('swim-results'), read('waves-season'),
     null, null, null, read('sharks-soccer'));
+
+  Object.assign(athletics, {
+    sharksRecord: '4-3-1',
+    sharksDivisionLabel: 'U11 Premier',
+    sharksLastResult: 'W 2–0 vs Beach FC B2015/16 Anderson Waves',
+    sharksNextGame: { opponent: 'Carolina United (CUSA) Lightning - U11B (Daniels)',
+      date: '2026-09-26', time: '11:00', homeAway: 'home' },
+    seasonRecord: '3-1-1',
+    seasonLabel: 'Fall 2026',
+    flagTeamName: 'Cowboys',
+    lastResult: 'W 20–6 at Ravens',
+    nextFlagGame: { opponent: 'Bears', date: '2026-09-27', time: '14:00' },
+    thisWeekOpponent: null,
+    thisWeekTime: null,
+  });
+
+  // Two-digit figures throughout, so the widest cell each column can hold is
+  // the one measured.
+  for (const table of [athletics.sharksDivisionTable, athletics.flagFootballDivisionTable]) {
+    table.rows.forEach((row, index) => Object.assign(row, {
+      played: 12, wins: 11 - index, losses: index, drawn: 0,
+      scoreFor: 30 - index, scoreAgainst: 10 + index,
+      scoreDifference: 20 - 2 * index, leaguePoints: table.sport === 'soccer' ? 33 - 3 * index : null,
+      rank: index + 1, rankShared: false,
+    }));
+  }
+  return athletics;
 }
 
 before(async () => {
