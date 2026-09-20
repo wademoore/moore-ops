@@ -379,14 +379,13 @@ Decisions taken on that date, not pre-existing repo practice.
   "AWAY at HOME".** The first team named is `away`, the second is `home`; write each score
   to the matching side.
 
-Entering a `fall-2026` result reddens `test/current-season-athletics.test.js`. Its
-`season record is 0-0-0 with no games played` case asserts against the real data file that
-this season's `seasonRecord` is `"0-0-0"` and its `lastResult` is empty. Marking our
-own Week 2 row `"final"` additionally reddens `nextFlagGame is the Week 2 fixture, never the
-Week 1 practice`: `nextFlagGame` selects only rows still `"scheduled"`, so it advances to
-Week 3. Each is the expected consequence of entering a result, not a mistake in the entry.
-Re-pointing those assertions at the entered results — never relaxing them — is a code change
-outside this skill's file authority: report it rather than making it.
+**Entering a `fall-2026` result no longer reddens anything (2026-09-20).** It used to redden
+two cases in `test/current-season-athletics.test.js` — `season record is 0-0-0 with no games
+played` and `nextFlagGame is the Week 2 fixture, never the Week 1 practice` — because both
+asserted against the shipped file as it stood. Both now strip the scores whose absence they
+are claiming, so they assert the derivation rather than the week the season has reached. A
+red suite after a flag football entry is a finding again, not paperwork. See *Recording a
+matchday is a cheap change* below.
 
 ### Unsupported
 
@@ -495,6 +494,13 @@ as later results are entered.
 league's own rank order, with both dates and a `source` saying where it came from. Do not patch
 individual rows into a stale table. Any team string appearing here must already be an alias in
 `divisionTeams` — a test fails if it is not.
+
+**The reproduction case reads its expected figures out of this block (2026-09-20)**, so a
+whole-block replacement needs no test edit — it moves the oracle and the recorded results
+together. It used to compare against a copy of the league's figures written inside the test,
+which went stale on every capture. What still fails is what should: a block that disagrees
+with the recorded scorelines, and a half-done refresh that replaces the rows and leaves a
+date behind, because `source` has to name both `asOf` and `resultsThrough`.
 
 `digest/sharksParser.js`'s legacy `divisionStanding` field still reads this block, so replacing
 it changes what that field reports. That is expected: it is the point of refreshing a stale
@@ -664,10 +670,76 @@ and no row keys at all. Both keys are provenance for a human, not an input to an
 
 ---
 
+## Recording a matchday is a cheap change (decided 2026-09-20)
+
+Decided in conversation with Wade on this date; this section is the first and only place it
+is written down. Not a pre-existing repo-wide convention — do not cite it as one.
+
+It governs a **score entry and nothing else**: writing scores onto fixture rows that already
+exist, marking them `final` or `played`, and — for soccer — replacing the `standings`
+check-fixture block whole. Every other kind of Updater work keeps the protocol below.
+
+Recording six soccer results on 2026-09-19 turned thirteen tests red, every one of them
+pinning the data as it stood rather than the derivation, and each needing a judgement about
+whether it was a real failure. Those assertions have since been given fixtures they build
+themselves, so the suite now goes red on a score entry only when something is actually
+wrong. The expensive part of that task was the ceremony around it, and this is what removes
+it.
+
+**Do:**
+
+1. **Enter the scores.** Three rules are unchanged and nothing here relaxes any of them:
+   **identity** (*`divisionTeams` and `myTeamId`* for soccer, *Identifying the two sides*
+   for flag football — the numeric id, never the mascot, and every team string an exact
+   alias); **whole matchdays** (*Entering a week’s results* — every division fixture
+   for the week in one pass, never our own game alone); and **source precedence**
+   (*`unverified: true`* for soccer, where the league’s published result is
+   authoritative and replaces a household-observed one; *Source precedence when sources
+   disagree about the same swim* for swim data). They are what the entry is for.
+2. **Run the suite once, after the edit** —
+   `DASHBOARD_BROWSER_PATH=<chrome> npm test`, or `npm run test:baseline`, which resolves a
+   browser itself.
+3. **Commit, push the branch, open the pull request.**
+
+**Do not:**
+
+- **Do not run the suite before the change.** A before-and-after pair exists to attribute a
+  new failure to a code change. A score entry is not a code change, and one green run after
+  it is the whole of the evidence needed.
+- **Do not run a Reviewer round.** There is no logic to review: the diff is scores in columns
+  that already existed, and the suite checks the derivation over them. The `Stop` gate in
+  `.claude/hooks/require-review.mjs` still asks for a verdict — ask Wade to say the override
+  phrase that hook defines (`MOORE-OPS-REVIEW-OVERRIDE`, its `OVERRIDE` constant) rather than
+  running a round to satisfy it.
+- **Do not restate the spec.** The conventions are above. They do not need repeating into the
+  pull request, the commit message, or the session.
+- **Do not edit documentation or a season `note`.** `CLAUDE.md`, the files under `docs/` and
+  the season notes describe the season’s shape, not its scoreboard. A score changes none
+  of them.
+- **Do not write commentary describing what changed.** The diff says which fixtures got which
+  scores. A subject line naming the sport and the date is the whole of the prose.
+
+**If the suite does go red, stop — that is now a signal rather than a chore.** It means the
+entry disagrees with something the derivation checks: a team string that is not an alias, a
+scoreline that contradicts the published table, a check fixture refreshed halfway. Fix the
+entry, or report it. Never re-point a test to match what was entered.
+
+Example commit subjects — the whole message, not the first line of a longer one:
+
+```
+Updater: record the 2026-09-26 TASL matchday for the Sharks division
+Updater: record flag football Week 2, 2026-09-20
+```
+
+---
+
 ## Commit and push protocol
 
 **A feature branch and a pull request are the only route to `main`. Do not push to
 `main` — it cannot succeed, and an earlier version of this section told you to.**
+
+A pure score entry takes the shorter route above: step 5 does not apply to it. Everything
+else follows this.
 
 After every data change:
 
@@ -720,6 +792,7 @@ Updater: add Waves vs EH meet result 2026-06-22
 - [ ] All keys verified against naming conventions (not abbreviated)
 - [ ] All times converted to decimal seconds
 - [ ] Committed to a feature branch, branch pushed, Reviewer passed, PR opened, not merged
+      (a pure score entry skips the Reviewer — see *Recording a matchday is a cheap change*)
 - [ ] No logic files touched
 - [ ] User confirmed the changes look correct
 

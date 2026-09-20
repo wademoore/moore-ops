@@ -111,12 +111,13 @@ describe('soccer division table — reproduces the published table', () => {
   // table, so it must not be in what this case derives either.
   //
   // The date filter below is NOT what provides that. It scopes the comparison
-  // to the fixture's own resultsThrough date, which today happens to sit before
-  // every unverified result there could be — and stops doing so the first time
-  // the league publishes a table covering a date on which one of our matches is
-  // still household-observed. That is no longer hypothetical: match 644 is
-  // dated on the check fixture's own resultsThrough, so the date scoping
-  // includes it and only this option keeps it out.
+  // to the fixture's own resultsThrough date, which only keeps an unverified
+  // result out while every one of them happens to postdate the league's last
+  // published table — and stops doing so the moment the league publishes
+  // through a day on which one of our matches is still household-observed.
+  // That stopped being hypothetical on 2026-09-19, and whether the shipped
+  // file is in that state this week is not something this case depends on:
+  // the option is what excludes such a row whenever there is one.
   const VERIFIED_ONLY = { verifiedOnly: true };
 
   /**
