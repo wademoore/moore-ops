@@ -3633,9 +3633,9 @@ enumerated under test, digest, and render directly to Node. No deployment.
 that already exist, marking them `final` or `played`, and — for soccer — replacing the
 `standings` check-fixture block whole: that skips the Reviewer round and the before-baseline
 run. It is the only exception to this rule and to the Branching policy's
-"Reviewer sign-off is still required before the pull request is merged"; both sentences now
-carry a pointer to it, because an unqualified one that a session meets first is how an
-exception gets missed. `.claude/skills/moore-ops-updater/SKILL.md`
+"Reviewer sign-off is still required before the pull request is merged". Each of those two
+sentences is now followed by a note pointing at this one, because an unqualified sentence that
+a session meets first is how an exception gets missed. `.claude/skills/moore-ops-updater/SKILL.md`
 → *Recording a matchday is a cheap change* holds the decision, its reasoning and its limits.
 **It extends to nothing else.** What makes it safe is that the suite covers the whole of what
 such a diff can break, which stopped being true of a score entry only when the division

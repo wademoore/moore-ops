@@ -65,12 +65,13 @@ and leave −6.41px.
 
 Both conditions are reachable together. The string comes from the match row, not
 from `divisionTeams` — `sharksParser.js` takes `homeTeam`/`awayTeam` verbatim and
-`athleticsParser.js` composes `${result} ${a}–${b} vs ${opponent}`, a 9-character
-prefix, or 10 with a double-digit score. Do not take the figures below on trust;
+`athleticsParser.js` composes `${result} ${a}–${b} vs ${opponent}`, so the prefix
+is `7 + len(a) + len(b)`: 9 characters at single-digit scores, 10 with one
+double-digit score, 11 with two. Do not take the figures below on trust;
 re-derive them, because a first version of this paragraph named the wrong fixture
-as the worst case:
+as the worst case. From the repository root:
 
-```
+```bash
 node -e '
 const s=JSON.parse(require("fs").readFileSync("data/sharks-soccer.json","utf8")).seasons[0];
 const ours=n=>/Tidewater Sharks/i.test(String(n||""));
@@ -81,10 +82,17 @@ console.log(s.divisionSchedule.matches
   .map(r=>`${r.o.length}  ${r.d}  #${r.n}  ${r.o}`).join("\n"));'
 ```
 
-As of 2026-09-20 that reports `Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)`
-at 50 characters (match 635, 2026-10-17) ahead of `Carolina United (CUSA)
-Lightning - U11B (Daniels)` at 49 (match 652, 2026-09-26). So the worst reachable
-line is **59–60** characters and the earliest one that wraps is the 58 above.
+As of 2026-09-20 that prints three rows:
+
+```
+50  2026-10-17  #635  Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)
+49  2026-09-26  #652  Carolina United (CUSA) Lightning - U11B (Daniels)
+45  2026-10-17  #658  VA Rush Soccer Club VAR U11B Coastal Strikers
+```
+
+So the worst reachable line is **59 to 61** characters depending on the scores,
+and the earliest one that wraps is the 58 above — match 652, which is also the
+first of these three to be played.
 
 `unpostedCount` goes above zero when a fixture dated on or before the latest
 recorded result carries no score at all. **Not** when a result is marked
