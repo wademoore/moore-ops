@@ -13,11 +13,11 @@
  * relay, and a Waves row swum in yards — each of which is a stated
  * requirement and none of which any real row exercises.
  *
- * ⚠ STANDING OBLIGATION — the next 757 meet entered will redden ten cases.
- * Five cases hard-assert the 2026-09-12 KickOff as the latest meet, and five
- * more reach the April meet by filtering `r.date !== '2026-09-12'`. The 757
- * season runs to April 2027, so an ordinary Updater data entry — not a code
- * change — turns them red. That is the accepted cost of asserting against the
+ * ⚠ STANDING OBLIGATION — the next 757 meet entered will redden the real-data
+ * cases. Some hard-assert the 2026-09-20 Catch 'Em All Series #1 as the latest
+ * meet; the rest reach the April meet by filtering out the September dates in
+ * SEPTEMBER_MEETS. The 757 season runs to April 2027, so an ordinary Updater
+ * data entry — not a code change — turns them red. That is the accepted cost of asserting against the
  * real files rather than a fixture copy that would drift, and the remedy is to
  * re-point both anchors at the new meet, never to relax the assertions. It is
  * recorded here and in CLAUDE.md's Known open items so the next Updater
@@ -61,34 +61,32 @@ const row = over => ({
   ...over,
 });
 
-// ── real data: the KickOff ────────────────────────────────────────────────────
+// ── real data: the latest meet ───────────────────────────────────────────────
 
 describe('selectLatest757Meet — real data', () => {
   const view = selectLatest757Meet(SWIM_RESULTS, PB_RECORDS);
 
-  it('selects the 2026-09-12 757swim Season KickOff as the latest meet', () => {
-    assert.equal(view.meet, '757swim Season KickOff');
-    assert.equal(view.startDate, '2026-09-12');
-    assert.equal(view.endDate,   '2026-09-12');
-    assert.deepEqual(view.dates, ['2026-09-12']);
+  it("selects the 2026-09-20 Catch 'Em All Series #1 as the latest meet", () => {
+    assert.equal(view.meet, "Catch 'Em All Series #1");
+    assert.equal(view.startDate, '2026-09-20');
+    assert.equal(view.endDate,   '2026-09-20');
+    assert.deepEqual(view.dates, ['2026-09-20']);
   });
 
-  it('shows exactly the three races swum, each marked as its event PB', () => {
+  it('shows exactly the three races swum, with time, DQ state and personal-best flag', () => {
     assert.deepEqual(view.races.map(r => [r.event, r.seconds, r.dq, r.isPersonalBest]), [
-      ['25y Breaststroke', 33.37, false, true],
-      ['25y Butterfly',    34.44, false, true],
-      ['50y Backstroke',   69.08, false, true],
+      ['25y Backstroke', 32.07, false, false],
+      ['25y Butterfly',  null,  true,  false],
+      ['50y Freestyle',  69.96, false, true],
     ]);
   });
 
   it('attaches each race its own course-scoped personal best', () => {
-    for (const race of view.races) {
-      assert.deepEqual(race.personalBest, {
-        seconds: race.seconds,
-        date:    '2026-09-12',
-        meet:    '757swim Season KickOff',
-      });
-    }
+    assert.deepEqual(view.races.map(r => [r.event, r.personalBest]), [
+      ['25y Backstroke', { seconds: 30.01, date: '2026-02-08', meet: '8 and Under Southeastern' }],
+      ['25y Butterfly',  { seconds: 34.44, date: '2026-09-12', meet: '757swim Season KickOff' }],
+      ['50y Freestyle',  { seconds: 69.96, date: '2026-09-20', meet: "Catch 'Em All Series #1" }],
+    ]);
   });
 
   it('carries distance and course per race, and the SCY course of this meet', () => {
@@ -97,7 +95,7 @@ describe('selectLatest757Meet — real data', () => {
   });
 
   it('includes nothing from any earlier meet', () => {
-    assert.ok(view.races.every(r => r.date === '2026-09-12'),
+    assert.ok(view.races.every(r => r.date === '2026-09-20'),
       'every race must be dated on the selected meet');
     assert.equal(view.races.length, 3);
   });
@@ -105,9 +103,11 @@ describe('selectLatest757Meet — real data', () => {
 
 // ── real data with the September rows removed ─────────────────────────────────
 
-describe('selectLatest757Meet — real data minus the KickOff', () => {
-  const withoutKickOff = SWIM_RESULTS.filter(r => r.date !== '2026-09-12');
-  const view = selectLatest757Meet(withoutKickOff, PB_RECORDS);
+const SEPTEMBER_MEETS = new Set(['2026-09-12', '2026-09-20']);
+
+describe('selectLatest757Meet — real data minus the September meets', () => {
+  const withoutSeptember = SWIM_RESULTS.filter(r => !SEPTEMBER_MEETS.has(r.date));
+  const view = selectLatest757Meet(withoutSeptember, PB_RECORDS);
 
   it('falls back to the 2026-04-25 14 and Under Spring Challenge', () => {
     assert.equal(view.meet, '14 and Under Spring Challenge');
@@ -137,7 +137,7 @@ describe('selectLatest757Meet — real data minus the KickOff', () => {
   });
 
   it('orders races by the defined rule, not by the order they sit in the file', () => {
-    const fileOrder = withoutKickOff
+    const fileOrder = withoutSeptember
       .filter(r => r.date === '2026-04-25')
       .map(r => r.event);
     assert.deepEqual(fileOrder,
@@ -362,7 +362,7 @@ describe('opheliaLatest757Meet — season gating', () => {
   it('is present in the 757 season, exactly when the 757 PB rows are', () => {
     const result = swim(IN_757_SEASON);
     assert.ok(result.opheliaLatest757Meet, 'view present');
-    assert.equal(result.opheliaLatest757Meet.meet, '757swim Season KickOff');
+    assert.equal(result.opheliaLatest757Meet.meet, "Catch 'Em All Series #1");
     assert.ok(result.opheliaPBRows.length > 0);
     assert.ok(result.opheliaPBRows.every(r => r.format === 'SCY'),
       'precondition: these are the 757 rows');
@@ -404,7 +404,7 @@ describe('opheliaLatest757Meet — on the athletics object', () => {
     const athletics = parseAthleticsDoc(
       IN_757_SEASON, CONFIG, FLAG_FOOTBALL, PB_RECORDS, SWIM_RESULTS, null);
     assert.ok('opheliaLatest757Meet' in athletics, 'key must be present');
-    assert.equal(athletics.opheliaLatest757Meet.meet, '757swim Season KickOff');
+    assert.equal(athletics.opheliaLatest757Meet.meet, "Catch 'Em All Series #1");
     assert.equal(athletics.opheliaLatest757Meet.races.length, 3);
   });
 

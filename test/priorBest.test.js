@@ -353,20 +353,24 @@ describe('priorBest — the real files at referenceDate 2026-09-16', () => {
   const view = () => parseSwim(
     PB_RECORDS, SWIM_RESULTS, REFERENCE, CONFIG, null, V2_RESULTS, null, RESULTS_757,
   ).opheliaLatest757Meet;
+  const kickOffView = () => parseSwim(
+    PB_RECORDS, SWIM_RESULTS.filter(r => r.date !== '2026-09-20'),
+    REFERENCE, CONFIG, null, V2_RESULTS, null, RESULTS_757,
+  ).opheliaLatest757Meet;
 
   it('reports the acceptance figures for every race at the latest 757 meet', () => {
     const v = view();
-    assert.equal(v.meet, '757swim Season KickOff');
+    assert.equal(v.meet, "Catch 'Em All Series #1");
     assert.deepEqual(
       v.races.map(r => [r.event, r.priorHistoryState,
                         r.priorBest && [r.priorBest.seconds, r.priorBest.date, r.priorBest.meet, r.priorBest.source],
                         r.improvementSeconds]),
       [
-        ['25y Breaststroke', 'prior-best',
-         [41.09, '2025-10-24', 'October Spooktacular', 'swim-results.json'], 7.72],
-        ['25y Butterfly', 'first-recorded', null, null],
-        ['50y Backstroke', 'prior-best',
-         [69.23, '2026-01-11', 'splash-and-dash', 'league-results-757.json'], 0.15],
+        ['25y Backstroke', 'prior-best',
+         [30.01, '2026-02-08', 'se-8u-district-champs', 'league-results-757.json'], null],
+        ['25y Butterfly', 'undetermined', null, null],
+        ['50y Freestyle', 'prior-best',
+         [73.9, '2026-02-08', 'se-8u-district-champs', 'league-results-757.json'], 3.94],
       ]);
   });
 
@@ -376,7 +380,7 @@ describe('priorBest — the real files at referenceDate 2026-09-16', () => {
     // disqualifications for her: 41.83, 38.76 and 38.73. Two of them are
     // faster than the 41.09 that is the true prior best, so a time-present
     // test would report one of those two.
-    const breast = view().races.find(r => r.event === '25y Breaststroke');
+    const breast = kickOffView().races.find(r => r.event === '25y Breaststroke');
     assert.equal(breast.priorBest.seconds, 41.09);
     assert.ok(breast.priorBest.seconds > 38.76, 'a disqualified swim is not a personal best');
   });
@@ -389,14 +393,14 @@ describe('priorBest — the real files at referenceDate 2026-09-16', () => {
   it('leaves the existing personal-best flag untouched', () => {
     // The new fields are additive. isPersonalBest still reads pb-records.json
     // and still asks a different question; nothing here reconciles the two.
-    assert.deepEqual(view().races.map(r => r.isPersonalBest), [true, true, true]);
-    assert.deepEqual(view().races.map(r => r.personalBest.seconds), [33.37, 34.44, 69.08]);
+    assert.deepEqual(view().races.map(r => r.isPersonalBest), [false, false, true]);
+    assert.deepEqual(view().races.map(r => r.personalBest.seconds), [30.01, 34.44, 69.96]);
   });
 
-  it('changes exactly two values in the whole view when the 757 source is withheld', () => {
+  it('changes only priorBest source and meet in the whole view when the 757 source is withheld', () => {
     // priorBest.js and the packaging comment both make a WHOLE-VIEW claim:
-    // including league-results-757.json changes one race's priorBest.source
-    // and priorBest.meet and nothing else. Asserted over every race and every
+    // including league-results-757.json changes priorBest.source and
+    // priorBest.meet and nothing else. Asserted over every race and every
     // field rather than spot-checked on one race, so the claim cannot quietly
     // stop being true.
     const withExtras = parseSwim(
@@ -412,23 +416,23 @@ describe('priorBest — the real files at referenceDate 2026-09-16', () => {
 
     assert.deepEqual(
       withExtras.races.map(r => r.priorBest && [r.priorBest.source, r.priorBest.meet]),
-      [['swim-results.json', 'October Spooktacular'], null,
-       ['league-results-757.json', 'splash-and-dash']]);
+      [['league-results-757.json', 'se-8u-district-champs'], null,
+       ['league-results-757.json', 'se-8u-district-champs']]);
     assert.deepEqual(
       withoutExtras.races.map(r => r.priorBest && [r.priorBest.source, r.priorBest.meet]),
-      [['swim-results.json', 'October Spooktacular'], null,
-       ['swim-results.json', 'Splash and Dash']]);
+      [['swim-results.json', '8 and Under Southeastern'], null,
+       ['swim-results.json', '8 and Under Southeastern']]);
   });
 
   it('is unchanged when the extra sources are withheld, except for what they supply', () => {
     // Called the old way — two arguments — the module still works and still
-    // answers from swim-results.json alone. The 50y Backstroke prior best is
+    // answers from swim-results.json alone. The 50y Freestyle prior best is
     // the same swim either way, named by the household file instead.
     const withoutExtras = selectLatest757Meet(SWIM_RESULTS, PB_RECORDS);
-    const back = withoutExtras.races.find(r => r.event === '50y Backstroke');
-    assert.equal(back.priorHistoryState, 'prior-best');
-    assert.equal(back.priorBest.seconds, 69.23);
-    assert.equal(back.priorBest.source, 'swim-results.json');
-    assert.equal(back.improvementSeconds, 0.15);
+    const free = withoutExtras.races.find(r => r.event === '50y Freestyle');
+    assert.equal(free.priorHistoryState, 'prior-best');
+    assert.equal(free.priorBest.seconds, 73.9);
+    assert.equal(free.priorBest.source, 'swim-results.json');
+    assert.equal(free.improvementSeconds, 3.94);
   });
 });
