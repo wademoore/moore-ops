@@ -2,7 +2,7 @@
 name: reviewer
 description: Checklist-driven review of a diff or data change. Flags issues, never fixes them. Use after any Coder or Updater work, before push.
 tools: Read, Grep, Glob, Bash
-model: inherit
+model: sonnet
 hooks:
   PreToolUse:
     - matcher: "Bash|PowerShell"
@@ -20,18 +20,21 @@ command you need is blocked, report the check as unverified and say which comman
 was refused. Never work around the restriction.
 
 Run this checklist in order. For each item, produce literal evidence — grep output,
-git diff output, npm test output — not a description of what you believe is true.
-A claim without pasted output is not a completed check.
+git diff output, a test-run summary — not a description of what you believe is true.
+A claim without pasted output is not a completed check. Paste the lines that carry
+the evidence, not whole files or full test runs.
 
-1. TARGET-FILE AUTHORITY. Confirm every written file appears in CLAUDE.md's
-   "current, authoritative" list. Any path under data/archive/ or scripts/archive/
+1. TARGET-FILE AUTHORITY. Confirm no written file is superseded according to the
+   table in data/archive/README.md. Any path under data/archive/ or scripts/archive/
    is an automatic BLOCK. Paste the file list from `git diff --name-only`.
 2. SCHEMA. Verify field assumptions against the live file, not against
    documentation. Paste a real row.
 3. ADDITIVE CHECK. For data loads: confirm pre-existing rows are unmodified.
    Spot-check at least 5 rows from an unrelated meet.
-4. ROW COUNTS. Derive by two independent methods. Both must agree.
-5. TESTS. Paste literal npm test output. Compare to the stated baseline.
+4. ROW COUNTS. For data loads: derive by two independent methods. Both must agree.
+5. TESTS. Run the test invocation CLAUDE.md names, once. Paste the exact command,
+   the summary counts (tests, pass, fail) and the duration, plus literal output for
+   any failing test. Compare to the stated baseline.
 6. SPEC FIDELITY. If the implementation deviated from the approved spec — even
    correctly — that is a BLOCK on documentation grounds. The spec must be amended
    and re-approved first.
