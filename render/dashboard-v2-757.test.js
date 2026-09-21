@@ -9,11 +9,47 @@ const race = (extra = {}) => ({ event: '50y Backstroke', distance: 50, course: '
 const view = (races = [race()], extra = {}) => ({ meet: 'Latest meet', startDate: '2026-09-12', endDate: '2026-09-12', dates: ['2026-09-12'], races, ...extra });
 const render = meet => renderAthletics({ athletics: { swim757Active: true, opheliaLatest757Meet: meet, opheliaPBRows: [{ event: 'Old configured event', lastSwim: { seconds: 12.34 } }] } });
 const titles = html => [...html.matchAll(/<span>([^<]+) <small>(?:SCY|SCM)<\/small>/g)].map(match => match[1]);
-const realView = rows => parseSwim(read('pb-records'), rows, new Date('2026-09-15T12:00:00'), read('sports-config')).opheliaLatest757Meet;
+
+// ── the fixture season ───────────────────────────────────────────────────────
+// Ophelia's rows and personal bests in the shapes swim-results.json and
+// pb-records.json store them, built here so no entered meet reaches the card.
+const SPRING = '14 and Under Spring Challenge';
+const KICKOFF = '757swim Season KickOff';
+const CATCH_EM = "Catch 'Em All Series #1";
+const oph = over => ({ swimmer: 'Ophelia', team: '757 Swim', league: 'USA Swimming', course: 'SCY', dq: false, relay: false, ...over });
+const fixtureRows = [
+  oph({ event: '25y Backstroke',  date: '2026-02-08', meet: '8 and Under Southeastern', seconds: 30.01 }),
+  oph({ event: '50y Freestyle',   date: '2026-02-08', meet: '8 and Under Southeastern', seconds: 73.90 }),
+  oph({ event: '25y Freestyle',   date: '2026-03-20', meet: 'Short Course Send off',    seconds: 30.46 }),
+  oph({ event: '25y Backstroke',  date: '2026-03-20', meet: 'Short Course Send off',    seconds: 30.87 }),
+  oph({ event: '25m Freestyle',    course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: 35.64 }),
+  oph({ event: '25m Breaststroke', course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: null, dq: true }),
+  oph({ event: '25m Backstroke',   course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: 36.25 }),
+  oph({ event: '25m Butterfly',    course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: 43.46 }),
+  oph({ event: '25y Breaststroke', date: '2026-09-12', meet: KICKOFF, seconds: 33.37, pb: true }),
+  oph({ event: '50y Backstroke',   date: '2026-09-12', meet: KICKOFF, seconds: 69.08, pb: true }),
+  oph({ event: '25y Butterfly',    date: '2026-09-12', meet: KICKOFF, seconds: 34.44, pb: true }),
+  oph({ event: '25y Butterfly',  date: '2026-09-20', meet: CATCH_EM, seconds: null, dq: true }),
+  oph({ event: '25y Backstroke', date: '2026-09-20', meet: CATCH_EM, seconds: 32.07 }),
+  oph({ event: '50y Freestyle',  date: '2026-09-20', meet: CATCH_EM, seconds: 69.96, pb: true }),
+];
+const fixturePbs = {
+  'Ophelia|25y Freestyle|SCY':    { seconds: 30.46, date: '2026-03-20', meet: 'Short Course Send off' },
+  'Ophelia|25y Backstroke|SCY':   { seconds: 30.01, date: '2026-02-08', meet: '8 and Under Southeastern' },
+  'Ophelia|25y Breaststroke|SCY': { seconds: 33.37, date: '2026-09-12', meet: KICKOFF },
+  'Ophelia|25y Butterfly|SCY':    { seconds: 34.44, date: '2026-09-12', meet: KICKOFF },
+  'Ophelia|50y Backstroke|SCY':   { seconds: 69.08, date: '2026-09-12', meet: KICKOFF },
+  'Ophelia|50y Freestyle|SCY':    { seconds: 69.96, date: '2026-09-20', meet: CATCH_EM },
+  'Ophelia|25m Freestyle|SCM':    { seconds: 28.09, date: '2026-06-22', meet: 'WT vs WPD' },
+  'Ophelia|25m Backstroke|SCM':   { seconds: 33.62, date: '2025-08-02', meet: 'Champs' },
+  'Ophelia|25m Breaststroke|SCM': { seconds: 35.47, date: '2026-07-13', meet: 'WT vs EH' },
+  'Ophelia|25m Butterfly|SCM':    { seconds: 34.11, date: '2026-08-01', meet: '2026 VPSU Championship Meet' },
+};
+const fixtureView = rows => parseSwim(fixturePbs, rows, new Date('2026-09-15T12:00:00'), read('sports-config')).opheliaLatest757Meet;
 
 describe('latest 757 meet card', () => {
-  it('shows the real latest meet in household order, with its DQ and its one PB', () => {
-    const html = render(realView(read('swim-results')));
+  it('shows the latest meet in household order, with its DQ and its one PB', () => {
+    const html = render(fixtureView(fixtureRows));
     assert.match(html, /Catch &#39;Em All Series #1/);
     assert.match(html, /<span>Sep 20, 2026<\/span>/);
     assert.deepEqual(titles(html), ['25y Backstroke', '25y Butterfly', '50y Freestyle']);
@@ -28,8 +64,8 @@ describe('latest 757 meet card', () => {
   });
 
   it('shows the April SCM meet including its breaststroke DQ, never an older result', () => {
-    const rows = read('swim-results').filter(row => !['2026-09-12', '2026-09-20'].includes(row.date));
-    const html = render(realView(rows));
+    const rows = fixtureRows.filter(row => !['2026-09-12', '2026-09-20'].includes(row.date));
+    const html = render(fixtureView(rows));
     assert.match(html, /14 and Under Spring Challenge/);
     assert.match(html, /Apr 25, 2026/);
     assert.deepEqual(titles(html), ['25m Freestyle', '25m Breaststroke', '25m Backstroke', '25m Butterfly']);

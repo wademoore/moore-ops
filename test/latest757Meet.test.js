@@ -4,24 +4,10 @@
  * Covers digest/latest757Meet.js and its wiring through swimParser /
  * athleticsParser.
  *
- * The real-data cases read data/swim-results.json and data/pb-records.json
- * rather than a fixture, deliberately: the acceptance criteria are stated
- * about the real files, and a fixture copy would drift.
- *
- * The fixture cases cover shapes the real data has never contained — a
- * multi-day meet, one meet name in two years, two meets on one date, a
- * relay, and a Waves row swum in yards — each of which is a stated
- * requirement and none of which any real row exercises.
- *
- * ⚠ STANDING OBLIGATION — the next 757 meet entered will redden the real-data
- * cases. Some hard-assert the 2026-09-20 Catch 'Em All Series #1 as the latest
- * meet; the rest reach the April meet by filtering out the September dates in
- * SEPTEMBER_MEETS. The 757 season runs to April 2027, so an ordinary Updater
- * data entry — not a code change — turns them red. That is the accepted cost of asserting against the
- * real files rather than a fixture copy that would drift, and the remedy is to
- * re-point both anchors at the new meet, never to relax the assertions. It is
- * recorded here and in CLAUDE.md's Known open items so the next Updater
- * session is not surprised by it.
+ * Every case builds its own results and personal-best records. The files under
+ * data/ are read only for sports-config.json and flag-football.json, neither of
+ * which carries a swim result, so entering a meet cannot reach any assertion
+ * here.
  */
 
 import { describe, it } from 'node:test';
@@ -39,10 +25,58 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const readData = name =>
   JSON.parse(readFileSync(resolve(HERE, '..', 'data', name), 'utf8').replace(/^﻿/, ''));
 
-const SWIM_RESULTS = readData('swim-results.json');
-const PB_RECORDS   = readData('pb-records.json');
 const CONFIG       = readData('sports-config.json');
 const FLAG_FOOTBALL = readData('flag-football.json');
+
+// ── the fixture season ───────────────────────────────────────────────────────
+// Ophelia's rows in the shape swim-results.json stores them, and the personal
+// bests pb-records.json keys the same way.
+const oph757 = over => ({
+  swimmer: 'Ophelia', team: TEAM_757, league: 'USA Swimming', course: 'SCY',
+  dq: false, relay: false, ...over,
+});
+const ophWaves = over => ({
+  swimmer: 'Ophelia', team: 'Wellington Waves', league: 'VPSU Summer Swim',
+  course: 'SCM', dq: false, relay: false, ...over,
+});
+
+const SPRING = '14 and Under Spring Challenge';
+const KICKOFF = '757swim Season KickOff';
+const CATCH_EM = "Catch 'Em All Series #1";
+
+const SWIM_RESULTS = [
+  ophWaves({ event: '25m Freestyle',    date: '2024-07-15', meet: 'WT vs KM',  seconds: 31.44 }),
+  ophWaves({ event: '25m Breaststroke', date: '2026-07-13', meet: 'WT vs EH',  seconds: 35.47 }),
+  oph757({ event: '25y Freestyle',   date: '2026-02-08', meet: '8 and Under Southeastern', seconds: 33.10 }),
+  oph757({ event: '25y Backstroke',  date: '2026-02-08', meet: '8 and Under Southeastern', seconds: 30.01 }),
+  oph757({ event: '50y Freestyle',   date: '2026-02-08', meet: '8 and Under Southeastern', seconds: 73.90 }),
+  oph757({ event: '25y Freestyle',   date: '2026-03-20', meet: 'Short Course Send off',    seconds: 30.46 }),
+  oph757({ event: '25y Backstroke',  date: '2026-03-20', meet: 'Short Course Send off',    seconds: 30.87 }),
+  // 2026-04-25 is stored in an order the selector must not preserve.
+  oph757({ event: '25m Freestyle',    course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: 35.64 }),
+  oph757({ event: '25m Breaststroke', course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: null, dq: true }),
+  oph757({ event: '25m Backstroke',   course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: 36.25 }),
+  oph757({ event: '25m Butterfly',    course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: 43.46 }),
+  oph757({ event: '25y Breaststroke', date: '2026-09-12', meet: KICKOFF, seconds: 33.37, pb: true }),
+  oph757({ event: '50y Backstroke',   date: '2026-09-12', meet: KICKOFF, seconds: 69.08, pb: true }),
+  oph757({ event: '25y Butterfly',    date: '2026-09-12', meet: KICKOFF, seconds: 34.44, pb: true }),
+  oph757({ event: '25y Butterfly',  date: '2026-09-20', meet: CATCH_EM, seconds: null, dq: true }),
+  oph757({ event: '25y Backstroke', date: '2026-09-20', meet: CATCH_EM, seconds: 32.07 }),
+  oph757({ event: '50y Freestyle',  date: '2026-09-20', meet: CATCH_EM, seconds: 69.96, pb: true }),
+];
+
+const PB_RECORDS = {
+  'Ophelia|25y Freestyle|SCY':    { seconds: 30.46, date: '2026-03-20', meet: 'Short Course Send off' },
+  'Ophelia|25y Backstroke|SCY':   { seconds: 30.01, date: '2026-02-08', meet: '8 and Under Southeastern' },
+  'Ophelia|25y Breaststroke|SCY': { seconds: 33.37, date: '2026-09-12', meet: KICKOFF },
+  'Ophelia|25y Butterfly|SCY':    { seconds: 34.44, date: '2026-09-12', meet: KICKOFF },
+  'Ophelia|50y Backstroke|SCY':   { seconds: 69.08, date: '2026-09-12', meet: KICKOFF },
+  'Ophelia|50y Freestyle|SCY':    { seconds: 69.96, date: '2026-09-20', meet: CATCH_EM },
+  'Ophelia|25m Freestyle|SCM':    { seconds: 28.09, date: '2026-06-22', meet: 'WT vs WPD' },
+  'Ophelia|25m Backstroke|SCM':   { seconds: 33.62, date: '2025-08-02', meet: 'Champs' },
+  'Ophelia|25m Breaststroke|SCM': { seconds: 35.47, date: '2026-07-13', meet: 'WT vs EH' },
+  'Ophelia|25m Butterfly|SCM':    { seconds: 34.11, date: '2026-08-01', meet: '2026 VPSU Championship Meet' },
+};
 
 // A date inside the configured 757 window and outside the Waves window.
 const IN_757_SEASON = new Date('2026-09-15T12:00:00');
@@ -61,9 +95,9 @@ const row = over => ({
   ...over,
 });
 
-// ── real data: the latest meet ───────────────────────────────────────────────
+// ── the latest meet ──────────────────────────────────────────────────────────
 
-describe('selectLatest757Meet — real data', () => {
+describe('selectLatest757Meet — the fixture season', () => {
   const view = selectLatest757Meet(SWIM_RESULTS, PB_RECORDS);
 
   it("selects the 2026-09-20 Catch 'Em All Series #1 as the latest meet", () => {
@@ -101,11 +135,11 @@ describe('selectLatest757Meet — real data', () => {
   });
 });
 
-// ── real data with the September rows removed ─────────────────────────────────
+// ── the fixture season with the September rows removed ───────────────────────
 
 const SEPTEMBER_MEETS = new Set(['2026-09-12', '2026-09-20']);
 
-describe('selectLatest757Meet — real data minus the September meets', () => {
+describe('selectLatest757Meet — the fixture season minus the September meets', () => {
   const withoutSeptember = SWIM_RESULTS.filter(r => !SEPTEMBER_MEETS.has(r.date));
   const view = selectLatest757Meet(withoutSeptember, PB_RECORDS);
 
