@@ -5,22 +5,9 @@
  * swimParser, for the prior-comparable-personal-best fields added to each
  * race in athletics.opheliaLatest757Meet.
  *
- * The real-data cases read data/swim-results.json, data/league-results-v2.json
- * and data/league-results-757.json rather than a fixture copy, deliberately:
- * the acceptance criteria are stated about the real files at referenceDate
- * 2026-09-16, and a fixture copy would drift away from them silently.
- *
- * The fixture cases cover shapes the real data does not currently contain in a
- * position that would exercise them — a tie, a slower swim, a same-day second
- * swim, a yards/metres collision — each a stated requirement.
- *
- * ⚠ STANDING OBLIGATION, inherited from test/latest757Meet.js.
- * The real-data cases here anchor on the 2026-09-12 KickOff being the latest
- * 757 meet. The 2026-27 757 season runs to April 2027, so an ordinary Updater
- * data entry — not a code change — will redden them. The remedy is to re-point
- * the anchor at the new meet and restate the expected figures from the new
- * data, never to relax the assertions: a case that stops naming a specific
- * prior best stops proving the selector found the right one.
+ * Every case builds the three source files it runs against. The files under
+ * data/ are read only for sports-config.json, which carries no swim result, so
+ * entering a meet cannot reach any assertion here.
  */
 
 import { describe, it } from 'node:test';
@@ -37,10 +24,6 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const readData = name =>
   JSON.parse(readFileSync(resolve(HERE, '..', 'data', name), 'utf8').replace(/^﻿/, ''));
 
-const SWIM_RESULTS = readData('swim-results.json');
-const PB_RECORDS   = readData('pb-records.json');
-const V2_RESULTS   = readData('league-results-v2.json');
-const RESULTS_757  = readData('league-results-757.json');
 const CONFIG       = readData('sports-config.json');
 const REFERENCE    = new Date('2026-09-16T12:00:00-04:00');
 
@@ -349,13 +332,82 @@ describe('priorBest — deduplication and source naming', () => {
   });
 });
 
-describe('priorBest — the real files at referenceDate 2026-09-16', () => {
+// ── the three-source fixture season ─────────────────────────────────────────
+// One season across all three sources, each row spelled the way that source
+// spells it. Every swim the assertions below name is here; nothing else is.
+const KICKOFF  = '757swim Season KickOff';
+const CATCH_EM = "Catch 'Em All Series #1";
+const SOUTHEASTERN = '8 and Under Southeastern';
+
+const hh = over => ({
+  swimmer: 'Ophelia', team: '757 Swim', league: 'USA Swimming', course: 'SCY',
+  dq: false, relay: false, ...over,
+});
+const hhWaves = over => ({
+  swimmer: 'Ophelia', team: 'Wellington Waves', league: 'VPSU Summer Swim',
+  course: 'SCM', dq: false, relay: false, ...over,
+});
+const p757 = over => ({
+  swimmer: 'Moore, Ophelia A', team: '757', course: 'SCY', dq: false, ...over,
+});
+const v2row = over => ({
+  swimmer: 'Moore Ophelia', team: 'WT', course: 'SCM', dq: false,
+  exhibition: false, ...over,
+});
+
+const FIXTURE_SWIM_RESULTS = [
+  hhWaves({ event: '25m Freestyle',    date: '2024-07-15', meet: 'WT vs KM', seconds: 31.44 }),
+  hhWaves({ event: '25m Breaststroke', date: '2026-07-13', meet: 'WT vs EH', seconds: 35.47 }),
+  hh({ event: '25y Breaststroke', date: '2025-10-24', meet: 'October Spooktacular', seconds: 41.09 }),
+  hh({ event: '25y Backstroke',   date: '2025-10-24', meet: 'October Spooktacular', seconds: 35.74 }),
+  hh({ event: '25y Breaststroke', date: '2025-12-07', meet: 'Grand Illumination',   seconds: 45.58 }),
+  hh({ event: '25y Backstroke',   date: '2026-02-08', meet: SOUTHEASTERN, seconds: 30.01 }),
+  hh({ event: '25y Breaststroke', date: '2026-02-08', meet: SOUTHEASTERN, seconds: 42.58 }),
+  hh({ event: '50y Freestyle',    date: '2026-02-08', meet: SOUTHEASTERN, seconds: 73.90 }),
+  hh({ event: '25y Breaststroke', date: '2026-09-12', meet: KICKOFF, seconds: 33.37, pb: true }),
+  hh({ event: '50y Backstroke',   date: '2026-09-12', meet: KICKOFF, seconds: 69.08, pb: true }),
+  hh({ event: '25y Butterfly',    date: '2026-09-12', meet: KICKOFF, seconds: 34.44, pb: true }),
+  hh({ event: '25y Butterfly',  date: '2026-09-20', meet: CATCH_EM, seconds: null, dq: true }),
+  hh({ event: '25y Backstroke', date: '2026-09-20', meet: CATCH_EM, seconds: 32.07 }),
+  hh({ event: '50y Freestyle',  date: '2026-09-20', meet: CATCH_EM, seconds: 69.96, pb: true }),
+];
+
+// The parsed 757 file keeps the swum time on a disqualified row, and three of
+// these 25 Breaststroke disqualifications are faster than the 41.09 that is the
+// true prior best.
+const FIXTURE_RESULTS_757 = [
+  p757({ event: '25 Breaststroke', date: '2025-09-19', meet: 'battle-of-the-burg',   seconds: 41.83, dq: true }),
+  p757({ event: '25 Breaststroke', date: '2026-01-10', meet: 'splash-and-dash',      seconds: 38.76, dq: true }),
+  p757({ event: '25 Breaststroke', date: '2026-03-20', meet: 'sc-send-off',          seconds: 38.73, dq: true }),
+  p757({ event: '25 Breaststroke', date: '2025-12-07', meet: 'grand-illumination',   seconds: 45.58 }),
+  p757({ event: '25 Backstroke',   date: '2026-02-08', meet: 'se-8u-district-champs', seconds: 30.01 }),
+  p757({ event: '25 Breaststroke', date: '2026-02-08', meet: 'se-8u-district-champs', seconds: 42.58 }),
+  p757({ event: '50 Freestyle',    date: '2026-02-08', meet: 'se-8u-district-champs', seconds: 73.90 }),
+];
+
+const FIXTURE_V2_RESULTS = [
+  v2row({ event: '25m Freestyle',    date: '2026-06-22', meet: 'WT vs WPD', time: 28.09 }),
+  v2row({ event: '25m Breaststroke', date: '2026-07-13', meet: 'WT vs EH',  time: 35.47 }),
+];
+
+const FIXTURE_PB_RECORDS = {
+  'Ophelia|25y Backstroke|SCY':   { seconds: 30.01, date: '2026-02-08', meet: SOUTHEASTERN },
+  'Ophelia|25y Breaststroke|SCY': { seconds: 33.37, date: '2026-09-12', meet: KICKOFF },
+  'Ophelia|25y Butterfly|SCY':    { seconds: 34.44, date: '2026-09-12', meet: KICKOFF },
+  'Ophelia|50y Backstroke|SCY':   { seconds: 69.08, date: '2026-09-12', meet: KICKOFF },
+  'Ophelia|50y Freestyle|SCY':    { seconds: 69.96, date: '2026-09-20', meet: CATCH_EM },
+  'Ophelia|25m Freestyle|SCM':    { seconds: 28.09, date: '2026-06-22', meet: 'WT vs WPD' },
+  'Ophelia|25m Breaststroke|SCM': { seconds: 35.47, date: '2026-07-13', meet: 'WT vs EH' },
+};
+
+describe('priorBest — the fixture season at referenceDate 2026-09-16', () => {
   const view = () => parseSwim(
-    PB_RECORDS, SWIM_RESULTS, REFERENCE, CONFIG, null, V2_RESULTS, null, RESULTS_757,
+    FIXTURE_PB_RECORDS, FIXTURE_SWIM_RESULTS, REFERENCE, CONFIG, null,
+    FIXTURE_V2_RESULTS, null, FIXTURE_RESULTS_757,
   ).opheliaLatest757Meet;
   const kickOffView = () => parseSwim(
-    PB_RECORDS, SWIM_RESULTS.filter(r => r.date !== '2026-09-20'),
-    REFERENCE, CONFIG, null, V2_RESULTS, null, RESULTS_757,
+    FIXTURE_PB_RECORDS, FIXTURE_SWIM_RESULTS.filter(r => r.date !== '2026-09-20'),
+    REFERENCE, CONFIG, null, FIXTURE_V2_RESULTS, null, FIXTURE_RESULTS_757,
   ).opheliaLatest757Meet;
 
   it('reports the acceptance figures for every race at the latest 757 meet', () => {
@@ -375,11 +427,6 @@ describe('priorBest — the real files at referenceDate 2026-09-16', () => {
   });
 
   it('excludes the faster disqualified 25y Breaststroke swims that the 757 file still times', () => {
-    // This is the DQ-with-time hazard on REAL data rather than on a fixture.
-    // league-results-757.json holds three SCY 25-Breaststroke
-    // disqualifications for her: 41.83, 38.76 and 38.73. Two of them are
-    // faster than the 41.09 that is the true prior best, so a time-present
-    // test would report one of those two.
     const breast = kickOffView().races.find(r => r.event === '25y Breaststroke');
     assert.equal(breast.priorBest.seconds, 41.09);
     assert.ok(breast.priorBest.seconds > 38.76, 'a disqualified swim is not a personal best');
@@ -404,9 +451,10 @@ describe('priorBest — the real files at referenceDate 2026-09-16', () => {
     // field rather than spot-checked on one race, so the claim cannot quietly
     // stop being true.
     const withExtras = parseSwim(
-      PB_RECORDS, SWIM_RESULTS, REFERENCE, CONFIG, null, V2_RESULTS, null, RESULTS_757,
+      FIXTURE_PB_RECORDS, FIXTURE_SWIM_RESULTS, REFERENCE, CONFIG, null,
+      FIXTURE_V2_RESULTS, null, FIXTURE_RESULTS_757,
     ).opheliaLatest757Meet;
-    const withoutExtras = selectLatest757Meet(SWIM_RESULTS, PB_RECORDS);
+    const withoutExtras = selectLatest757Meet(FIXTURE_SWIM_RESULTS, FIXTURE_PB_RECORDS);
 
     const blank = view => view.races.map(r => ({
       ...r, priorBest: r.priorBest ? { ...r.priorBest, source: null, meet: null } : null,
@@ -420,15 +468,15 @@ describe('priorBest — the real files at referenceDate 2026-09-16', () => {
        ['league-results-757.json', 'se-8u-district-champs']]);
     assert.deepEqual(
       withoutExtras.races.map(r => r.priorBest && [r.priorBest.source, r.priorBest.meet]),
-      [['swim-results.json', '8 and Under Southeastern'], null,
-       ['swim-results.json', '8 and Under Southeastern']]);
+      [['swim-results.json', SOUTHEASTERN], null,
+       ['swim-results.json', SOUTHEASTERN]]);
   });
 
   it('is unchanged when the extra sources are withheld, except for what they supply', () => {
     // Called the old way — two arguments — the module still works and still
     // answers from swim-results.json alone. The 50y Freestyle prior best is
     // the same swim either way, named by the household file instead.
-    const withoutExtras = selectLatest757Meet(SWIM_RESULTS, PB_RECORDS);
+    const withoutExtras = selectLatest757Meet(FIXTURE_SWIM_RESULTS, FIXTURE_PB_RECORDS);
     const free = withoutExtras.races.find(r => r.event === '50y Freestyle');
     assert.equal(free.priorHistoryState, 'prior-best');
     assert.equal(free.priorBest.seconds, 73.9);

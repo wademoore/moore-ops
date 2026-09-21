@@ -64,11 +64,41 @@ for (const [count, raceCount, visibleCount] of footerCases) {
   });
 }
 
+// ── the fixture season ───────────────────────────────────────────────────────
+// A four-race SCM meet with a DQ and a three-race SCY meet, in the shapes
+// swim-results.json and pb-records.json store them, so no entered meet changes
+// how many rows these cases lay out.
+const SPRING = '14 and Under Spring Challenge';
+const KICKOFF = '757swim Season KickOff';
+const CATCH_EM = "Catch 'Em All Series #1";
+const oph = over => ({ swimmer: 'Ophelia', team: '757 Swim', league: 'USA Swimming', course: 'SCY', dq: false, relay: false, ...over });
+const fixtureRows = [
+  oph({ event: '25y Backstroke', date: '2026-02-08', meet: '8 and Under Southeastern', seconds: 30.01 }),
+  oph({ event: '50y Freestyle',  date: '2026-02-08', meet: '8 and Under Southeastern', seconds: 73.90 }),
+  oph({ event: '25m Freestyle',    course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: 35.64 }),
+  oph({ event: '25m Breaststroke', course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: null, dq: true }),
+  oph({ event: '25m Backstroke',   course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: 36.25 }),
+  oph({ event: '25m Butterfly',    course: 'SCM', date: '2026-04-25', meet: SPRING, seconds: 43.46 }),
+  oph({ event: '25y Butterfly',  date: '2026-09-12', meet: KICKOFF, seconds: 34.44, pb: true }),
+  oph({ event: '25y Butterfly',  date: '2026-09-20', meet: CATCH_EM, seconds: null, dq: true }),
+  oph({ event: '25y Backstroke', date: '2026-09-20', meet: CATCH_EM, seconds: 32.07 }),
+  oph({ event: '50y Freestyle',  date: '2026-09-20', meet: CATCH_EM, seconds: 69.96, pb: true }),
+];
+const fixturePbs = {
+  'Ophelia|25y Backstroke|SCY':   { seconds: 30.01, date: '2026-02-08', meet: '8 and Under Southeastern' },
+  'Ophelia|25y Butterfly|SCY':    { seconds: 34.44, date: '2026-09-12', meet: KICKOFF },
+  'Ophelia|50y Freestyle|SCY':    { seconds: 69.96, date: '2026-09-20', meet: CATCH_EM },
+  'Ophelia|25m Freestyle|SCM':    { seconds: 28.09, date: '2026-06-22', meet: 'WT vs WPD' },
+  'Ophelia|25m Backstroke|SCM':   { seconds: 33.62, date: '2025-08-02', meet: 'Champs' },
+  'Ophelia|25m Breaststroke|SCM': { seconds: 35.47, date: '2026-07-13', meet: 'WT vs EH' },
+  'Ophelia|25m Butterfly|SCM':    { seconds: 34.11, date: '2026-08-01', meet: '2026 VPSU Championship Meet' },
+};
+
 for (const april of [false, true]) for (const count of [1, 2, 3]) {
   it(`fits ${april ? 'April DQ' : 'latest meet'} rows and provenance with ${count} athletics cards`, async () => {
-    const rows = read('swim-results')
+    const rows = fixtureRows
       .filter(row => !april || !['2026-09-12', '2026-09-20'].includes(row.date));
-    const swim = parseSwim(read('pb-records'), rows, new Date('2026-09-15T12:00:00'), read('sports-config'));
+    const swim = parseSwim(fixturePbs, rows, new Date('2026-09-15T12:00:00'), read('sports-config'));
     const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
     await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, now: new Date('2026-09-15T12:00:00-04:00'), athletics: {
       ...sampleDashboardV2Data.athletics, ...swim, opheliaFooter: '757 season note', wavesActive: false, swim757Active: true,
