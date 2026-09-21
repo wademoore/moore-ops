@@ -372,9 +372,6 @@ const FIXTURE_SWIM_RESULTS = [
   hh({ event: '50y Freestyle',  date: '2026-09-20', meet: CATCH_EM, seconds: 69.96, pb: true }),
 ];
 
-// The parsed 757 file keeps the swum time on a disqualified row, and three of
-// these 25 Breaststroke disqualifications are faster than the 41.09 that is the
-// true prior best.
 const FIXTURE_RESULTS_757 = [
   p757({ event: '25 Breaststroke', date: '2025-09-19', meet: 'battle-of-the-burg',   seconds: 41.83, dq: true }),
   p757({ event: '25 Breaststroke', date: '2026-01-10', meet: 'splash-and-dash',      seconds: 38.76, dq: true }),
