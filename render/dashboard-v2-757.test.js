@@ -12,19 +12,23 @@ const titles = html => [...html.matchAll(/<span>([^<]+) <small>(?:SCY|SCM)<\/sma
 const realView = rows => parseSwim(read('pb-records'), rows, new Date('2026-09-15T12:00:00'), read('sports-config')).opheliaLatest757Meet;
 
 describe('latest 757 meet card', () => {
-  it('shows the real KickOff in household order, all three as PBs', () => {
+  it('shows the real latest meet in household order, with its DQ and its one PB', () => {
     const html = render(realView(read('swim-results')));
-    assert.match(html, /757swim Season KickOff/);
-    assert.match(html, /Sep 12, 2026/);
-    assert.deepEqual(titles(html), ['25y Breaststroke', '25y Butterfly', '50y Backstroke']);
-    for (const value of ['33.37', '34.44', '1:09.08']) assert.equal(html.split(value).length - 1, 1);
-    assert.equal((html.match(/<em>PB<\/em>/g) || []).length, 3);
-    assert.doesNotMatch(html, /class="latest-757-pb"/);
+    assert.match(html, /Catch &#39;Em All Series #1/);
+    assert.match(html, /<span>Sep 20, 2026<\/span>/);
+    assert.deepEqual(titles(html), ['25y Backstroke', '25y Butterfly', '50y Freestyle']);
+    for (const value of ['32.07', '1:09.96']) assert.equal(html.split(value).length - 1, 1);
+    assert.match(html, /25y Butterfly[\s\S]*?<strong>DQ<\/strong>/);
+    assert.equal((html.match(/<em>PB<\/em>/g) || []).length, 1);
+    assert.match(html, /50y Freestyle[\s\S]*?<em>PB<\/em>[\s\S]*?3\.94 seconds faster/);
+    // The race that is a PB carries no provenance line; the DQ, which is not, does.
+    assert.equal((html.match(/class="latest-757-pb"/g) || []).length, 1);
+    assert.match(html, /25y Butterfly[\s\S]*?class="latest-757-pb">PB 34\.44 · 757swim Season KickOff/);
     assert.doesNotMatch(html, /Old configured event|30.46|30.87/);
   });
 
   it('shows the April SCM meet including its breaststroke DQ, never an older result', () => {
-    const rows = read('swim-results').filter(row => row.date !== '2026-09-12');
+    const rows = read('swim-results').filter(row => !['2026-09-12', '2026-09-20'].includes(row.date));
     const html = render(realView(rows));
     assert.match(html, /14 and Under Spring Challenge/);
     assert.match(html, /Apr 25, 2026/);

@@ -1277,10 +1277,33 @@ it('defers an oversized first day whole rather than overflowing or skipping ahea
   assert.equal(await page.locator('.upcoming-later').textContent(), '+36 later in the two-week window');
 });
 
+function twoRace757Meet() {
+  const race = over => ({
+    event: '50y Freestyle', distance: 50, course: 'SCY', date: '2026-09-20',
+    seconds: 69.96, dq: false,
+    personalBest: { seconds: 69.96, date: '2026-09-20', meet: "Catch 'Em All Series #1" },
+    isPersonalBest: true, priorHistoryState: 'prior-best',
+    priorBest: { seconds: 73.9, date: '2026-02-08', meet: 'se-8u-district-champs', source: 'league-results-757.json' },
+    improvementSeconds: 3.94, coveredHistorySince: '2024-07-15', ...over,
+  });
+  return {
+    meet: 'Two Race Fixture', startDate: '2026-09-20', endDate: '2026-09-20', dates: ['2026-09-20'],
+    races: [
+      race({}),
+      race({
+        event: '25y Butterfly', distance: 25, seconds: 34.44,
+        personalBest: { seconds: 34.44, date: '2026-09-20', meet: 'Two Race Fixture' },
+        priorHistoryState: 'first-recorded', priorBest: null, improvementSeconds: null,
+      }),
+    ],
+  };
+}
+
 it('aligns team-card sections despite missing results and matches swim comparison colors to their meaning', async () => {
   for (const banner of [null, { title: 'Family day' }]) {
     const athletics = realDivisionAthletics();
     athletics.lastResult = '';
+    athletics.opheliaLatest757Meet = twoRace757Meet();
     await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, banner, athletics }));
     await page.evaluate(() => document.fonts.ready);
     const alignment = await page.evaluate(() => ['.next-box', '.division-table', '.division-table tbody tr'].map(selector => {

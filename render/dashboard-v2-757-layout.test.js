@@ -65,8 +65,9 @@ for (const [count, raceCount, visibleCount] of footerCases) {
 }
 
 for (const april of [false, true]) for (const count of [1, 2, 3]) {
-  it(`fits ${april ? 'April DQ' : 'KickOff PB'} rows and provenance with ${count} athletics cards`, async () => {
-    const rows = read('swim-results').filter(row => !april || row.date !== '2026-09-12');
+  it(`fits ${april ? 'April DQ' : 'latest meet'} rows and provenance with ${count} athletics cards`, async () => {
+    const rows = read('swim-results')
+      .filter(row => !april || !['2026-09-12', '2026-09-20'].includes(row.date));
     const swim = parseSwim(read('pb-records'), rows, new Date('2026-09-15T12:00:00'), read('sports-config'));
     const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
     await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, now: new Date('2026-09-15T12:00:00-04:00'), athletics: {
