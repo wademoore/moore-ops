@@ -301,6 +301,14 @@ request body. Until one exists, the evidence for the prior-best calculation is
 testimony. The committed harnesses under `scratch/` are the pattern to copy;
 read the "Harden the mutation harnesses" entry above before adding another.
 
+**Make the season-gated tests independent of live season windows.**
+Several tests that build their own result data still read season
+windows from `data/sports-config.json`, so editing a season window can
+turn them red. Found by PR #129's simulations and its Reviewer. Season
+windows change about once a year per sport, so routine data entry is
+unaffected. Remedy: give those tests their own season config, keeping
+every assertion.
+
 ---
 
 ## Needs Wade's decision
