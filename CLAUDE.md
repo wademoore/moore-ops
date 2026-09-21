@@ -12,7 +12,7 @@
 ### CODER MODE
 - Implement the spec exactly as written
 - Stop and flag ambiguity rather than guessing
-- Run npm test after changes — must stay at 2745+ passing with a browser
+- Run npm test after changes — must stay at 2889+ passing with a browser
   (see "Test baseline" for the exact invocation; the current entry records no
   no-browser row). **This line and the floor at the end of the current baseline
   entry are one figure in two places — move both or neither.** It has now gone
@@ -3012,7 +3012,85 @@ is not one of the two. Deleted rather than softened; a Reviewer round caught it.
 
 ## Test baseline
 
-### Current baseline — measured Sept 16, 2026 on the flag-football division-schedule branch
+### Current baseline — measured Sept 20, 2026 on the standings-test-coverage branch
+
+| Invocation | tests | pass | fail | cancelled | duration |
+|---|---|---|---|---|---|
+| `npm run test:baseline` (browser resolved) | 2889 | **2889** | **0** | **0** | 70084.368682 ms |
+
+Measured on `claude/standings-test-independence-17yba2`, branched from `origin/main` at
+**`608bf70`**. `git fetch origin main` was run before deriving the base, per the standing
+warning; here the ref was already current, so `HEAD == merge-base == origin/main`.
+
+**The base was re-measured in this session, after `npm ci` and before any edit: 2884 / 2884 /
+0 / 0, 72066.624206 ms.** That is NOT the 2745 the entry below records, and the gap is larger
+than it looks. That entry was measured on the branch that merged as **#104** (`15e3da5`, whose
+parent is `afe1876` — the base the entry itself names), so **twenty commits have landed since:
+#105 through #124.** Fourteen of them touched a test file, two of those adding a whole new one
+(#111 `test/divisionStandings.test.js`, #113 `render/division-tables.test.js`), and the floor
+sat at `2745+` through all of it — which licensed deleting every test those twenty added. That
+is the drift this section exists to catch, and it ran for twenty commits rather than the
+handful a first draft of this paragraph guessed at. Re-derive the range rather than estimating
+it; neither figure below is arithmetic:
+
+```
+git rev-list --count 15e3da5..608bf70
+git log --oneline 15e3da5..608bf70 -- test/ 'digest/*.test.js' 'render/*.test.js' | wc -l
+```
+
+Both endpoints are pinned SHAs — `15e3da5` is #104 and `608bf70` is this entry's base — so the
+two answers are 20 and 14 permanently, rather than moving with whatever is checked out.
+
+Re-measure the count too; the run costs less than the correction.
+
+This change adds **+5**, across two existing files:
+
+| File | before | after | delta |
+|---|---|---|---|
+| `test/divisionStandings.test.js` | 64 | 67 | +3 |
+| `test/flagFootballParser.test.js` | 55 | 57 | +2 |
+
+Both before-figures were measured on the unmodified tree in this session, via `git stash`.
+2884 + 5 = 2889, and **2889 is the measured figure in the table above rather than that sum** —
+the agreement is reassuring and is not itself evidence.
+
+**No existing test was deleted, skipped, weakened or updated, and none needed to be.** The change
+is purely additive: `git diff --numstat` over the two files reports **zero in the deletions
+column for both**, no `.skip` or `.todo` appears anywhere in the diff, and five `it()` lines are
+added with none removed. **The insertion counts are deliberately not quoted here** — this
+paragraph pasted `71 0` and `42 0`, and the very next commit on this branch changed the second
+file by seven lines and left the pasted `42` behind, which a Reviewer round caught. That is the
+fourth time this file has recorded the same failure, so the rule it already derived is applied
+instead of restated: **a magnitude the containing commit can move is not worth pasting.** The
+property is what matters and the property is stable; the numbers are one command away:
+
+```
+git diff --numstat 608bf70..HEAD -- 'test/'
+git diff 608bf70..HEAD -- 'test/' | grep -E '^[-+].*\bit\('
+```
+
+**Why the five exist.** They cover flag football derivation that **no shipped data can reach**:
+every fall-2026 game is still `scheduled`, so every division row is 0-0-0 and the ordering is
+degenerate. A mutation harness over the derivation scored **13/18** before them — the five
+survivors were the win-percentage primary sort key, the `played === 0` special case, and the
+`status === 'final'` and `type === 'regular'` eligibility gates in both
+`flagFootballParser.js` and `divisionStandings.js`. It scores **18/18** after. The harness is
+not committed; it lived in the session scratchpad, so those figures are testimony rather than
+evidence, the same standing this file gives the latest-757-meet harnesses.
+
+Exact invocation:
+
+```bash
+npm run test:baseline
+```
+
+**Coder mode must keep `npm test` at 2889+ with no failures once a browser resolves.**
+
+The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
+quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to
+prevent.
+
+### Superseded baseline — measured Sept 16, 2026 on the flag-football division-schedule branch
 
 | Invocation | tests | pass | fail | cancelled | duration |
 |---|---|---|---|---|---|
@@ -3135,7 +3213,10 @@ Exact invocation:
 DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome npm test
 ```
 
-**Coder mode must keep `npm test` at 2745+ with no failures once a browser resolves.**
+⚠ **This entry's Coder-mode floor line was removed when the entry below was superseded**, per the
+rule at the end of the Sept 11 entry: a floor of `2745+` licenses deleting every test added since.
+The floor lives in exactly two places — the CODER MODE bullet and the end of the **current**
+baseline entry.
 
 The no-browser row is deliberately absent: only the browser-enabled invocation was run, and
 quoting a figure that was not taken is exactly the unfalsifiable claim this section exists to

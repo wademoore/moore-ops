@@ -243,6 +243,52 @@ describe('parseFlagFootball', () => {
     assert.equal(parseFlagFootball(FIXTURE, MAY_1, CONFIG).seasonRecord, '3-0-0');
   });
 
+  // ── Which rows are eligible at all ─────────────────────────────────────────
+  // Both gates below are load-bearing the moment a result is recorded, and
+  // neither can be exercised by the shipped fall-2026 season, which carries no
+  // scores at all. So each builds the row it is about rather than looking for
+  // one in the file — the same reason the division-table cases build theirs.
+
+  it('a game carrying two scores does not count until it is final', () => {
+    // The plausible data-entry slip on a score week: the numbers are typed in
+    // and the status is left alone. Such a row must not reach the record.
+    const slipped = { seasons: [{ ...ID_FIXTURE.seasons[0],
+      games: [
+        { type: 'regular', status: 'final',     date: '2026-09-20', home: 8009182, away: 8070749, homeScore: 20, awayScore: 6 },
+        // Scored, regular, ours — and still scheduled.
+        { type: 'regular', status: 'scheduled', date: '2026-09-27', home: 8009182, away: 8888888, homeScore: 33, awayScore: 0 },
+      ] }] };
+    const result = parseFlagFootball(slipped, SEP_21, CONFIG);
+    assert.equal(result.seasonRecord, '1-0-0',
+      'the scheduled row must not be counted, however complete its scoreline looks');
+    assert.equal(result.standings.find(s => s.isMe).w, 1);
+    assert.equal(result.lastResult, 'W 20\u20136 vs Ravens',
+      'and it must not become the last result either');
+  });
+
+  it('a scored playoff or consolation game stays out of the regular-season record', () => {
+    // Not hypothetical, and the shape differs by season: fall-2025 ships two
+    // playoff rows AND two consolation rows, all four final and carrying two
+    // real scores; spring-2026 ships three playoff rows and no consolation row
+    // at all, two of the three scored. fall-2026 ships neither — the league has
+    // published its Oct 25 postseason, but every participant is TBD and the
+    // file deliberately records no row rather than inventing teams. So `type`
+    // is what keeps six live scored rows out of a regular-season table.
+    const postseason = { seasons: [{ ...ID_FIXTURE.seasons[0],
+      games: [
+        { type: 'regular',     status: 'final', date: '2026-09-20', home: 8009182, away: 8070749, homeScore: 20, awayScore: 6 },
+        { type: 'playoff',     status: 'final', date: '2026-10-25', home: 8009182, away: 8070749, homeScore: 0,  awayScore: 40 },
+        { type: 'consolation', status: 'final', date: '2026-10-25', home: 8888888, away: 8070749, homeScore: 9,  awayScore: 20 },
+      ] }] };
+    const result = parseFlagFootball(postseason, SEP_21, CONFIG);
+    assert.equal(result.seasonRecord, '1-0-0',
+      'the playoff defeat must not be added to the regular-season record');
+    const mine = result.standings.find(s => s.isMe);
+    assert.deepEqual({ w: mine.w, l: mine.l, t: mine.t }, { w: 1, l: 0, t: 0 });
+    assert.equal(result.standings.find(r => r.teamId === 8070749).w, 0,
+      'nor to an opponent\u2019s, from either postseason row');
+  });
+
   // ── Standings identity and the shared display name ─────────────────────────
   // ID_FIXTURE's teams[] carries leagueName but no coach. The real
   // data/flag-football.json fall-2026 entry carries both, so the coaches are
