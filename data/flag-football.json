@@ -744,12 +744,12 @@
                                           "date":  "2026-09-20",
                                           "time":  "12:00",
                                           "away":  8088488,
-                                          "awayScore":  null,
+                                          "awayScore":  0,
                                           "home":  8117740,
-                                          "homeScore":  null,
+                                          "homeScore":  26,
                                           "type":  "regular",
                                           "field":  "4A",
-                                          "status":  "scheduled"
+                                          "status":  "final"
                                       },
                                       {
                                           "week":  2,
@@ -757,36 +757,36 @@
                                           "practiceTime":  "11:00",
                                           "time":  "12:00",
                                           "away":  8009182,
-                                          "awayScore":  null,
+                                          "awayScore":  14,
                                           "home":  8070749,
-                                          "homeScore":  null,
+                                          "homeScore":  20,
                                           "type":  "regular",
                                           "field":  "4B",
-                                          "status":  "scheduled"
+                                          "status":  "final"
                                       },
                                       {
                                           "week":  2,
                                           "date":  "2026-09-20",
                                           "time":  "14:00",
                                           "away":  8057461,
-                                          "awayScore":  null,
+                                          "awayScore":  6,
                                           "home":  8108154,
-                                          "homeScore":  null,
+                                          "homeScore":  26,
                                           "type":  "regular",
                                           "field":  "3B",
-                                          "status":  "scheduled"
+                                          "status":  "final"
                                       },
                                       {
                                           "week":  2,
                                           "date":  "2026-09-20",
                                           "time":  "14:00",
                                           "away":  8069066,
-                                          "awayScore":  null,
+                                          "awayScore":  13,
                                           "home":  8113277,
-                                          "homeScore":  null,
+                                          "homeScore":  0,
                                           "type":  "regular",
                                           "field":  "4A",
-                                          "status":  "scheduled"
+                                          "status":  "final"
                                       },
                                       {
                                           "week":  3,
