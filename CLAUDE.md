@@ -11,8 +11,8 @@ End with: "Planner complete — awaiting Coder instructions"
 
 ### CODER
 Implement the spec exactly. Stop and flag ambiguity rather than guessing. Confirm each
-file change before moving on. Run `npm run test:baseline`; it must stay at **2889+**
-passing with zero failures once a browser resolves.
+file change before moving on. Run `npm run test:baseline`; it must complete with zero
+failures once a browser resolves.
 End with: "Coder complete — ready for review or push"
 
 ### REVIEWER
