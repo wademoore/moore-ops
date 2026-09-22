@@ -11,18 +11,13 @@ This conversion has been a recurring source of error: minutes were previously
 miscalculated as ×100 instead of ×60 in several files, producing values like `121.33`
 instead of the correct `81.33` for a time of `1:21.33`.
 
-## swim-annotations.json conventions
-
-Three such rows exist (the Sept 12, 2026 KickOff) because they were explicitly requested as the
-forward-looking home for pb/note — they are harmless and completely inert.
-
 ## sharks-soccer.json conventions — `unverified: true`
 
 This replaces an earlier field, `resultSource` (a string, e.g. `"household-report"`), which
 carried the same meaning under a name that described *where* the result came from rather
 than *whether it's been checked*. `resultSource` was used once, on match 641, and was
 removed from that row once the league posted its own confirmation (commit `d70f280`, PR
-#78). As of this writing, zero rows in this file carry either field.
+#78).
 
 What follows is the decision Wade took on that date; it governs what you write, and it is
 not a pre-existing repo-wide convention either.
@@ -41,9 +36,6 @@ goals-against each include its awarded scoreline.
 
 Clearing the flag on that row changes nothing in the derived table, which is asserted rather
 than claimed.
-
-One row carries it as of this writing — match 637 (2026-08-29, Chesapeake United Reapers
-3–0 VA Rush Killer Bees), entered in commit `b4dc214` (PR #77).
 
 A test now does: `test/divisionStandings.test.js` asserts that this row still carries the flag, and
 clears the flag on a copy to prove the derived table counts the row identically either way. That
@@ -95,10 +87,6 @@ This field has been in the file since it was first added (commit `ba113fb`), lon
 either key above; what was decided in conversation with Wade on this date is that it should
 be written down, and this paragraph is the first and only place that has happened. Not a
 pre-existing repo-wide convention — do not cite it as one.
-
-Five rows do this — calendar conflicts with W&M home games, a doubleheader cross-reference
-between matches 658 and 635, and a venue-label discrepancy on match 673. All five date to
-commit `ba113fb` and are not anomaly reports. Leave them alone.
 
 ## flag-football.json conventions — Entering a week's results
 

@@ -576,6 +576,8 @@ both are legitimate — do not narrow the field to either one:
   *missing without explanation* from one merely not yet entered.
 - **Household or data caveats on an ordinary fixture.**
 
+**Most rows carry no `note`, and that is the ordinary case.** Do not add one to a fixture that has nothing unusual about it.
+
 Nothing reads this key or `forfeit`. Verified against the readers of this file:
 `digest/sharksParser.js` (which reads `homeTeam`, `awayTeam`, `played`, `homeScore`,
 `awayScore`, `date`, `time`, `venue` and `address`), the `findFixture()` helpers in
