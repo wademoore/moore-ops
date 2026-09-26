@@ -178,6 +178,11 @@ includes the worker and infrastructure trees.
 Under full-suite load, workerd's nodejs_compat deprecation warning
 displaces an expected diagnostic line.
 
+Seen again 2026-09-25 in Codex cloud, where a mobile Worker test failed
+because the runtime printed its notice before the Worker's own log line;
+CI passed. The notice says `nodejs_compat`, which the mobile Worker's
+config sets, is now a default. Check whether the flag is still needed.
+
 ### Re-anchor the test baseline denominator
 
 The commit it cites does not resolve.
@@ -205,6 +210,9 @@ cache TTL.
 
 Quoted test globs select zero tests on Windows; a set of CRLF and
 path-handling failures exist; consider .gitattributes.
+
+Added 2026-09-25: commit line-ending rules so a Windows checkout cannot
+convert scripts and workflow files to CRLF.
 
 ### Integrate full-roster 757 data into the digest's swim path
 
@@ -317,9 +325,41 @@ windows change about once a year per sport, so routine data entry is
 unaffected. Remedy: give those tests their own season config, keeping
 every assertion.
 
+### Log S3's error code in the mobile Worker's failure log
+
+The failure log records only the HTTP status, so a missing permission took
+an evening to diagnose. Log S3's error code (for example `AccessDenied` or
+`SignatureDoesNotMatch`) as well, without logging credentials, the signed
+URL, or request headers. Added 2026-09-25.
+
+### Reconcile the mobile Worker's documented IAM user with the deployed one
+
+The docs name an IAM user for the mobile Worker that differs from the user
+actually deployed. Reconcile the docs to the live user. Added 2026-09-25.
+
+### Model per-action permissions in the S3 test double
+
+The test double never models per-action permissions, so a missing
+permission passes locally. Added 2026-09-25.
+
+### Add a broader mobile/wall parity test
+
+So a future wall change cannot silently leave mobile behind. Added
+2026-09-25.
+
+### Prune the overlap-exclusion tests the overlap flag's retirement made unfalsifiable
+
+When the overlap flag was retired, some tests of overlap exclusion could
+no longer fail. Remove them. Added 2026-09-25.
+
 ---
 
 ## Needs Wade's decision
+
+### Whether the email keeps rendering flags
+
+The 2026-09-16 and 2026-09-25 decisions removed flags from the wall and
+mobile only. Decide whether the email digest follows. Added 2026-09-25.
 
 ### Updater agent file contradicts the Updater skill
 
