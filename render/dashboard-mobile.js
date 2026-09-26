@@ -1,7 +1,7 @@
 import {
   cleanDisplayText, peopleForEvent, collapseUpcomingEvents, selectHorizonEvents,
   formatCalendarDate, formatEventTime, eventSubtitleWithoutTime, eventDateKey,
-  rangeDetail, horizonPresentation, conversationalMatchDate, sportsSlotLines, V2_LOGOS, flagTeamLogo, flagNextGame, flagEventMark,
+  rangeDetail, horizonPresentation, conversationalMatchDate, sportsSlotLines, V2_LOGOS, flagTeamLogo, flagNextGame, flagEventMark, renderDivisionTable, safeLatest757Card,
 } from './dashboard-v2.js';
 import { selectEventRowAccents, selectFeatureSlotSpotlight } from '../digest/specialEventSelector.js';
 import { occurrenceId } from '../digest/specialEventOccurrences.js';
@@ -35,9 +35,7 @@ const icon = key => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 
 function nowPage(data) {
   const nn = data.nowNext;
-  const focus = nn ? `<section class="focus tone-${tone(nn.tone)}"><p class="eyebrow">${text(nn.signal)}</p>${nn.subject ? `<h2>${flagEventMark(nn)}${text(nn.subject)}</h2>` : ''}${nn.qualifier ? `<p class="qualifier">${esc(nn.qualifier)}</p>` : ''}${list(nn.context).filter(Boolean).map(line => `<p class="context">${esc(line)}</p>`).join('')}</section>${list(nn.supporting).map(block => group(block.label, list(block.lines).map((line, index) => `<p>${index === 0 ? flagEventMark(block) : ''}${text(line)}</p>`).join(''))).join('')}` : note('No operational summary available in this update. Check Today and the notices below.');
-  const flags = list(data.flags).filter(flag => !flag.bannerOnly);
-  return focus + group('Operational notices', flags.length ? flags.map(flag => `<article class="notice tone-${tone(flag.level)}"><h3>${text(flag.title || 'Family note')}</h3><p>${text(flag.body || flag.message)}</p></article>`).join('') : note(data.calendarFetchFailures?.length ? 'Calendar information is incomplete in this update.' : 'No operational notices listed in this update.'));
+  return nn ? `<section class="focus tone-${tone(nn.tone)}"><p class="eyebrow">${text(nn.signal)}</p>${nn.subject ? `<h2>${flagEventMark(nn)}${text(nn.subject)}</h2>` : ''}${nn.qualifier ? `<p class="qualifier">${esc(nn.qualifier)}</p>` : ''}${list(nn.context).filter(Boolean).map(line => `<p class="context">${esc(line)}</p>`).join('')}</section>${list(nn.supporting).map(block => group(block.label, list(block.lines).map((line, index) => `<p>${index === 0 ? flagEventMark(block) : ''}${text(line)}</p>`).join(''))).join('')}` : note('No operational summary available in this update. Check Today.');
 }
 
 function eventRow(event, detail = eventSubtitleWithoutTime(event), accent = null) {
@@ -68,7 +66,7 @@ function todayPage(data) {
   const day = data.days?.[0] || {}, events = list(day.events).filter(event => event.cardType !== 'menu');
   const tasks = list(day.tasks);
   const work = data.schoolwork;
-  return group('Schedule', events.length ? events.map(event => eventRow(event)).join('') : note(data.calendarFetchFailures?.length ? 'No events returned; calendar information is incomplete.' : 'Nothing scheduled in this update.'))
+  return group('Schedule', events.length ? events.map(event => eventRow(event)).join('') : note('Nothing scheduled in this update.'))
     + group('Today’s tasks', tasks.length ? tasks.map(task => `<article class="list-row"><h3>${text(task.text)}</h3><p class="secondary">${esc(task.owner)}${task.time ? ` · ${esc(task.time)}` : ''}</p></article>`).join('') : note('No tasks listed.'))
     + group('School centers', centers(data.schoolStrip?.centersWeek))
     + group('Schoolwork · upcoming due dates', list(work?.items).map(item => `<article class="list-row"><p class="secondary">${dateLabel(item.date)} · ${esc(item.child)} · ${esc(item.type)}</p><h3>${text(item.title)}</h3></article>`).join('') + (!work?.items?.length ? note('No upcoming work listed.') : '') + (work?.unavailable?.length ? note(`Calendar unavailable: ${work.unavailable.join(', ')}`) : ''))
@@ -111,13 +109,14 @@ function spotlight(data) {
 function athleticsPage(data) {
   const a = data.athletics || {}, parts = [];
   const nextFlag = flagNextGame(a);
-  if (a.flagFootballActive) parts.push(group(a.flagTeamName ? `NFL FLAG · ${a.flagTeamName}` : 'NFL FLAG', `${flagMark(a.flagTeamName)}${note(a.seasonLabel || 'Season')}<p class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</p>${a.lastResult ? note(`Latest result · ${a.lastResult}`) : ''}${nextFlag ? `<h3>${flagMark(nextFlag.opponent)}Next game · ${esc(nextFlag.opponent)}</h3>${nextFlag.detail ? note(nextFlag.detail) : ''}` : ''}${standings(a.standings, true)}`));
+  if (a.flagFootballActive) parts.push(group(a.flagTeamName ? `NFL FLAG · ${a.flagTeamName}` : 'NFL FLAG', `${flagMark(a.flagTeamName)}${note(a.seasonLabel || 'Season')}<p class="record">${esc(a.seasonRecord || a.finalRecord || '0-0')}</p>${a.lastResult ? note(`Latest result · ${a.lastResult}`) : ''}${nextFlag ? `<h3>${flagMark(nextFlag.opponent)}Next game · ${esc(nextFlag.opponent)}</h3>${nextFlag.detail ? note(nextFlag.detail) : ''}` : ''}${renderDivisionTable(a.flagFootballDivisionTable, 'flag-football')}`));
   if (a.wavesActive) {
     parts.push(group('Wellington Waves', `${logo('waves')}${note(`${a.wavesSeasonYear || ''} season`)}<p class="record">${esc(a.wavesRecord || '0-0')}</p>${a.wavesNextMeet ? `<h3>Next meet · ${esc(a.wavesNextMeet.opponent)}</h3>${note(dateLabel(a.wavesNextMeet.date))}` : ''}${standings(a.wavesStandings)}`));
     parts.push(swimmers('Myles · Wellington Waves', 'waves', a.mylesPBRows, a.mylesSeason, a.mylesFooter));
   }
-  if (a.wavesActive || a.swim757Active) parts.push(swimmers(`Ophelia · ${a.wavesActive ? 'Wellington Waves' : '757 Swim'}`, a.wavesActive ? 'waves' : 'swim757', a.opheliaPBRows, a.opheliaSeason, a.opheliaFooter));
-  if (a.sharksActive) parts.push(group('Myles · Tidewater Sharks', `${logo('sharks')}${note(a.sharksDivisionLabel || 'U11 Premier')}<p class="record">${esc(a.sharksRecord || '0-0-0')}</p>${a.sharksLastResult ? note(`Latest result · ${a.sharksLastResult}`) : ''}${a.sharksNextGame ? `<h3>Next match · ${a.sharksNextGame.homeAway === 'away' ? '@' : 'vs.'} ${esc(a.sharksNextGame.opponent)}</h3>${note(conversationalMatchDate(a.sharksNextGame.date, a.sharksNextGame.time))}${note(a.sharksNextGame.venue || '')}` : ''}${a.sharksDivisionStanding ? note(`${a.sharksDivisionStanding.rank} of ${a.sharksDivisionStanding.of} · ${a.sharksDivisionStanding.pts} pts`) : ''}`));
+  if (a.wavesActive) parts.push(swimmers('Ophelia · Wellington Waves', 'waves', a.opheliaPBRows, a.opheliaSeason, a.opheliaFooter));
+  else if (safeLatest757Card(a)) parts.push(group('Ophelia · 757 Swim', safeLatest757Card(a)));
+  if (a.sharksActive) parts.push(group('Myles · Tidewater Sharks', `${logo('sharks')}${note(a.sharksDivisionLabel || 'U11 Premier')}<p class="record">${esc(a.sharksRecord || '0-0-0')}</p>${a.sharksLastResult ? note(`Latest result · ${a.sharksLastResult}`) : ''}${a.sharksNextGame ? `<h3>Next match · ${a.sharksNextGame.homeAway === 'away' ? '@' : 'vs.'} ${esc(a.sharksNextGame.opponent)}</h3>${note(conversationalMatchDate(a.sharksNextGame.date, a.sharksNextGame.time))}${note(a.sharksNextGame.venue || '')}` : ''}${renderDivisionTable(a.sharksDivisionTable, 'soccer')}`));
   const slots = list(data.sportsSnapshot?.slots || data.sportsTicker);
   const sportTime = data.sportsSnapshot?.generatedAt;
   const followed = `${sportTime ? note(`Sports snapshot · ${new Date(sportTime).toLocaleString('en-US', { timeZone: 'America/New_York' })} ET`) : note('Sports update time unavailable.')}${data.sportsSnapshot?.source?.stale ? note('Sports data delayed; last available snapshot shown.') : ''}${slots.length ? slots.map(slot => {
@@ -148,10 +147,9 @@ export function renderDashboardMobile(input, { previewLabel = '' } = {}) {
   const generated = input.householdGeneratedAt && Number.isFinite(Date.parse(input.householdGeneratedAt)) ? new Date(input.householdGeneratedAt).toISOString() : '';
   const snapshotDate = formatCalendarDate(data.today, { year: 'numeric', month: '2-digit', day: '2-digit' });
   const renderers = [nowPage, todayPage, upcomingPage, athleticsPage, horizonPage, prioritiesPage];
-  const failures = list(data.calendarFetchFailures);
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="color-scheme" content="light dark"><title>Moore · Family dashboard</title><style>${MOBILE_CSS}</style></head><body>
 <div class="mobile-dashboard" data-household-generated-at="${esc(generated)}" data-snapshot-date="${esc(snapshotDate)}">
-<header class="app-header"><div class="topline"><span class="wordmark">${icon('now')}Moore</span><span class="updated">${generated ? `Updated ${esc(new Date(generated).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))} ET` : 'Update time unavailable'}</span></div><p class="date">${esc(formatCalendarDate(data.today, { weekday: 'long', month: 'long', day: 'numeric' }))} · ET</p><h1>Now / Next</h1>${previewLabel ? `<p class="preview-label">${esc(previewLabel)}</p>` : ''}<p class="freshness" role="status"></p>${failures.length ? '<p class="fetch-warning">Calendar information is incomplete. Check operational notices.</p>' : ''}</header>
+<header class="app-header"><div class="topline"><span class="wordmark">${icon('now')}Moore</span><span class="updated">${generated ? `Updated ${esc(new Date(generated).toLocaleString('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }))} ET` : 'Update time unavailable'}</span></div><p class="date">${esc(formatCalendarDate(data.today, { weekday: 'long', month: 'long', day: 'numeric' }))} · ET</p><h1>Now / Next</h1>${previewLabel ? `<p class="preview-label">${esc(previewLabel)}</p>` : ''}<p class="freshness" role="status"></p></header>
 <main>${SECTIONS.map(([id, , title], i) => `<section class="page" id="${id}" aria-label="${esc(title)}">${i === 0 && data.banner ? `<aside class="announcement"><h2>${text(data.banner.headline)}</h2>${note(data.banner.subtitle || '')}</aside>` : ''}${renderers[i](data)}</section>`).join('')}</main>
 <nav aria-label="Dashboard sections">${SECTIONS.map(([id, label, title], i) => `<a href="#${id}" data-section="${id}" data-title="${esc(title)}"${i === 0 ? ' aria-current="page"' : ''}>${icon(id)}<span>${label}</span></a>`).join('')}</nav><span class="sr-only" aria-live="polite" id="section-announcement"></span>
 </div><script>(${mountMobileDashboard.toString()})();</script></body></html>`;
