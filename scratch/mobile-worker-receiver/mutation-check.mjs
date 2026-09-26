@@ -118,7 +118,7 @@ const MUTATIONS = [
 
   // --- the two diagnostics a Reviewer pass found missing --------------------
   ['a 5xx from the store becomes indistinguishable from a transport throw again', WORKER,
-    s => s.replace("    logUnderlying('upstream-status', 'storage-unreachable', safeKey, new Error(`upstream answered HTTP ${response.status}`));\n", '')],
+    s => s.replace("    logUnderlying('upstream-status', 'storage-unreachable', safeKey, new Error(`upstream answered HTTP ${response.status}`), await readS3ErrorCode(response));\n", '')],
   ['an unclassified throw is erased into artifact-malformed with no diagnostic', WORKER,
     s => s.replace("    if (!classified) logUnderlying('handler', 'artifact-malformed', pathname, error);\n", '')],
   ['the outer catch logs a classified failure too, so one request reads as two', WORKER,
@@ -132,7 +132,7 @@ const MUTATIONS = [
   ['the missing-secret cause of the 500 goes back to being silent', WORKER,
     s => s.replace("    logUnderlying('config-credentials', 'credentials-rejected', null, new Error('AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY is not set'));\n", '')],
   ['the rejected-key cause of the 500 goes back to being silent', WORKER,
-    s => s.replace("    logUnderlying('upstream-status', 'credentials-rejected', safeKey, new Error(`upstream answered HTTP ${response.status}`));\n", '')],
+    s => s.replace("    logUnderlying('upstream-status', 'credentials-rejected', safeKey, new Error(`upstream answered HTTP ${response.status}`), await readS3ErrorCode(response));\n", '')],
   // All three causes logged under ONE phase is the shape that looks fixed and
   // is not: the reason is logged, and still nothing says which remedy applies.
   ['the three causes are logged but under one indistinguishable phase', WORKER,
@@ -142,7 +142,7 @@ const MUTATIONS = [
       "new Error('AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY is not set')",
       'new Error(`AWS_ACCESS_KEY_ID=${accessKeyId} AWS_SECRET_ACCESS_KEY is not set`)')],
   ['a non-ok upstream status stops being distinguishable from a bad manifest', WORKER,
-    s => s.replace("    logUnderlying('upstream-status', 'artifact-malformed', safeKey, new Error(`upstream answered HTTP ${response.status}`));\n", '')],
+    s => s.replace("    logUnderlying('upstream-status', 'artifact-malformed', safeKey, new Error(`upstream answered HTTP ${response.status}`), await readS3ErrorCode(response));\n", '')],
   // The documented silent family, pinned from the other direction: a line per
   // manifest field would be volume rather than signal, and the test that says
   // so must be able to fail.
