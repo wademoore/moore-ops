@@ -34,6 +34,14 @@ What that section makes cheap is the ceremony around the entry, not the review o
 it. Decided in conversation on 2026-09-20. That is a decision taken on that date,
 not a pre-existing convention being written down.
 
+- Weekly Review skill lives in three places: tracked at
+  .claude/skills/moore-ops-weekly-review/SKILL.md, untracked duplicate at
+  .agents/skills/..., and an uploaded account skill (by you, no source repo)
+  which is the copy that loads in claude.ai chat. Only the repo copy is
+  version-controlled. Updating the skill means updating all three. The
+  account copy sat at Jun 3 while the repo moved on. Decide: keep the
+  three-way sync manual, or collapse to one home.
+  
 ---
 
 ## Work
