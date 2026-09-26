@@ -325,13 +325,6 @@ windows change about once a year per sport, so routine data entry is
 unaffected. Remedy: give those tests their own season config, keeping
 every assertion.
 
-### Log S3's error code in the mobile Worker's failure log
-
-The failure log records only the HTTP status, so a missing permission took
-an evening to diagnose. Log S3's error code (for example `AccessDenied` or
-`SignatureDoesNotMatch`) as well, without logging credentials, the signed
-URL, or request headers. Added 2026-09-25.
-
 ### Reconcile the mobile Worker's documented IAM user with the deployed one
 
 The docs name an IAM user for the mobile Worker that differs from the user

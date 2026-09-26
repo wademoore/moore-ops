@@ -188,11 +188,10 @@ function scrubCredentials(text) {
  * WHAT IS DELIBERATELY ABSENT. Not the signed headers: `authorization`
  * carries `Credential=<access key id>/<scope>`. Not `config.credentials`,
  * not `env`, and not the error object itself, whose own properties are set
- * by whatever threw rather than by us. Name, message and our own two labels
- * are the whole of it, and the message is truncated so an upstream string
- * cannot run away with the log.
+ * by whatever threw rather than by us. The message is truncated so an
+ * upstream string cannot run away with the log.
  */
-function logUnderlying(phase, reason, key, error) {
+function logUnderlying(phase, reason, key, error, s3ErrorCode) {
   console.error(JSON.stringify({
     worker: 'mobile-dashboard',
     event: 'serve-failure',
@@ -203,7 +202,55 @@ function logUnderlying(phase, reason, key, error) {
     // Scrubbed BEFORE truncating: a key straddling the bound would otherwise
     // survive as a fragment.
     message: scrubCredentials(String(error instanceof Error ? error.message : error)).slice(0, MAX_DIAGNOSTIC_MESSAGE),
+    ...(s3ErrorCode === undefined ? {} : { s3ErrorCode }),
   }));
+}
+
+/** Bounds on reading an upstream error body for its code. */
+const ERROR_BODY_MAX_BYTES = 1024;
+const ERROR_BODY_TIMEOUT_MS = 1_000;
+
+/** The first element of S3's `<Error>` document, and its value's only accepted shape. */
+const S3_ERROR_CODE_POSITION = /^\s*(?:<\?xml[^>]*\?>\s*)?<Error>\s*<Code>([^<]*)<\/Code>/;
+const S3_ERROR_CODE_SHAPE = /^[A-Z][a-z][A-Za-z]{0,62}$/;
+
+/**
+ * S3's error code from a failed response, or null. The body can carry the
+ * access key id, the string to sign, the canonical request and the provided
+ * signature, so only a value of the code's own shape leaves this function.
+ * Never throws.
+ */
+async function readS3ErrorCode(response) {
+  let reader;
+  let timer;
+  try {
+    reader = response.body?.getReader();
+    if (!reader) return null;
+    const timeout = new Promise(resolve => { timer = setTimeout(resolve, ERROR_BODY_TIMEOUT_MS, null); });
+    const chunks = [];
+    let total = 0;
+    while (total < ERROR_BODY_MAX_BYTES) {
+      const step = await Promise.race([reader.read(), timeout]);
+      if (!step) return null;
+      if (step.done) break;
+      chunks.push(step.value);
+      total += step.value.byteLength;
+    }
+    const bytes = new Uint8Array(Math.min(total, ERROR_BODY_MAX_BYTES));
+    let offset = 0;
+    for (const chunk of chunks) {
+      const part = chunk.subarray(0, bytes.length - offset);
+      bytes.set(part, offset);
+      offset += part.length;
+    }
+    const code = S3_ERROR_CODE_POSITION.exec(new TextDecoder().decode(bytes))?.[1];
+    return code !== undefined && S3_ERROR_CODE_SHAPE.test(code) ? code : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+    try { reader?.cancel().catch(() => {}); } catch { /* already released */ }
+  }
 }
 
 /**
@@ -348,17 +395,17 @@ async function readObject(config, deps, key, versionId) {
   }
 
   if (response.status === 403 || response.status === 401) {
-    logUnderlying('upstream-status', 'credentials-rejected', safeKey, new Error(`upstream answered HTTP ${response.status}`));
+    logUnderlying('upstream-status', 'credentials-rejected', safeKey, new Error(`upstream answered HTTP ${response.status}`), await readS3ErrorCode(response));
     throw new ServeFailure('credentials-rejected');
   }
   // 404 is the one reason with exactly one cause, so it needs no line.
   if (response.status === 404) throw new ServeFailure('artifact-missing');
   if (response.status >= 500) {
-    logUnderlying('upstream-status', 'storage-unreachable', safeKey, new Error(`upstream answered HTTP ${response.status}`));
+    logUnderlying('upstream-status', 'storage-unreachable', safeKey, new Error(`upstream answered HTTP ${response.status}`), await readS3ErrorCode(response));
     throw new ServeFailure('storage-unreachable');
   }
   if (!response.ok) {
-    logUnderlying('upstream-status', 'artifact-malformed', safeKey, new Error(`upstream answered HTTP ${response.status}`));
+    logUnderlying('upstream-status', 'artifact-malformed', safeKey, new Error(`upstream answered HTTP ${response.status}`), await readS3ErrorCode(response));
     throw new ServeFailure('artifact-malformed');
   }
 
@@ -573,6 +620,8 @@ export {
   DISCOVERY_ROUTES,
   DOCUMENT_CONTENT_TYPE,
   DOCUMENT_ROUTES,
+  ERROR_BODY_MAX_BYTES,
+  ERROR_BODY_TIMEOUT_MS,
   FAILURES,
   MANIFEST_CONTENT_TYPE,
   MAX_DIAGNOSTIC_MESSAGE,
