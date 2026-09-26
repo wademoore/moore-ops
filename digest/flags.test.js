@@ -80,6 +80,13 @@ describe('Regression — unchanged evaluators', () => {
   });
 });
 
+// Retired at its producer. Decided in conversation on 2026-09-25: an overlap
+// between two kids' activities that the household coverage defaults already
+// resolve (Wade takes Myles, Robyn takes Ophelia) is not information and is not
+// surfaced. Reason: Wade found the notices were not providing value, which is
+// also the reason behind the 2026-09-16 removal of the notices strip from the
+// wall. A replacement flag for cases where the defaults fail is out of scope;
+// none has a named consumer.
 describe('Kid activity overlap', () => {
   const timedKidEvent = (title, calendarName, start, end) => ev({
     title,
@@ -96,13 +103,13 @@ describe('Kid activity overlap', () => {
     assert.equal(flags.find(flag => flag.id === 'activity-overlap'), undefined);
   });
 
-  it('continues to flag genuine overlapping kid activities', () => {
+  it('does not flag overlapping kid activities', () => {
     const flags = computeFlags(ctx({ resolvedEvents: [
       timedKidEvent('Sharks Practice', 'Myles', '2026-09-08T18:00:00-04:00', '2026-09-08T19:00:00-04:00'),
       timedKidEvent('Dance Class', 'Ophelia', '2026-09-08T18:30:00-04:00', '2026-09-08T19:30:00-04:00'),
     ] }));
 
-    assert.ok(flags.find(flag => flag.id === 'activity-overlap'));
+    assert.equal(flags.find(flag => flag.id === 'activity-overlap'), undefined);
   });
 
   it('ignores standing GK training with the household standard coverage setup', () => {
@@ -114,76 +121,42 @@ describe('Kid activity overlap', () => {
     assert.equal(flags.find(flag => flag.id === 'activity-overlap'), undefined);
   });
 
-  // ── Demotion (Sept 2026) ──────────────────────────────────────────────────
-  // The flag recites the always-on split-coverage rule, so it is standing
-  // context rather than news. Before this change nothing in the suite asserted
-  // either half of its prominence, which is why it could sit in the two most
-  // prominent positions on the wall unchallenged. These cases are new guards,
-  // not rewritten ones — no assertion was relaxed, deleted or skipped to reach
-  // them, and the three firing cases above are untouched.
-  describe('demoted prominence', () => {
-    const overlapFlag = () => computeFlags(ctx({ resolvedEvents: [
+  describe('retired', () => {
+    const overlapEvents = [
       timedKidEvent('Sharks Practice', 'Myles', '2026-09-08T18:00:00-04:00', '2026-09-08T19:00:00-04:00'),
       timedKidEvent('Dance Class', 'Ophelia', '2026-09-08T18:30:00-04:00', '2026-09-08T19:30:00-04:00'),
-    ] })).find(flag => flag.id === 'activity-overlap');
+    ];
+    const overlapFlags = (today = d('2026-05-18')) => computeFlags(ctx({ today, resolvedEvents: overlapEvents }));
 
-    it('is blue, so nowNextSelector’s problemCandidates filter rejects it', () => {
-      // problemCandidates() admits `!bannerOnly && (level red || amber)` at
-      // PRIORITY 700 — the top of the table — and supportFrom() never admits an
-      // UNRESOLVED_PROBLEM into a supporting block, so an amber flag here means
-      // the featured slot or nothing. Blue is what makes it stop qualifying;
-      // nowNextSelector.js itself is deliberately not modified.
-      assert.equal(overlapFlag().level, 'blue');
+    it('produces no activity-overlap flag on the overlap date itself', () => {
+      assert.equal(overlapFlags(d('2026-09-08')).find(flag => flag.id === 'activity-overlap'), undefined);
     });
 
-    it('is noteOnly, so the v2 alerts panel keeps it out of the three cards', () => {
-      assert.equal(overlapFlag().noteOnly, true);
+    it('produces no noteOnly flag', () => {
+      assert.equal(overlapFlags().find(flag => flag.noteOnly), undefined);
     });
 
-    it('is not bannerOnly, because Dashboard v2 renders bannerOnly flags nowhere', () => {
-      // renderAlerts() is v2's only consumer of data.flags and filters
-      // bannerOnly out entirely, so bannerOnly would hide the flag rather than
-      // quiet it. It is demoted, not retired.
-      assert.notEqual(overlapFlag().bannerOnly, true);
+    it('adds no flag to those the date produces without the overlap', () => {
+      assert.deepEqual(overlapFlags(), computeFlags(ctx()));
     });
 
-    it('leads the body with the standing default, so truncation cannot eat it', () => {
-      // Order is load-bearing, not stylistic. `desc` carries one clause per
-      // overlapping PAIR, bounded by |Myles timed| × |Ophelia timed| rather than
-      // by either alone, so it grows faster than the event count while the note
-      // renders in a fixed 92px band. Measured at 2560×1440 with the default
-      // trailing, on two Myles and two Ophelia events that mutually overlap
-      // (four clauses): only 51.3% of the body was visible and the ellipsis had
-      // removed this whole sentence. render/dashboard-v2-layout.test.js asserts
-      // the rendered consequence; this asserts the shape that produces it.
-      assert.ok(
-        overlapFlag().body.startsWith('Standing default: Wade takes Myles, Robyn takes Ophelia.'),
-        `body must lead with the standing default, got: ${overlapFlag().body}`,
-      );
+    it('produces no body stating the standing default', () => {
+      assert.ok(!overlapFlags().some(flag => /Wade takes Myles, Robyn takes Ophelia/.test(flag.body)));
     });
 
-    it('states the standing default without asking for a decision', () => {
-      const flag = overlapFlag();
-      assert.match(flag.body, /Standing default: Wade takes Myles, Robyn takes Ophelia/);
-      assert.doesNotMatch(flag.body, /Confirm/i);
-      assert.doesNotMatch(flag.title, /Needed/i);
-      // The amber indicator glyph would contradict level 'blue'.
-      assert.doesNotMatch(flag.title, /\u{1F7E1}/u);
+    it('produces no Overlapping Activities title', () => {
+      assert.ok(!overlapFlags().some(flag => /Overlapping Activities/.test(flag.title)));
     });
 
-    it('still names both overlapping activities, so the note is identifiable', () => {
-      const flag = overlapFlag();
-      assert.match(flag.body, /Sharks Practice \(Myles\)/);
-      assert.match(flag.body, /Dance Class \(Ophelia\)/);
+    it('names neither overlapping activity in any flag', () => {
+      assert.ok(!overlapFlags().some(flag => /Sharks Practice|Dance Class/.test(`${flag.title} ${flag.body}`)));
     });
   });
 });
 
 // ---------------------------------------------------------------------------
-// End-to-end: the demoted flag no longer displaces real events in NOW/NEXT.
-// computeFlags() feeds selectNowNext() exactly as builder.js wires them, so
-// this asserts the outcome the demotion exists for rather than the property
-// that produces it.
+// End-to-end: computeFlags() feeds selectNowNext() exactly as builder.js wires
+// them.
 // ---------------------------------------------------------------------------
 
 describe('Kid activity overlap — NOW/NEXT outcome', () => {
@@ -200,7 +173,7 @@ describe('Kid activity overlap — NOW/NEXT outcome', () => {
   const now = new Date('2026-09-08T16:00:00-04:00');
   const nowNext = () => {
     const flags = computeFlags(ctx({ today: d('2026-09-08'), resolvedEvents: events }));
-    assert.ok(flags.find(flag => flag.id === 'activity-overlap'), 'fixture must actually fire the flag');
+    assert.equal(flags.find(flag => flag.id === 'activity-overlap'), undefined);
     return selectNowNext({ flags, days: [{ events, tasks: [] }], upcomingEvents: [], now }, { now });
   };
 

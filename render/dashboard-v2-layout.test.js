@@ -1163,16 +1163,6 @@ describe('event-row accent 2560x1440 footprint and readability', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// The demoted activity-overlap flag renders as a note, measured rather than
-// asserted. "Still visible somewhere on the dashboard" is the half of the
-// demotion that a markup assertion cannot establish on its own: a note that is
-// zero-width, fully transparent, or pushed outside the panel would satisfy
-// every string check in render/dashboard-v2.test.js and show nothing on the
-// wall. These cases read the composited box out of a real browser.
-// ---------------------------------------------------------------------------
-
-
 // Former note visibility tests now guard the approved absence and reclaimed layout.
 describe('retired alert strip does not reserve wall space', () => {
   const LONG_ALERTS = Object.freeze([
@@ -1181,8 +1171,6 @@ describe('retired alert strip does not reserve wall space', () => {
     { level: 'amber', title: 'Flag Football Schedule Gap — 1 Calendar Event Has No Season Entry', body: '2026-10-25 “Flag Football: Week 6 — Practice + Game / Playoffs (Yorktown)” is on the calendar but not in data/flag-football.json.' },
   ]);
 
-  // Built through computeFlags rather than hand-written, so the body string is
-  // the one production emits — including the cross product that makes it grow.
   const timedKidEvent = (title, calendarName) => ({
     title,
     _calName: calendarName,
@@ -1199,12 +1187,12 @@ describe('retired alert strip does not reserve wall space', () => {
       events.push(timedKidEvent(`Myles Activity ${index + 1}`, 'Myles'));
       events.push(timedKidEvent(`Ophelia Activity ${index + 1}`, 'Ophelia'));
     }
-    const flag = computeFlags({
+    const flags = computeFlags({
       today: new Date(2026, 8, 8), resolvedEvents: events,
       schoolStrip: { myles: {}, ophelia: {} }, days: [], gmailHits: {},
-    }).find(item => item.id === 'activity-overlap');
-    assert.ok(flag, 'fixture must actually fire the activity-overlap flag');
-    return flag;
+    });
+    assert.equal(flags.find(item => item.id === 'activity-overlap'), undefined);
+    return flags;
   }
 
   async function geometry(flags, banner = null) {
@@ -1221,10 +1209,10 @@ describe('retired alert strip does not reserve wall space', () => {
     }));
   }
   const scenarios = [
-    ['ordinary alerts and one real overlap note', () => [...sampleDashboardV2Data.flags, overlapNote(1)]],
-    ['long alert titles', () => [...LONG_ALERTS, overlapNote(1)]],
-    ['multiple real overlaps', () => [...LONG_ALERTS, overlapNote(2)]],
-    ['long overlap body', () => [...LONG_ALERTS, overlapNote(3)]],
+    ['ordinary alerts and one real overlap', () => [...sampleDashboardV2Data.flags, ...overlapNote(1)]],
+    ['long alert titles', () => [...LONG_ALERTS, ...overlapNote(1)]],
+    ['multiple real overlaps', () => [...LONG_ALERTS, ...overlapNote(2)]],
+    ['long overlap', () => [...LONG_ALERTS, ...overlapNote(3)]],
     ['severity variants', () => LONG_ALERTS.map(flag => ({ ...flag, noteOnly: true }))],
     ['ordinary alerts without notes', () => LONG_ALERTS],
     ['empty flags', () => []],
