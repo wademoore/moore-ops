@@ -1924,6 +1924,8 @@ ${browserScript()}
 }
 
 export {
+  renderDivisionTable,
+  safeLatest757Card,
   flagEventMark,
   flagTeamLogo,
   flagNextGame,

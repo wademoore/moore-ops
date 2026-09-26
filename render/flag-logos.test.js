@@ -1,6 +1,6 @@
 import { it } from 'node:test';
 import assert from 'node:assert/strict';
-import { flagNextGame, flagTeamLogo, renderAthletics, V2_LOGOS } from './dashboard-v2.js';
+import { flagNextGame, flagTeamLogo, renderAthletics, renderDivisionTable, V2_LOGOS } from './dashboard-v2.js';
 import { renderDashboardMobile } from './dashboard-mobile.js';
 import { divisionFixture } from './division-table.fixtures.js';
 import { sampleDashboardV2Data } from './dashboard-v2.sample-data.js';
@@ -27,8 +27,10 @@ it('decorates resolved rows without using the mascot to identify our team', () =
   assert.equal((wall.match(/Cowboys · Us/g) || []).length, 1);
   assert.ok(wall.includes(V2_LOGOS.ravens));
   assert.match(wall, /vs\. Ravens<\/span>/);
-  const mobile = renderDashboardMobile(data);
-  assert.equal((mobile.match(/Cowboys · Our team/g) || []).length, 1);
+  const table = divisionFixture(data.athletics.standings);
+  const mobile = renderDashboardMobile({ ...data, athletics: { ...data.athletics, flagFootballDivisionTable: table } });
+  assert.ok(mobile.includes(renderDivisionTable(table, 'flag-football')));
+  assert.equal((mobile.match(/Cowboys · Us/g) || []).length, 1);
   assert.ok(mobile.includes(V2_LOGOS.ravens));
   assert.doesNotMatch(mobile, /<p class="note"><\/p>/);
 });
@@ -56,8 +58,10 @@ it('renders every supplied flag standing in order, including our last-place row,
     rows.forEach((row, i) => assert.ok(row[2].includes(standings[i].team)));
     assert.equal(rows.at(-1)[1], 'is-me');
     assert.match(rows.at(-1)[2], /Cowboys · Us/);
-    const mobile = renderDashboardMobile(data);
-    assert.match(mobile, /Cowboys · Our team/);
+    const table = divisionFixture(standings);
+    const mobile = renderDashboardMobile({ ...data, athletics: { ...data.athletics, flagFootballDivisionTable: table } });
+    assert.ok(mobile.includes(renderDivisionTable(table, 'flag-football')));
+    assert.match(mobile, /Cowboys · Us/);
     for (const row of standings) assert.ok(mobile.includes(row.team));
   }
 });

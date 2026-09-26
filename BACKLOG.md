@@ -321,12 +321,6 @@ every assertion.
 
 ## Needs Wade's decision
 
-### Mobile and wall disagree on Ophelia's 757 swims
-
-Dashboard v2 shows her latest 757 meet; the mobile renderer shows the
-configured-event rows. Decide whether the phone should match the wall
-before mobile goes live.
-
 ### Updater agent file contradicts the Updater skill
 
 The agent file says do not push; the skill says push a branch and open a

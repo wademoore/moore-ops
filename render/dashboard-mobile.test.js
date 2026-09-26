@@ -2,7 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderDashboardMobile } from './dashboard-mobile.js';
 import { mobilePreviewStates } from './dashboard-mobile.sample-data.js';
-import { collapseUpcomingEvents, selectHorizonEvents, sportsSlotLines } from './dashboard-v2.js';
+import { collapseUpcomingEvents, selectHorizonEvents, sportsSlotLines, renderDashboardV2, renderDivisionTable, safeLatest757Card } from './dashboard-v2.js';
 
 const states = mobilePreviewStates();
 const render = (state = 'everyday') => renderDashboardMobile(states[state]);
@@ -23,12 +23,13 @@ describe('mobile dashboard content contract', () => {
     for (const value of ['Coverage needed', 'Arrange pickup', 'Action required', 'School closes early', 'Contact caregiver', 'Three']) assert.ok(html.includes(value));
     assert.match(html, /tone-problem/); assert.doesNotMatch(html, /5:05|Leave at/);
   });
-  it('shows all operational flags except banner-only flags', () => {
+  it('ignores flags outside the selected Now / Next content, as the wall does', () => {
     const data = structuredClone(states.everyday);
+    const without = renderDashboardMobile({ ...data, flags: [] });
     data.flags = Array.from({ length: 8 }, (_, i) => ({ title: `Notice ${i}`, message: `Body ${i}` }));
     data.flags.push({ title: 'Masthead-only', bannerOnly: true });
-    const html = section(renderDashboardMobile(data), 'now');
-    assert.equal(count(html, 'class="notice '), 8); assert.doesNotMatch(html, /Masthead-only/);
+    assert.equal(renderDashboardMobile(data), without);
+    assert.equal(renderDashboardV2(data), renderDashboardV2({ ...data, flags: [] }));
   });
   it('removes TV list caps from today events, tasks, and schoolwork', () => {
     const html = section(render('crowded'), 'today');
@@ -64,10 +65,52 @@ describe('mobile dashboard content contract', () => {
     const html = section(renderDashboardMobile(data), 'today');
     for (const value of ['Provisional', 'Schedule not available yet', 'Bring instrument', 'Jun 9']) assert.ok(html.includes(value));
   });
-  it('shows incomplete calendar and schoolwork source warnings', () => {
+  it('keeps schoolwork source availability but omits mobile calendar fetch warnings', () => {
     const html = render('partial-calendar');
-    assert.ok(html.includes('Calendar information is incomplete'));
+    assert.doesNotMatch(html, /Calendar information is incomplete|No events returned|Operational notices|Calendar unavailable<\/h3>/);
     assert.ok(html.includes('Calendar unavailable: Myles'));
+    const empty = structuredClone(states.quiet);
+    empty.calendarFetchFailures = [{ calendarName: 'Myles' }];
+    assert.equal(renderDashboardMobile(empty), renderDashboardMobile({ ...empty, calendarFetchFailures: [] }));
+    assert.match(section(renderDashboardMobile(empty), 'today'), /Nothing scheduled in this update/);
+  });
+  it('uses the wall division table content for both sports', () => {
+    const data = structuredClone(states.everyday);
+    data.athletics = {
+      sharksActive: true, flagFootballActive: true, flagTeamName: 'Cowboys',
+      sharksDivisionTable: { status: 'available', unpostedCount: 2, rows: [
+        { teamId: 1, shortName: 'Sharks', isMe: true, rank: 2, rankShared: true, played: 3, scoreDifference: 4, leaguePoints: 7 },
+      ] },
+      flagFootballDivisionTable: { status: 'available', unpostedCount: 1, rows: [
+        { teamId: 2, shortName: 'Cowboys', isMe: true, rank: 1, rankShared: true, wins: 2, losses: 0, drawn: 1 },
+        { teamId: 3, shortName: 'Bears', coach: 'Lee', rank: 2, wins: 1, losses: 1, drawn: 0 },
+        { teamId: 4, shortName: 'Bears', coach: 'Kim', rank: 2, wins: 1, losses: 1, drawn: 0 },
+      ] },
+    };
+    const mobile = section(renderDashboardMobile(data), 'athletics');
+    const wall = renderDashboardV2(data);
+    for (const [table, sport] of [[data.athletics.sharksDivisionTable, 'soccer'], [data.athletics.flagFootballDivisionTable, 'flag-football']]) {
+      const exact = renderDivisionTable(table, sport);
+      assert.ok(mobile.includes(exact)); assert.ok(wall.includes(exact));
+    }
+    assert.match(mobile, /T-1|T-2/); assert.match(mobile, /Bears \(Lee\)/);
+    assert.match(mobile, /Bears \(Kim\)/); assert.match(mobile, /Some scores are not yet posted/);
+  });
+  it('uses the wall latest 757 meet gate and content without a Waves award', () => {
+    const data = structuredClone(states.everyday);
+    const meet = { meet: 'KickOff', startDate: '2026-09-12', endDate: '2026-09-12', dates: ['2026-09-12'], races: [
+      { event: '50y Backstroke', course: 'SCY', seconds: 42.12, distance: 50, isPersonalBest: true },
+    ] };
+    data.athletics = { swim757Active: true, opheliaSeason: 'Fall', opheliaFooter: '2025 Most Improved Swimmer', opheliaLatest757Meet: meet };
+    const card = safeLatest757Card(data.athletics);
+    assert.ok(card);
+    const mobile = section(renderDashboardMobile(data), 'athletics');
+    assert.ok(mobile.includes(card)); assert.ok(renderDashboardV2(data).includes(card));
+    assert.doesNotMatch(mobile, /2025 Most Improved Swimmer/);
+    data.athletics.opheliaLatest757Meet = { ...meet, races: [] };
+    assert.equal(safeLatest757Card(data.athletics), '');
+    assert.doesNotMatch(section(renderDashboardMobile(data), 'athletics'), /Ophelia · 757 Swim|latest-757-card/);
+    assert.doesNotMatch(renderDashboardV2(data), /latest-757-card/);
   });
   it('does not claim a successful priority fetch when no rows are returned', () => {
     assert.match(section(render('quiet'), 'priorities'), /No priorities listed in this update/);
