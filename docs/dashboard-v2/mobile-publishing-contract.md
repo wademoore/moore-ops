@@ -225,7 +225,7 @@ handling.
   trigger exactly the retry-and-republish this design exists to avoid. The
   mobile path is therefore bounded in duration as well as caught on rejection.
 - A display failure still rejects, exactly as it did before mobile publishing
-  existed, so retries and existing alarms behave identically — and the mobile
+  existed, so retries behave identically — and the mobile
   document publishes anyway.
 
 Both directions are proved by mutation in
