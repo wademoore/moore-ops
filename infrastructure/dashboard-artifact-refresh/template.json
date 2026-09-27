@@ -13,7 +13,11 @@
     "FirstDayLevel3Departure": { "Type": "String", "Default": "07:30", "AllowedPattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
     "FirstDayLevel3Handoff": { "Type": "String", "Default": "07:45", "AllowedPattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
     "FirstDayLevel3Coda": { "Type": "String", "Default": "16:00", "AllowedPattern": "^(?:[01][0-9]|2[0-3]):[0-5][0-9]$" },
-    "ArtifactBucketName": { "Type": "String", "Default": "moore-ops-dashboard-v2-artifacts-0803" }
+    "ArtifactBucketName": { "Type": "String", "Default": "moore-ops-dashboard-v2-artifacts-0803" },
+    "AlertEmail": { "Type": "String", "Default": "", "NoEcho": true }
+  },
+  "Conditions": {
+    "HasAlertEmail": { "Fn::Not": [{ "Fn::Equals": [{ "Ref": "AlertEmail" }, ""] }] }
   },
   "Resources": {
     "ArtifactBucket": {
@@ -58,6 +62,17 @@
       }
     },
     "GeneratorLogGroup": { "Type": "AWS::Logs::LogGroup", "Properties": { "LogGroupName": { "Fn::Sub": "/aws/lambda/${GeneratorFunction}" }, "RetentionInDays": 30 } },
+    "GeneratorAlertTopic": { "Type": "AWS::SNS::Topic" },
+    "GeneratorAlertSubscription": { "Type": "AWS::SNS::Subscription", "Condition": "HasAlertEmail", "Properties": { "TopicArn": { "Ref": "GeneratorAlertTopic" }, "Protocol": "email", "Endpoint": { "Ref": "AlertEmail" } } },
+    "DisplayPublishedMetricFilter": { "Type": "AWS::Logs::MetricFilter", "Properties": { "LogGroupName": { "Ref": "GeneratorLogGroup" }, "FilterPattern": "\"dashboard_artifact_generation_succeeded\"", "MetricTransformations": [{ "MetricNamespace": "MooreOps/DashboardV2", "MetricName": "DisplayPublished", "MetricValue": "1" }] } },
+    "MobileFailedMetricFilter": { "Type": "AWS::Logs::MetricFilter", "Properties": { "LogGroupName": { "Ref": "GeneratorLogGroup" }, "FilterPattern": "\"dashboard_mobile_generation_failed\"", "MetricTransformations": [{ "MetricNamespace": "MooreOps/DashboardV2", "MetricName": "MobileGenerationFailed", "MetricValue": "1" }] } },
+    "GeneratorFailedAlarm": { "Type": "AWS::CloudWatch::Alarm", "Properties": { "AlarmName": "moore-ops-dashboard-v2-generator-failed", "Namespace": "AWS/Lambda", "MetricName": "Errors", "Dimensions": [{ "Name": "FunctionName", "Value": { "Ref": "GeneratorFunction" } }], "Statistic": "Sum", "Period": 3600, "EvaluationPeriods": 1, "Threshold": 3, "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching", "AlarmActions": [{ "Ref": "GeneratorAlertTopic" }] } },
+    "GeneratorStaleAlarm": { "Type": "AWS::CloudWatch::Alarm", "Properties": { "AlarmName": "moore-ops-dashboard-v2-generator-stale", "Namespace": "MooreOps/DashboardV2", "MetricName": "DisplayPublished", "Statistic": "Sum", "Period": 3600, "EvaluationPeriods": 9, "DatapointsToAlarm": 9, "Threshold": 1, "ComparisonOperator": "LessThanThreshold", "TreatMissingData": "breaching", "AlarmActions": [{ "Ref": "GeneratorAlertTopic" }], "OKActions": [{ "Ref": "GeneratorAlertTopic" }] } },
+    "MobileFailedAlarm": { "Type": "AWS::CloudWatch::Alarm", "Properties": { "AlarmName": "moore-ops-dashboard-v2-mobile-failed", "Metrics": [
+      { "Id": "display", "MetricStat": { "Metric": { "Namespace": "MooreOps/DashboardV2", "MetricName": "DisplayPublished" }, "Period": 3600, "Stat": "Sum" }, "ReturnData": false },
+      { "Id": "mobile", "MetricStat": { "Metric": { "Namespace": "MooreOps/DashboardV2", "MetricName": "MobileGenerationFailed" }, "Period": 3600, "Stat": "Sum" }, "ReturnData": false },
+      { "Id": "wallPublishedMobileFailed", "Expression": "IF(FILL(display, 0) > 0 AND FILL(mobile, 0) > 0, 1, 0)", "ReturnData": true }
+    ], "EvaluationPeriods": 1, "Threshold": 1, "ComparisonOperator": "GreaterThanOrEqualToThreshold", "TreatMissingData": "notBreaching", "AlarmActions": [{ "Ref": "GeneratorAlertTopic" }] } },
     "PiReader": { "Type": "AWS::IAM::User", "Properties": { "UserName": "moore-ops-dashboard-v2-pi-reader-0803", "Policies": [{ "PolicyName": "ReadOnlyDashboardArtifacts", "PolicyDocument": { "Version": "2012-10-17", "Statement": [{ "Effect": "Allow", "Action": ["s3:GetObject", "s3:GetObjectVersion"], "Resource": { "Fn::Sub": "${ArtifactBucket.Arn}/dashboard-v2/*" } }] } }] } }
   },
   "Outputs": {

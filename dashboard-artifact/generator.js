@@ -128,7 +128,7 @@ async function generateAndPublish({
  *
  * Failure semantics are deliberately asymmetric, and the asymmetry is the
  * point rather than an oversight. A display failure still rejects, exactly as
- * it did before this change, so EventBridge retries and existing alarms behave
+ * it did before this change, so EventBridge retries behave
  * identically. A mobile failure does NOT reject: making it do so would let a
  * phone-only defect force repeated republishing of a perfectly good display
  * artifact. It surfaces instead as the structured
