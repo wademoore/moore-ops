@@ -23,13 +23,53 @@ describe('mobile dashboard content contract', () => {
     for (const value of ['Coverage needed', 'Arrange pickup', 'Action required', 'School closes early', 'Contact caregiver', 'Three']) assert.ok(html.includes(value));
     assert.match(html, /tone-problem/); assert.doesNotMatch(html, /5:05|Leave at/);
   });
-  it('ignores flags outside the selected Now / Next content, as the wall does', () => {
+  it('keeps unrelated flags out while showing banner-style advance notices on mobile only', () => {
     const data = structuredClone(states.everyday);
-    const without = renderDashboardMobile({ ...data, flags: [] });
     data.flags = Array.from({ length: 8 }, (_, i) => ({ title: `Notice ${i}`, message: `Body ${i}` }));
     data.flags.push({ title: 'Masthead-only', bannerOnly: true });
-    assert.equal(renderDashboardMobile(data), without);
+    const html = renderDashboardMobile(data);
+    for (let i = 0; i < 8; i++) assert.doesNotMatch(html, new RegExp(`Notice ${i}`));
+    assert.match(section(html, 'today'), /Masthead-only/);
     assert.equal(renderDashboardV2(data), renderDashboardV2({ ...data, flags: [] }));
+  });
+  it('shows each supplied tomorrow warning and omits the group when none exist', () => {
+    const data = structuredClone(states.everyday);
+    data.schoolStrip.tomorrowWarnings = ['Tomorrow: Myles has Media — pack library book tonight', 'Pack for Ophelia Swim by Friday (Saturday activity)'];
+    const html = section(renderDashboardMobile(data), 'today');
+    assert.match(html, /Tomorrow warnings/);
+    assert.match(html, /Myles has Media/);
+    assert.match(html, /Pack for Ophelia Swim/);
+    data.schoolStrip.tomorrowWarnings = [];
+    assert.doesNotMatch(section(renderDashboardMobile(data), 'today'), /Tomorrow warnings|Pack for Ophelia Swim/);
+  });
+  it('shows only informational, banner, and Emma advance notices with their supplied text', () => {
+    const data = structuredClone(states.everyday);
+    data.flags = [
+      { id: 'trash-monday', level: 'blue', title: 'Trash Day', body: 'Put bins out' },
+      { id: 'saturday-board-game', level: 'blue', title: 'Board Game Night', body: 'Meet at seven' },
+      { id: 'myles_birthday', level: 'blue', bannerOnly: true, label: () => 'Happy birthday, Myles!' },
+      { id: 'champs-qualifier', level: 'blue', bannerOnly: true, message: 'Ophelia qualified for Champs!' },
+      { id: 'emma-unavail-2026-10-01-uta', level: 'amber', title: 'Emma Unavailable', body: 'Confirm coverage', nowNextEligibleFrom: '2026-09-30' },
+      { id: 'unrelated-amber', level: 'amber', title: 'Unrelated action', body: 'Do this' },
+      { id: 'calendar-fetch-failure', level: 'red', title: 'Calendar unreadable' },
+    ];
+    const html = section(renderDashboardMobile(data), 'today');
+    for (const value of ['Trash Day', 'Put bins out', 'Board Game Night', 'Happy birthday, Myles!', 'Ophelia qualified for Champs!', 'Emma Unavailable', 'Confirm coverage']) assert.ok(html.includes(value));
+    assert.doesNotMatch(html, /undefined|<h3><\/h3>|Unrelated action|Calendar unreadable/);
+    assert.equal(renderDashboardV2(data), renderDashboardV2({ ...data, flags: [] }));
+    data.flags = [];
+    assert.doesNotMatch(section(renderDashboardMobile(data), 'today'), /Advance notices/);
+  });
+  it('does not repeat an Emma notice when it wins Now / Next', () => {
+    const data = structuredClone(states.everyday);
+    const flag = { id: 'emma-unavail-2026-10-01-uta', level: 'amber', title: 'Emma Unavailable', body: 'Confirm coverage', nowNextEligibleFrom: '2026-09-30' };
+    data.flags = [flag];
+    data.nowNext = { signal: 'Coverage', subject: flag.body, diagnostics: { selectedSource: { type: 'flag', id: flag.id } } };
+    assert.doesNotMatch(section(renderDashboardMobile(data), 'today'), /Advance notices|Emma Unavailable/);
+    data.nowNext.diagnostics.selectedSource.id = 'other';
+    assert.match(section(renderDashboardMobile(data), 'today'), /Emma Unavailable/);
+    data.flags[0].nowNextEligibleFrom = '2026-06-09';
+    assert.doesNotMatch(section(renderDashboardMobile(data), 'today'), /Emma Unavailable/);
   });
   it('removes TV list caps from today events, tasks, and schoolwork', () => {
     const html = section(render('crowded'), 'today');
