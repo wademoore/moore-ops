@@ -42,6 +42,20 @@ it('keeps associated flag titles readable at 200% text on narrow mobile', async 
 });
 
 describe('mobile dashboard browser behavior', () => {
+  it('keeps the full planning text in the DOM at narrow width and large type', async () => {
+    const data = structuredClone(states.everyday);
+    const warning = 'Pack for Ophelia Saturday swim with the purple bag, goggles, cap, towel, and change of clothes by Friday';
+    const notice = 'Emma unavailable next week — confirm coverage for each school pickup and evening activity';
+    data.schoolStrip.tomorrowWarnings = [warning];
+    data.flags = [{ id: 'emma-unavail-2026-10-01-uta', level: 'amber', title: 'Emma Unavailable', body: notice, nowNextEligibleFrom: '2026-09-30' }];
+    await withPage(data, async page => {
+      await page.addStyleTag({ content: ':root{font-size:200%}' });
+      await choose(page, 'today');
+      assert.equal(await page.locator('#today .planning-row').textContent(), warning);
+      assert.equal(await page.locator('#today .advance-notice .secondary').textContent(), notice);
+      assert.ok(await page.locator('#today').evaluate(node => node.scrollWidth <= node.clientWidth + 1));
+    }, { viewport: { width: 320, height: 844 } });
+  });
   for (const width of [320, 390, 430, 768, 1440]) it(`fits every section at ${width}px and retains reachable navigation`, async () => {
     await withPage(states.crowded, async page => {
       for (const id of ['now', 'today', 'upcoming', 'athletics', 'horizon', 'priorities']) {

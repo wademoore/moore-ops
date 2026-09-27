@@ -1,7 +1,7 @@
 import {
   cleanDisplayText, peopleForEvent, collapseUpcomingEvents, selectHorizonEvents,
   formatCalendarDate, formatEventTime, eventSubtitleWithoutTime, eventDateKey,
-  rangeDetail, horizonPresentation, conversationalMatchDate, sportsSlotLines, V2_LOGOS, flagTeamLogo, flagNextGame, flagEventMark, renderDivisionTable, safeLatest757Card,
+  rangeDetail, horizonPresentation, conversationalMatchDate, sportsSlotLines, V2_LOGOS, flagTeamLogo, flagNextGame, flagEventMark, renderDivisionTable, safeLatest757Card, easternDateKey,
 } from './dashboard-v2.js';
 import { selectEventRowAccents, selectFeatureSlotSpotlight } from '../digest/specialEventSelector.js';
 import { occurrenceId } from '../digest/specialEventOccurrences.js';
@@ -62,6 +62,30 @@ function weather(data) {
   return current + (days.length ? `<details><summary>${days.length}-day forecast</summary>${days.map(day => `<div class="forecast-row"><span>${esc(day.label)}</span><span>${number(day.high) ? esc(day.high) + '°' : '—'} / ${number(day.low) ? esc(day.low) + '°' : '—'}</span><span>${number(day.precipitation) ? esc(day.precipitation) + '% rain' : '—'}</span></div>`).join('')}</details>` : '');
 }
 
+function tomorrowWarnings(data) {
+  const warnings = list(data.schoolStrip?.tomorrowWarnings).filter(warning => typeof warning === 'string' && warning.trim());
+  return warnings.length ? group('Tomorrow warnings', warnings.map(warning => `<p class="planning-row">${text(warning)}</p>`).join('')) : '';
+}
+
+function advanceNotices(data) {
+  const featured = data.nowNext?.diagnostics?.selectedSource;
+  const todayKey = easternDateKey(data.now);
+  const notices = list(data.flags).filter(flag => flag && (
+    flag.level === 'blue' || flag.bannerOnly || (
+      /^emma-unavail-/.test(flag.id || '') && flag.nowNextEligibleFrom && todayKey < flag.nowNextEligibleFrom
+    )
+  ) && !(featured?.type === 'flag' && featured.id === flag.id));
+  const rows = notices.map(flag => {
+    let label;
+    try { label = typeof flag.label === 'function' ? flag.label({ today: data.today }) : flag.label; } catch { label = ''; }
+    const title = [flag.title, label, flag.message, flag.body].find(value => typeof value === 'string' && value.trim());
+    if (!title) return '';
+    const detail = [flag.body, flag.message].find(value => typeof value === 'string' && value.trim() && value !== title);
+    return `<article class="list-row advance-notice"><h3>${text(title)}</h3>${detail ? `<p class="secondary">${text(detail)}</p>` : ''}</article>`;
+  }).filter(Boolean);
+  return rows.length ? group('Advance notices', rows.join('')) : '';
+}
+
 function todayPage(data) {
   const day = data.days?.[0] || {}, events = list(day.events).filter(event => event.cardType !== 'menu');
   const tasks = list(day.tasks);
@@ -69,6 +93,8 @@ function todayPage(data) {
   return group('Schedule', events.length ? events.map(event => eventRow(event)).join('') : note('Nothing scheduled in this update.'))
     + group('Today’s tasks', tasks.length ? tasks.map(task => `<article class="list-row"><h3>${text(task.text)}</h3><p class="secondary">${esc(task.owner)}${task.time ? ` · ${esc(task.time)}` : ''}</p></article>`).join('') : note('No tasks listed.'))
     + group('School centers', centers(data.schoolStrip?.centersWeek))
+    + tomorrowWarnings(data)
+    + advanceNotices(data)
     + group('Schoolwork · upcoming due dates', list(work?.items).map(item => `<article class="list-row"><p class="secondary">${dateLabel(item.date)} · ${esc(item.child)} · ${esc(item.type)}</p><h3>${text(item.title)}</h3></article>`).join('') + (!work?.items?.length ? note('No upcoming work listed.') : '') + (work?.unavailable?.length ? note(`Calendar unavailable: ${work.unavailable.join(', ')}`) : ''))
     + group('Dinner', `<div class="list-row"><p class="eyebrow">Tonight</p><h3>${text(data.menuEvent?.title || 'Not set')}</h3>${data.menuEvent?.subtitle ? note(data.menuEvent.subtitle) : ''}</div><div class="list-row"><p class="eyebrow">Tomorrow</p><h3>${text(data.tomorrowMenu?.title || 'Not set')}</h3>${data.tomorrowMenu?.subtitle ? note(data.tomorrowMenu.subtitle) : ''}</div>`)
     + group('Williamsburg weather', weather(data));
