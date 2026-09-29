@@ -365,8 +365,10 @@ and test names written before then still describe that table as a check:
   household-observed result counts for display, never for the check", its
   header comment (which points to a "published-table check above"), and the
   tests "moves a team up the displayed table, and leaves the published-table
-  check where it was" and "the check derivation reproduces the posted table
-  exactly, from verified results alone".
+  check where it was", "the check derivation reproduces the posted table
+  exactly, from verified results alone" and "keeps reproducing the posted
+  table as later results are added, verified or not" (whose comment says
+  results must not "reach the comparison").
 
 Found by grepping for "published table", "check fixture" and "check" on
 2026-09-29; confirm each still reads this way before editing. Added
