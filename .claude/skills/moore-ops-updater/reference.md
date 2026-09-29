@@ -114,6 +114,16 @@ is written down. Not a pre-existing repo-wide convention — do not cite it as o
 It used to compare against a copy of the league's figures written inside the test, which
 went stale on every capture.
 
+Superseded by Wade's decision of 2026-09-28, below.
+
+## sharks-soccer.json conventions — the league's published table is not stored (2026-09-28)
+
+Decided by Wade on 2026-09-28; this paragraph is the first and only place it is written
+down. Not a pre-existing repo-wide convention — do not cite it as one.
+
+The league's published table is no longer a check on this data. The `standings` block and the
+tests comparing the derived table against it were removed.
+
 ## Recording a matchday is a cheap change
 
 Decided in conversation with Wade on this date; this section is the first and only place it
