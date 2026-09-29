@@ -44,7 +44,7 @@ Targeted data changes only. You read data files, make the specific change reques
 | `data/waves-team-records.json` | Wellington Waves all-time team records |
 | `data/swim-annotations.json` | pb and note annotations for Moore family Waves results; overlay key: `swimmer\|event\|date` |
 | `data/waves-champs-team-scores.json` | Champs meet combined team standings, Updater-managed manual entry from a one-page source PDF (not part of the pdf-reload-parser.mjs pipeline) |
-| `data/sharks-soccer.json` | Tidewater Sharks U11 soccer — full Sky Division schedule and standings, manual entry from GotSport/TASL screenshots (automated fetch blocked, same workflow as vpsu-rankings.json). Standings row for the Sharks is worded differently (`"Tidewater Sharks B2015/16 Premier White"`) than the schedule/team entries (`"Tidewater Sharks Premier White"`) — this is intentional, GotSport's own wording, not a typo to correct. |
+| `data/sharks-soccer.json` | Tidewater Sharks U11 soccer — full Sky Division schedule, manual entry from GotSport/TASL screenshots (automated fetch blocked, same workflow as vpsu-rankings.json). |
 
 > The v2 result files (`league-results-v2.json`, `relay-results-v2.json`, and the `-history-v2` equivalents) are populated by `scripts/pdf-reload-parser.mjs`, not the Updater — do not write to them. See `data/archive/README.md` for the full file authority list.
 
@@ -399,8 +399,7 @@ then, do not invent an id and do not write a null side.
 
 ## sharks-soccer.json conventions
 
-Matches live under `seasons[n].divisionSchedule.matches`. See the table above for the
-standings-vs-schedule team-name wording caveat.
+Matches live under `seasons[n].divisionSchedule.matches`.
 
 ### `divisionTeams` and `myTeamId` — the division's teams and their exact aliases (added Sept 16, 2026)
 
@@ -416,7 +415,7 @@ standings-vs-schedule team-name wording caveat.
 `seasons[n].myTeamId` names our own team's `teamId`.
 
 **`aliases` must cover every team string anywhere in this file** — both sides of every match
-row, every `standings.teams` row, and `team.name` and `team.displayName`. Resolution in
+row, and `team.name` and `team.displayName`. Resolution in
 `digest/divisionStandings.js` is exact-string and nothing else: a string that matches no
 alias, or that two teams both claim, makes the whole table unavailable rather than being
 guessed at. So when the league edits a team's name, ADD the new string to `aliases` and
@@ -460,45 +459,15 @@ name that is unique in this division. Which of eleven teams a string names is a 
 question, and the same tool does not answer both. Do not extend the substring test to
 opponents.
 
-### `standings` is a dated check fixture, not a display source (decided Sept 16, 2026)
+### The league's published table is not stored (decided by Wade, 2026-09-28)
 
-Standings are DERIVED from recorded results by `digest/divisionStandings.js`. A published table
-is never ingested for display. `seasons[n].standings` holds the league's published table anyway,
-as a check the derivation is compared against, and carries two dates for that purpose:
+Standings are DERIVED from recorded results by `digest/divisionStandings.js`. The league's
+published table is no longer a check on this data: the `seasons[n].standings` block and the
+tests that compared the derived table against it were retired on 2026-09-28. Do not capture,
+transcribe or refresh the league's table, and do not add a `standings` block back.
 
-| field | meaning |
-|---|---|
-| `asOf` | the date the table was captured from the league's page |
-| `resultsThrough` | the date the results behind that table run through |
-
-They are not the same date and both matter. `test/divisionStandings.test.js` filters the match
-rows on `resultsThrough` before deriving, which is what lets the reproduction case keep passing
-as later results are entered.
-
-**Replacing the block is a whole-block replacement**: every row of the published table, in the
-league's own rank order, with both dates and a `source` saying where it came from. Do not patch
-individual rows into a stale table. Any team string appearing here must already be an alias in
-`divisionTeams` — a test fails if it is not.
-
-**The reproduction case reads its expected figures out of this block (2026-09-20)**, so a
-whole-block replacement needs no test edit — it moves the oracle and the recorded results
-together. What still fails is what should: a block that disagrees
-with the recorded scorelines, and a half-done refresh that replaces the rows and leaves a
-date behind, because `source` has to name both `asOf` and `resultsThrough`.
-
-⚠ **So TRANSCRIBE this block from the league's page. Never compute it from the scorelines
-you have just entered.** The whole value of the check is that `standings.teams` and
-`divisionSchedule.matches` are two independent readings of GotSport — its standings page and
-its schedule — so a disagreement between them catches a mis-entered score. Back-filling the
-block from the rows makes the check compare the derivation against itself, and **no test in
-this repository can detect that**. This is the one part of a score entry with no automated
-guard, and it is why the entry is a transcription task rather than a calculation. If you
-cannot see the league's own table, leave the block alone: a stale check fixture keeps
-working, because the comparison is scoped to its own `resultsThrough`.
-
-`digest/sharksParser.js`'s legacy `divisionStanding` field still reads this block, so replacing
-it changes what that field reports. That is expected: it is the point of refreshing a stale
-snapshot. Retiring that field is a separate, later change.
+`digest/sharksParser.js`'s legacy `divisionStanding` field read that block, so it is now always
+null.
 
 ### `unverified: true` — a result entered before the league posted it (added Sept 14, 2026)
 
@@ -520,9 +489,6 @@ reads it when it derives the soccer division table.
   the recorded result with the published one — **including when the score differs** — and
   remove the marker in the same edit. Do not keep both, and do not leave the marker on a row
   whose score now came from the league.
-- **The published-table check derives from verified results only**, so an unverified result can
-  never make it fail. That is a property of the derivation, not something you have to arrange
-  by choosing what to record.
 
 `digest/sharksParser.js` still does not read the key: `seasonRecord` and `lastResult` count any
 played match either way, which is what makes an unverified result appear in them.
@@ -548,8 +514,7 @@ points and for goals alike, matching the published table, and `digest/divisionSt
 
 Nothing else reads the key either. `digest/sharksParser.js` derives `seasonRecord` only from
 rows where `isSharksTeam()` matches exactly one side, and the one row carrying the flag is
-between two other clubs. The `divisionStanding` that same parser returns is read straight out
-of this file's own `standings.teams` block, not computed from the match rows at all.
+between two other clubs.
 
 No parser reads it.
 
@@ -594,8 +559,7 @@ and no row keys at all. Both keys are provenance for a human, not an input to an
 ## Recording a matchday is a cheap change (decided 2026-09-20)
 
 It governs a **score entry and nothing else**: writing scores onto fixture rows that already
-exist, marking them `final` or `played`, and — for soccer — replacing the `standings`
-check-fixture block whole.
+exist, and marking them `final` or `played`.
 
 **Do:**
 
@@ -607,12 +571,6 @@ check-fixture block whole.
    (*`unverified: true`* for soccer, where the league’s published result is
    authoritative and replaces a household-observed one; *Source precedence when sources
    disagree about the same swim* for swim data). They are what the entry is for.
-
-   ⚠ And for soccer, a fourth: **transcribe the `standings` block from the league’s
-   page, never compute it from the scorelines you have just entered** —
-   *`standings` is a dated check fixture* above says why, and it is the one part of a
-   score entry that **no test in this repository can check**. Restated here because
-   it is the rule a session following this short protocol would otherwise not meet.
 2. **Run the suite once, after the edit** —
    `npm run test:baseline`, which resolves a browser itself.
 3. **Commit, push the branch, get a Reviewer pass, and open the pull request.**
@@ -631,9 +589,8 @@ check-fixture block whole.
   scores. A subject line naming the sport and the date is the whole of the prose.
 
 **If the suite does go red, stop — that is now a signal rather than a chore.** It means the
-entry disagrees with something the derivation checks: a team string that is not an alias, a
-scoreline that contradicts the published table, a check fixture refreshed halfway. Fix the
-entry, or report it. Never re-point a test to match what was entered.
+entry disagrees with something the derivation checks, such as a team string that is not an
+alias. Fix the entry, or report it. Never re-point a test to match what was entered.
 
 Example commit subjects — the whole message, not the first line of a longer one:
 
