@@ -345,6 +345,43 @@ So a future wall change cannot silently leave mobile behind. Added
 When the overlap flag was retired, some tests of overlap exclusion could
 no longer fail. Remove them. Added 2026-09-25.
 
+### Correct prose that still calls the league's published table a check
+
+PR #146 retired the league published-table check, decided by Wade on
+2026-09-28 (recorded in the Updater skill's `reference.md`). Source comments
+and test names written before then still describe that table as a check:
+
+- `digest/divisionStandings.js`: decision 1 of the 2026-09-16 block (the
+  `standings` block "kept as a dated CHECK FIXTURE"); decision c of the
+  2026-09-19 block ("The check that this derivation reproduces the league's
+  published table"); the alias-index comment ("the stored check fixture");
+  the comment on reading `unverified` ("the published-table comparison");
+  and the `verifiedOnly` JSDoc on `buildSoccerDivisionTable` ("the published
+  -table check is the one caller that passes true").
+- `digest/athleticsParser.js`: the 2026-09-19 note in the
+  `sharksDivisionTable` contract ("The check that this derivation reproduces
+  the league's published table").
+- `test/divisionStandings.test.js`: the describe block "soccer — a
+  household-observed result counts for display, never for the check", its
+  header comment (which points to a "published-table check above"), and the
+  tests "moves a team up the displayed table, and leaves the published-table
+  check where it was", "the check derivation reproduces the posted table
+  exactly, from verified results alone" and "keeps reproducing the posted
+  table as later results are added, verified or not" (whose comment says
+  results must not "reach the comparison").
+
+Found by grepping for "published table", "check fixture" and "check" on
+2026-09-29; confirm each still reads this way before editing. Added
+2026-09-29.
+
+### Identify the intermittent test failure on PR #146's head commit
+
+As reported to the session that added this entry: on PR #146's head commit,
+the `pull_request` test job failed a test on its first attempt and passed on
+re-run, and the `push` job on the same commit passed. The failing test has
+not been identified. The log is job 109227739708 in run 36512572064. Added
+2026-09-29.
+
 ---
 
 ## Needs Wade's decision
