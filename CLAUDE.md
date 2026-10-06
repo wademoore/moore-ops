@@ -2,6 +2,13 @@
 
 Read this file, then read the files relevant to the task. New task = new session.
 
+## Current Pi connection
+
+The dashboard Pi is `pi@192.168.1.11` (confirmed by Wade on 2026-09-30).
+Use this address for dashboard refreshes and other Pi operations. The former
+`192.168.1.4` address in historical deployment reports is stale; those reports
+are historical evidence, not the current connection reference.
+
 ## Agent roles
 
 ### PLANNER (`/plan`)
