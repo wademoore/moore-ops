@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { NOW_NEXT_REASON_CODES as R, selectNowNext } from './nowNextSelector.js';
+import { computeFlags } from './flags.js';
 
 const NOW = new Date('2026-08-17T17:50:00-04:00');
 const event = (title, dateTime, extra = {}) => ({ title, cardType: 'standard', raw: { start: { dateTime } }, ...extra });
@@ -370,3 +371,18 @@ describe('NOW/NEXT carries flag football identity', () => {
   });
 });
 
+describe('flag football schedule gap never takes NOW/NEXT', () => {
+  // The flag's body is a developer-facing data chore. It must not outrank a real event.
+  it('leaves the hero to the real event when the gap flag is active', () => {
+    const gapFlags = computeFlags({ flagFootballGaps: [{ date: '2026-10-25', title: 'Flag Football: Week 7', reason: 'no-fixture-on-date' }] })
+      .filter(flag => flag.id === 'flag-football-schedule-gap');
+    assert.equal(gapFlags.length, 1);
+    const result = selectNowNext(data({
+      flags: gapFlags,
+      days: [{ events: [event('Myles — Sharks Practice', '2026-08-17T18:00:00-04:00')], tasks: [] }, { events: [], tasks: [] }],
+    }));
+    assert.notEqual(result.diagnostics?.selectedSource?.type, 'flag');
+    assert.notEqual(result.reasonCodes[0], R.UNRESOLVED_PROBLEM);
+    assert.equal(result.reasonCodes[0], R.IMMINENT_DEPARTURE);
+  });
+});

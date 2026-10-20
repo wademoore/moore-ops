@@ -555,12 +555,12 @@ describe('computeFlags — flag football schedule gap', () => {
     assert.match(flag.body, /data\/flag-football\.json/);
   });
 
-  it('is not bannerOnly, so nowNextSelector can promote it as an unresolved problem', () => {
-    // This is the "somewhere I will actually see it" half of the contract: a
-    // non-bannerOnly amber flag becomes a NOW_NEXT_UNRESOLVED_PROBLEM
-    // candidate at priority 700, the top of the ranking.
+  it('is bannerOnly, so it can never take the NOW/NEXT hero from a real event', () => {
+    // A non-bannerOnly amber flag becomes a NOW_NEXT_UNRESOLVED_PROBLEM
+    // candidate at priority 700, above every event. This flag's body is a
+    // developer-facing data chore, so it is kept out of that ranking.
     const flag = find(computeFlags(ctx({ flagFootballGaps: [gap()] })));
-    assert.notEqual(flag.bannerOnly, true);
+    assert.equal(flag.bannerOnly, true);
   });
 
   it('pluralizes and lists every unmatched occurrence', () => {

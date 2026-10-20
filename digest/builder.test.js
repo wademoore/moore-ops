@@ -1124,7 +1124,7 @@ describe('buildDigest — flag football event identity', () => {
     const flag = result.flags.find(f => f.id === 'flag-football-schedule-gap');
     nodeAssert.ok(flag, 'expected the gap to surface as a flag');
     nodeAssert.equal(flag.level, 'amber');
-    nodeAssert.equal(flag.bannerOnly, undefined, 'must not be bannerOnly, or NOW/NEXT cannot promote it');
+    nodeAssert.equal(flag.bannerOnly, true, 'must be bannerOnly, or NOW/NEXT promotes a developer-facing data chore over real events');
     nodeAssert.match(flag.body, /Week 6/);
     nodeAssert.match(flag.body, new RegExp(isoDate(ORPHAN_IN)));
     nodeAssert.equal(findUpcoming(result, 'ff-orphan').flagFootball, null);
