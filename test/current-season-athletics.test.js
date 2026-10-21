@@ -349,8 +349,8 @@ describe('flag football team identity', () => {
       { week: 2, date: '2026-09-20', time: '12:00', type: 'regular',  field: '4B', homeAway: 'A', opponent: 8070749 },
       { week: 3, date: '2026-09-27', time: '14:00', type: 'regular',  field: '4A', homeAway: 'H', opponent: 8113277 },
       { week: 4, date: '2026-10-04', time: '14:00', type: 'regular',  field: '3B', homeAway: 'A', opponent: 8069066 },
-      { week: 5, date: '2026-10-11', time: '12:00', type: 'regular',  field: '3A', homeAway: 'H', opponent: 8108154 },
-      { week: 6, date: '2026-10-18', time: '14:00', type: 'regular',  field: '3B', homeAway: 'A', opponent: 8088488 },
+      { week: 5, date: '2026-10-18', time: '14:00', type: 'regular',  field: '3B', homeAway: 'A', opponent: 8088488 },
+      { week: 6, date: '2026-10-25', time: '12:00', type: 'regular',  field: '3A', homeAway: 'H', opponent: 8108154 },
     ]);
 
     // Week 1 is a practice, not a game. Typed so it is excluded structurally
@@ -473,15 +473,16 @@ describe('flag football team identity', () => {
 
     // seasonEnd is the end of the playoffs as Wade set it on 2026-10-20 (the
     // announced regular season ended Oct 25; the Nov 1 playoffs placeholder
-    // runs past it), NOT the last published week (Oct 18). Pinned so that a
-    // later 'correction' to the last posted game would fail here and have to
-    // be argued for.
+    // runs past it), NOT the last regular-season game (Oct 25; the league moved
+    // the former Oct 11 matchday there on 2026-10-21). Pinned so that a later
+    // 'correction' to the last posted game would fail here and have to be
+    // argued for.
     const data = await readJson('data/flag-football.json');
     const fall = data.seasons.find(s => s.seasonId === 'fall-2026');
     assert.equal(fall.seasonEnd, cfg.flagFootball.seasonEnd,
       'the schedule file and the visibility window must name the same end date');
     const lastGame = fall.games.map(g => g.date).sort().at(-1);
-    assert.equal(lastGame, '2026-10-18');
+    assert.equal(lastGame, '2026-10-25');
     assert.ok(cfg.flagFootball.seasonEnd > lastGame,
       'the window deliberately outlives the last published week');
   });
