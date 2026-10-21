@@ -105,6 +105,30 @@ Validation on Windows with system Chrome (October 21, 2026):
 - `node --test --test-reporter=tap render/dashboard-v2.test.js render/dashboard-v2-layout.test.js`: 156 tests passed, zero failures. The busy-week browser measurement shows Saturday's first item plus `+4 more`, with four later items counted separately; adding the next row exceeds the measured limit.
 - `$env:npm_config_script_shell='powershell.exe'; $env:NODE_OPTIONS='--test-reporter=tap'; npm run test:baseline`: 2,910 tests, 2,859 passed, 51 failed. The runner resolved `C:\Program Files\Google\Chrome\Application\chrome.exe`. Reported failures include malformed Windows file-URL paths (`C:\C:\...`), CRLF-sensitive assertions, and temporary-directory cleanup errors. This is a failing baseline, not a waiver or clean sign-off. The default Windows npm shell selected zero tests from the single-quoted globs, which is why this invocation specifies PowerShell.
 
+Reviewer handoff follow-up: the implementation is committed as `2addbb5` on
+`codex/coming-up-item-fit`, directly above `cb1e135`. No commits from the other
+surface's branch are included. A fresh Windows comparison using the invocation
+above produced 2,905 tests / 2,850 passed / 55 failed on a clean `cb1e135`
+checkout, and 2,910 tests / 2,855 passed / 55 failed on the changed tree. All
+64 reported failure blocks (including parent suites) match by test name and
+repository-relative location. There are no failures unique to either run.
+The four additional failures relative to the earlier run are Pi tests reporting
+that Python is unavailable, on both checkouts. Matching failures establish their
+presence on the clean base; they do not turn either Windows run green or replace
+reviewer sign-off.
+
+Evidence available from the branch:
+
+- [Busy-week screenshot](coming-up-review/busy-week.png)
+- [Renderer test TAP output](coming-up-review/renderer-tests.tap)
+- [Windows baseline comparison and failure identities](coming-up-review/windows-baseline-comparison.json)
+- Full baseline output: [clean base](coming-up-review/windows-base.log), [changed tree](coming-up-review/windows-changed.log)
+
+The reviewer should fetch `codex/coming-up-item-fit`, inspect the range from
+`cb1e135` to the branch head, and rerun the tests in their environment. No review
+verdict has been issued. A verdict in a separate checkout does not release a
+checkout/session-specific local review gate. Wade merges after sign-off.
+
 ### Variety without maintenance
 
 - The dashboard should feel alive through data changes, bounded doodle rotation, seasonal treatments, occasional banners, and context-aware rail content.

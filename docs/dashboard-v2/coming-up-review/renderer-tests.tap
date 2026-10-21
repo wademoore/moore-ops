@@ -1,0 +1,1051 @@
+TAP version 13
+# Subtest: dashboard v2 2560x1440 layout verification
+    # Subtest: matches NOW/NEXT owner badges to Weekly Priorities
+    ok 1 - matches NOW/NEXT owner badges to Weekly Priorities
+      ---
+      duration_ms: 1116.3779
+      type: 'test'
+      ...
+    # Subtest: fits full real division tables, including unposted notes and our last rows
+    ok 2 - fits full real division tables, including unposted notes and our last rows
+      ---
+      duration_ms: 2544.7004
+      type: 'test'
+      ...
+    # Subtest: keeps four today events and full schoolwork visible alongside NOW/NEXT
+    ok 3 - keeps four today events and full schoolwork visible alongside NOW/NEXT
+      ---
+      duration_ms: 385.2212
+      type: 'test'
+      ...
+    # Subtest: fits prominent team artwork below ribbons with one, two, and three cards
+    ok 4 - fits prominent team artwork below ribbons with one, two, and three cards
+      ---
+      duration_ms: 2287.86
+      type: 'test'
+      ...
+    # Subtest: fits all eight flag standings with our last-place team in one, two, and three cards
+    ok 5 - fits all eight flag standings with our last-place team in one, two, and three cards
+      ---
+      duration_ms: 2483.7011
+      type: 'test'
+      ...
+    # Subtest: aligns standings text with known and missing logos at six and eight rows
+    ok 6 - aligns standings text with known and missing logos at six and eight rows
+      ---
+      duration_ms: 770.2197
+      type: 'test'
+      ...
+    # Subtest: shows the transparent calendar star alone and restores its fallback on image failure
+    ok 7 - shows the transparent calendar star alone and restores its fallback on image failure
+      ---
+      duration_ms: 424.9079
+      type: 'test'
+      ...
+    # Subtest: shows W&M, iDance and Stonehouse logos alone without :has support, restoring failed-image fallbacks
+    ok 8 - shows W&M, iDance and Stonehouse logos alone without :has support, restoring failed-image fallbacks
+      ---
+      duration_ms: 1361.9297
+      type: 'test'
+      ...
+    # Subtest: fits associated flag logos in featured and supporting Now/Next copy
+    ok 9 - fits associated flag logos in featured and supporting Now/Next copy
+      ---
+      duration_ms: 404.0718
+      type: 'test'
+      ...
+    # Subtest: keeps all six flag-logo standings rows inside single and multiple card panels
+    ok 10 - keeps all six flag-logo standings rows inside single and multiple card panels
+      ---
+      duration_ms: 822.0502
+      type: 'test'
+      ...
+    # Subtest: keeps the single flag card footprint with an unknown or known game time
+    ok 11 - keeps the single flag card footprint with an unknown or known game time
+      ---
+      duration_ms: 782.0885
+      type: 'test'
+      ...
+    # Subtest: fits every current soccer opponent and date on one line in a three-card panel
+    ok 12 - fits every current soccer opponent and date on one line in a three-card panel
+      ---
+      duration_ms: 3959.901
+      type: 'test'
+      ...
+    # Subtest: day state stays within the canvas without text clipping or external images
+    ok 13 - day state stays within the canvas without text clipping or external images
+      ---
+      duration_ms: 410.2112
+      type: 'test'
+      ...
+    # Subtest: evening state stays within the canvas without text clipping or external images
+    ok 14 - evening state stays within the canvas without text clipping or external images
+      ---
+      duration_ms: 388.3789
+      type: 'test'
+      ...
+    # Subtest: empty state stays within the canvas without text clipping or external images
+    ok 15 - empty state stays within the canvas without text clipping or external images
+      ---
+      duration_ms: 366.08
+      type: 'test'
+      ...
+    # Subtest: one state stays within the canvas without text clipping or external images
+    ok 16 - one state stays within the canvas without text clipping or external images
+      ---
+      duration_ms: 390.6573
+      type: 'test'
+      ...
+    # Subtest: three state stays within the canvas without text clipping or external images
+    ok 17 - three state stays within the canvas without text clipping or external images
+      ---
+      duration_ms: 371.0213
+      type: 'test'
+      ...
+    # Subtest: canonicalBusy state stays within the canvas without text clipping or external images
+    ok 18 - canonicalBusy state stays within the canvas without text clipping or external images
+      ---
+      duration_ms: 391.2996
+      type: 'test'
+      ...
+    # Subtest: fills the taller Coming Up panel above Athletics and discloses later events
+    ok 19 - fills the taller Coming Up panel above Athletics and discloses later events
+      ---
+      duration_ms: 425.0573
+      type: 'test'
+      ...
+    1..19
+ok 1 - dashboard v2 2560x1440 layout verification
+  ---
+  duration_ms: 20652.1799
+  type: 'suite'
+  ...
+# Subtest: family spotlight 2560x1440 footprint and readability
+    # Subtest: friday anticipation renders the visible Spotlight inside the panel without clipping or overlap
+    ok 1 - friday anticipation renders the visible Spotlight inside the panel without clipping or overlap
+      ---
+      duration_ms: 391.9605
+      type: 'test'
+      ...
+    # Subtest: saturday today renders the visible Spotlight inside the panel without clipping or overlap
+    ok 2 - saturday today renders the visible Spotlight inside the panel without clipping or overlap
+      ---
+      duration_ms: 409.409
+      type: 'test'
+      ...
+    # Subtest: one child only renders the visible Spotlight inside the panel without clipping or overlap
+    ok 3 - one child only renders the visible Spotlight inside the panel without clipping or overlap
+      ---
+      duration_ms: 363.0652
+      type: 'test'
+      ...
+    # Subtest: preserves the exact Athletics footprint whether or not a Spotlight is present
+    ok 4 - preserves the exact Athletics footprint whether or not a Spotlight is present
+      ---
+      duration_ms: 744.4464
+      type: 'test'
+      ...
+    # Subtest: keeps the panel geometry identical across every controller state
+    ok 5 - keeps the panel geometry identical across every controller state
+      ---
+      duration_ms: 1481.2062
+      type: 'test'
+      ...
+    # Subtest: drives the approved visible states from absolute instants alone
+    ok 6 - drives the approved visible states from absolute instants alone
+      ---
+      duration_ms: 381.141
+      type: 'test'
+      ...
+    # Subtest: keeps every Spotlight text node at or above the 14px television floor
+    ok 7 - keeps every Spotlight text node at or above the 14px television floor
+      ---
+      duration_ms: 360.1875
+      type: 'test'
+      ...
+    # Subtest: renders both children at equal width in the two-child state
+    ok 8 - renders both children at equal width in the two-child state
+      ---
+      duration_ms: 380.594
+      type: 'test'
+      ...
+    1..8
+ok 2 - family spotlight 2560x1440 footprint and readability
+  ---
+  duration_ms: 4513.358
+  type: 'suite'
+  ...
+# Subtest: event-row accent 2560x1440 footprint and readability
+    # Subtest: changes no geometry at all between the ordinary and active states
+    ok 1 - changes no geometry at all between the ordinary and active states
+      ---
+      duration_ms: 796.9307
+      type: 'test'
+      ...
+    # Subtest: holds the Athletics footprint the Spotlight work measured
+    ok 2 - holds the Athletics footprint the Spotlight work measured
+      ---
+      duration_ms: 430.4898
+      type: 'test'
+      ...
+    # Subtest: renders the text reading area pixel-for-pixel as it renders ordinary
+    ok 3 - renders the text reading area pixel-for-pixel as it renders ordinary
+      ---
+      duration_ms: 764.9082
+      type: 'test'
+      ...
+    # Subtest: keeps the swim title pinned, and measures what the flag-football accents trade for dropping it
+    ok 4 - keeps the swim title pinned, and measures what the flag-football accents trade for dropping it
+      ---
+      duration_ms: 1504.8788
+      type: 'test'
+      ...
+    # Subtest: clears the widest chip that ships — SEASON OPENER, which no other fixture renders
+    ok 5 - clears the widest chip that ships — SEASON OPENER, which no other fixture renders
+      ---
+      duration_ms: 408.9845
+      type: 'test'
+      ...
+    # Subtest: places every decoration clear of the text and inside the row band
+    ok 6 - places every decoration clear of the text and inside the row band
+      ---
+      duration_ms: 385.2802
+      type: 'test'
+      ...
+    # Subtest: never renders an accent outside the Upcoming panel
+    ok 7 - never renders an accent outside the Upcoming panel
+      ---
+      duration_ms: 1545.8155
+      type: 'test'
+      ...
+    # Subtest: renders ordinary rows once the accents expire and once the switch is off
+    ok 8 - renders ordinary rows once the accents expire and once the switch is off
+      ---
+      duration_ms: 1235.5343
+      type: 'test'
+      ...
+    1..8
+ok 3 - event-row accent 2560x1440 footprint and readability
+  ---
+  duration_ms: 7074.0906
+  type: 'suite'
+  ...
+# Subtest: retired alert strip does not reserve wall space
+    # Subtest: reclaims the strip for ordinary alerts and one real overlap
+    ok 1 - reclaims the strip for ordinary alerts and one real overlap
+      ---
+      duration_ms: 1564.146
+      type: 'test'
+      ...
+    # Subtest: reclaims the strip for long alert titles
+    ok 2 - reclaims the strip for long alert titles
+      ---
+      duration_ms: 1542.8525
+      type: 'test'
+      ...
+    # Subtest: reclaims the strip for multiple real overlaps
+    ok 3 - reclaims the strip for multiple real overlaps
+      ---
+      duration_ms: 1574.5428
+      type: 'test'
+      ...
+    # Subtest: reclaims the strip for long overlap
+    ok 4 - reclaims the strip for long overlap
+      ---
+      duration_ms: 1594.1649
+      type: 'test'
+      ...
+    # Subtest: reclaims the strip for severity variants
+    ok 5 - reclaims the strip for severity variants
+      ---
+      duration_ms: 1562.8661
+      type: 'test'
+      ...
+    # Subtest: reclaims the strip for ordinary alerts without notes
+    ok 6 - reclaims the strip for ordinary alerts without notes
+      ---
+      duration_ms: 1551.3008
+      type: 'test'
+      ...
+    # Subtest: reclaims the strip for empty flags
+    ok 7 - reclaims the strip for empty flags
+      ---
+      duration_ms: 1602.1916
+      type: 'test'
+      ...
+    1..7
+ok 4 - retired alert strip does not reserve wall space
+  ---
+  duration_ms: 10993.093
+  type: 'suite'
+  ...
+# Subtest: balanced Coming Up space
+    # Subtest: fits chronological items and counts deferred events (ordinary)
+    ok 1 - fits chronological items and counts deferred events (ordinary)
+      ---
+      duration_ms: 399.6455
+      type: 'test'
+      ...
+    # Subtest: fits chronological items and counts deferred events (masthead)
+    ok 2 - fits chronological items and counts deferred events (masthead)
+      ---
+      duration_ms: 439.136
+      type: 'test'
+      ...
+    1..2
+ok 5 - balanced Coming Up space
+  ---
+  duration_ms: 839.2219
+  type: 'suite'
+  ...
+# Subtest: fills an oversized first day partially without skipping ahead
+ok 6 - fills an oversized first day partially without skipping ahead
+  ---
+  duration_ms: 398.23
+  type: 'test'
+  ...
+# Subtest: Coming Up fills Wade’s week through a partial Saturday with separate omission counts
+ok 7 - Coming Up fills Wade’s week through a partial Saturday with separate omission counts
+  ---
+  duration_ms: 406.4694
+  type: 'test'
+  ...
+# Subtest: Coming Up fills light days and removes the empty footer
+ok 8 - Coming Up fills light days and removes the empty footer
+  ---
+  duration_ms: 372.6238
+  type: 'test'
+  ...
+# Subtest: Coming Up expands beyond the server cap when the measured panel has room
+ok 9 - Coming Up expands beyond the server cap when the measured panel has room
+  ---
+  duration_ms: 393.4562
+  type: 'test'
+  ...
+# Subtest: Coming Up retains the empty-fit message when even the first item cannot fit
+ok 10 - Coming Up retains the empty-fit message when even the first item cannot fit
+  ---
+  duration_ms: 371.7008
+  type: 'test'
+  ...
+# Subtest: Coming Up keeps the capped fallback with JavaScript disabled
+ok 11 - Coming Up keeps the capped fallback with JavaScript disabled
+  ---
+  duration_ms: 791.45
+  type: 'test'
+  ...
+# Subtest: aligns team-card sections despite missing results and matches swim comparison colors to their meaning
+ok 12 - aligns team-card sections despite missing results and matches swim comparison colors to their meaning
+  ---
+  duration_ms: 831.2404
+  type: 'test'
+  ...
+# Subtest: approved NOW/NEXT rendering contract
+    # Subtest: renders Leave in 10 min
+    ok 1 - renders Leave in 10 min
+      ---
+      duration_ms: 1.4042
+      type: 'test'
+      ...
+    # Subtest: renders Tomorrow morning
+    ok 2 - renders Tomorrow morning
+      ---
+      duration_ms: 0.2647
+      type: 'test'
+      ...
+    # Subtest: renders Pickup needs coverage
+    ok 3 - renders Pickup needs coverage
+      ---
+      duration_ms: 0.1647
+      type: 'test'
+      ...
+    # Subtest: renders All clear
+    ok 4 - renders All clear
+      ---
+      duration_ms: 0.2743
+      type: 'test'
+      ...
+    # Subtest: keeps today’s schedule alongside the NOW/NEXT headline
+    ok 5 - keeps today’s schedule alongside the NOW/NEXT headline
+      ---
+      duration_ms: 29.2667
+      type: 'test'
+      ...
+    # Subtest: retains every supplied today event when an unrelated coverage alert wins NOW/NEXT
+    ok 6 - retains every supplied today event when an unrelated coverage alert wins NOW/NEXT
+      ---
+      duration_ms: 1.7162
+      type: 'test'
+      ...
+    # Subtest: uses existing display normalization for the approved both-kids camp title
+    ok 7 - uses existing display normalization for the approved both-kids camp title
+      ---
+      duration_ms: 0.3284
+      type: 'test'
+      ...
+    # Subtest: normalizes hero and supporting Sharks copy with a nonbreaking field number
+    ok 8 - normalizes hero and supporting Sharks copy with a nonbreaking field number
+      ---
+      duration_ms: 0.3147
+      type: 'test'
+      ...
+    1..8
+ok 13 - approved NOW/NEXT rendering contract
+  ---
+  duration_ms: 35.758
+  type: 'suite'
+  ...
+# Subtest: Centers live Eastern-date highlight
+    # Subtest: resolves Thursday Aug 27 at 8:07 PM ET and rolls over at Eastern midnight
+    ok 1 - resolves Thursday Aug 27 at 8:07 PM ET and rolls over at Eastern midnight
+      ---
+      duration_ms: 0.7883
+      type: 'test'
+      ...
+    # Subtest: gives the browser dated Centers cells and recomputes the highlight on every live tick
+    ok 2 - gives the browser dated Centers cells and recomputes the highlight on every live tick
+      ---
+      duration_ms: 26.1613
+      type: 'test'
+      ...
+    1..2
+ok 14 - Centers live Eastern-date highlight
+  ---
+  duration_ms: 27.3023
+  type: 'suite'
+  ...
+# Subtest: experimental dashboard v2 isolation and structure
+    # Subtest: uses an unambiguous Eastern instant for the sample date
+    ok 1 - uses an unambiguous Eastern instant for the sample date
+      ---
+      duration_ms: 5.715
+      type: 'test'
+      ...
+    # Subtest: renders the standalone canonical dashboard
+    ok 2 - renders the standalone canonical dashboard
+      ---
+      duration_ms: 0.4492
+      type: 'test'
+      ...
+    # Subtest: keeps the busy-screen content areas
+    ok 3 - keeps the busy-screen content areas
+      ---
+      duration_ms: 8.0501
+      type: 'test'
+      ...
+    # Subtest: elevates only Centers cells with an action cue
+    ok 4 - elevates only Centers cells with an action cue
+      ---
+      duration_ms: 2.2346
+      type: 'test'
+      ...
+    # Subtest: uses the normal-day layout without a special-event masthead
+    ok 5 - uses the normal-day layout without a special-event masthead
+      ---
+      duration_ms: 3.492
+      type: 'test'
+      ...
+    # Subtest: still supports an occasional special-event masthead
+    ok 6 - still supports an occasional special-event masthead
+      ---
+      duration_ms: 23.5613
+      type: 'test'
+      ...
+    # Subtest: includes both dinner values and grouped event times
+    ok 7 - includes both dinner values and grouped event times
+      ---
+      duration_ms: 14.7088
+      type: 'test'
+      ...
+    # Subtest: updates clock and countdown in the browser
+    ok 8 - updates clock and countdown in the browser
+      ---
+      duration_ms: 4.2541
+      type: 'test'
+      ...
+    # Subtest: serializes the configured sports feed URL onto the polling boundary
+    ok 9 - serializes the configured sports feed URL onto the polling boundary
+      ---
+      duration_ms: 23.7425
+      type: 'test'
+      ...
+    # Subtest: does not include private source details or credentials
+    ok 10 - does not include private source details or credentials
+      ---
+      duration_ms: 7.301
+      type: 'test'
+      ...
+    # Subtest: keeps event text in place when a remote activity logo fails
+    ok 11 - keeps event text in place when a remote activity logo fails
+      ---
+      duration_ms: 0.1903
+      type: 'test'
+      ...
+    # Subtest: embeds the mockup-oriented typography and weather treatment
+    ok 12 - embeds the mockup-oriented typography and weather treatment
+      ---
+      duration_ms: 3.745
+      type: 'test'
+      ...
+    # Subtest: uses a painted ticker and compact forecast tiles
+    ok 13 - uses a painted ticker and compact forecast tiles
+      ---
+      duration_ms: 0.214
+      type: 'test'
+      ...
+    # Subtest: keeps heading and ticker text inside the naturally opaque paint
+    ok 14 - keeps heading and ticker text inside the naturally opaque paint
+      ---
+      duration_ms: 0.2648
+      type: 'test'
+      ...
+    # Subtest: integrates headings with panel borders and divider rules
+    ok 15 - integrates headings with panel borders and divider rules
+      ---
+      duration_ms: 0.0982
+      type: 'test'
+      ...
+    # Subtest: adds restrained hand-drawn marginalia to major sections
+    ok 16 - adds restrained hand-drawn marginalia to major sections
+      ---
+      duration_ms: 3.7318
+      type: 'test'
+      ...
+    # Subtest: centers brush labels and clears the ticker fringe
+    ok 17 - centers brush labels and clears the ticker fringe
+      ---
+      duration_ms: 0.2558
+      type: 'test'
+      ...
+    # Subtest: uses painterly athletics labels and a compact next-event rail card
+    ok 18 - uses painterly athletics labels and a compact next-event rail card
+      ---
+      duration_ms: 3.4111
+      type: 'test'
+      ...
+    # Subtest: keeps strong person-color bars on upcoming dates
+    ok 19 - keeps strong person-color bars on upcoming dates
+      ---
+      duration_ms: 0.3913
+      type: 'test'
+      ...
+    1..19
+ok 15 - experimental dashboard v2 isolation and structure
+  ---
+  duration_ms: 106.9693
+  type: 'suite'
+  ...
+# Subtest: person identity color classification
+    # Subtest: identifies Myles, Ophelia, both, and family events
+    ok 1 - identifies Myles, Ophelia, both, and family events
+      ---
+      duration_ms: 0.165
+      type: 'test'
+      ...
+    1..1
+ok 16 - person identity color classification
+  ---
+  duration_ms: 0.2695
+  type: 'suite'
+  ...
+# Subtest: runtime display policies
+    # Subtest: shares deterministic semantics and reason codes across audited real events
+    ok 1 - shares deterministic semantics and reason codes across audited real events
+      ---
+      duration_ms: 0.7875
+      type: 'test'
+      ...
+    # Subtest: uses semantic event marks instead of diagnostic yellow circles
+    ok 2 - uses semantic event marks instead of diagnostic yellow circles
+      ---
+      duration_ms: 22.589
+      type: 'test'
+      ...
+    # Subtest: chooses a meaningful event over an earlier routine event
+    ok 3 - chooses a meaningful event over an earlier routine event
+      ---
+      duration_ms: 1.7939
+      type: 'test'
+      ...
+    # Subtest: renders stable empty and weather failure states
+    ok 4 - renders stable empty and weather failure states
+      ---
+      duration_ms: 14.9313
+      type: 'test'
+      ...
+    1..4
+ok 17 - runtime display policies
+  ---
+  duration_ms: 40.505
+  type: 'suite'
+  ...
+# Subtest: real-data resilience policies
+    # Subtest: fills the taller one-card layout chronologically without splitting the final day
+    ok 1 - fills the taller one-card layout chronologically without splitting the final day
+      ---
+      duration_ms: 13.6472
+      type: 'test'
+      ...
+    # Subtest: groups each date tile once and stacks that day’s events without undoing ranges
+    ok 2 - groups each date tile once and stacks that day’s events without undoing ranges
+      ---
+      duration_ms: 3.3863
+      type: 'test'
+      ...
+    # Subtest: keeps chronological order and includes every event on the final visible day
+    ok 3 - keeps chronological order and includes every event on the final visible day
+      ---
+      duration_ms: 8.0835
+      type: 'test'
+      ...
+    # Subtest: offers up to 12 events in the multi-card layout before browser fitting
+    ok 4 - offers up to 12 events in the multi-card layout before browser fitting
+      ---
+      duration_ms: 7.9722
+      type: 'test'
+      ...
+    # Subtest: keeps near-term swim practices even when later practices share dates with higher-priority events
+    ok 5 - keeps near-term swim practices even when later practices share dates with higher-priority events
+      ---
+      duration_ms: 7.5374
+      type: 'test'
+      ...
+    # Subtest: adapts the center for one athletics card and formats its match date conversationally
+    ok 6 - adapts the center for one athletics card and formats its match date conversationally
+      ---
+      duration_ms: 17.8177
+      type: 'test'
+      ...
+    # Subtest: uses organization and team names only on dedicated athletics ribbons
+    ok 7 - uses organization and team names only on dedicated athletics ribbons
+      ---
+      duration_ms: 60.1352
+      type: 'test'
+      ...
+    # Subtest: flag ribbon names the team from flagTeamName and carries its logo when one exists
+    ok 8 - flag ribbon names the team from flagTeamName and carries its logo when one exists
+      ---
+      duration_ms: 24.3611
+      type: 'test'
+      ...
+    # Subtest: flag ribbon falls back to the no-logo mark when the team has no logo key
+    ok 9 - flag ribbon falls back to the no-logo mark when the team has no logo key
+      ---
+      duration_ms: 17.2026
+      type: 'test'
+      ...
+    # Subtest: flag ribbon reads "NFL FLAG" alone when flagTeamName is null (fall-2026 initial state)
+    ok 10 - flag ribbon reads "NFL FLAG" alone when flagTeamName is null (fall-2026 initial state)
+      ---
+      duration_ms: 28.1587
+      type: 'test'
+      ...
+    # Subtest: flag ribbon treats a missing, empty, or whitespace-only team name identically to null
+    ok 11 - flag ribbon treats a missing, empty, or whitespace-only team name identically to null
+      ---
+      duration_ms: 62.2047
+      type: 'test'
+      ...
+    # Subtest: flag logo lookup is case- and whitespace-normalized
+    ok 12 - flag logo lookup is case- and whitespace-normalized
+      ---
+      duration_ms: 27.6598
+      type: 'test'
+      ...
+    # Subtest: flag team name is HTML-escaped
+    ok 13 - flag team name is HTML-escaped
+      ---
+      duration_ms: 22.1483
+      type: 'test'
+      ...
+    # Subtest: flag logo lookup cannot resolve an inherited Object property as an asset
+    ok 14 - flag logo lookup cannot resolve an inherited Object property as an asset
+      ---
+      duration_ms: 21.5064
+      type: 'test'
+      ...
+    # Subtest: ranks family milestones before nearer routine appointments and normalizes owner shorthand
+    ok 15 - ranks family milestones before nearer routine appointments and normalizes owner shorthand
+      ---
+      duration_ms: 26.1296
+      type: 'test'
+      ...
+    # Subtest: cleans duplicated text, empty school rows, emoji marks, and obvious categories
+    ok 16 - cleans duplicated text, empty school rows, emoji marks, and obvious categories
+      ---
+      duration_ms: 53.1388
+      type: 'test'
+      ...
+    # Subtest: normalizes owner shorthand in the canonical Next Two Weeks view
+    ok 17 - normalizes owner shorthand in the canonical Next Two Weeks view
+      ---
+      duration_ms: 21.2511
+      type: 'test'
+      ...
+    # Subtest: embeds organization and ticker logos without external image URLs
+    ok 18 - embeds organization and ticker logos without external image URLs
+      ---
+      duration_ms: 17.4966
+      type: 'test'
+      ...
+    # Subtest: shows Sharks logos for short team titles and Myles goalkeeping training
+    ok 19 - shows Sharks logos for short team titles and Myles goalkeeping training
+      ---
+      duration_ms: 20.4136
+      type: 'test'
+      ...
+    # Subtest: keeps transparent activity logos transparent in Next Two Weeks
+    ok 20 - keeps transparent activity logos transparent in Next Two Weeks
+      ---
+      duration_ms: 23.9221
+      type: 'test'
+      ...
+    1..20
+ok 18 - real-data resilience policies
+  ---
+  duration_ms: 486.1117
+  type: 'suite'
+  ...
+# Subtest: television readability and horizon policies
+    # Subtest: activates documented daytime and evening palettes using Williamsburg time
+    ok 1 - activates documented daytime and evening palettes using Williamsburg time
+      ---
+      duration_ms: 53.7974
+      type: 'test'
+      ...
+    # Subtest: uses tokenized oatmeal surfaces without a bright alert exception
+    ok 2 - uses tokenized oatmeal surfaces without a bright alert exception
+      ---
+      duration_ms: 41.6384
+      type: 'test'
+      ...
+    # Subtest: retains exactly five visible priorities at the larger television size
+    ok 3 - retains exactly five visible priorities at the larger television size
+      ---
+      duration_ms: 21.1733
+      type: 'test'
+      ...
+    # Subtest: enforces the greater-than-14 and at-most-180 day horizon window
+    ok 4 - enforces the greater-than-14 and at-most-180 day horizon window
+      ---
+      duration_ms: 2.242
+      type: 'test'
+      ...
+    # Subtest: includes every supported high-signal milestone with explicit reason codes
+    ok 5 - includes every supported high-signal milestone with explicit reason codes
+      ---
+      duration_ms: 0.8418
+      type: 'test'
+      ...
+    # Subtest: excludes routine, practice, appointments, household work, and unmarked recurring events
+    ok 6 - excludes routine, practice, appointments, household work, and unmarked recurring events
+      ---
+      duration_ms: 0.4301
+      type: 'test'
+      ...
+    # Subtest: includes family visits and work travel while suppressing unmarked itinerary legs
+    ok 7 - includes family visits and work travel while suppressing unmarked itinerary legs
+      ---
+      duration_ms: 0.8847
+      type: 'test'
+      ...
+    # Subtest: keeps itinerary legs in Next Two Weeks when they are inside its normal window
+    ok 8 - keeps itinerary legs in Next Two Weeks when they are inside its normal window
+      ---
+      duration_ms: 0.8975
+      type: 'test'
+      ...
+    # Subtest: suppresses planning actions from Horizon unless explicitly overridden
+    ok 9 - suppresses planning actions from Horizon unless explicitly overridden
+      ---
+      duration_ms: 1.492
+      type: 'test'
+      ...
+    # Subtest: gives family visits major Horizon priority alongside retained work travel
+    ok 10 - gives family visits major Horizon priority alongside retained work travel
+      ---
+      duration_ms: 0.3742
+      type: 'test'
+      ...
+    # Subtest: renders couch-readable primary and secondary Horizon labels
+    ok 11 - renders couch-readable primary and secondary Horizon labels
+      ---
+      duration_ms: 33.5301
+      type: 'test'
+      ...
+    # Subtest: uses the Eastern 6 AM threshold for contextual Today empty-state wording
+    ok 12 - uses the Eastern 6 AM threshold for contextual Today empty-state wording
+      ---
+      duration_ms: 6.3443
+      type: 'test'
+      ...
+    # Subtest: deduplicates, ranks explicit countdowns first, and caps the module at three
+    ok 13 - deduplicates, ranks explicit countdowns first, and caps the module at three
+      ---
+      duration_ms: 0.6573
+      type: 'test'
+      ...
+    # Subtest: renders empty, one-item, and three-item adaptive horizon states without a second Coming Up label
+    ok 14 - renders empty, one-item, and three-item adaptive horizon states without a second Coming Up label
+      ---
+      duration_ms: 68.8113
+      type: 'test'
+      ...
+    1..14
+ok 19 - television readability and horizon policies
+  ---
+  duration_ms: 234.2762
+  type: 'suite'
+  ...
+# Subtest: family spotlight — in-panel treatment
+    # Subtest: replaces the Athletics title band with the approved eyebrow and headline
+    ok 1 - replaces the Athletics title band with the approved eyebrow and headline
+      ---
+      duration_ms: 36.7319
+      type: 'test'
+      ...
+    # Subtest: renders two equal children with the approved copy
+    ok 2 - renders two equal children with the approved copy
+      ---
+      duration_ms: 22.7346
+      type: 'test'
+      ...
+    # Subtest: does not change athleticsCardCount or the one-card panel classes
+    ok 3 - does not change athleticsCardCount or the one-card panel classes
+      ---
+      duration_ms: 57.2936
+      type: 'test'
+      ...
+    # Subtest: ships the ordinary Athletics presentation alongside the Spotlight
+    ok 4 - ships the ordinary Athletics presentation alongside the Spotlight
+      ---
+      duration_ms: 20.9111
+      type: 'test'
+      ...
+    # Subtest: opens in the ordinary state so an absent script fails closed
+    ok 5 - opens in the ordinary state so an absent script fails closed
+      ---
+      duration_ms: 15.7232
+      type: 'test'
+      ...
+    # Subtest: renders ordinary Athletics unchanged when the switch is off
+    ok 6 - renders ordinary Athletics unchanged when the switch is off
+      ---
+      duration_ms: 42.0113
+      type: 'test'
+      ...
+    # Subtest: renders ordinary Athletics before the inclusion window and after expiry
+    ok 7 - renders ordinary Athletics before the inclusion window and after expiry
+      ---
+      duration_ms: 40.2386
+      type: 'test'
+      ...
+    # Subtest: layers the official logo over the semantic sports mark so failure reveals it
+    ok 8 - layers the official logo over the semantic sports mark so failure reveals it
+      ---
+      duration_ms: 19.8653
+      type: 'test'
+      ...
+    # Subtest: falls back to the semantic mark, retaining all text, when a logo resolves to nothing
+    ok 9 - falls back to the semantic mark, retaining all text, when a logo resolves to nothing
+      ---
+      duration_ms: 29.311
+      type: 'test'
+      ...
+    # Subtest: uses only the Dashboard v2 ownership colours
+    ok 10 - uses only the Dashboard v2 ownership colours
+      ---
+      duration_ms: 21.7487
+      type: 'test'
+      ...
+    # Subtest: keeps NOW/NEXT and the sports ticker intact
+    ok 11 - keeps NOW/NEXT and the sports ticker intact
+      ---
+      duration_ms: 19.1591
+      type: 'test'
+      ...
+    # Subtest: ships a bounded controller that performs no network request
+    ok 12 - ships a bounded controller that performs no network request
+      ---
+      duration_ms: 19.4351
+      type: 'test'
+      ...
+    1..12
+ok 20 - family spotlight — in-panel treatment
+  ---
+  duration_ms: 346.2385
+  type: 'suite'
+  ...
+# Subtest: special-event migration — byte equality with the legacy Family Spotlight
+    # Subtest: reproduces the legacy Athletics panel byte-for-byte in the staged state
+    ok 1 - reproduces the legacy Athletics panel byte-for-byte in the staged state
+      ---
+      duration_ms: 17.1143
+      type: 'test'
+      ...
+    # Subtest: reproduces the legacy ordinary Athletics panel in the staged state with the switch off
+    ok 2 - reproduces the legacy ordinary Athletics panel in the staged state with the switch off
+      ---
+      duration_ms: 19.7172
+      type: 'test'
+      ...
+    # Subtest: reproduces the legacy Athletics panel byte-for-byte in the friday-active state
+    ok 3 - reproduces the legacy Athletics panel byte-for-byte in the friday-active state
+      ---
+      duration_ms: 14.5232
+      type: 'test'
+      ...
+    # Subtest: reproduces the legacy ordinary Athletics panel in the friday-active state with the switch off
+    ok 4 - reproduces the legacy ordinary Athletics panel in the friday-active state with the switch off
+      ---
+      duration_ms: 12.6676
+      type: 'test'
+      ...
+    # Subtest: reproduces the legacy Athletics panel byte-for-byte in the saturday-today state
+    ok 5 - reproduces the legacy Athletics panel byte-for-byte in the saturday-today state
+      ---
+      duration_ms: 15.1235
+      type: 'test'
+      ...
+    # Subtest: reproduces the legacy ordinary Athletics panel in the saturday-today state with the switch off
+    ok 6 - reproduces the legacy ordinary Athletics panel in the saturday-today state with the switch off
+      ---
+      duration_ms: 17.6175
+      type: 'test'
+      ...
+    # Subtest: reproduces the legacy Athletics panel byte-for-byte in the saturday-live state
+    ok 7 - reproduces the legacy Athletics panel byte-for-byte in the saturday-live state
+      ---
+      duration_ms: 12.8053
+      type: 'test'
+      ...
+    # Subtest: reproduces the legacy ordinary Athletics panel in the saturday-live state with the switch off
+    ok 8 - reproduces the legacy ordinary Athletics panel in the saturday-live state with the switch off
+      ---
+      duration_ms: 10.3341
+      type: 'test'
+      ...
+    # Subtest: reproduces the legacy Athletics panel byte-for-byte in the expired state
+    ok 9 - reproduces the legacy Athletics panel byte-for-byte in the expired state
+      ---
+      duration_ms: 14.2837
+      type: 'test'
+      ...
+    # Subtest: reproduces the legacy ordinary Athletics panel in the expired state with the switch off
+    ok 10 - reproduces the legacy ordinary Athletics panel in the expired state with the switch off
+      ---
+      duration_ms: 16.829
+      type: 'test'
+      ...
+    # Subtest: is not a vacuous comparison — the Spotlight states really differ from ordinary
+    ok 11 - is not a vacuous comparison — the Spotlight states really differ from ordinary
+      ---
+      duration_ms: 0.2458
+      type: 'test'
+      ...
+    # Subtest: carries the legacy lifecycle instants unchanged into the rendered attributes
+    ok 12 - carries the legacy lifecycle instants unchanged into the rendered attributes
+      ---
+      duration_ms: 19.3031
+      type: 'test'
+      ...
+    # Subtest: renders a byte-identical ordinary Dashboard v2 whether or not a registry is present
+    ok 13 - renders a byte-identical ordinary Dashboard v2 whether or not a registry is present
+      ---
+      duration_ms: 50.1847
+      type: 'test'
+      ...
+    # Subtest: leaves athleticsCardCount and the panel classes untouched across the whole flag matrix
+    ok 14 - leaves athleticsCardCount and the panel classes untouched across the whole flag matrix
+      ---
+      duration_ms: 167.2854
+      type: 'test'
+      ...
+    1..14
+ok 21 - special-event migration — byte equality with the legacy Family Spotlight
+  ---
+  duration_ms: 389.1495
+  type: 'suite'
+  ...
+# Subtest: dashboard v2 omits the retired alert strip
+    # Subtest: note does not create an alert card
+    ok 1 - note does not create an alert card
+      ---
+      duration_ms: 43.493
+      type: 'test'
+      ...
+    # Subtest: note text is no longer visible
+    ok 2 - note text is no longer visible
+      ---
+      duration_ms: 37.6684
+      type: 'test'
+      ...
+    # Subtest: note severity does not create a mark
+    ok 3 - note severity does not create a mark
+      ---
+      duration_ms: 54.0727
+      type: 'test'
+      ...
+    # Subtest: three alerts plus a note create no strip
+    ok 4 - three alerts plus a note create no strip
+      ---
+      duration_ms: 43.3175
+      type: 'test'
+      ...
+    # Subtest: four alerts plus a note create no strip
+    ok 5 - four alerts plus a note create no strip
+      ---
+      duration_ms: 46.2599
+      type: 'test'
+      ...
+    # Subtest: empty flags do not create an all-clear card
+    ok 6 - empty flags do not create an all-clear card
+      ---
+      duration_ms: 42.9284
+      type: 'test'
+      ...
+    # Subtest: ordinary sample flags no longer render their frozen strip markup
+    ok 7 - ordinary sample flags no longer render their frozen strip markup
+      ---
+      duration_ms: 50.0949
+      type: 'test'
+      ...
+    # Subtest: banner-only flags remain absent
+    ok 8 - banner-only flags remain absent
+      ---
+      duration_ms: 36.4291
+      type: 'test'
+      ...
+    # Subtest: three notes do not create a note container
+    ok 9 - three notes do not create a note container
+      ---
+      duration_ms: 51.6382
+      type: 'test'
+      ...
+    # Subtest: mixed former capacities create no reserved UI
+    ok 10 - mixed former capacities create no reserved UI
+      ---
+      duration_ms: 32.4971
+      type: 'test'
+      ...
+    # Subtest: calendar-fetch failure has no visible wall indicator
+    ok 11 - calendar-fetch failure has no visible wall indicator
+      ---
+      duration_ms: 40.8395
+      type: 'test'
+      ...
+    1..11
+ok 22 - dashboard v2 omits the retired alert strip
+  ---
+  duration_ms: 480.1968
+  type: 'suite'
+  ...
+1..22
+# tests 156
+# suites 15
+# pass 156
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 48533.3237

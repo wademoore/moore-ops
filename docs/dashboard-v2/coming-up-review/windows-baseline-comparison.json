@@ -1,0 +1,786 @@
+{
+  "baseCommit": "cb1e135022e628fcf727153afd5e48af054e41a2",
+  "invocation": "$env:npm_config_script_shell='powershell.exe'; $env:NODE_OPTIONS='--test-reporter=tap'; npm run test:baseline",
+  "nodeVersion": "v24.15.0",
+  "browser": "C:/Program Files/Google/Chrome/Application/chrome.exe",
+  "base": {
+    "summary": "tests 2905  suites 394  pass 2850  fail 55  cancelled 0  skipped 0  todo 0  duration_ms 114257.8113",
+    "failures": [
+      {
+        "name": "event-row accent fixture callers",
+        "location": "test/accent-fixture-callers.test.js:43:1",
+        "type": "suite",
+        "error": "\"ENOENT: no such file or directory, scandir 'C:\\\\C:\\\\Users\\\\wadem\\\\worktrees\\\\coming-up-baseline\\\\moore-ops\\\\'\""
+      },
+      {
+        "name": "fails by name when assets-v2/doodle-holiday-pumpkin.svg is absent",
+        "location": "test/artifact/holiday-theme-mutations.test.js:81:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails by name when assets-v2/doodle-holiday-bats.svg is absent",
+        "location": "test/artifact/holiday-theme-mutations.test.js:81:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails by name when assets-v2/doodle-holiday-web.svg is absent",
+        "location": "test/artifact/holiday-theme-mutations.test.js:81:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails by name when the registry itself is absent",
+        "location": "test/artifact/holiday-theme-mutations.test.js:91:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "mutation control — required holiday doodle assets",
+        "location": "test/artifact/holiday-theme-mutations.test.js:72:1",
+        "type": "suite",
+        "error": "'4 subtests failed'"
+      },
+      {
+        "name": "the real validator fails by name when assets-v2/doodle-swim-goggles.svg is absent",
+        "location": "test/artifact/required-doodle-assets.test.js:87:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "the real validator fails by name when assets-v2/doodle-football-laces.svg is absent",
+        "location": "test/artifact/required-doodle-assets.test.js:87:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "a package missing both doodles cannot pass validation",
+        "location": "test/artifact/required-doodle-assets.test.js:99:1",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is absent",
+        "location": "test/deploy-workflow-holiday-flag.test.js:61:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is empty",
+        "location": "test/deploy-workflow-holiday-flag.test.js:69:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is whitespace only",
+        "location": "test/deploy-workflow-holiday-flag.test.js:69:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is a newline",
+        "location": "test/deploy-workflow-holiday-flag.test.js:69:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is a tab",
+        "location": "test/deploy-workflow-holiday-flag.test.js:69:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "deploys the allowed value 0 unchanged",
+        "location": "test/deploy-workflow-holiday-flag.test.js:77:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "deploys the allowed value 1 unchanged",
+        "location": "test/deploy-workflow-holiday-flag.test.js:77:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "trims a padded value rather than rejecting it",
+        "location": "test/deploy-workflow-holiday-flag.test.js:87:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "trims a newline-terminated value rather than rejecting it",
+        "location": "test/deploy-workflow-holiday-flag.test.js:87:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "trims a tab-padded value rather than rejecting it",
+        "location": "test/deploy-workflow-holiday-flag.test.js:87:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "wires the repository variable through to a verified stack parameter",
+        "location": "test/deploy-workflow-holiday-flag.test.js:230:3",
+        "type": "test",
+        "error": "'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'"
+      },
+      {
+        "name": "fails for the right reason when you delete the repository-variable env mapping",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "'the mutation must actually change the workflow'"
+      },
+      {
+        "name": "fails for the right reason when you remove the SAM parameter override, leaving the literal elsewhere",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails for the right reason when you move resolution after the deploy",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails for the right reason when you remove the stack read-back",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails for the right reason when you reorder the stack read-back ahead of the deploy",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails for the right reason when you compare the read-back against the Spotlight value instead",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "the unmutated workflow still passes — the gate is not rejecting everything",
+        "location": "test/deploy-workflow-holiday-flag.test.js:327:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "mutation controls — the deployment path",
+        "location": "test/deploy-workflow-holiday-flag.test.js:241:3",
+        "type": "suite",
+        "error": "'7 subtests failed'"
+      },
+      {
+        "name": "a widened allow-list would accept an invalid value — so the narrow one is load-bearing",
+        "location": "test/deploy-workflow-holiday-flag.test.js:345:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "a removed blank check would deploy an empty value — so failing closed is load-bearing",
+        "location": "test/deploy-workflow-holiday-flag.test.js:352:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "a removed trim would let a padded value through unvalidated",
+        "location": "test/deploy-workflow-holiday-flag.test.js:358:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "mutation controls — the guard has teeth",
+        "location": "test/deploy-workflow-holiday-flag.test.js:332:3",
+        "type": "suite",
+        "error": "'3 subtests failed'"
+      },
+      {
+        "name": "deploy workflow — Holiday Themes kill-switch resolution",
+        "location": "test/deploy-workflow-holiday-flag.test.js:35:1",
+        "type": "suite",
+        "error": "'13 subtests failed'"
+      },
+      {
+        "name": "resolves an absent or blank variable to 0",
+        "location": "test/deploy-workflow-mobile-flag.test.js:120:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "accepts exactly 0 and 1, whitespace-padded included",
+        "location": "test/deploy-workflow-mobile-flag.test.js:128:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails the workflow before SAM runs for any other value",
+        "location": "test/deploy-workflow-mobile-flag.test.js:136:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "the shipped workflow satisfies the whole deployment path",
+        "location": "test/deploy-workflow-mobile-flag.test.js:157:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "the whole-path gate has teeth against each silent mutation",
+        "location": "test/deploy-workflow-mobile-flag.test.js:161:3",
+        "type": "test",
+        "error": "'mutation did not apply: the env mapping is deleted'"
+      },
+      {
+        "name": "deploy workflow — mobile artifact kill switch",
+        "location": "test/deploy-workflow-mobile-flag.test.js:93:1",
+        "type": "suite",
+        "error": "'5 subtests failed'"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is absent",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:57:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is empty",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:64:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is whitespace only",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:64:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is a newline",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:64:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "deploys the allowed value 0 unchanged",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:72:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "deploys the allowed value 1 unchanged",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:72:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "trims surrounding whitespace from \" 1 \"",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:82:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "trims surrounding whitespace from \"\\\\t0\\\\n\"",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:82:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "reads the repository variable through an env mapping, and only that way",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:112:3",
+        "type": "test",
+        "error": "'vars.FAMILY_SPOTLIGHT_ENABLED must only appear as an env mapping, found: FAMILY_SPOTLIGHT_ENABLED: ${{ vars.FAMILY_SPOTLIGHT_ENABLED }}'"
+      },
+      {
+        "name": "deploy workflow — Family Spotlight kill-switch resolution",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:34:1",
+        "type": "suite",
+        "error": "'9 subtests failed'"
+      },
+      {
+        "name": "Pi staging validation is host-timezone independent across EDT and EST instants",
+        "location": "test/pi-dashboard-pull.test.js:19:1",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "Pi validator rejects ordinary artifacts missing canonical NOW/NEXT or Centers markers",
+        "location": "test/pi-dashboard-pull.test.js:24:1",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "Pi validator recognizes first-day candidates only with a Level-2 fallback",
+        "location": "test/pi-dashboard-pull.test.js:52:1",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "Pi stages and validates both version-pinned directions for afternoon re-entry",
+        "location": "test/pi-dashboard-pull.test.js:68:1",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "verifies the same configuration file it deploys",
+        "location": "test/worker/mobile-worker-config.test.js:249:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "that whole-path check has teeth in each direction",
+        "location": "test/worker/mobile-worker-config.test.js:253:3",
+        "type": "test",
+        "error": "'mapping repointed was caught for the wrong reason: the workflow never deploys; the verify step has no CONFIG env mapping; the deploy step names no configuration file'"
+      },
+      {
+        "name": "is triggered only by hand",
+        "location": "test/worker/mobile-worker-config.test.js:285:3",
+        "type": "test",
+        "error": "'workflow has no top-level on: block'"
+      },
+      {
+        "name": "holds no AWS credential and sets no Worker secret",
+        "location": "test/worker/mobile-worker-config.test.js:326:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "the deploy workflow does not deploy on merge",
+        "location": "test/worker/mobile-worker-config.test.js:248:1",
+        "type": "suite",
+        "error": "'4 subtests failed'"
+      },
+      {
+        "name": "accepts the configuration this repository ships",
+        "location": "test/worker/mobile-worker-config.test.js:359:3",
+        "type": "test",
+        "error": "\"EPERM, Permission denied: \\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-tLqw2q '\\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-tLqw2q'\""
+      },
+      {
+        "name": "refuses a pointer aimed outside the mobile prefix",
+        "location": "test/worker/mobile-worker-config.test.js:365:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "refuses a configuration without the compatibility flag",
+        "location": "test/worker/mobile-worker-config.test.js:374:3",
+        "type": "test",
+        "error": "\"EPERM, Permission denied: \\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-z9GmNy '\\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-z9GmNy'\""
+      },
+      {
+        "name": "refuses a configuration with a pasted credential",
+        "location": "test/worker/mobile-worker-config.test.js:380:3",
+        "type": "test",
+        "error": "\"EPERM, Permission denied: \\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-GnRv3A '\\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-GnRv3A'\""
+      },
+      {
+        "name": "refuses a missing configuration",
+        "location": "test/worker/mobile-worker-config.test.js:388:3",
+        "type": "test",
+        "error": "\"EPERM, Permission denied: \\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-SExGTt '\\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-SExGTt'\""
+      },
+      {
+        "name": "the shipped verify step, executed",
+        "location": "test/worker/mobile-worker-config.test.js:358:1",
+        "type": "suite",
+        "error": "'5 subtests failed'"
+      }
+    ]
+  },
+  "changed": {
+    "summary": "tests 2910  suites 394  pass 2855  fail 55  cancelled 0  skipped 0  todo 0  duration_ms 130639.0677",
+    "failures": [
+      {
+        "name": "event-row accent fixture callers",
+        "location": "test/accent-fixture-callers.test.js:43:1",
+        "type": "suite",
+        "error": "\"ENOENT: no such file or directory, scandir 'C:\\\\C:\\\\Users\\\\wadem\\\\worktrees\\\\93d5\\\\moore-ops\\\\'\""
+      },
+      {
+        "name": "fails by name when assets-v2/doodle-holiday-pumpkin.svg is absent",
+        "location": "test/artifact/holiday-theme-mutations.test.js:81:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails by name when assets-v2/doodle-holiday-bats.svg is absent",
+        "location": "test/artifact/holiday-theme-mutations.test.js:81:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails by name when assets-v2/doodle-holiday-web.svg is absent",
+        "location": "test/artifact/holiday-theme-mutations.test.js:81:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails by name when the registry itself is absent",
+        "location": "test/artifact/holiday-theme-mutations.test.js:91:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "mutation control — required holiday doodle assets",
+        "location": "test/artifact/holiday-theme-mutations.test.js:72:1",
+        "type": "suite",
+        "error": "'4 subtests failed'"
+      },
+      {
+        "name": "the real validator fails by name when assets-v2/doodle-swim-goggles.svg is absent",
+        "location": "test/artifact/required-doodle-assets.test.js:87:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "the real validator fails by name when assets-v2/doodle-football-laces.svg is absent",
+        "location": "test/artifact/required-doodle-assets.test.js:87:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "a package missing both doodles cannot pass validation",
+        "location": "test/artifact/required-doodle-assets.test.js:99:1",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is absent",
+        "location": "test/deploy-workflow-holiday-flag.test.js:61:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is empty",
+        "location": "test/deploy-workflow-holiday-flag.test.js:69:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is whitespace only",
+        "location": "test/deploy-workflow-holiday-flag.test.js:69:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is a newline",
+        "location": "test/deploy-workflow-holiday-flag.test.js:69:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is a tab",
+        "location": "test/deploy-workflow-holiday-flag.test.js:69:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "deploys the allowed value 0 unchanged",
+        "location": "test/deploy-workflow-holiday-flag.test.js:77:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "deploys the allowed value 1 unchanged",
+        "location": "test/deploy-workflow-holiday-flag.test.js:77:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "trims a padded value rather than rejecting it",
+        "location": "test/deploy-workflow-holiday-flag.test.js:87:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "trims a newline-terminated value rather than rejecting it",
+        "location": "test/deploy-workflow-holiday-flag.test.js:87:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "trims a tab-padded value rather than rejecting it",
+        "location": "test/deploy-workflow-holiday-flag.test.js:87:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "wires the repository variable through to a verified stack parameter",
+        "location": "test/deploy-workflow-holiday-flag.test.js:230:3",
+        "type": "test",
+        "error": "'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'"
+      },
+      {
+        "name": "fails for the right reason when you delete the repository-variable env mapping",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "'the mutation must actually change the workflow'"
+      },
+      {
+        "name": "fails for the right reason when you remove the SAM parameter override, leaving the literal elsewhere",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails for the right reason when you move resolution after the deploy",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails for the right reason when you remove the stack read-back",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails for the right reason when you reorder the stack read-back ahead of the deploy",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails for the right reason when you compare the read-back against the Spotlight value instead",
+        "location": "test/deploy-workflow-holiday-flag.test.js:317:7",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "the unmutated workflow still passes — the gate is not rejecting everything",
+        "location": "test/deploy-workflow-holiday-flag.test.js:327:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "mutation controls — the deployment path",
+        "location": "test/deploy-workflow-holiday-flag.test.js:241:3",
+        "type": "suite",
+        "error": "'7 subtests failed'"
+      },
+      {
+        "name": "a widened allow-list would accept an invalid value — so the narrow one is load-bearing",
+        "location": "test/deploy-workflow-holiday-flag.test.js:345:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "a removed blank check would deploy an empty value — so failing closed is load-bearing",
+        "location": "test/deploy-workflow-holiday-flag.test.js:352:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "a removed trim would let a padded value through unvalidated",
+        "location": "test/deploy-workflow-holiday-flag.test.js:358:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "mutation controls — the guard has teeth",
+        "location": "test/deploy-workflow-holiday-flag.test.js:332:3",
+        "type": "suite",
+        "error": "'3 subtests failed'"
+      },
+      {
+        "name": "deploy workflow — Holiday Themes kill-switch resolution",
+        "location": "test/deploy-workflow-holiday-flag.test.js:35:1",
+        "type": "suite",
+        "error": "'13 subtests failed'"
+      },
+      {
+        "name": "resolves an absent or blank variable to 0",
+        "location": "test/deploy-workflow-mobile-flag.test.js:120:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "accepts exactly 0 and 1, whitespace-padded included",
+        "location": "test/deploy-workflow-mobile-flag.test.js:128:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails the workflow before SAM runs for any other value",
+        "location": "test/deploy-workflow-mobile-flag.test.js:136:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "the shipped workflow satisfies the whole deployment path",
+        "location": "test/deploy-workflow-mobile-flag.test.js:157:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "the whole-path gate has teeth against each silent mutation",
+        "location": "test/deploy-workflow-mobile-flag.test.js:161:3",
+        "type": "test",
+        "error": "'mutation did not apply: the env mapping is deleted'"
+      },
+      {
+        "name": "deploy workflow — mobile artifact kill switch",
+        "location": "test/deploy-workflow-mobile-flag.test.js:93:1",
+        "type": "suite",
+        "error": "'5 subtests failed'"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is absent",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:57:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is empty",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:64:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is whitespace only",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:64:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "fails closed to 0 when the repository variable is a newline",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:64:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "deploys the allowed value 0 unchanged",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:72:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "deploys the allowed value 1 unchanged",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:72:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "trims surrounding whitespace from \" 1 \"",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:82:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "trims surrounding whitespace from \"\\\\t0\\\\n\"",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:82:5",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "reads the repository variable through an env mapping, and only that way",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:112:3",
+        "type": "test",
+        "error": "'vars.FAMILY_SPOTLIGHT_ENABLED must only appear as an env mapping, found: FAMILY_SPOTLIGHT_ENABLED: ${{ vars.FAMILY_SPOTLIGHT_ENABLED }}'"
+      },
+      {
+        "name": "deploy workflow — Family Spotlight kill-switch resolution",
+        "location": "test/deploy-workflow-spotlight-flag.test.js:34:1",
+        "type": "suite",
+        "error": "'9 subtests failed'"
+      },
+      {
+        "name": "Pi staging validation is host-timezone independent across EDT and EST instants",
+        "location": "test/pi-dashboard-pull.test.js:19:1",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "Pi validator rejects ordinary artifacts missing canonical NOW/NEXT or Centers markers",
+        "location": "test/pi-dashboard-pull.test.js:24:1",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "Pi validator recognizes first-day candidates only with a Level-2 fallback",
+        "location": "test/pi-dashboard-pull.test.js:52:1",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "Pi stages and validates both version-pinned directions for afternoon re-entry",
+        "location": "test/pi-dashboard-pull.test.js:68:1",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "verifies the same configuration file it deploys",
+        "location": "test/worker/mobile-worker-config.test.js:249:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "that whole-path check has teeth in each direction",
+        "location": "test/worker/mobile-worker-config.test.js:253:3",
+        "type": "test",
+        "error": "'mapping repointed was caught for the wrong reason: the workflow never deploys; the verify step has no CONFIG env mapping; the deploy step names no configuration file'"
+      },
+      {
+        "name": "is triggered only by hand",
+        "location": "test/worker/mobile-worker-config.test.js:285:3",
+        "type": "test",
+        "error": "'workflow has no top-level on: block'"
+      },
+      {
+        "name": "holds no AWS credential and sets no Worker secret",
+        "location": "test/worker/mobile-worker-config.test.js:326:3",
+        "type": "test",
+        "error": "|-"
+      },
+      {
+        "name": "the deploy workflow does not deploy on merge",
+        "location": "test/worker/mobile-worker-config.test.js:248:1",
+        "type": "suite",
+        "error": "'4 subtests failed'"
+      },
+      {
+        "name": "accepts the configuration this repository ships",
+        "location": "test/worker/mobile-worker-config.test.js:359:3",
+        "type": "test",
+        "error": "\"EPERM, Permission denied: \\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-VTojMY '\\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-VTojMY'\""
+      },
+      {
+        "name": "refuses a pointer aimed outside the mobile prefix",
+        "location": "test/worker/mobile-worker-config.test.js:365:3",
+        "type": "test",
+        "error": "\"EPERM, Permission denied: \\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-rqYHtK '\\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-rqYHtK'\""
+      },
+      {
+        "name": "refuses a configuration without the compatibility flag",
+        "location": "test/worker/mobile-worker-config.test.js:374:3",
+        "type": "test",
+        "error": "\"EPERM, Permission denied: \\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-LorwEd '\\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-LorwEd'\""
+      },
+      {
+        "name": "refuses a configuration with a pasted credential",
+        "location": "test/worker/mobile-worker-config.test.js:380:3",
+        "type": "test",
+        "error": "\"EPERM, Permission denied: \\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-BnXg17 '\\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-BnXg17'\""
+      },
+      {
+        "name": "refuses a missing configuration",
+        "location": "test/worker/mobile-worker-config.test.js:388:3",
+        "type": "test",
+        "error": "\"EPERM, Permission denied: \\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-YR3ij7 '\\\\\\\\?\\\\C:\\\\Users\\\\wadem\\\\AppData\\\\Local\\\\Temp\\\\mobile-worker-verify-YR3ij7'\""
+      },
+      {
+        "name": "the shipped verify step, executed",
+        "location": "test/worker/mobile-worker-config.test.js:358:1",
+        "type": "suite",
+        "error": "'5 subtests failed'"
+      }
+    ]
+  },
+  "changedOnly": [],
+  "baseOnly": []
+}
