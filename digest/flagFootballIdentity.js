@@ -57,13 +57,34 @@
  * (2026-09-13 and 2026-10-11). Date alone, with no sport predicate, would put
  * Cowboys artwork on an art festival.
  *
- * Recognition is deliberately permissive and reads two signals:
- *   (a) the sport token declared by the data file itself
- *       (flagFootballData.sport, "Flag Football") appearing in the resolved
- *       title, the subtitle, or the raw calendar summary; or
+ * Recognition is deliberately narrow (Wade, 2026-10-21) and reads two signals:
+ *   (a) the TITLE BEGINS with the sport token declared by the data file itself
+ *       (flagFootballData.sport, "Flag Football") — the league convention is
+ *       "Flag Football: Week 2 — vs …" — in either the resolved title or the
+ *       raw calendar summary. The token must end the word and must not be
+ *       followed by "Club". It may be preceded only by the athlete's owner
+ *       prefix ("Myles: …") and/or our own team name, which is what
+ *       digest/aliases.js writes ("Cowboys Flag Football Practice"); or
  *   (b) the pre-existing isFlagGame marker set by digest/aliases.js, which
  *       covers the older "Flag Cowboys vs. Raiders" title convention that
  *       contains no "flag football" at all.
+ *
+ * Either way, an occurrence whose title says it is a placeholder, or a picture
+ * day that names no opponent, is NOT a league fixture and is never recognised:
+ * it names no fixture the season data could hold, so reporting it as a gap
+ * would be a false alarm, and giving it a team identity would dress a non-game
+ * as one. That exclusion wins over isFlagGame too. "TBD" alone is not on the
+ * list, because "(time TBD)" can sit on a real game; and a title that names an
+ * opponent ("vs Ravens (Picture Day)") stays a game, because picture day can
+ * fall on a game day.
+ *
+ * WHY "begins with" AND NOT "contains". The earlier rule recognised any title
+ * containing the token. That made "Myles: SHIP Flag Football Club" — a school
+ * club, an ordinary calendar activity — look like a league event: it raised a
+ * schedule-gap entry every session, and on a date that happened to carry a
+ * fixture it would have taken our team's identity and logo. Nothing but a
+ * league entry may do that. What keeps the club out is that "SHIP" sits between
+ * the owner prefix and the token, and that "Club" may not follow the token.
  *
  * Taking the token from the data rather than hardcoding it keeps the
  * recognition vocabulary in the same file as the fixtures — the file the
@@ -71,34 +92,33 @@
  * can drift.
  *
  * ── THE LIMIT, STATED PLAINLY RATHER THAN GLOSSED ──
- * These two signals are NOT independent. Both are ultimately functions of the
- * calendar summary: (b) is set by a single title regex in aliases.js
- * (/^flag\s+.+?\s+vs\.?\s+/i), so ONE title edit turns off both. Concretely:
- * the live 2026-10-25 orphan does not match (b) at all, so its gap report
- * rests entirely on the words "Flag Football" surviving in its title. Retitle
- * it "Week 7 — Playoffs (Yorktown)" and it resolves to no identity AND raises
- * no gap. Worse, (b) is strictly REDUNDANT in production: when that matcher
- * fires it rewrites the title to `Cowboys Flag Football — vs. ${opponent}`,
- * which contains the token, so (a) already matches. Only a hand-built fixture
- * exercises the (b)-only path.
- *
- * So the gap detector — the thing built to make breakage visible — can itself
- * be silenced by a rename. That is a real, accepted limit, not a guarantee:
+ * Recognition still reads the calendar TITLE, so a title edit changes it:
+ *   - Retitle a league entry so it no longer begins with the token (after the
+ *     optional owner and team prefixes) and it resolves to no identity AND
+ *     raises no gap (a silent miss). "Game vs Ravens — Flag Football" is such
+ *     a title.
+ *   - Prefix a league title with anything but the athlete and team names
+ *     ("Myles - Flag Football", an emoji) and it is a silent miss too.
+ *   - Word a new placeholder in a way the exclusion does not cover, or name
+ *     a game "vs TBD", and it raises a gap (a visible false alarm). That
+ *     direction is the safer one, which is why the exclusion is a short wording
+ *     list rather than a guess, and why the boundary after the token is wide.
+ * (b) is set by a single title regex in aliases.js (/^flag\s+.+?\s+vs\.?\s+/i)
+ * and is strictly redundant in production: when it fires the title is
+ * rewritten to `Cowboys Flag Football — vs. ${opponent}`, which (a) already
+ * matches. Only a hand-built fixture exercises the (b)-only path.
  *
  *   - ASSOCIATION is what must not depend on a title, and it does not. A
- *     renamed event on a fixture date still resolves, which is the case that
- *     actually matters day to day.
+ *     renamed league event on a fixture date still resolves, which is the
+ *     case that actually matters day to day.
  *   - RECOGNITION has no non-title signal available that is any more durable.
  *     The obvious candidate is the venue: the season declares `location`
- *     ("McReynolds Athletic Complex") and all seven live occurrences carry it.
- *     It was REJECTED, deliberately. A public athletic complex is shared
+ *     ("McReynolds Athletic Complex") and all live occurrences carry it. It
+ *     was REJECTED, deliberately. A public athletic complex is shared
  *     infrastructure, so recognising on it would re-open the exact over-match
  *     hole the "2nd Sundays" measurement closed — any event at that venue on a
  *     fixture date would take Cowboys artwork — and the location field is
  *     hand-typed too, so it is not more durable than the title, only broader.
- *
- * Do not read the permissiveness here as robustness. It is the widest net that
- * does not also catch the neighbours.
  *
  * ─────────────────────────────────────────────────────────────────────────
  * ONLY IMMUTABLE COLUMNS ARE REACHABLE
@@ -153,6 +173,20 @@ function norm(value) {
   return String(value ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
 }
 
+/** Titles that name no fixture the season data could hold. Matched on normalised text. */
+const PLACEHOLDER = /\bplaceholder\b/;
+const PICTURE_DAY = /\bpicture\s+day\b/;
+/** A title that names an opponent ("… vs Ravens") is a game, whatever else it mentions. */
+const NAMES_OPPONENT = /\bvs\.?(?![a-z0-9])/;
+
+function isNotAFixture(text) {
+  return PLACEHOLDER.test(text) || (PICTURE_DAY.test(text) && !NAMES_OPPONENT.test(text));
+}
+
+function escapeRegExp(text) {
+  return String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
  * Seasons that can express this contract: those keyed on a numeric league
  * team id. Legacy abbr-keyed seasons (fall-2025, spring-2026) are skipped
@@ -192,18 +226,40 @@ function eventDateKey(event) {
  */
 function isFlagFootballOccurrence(event, flagFootballData) {
   if (!event) return false;
+
+  // The two places a calendar title lives: the resolved title and the raw
+  // summary. The subtitle is deliberately not read — it carries times and
+  // venue, never the league's title convention.
+  const titles = [event.title, event.raw?.summary]
+    .filter(text => typeof text === 'string' && text.trim())
+    .map(norm);
+
+  // A placeholder, or a picture day that names no opponent, is not a fixture.
+  // "TBD" alone is deliberately NOT in that list: "(time TBD)" can sit on a
+  // real game, and missing a real game silently is the worse error. A title
+  // that names an opponent ("… vs Ravens (Picture Day)") stays a game, for the
+  // same reason: picture day can fall on a game day.
+  if (titles.some(isNotAFixture)) return false;
+
   if (event.isFlagGame === true) return true;
 
   const token = norm(flagFootballData?.sport);
   if (!token) return false;
 
-  const haystack = norm([
-    event.title,
-    event.subtitle,
-    event.raw?.summary,
-  ].filter(Boolean).join(' '));
+  // Our own team name may precede the token (aliases.js writes
+  // "Cowboys Flag Football Practice"), and so may the athlete's owner prefix
+  // ("Myles: Flag Football: Week 3"); nothing else may.
+  const teamNames = (Array.isArray(flagFootballData?.seasons) ? flagFootballData.seasons : [])
+    .map(season => norm(season?.teamName))
+    .filter(Boolean);
+  const athlete = norm(flagFootballData?.athlete);
+  const athletePrefix = athlete ? `(?:${escapeRegExp(athlete)}:\\s*)?` : '';
+  const teamPrefix = teamNames.length ? `(?:(?:${teamNames.map(escapeRegExp).join('|')})\\s+)?` : '';
+  // The token must end the word (so "Flag Footballs" is not it) and must not be
+  // followed by "Club" — the SHIP school club, retitled however it is.
+  const leagueTitle = new RegExp(`^${athletePrefix}${teamPrefix}${escapeRegExp(token)}(?![a-z0-9])(?!\\s+club\\b)`);
 
-  return haystack.includes(token);
+  return titles.some(text => leagueTitle.test(text));
 }
 
 /** Project a team row to the display identity. teamName is for artwork only. */

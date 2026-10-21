@@ -463,3 +463,106 @@ describe('flag football event identity — the gap is visible', () => {
     assert.equal(collectFlagFootballGaps([[noId]], DATA()).length, 1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// League entries only (Wade, 2026-10-21): the SHIP school club is an ordinary
+// calendar activity, and placeholders / picture day are not fixtures.
+// ---------------------------------------------------------------------------
+
+describe('flag football event identity — league entries only', () => {
+  const ship = (overrides = {}) => ev({
+    id: 'evt-ship',
+    title: 'Myles: SHIP Flag Football Club',
+    summary: 'Myles: SHIP Flag Football Club',
+    start: { dateTime: '2026-10-21T15:30:00-04:00' },
+    ...overrides,
+  });
+
+  it('does not recognise the SHIP school club, in any plausible wording', () => {
+    for (const title of ['Myles: SHIP Flag Football Club', 'SHIP Flag Football Club', 'Flag Football Club', 'Myles: Flag Football Club']) {
+      assert.equal(isFlagFootballOccurrence(ship({ title, summary: title }), DATA()), false, title);
+    }
+  });
+
+  it('gives the SHIP club no identity and no gap, even on a date that carries a fixture', () => {
+    const onFixtureDate = ship({ start: { dateTime: '2026-09-20T15:30:00-04:00' } });
+    assert.deepEqual(resolveFlagFootballIdentity(onFixtureDate, DATA()), { identity: null, gapReason: null });
+  });
+
+  it('does not recognise a placeholder or a picture day', () => {
+    for (const title of [
+      'Flag Football: Playoffs (placeholder)',
+      'Flag Football: Picture Day (time TBD)',
+    ]) {
+      assert.equal(isFlagFootballOccurrence(ev({ title, summary: title }), DATA()), false, title);
+    }
+  });
+
+  it('keeps a placeholder out even when isFlagGame is set', () => {
+    const title = 'Flag Cowboys vs. Raiders (placeholder)';
+    assert.equal(isFlagFootballOccurrence(ev({ title, summary: title, isFlagGame: true }), DATA()), false);
+  });
+
+  it('keeps a game that names an opponent even when picture day is in its title', () => {
+    const title = 'Flag Football: Week 2 — vs Langston-Ravens (Picture Day)';
+    const game = ev({ title, summary: title, start: { date: '2026-09-20' } });
+    assert.equal(isFlagFootballOccurrence(game, DATA()), true);
+    assert.equal(identityOf(game).opponent.teamId, RAVENS, 'and it takes the fixture identity on its date');
+    assert.equal(isFlagFootballOccurrence(ev({ title: 'Flag Football: Picture Day vs. (time TBD)', summary: 'x' }), DATA()), true,
+      'a stray "vs" is enough to count as naming an opponent — a visible false alarm at worst');
+  });
+
+  it('does not treat "TBD" alone as a non-fixture — a real game can have its time TBD', () => {
+    const title = 'Flag Football: Week 2 — vs Langston-Ravens (time TBD)';
+    const game = ev({ title, summary: title, start: { date: '2026-09-20' } });
+    assert.equal(isFlagFootballOccurrence(game, DATA()), true);
+    assert.equal(identityOf(game).opponent.teamId, RAVENS, 'and it still takes the fixture identity');
+  });
+
+  it('gives picture day on a fixture date no team identity — it is not the game', () => {
+    const pictureDay = ev({
+      id: 'evt-picture',
+      title: 'Flag Football: Picture Day (time TBD)',
+      summary: 'Flag Football: Picture Day (time TBD)',
+      start: { date: '2026-09-20' },
+    });
+    assert.deepEqual(resolveFlagFootballIdentity(pictureDay, DATA()), { identity: null, gapReason: null });
+  });
+
+  it('reports no gap for the SHIP club, a placeholder or picture day, however many', () => {
+    const entries = [
+      ship({ id: 'a', start: { dateTime: '2026-10-21T15:30:00-04:00' } }),
+      ship({ id: 'b', start: { dateTime: '2026-10-28T15:30:00-04:00' } }),
+      ev({ id: 'c', title: 'Flag Football: Playoffs (placeholder)', summary: 'Flag Football: Playoffs (placeholder)', start: { dateTime: '2026-11-01T13:00:00-05:00' } }),
+      ev({ id: 'd', title: 'Flag Football: Picture Day (time TBD)', summary: 'Flag Football: Picture Day (time TBD)', start: { date: '2026-10-25' } }),
+    ];
+    assert.deepEqual(collectFlagFootballGaps([entries], DATA()), []);
+  });
+
+  it('still recognises a league entry that begins with the token, with or without our team name first', () => {
+    for (const title of [
+      'Flag Football: Week 7 — vs Baker/In-Texans (Home)',
+      'Flag Football — something Wade retyped',
+      'Cowboys Flag Football Practice',
+      'Cowboys Flag Football — vs. Langston-Ravens (Home)',
+      // Shapes a closed boundary list would silently miss.
+      'Flag Football Game',
+      'Flag Football Week 2',
+      'Flag Football. Week 3',
+      'Flag Football/Practice',
+      'Myles: Flag Football: Week 3',
+    ]) {
+      assert.equal(isFlagFootballOccurrence(ev({ title, summary: title }), DATA()), true, title);
+    }
+  });
+
+  it('still reports a real league entry that has no season row', () => {
+    const missing = ev({
+      id: 'evt-missing',
+      title: 'Flag Football: Week 9 — vs Langston-Ravens (Home)',
+      summary: 'Flag Football: Week 9 — vs Langston-Ravens (Home)',
+      start: { date: '2026-11-15' },
+    });
+    assert.equal(collectFlagFootballGaps([[missing]], DATA()).length, 1);
+  });
+});
