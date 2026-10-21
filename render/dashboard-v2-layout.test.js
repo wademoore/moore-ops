@@ -1233,7 +1233,7 @@ describe('retired alert strip does not reserve wall space', () => {
 });
 
 describe('balanced Coming Up space', () => {
-  for (const banner of [null, { title: 'Family day' }]) it(`fits whole days and counts deferred events (${banner ? 'masthead' : 'ordinary'})`, async () => {
+  for (const banner of [null, { title: 'Family day' }]) it(`fits chronological items and counts deferred events (${banner ? 'masthead' : 'ordinary'})`, async () => {
     const upcomingEvents = Array.from({ length: 14 }, (_, i) => ({
       title: `Event ${i + 1}`, subtitle: '', raw: { start: { dateTime: `2026-09-${String(18 + Math.floor(i / 2)).padStart(2, '0')}T09:00:00-04:00` } },
     }));
@@ -1244,25 +1244,110 @@ describe('balanced Coming Up space', () => {
       const note = document.querySelector('.upcoming-later');
       const days = [...document.querySelectorAll('.upcoming-day')];
       return { counts: days.map(d => d.querySelectorAll('.upcoming-event').length), visible: document.querySelectorAll('.upcoming-event').length,
+        partial: Number(document.querySelector('.upcoming-more')?.textContent.match(/\d+/)[0] || 0),
         later: Number(note.textContent.match(/\d+/)[0]), noteInside: note.getBoundingClientRect().bottom <= panel.bottom,
         contained: days.every(d => d.getBoundingClientRect().bottom <= note.getBoundingClientRect().top),
         athleticsClear: panel.bottom < document.querySelector('.athletics-panel').getBoundingClientRect().top };
     });
-    assert.ok(result.visible > 0 && result.visible <= 12);
-    assert.ok(result.counts.every(count => count === 2), JSON.stringify(result));
-    assert.equal(result.visible + result.later, 14);
+    assert.ok(result.visible > 0);
+    assert.ok(result.counts.slice(0, -1).every(count => count === 2), JSON.stringify(result));
+    assert.equal(result.visible + result.partial + result.later, 14);
     assert.ok(result.contained && result.noteInside && result.athleticsClear, JSON.stringify(result));
   });
 });
 
-it('defers an oversized first day whole rather than overflowing or skipping ahead', async () => {
+it('fills an oversized first day partially without skipping ahead', async () => {
   const upcomingEvents = Array.from({ length: 35 }, (_, i) => ({ title: `Busy day event ${i + 1}`, subtitle: '', raw: { start: { date: '2026-09-18' } } }));
   upcomingEvents.push({ title: 'Following day', subtitle: '', raw: { start: { date: '2026-09-19' } } });
   await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, today: new Date('2026-09-17T12:00:00-04:00'), upcomingEvents, athletics: realDivisionAthletics() }));
   await page.evaluate(() => document.fonts.ready);
-  assert.equal(await page.locator('.upcoming-event').count(), 0);
+  const visible = await page.locator('.upcoming-event').count();
+  assert.ok(visible > 0 && visible < 35);
+  assert.equal(await page.locator('.upcoming-day').count(), 1);
+  assert.equal(await page.locator('.upcoming-more').textContent(), `+${35 - visible} more`);
+  assert.equal(await page.locator('.upcoming-later').textContent(), '+1 later in the two-week window');
+});
+
+function comingUpWeek(counts) {
+  return counts.flatMap((count, day) => Array.from({ length: count }, (_, item) => ({
+    title: day === 3 ? ['Sharks away game', '757swim', 'Hip Hop', 'W&M tailgate', 'W&M game'][item] : `Day ${day + 1} event ${item + 1}`,
+    subtitle: '',
+    raw: { start: { dateTime: `2026-10-${21 + day}T${String(8 + item * 2).padStart(2, '0')}:00:00-04:00` } },
+  })));
+}
+
+it('Coming Up fills Wade’s week through a partial Saturday with separate omission counts', async () => {
+  const upcomingEvents = comingUpWeek([4, 4, 1, 5, 1, 2, 1]);
+  await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, today: new Date('2026-10-20T12:00:00-04:00'), upcomingEvents }));
+  await page.evaluate(() => document.fonts.ready);
+  const result = await page.evaluate(() => {
+    const panel = document.querySelector('.upcoming-panel');
+    const days = [...panel.querySelectorAll('.upcoming-day')];
+    const last = days.at(-1);
+    const more = last.querySelector('.upcoming-more');
+    const footer = panel.querySelector('.upcoming-later');
+    const limit = panel.getBoundingClientRect().bottom - 32;
+    const bottom = last.getBoundingClientRect().bottom;
+    const copy = last.querySelector('.upcoming-event').cloneNode(true);
+    const result = {
+      counts: days.map(day => day.querySelectorAll('.upcoming-event').length),
+      dates: days.map(day => day.querySelector('.date-tile b').textContent),
+      titles: [...last.querySelectorAll('.upcoming-event strong')].map(row => row.textContent),
+      more: more?.textContent, footer: footer?.textContent,
+      gap: limit - bottom,
+      moreSize: more && parseFloat(getComputedStyle(more).fontSize),
+      separated: more && more.getBoundingClientRect().bottom <= footer.getBoundingClientRect().top,
+    };
+    more?.before(copy);
+    result.nextWouldOverflow = last.getBoundingClientRect().bottom > limit;
+    copy.remove();
+    return result;
+  });
+  assert.deepEqual(result.dates, ['21', '22', '23', '24'], JSON.stringify(result));
+  assert.deepEqual(result.counts.slice(0, 3), [4, 4, 1]);
+  const saturday = result.counts[3];
+  assert.ok(saturday > 0 && saturday < 5, JSON.stringify(result));
+  assert.deepEqual(result.titles, ['Sharks away game', '757swim', 'Hip Hop', 'W&M tailgate', 'W&M game'].slice(0, saturday));
+  assert.equal(result.more, `+${5 - saturday} more`);
+  assert.equal(result.footer, '+4 later in the two-week window');
+  assert.ok(result.gap >= 0 && result.nextWouldOverflow && result.separated && result.moreSize >= 20, JSON.stringify(result));
+  if (process.env.COMING_UP_SCREENSHOT) await page.screenshot({ path: process.env.COMING_UP_SCREENSHOT });
+});
+
+it('Coming Up fills light days and removes the empty footer', async () => {
+  await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, today: new Date('2026-10-20T12:00:00-04:00'), upcomingEvents: comingUpWeek(Array(10).fill(1)) }));
+  await page.evaluate(() => document.fonts.ready);
+  assert.equal(await page.locator('.upcoming-event').count(), 10);
+  assert.equal(await page.locator('.upcoming-later,.upcoming-more').count(), 0);
+  assert.ok(await page.evaluate(() => document.querySelector('.upcoming-day:last-child').getBoundingClientRect().bottom <= document.querySelector('.upcoming-panel').getBoundingClientRect().bottom - 32));
+});
+
+it('Coming Up expands beyond the server cap when the measured panel has room', async () => {
+  const upcomingEvents = comingUpWeek(Array(10).fill(2));
+  await page.setContent(renderDashboardV2({ ...sampleDashboardV2Data, today: new Date('2026-10-20T12:00:00-04:00'), upcomingEvents,
+    athletics: { sharksActive: true } }));
+  await page.evaluate(() => document.fonts.ready);
+  assert.ok(await page.locator('.upcoming-event').count() > 14);
+  assert.ok(await page.evaluate(() => document.querySelector('.upcoming-day:last-child').getBoundingClientRect().bottom <= document.querySelector('.upcoming-panel').getBoundingClientRect().bottom - 32));
+});
+
+it('Coming Up retains the empty-fit message when even the first item cannot fit', async () => {
+  const html = renderDashboardV2({ ...sampleDashboardV2Data, today: new Date('2026-10-20T12:00:00-04:00'), upcomingEvents: comingUpWeek([4, 1]) });
+  await page.setContent(html.replace('</head>', '<style>.upcoming-panel{height:90px!important}</style></head>'));
+  await page.evaluate(() => document.fonts.ready);
+  assert.equal(await page.locator('.upcoming-day').count(), 0);
   assert.match(await page.locator('.upcoming-list').textContent(), /next day’s schedule is too long to fit/);
-  assert.equal(await page.locator('.upcoming-later').textContent(), '+36 later in the two-week window');
+  assert.equal(await page.locator('.upcoming-later').textContent(), '+5 later in the two-week window');
+});
+
+it('Coming Up keeps the capped fallback with JavaScript disabled', async () => {
+  const fallback = await browser.newPage({ javaScriptEnabled: false, viewport: { width: 2560, height: 1440 } });
+  try {
+    await fallback.setContent(renderDashboardV2({ ...sampleDashboardV2Data, today: new Date('2026-10-20T12:00:00-04:00'), upcomingEvents: comingUpWeek([4, 4, 1, 5, 1, 2, 1]) }));
+    assert.equal(await fallback.locator('.upcoming-event').count(), 14);
+    assert.equal(await fallback.locator('.upcoming-later').textContent(), '+4 later in the two-week window');
+    assert.equal(await fallback.locator('.upcoming-more').count(), 0);
+  } finally { await fallback.close(); }
 });
 
 function twoRace757Meet() {

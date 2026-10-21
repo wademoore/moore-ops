@@ -45,7 +45,7 @@ Candidate diagnostics use concrete occurrence identity (`Google event id + start
 ## Minimum runtime display policies
 
 - Event artwork resolves in this order: official organization logo, semantic category mark, neutral family spark. The semantic set covers appointments, travel, school, household, arts, sports, and family events; remote-logo failures reveal the semantic mark beneath them.
-- `Coming Up` is deterministic and deliberately not just the next event. Appointments, trips, performances, celebrations, games, and meets receive priority; routine practice, classes, recycling, trash, and pickup are de-emphasized. Score ties resolve by event time and then title. If nothing clears the threshold, the rail says that nothing needs special attention while preserving the full two-week list.
+- `Coming Up` shows a chronological prefix of the eligible two-week calendar, without importance ranking. Browser fitting includes as many item rows as fit, with a partial final day when necessary. The separate On the Horizon rail retains its own selection rules.
 - NOW/NEXT requires temporal immediacy or a current action/decision; importance alone is insufficient. Time-bounded planning conditions may remain visible in their calendar or planning context while declaring `nowNextEligibleFrom` for the point at which they affect current operations. Emma unavailability becomes eligible the day before it begins and while it is active; earlier coverage work belongs in Weekly Priorities.
 - Standing GK/goalkeeper training uses the household's settled weekly coverage setup. Ordinary occurrences remain visible in the calendar but do not create NOW/NEXT candidates; a cancellation, reschedule, move, or other explicit change remains eligible for NOW/NEXT.
 - If current weather or forecast data is unavailable, the rail keeps its geometry and explains that weather will retry on the next refresh. Calendar data remains visible.
@@ -92,12 +92,68 @@ The approved everyday layout should remain the stable structural baseline. Futur
 - Resolution order should eventually be: official activity/team logo, semantic category icon, intentional neutral family mark. Unknown events must remain readable even without an icon.
 - Do not require a bespoke icon for every calendar title or ongoing manual asset matching.
 
-### Coming Up logic
+### Coming Up fitting (October 21, 2026)
 
-- Define which events qualify, rather than simply selecting the next chronological event.
-- Candidate factors: urgency, family impact, unusual preparation, ownership, event category, time until event, and whether the item is already prominent in the two-week list.
-- Avoid duplicating a mundane near-term event when a more meaningful event deserves the glanceable rail position.
-- Establish deterministic tie-breaking and a useful empty/fallback state.
+- Keep the existing 14-day eligibility, exclusions, deduplication, and consecutive-repeat collapsing. A merged multi-day entry remains one item on its first date. Days and their items stay in chronological order; never skip ahead to a lighter or more important day.
+- After fonts load, fit item rows above the panel bottom minus the existing 32px clearance. A partially visible day keeps its date tile and countdown chip and includes a 20px bold `+N more` disclosure. Its height participates in fitting. A day with no fitting items is omitted.
+- The footer counts only items in entirely hidden days. Partial-day omissions belong exclusively to that day's disclosure. Omit the footer when its count is zero. If even the first item cannot fit, retain the calendar-details empty-fit message.
+- **No-JavaScript fallback:** retain the server's whole-day prefix with a target of 12 items, or 14 for one athletics card, including the whole final date. Remaining eligible rows are in an inert template. This is a count-limited fallback, not a promise of geometric fitting; item-by-item fitting requires JavaScript. The browser materializes the remaining rows before accent initialization and measures the full eligible list, so the server target does not limit browser capacity.
+- Browser coverage in `render/dashboard-v2-layout.test.js` includes the 4/4/1/5 busy-week fixture, oversized first day, light days, expansion beyond the server target, no fitting item, and JavaScript-disabled fallback. Set `COMING_UP_SCREENSHOT` to an output PNG path to capture the busy-week fixture during its test.
+
+Validation on Windows with system Chrome (October 21, 2026):
+
+- `node --test --test-reporter=tap render/dashboard-v2.test.js render/dashboard-v2-layout.test.js`: 156 tests passed, zero failures. The busy-week browser measurement shows Saturday's first item plus `+4 more`, with four later items counted separately; adding the next row exceeds the measured limit.
+- `$env:npm_config_script_shell='powershell.exe'; $env:NODE_OPTIONS='--test-reporter=tap'; npm run test:baseline`: 2,910 tests, 2,859 passed, 51 failed. The runner resolved `C:\Program Files\Google\Chrome\Application\chrome.exe`. Reported failures include malformed Windows file-URL paths (`C:\C:\...`), CRLF-sensitive assertions, and temporary-directory cleanup errors. This is a failing baseline, not a waiver or clean sign-off. The default Windows npm shell selected zero tests from the single-quoted globs, which is why this invocation specifies PowerShell.
+
+Reviewer handoff follow-up: the implementation is committed as `2addbb5` on
+`codex/coming-up-item-fit`, directly above `cb1e135`. No commits from the other
+surface's branch are included. A fresh Windows comparison using the invocation
+above produced 2,905 tests / 2,850 passed / 55 failed on a clean `cb1e135`
+checkout, and 2,910 tests / 2,855 passed / 55 failed on the changed tree. All
+64 reported failure blocks (including parent suites) match by test name and
+repository-relative location. There are no failures unique to either run.
+The four additional failures relative to the earlier run are Pi tests reporting
+that Python is unavailable, on both checkouts. Matching failures establish their
+presence on the clean base; they do not turn either Windows run green or replace
+reviewer sign-off.
+
+Evidence available from the branch:
+
+- [Busy-week screenshot](coming-up-review/busy-week.png)
+- [Renderer test TAP output](coming-up-review/renderer-tests.tap)
+- [Windows baseline comparison and failure identities](coming-up-review/windows-baseline-comparison.json)
+- Full baseline output: [clean base](coming-up-review/windows-base.log), [changed tree](coming-up-review/windows-changed.log)
+
+External review of `cb1e135..0766ed0`, supplied by Wade, returned PASS with no
+blocking code findings. The reviewer reported `npm run test:baseline` with
+`DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`:
+2,921 tests, zero failures, 394 suites. These are the reviewer's Linux results,
+not a local Windows run. The documentation follow-up below preserves the design
+notes called out in that review; it does not change the reviewed renderer.
+A verdict in a separate checkout does not release a checkout/session-specific
+local review gate. No local gate record has been created here. Wade merges.
+
+### Earlier Coming Up prioritization proposals (deferred)
+
+These notes preserve the earlier design exploration. They are not the current
+Coming Up contract or authorization to change its chronological ordering. Wade's
+October decision accepts hiding later items regardless of importance; revisiting
+prioritization requires a separate product decision.
+
+- Explore qualifying events by urgency, family impact, unusual preparation,
+  ownership, event category, time until the event, and existing prominence in
+  the two-week list.
+- The earlier proposal favored appointments, trips, performances, celebrations,
+  games, and meets over routine practices, classes, recycling, trash, and pickup.
+- Consider avoiding a mundane near-term duplicate when another event needs
+  attention; define deterministic ties and a useful empty/fallback state.
+
+`comingUpScore`, `selectComingUpEvent`, and `selectComingUpEvents` remain in
+`render/dashboard-v2.js`; selector tests still exercise the latter helpers.
+They do not select the rendered Coming Up panel's rows. Removing these helpers
+or adopting their ranking is outside this fitting change and should be scoped
+separately. The historical cutover checklist below records the rules reviewed
+at that time, not a requirement to activate these proposals.
 
 ### Variety without maintenance
 

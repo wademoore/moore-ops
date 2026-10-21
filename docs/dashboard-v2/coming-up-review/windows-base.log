@@ -1,0 +1,2712 @@
+
+> test:baseline
+> node scripts/test-baseline.mjs
+
+test:baseline — DASHBOARD_BROWSER_PATH=C:\Program Files\Google\Chrome\Application\chrome.exe
+(node:37808) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+$ npm.cmd test
+tests 2905  suites 394  pass 2850  fail 55  cancelled 0  skipped 0  todo 0  duration_ms 114257.8113
+
+--- failing tests (64) ---
+
+not ok 301 - event-row accent fixture callers
+  ---
+  duration_ms: 1.0277
+  type: 'suite'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\accent-fixture-callers.test.js:43:1'
+  failureType: 'testCodeFailure'
+  error: "ENOENT: no such file or directory, scandir 'C:\\C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\'"
+  code: 'ENOENT'
+  stack: |-
+    readdirSync (node:fs:1570:26)
+    sourceFiles (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/accent-fixture-callers.test.js:29:23)
+    SuiteContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/accent-fixture-callers.test.js:44:19)
+    Suite.runInAsyncScope (node:async_hooks:227:14)
+    Suite.createBuild (node:internal/test_runner/test:1579:13)
+    new Suite (node:internal/test_runner/test:1570:28)
+    Test.createSubtest (node:internal/test_runner/test:908:18)
+    run (node:internal/test_runner/harness:391:28)
+    test (node:internal/test_runner/harness:405:12)
+    file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/accent-fixture-callers.test.js:43:1
+  ...
+
+    not ok 2 - fails by name when assets-v2/doodle-holiday-pumpkin.svg is absent
+      ---
+      duration_ms: 766.6564
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\artifact\\holiday-theme-mutations.test.js:81:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        node:internal/modules/cjs/loader:1479
+          throw err;
+          ^
+        
+        Error: Cannot find module 'C:\C:\Users\wadem\worktrees\coming-up-baseline\moore-ops\scripts\validate-dashboard-artifact-package.mjs'
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)
+            at wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)
+            at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)
+            at Module._load (node:internal/modules/cjs/loader:1262:25)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+            at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+            at node:internal/main/run_main_module:33:47 {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: []
+        }
+        
+        Node.js v24.15.0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: '=='
+      stack: |-
+        Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)
+        wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)
+        defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10)
+        resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)
+        Module._load (node:internal/modules/cjs/loader:1262:25)
+        wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+        Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+        node:internal/main/run_main_module:33:47 {
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/artifact/holiday-theme-mutations.test.js:83:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+        Test.postRun (node:internal/test_runner/test:1330:19)
+        Test.run (node:internal/test_runner/test:1258:12)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:1619:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+
+    not ok 3 - fails by name when assets-v2/doodle-holiday-bats.svg is absent
+      ---
+      duration_ms: 960.7621
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\artifact\\holiday-theme-mutations.test.js:81:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        node:internal/modules/cjs/loader:1479
+          throw err;
+          ^
+        
+        Error: Cannot find module 'C:\C:\Users\wadem\worktrees\coming-up-baseline\moore-ops\scripts\validate-dashboard-artifact-package.mjs'
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)
+            at wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)
+            at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)
+            at Module._load (node:internal/modules/cjs/loader:1262:25)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+            at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+            at node:internal/main/run_main_module:33:47 {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: []
+        }
+        
+        Node.js v24.15.0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: '=='
+      stack: |-
+        Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)
+        wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)
+        defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10)
+        resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)
+        Module._load (node:internal/modules/cjs/loader:1262:25)
+        wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+        Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+        node:internal/main/run_main_module:33:47 {
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/artifact/holiday-theme-mutations.test.js:83:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+        Test.postRun (node:internal/test_runner/test:1330:19)
+        Test.run (node:internal/test_runner/test:1258:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 4 - fails by name when assets-v2/doodle-holiday-web.svg is absent
+      ---
+      duration_ms: 942.6179
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\artifact\\holiday-theme-mutations.test.js:81:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        node:internal/modules/cjs/loader:1479
+          throw err;
+          ^
+        
+        Error: Cannot find module 'C:\C:\Users\wadem\worktrees\coming-up-baseline\moore-ops\scripts\validate-dashboard-artifact-package.mjs'
+            at Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)
+            at wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)
+            at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10)
+            at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)
+            at Module._load (node:internal/modules/cjs/loader:1262:25)
+            at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+            at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+            at node:internal/main/run_main_module:33:47 {
+          code: 'MODULE_NOT_FOUND',
+          requireStack: []
+        }
+        
+        Node.js v24.15.0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: '=='
+      stack: |-
+        Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)
+        wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)
+        defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10)
+        resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)
+        Module._load (node:internal/modules/cjs/loader:1262:25)
+        wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+        Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+        node:internal/main/run_main_module:33:47 {
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/artifact/holiday-theme-mutations.test.js:83:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+        Test.postRun (node:internal/test_runner/test:1330:19)
+        Test.run (node:internal/test_runner/test:1258:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 5 - fails by name when the registry itself is absent
+      ---
+      duration_ms: 379.4297
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\artifact\\holiday-theme-mutations.test.js:91:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        The expression evaluated to a falsy value:
+        
+          assert.ok(`${run.stdout}${run.stderr}`.includes('built data file is missing: data/holiday-themes.json'))
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: '=='
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/artifact/holiday-theme-mutations.test.js:100:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+        Test.postRun (node:internal/test_runner/test:1330:19)
+        Test.run (node:internal/test_runner/test:1258:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+not ok 341 - mutation control — required holiday doodle assets
+  ---
+  duration_ms: 3869.2915
+  type: 'suite'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\artifact\\holiday-theme-mutations.test.js:72:1'
+  failureType: 'subtestsFailed'
+  error: '4 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+
+not ok 392 - the real validator fails by name when assets-v2/doodle-swim-goggles.svg is absent
+  ---
+  duration_ms: 699.1887
+  type: 'test'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\artifact\\required-doodle-assets.test.js:87:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    validator did not name the missing asset:
+    node:internal/modules/cjs/loader:1479
+      throw err;
+      ^
+    
+    Error: Cannot find module 'C:\C:\Users\wadem\worktrees\coming-up-baseline\moore-ops\scripts\validate-dashboard-artifact-package.mjs'
+        at Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)
+        at wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)
+        at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10)
+        at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)
+        at Module._load (node:internal/modules/cjs/loader:1262:25)
+        at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+        at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+        at node:internal/main/run_main_module:33:47 {
+      code: 'MODULE_NOT_FOUND',
+      requireStack: []
+    }
+    
+    Node.js v24.15.0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)
+    wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)
+    defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10)
+    resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)
+    Module._load (node:internal/modules/cjs/loader:1262:25)
+    wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    node:internal/main/run_main_module:33:47 {
+    TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/artifact/required-doodle-assets.test.js:89:12)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1201:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+    Test.postRun (node:internal/test_runner/test:1330:19)
+    Test.run (node:internal/test_runner/test:1258:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+  ...
+
+not ok 393 - the real validator fails by name when assets-v2/doodle-football-laces.svg is absent
+  ---
+  duration_ms: 903.7396
+  type: 'test'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\artifact\\required-doodle-assets.test.js:87:3'
+  failureType: 'testCodeFailure'
+  error: |-
+    validator did not name the missing asset:
+    node:internal/modules/cjs/loader:1479
+      throw err;
+      ^
+    
+    Error: Cannot find module 'C:\C:\Users\wadem\worktrees\coming-up-baseline\moore-ops\scripts\validate-dashboard-artifact-package.mjs'
+        at Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)
+        at wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)
+        at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10)
+        at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)
+        at Module._load (node:internal/modules/cjs/loader:1262:25)
+        at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+        at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+        at node:internal/main/run_main_module:33:47 {
+      code: 'MODULE_NOT_FOUND',
+      requireStack: []
+    }
+    
+    Node.js v24.15.0
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    Module._resolveFilename (node:internal/modules/cjs/loader:1476:15)
+    wrapResolveFilename (node:internal/modules/cjs/loader:1049:27)
+    defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1073:10)
+    resolveForCJSWithHooks (node:internal/modules/cjs/loader:1094:12)
+    Module._load (node:internal/modules/cjs/loader:1262:25)
+    wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    node:internal/main/run_main_module:33:47 {
+    TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/artifact/required-doodle-assets.test.js:89:12)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1201:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+    Test.postRun (node:internal/test_runner/test:1330:19)
+    Test.run (node:internal/test_runner/test:1258:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+  ...
+
+not ok 394 - a package missing both doodles cannot pass validation
+  ---
+  duration_ms: 700.9183
+  type: 'test'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\artifact\\required-doodle-assets.test.js:99:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    The expression evaluated to a falsy value:
+    
+      assert.ok(output.includes(`required built asset is missing: ${doodle}`))
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/artifact/required-doodle-assets.test.js:101:40)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1201:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+    Test.postRun (node:internal/test_runner/test:1330:19)
+    Test.run (node:internal/test_runner/test:1258:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+  ...
+
+    not ok 1 - fails closed to 0 when the repository variable is absent
+      ---
+      duration_ms: 5134.2304
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:61:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:63:12)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:1619:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+
+    not ok 2 - fails closed to 0 when the repository variable is empty
+      ---
+      duration_ms: 1481.7915
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:69:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:71:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 3 - fails closed to 0 when the repository variable is whitespace only
+      ---
+      duration_ms: 825.6369
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:69:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:71:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 4 - fails closed to 0 when the repository variable is a newline
+      ---
+      duration_ms: 823.9231
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:69:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:71:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 5 - fails closed to 0 when the repository variable is a tab
+      ---
+      duration_ms: 574.8942
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:69:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:71:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 6 - deploys the allowed value 0 unchanged
+      ---
+      duration_ms: 805.6681
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:77:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:79:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 7 - deploys the allowed value 1 unchanged
+      ---
+      duration_ms: 527.7162
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:77:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:79:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 8 - trims a padded value rather than rejecting it
+      ---
+      duration_ms: 627.0289
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:87:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:89:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 9 - trims a newline-terminated value rather than rejecting it
+      ---
+      duration_ms: 703.7463
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:87:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:89:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 10 - trims a tab-padded value rather than rejecting it
+      ---
+      duration_ms: 604.426
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:87:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:89:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 27 - wires the repository variable through to a verified stack parameter
+      ---
+      duration_ms: 2.0053
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:230:3'
+      failureType: 'testCodeFailure'
+      error: 'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: '          HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}\r'
+      operator: 'match'
+      stack: |-
+        assertDeploymentPath (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:181:14)
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:231:5)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+        not ok 1 - fails for the right reason when you delete the repository-variable env mapping
+          ---
+          duration_ms: 1.1147
+          type: 'test'
+          location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:317:7'
+          failureType: 'testCodeFailure'
+          error: 'the mutation must actually change the workflow'
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: |-
+            name: Deploy Dashboard v2 artifact generator
+            
+            on:
+              push:
+                branches:
+                  - main
+                paths:
+                  - '.github/workflows/deploy-dashboard-v2-artifact.yml'
+                  - 'dashboard-artifact/**'
+                  - 'digest/**'
+                  - 'render/**'
+                  - 'sports/**'
+                  - 'data/**'
+                  - '*.js'
+                  - 'package.json'
+                  - 'package-lock.json'
+                  - 'infrastructure/dashboard-artifact-refresh/**'
+                  - 'scripts/prepare-dashboard-artifact-package.mjs'
+                  - 'scripts/validate-dashboard-artifact-deployment.mjs'
+                  - 'scripts/validate-dashboard-artifact-package.mjs'
+              workflow_dispatch:
+            
+            permissions:
+              id-token: write
+              contents: read
+            
+            concurrency:
+              group: deploy-dashboard-v2-artifact
+              cancel-in-progress: false
+            
+            jobs:
+              deploy:
+                runs-on: ubuntu-latest
+                steps:
+                  - name: Check safe deploy window
+                    run: |
+                      HOUR=$(TZ="America/New_York" date +%H)
+                      MIN=$(TZ="America/New_York" date +%M)
+                      if [ "$HOUR" -eq 3 ] && [ "$MIN" -ge 30 ]; then
+                        echo "Deploy blocked — too close to the 4 AM generation"
+                        exit 1
+                      fi
+                      if [ "$HOUR" -eq 4 ] && [ "$MIN" -le 30 ]; then
+                        echo "Deploy blocked — generation may be running"
+                        exit 1
+                      fi
+            
+                  - name: Resolve Family Spotlight kill switch
+                    env:
+                      # Read through env, never interpolated into the script body: a
+                      # repository variable is attacker-controllable text and `${{ }}` inside
+                      # a run block is substituted before bash ever sees it.
+                      FAMILY_SPOTLIGHT_ENABLED: ${{ vars.FAMILY_SPOTLIGHT_ENABLED }}
+                    run: |
+                      RAW="${FAMILY_SPOTLIGHT_ENABLED:-}"
+                      # Trim whitespace so a present-but-blank variable counts as absent.
+                      VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                      if [ -z "$VALUE" ]; then
+                        VALUE=0
+                        echo "FAMILY_SPOTLIGHT_ENABLED is absent or blank - failing closed to 0"
+                      fi
+                      case "$VALUE" in
+                        0|1) ;;
+                        *)
+                          echo "::error::FAMILY_SPOTLIGHT_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                          exit 1
+                          ;;
+                      esac
+                      echo "SPOTLIGHT_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                      echo "Family Spotlight kill switch will be deployed as $VALUE"
+            
+                  - name: Resolve Holiday Themes kill switch
+                    env:
+                      # Read through env, never interpolated into the script body: a
+                      # repository variable is editable text and `${{ }}` inside a run block
+                      # is substituted before bash ever sees it. Independent of
+                      # FAMILY_SPOTLIGHT_ENABLED - neither switch reads or writes the other.
+                      HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}
+                    run: |
+                      RAW="${HOLIDAY_THEMES_ENABLED:-}"
+                      # Trim whitespace so a present-but-blank variable counts as absent.
+                      VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                      if [ -z "$VALUE" ]; then
+                        VALUE=0
+                        echo "HOLIDAY_THEMES_ENABLED is absent or blank - failing closed to 0"
+                      fi
+                      case "$VALUE" in
+                        0|1) ;;
+                        *)
+                          echo "::error::HOLIDAY_THEMES_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                          exit 1
+                          ;;
+                      esac
+                      echo "HOLIDAY_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                      echo "Holiday Themes kill switch will be deployed as $VALUE"
+            
+                  - name: Resolve mobile artifact kill switch
+                    env:
+                      # Read through env, never interpolated into the script body: a
+                      # repository variable is editable text and `${{ }}` inside a run block
+                      # is substituted before bash ever sees it. Sourced
+                      # from its own repository variable and no other - the two existing
+                      # switches are read here neither as a fallback nor as a default.
+                      MOBILE_ARTIFACT_ENABLED: ${{ vars.MOBILE_ARTIFACT_ENABLED }}
+                    run: |
+                      RAW="${MOBILE_ARTIFACT_ENABLED:-}"
+                      # Trim whitespace so a present-but-blank variable counts as absent.
+                      VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                      if [ -z "$VALUE" ]; then
+                        VALUE=0
+                        echo "MOBILE_ARTIFACT_ENABLED is absent or blank - failing closed to 0"
+                      fi
+                      case "$VALUE" in
+                        0|1) ;;
+                        *)
+                          echo "::error::MOBILE_ARTIFACT_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                          exit 1
+                          ;;
+                      esac
+                      echo "MOBILE_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                      echo "Mobile artifact kill switch will be deployed as $VALUE"
+            
+                  - name: Checkout
+                    uses: actions/checkout@v4
+            
+                  - name: Setup Node
+                    uses: actions/setup-node@v4
+                    with:
+                      node-version: '22'
+                      cache: npm
+            
+                  - name: Setup SAM
+                    uses: aws-actions/setup-sam@v2
+            
+                  - name: Install dependencies
+                    run: npm ci
+            
+                  - name: Validate deployment dependency coverage
+                    run: npm run validate:dashboard-artifact-deployment
+            
+                  - name: Build and validate generator package
+                    run: |
+                      npm run build:dashboard-artifact
+                      npm run validate:dashboard-artifact-package
+            
+                  - name: Configure AWS credentials
+                    uses: aws-actions/configure-aws-credentials@v4
+                    with:
+                      role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+                      aws-region: ${{ secrets.AWS_REGION }}
+            
+                  - name: Deploy integrated generator revision
+                    env:
+                      STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                      PACKAGE_BUCKET: moore-ops-lambda
+                    run: |
+                      sam deploy \
+                        --template-file .aws-sam/build/template.yaml \
+                        --stack-name "$STACK_NAME" \
+                        --s3-bucket "$PACKAGE_BUCKET" \
+                        --capabilities CAPABILITY_NAMED_IAM \
+                        --no-confirm-changeset \
+                        --no-fail-on-empty-changeset \
+                        --parameter-overrides \
+                          "SourceRevision=$GITHUB_SHA" \
+                          "FamilySpotlightEnabled=$SPOTLIGHT_ENABLED" \
+                          "HolidayThemesEnabled=$HOLIDAY_ENABLED" \
+                          "MobileArtifactEnabled=$MOBILE_ENABLED"
+            
+                  - name: Verify deployed source revision
+                    env:
+                      STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                    run: |
+                      DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='SourceRevision'].ParameterValue | [0]" --output text)
+                      test "$DEPLOYED" = "$GITHUB_SHA"
+                      echo "Dashboard v2 artifact generator deployed from $GITHUB_SHA"
+            
+                  - name: Verify deployed Family Spotlight kill switch
+                    env:
+                      STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                    run: |
+                      # Selects exactly one parameter: no other stack parameter is read or printed.
+                      DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='FamilySpotlightEnabled'].ParameterValue | [0]" --output text)
+                      if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                        echo "::error::FamilySpotlightEnabled is absent from the deployed stack"
+                        exit 1
+                      fi
+                      if [ "$DEPLOYED" != "$SPOTLIGHT_ENABLED" ]; then
+                        echo "::error::FamilySpotlightEnabled mismatch - intended $SPOTLIGHT_ENABLED, deployed $DEPLOYED"
+                        exit 1
+                      fi
+                      echo "Family Spotlight kill switch verified as $DEPLOYED"
+            
+                  - name: Verify deployed Holiday Themes kill switch
+                    env:
+                      STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                    run: |
+                      # Selects exactly one parameter: no other stack parameter is read or printed.
+                      DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='HolidayThemesEnabled'].ParameterValue | [0]" --output text)
+                      if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                        echo "::error::HolidayThemesEnabled is absent from the deployed stack"
+                        exit 1
+                      fi
+                      if [ "$DEPLOYED" != "$HOLIDAY_ENABLED" ]; then
+                        echo "::error::HolidayThemesEnabled mismatch - intended $HOLIDAY_ENABLED, deployed $DEPLOYED"
+                        exit 1
+                      fi
+                      echo "Holiday Themes kill switch verified as $DEPLOYED"
+            
+                  - name: Verify deployed mobile artifact kill switch
+                    env:
+                      STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                    run: |
+                      # Selects exactly one parameter: no other stack parameter is read or printed.
+                      DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='MobileArtifactEnabled'].ParameterValue | [0]" --output text)
+                      if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                        echo "::error::MobileArtifactEnabled is absent from the deployed stack"
+                        exit 1
+                      fi
+                      if [ "$DEPLOYED" != "$MOBILE_ENABLED" ]; then
+                        echo "::error::MobileArtifactEnabled mismatch - intended $MOBILE_ENABLED, deployed $DEPLOYED"
+                        exit 1
+                      fi
+                      echo "Mobile artifact kill switch verified as $DEPLOYED"
+            
+          actual: |-
+            name: Deploy Dashboard v2 artifact generator
+            
+            on:
+              push:
+                branches:
+                  - main
+                paths:
+                  - '.github/workflows/deploy-dashboard-v2-artifact.yml'
+                  - 'dashboard-artifact/**'
+                  - 'digest/**'
+                  - 'render/**'
+                  - 'sports/**'
+                  - 'data/**'
+                  - '*.js'
+                  - 'package.json'
+                  - 'package-lock.json'
+                  - 'infrastructure/dashboard-artifact-refresh/**'
+                  - 'scripts/prepare-dashboard-artifact-package.mjs'
+                  - 'scripts/validate-dashboard-artifact-deployment.mjs'
+                  - 'scripts/validate-dashboard-artifact-package.mjs'
+              workflow_dispatch:
+            
+            permissions:
+              id-token: write
+              contents: read
+            
+            concurrency:
+              group: deploy-dashboard-v2-artifact
+              cancel-in-progress: false
+            
+            jobs:
+              deploy:
+                runs-on: ubuntu-latest
+                steps:
+                  - name: Check safe deploy window
+                    run: |
+                      HOUR=$(TZ="America/New_York" date +%H)
+                      MIN=$(TZ="America/New_York" date +%M)
+                      if [ "$HOUR" -eq 3 ] && [ "$MIN" -ge 30 ]; then
+                        echo "Deploy blocked — too close to the 4 AM generation"
+                        exit 1
+                      fi
+                      if [ "$HOUR" -eq 4 ] && [ "$MIN" -le 30 ]; then
+                        echo "Deploy blocked — generation may be running"
+                        exit 1
+                      fi
+            
+                  - name: Resolve Family Spotlight kill switch
+                    env:
+                      # Read through env, never interpolated into the script body: a
+                      # repository variable is attacker-controllable text and `${{ }}` inside
+                      # a run block is substituted before bash ever sees it.
+                      FAMILY_SPOTLIGHT_ENABLED: ${{ vars.FAMILY_SPOTLIGHT_ENABLED }}
+                    run: |
+                      RAW="${FAMILY_SPOTLIGHT_ENABLED:-}"
+                      # Trim whitespace so a present-but-blank variable counts as absent.
+                      VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                      if [ -z "$VALUE" ]; then
+                        VALUE=0
+                        echo "FAMILY_SPOTLIGHT_ENABLED is absent or blank - failing closed to 0"
+                      fi
+                      case "$VALUE" in
+                        0|1) ;;
+                        *)
+                          echo "::error::FAMILY_SPOTLIGHT_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                          exit 1
+                          ;;
+                      esac
+                      echo "SPOTLIGHT_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                      echo "Family Spotlight kill switch will be deployed as $VALUE"
+            
+                  - name: Resolve Holiday Themes kill switch
+                    env:
+                      # Read through env, never interpolated into the script body: a
+                      # repository variable is editable text and `${{ }}` inside a run block
+                      # is substituted before bash ever sees it. Independent of
+                      # FAMILY_SPOTLIGHT_ENABLED - neither switch reads or writes the other.
+                      HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}
+                    run: |
+                      RAW="${HOLIDAY_THEMES_ENABLED:-}"
+                      # Trim whitespace so a present-but-blank variable counts as absent.
+                      VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                      if [ -z "$VALUE" ]; then
+                        VALUE=0
+                        echo "HOLIDAY_THEMES_ENABLED is absent or blank - failing closed to 0"
+                      fi
+                      case "$VALUE" in
+                        0|1) ;;
+                        *)
+                          echo "::error::HOLIDAY_THEMES_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                          exit 1
+                          ;;
+                      esac
+                      echo "HOLIDAY_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                      echo "Holiday Themes kill switch will be deployed as $VALUE"
+            
+                  - name: Resolve mobile artifact kill switch
+                    env:
+                      # Read through env, never interpolated into the script body: a
+                      # repository variable is editable text and `${{ }}` inside a run block
+                      # is substituted before bash ever sees it. Sourced
+                      # from its own repository variable and no other - the two existing
+                      # switches are read here neither as a fallback nor as a default.
+                      MOBILE_ARTIFACT_ENABLED: ${{ vars.MOBILE_ARTIFACT_ENABLED }}
+                    run: |
+                      RAW="${MOBILE_ARTIFACT_ENABLED:-}"
+                      # Trim whitespace so a present-but-blank variable counts as absent.
+                      VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                      if [ -z "$VALUE" ]; then
+                        VALUE=0
+                        echo "MOBILE_ARTIFACT_ENABLED is absent or blank - failing closed to 0"
+                      fi
+                      case "$VALUE" in
+                        0|1) ;;
+                        *)
+                          echo "::error::MOBILE_ARTIFACT_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                          exit 1
+                          ;;
+                      esac
+                      echo "MOBILE_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                      echo "Mobile artifact kill switch will be deployed as $VALUE"
+            
+                  - name: Checkout
+                    uses: actions/checkout@v4
+            
+                  - name: Setup Node
+                    uses: actions/setup-node@v4
+                    with:
+                      node-version: '22'
+                      cache: npm
+            
+                  - name: Setup SAM
+                    uses: aws-actions/setup-sam@v2
+            
+                  - name: Install dependencies
+                    run: npm ci
+            
+                  - name: Validate deployment dependency coverage
+                    run: npm run validate:dashboard-artifact-deployment
+            
+                  - name: Build and validate generator package
+                    run: |
+                      npm run build:dashboard-artifact
+                      npm run validate:dashboard-artifact-package
+            
+                  - name: Configure AWS credentials
+                    uses: aws-actions/configure-aws-credentials@v4
+                    with:
+                      role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+                      aws-region: ${{ secrets.AWS_REGION }}
+            
+                  - name: Deploy integrated generator revision
+                    env:
+                      STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                      PACKAGE_BUCKET: moore-ops-lambda
+                    run: |
+                      sam deploy \
+                        --template-file .aws-sam/build/template.yaml \
+                        --stack-name "$STACK_NAME" \
+                        --s3-bucket "$PACKAGE_BUCKET" \
+                        --capabilities CAPABILITY_NAMED_IAM \
+                        --no-confirm-changeset \
+                        --no-fail-on-empty-changeset \
+                        --parameter-overrides \
+                          "SourceRevision=$GITHUB_SHA" \
+                          "FamilySpotlightEnabled=$SPOTLIGHT_ENABLED" \
+                          "HolidayThemesEnabled=$HOLIDAY_ENABLED" \
+                          "MobileArtifactEnabled=$MOBILE_ENABLED"
+            
+                  - name: Verify deployed source revision
+                    env:
+                      STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                    run: |
+                      DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='SourceRevision'].ParameterValue | [0]" --output text)
+                      test "$DEPLOYED" = "$GITHUB_SHA"
+                      echo "Dashboard v2 artifact generator deployed from $GITHUB_SHA"
+            
+                  - name: Verify deployed Family Spotlight kill switch
+                    env:
+                      STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                    run: |
+                      # Selects exactly one parameter: no other stack parameter is read or printed.
+                      DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='FamilySpotlightEnabled'].ParameterValue | [0]" --output text)
+                      if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                        echo "::error::FamilySpotlightEnabled is absent from the deployed stack"
+                        exit 1
+                      fi
+                      if [ "$DEPLOYED" != "$SPOTLIGHT_ENABLED" ]; then
+                        echo "::error::FamilySpotlightEnabled mismatch - intended $SPOTLIGHT_ENABLED, deployed $DEPLOYED"
+                        exit 1
+                      fi
+                      echo "Family Spotlight kill switch verified as $DEPLOYED"
+            
+                  - name: Verify deployed Holiday Themes kill switch
+                    env:
+                      STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                    run: |
+                      # Selects exactly one parameter: no other stack parameter is read or printed.
+                      DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='HolidayThemesEnabled'].ParameterValue | [0]" --output text)
+                      if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                        echo "::error::HolidayThemesEnabled is absent from the deployed stack"
+                        exit 1
+                      fi
+                      if [ "$DEPLOYED" != "$HOLIDAY_ENABLED" ]; then
+                        echo "::error::HolidayThemesEnabled mismatch - intended $HOLIDAY_ENABLED, deployed $DEPLOYED"
+                        exit 1
+                      fi
+                      echo "Holiday Themes kill switch verified as $DEPLOYED"
+            
+                  - name: Verify deployed mobile artifact kill switch
+                    env:
+                      STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                    run: |
+                      # Selects exactly one parameter: no other stack parameter is read or printed.
+                      DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='MobileArtifactEnabled'].ParameterValue | [0]" --output text)
+                      if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                        echo "::error::MobileArtifactEnabled is absent from the deployed stack"
+                        exit 1
+                      fi
+                      if [ "$DEPLOYED" != "$MOBILE_ENABLED" ]; then
+                        echo "::error::MobileArtifactEnabled mismatch - intended $MOBILE_ENABLED, deployed $DEPLOYED"
+                        exit 1
+                      fi
+                      echo "Mobile artifact kill switch verified as $DEPLOYED"
+            
+          operator: 'notStrictEqual'
+          stack: |-
+            TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:319:16)
+            Test.runInAsyncScope (node:async_hooks:227:14)
+            Test.run (node:internal/test_runner/test:1201:25)
+            Test.start (node:internal/test_runner/test:1096:17)
+            node:internal/test_runner/test:1617:71
+            node:internal/per_context/primordials:466:82
+            new Promise (<anonymous>)
+            new SafePromise (node:internal/per_context/primordials:435:3)
+            node:internal/per_context/primordials:466:9
+            Array.map (<anonymous>)
+          ...
+
+        not ok 4 - fails for the right reason when you remove the SAM parameter override, leaving the literal elsewhere
+          ---
+          duration_ms: 0.7073
+          type: 'test'
+          location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:317:7'
+          failureType: 'testCodeFailure'
+          error: |-
+            The input did not match the regular expression /HolidayThemesEnabled=\\\$HOLIDAY_ENABLED/. Input:
+            
+            'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected:
+          actual: 'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+          operator: 'match'
+          stack: |-
+            Object.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:321:18)
+            expectedException (node:assert:578:17)
+            expectsError (node:assert:703:21)
+            strict.throws (node:assert:759:3)
+            TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:320:16)
+            Test.runInAsyncScope (node:async_hooks:227:14)
+            Test.run (node:internal/test_runner/test:1201:25)
+            Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+            Test.postRun (node:internal/test_runner/test:1330:19)
+            Test.run (node:internal/test_runner/test:1258:12)
+          ...
+
+        not ok 5 - fails for the right reason when you move resolution after the deploy
+          ---
+          duration_ms: 1.1207
+          type: 'test'
+          location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:317:7'
+          failureType: 'testCodeFailure'
+          error: |-
+            The input did not match the regular expression /must be resolved before deployment/. Input:
+            
+            'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected:
+          actual: 'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+          operator: 'match'
+          stack: |-
+            Object.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:321:18)
+            expectedException (node:assert:578:17)
+            expectsError (node:assert:703:21)
+            strict.throws (node:assert:759:3)
+            TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:320:16)
+            Test.runInAsyncScope (node:async_hooks:227:14)
+            Test.run (node:internal/test_runner/test:1201:25)
+            Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+            Test.postRun (node:internal/test_runner/test:1330:19)
+            Test.run (node:internal/test_runner/test:1258:12)
+          ...
+
+        not ok 6 - fails for the right reason when you remove the stack read-back
+          ---
+          duration_ms: 0.5057
+          type: 'test'
+          location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:317:7'
+          failureType: 'testCodeFailure'
+          error: |-
+            The input did not match the regular expression /missing step: Verify deployed Holiday Themes kill switch/. Input:
+            
+            'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected:
+          actual: 'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+          operator: 'match'
+          stack: |-
+            Object.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:321:18)
+            expectedException (node:assert:578:17)
+            expectsError (node:assert:703:21)
+            strict.throws (node:assert:759:3)
+            TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:320:16)
+            Test.runInAsyncScope (node:async_hooks:227:14)
+            Test.run (node:internal/test_runner/test:1201:25)
+            Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+            Test.postRun (node:internal/test_runner/test:1330:19)
+            Test.run (node:internal/test_runner/test:1258:12)
+          ...
+
+        not ok 7 - fails for the right reason when you reorder the stack read-back ahead of the deploy
+          ---
+          duration_ms: 0.4038
+          type: 'test'
+          location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:317:7'
+          failureType: 'testCodeFailure'
+          error: |-
+            The input did not match the regular expression /the stack read-back must follow the deploy/. Input:
+            
+            'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected:
+          actual: 'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+          operator: 'match'
+          stack: |-
+            Object.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:321:18)
+            expectedException (node:assert:578:17)
+            expectsError (node:assert:703:21)
+            strict.throws (node:assert:759:3)
+            TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:320:16)
+            Test.runInAsyncScope (node:async_hooks:227:14)
+            Test.run (node:internal/test_runner/test:1201:25)
+            Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+            Test.postRun (node:internal/test_runner/test:1330:19)
+            Test.run (node:internal/test_runner/test:1258:12)
+          ...
+
+        not ok 8 - fails for the right reason when you compare the read-back against the Spotlight value instead
+          ---
+          duration_ms: 0.4277
+          type: 'test'
+          location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:317:7'
+          failureType: 'testCodeFailure'
+          error: |-
+            The input did not match the regular expression /the read-back must compare the resolved value/. Input:
+            
+            'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected:
+          actual: 'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+          operator: 'match'
+          stack: |-
+            Object.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:321:18)
+            expectedException (node:assert:578:17)
+            expectsError (node:assert:703:21)
+            strict.throws (node:assert:759:3)
+            TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:320:16)
+            Test.runInAsyncScope (node:async_hooks:227:14)
+            Test.run (node:internal/test_runner/test:1201:25)
+            Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+            Test.postRun (node:internal/test_runner/test:1330:19)
+            Test.run (node:internal/test_runner/test:1258:12)
+          ...
+
+        not ok 9 - the unmutated workflow still passes — the gate is not rejecting everything
+          ---
+          duration_ms: 0.5029
+          type: 'test'
+          location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:327:5'
+          failureType: 'testCodeFailure'
+          error: |-
+            Got unwanted exception.
+            Actual message: "vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}"
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          actual:
+          error: 'vars.HOLIDAY_THEMES_ENABLED must only appear as an env mapping, found: HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}'
+          stack: |-
+            assertDeploymentPath (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:181:14)
+            file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:328:33
+            getActual (node:assert:611:5)
+            strict.doesNotThrow (node:assert:779:32)
+            TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:328:14)
+            Test.runInAsyncScope (node:async_hooks:227:14)
+            Test.run (node:internal/test_runner/test:1201:25)
+            Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+            Test.postRun (node:internal/test_runner/test:1330:19)
+            Test.run (node:internal/test_runner/test:1258:12)
+          operator: 'doesNotThrow'
+          stack: |-
+            TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:328:14)
+            Test.runInAsyncScope (node:async_hooks:227:14)
+            Test.run (node:internal/test_runner/test:1201:25)
+            Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+            Test.postRun (node:internal/test_runner/test:1330:19)
+            Test.run (node:internal/test_runner/test:1258:12)
+            async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+          ...
+
+    not ok 29 - mutation controls — the deployment path
+      ---
+      duration_ms: 7.1713
+      type: 'suite'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:241:3'
+      failureType: 'subtestsFailed'
+      error: '7 subtests failed'
+      code: 'ERR_TEST_FAILURE'
+      ...
+
+        not ok 1 - a widened allow-list would accept an invalid value — so the narrow one is load-bearing
+          ---
+          duration_ms: 497.779
+          type: 'test'
+          location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:345:5'
+          failureType: 'testCodeFailure'
+          error: |-
+            Expected values to be strictly equal:
+            
+            1 !== 0
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: 0
+          actual: 1
+          operator: 'strictEqual'
+          stack: |-
+            TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:347:14)
+            Test.runInAsyncScope (node:async_hooks:227:14)
+            Test.run (node:internal/test_runner/test:1201:25)
+            Test.start (node:internal/test_runner/test:1096:17)
+            node:internal/test_runner/test:1617:71
+            node:internal/per_context/primordials:466:82
+            new Promise (<anonymous>)
+            new SafePromise (node:internal/per_context/primordials:435:3)
+            node:internal/per_context/primordials:466:9
+            Array.map (<anonymous>)
+          ...
+
+        not ok 2 - a removed blank check would deploy an empty value — so failing closed is load-bearing
+          ---
+          duration_ms: 934.7928
+          type: 'test'
+          location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:352:5'
+          failureType: 'testCodeFailure'
+          error: |-
+            the shipped step must fail closed to 0
+            
+            null !== '0'
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: '0'
+          actual: ~
+          operator: 'strictEqual'
+          stack: |-
+            TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:355:14)
+            Test.runInAsyncScope (node:async_hooks:227:14)
+            Test.run (node:internal/test_runner/test:1201:25)
+            Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+            Test.postRun (node:internal/test_runner/test:1330:19)
+            Test.run (node:internal/test_runner/test:1258:12)
+            async Promise.all (index 0)
+            async Suite.run (node:internal/test_runner/test:1619:7)
+            async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+          ...
+
+        not ok 3 - a removed trim would let a padded value through unvalidated
+          ---
+          duration_ms: 975.9843
+          type: 'test'
+          location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:358:5'
+          failureType: 'testCodeFailure'
+          error: |-
+            Expected values to be strictly equal:
+            
+            null !== '1'
+            
+          code: 'ERR_ASSERTION'
+          name: 'AssertionError'
+          expected: '1'
+          actual: ~
+          operator: 'strictEqual'
+          stack: |-
+            TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-holiday-flag.test.js:361:14)
+            Test.runInAsyncScope (node:async_hooks:227:14)
+            Test.run (node:internal/test_runner/test:1201:25)
+            Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+            Test.postRun (node:internal/test_runner/test:1330:19)
+            Test.run (node:internal/test_runner/test:1258:12)
+            async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+          ...
+
+    not ok 30 - mutation controls — the guard has teeth
+      ---
+      duration_ms: 2410.094
+      type: 'suite'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:332:3'
+      failureType: 'subtestsFailed'
+      error: '3 subtests failed'
+      code: 'ERR_TEST_FAILURE'
+      ...
+
+not ok 450 - deploy workflow — Holiday Themes kill-switch resolution
+  ---
+  duration_ms: 22023.6113
+  type: 'suite'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-holiday-flag.test.js:35:1'
+  failureType: 'subtestsFailed'
+  error: '13 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+
+    not ok 1 - resolves an absent or blank variable to 0
+      ---
+      duration_ms: 4743.8605
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-mobile-flag.test.js:120:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        value undefined should succeed
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-mobile-flag.test.js:123:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:1619:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+
+    not ok 2 - accepts exactly 0 and 1, whitespace-padded included
+      ---
+      duration_ms: 1450.0198
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-mobile-flag.test.js:128:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        value "0" should succeed
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-mobile-flag.test.js:131:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 3 - fails the workflow before SAM runs for any other value
+      ---
+      duration_ms: 810.2535
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-mobile-flag.test.js:136:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input did not match the regular expression /must be exactly 0 or 1/. Input:
+        
+        ''
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: ''
+      operator: 'match'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-mobile-flag.test.js:141:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 5 - the shipped workflow satisfies the whole deployment path
+      ---
+      duration_ms: 2.4975
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-mobile-flag.test.js:157:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+        + [
+        +   'MOBILE_ARTIFACT_ENABLED is not fed by its own repository variable through an env mapping'
+        + ]
+        - []
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual:
+        0: 'MOBILE_ARTIFACT_ENABLED is not fed by its own repository variable through an env mapping'
+      operator: 'deepStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-mobile-flag.test.js:158:12)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 6 - the whole-path gate has teeth against each silent mutation
+      ---
+      duration_ms: 0.5025
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-mobile-flag.test.js:161:3'
+      failureType: 'testCodeFailure'
+      error: 'mutation did not apply: the env mapping is deleted'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: |-
+        name: Deploy Dashboard v2 artifact generator
+        
+        on:
+          push:
+            branches:
+              - main
+            paths:
+              - '.github/workflows/deploy-dashboard-v2-artifact.yml'
+              - 'dashboard-artifact/**'
+              - 'digest/**'
+              - 'render/**'
+              - 'sports/**'
+              - 'data/**'
+              - '*.js'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'infrastructure/dashboard-artifact-refresh/**'
+              - 'scripts/prepare-dashboard-artifact-package.mjs'
+              - 'scripts/validate-dashboard-artifact-deployment.mjs'
+              - 'scripts/validate-dashboard-artifact-package.mjs'
+          workflow_dispatch:
+        
+        permissions:
+          id-token: write
+          contents: read
+        
+        concurrency:
+          group: deploy-dashboard-v2-artifact
+          cancel-in-progress: false
+        
+        jobs:
+          deploy:
+            runs-on: ubuntu-latest
+            steps:
+              - name: Check safe deploy window
+                run: |
+                  HOUR=$(TZ="America/New_York" date +%H)
+                  MIN=$(TZ="America/New_York" date +%M)
+                  if [ "$HOUR" -eq 3 ] && [ "$MIN" -ge 30 ]; then
+                    echo "Deploy blocked — too close to the 4 AM generation"
+                    exit 1
+                  fi
+                  if [ "$HOUR" -eq 4 ] && [ "$MIN" -le 30 ]; then
+                    echo "Deploy blocked — generation may be running"
+                    exit 1
+                  fi
+        
+              - name: Resolve Family Spotlight kill switch
+                env:
+                  # Read through env, never interpolated into the script body: a
+                  # repository variable is attacker-controllable text and `${{ }}` inside
+                  # a run block is substituted before bash ever sees it.
+                  FAMILY_SPOTLIGHT_ENABLED: ${{ vars.FAMILY_SPOTLIGHT_ENABLED }}
+                run: |
+                  RAW="${FAMILY_SPOTLIGHT_ENABLED:-}"
+                  # Trim whitespace so a present-but-blank variable counts as absent.
+                  VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                  if [ -z "$VALUE" ]; then
+                    VALUE=0
+                    echo "FAMILY_SPOTLIGHT_ENABLED is absent or blank - failing closed to 0"
+                  fi
+                  case "$VALUE" in
+                    0|1) ;;
+                    *)
+                      echo "::error::FAMILY_SPOTLIGHT_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                      exit 1
+                      ;;
+                  esac
+                  echo "SPOTLIGHT_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                  echo "Family Spotlight kill switch will be deployed as $VALUE"
+        
+              - name: Resolve Holiday Themes kill switch
+                env:
+                  # Read through env, never interpolated into the script body: a
+                  # repository variable is editable text and `${{ }}` inside a run block
+                  # is substituted before bash ever sees it. Independent of
+                  # FAMILY_SPOTLIGHT_ENABLED - neither switch reads or writes the other.
+                  HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}
+                run: |
+                  RAW="${HOLIDAY_THEMES_ENABLED:-}"
+                  # Trim whitespace so a present-but-blank variable counts as absent.
+                  VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                  if [ -z "$VALUE" ]; then
+                    VALUE=0
+                    echo "HOLIDAY_THEMES_ENABLED is absent or blank - failing closed to 0"
+                  fi
+                  case "$VALUE" in
+                    0|1) ;;
+                    *)
+                      echo "::error::HOLIDAY_THEMES_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                      exit 1
+                      ;;
+                  esac
+                  echo "HOLIDAY_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                  echo "Holiday Themes kill switch will be deployed as $VALUE"
+        
+              - name: Resolve mobile artifact kill switch
+                env:
+                  # Read through env, never interpolated into the script body: a
+                  # repository variable is editable text and `${{ }}` inside a run block
+                  # is substituted before bash ever sees it. Sourced
+                  # from its own repository variable and no other - the two existing
+                  # switches are read here neither as a fallback nor as a default.
+                  MOBILE_ARTIFACT_ENABLED: ${{ vars.MOBILE_ARTIFACT_ENABLED }}
+                run: |
+                  RAW="${MOBILE_ARTIFACT_ENABLED:-}"
+                  # Trim whitespace so a present-but-blank variable counts as absent.
+                  VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                  if [ -z "$VALUE" ]; then
+                    VALUE=0
+                    echo "MOBILE_ARTIFACT_ENABLED is absent or blank - failing closed to 0"
+                  fi
+                  case "$VALUE" in
+                    0|1) ;;
+                    *)
+                      echo "::error::MOBILE_ARTIFACT_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                      exit 1
+                      ;;
+                  esac
+                  echo "MOBILE_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                  echo "Mobile artifact kill switch will be deployed as $VALUE"
+        
+              - name: Checkout
+                uses: actions/checkout@v4
+        
+              - name: Setup Node
+                uses: actions/setup-node@v4
+                with:
+                  node-version: '22'
+                  cache: npm
+        
+              - name: Setup SAM
+                uses: aws-actions/setup-sam@v2
+        
+              - name: Install dependencies
+                run: npm ci
+        
+              - name: Validate deployment dependency coverage
+                run: npm run validate:dashboard-artifact-deployment
+        
+              - name: Build and validate generator package
+                run: |
+                  npm run build:dashboard-artifact
+                  npm run validate:dashboard-artifact-package
+        
+              - name: Configure AWS credentials
+                uses: aws-actions/configure-aws-credentials@v4
+                with:
+                  role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+                  aws-region: ${{ secrets.AWS_REGION }}
+        
+              - name: Deploy integrated generator revision
+                env:
+                  STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                  PACKAGE_BUCKET: moore-ops-lambda
+                run: |
+                  sam deploy \
+                    --template-file .aws-sam/build/template.yaml \
+                    --stack-name "$STACK_NAME" \
+                    --s3-bucket "$PACKAGE_BUCKET" \
+                    --capabilities CAPABILITY_NAMED_IAM \
+                    --no-confirm-changeset \
+                    --no-fail-on-empty-changeset \
+                    --parameter-overrides \
+                      "SourceRevision=$GITHUB_SHA" \
+                      "FamilySpotlightEnabled=$SPOTLIGHT_ENABLED" \
+                      "HolidayThemesEnabled=$HOLIDAY_ENABLED" \
+                      "MobileArtifactEnabled=$MOBILE_ENABLED"
+        
+              - name: Verify deployed source revision
+                env:
+                  STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                run: |
+                  DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='SourceRevision'].ParameterValue | [0]" --output text)
+                  test "$DEPLOYED" = "$GITHUB_SHA"
+                  echo "Dashboard v2 artifact generator deployed from $GITHUB_SHA"
+        
+              - name: Verify deployed Family Spotlight kill switch
+                env:
+                  STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                run: |
+                  # Selects exactly one parameter: no other stack parameter is read or printed.
+                  DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='FamilySpotlightEnabled'].ParameterValue | [0]" --output text)
+                  if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                    echo "::error::FamilySpotlightEnabled is absent from the deployed stack"
+                    exit 1
+                  fi
+                  if [ "$DEPLOYED" != "$SPOTLIGHT_ENABLED" ]; then
+                    echo "::error::FamilySpotlightEnabled mismatch - intended $SPOTLIGHT_ENABLED, deployed $DEPLOYED"
+                    exit 1
+                  fi
+                  echo "Family Spotlight kill switch verified as $DEPLOYED"
+        
+              - name: Verify deployed Holiday Themes kill switch
+                env:
+                  STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                run: |
+                  # Selects exactly one parameter: no other stack parameter is read or printed.
+                  DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='HolidayThemesEnabled'].ParameterValue | [0]" --output text)
+                  if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                    echo "::error::HolidayThemesEnabled is absent from the deployed stack"
+                    exit 1
+                  fi
+                  if [ "$DEPLOYED" != "$HOLIDAY_ENABLED" ]; then
+                    echo "::error::HolidayThemesEnabled mismatch - intended $HOLIDAY_ENABLED, deployed $DEPLOYED"
+                    exit 1
+                  fi
+                  echo "Holiday Themes kill switch verified as $DEPLOYED"
+        
+              - name: Verify deployed mobile artifact kill switch
+                env:
+                  STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                run: |
+                  # Selects exactly one parameter: no other stack parameter is read or printed.
+                  DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='MobileArtifactEnabled'].ParameterValue | [0]" --output text)
+                  if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                    echo "::error::MobileArtifactEnabled is absent from the deployed stack"
+                    exit 1
+                  fi
+                  if [ "$DEPLOYED" != "$MOBILE_ENABLED" ]; then
+                    echo "::error::MobileArtifactEnabled mismatch - intended $MOBILE_ENABLED, deployed $DEPLOYED"
+                    exit 1
+                  fi
+                  echo "Mobile artifact kill switch verified as $DEPLOYED"
+        
+      actual: |-
+        name: Deploy Dashboard v2 artifact generator
+        
+        on:
+          push:
+            branches:
+              - main
+            paths:
+              - '.github/workflows/deploy-dashboard-v2-artifact.yml'
+              - 'dashboard-artifact/**'
+              - 'digest/**'
+              - 'render/**'
+              - 'sports/**'
+              - 'data/**'
+              - '*.js'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'infrastructure/dashboard-artifact-refresh/**'
+              - 'scripts/prepare-dashboard-artifact-package.mjs'
+              - 'scripts/validate-dashboard-artifact-deployment.mjs'
+              - 'scripts/validate-dashboard-artifact-package.mjs'
+          workflow_dispatch:
+        
+        permissions:
+          id-token: write
+          contents: read
+        
+        concurrency:
+          group: deploy-dashboard-v2-artifact
+          cancel-in-progress: false
+        
+        jobs:
+          deploy:
+            runs-on: ubuntu-latest
+            steps:
+              - name: Check safe deploy window
+                run: |
+                  HOUR=$(TZ="America/New_York" date +%H)
+                  MIN=$(TZ="America/New_York" date +%M)
+                  if [ "$HOUR" -eq 3 ] && [ "$MIN" -ge 30 ]; then
+                    echo "Deploy blocked — too close to the 4 AM generation"
+                    exit 1
+                  fi
+                  if [ "$HOUR" -eq 4 ] && [ "$MIN" -le 30 ]; then
+                    echo "Deploy blocked — generation may be running"
+                    exit 1
+                  fi
+        
+              - name: Resolve Family Spotlight kill switch
+                env:
+                  # Read through env, never interpolated into the script body: a
+                  # repository variable is attacker-controllable text and `${{ }}` inside
+                  # a run block is substituted before bash ever sees it.
+                  FAMILY_SPOTLIGHT_ENABLED: ${{ vars.FAMILY_SPOTLIGHT_ENABLED }}
+                run: |
+                  RAW="${FAMILY_SPOTLIGHT_ENABLED:-}"
+                  # Trim whitespace so a present-but-blank variable counts as absent.
+                  VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                  if [ -z "$VALUE" ]; then
+                    VALUE=0
+                    echo "FAMILY_SPOTLIGHT_ENABLED is absent or blank - failing closed to 0"
+                  fi
+                  case "$VALUE" in
+                    0|1) ;;
+                    *)
+                      echo "::error::FAMILY_SPOTLIGHT_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                      exit 1
+                      ;;
+                  esac
+                  echo "SPOTLIGHT_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                  echo "Family Spotlight kill switch will be deployed as $VALUE"
+        
+              - name: Resolve Holiday Themes kill switch
+                env:
+                  # Read through env, never interpolated into the script body: a
+                  # repository variable is editable text and `${{ }}` inside a run block
+                  # is substituted before bash ever sees it. Independent of
+                  # FAMILY_SPOTLIGHT_ENABLED - neither switch reads or writes the other.
+                  HOLIDAY_THEMES_ENABLED: ${{ vars.HOLIDAY_THEMES_ENABLED }}
+                run: |
+                  RAW="${HOLIDAY_THEMES_ENABLED:-}"
+                  # Trim whitespace so a present-but-blank variable counts as absent.
+                  VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                  if [ -z "$VALUE" ]; then
+                    VALUE=0
+                    echo "HOLIDAY_THEMES_ENABLED is absent or blank - failing closed to 0"
+                  fi
+                  case "$VALUE" in
+                    0|1) ;;
+                    *)
+                      echo "::error::HOLIDAY_THEMES_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                      exit 1
+                      ;;
+                  esac
+                  echo "HOLIDAY_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                  echo "Holiday Themes kill switch will be deployed as $VALUE"
+        
+              - name: Resolve mobile artifact kill switch
+                env:
+                  # Read through env, never interpolated into the script body: a
+                  # repository variable is editable text and `${{ }}` inside a run block
+                  # is substituted before bash ever sees it. Sourced
+                  # from its own repository variable and no other - the two existing
+                  # switches are read here neither as a fallback nor as a default.
+                  MOBILE_ARTIFACT_ENABLED: ${{ vars.MOBILE_ARTIFACT_ENABLED }}
+                run: |
+                  RAW="${MOBILE_ARTIFACT_ENABLED:-}"
+                  # Trim whitespace so a present-but-blank variable counts as absent.
+                  VALUE="$(printf '%s' "$RAW" | tr -d '[:space:]')"
+                  if [ -z "$VALUE" ]; then
+                    VALUE=0
+                    echo "MOBILE_ARTIFACT_ENABLED is absent or blank - failing closed to 0"
+                  fi
+                  case "$VALUE" in
+                    0|1) ;;
+                    *)
+                      echo "::error::MOBILE_ARTIFACT_ENABLED must be exactly 0 or 1, got '$VALUE' - refusing to deploy"
+                      exit 1
+                      ;;
+                  esac
+                  echo "MOBILE_ENABLED=$VALUE" >> "$GITHUB_ENV"
+                  echo "Mobile artifact kill switch will be deployed as $VALUE"
+        
+              - name: Checkout
+                uses: actions/checkout@v4
+        
+              - name: Setup Node
+                uses: actions/setup-node@v4
+                with:
+                  node-version: '22'
+                  cache: npm
+        
+              - name: Setup SAM
+                uses: aws-actions/setup-sam@v2
+        
+              - name: Install dependencies
+                run: npm ci
+        
+              - name: Validate deployment dependency coverage
+                run: npm run validate:dashboard-artifact-deployment
+        
+              - name: Build and validate generator package
+                run: |
+                  npm run build:dashboard-artifact
+                  npm run validate:dashboard-artifact-package
+        
+              - name: Configure AWS credentials
+                uses: aws-actions/configure-aws-credentials@v4
+                with:
+                  role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+                  aws-region: ${{ secrets.AWS_REGION }}
+        
+              - name: Deploy integrated generator revision
+                env:
+                  STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                  PACKAGE_BUCKET: moore-ops-lambda
+                run: |
+                  sam deploy \
+                    --template-file .aws-sam/build/template.yaml \
+                    --stack-name "$STACK_NAME" \
+                    --s3-bucket "$PACKAGE_BUCKET" \
+                    --capabilities CAPABILITY_NAMED_IAM \
+                    --no-confirm-changeset \
+                    --no-fail-on-empty-changeset \
+                    --parameter-overrides \
+                      "SourceRevision=$GITHUB_SHA" \
+                      "FamilySpotlightEnabled=$SPOTLIGHT_ENABLED" \
+                      "HolidayThemesEnabled=$HOLIDAY_ENABLED" \
+                      "MobileArtifactEnabled=$MOBILE_ENABLED"
+        
+              - name: Verify deployed source revision
+                env:
+                  STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                run: |
+                  DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='SourceRevision'].ParameterValue | [0]" --output text)
+                  test "$DEPLOYED" = "$GITHUB_SHA"
+                  echo "Dashboard v2 artifact generator deployed from $GITHUB_SHA"
+        
+              - name: Verify deployed Family Spotlight kill switch
+                env:
+                  STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                run: |
+                  # Selects exactly one parameter: no other stack parameter is read or printed.
+                  DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='FamilySpotlightEnabled'].ParameterValue | [0]" --output text)
+                  if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                    echo "::error::FamilySpotlightEnabled is absent from the deployed stack"
+                    exit 1
+                  fi
+                  if [ "$DEPLOYED" != "$SPOTLIGHT_ENABLED" ]; then
+                    echo "::error::FamilySpotlightEnabled mismatch - intended $SPOTLIGHT_ENABLED, deployed $DEPLOYED"
+                    exit 1
+                  fi
+                  echo "Family Spotlight kill switch verified as $DEPLOYED"
+        
+              - name: Verify deployed Holiday Themes kill switch
+                env:
+                  STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                run: |
+                  # Selects exactly one parameter: no other stack parameter is read or printed.
+                  DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='HolidayThemesEnabled'].ParameterValue | [0]" --output text)
+                  if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                    echo "::error::HolidayThemesEnabled is absent from the deployed stack"
+                    exit 1
+                  fi
+                  if [ "$DEPLOYED" != "$HOLIDAY_ENABLED" ]; then
+                    echo "::error::HolidayThemesEnabled mismatch - intended $HOLIDAY_ENABLED, deployed $DEPLOYED"
+                    exit 1
+                  fi
+                  echo "Holiday Themes kill switch verified as $DEPLOYED"
+        
+              - name: Verify deployed mobile artifact kill switch
+                env:
+                  STACK_NAME: moore-ops-dashboard-v2-artifact-refresh
+                run: |
+                  # Selects exactly one parameter: no other stack parameter is read or printed.
+                  DEPLOYED=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query "Stacks[0].Parameters[?ParameterKey=='MobileArtifactEnabled'].ParameterValue | [0]" --output text)
+                  if [ -z "$DEPLOYED" ] || [ "$DEPLOYED" = "None" ]; then
+                    echo "::error::MobileArtifactEnabled is absent from the deployed stack"
+                    exit 1
+                  fi
+                  if [ "$DEPLOYED" != "$MOBILE_ENABLED" ]; then
+                    echo "::error::MobileArtifactEnabled mismatch - intended $MOBILE_ENABLED, deployed $DEPLOYED"
+                    exit 1
+                  fi
+                  echo "Mobile artifact kill switch verified as $DEPLOYED"
+        
+      operator: 'notStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-mobile-flag.test.js:176:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+not ok 451 - deploy workflow — mobile artifact kill switch
+  ---
+  duration_ms: 9752.4198
+  type: 'suite'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-mobile-flag.test.js:93:1'
+  failureType: 'subtestsFailed'
+  error: '5 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+
+    not ok 1 - fails closed to 0 when the repository variable is absent
+      ---
+      duration_ms: 5343.2733
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-spotlight-flag.test.js:57:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-spotlight-flag.test.js:59:12)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:1619:7)
+        async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3)
+      ...
+
+    not ok 2 - fails closed to 0 when the repository variable is empty
+      ---
+      duration_ms: 1429.9894
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-spotlight-flag.test.js:64:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-spotlight-flag.test.js:66:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 3 - fails closed to 0 when the repository variable is whitespace only
+      ---
+      duration_ms: 979.9096
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-spotlight-flag.test.js:64:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-spotlight-flag.test.js:66:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 4 - fails closed to 0 when the repository variable is a newline
+      ---
+      duration_ms: 877.5137
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-spotlight-flag.test.js:64:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-spotlight-flag.test.js:66:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 5 - deploys the allowed value 0 unchanged
+      ---
+      duration_ms: 808.2348
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-spotlight-flag.test.js:72:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-spotlight-flag.test.js:74:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 6 - deploys the allowed value 1 unchanged
+      ---
+      duration_ms: 701.993
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-spotlight-flag.test.js:72:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-spotlight-flag.test.js:74:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 7 - trims surrounding whitespace from " 1 "
+      ---
+      duration_ms: 713.05
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-spotlight-flag.test.js:82:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-spotlight-flag.test.js:84:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 8 - trims surrounding whitespace from "\\t0\\n"
+      ---
+      duration_ms: 602.0707
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-spotlight-flag.test.js:82:5'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        1 !== 0
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 0
+      actual: 1
+      operator: 'strictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-spotlight-flag.test.js:84:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 22 - reads the repository variable through an env mapping, and only that way
+      ---
+      duration_ms: 1.4049
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-spotlight-flag.test.js:112:3'
+      failureType: 'testCodeFailure'
+      error: 'vars.FAMILY_SPOTLIGHT_ENABLED must only appear as an env mapping, found: FAMILY_SPOTLIGHT_ENABLED: ${{ vars.FAMILY_SPOTLIGHT_ENABLED }}'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: '          FAMILY_SPOTLIGHT_ENABLED: ${{ vars.FAMILY_SPOTLIGHT_ENABLED }}\r'
+      operator: 'match'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/deploy-workflow-spotlight-flag.test.js:126:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+not ok 452 - deploy workflow — Family Spotlight kill-switch resolution
+  ---
+  duration_ms: 17918.0296
+  type: 'suite'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\deploy-workflow-spotlight-flag.test.js:34:1'
+  failureType: 'subtestsFailed'
+  error: '9 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+
+not ok 720 - Pi staging validation is host-timezone independent across EDT and EST instants
+  ---
+  duration_ms: 536.4708
+  type: 'test'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\pi-dashboard-pull.test.js:19:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: python -c 
+    import datetime, hashlib, importlib.util, json, pathlib
+    p = pathlib.Path('infrastructure/pi-dashboard/pull-dashboard-candidate.py')
+    s = importlib.util.spec_from_file_location('pull', p)
+    m = importlib.util.module_from_spec(s); s.loader.exec_module(m)
+    sports = 'https://example.lambda-url.us-east-2.on.aws/'
+    html = ('<!doctype html>' + 'x' * 1000000 + '<main class="today-panel upcoming-panel athletics-panel right-rail" data-sports-url="' + sports + '"><section class="now-next "></section><div class="centers-block"></div><footer class="sports-ticker"></footer></main>').encode()
+    def run(instant):
+      manifest = {'schemaVersion':1,'artifactVersion':'dashboard-v2','generatedAt':instant,'artifact':{'key':'dashboard-v2/releases/x/index.html','versionId':'v1','size':len(html),'sha256':hashlib.sha256(html).hexdigest()},'runtime':{'browserOrigin':'http://127.0.0.1:4173','sportsFeedUrl':sports}}
+      now = datetime.datetime.fromisoformat(instant.replace('Z','+00:00')) + datetime.timedelta(minutes=5)
+      return m.validate(manifest, html, sports, now=now)
+    print(json.dumps([run('2026-08-16T16:10:00.000Z'), run('2027-01-16T17:10:00.000Z')], sort_keys=True))
+    
+    Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    genericNodeError (node:internal/errors:985:15)
+    wrappedFn (node:internal/errors:539:14)
+    checkExecSyncError (node:child_process:925:11)
+    execFileSync (node:child_process:961:15)
+    file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/pi-dashboard-pull.test.js:20:57
+    Array.map (<anonymous>)
+    TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/pi-dashboard-pull.test.js:20:47)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1201:25)
+    Test.start (node:internal/test_runner/test:1096:17)
+  ...
+
+not ok 721 - Pi validator rejects ordinary artifacts missing canonical NOW/NEXT or Centers markers
+  ---
+  duration_ms: 702.4905
+  type: 'test'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\pi-dashboard-pull.test.js:24:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: python -c 
+    import datetime, hashlib, importlib.util, json, pathlib
+    p=pathlib.Path('infrastructure/pi-dashboard/pull-dashboard-candidate.py');s=importlib.util.spec_from_file_location('pull',p);m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
+    sports='https://example.lambda-url.us-east-2.on.aws/'
+    base='<!doctype html>'+'x'*1000000+'<main class="today-panel upcoming-panel athletics-panel right-rail" data-sports-url="'+sports+'"><section class="now-next "></section><div class="centers-block"></div><footer class="sports-ticker"></footer></main>'
+    def rejected(text):
+      body=text.encode(); instant='2026-08-24T11:00:00.000Z'; artifact={'key':'dashboard-v2/releases/x/index.html','versionId':'v1','size':len(body),'sha256':hashlib.sha256(body).hexdigest()}; manifest={'schemaVersion':1,'artifactVersion':'dashboard-v2','generatedAt':instant,'artifact':artifact,'runtime':{'browserOrigin':'http://127.0.0.1:4173','sportsFeedUrl':sports}}
+      try: m.validate(manifest,body,sports,now=datetime.datetime.fromisoformat('2026-08-24T11:05:00+00:00')); return False
+      except ValueError: return True
+    print(json.dumps([rejected(base.replace('now-next ', 'old-events ')), rejected(base.replace('centers-block', 'school-strip'))]))
+    
+    Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    genericNodeError (node:internal/errors:985:15)
+    wrappedFn (node:internal/errors:539:14)
+    checkExecSyncError (node:child_process:925:11)
+    execFileSync (node:child_process:961:15)
+    TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/pi-dashboard-pull.test.js:36:31)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1201:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+    Test.postRun (node:internal/test_runner/test:1330:19)
+    Test.run (node:internal/test_runner/test:1258:12)
+  ...
+
+not ok 723 - Pi validator recognizes first-day candidates only with a Level-2 fallback
+  ---
+  duration_ms: 532.2277
+  type: 'test'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\pi-dashboard-pull.test.js:52:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: python -c 
+    import datetime, hashlib, importlib.util, pathlib
+    p = pathlib.Path('infrastructure/pi-dashboard/pull-dashboard-candidate.py')
+    s = importlib.util.spec_from_file_location('pull', p); m = importlib.util.module_from_spec(s); s.loader.exec_module(m)
+    sports = 'https://example.lambda-url.us-east-2.on.aws/'
+    html = ('<!doctype html>' + 'x' * 1000000 + '<main class="first-day-dashboard" data-dashboard-mode="first-day-level3" data-first-day-coda="true"><div data-fd-slot="now">Welcome home, Myles + Ophelia</div><div data-fd-slot="next"></div><script>updateFirstDayLevel3</script></main>').encode()
+    artifact = {'key':'dashboard-v2/releases/x/index.html','versionId':'v1','size':len(html),'sha256':hashlib.sha256(html).hexdigest()}
+    fallback = {'key':'dashboard-v2/releases/x/level2.html','versionId':'v2','size':1000000,'sha256':'x'}
+    manifest = {'schemaVersion':1,'artifactVersion':'dashboard-v2','generatedAt':'2026-08-24T11:00:00.000Z','artifact':artifact,'level2Artifact':fallback,'runtime':{'browserOrigin':'http://127.0.0.1:4173','sportsFeedUrl':sports}}
+    m.validate(manifest, html, sports, now=datetime.datetime.fromisoformat('2026-08-24T11:05:00+00:00'))
+    print('ok')
+    
+    Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    genericNodeError (node:internal/errors:985:15)
+    wrappedFn (node:internal/errors:539:14)
+    checkExecSyncError (node:child_process:925:11)
+    execFileSync (node:child_process:961:15)
+    TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/pi-dashboard-pull.test.js:65:16)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1201:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+    Test.postRun (node:internal/test_runner/test:1330:19)
+    Test.run (node:internal/test_runner/test:1258:12)
+  ...
+
+not ok 724 - Pi stages and validates both version-pinned directions for afternoon re-entry
+  ---
+  duration_ms: 373.2569
+  type: 'test'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\pi-dashboard-pull.test.js:68:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: python -c 
+    import datetime, hashlib, importlib.util, json, pathlib, tempfile
+    p=pathlib.Path('infrastructure/pi-dashboard/pull-dashboard-candidate.py');s=importlib.util.spec_from_file_location('pull',p);m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
+    sports='https://example.lambda-url.us-east-2.on.aws/'
+    first=('<!doctype html>'+'x'*1000000+'<main class="first-day-dashboard" data-dashboard-mode="first-day-level3" data-first-day-coda="true"><div data-fd-slot="now">Welcome home, Myles + Ophelia</div><div data-fd-slot="next"></div><script>updateFirstDayLevel3</script></main>').encode()
+    level2=('<!doctype html>'+'x'*1000000+'<main class="today-panel upcoming-panel athletics-panel right-rail" data-sports-url="'+sports+'" data-first-day-coda-url="index.html" data-first-day-coda-start="2026-08-24T16:00:00-04:00" data-first-day-coda-end="2026-08-24T19:00:00-04:00"><section class="now-next "></section><div class="centers-block"></div><footer class="sports-ticker"></footer><script>updateFirstDayLevel2Transition</script></main>').encode()
+    art=lambda key,version,body:{'key':key,'versionId':version,'size':len(body),'sha256':hashlib.sha256(body).hexdigest()}
+    generated=datetime.datetime.now(datetime.timezone.utc).isoformat(timespec='milliseconds').replace('+00:00','Z')
+    manifest={'schemaVersion':1,'artifactVersion':'dashboard-v2','generatedAt':generated,'artifact':art('dashboard-v2/releases/x/index.html','v1',first),'level2Artifact':art('dashboard-v2/releases/x/level2.html','v2',level2),'runtime':{'browserOrigin':'http://127.0.0.1:4173','sportsFeedUrl':sports}}
+    with tempfile.TemporaryDirectory() as root:
+      root=pathlib.Path(root);config=root/'config.json';credentials=root/'credentials.json';staging=root/'staging'
+      config.write_text(json.dumps({'bucket':'test','region':'us-east-2','manifestKey':'dashboard-v2/current/manifest.json','sportsFeedUrl':sports}));credentials.write_text(json.dumps({'accessKeyId':'x','secretAccessKey':'y'}));credentials.chmod(0o600)
+      blobs={'dashboard-v2/current/manifest.json':json.dumps(manifest).encode(),manifest['artifact']['key']:first,manifest['level2Artifact']['key']:level2}
+      m.signed_get=lambda bucket,region,key,credentials,version_id=None:blobs[key]
+      candidate=m.stage(config,credentials,staging)
+      assert (candidate/'index.html').read_bytes()==first and (candidate/'level2.html').read_bytes()==level2
+    print('ok')
+    
+    Python was not found; run without arguments to install from the Microsoft Store, or disable this shortcut from Settings > Apps > Advanced app settings > App execution aliases.
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    genericNodeError (node:internal/errors:985:15)
+    wrappedFn (node:internal/errors:539:14)
+    checkExecSyncError (node:child_process:925:11)
+    execFileSync (node:child_process:961:15)
+    TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/pi-dashboard-pull.test.js:87:16)
+    Test.runInAsyncScope (node:async_hooks:227:14)
+    Test.run (node:internal/test_runner/test:1201:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+    Test.postRun (node:internal/test_runner/test:1330:19)
+    Test.run (node:internal/test_runner/test:1258:12)
+  ...
+
+    not ok 1 - verifies the same configuration file it deploys
+      ---
+      duration_ms: 16.4002
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\worker\\mobile-worker-config.test.js:249:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly deep-equal:
+        + actual - expected
+        
+        + [
+        +   'the workflow never deploys',
+        +   'the verify step has no CONFIG env mapping',
+        +   'the deploy step names no configuration file'
+        + ]
+        - []
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual:
+        0: 'the workflow never deploys'
+        1: 'the verify step has no CONFIG env mapping'
+        2: 'the deploy step names no configuration file'
+      operator: 'deepStrictEqual'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:250:12)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Test.start (node:internal/test_runner/test:1096:17)
+        node:internal/test_runner/test:1617:71
+        node:internal/per_context/primordials:466:82
+        new Promise (<anonymous>)
+        new SafePromise (node:internal/per_context/primordials:435:3)
+        node:internal/per_context/primordials:466:9
+        Array.map (<anonymous>)
+      ...
+
+    not ok 2 - that whole-path check has teeth in each direction
+      ---
+      duration_ms: 1.9367
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\worker\\mobile-worker-config.test.js:253:3'
+      failureType: 'testCodeFailure'
+      error: 'mapping repointed was caught for the wrong reason: the workflow never deploys; the verify step has no CONFIG env mapping; the deploy step names no configuration file'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: true
+      actual: false
+      operator: '=='
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:281:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+        Test.postRun (node:internal/test_runner/test:1330:19)
+        Test.run (node:internal/test_runner/test:1258:12)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:1619:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 3 - is triggered only by hand
+      ---
+      duration_ms: 1.9404
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\worker\\mobile-worker-config.test.js:285:3'
+      failureType: 'testCodeFailure'
+      error: 'workflow has no top-level on: block'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: -1
+      actual: -1
+      operator: 'notStrictEqual'
+      stack: |-
+        triggerBlock (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:45:10)
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:289:19)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+        Test.postRun (node:internal/test_runner/test:1330:19)
+        Test.run (node:internal/test_runner/test:1258:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 5 - holds no AWS credential and sets no Worker secret
+      ---
+      duration_ms: 11.4605
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\worker\\mobile-worker-config.test.js:326:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input did not match the regular expression /permissions:\n\s+contents: read/. Input:
+        
+        'name: Deploy mobile dashboard Worker\r\n' +
+          '\r\n' +
+          '# MANUAL ONLY, DELIBERATELY. There is no `push` and no `pull_request`\r\n' +
+          '# trigger, so merging this change deploys nothing. The mobile artifact itself\r\n' +
+          '# is still unpublished (MOBILE_ARTIFACT_ENABLED defaults to 0), so an origin\r\n' +
+          '# that deployed on merge would serve a 404 to anyone who found it, and the\r\n' +
+          '# authenticated origin in front of it is a deployment decision that has not\r\n' +
+          "# been made in this repository. Deployment is a person's decision this round.\r\n" +
+          'on:\r\n' +
+          '  workflow_dispatch:\r\n' +
+          '\r\n' +
+          '# Read-only. This workflow reaches Cloudflare and nothing else: it holds no\r\n' +
+          "# AWS credential, sets no Worker secret, and cannot touch the wall display's\r\n" +
+          '# stack, its bucket or its Pi.\r\n' +
+          'permissions:\r\n' +
+          '  contents: read\r\n' +
+          '\r\n' +
+          'concurrency:\r\n' +
+          '  group: deploy-mobile-worker\r\n' +
+          '  cancel-in-progress: false\r\n' +
+          '\r\n' +
+          'jobs:\r\n' +
+          '  deploy:\r\n' +
+          '    runs-on: ubuntu-latest\r\n' +
+          '    steps:\r\n' +
+          '      - name: Checkout\r\n' +
+          '        uses: actions/checkout@v4\r\n' +
+          '\r\n' +
+          '      - name: Setup Node\r\n' +
+          '        uses: actions/setup-node@v4\r\n' +
+          '        with:\r\n' +
+          "          node-version: '22'\r\n" +
+          '          cache: npm\r\n' +
+          '\r\n' +
+          '      - name: Install dependencies\r\n' +
+          '        run: npm ci\r\n' +
+          '\r\n' +
+          '      - name: Run tests\r\n' +
+          '        run: npm test\r\n' +
+          '\r\n' +
+          '      - name: Verify the Worker configuration is deployable\r\n' +
+          '        env:\r\n' +
+          '          CONFIG: worker/mobile-dashboard/wrangler.toml\r\n' +
+          '        run: |\r\n' +
+          '          set -eu\r\n' +
+          '          if [ ! -f "$CONFIG" ]; then\r\n' +
+          '            echo "::error::$CONFIG is missing - refusing to deploy"\r\n' +
+          '            exit 1\r\n' +
+          '          fi\r\n' +
+          '          # Every S3 key this Worker is configured with must live under the\r\n' +
+          '          # mobile prefix. The Worker refuses anything else at runtime too;\r\n' +
+          '          # this refuses it before a deployment exists.\r\n' +
+          `          KEY="$(sed -n 's/^MOBILE_MANIFEST_KEY *= *"\\(.*\\)"$/\\1/p' "$CONFIG")"\r\n` +
+          '          case "$KEY" in\r\n' +
+          '            dashboard-mobile/*) ;;\r\n' +
+          '            *)\r\n' +
+          `              echo "::error::MOBILE_MANIFEST_KEY must live under dashboard-mobile/, got '$KEY' - refusing to deploy"\r\n` +
+          '              exit 1\r\n' +
+          '              ;;\r\n' +
+          '          esac\r\n' +
+          '          # nodejs_compat is what lets the Worker import the publishing\r\n' +
+          '          # contract rather than restate it. Without it the deploy succeeds\r\n' +
+          '          # and the Worker throws on its first request.\r\n' +
+          `          if ! grep -q 'nodejs_compat' "$CONFIG"; then\r\n` +
+          '            echo "::error::$CONFIG does not enable nodejs_compat - refusing to deploy"\r\n' +
+          '            exit 1\r\n' +
+          '          fi\r\n' +
+          '          # A pasted credential must never reach a deployment.\r\n' +
+          `          if grep -Eq 'AKIA[0-9A-Z]{16}|aws_secret_access_key|AWS_SECRET_ACCESS_KEY *=' "$CONFIG"; then\r\n` +
+          '            echo "::error::$CONFIG appears to contain a credential - refusing to deploy"\r\n' +
+          '            exit 1\r\n' +
+          '          fi\r\n' +
+          '          echo "Worker configuration verified: pointer $KEY"\r\n' +
+          '\r\n' +
+          '      - name: Deploy\r\n' +
+          '        # Pinned major, invoked through npx so no npm dependency is added to\r\n' +
+          '        # this repository for a tool only this workflow runs.\r\n' +
+          '        run: npx --yes wrangler@4 deploy --config worker/mobile-dashboard/wrangler.toml\r\n' +
+          '        env:\r\n' +
+          '          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}\r\n' +
+          '          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}\r\n'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: |-
+        name: Deploy mobile dashboard Worker
+        
+        # MANUAL ONLY, DELIBERATELY. There is no `push` and no `pull_request`
+        # trigger, so merging this change deploys nothing. The mobile artifact itself
+        # is still unpublished (MOBILE_ARTIFACT_ENABLED defaults to 0), so an origin
+        # that deployed on merge would serve a 404 to anyone who found it, and the
+        # authenticated origin in front of it is a deployment decision that has not
+        # been made in this repository. Deployment is a person's decision this round.
+        on:
+          workflow_dispatch:
+        
+        # Read-only. This workflow reaches Cloudflare and nothing else: it holds no
+        # AWS credential, sets no Worker secret, and cannot touch the wall display's
+        # stack, its bucket or its Pi.
+        permissions:
+          contents: read
+        
+        concurrency:
+          group: deploy-mobile-worker
+          cancel-in-progress: false
+        
+        jobs:
+          deploy:
+            runs-on: ubuntu-latest
+            steps:
+              - name: Checkout
+                uses: actions/checkout@v4
+        
+              - name: Setup Node
+                uses: actions/setup-node@v4
+                with:
+                  node-version: '22'
+                  cache: npm
+        
+              - name: Install dependencies
+                run: npm ci
+        
+              - name: Run tests
+                run: npm test
+        
+              - name: Verify the Worker configuration is deployable
+                env:
+                  CONFIG: worker/mobile-dashboard/wrangler.toml
+                run: |
+                  set -eu
+                  if [ ! -f "$CONFIG" ]; then
+                    echo "::error::$CONFIG is missing - refusing to deploy"
+                    exit 1
+                  fi
+                  # Every S3 key this Worker is configured with must live under the
+                  # mobile prefix. The Worker refuses anything else at runtime too;
+                  # this refuses it before a deployment exists.
+                  KEY="$(sed -n 's/^MOBILE_MANIFEST_KEY *= *"\(.*\)"$/\1/p' "$CONFIG")"
+                  case "$KEY" in
+                    dashboard-mobile/*) ;;
+                    *)
+                      echo "::error::MOBILE_MANIFEST_KEY must live under dashboard-mobile/, got '$KEY' - refusing to deploy"
+                      exit 1
+                      ;;
+                  esac
+                  # nodejs_compat is what lets the Worker import the publishing
+                  # contract rather than restate it. Without it the deploy succeeds
+                  # and the Worker throws on its first request.
+                  if ! grep -q 'nodejs_compat' "$CONFIG"; then
+                    echo "::error::$CONFIG does not enable nodejs_compat - refusing to deploy"
+                    exit 1
+                  fi
+                  # A pasted credential must never reach a deployment.
+                  if grep -Eq 'AKIA[0-9A-Z]{16}|aws_secret_access_key|AWS_SECRET_ACCESS_KEY *=' "$CONFIG"; then
+                    echo "::error::$CONFIG appears to contain a credential - refusing to deploy"
+                    exit 1
+                  fi
+                  echo "Worker configuration verified: pointer $KEY"
+        
+              - name: Deploy
+                # Pinned major, invoked through npx so no npm dependency is added to
+                # this repository for a tool only this workflow runs.
+                run: npx --yes wrangler@4 deploy --config worker/mobile-dashboard/wrangler.toml
+                env:
+                  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+                  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        
+      operator: 'match'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:344:12)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+        Test.postRun (node:internal/test_runner/test:1330:19)
+        Test.run (node:internal/test_runner/test:1258:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+not ok 1056 - the deploy workflow does not deploy on merge
+  ---
+  duration_ms: 50.2097
+  type: 'suite'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\worker\\mobile-worker-config.test.js:248:1'
+  failureType: 'subtestsFailed'
+  error: '4 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+
+    not ok 1 - accepts the configuration this repository ships
+      ---
+      duration_ms: 852.3773
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\worker\\mobile-worker-config.test.js:359:3'
+      failureType: 'testCodeFailure'
+      error: "EPERM, Permission denied: \\\\?\\C:\\Users\\wadem\\AppData\\Local\\Temp\\mobile-worker-verify-tLqw2q '\\\\?\\C:\\Users\\wadem\\AppData\\Local\\Temp\\mobile-worker-verify-tLqw2q'"
+      code: 'EPERM'
+      stack: |-
+        rmSync (node:fs:1222:18)
+        runVerify (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:94:5)
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:360:20)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Test.start (node:internal/test_runner/test:1096:17)
+        node:internal/test_runner/test:1617:71
+        node:internal/per_context/primordials:466:82
+        new Promise (<anonymous>)
+        new SafePromise (node:internal/per_context/primordials:435:3)
+      ...
+
+    not ok 2 - refuses a pointer aimed outside the mobile prefix
+      ---
+      duration_ms: 728.4212
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\worker\\mobile-worker-config.test.js:365:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        The input did not match the regular expression /must live under dashboard-mobile\//. Input:
+        
+        `sed: can't read "": No such file or directory\n` +
+          '/bin/bash: line 1: set: -\r: invalid option\n' +
+          'set: usage: set [-abefhkmnptuvxBCEHPT] [-o option-name] [--] [-] [arg ...]\n'
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      actual: |-
+        sed: can't read "": No such file or directory
+        /bin/bash: line 1: set: -
+: invalid option
+        set: usage: set [-abefhkmnptuvxBCEHPT] [-o option-name] [--] [-] [arg ...]
+        
+      operator: 'match'
+      stack: |-
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:370:14)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+        Test.postRun (node:internal/test_runner/test:1330:19)
+        Test.run (node:internal/test_runner/test:1258:12)
+        async Promise.all (index 0)
+        async Suite.run (node:internal/test_runner/test:1619:7)
+        async Test.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 3 - refuses a configuration without the compatibility flag
+      ---
+      duration_ms: 650.1615
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\worker\\mobile-worker-config.test.js:374:3'
+      failureType: 'testCodeFailure'
+      error: "EPERM, Permission denied: \\\\?\\C:\\Users\\wadem\\AppData\\Local\\Temp\\mobile-worker-verify-z9GmNy '\\\\?\\C:\\Users\\wadem\\AppData\\Local\\Temp\\mobile-worker-verify-z9GmNy'"
+      code: 'EPERM'
+      stack: |-
+        rmSync (node:fs:1222:18)
+        runVerify (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:94:5)
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:375:20)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+        Test.postRun (node:internal/test_runner/test:1330:19)
+        Test.run (node:internal/test_runner/test:1258:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 4 - refuses a configuration with a pasted credential
+      ---
+      duration_ms: 636.4962
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\worker\\mobile-worker-config.test.js:380:3'
+      failureType: 'testCodeFailure'
+      error: "EPERM, Permission denied: \\\\?\\C:\\Users\\wadem\\AppData\\Local\\Temp\\mobile-worker-verify-GnRv3A '\\\\?\\C:\\Users\\wadem\\AppData\\Local\\Temp\\mobile-worker-verify-GnRv3A'"
+      code: 'EPERM'
+      stack: |-
+        rmSync (node:fs:1222:18)
+        runVerify (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:94:5)
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:382:22)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+        Test.postRun (node:internal/test_runner/test:1330:19)
+        Test.run (node:internal/test_runner/test:1258:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+    not ok 5 - refuses a missing configuration
+      ---
+      duration_ms: 654.5293
+      type: 'test'
+      location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\worker\\mobile-worker-config.test.js:388:3'
+      failureType: 'testCodeFailure'
+      error: "EPERM, Permission denied: \\\\?\\C:\\Users\\wadem\\AppData\\Local\\Temp\\mobile-worker-verify-SExGTt '\\\\?\\C:\\Users\\wadem\\AppData\\Local\\Temp\\mobile-worker-verify-SExGTt'"
+      code: 'EPERM'
+      stack: |-
+        rmSync (node:fs:1222:18)
+        runVerify (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:94:5)
+        TestContext.<anonymous> (file:///C:/Users/wadem/worktrees/coming-up-baseline/moore-ops/test/worker/mobile-worker-config.test.js:389:20)
+        Test.runInAsyncScope (node:async_hooks:227:14)
+        Test.run (node:internal/test_runner/test:1201:25)
+        Suite.processPendingSubtests (node:internal/test_runner/test:831:18)
+        Test.postRun (node:internal/test_runner/test:1330:19)
+        Test.run (node:internal/test_runner/test:1258:12)
+        async Suite.processPendingSubtests (node:internal/test_runner/test:831:7)
+      ...
+
+not ok 1057 - the shipped verify step, executed
+  ---
+  duration_ms: 3522.6923
+  type: 'suite'
+  location: 'C:\\Users\\wadem\\worktrees\\coming-up-baseline\\moore-ops\\test\\worker\\mobile-worker-config.test.js:358:1'
+  failureType: 'subtestsFailed'
+  error: '5 subtests failed'
+  code: 'ERR_TEST_FAILURE'
+  ...
+
