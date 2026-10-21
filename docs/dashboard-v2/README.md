@@ -124,10 +124,36 @@ Evidence available from the branch:
 - [Windows baseline comparison and failure identities](coming-up-review/windows-baseline-comparison.json)
 - Full baseline output: [clean base](coming-up-review/windows-base.log), [changed tree](coming-up-review/windows-changed.log)
 
-The reviewer should fetch `codex/coming-up-item-fit`, inspect the range from
-`cb1e135` to the branch head, and rerun the tests in their environment. No review
-verdict has been issued. A verdict in a separate checkout does not release a
-checkout/session-specific local review gate. Wade merges after sign-off.
+External review of `cb1e135..0766ed0`, supplied by Wade, returned PASS with no
+blocking code findings. The reviewer reported `npm run test:baseline` with
+`DASHBOARD_BROWSER_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`:
+2,921 tests, zero failures, 394 suites. These are the reviewer's Linux results,
+not a local Windows run. The documentation follow-up below preserves the design
+notes called out in that review; it does not change the reviewed renderer.
+A verdict in a separate checkout does not release a checkout/session-specific
+local review gate. No local gate record has been created here. Wade merges.
+
+### Earlier Coming Up prioritization proposals (deferred)
+
+These notes preserve the earlier design exploration. They are not the current
+Coming Up contract or authorization to change its chronological ordering. Wade's
+October decision accepts hiding later items regardless of importance; revisiting
+prioritization requires a separate product decision.
+
+- Explore qualifying events by urgency, family impact, unusual preparation,
+  ownership, event category, time until the event, and existing prominence in
+  the two-week list.
+- The earlier proposal favored appointments, trips, performances, celebrations,
+  games, and meets over routine practices, classes, recycling, trash, and pickup.
+- Consider avoiding a mundane near-term duplicate when another event needs
+  attention; define deterministic ties and a useful empty/fallback state.
+
+`comingUpScore`, `selectComingUpEvent`, and `selectComingUpEvents` remain in
+`render/dashboard-v2.js`; selector tests still exercise the latter helpers.
+They do not select the rendered Coming Up panel's rows. Removing these helpers
+or adopting their ranking is outside this fitting change and should be scoped
+separately. The historical cutover checklist below records the rules reviewed
+at that time, not a requirement to activate these proposals.
 
 ### Variety without maintenance
 
