@@ -468,12 +468,14 @@ describe('flag football team identity', () => {
   it('pins the fall 2026 flag football season window', async () => {
     const cfg = await readJson('data/sports-config.json');
     assert.deepEqual(cfg.flagFootball, {
-      active: true, seasonStart: '2026-09-13', seasonEnd: '2026-10-25', bufferDays: 7,
+      active: true, seasonStart: '2026-09-13', seasonEnd: '2026-11-08', bufferDays: 7,
     });
 
-    // seasonEnd is the league's announced end date, NOT the last published week
-    // (Oct 18). Pinned so that a later 'correction' to the last posted game
-    // would fail here and have to be argued for.
+    // seasonEnd is the end of the playoffs as Wade set it on 2026-10-20 (the
+    // announced regular season ended Oct 25; the Nov 1 playoffs placeholder
+    // runs past it), NOT the last published week (Oct 18). Pinned so that a
+    // later 'correction' to the last posted game would fail here and have to
+    // be argued for.
     const data = await readJson('data/flag-football.json');
     const fall = data.seasons.find(s => s.seasonId === 'fall-2026');
     assert.equal(fall.seasonEnd, cfg.flagFootball.seasonEnd,
@@ -495,7 +497,7 @@ describe('flag football team identity', () => {
     assert.equal(activeAt(new Date('2026-09-05T00:00:00')), false, 'day before the buffered window opens');
     assert.equal(activeAt(new Date('2026-09-06T00:00:00')), true,  'first buffered day');
     assert.equal(activeAt(TODAY), true, 'today, three days ahead of the first event');
-    assert.equal(activeAt(new Date('2026-11-01T00:00:00')), true,  'last buffered day');
-    assert.equal(activeAt(new Date('2026-11-02T00:00:00')), false, 'day after the buffered window closes');
+    assert.equal(activeAt(new Date('2026-11-15T00:00:00')), true,  'last buffered day');
+    assert.equal(activeAt(new Date('2026-11-16T00:00:00')), false, 'day after the buffered window closes');
   });
 });

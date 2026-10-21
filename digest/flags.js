@@ -461,8 +461,13 @@ const EVALUATORS = [
   // means the digest does not know what is on the calendar at all. Here the
   // digest knows the occurrence exists and still shows it in Today and Coming
   // Up; what it cannot say is which fixture it is. That is partial knowledge,
-  // not blindness, and amber is where this taxonomy puts it. It is not
-  // bannerOnly, so nowNextSelector.js promotes it as an unresolved problem.
+  // not blindness, and amber is where this taxonomy puts it.
+  //
+  // bannerOnly, deliberately (Wade, 2026-10-20): the body is a developer-facing
+  // data chore, and as an ordinary amber flag it outranked every real event for
+  // the wall's NOW/NEXT hero (priority 700). bannerOnly keeps it out of
+  // nowNextSelector.js's problem candidates. It still reaches the email, and the
+  // mobile Now page lists bannerOnly flags as advance notices.
   (ctx) => {
     const gaps = ctx.flagFootballGaps;
     if (!Array.isArray(gaps) || gaps.length === 0) return null;
@@ -537,6 +542,7 @@ const EVALUATORS = [
       body: `${detail}. ${one ? 'This occurrence is' : 'These occurrences are'} on the calendar but ${cause} data/flag-football.json, ${consequence}. ${remedy}.`,
       owner: ['wade'],
       persist: false,
+      bannerOnly: true,
     };
   },
 
