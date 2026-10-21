@@ -835,7 +835,7 @@ describe('shared ranks — flag football', () => {
       ['2026-09-20', 8117740, 6, 8088488, 12],
       ['2026-09-27', 8088488, 6, 8070749, 12],
       ['2026-10-04', 8113277, 6, 8088488, 12],
-      ['2026-10-11', 8088488, 6, 8069066, 12],
+      ['2026-10-25', 8088488, 6, 8069066, 12],
     ]);
     const table = buildFlagFootballDivisionTable(season);
     const mine = table.rows.find(r => r.teamId === MOORE);
