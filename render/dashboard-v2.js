@@ -752,7 +752,9 @@ function renderUpcoming(data, latest757Card = safeLatest757Card(data.athletics |
     visibleCount += day.items.length;
   }
   const laterCount = allItems.length - visibleCount;
-  const rows = visibleDays.map(day => {
+  // Keep the capped whole-day fallback; the browser also receives the remaining
+  // days inertly so its measured fit is not constrained by the server target.
+  const renderDay = day => {
     const date = dateAtNoon(day.key);
     const days = daysFrom(data.today, day.key);
     const people = new Set(day.items.map(item => peopleForEvent(item.event)));
@@ -763,11 +765,14 @@ function renderUpcoming(data, latest757Card = safeLatest757Card(data.athletics |
       <div class="upcoming-events">${eventLines}</div>
       <div class="count-chip">${esc(countdownLabel(days))}</div>
     </div>`;
-  }).join('');
+  };
+  const rows = visibleDays.map(renderDay).join('');
+  const remainingRows = allDays.slice(visibleDays.length).map(renderDay).join('');
   const densityClass = visibleDays.length > 9 ? ' upcoming-dense' : '';
   return `<section class="paper-panel upcoming-panel${densityClass}" data-later-count="${laterCount}">
     ${renderSectionTitle('Coming Up', 'green', 'calendar')}
     <div class="upcoming-list">${rows || '<div class="empty-state">No upcoming events.</div>'}</div>
+    <template class="upcoming-remaining">${remainingRows}</template>
     ${laterCount ? `<div class="upcoming-later">+${laterCount} later in the two-week window</div>` : ''}
   </section>`;
 }
@@ -1318,21 +1323,48 @@ function renderTicker(data) {
 function browserScript() {
   return `<script>
   (() => {
-    // Fit complete calendar days after fonts settle; never split a busy day.
+    // Materialize before accent controllers discover rows, but measure only
+    // after fonts settle. Without JavaScript the extra rows remain inert.
+    const remainingUpcoming = document.querySelector('.upcoming-remaining');
+    if (remainingUpcoming) {
+      document.querySelector('.upcoming-list').appendChild(remainingUpcoming.content);
+      remainingUpcoming.remove();
+    }
+    // Fit a chronological prefix after fonts settle, reserving the partial-day
+    // disclosure inside the day and the existing 32px footer clearance.
     const fitUpcoming = () => {
       const panel = document.querySelector('.upcoming-panel');
       if (!panel) return;
       const list = panel.querySelector('.upcoming-list');
-      let later = Number(panel.dataset.laterCount || 0);
+      let later = 0;
       const days = [...list.querySelectorAll('.upcoming-day')];
       const limit = panel.getBoundingClientRect().bottom - 32 * (panel.getBoundingClientRect().width / panel.offsetWidth);
       const hadDays = days.length > 0;
-      while (days.length > 0 && days[days.length - 1].getBoundingClientRect().bottom > limit) {
-        const day = days.pop();
-        later += day.querySelectorAll('.upcoming-event').length;
-        day.remove();
+      let stopped = false;
+      for (const day of days) {
+        const items = [...day.querySelectorAll('.upcoming-event')];
+        if (stopped) {
+          later += items.length;
+          day.remove();
+          continue;
+        }
+        if (day.getBoundingClientRect().bottom <= limit) continue;
+        stopped = true;
+        const more = document.createElement('div');
+        more.className = 'upcoming-more';
+        day.querySelector('.upcoming-events').appendChild(more);
+        let hidden = 0;
+        do {
+          items.pop().remove();
+          hidden++;
+          more.textContent = '+' + hidden + ' more';
+        } while (items.length && day.getBoundingClientRect().bottom > limit);
+        if (!items.length) {
+          later += hidden;
+          day.remove();
+        }
       }
-      if (hadDays && !days.length) {
+      if (hadDays && !list.querySelector('.upcoming-day')) {
         const message = document.createElement('div');
         message.className = 'empty-state';
         message.textContent = 'The next day’s schedule is too long to fit. See the calendar for details.';
@@ -1344,7 +1376,9 @@ function browserScript() {
         note.className = 'upcoming-later';
         panel.appendChild(note);
       }
-      if (note) note.textContent = '+' + later + ' later in the two-week window';
+      if (note && later) note.textContent = '+' + later + ' later in the two-week window';
+      else if (note) note.remove();
+      panel.dataset.laterCount = String(later);
     };
     const alignTeamCards = () => {
       const cards = [...document.querySelectorAll('.athletics-multi .flag-football-card,.athletics-multi .sharks-card')];
@@ -1628,6 +1662,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .upcoming-panel.upcoming-dense .upcoming-events{gap:1px}.upcoming-panel.upcoming-dense .upcoming-event{grid-template-columns:27px minmax(0,1fr);gap:6px}
 .upcoming-panel.upcoming-dense .upcoming-logo{width:27px;height:27px}.upcoming-panel.upcoming-dense .upcoming-event strong{font-size:17px;line-height:1}.upcoming-panel.upcoming-dense .upcoming-event span{font-size:11px;line-height:1}
 .upcoming-panel.upcoming-dense .count-chip{font-size:11px;padding:3px 9px}
+.upcoming-more{font-size:20px;line-height:1.1;font-weight:700;color:${COLORS.greenDark};padding-top:3px}
 /* A masthead and latest-result line need 32px more in the stacked multi-card layout. */
 .dashboard.has-masthead.athletics-multi .upcoming-panel{height:calc(58% - 68px)}.dashboard.has-masthead.athletics-multi .athletics-panel{height:calc(40% + 70px)}
 .dashboard.athletics-one .upcoming-panel{height:calc(72% - 50.6px)}.dashboard.athletics-one .athletics-panel{height:calc(26% + 52.7px)}

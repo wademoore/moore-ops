@@ -348,9 +348,10 @@ describe('real-data resilience policies', () => {
       athletics: { sharksActive: true, sharksNextGame: { opponent: 'United', date: '2026-09-12', time: '13:15' } },
     });
     assert.match(html, /Aug 17–21 · 7:30 AM/);
-    assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 15);
+    assert.equal((html.split('<template')[0].match(/<div class="upcoming-event">/g) || []).length, 15);
+    assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 22);
     assert.match(html, /later in the two-week window/);
-    assert.doesNotMatch(html, /Useful event 14/);
+    assert.doesNotMatch(html.split('<template')[0], /Useful event 14/);
     assert.match(html, /\+7 later in the two-week window/);
   });
 
@@ -392,7 +393,8 @@ describe('real-data resilience policies', () => {
       upcomingEvents: events,
       athletics: { sharksActive: true, swim757Active: true, opheliaLatest757Meet: latest757Fixture },
     });
-    assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 12);
+    assert.equal((html.split('<template')[0].match(/<div class="upcoming-event">/g) || []).length, 12);
+    assert.equal((html.match(/<div class="upcoming-event">/g) || []).length, 14);
     assert.match(html, /\+2 later in the two-week window/);
   });
 
