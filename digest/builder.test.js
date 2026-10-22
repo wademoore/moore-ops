@@ -1152,6 +1152,22 @@ describe('buildDigest — flag football event identity', () => {
     nodeAssert.doesNotMatch(flag.body, /2nd Sundays/);
   });
 
+  it('treats the SHIP school club, a placeholder and picture day as ordinary calendar items — no identity, no gap', async () => {
+    // Wade, 2026-10-21: only league entries may be flag football. These three
+    // carry the sport words in their titles and sit in the lookahead.
+    const extras = [
+      { id: 'ship-club', summary: 'Myles: SHIP Flag Football Club', calendarName: 'Myles', start: { date: isoDate(ORPHAN_IN) } },
+      { id: 'ff-placeholder', summary: 'Flag Football: Playoffs (placeholder)', calendarName: 'Myles', start: { date: isoDate(ORPHAN_IN) } },
+      { id: 'ff-picture-day', summary: 'Flag Football: Picture Day (time TBD)', calendarName: 'Myles', start: { date: isoDate(ORPHAN_IN) } },
+    ];
+    const result = await run(extras);
+    for (const id of ['ship-club', 'ff-placeholder', 'ff-picture-day']) {
+      nodeAssert.equal(findUpcoming(result, id).flagFootball, null, `${id} must carry no team identity`);
+    }
+    nodeAssert.equal(result.flags.find(f => f.id === 'flag-football-schedule-gap'), undefined,
+      'none of them may raise the schedule-gap flag');
+  });
+
   it('does not raise the flag when every occurrence matches', async () => {
     const result = await run();
     nodeAssert.equal(result.flags.find(f => f.id === 'flag-football-schedule-gap'), undefined);
