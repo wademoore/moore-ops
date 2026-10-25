@@ -38,6 +38,11 @@ describe('holiday theme 2560x1440 skin, geometry and clock transitions', () => {
       args: ['--no-sandbox', '--disable-dev-shm-usage'],
     });
     page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
+    // The page's own controller reads Date.now() when it loads
+    // (scheduleHoliday in render/dashboard-v2.js), so without this the first
+    // state it reaches depends on the real date. Fixing the page clock at the
+    // generation instant makes load-time state a function of GENERATED_AT.
+    await page.clock.setFixedTime(GENERATED_AT);
     // One artifact, generated once, inside the inclusion window. Everything
     // below changes only the controller instant — which is exactly how the
     // shipped page behaves: no regeneration, no reload, no network request.
