@@ -4,6 +4,20 @@ on:
   push:
     branches:
       - main
+    paths:
+      - '**'
+      - '!.git/**'
+      - '!.github/**'
+      - '.github/workflows/deploy.yml'
+      - '!test/**'
+      - '!logs/**'
+      - '!run-digest.bat'
+      - '!**.env'
+      - '!**.log'
+      - '!render/assets-first-day/**'
+      - '!render/assets-v2/**'
+      - '!docs/**'
+  workflow_dispatch:
 
 permissions:
   id-token: write
