@@ -1409,17 +1409,27 @@ function browserScript() {
         while (visible && results.scrollHeight > results.clientHeight) {
           rows[--visible].hidden = true;
           more.hidden = false;
-          more.textContent = '+' + (rows.length - visible) + ' more races';
+          const hidden = rows.length - visible;
+          more.textContent = '+' + hidden + (hidden === 1 ? ' more race' : ' more races');
         }
       });
     };
     const startLatest757 = () => {
       fitLatest757();
       const observer = new ResizeObserver(fitLatest757);
-      document.querySelectorAll('.latest-757-results').forEach(results => observer.observe(results));
+      // Observe text, not hidden attributes or the disclosure we update ourselves.
+      const textObserver = new MutationObserver(fitLatest757);
+      document.querySelectorAll('.latest-757-results').forEach(results => {
+        observer.observe(results);
+        for (const content of results.querySelectorAll('.latest-757-meet,.swim-rows')) {
+          textObserver.observe(content, { childList: true, characterData: true, subtree: true });
+        }
+      });
+      document.fonts?.addEventListener('loadingdone', fitLatest757);
     };
-    if (document.fonts) document.fonts.ready.then(() => { fitUpcoming(); alignTeamCards(); startLatest757(); });
-    else { fitUpcoming(); alignTeamCards(); startLatest757(); }
+    // Install swim fitting even if an unrelated layout step subsequently fails.
+    if (document.fonts) document.fonts.ready.then(() => { startLatest757(); fitUpcoming(); alignTeamCards(); });
+    else { startLatest757(); fitUpcoming(); alignTeamCards(); }
     const zone = 'America/New_York';
     const dashboard = document.querySelector('.dashboard');
     const clock = document.getElementById('live-clock');

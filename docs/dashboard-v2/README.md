@@ -45,8 +45,9 @@ Candidate diagnostics use concrete occurrence identity (`Google event id + start
 ## Minimum runtime display policies
 
 The latest 757swim card fits a complete prefix of races to its available results
-height after fonts load, and refits when that area resizes. Text sizes stay fixed;
-the meet heading, optional footer, and `+N more races` disclosure retain their
+height after fonts load, and refits when that area resizes, additional fonts finish
+loading, or meet/race text changes. Fitting starts before unrelated layout steps.
+Text sizes stay fixed; the meet heading, optional footer, and overflow disclosure retain their
 space. At the standard 2560×1440 layout, six two-line results fit alongside other
 sports; the shorter single-card strip may disclose the sixth race. Browser
 coverage lives in `render/dashboard-v2-757-layout.test.js`, including constrained

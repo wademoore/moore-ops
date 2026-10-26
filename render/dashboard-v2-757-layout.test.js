@@ -18,7 +18,8 @@ for (const [count, raceCount] of footerCases) {
   it(`keeps the footer and ${raceCount} races within the ${count}-card panel`, async () => {
     const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
     const races = ['25y Butterfly', '25y Backstroke', '25y Breaststroke', '25y Freestyle', '50y Freestyle', '50y Breaststroke', '50y Backstroke', '50y Butterfly', '100y Freestyle', '100y Breaststroke'].slice(0, raceCount).map(event => ({
-      event, distance: Number(event.match(/^\d+/)[0]), course: 'SCY', date: '2026-09-12', seconds: 65, dq: false, isPersonalBest: false,
+      event, distance: Number(event.match(/^\d+/)[0]), course: 'SCY', date: '2026-09-12', seconds: 65,
+      dq: event === '25y Freestyle', isPersonalBest: event === '25y Breaststroke',
       personalBest: { seconds: 60, meet: '2026 VPSU Championship Meet', date: '2026-08-01' },
       priorHistoryState: 'prior-best', priorBest: { seconds: 65, date: '2026-01-01', meet: 'Earlier meet', source: 'swim-results.json' }, improvementSeconds: 0,
     }));
@@ -57,14 +58,15 @@ for (const [count, raceCount] of footerCases) {
     // The single-card strip is shorter; its two-line comparisons fit five.
     if (raceCount <= 6) assert.equal(visibleCount, count === 1 ? Math.min(5, raceCount) : raceCount);
     assert.deepEqual(result.titles, ['25y Freestyle', '25y Breaststroke', '25y Backstroke', '25y Butterfly', '50y Freestyle', '50y Breaststroke', '50y Backstroke', '50y Butterfly', '100y Freestyle', '100y Breaststroke'].filter(event => races.some(race => race.event === event)).slice(0, visibleCount));
-    assert.equal(result.more, raceCount > visibleCount ? `+${raceCount - visibleCount} more races` : '');
+    const hiddenCount = raceCount - visibleCount;
+    assert.equal(result.more, hiddenCount ? `+${hiddenCount} more ${hiddenCount === 1 ? 'race' : 'races'}` : '');
     assert.deepEqual(result.clipped, []);
     if (raceCount === 6) {
       // Exercise wrapped provenance, a DQ, and a PB without shrinking type.
+      assert.equal(await page.locator('.latest-757-race>strong').first().textContent(), 'DQ');
+      assert.equal(await page.locator('.latest-757-race>em').nth(1).textContent(), 'PB');
       await page.evaluate(() => {
         const rows = [...document.querySelectorAll('.latest-757-race')];
-        rows[0].querySelector('strong').textContent = 'DQ';
-        rows[1].querySelector('em').textContent = 'PB';
         rows[2].querySelector('.latest-757-improvement').textContent = 'Previous best 1:05.00 · A longer meet name with additional provenance that wraps onto another line';
         document.querySelector('.latest-757-results').style.cssText = 'height:180px;max-height:180px;flex:none';
       });
@@ -74,10 +76,9 @@ for (const [count, raceCount] of footerCases) {
         const rows = [...results.querySelectorAll('.latest-757-race:not([hidden])')];
         const more = results.querySelector('.latest-757-more');
         const fits = results.scrollHeight <= results.clientHeight;
-        // One more whole row must not fit, even without a disclosure if last.
+        // More than one row is hidden, so adding one still needs a disclosure.
         const next = results.querySelector('.latest-757-race[hidden]');
         next.hidden = false;
-        if (rows.length === 5) more.hidden = true;
         const nextOverflows = results.scrollHeight > results.clientHeight;
         next.hidden = true;
         more.hidden = false;
@@ -94,6 +95,118 @@ for (const [count, raceCount] of footerCases) {
     await page.close();
   });
 }
+
+function reflowFixture(raceCount = 6) {
+  return renderDashboardV2({ ...sampleDashboardV2Data, athletics: {
+    ...sampleDashboardV2Data.athletics, wavesActive: false, swim757Active: true,
+    flagFootballActive: true, sharksActive: true, opheliaFooter: '757 season note',
+    opheliaLatest757Meet: {
+      meet: 'Latest race meet', startDate: '2026-09-12', endDate: '2026-09-12', dates: ['2026-09-12'],
+      races: Array.from({ length: raceCount }, () => ({
+        event: '50y Freestyle', distance: 50, course: 'SCY', seconds: 65,
+        priorHistoryState: 'prior-best', priorBest: { seconds: 66 }, improvementSeconds: 1,
+      })),
+    },
+  } });
+}
+
+async function fitState(page) {
+  return page.evaluate(() => {
+    const results = document.querySelector('.latest-757-results');
+    return {
+      width: results.clientWidth, height: results.clientHeight,
+      fits: results.scrollHeight <= results.clientHeight,
+      visible: results.querySelectorAll('.latest-757-race:not([hidden])').length,
+      more: results.querySelector('.latest-757-more').textContent,
+    };
+  });
+}
+
+it('fits and keeps observing races when an unrelated layout step throws', async () => {
+  const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
+  const errors = [];
+  page.on('pageerror', error => errors.push(error.message));
+  const fault = `<script>
+    const originalRect = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function () {
+      if (this.matches('.upcoming-panel')) {
+        Element.prototype.getBoundingClientRect = originalRect;
+        throw new Error('injected upcoming layout failure');
+      }
+      return originalRect.call(this);
+    };
+  </script>`;
+  await page.setContent(reflowFixture(20).replace('<head>', '<head>' + fault));
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(() => document.querySelectorAll('.latest-757-race[hidden]').length > 0);
+  assert.deepEqual(errors, ['injected upcoming layout failure']);
+  const state = await fitState(page);
+  assert.ok(state.fits && state.visible > 0);
+  assert.equal(state.more, `+${20 - state.visible} more races`);
+  await page.evaluate(() => { document.querySelector('.latest-757-results').style.maxHeight = '180px'; });
+  await page.waitForFunction(count => document.querySelectorAll('.latest-757-race:not([hidden])').length < count, state.visible);
+  assert.ok((await fitState(page)).fits);
+  await page.close();
+});
+
+it('refits late text changes in a fixed box and settles without an observer loop', async () => {
+  const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
+  await page.setContent(reflowFixture());
+  await page.evaluate(() => document.fonts.ready);
+  const before = await fitState(page);
+  assert.equal(before.visible, 6);
+  await page.evaluate(() => {
+    document.querySelectorAll('.latest-757-improvement').forEach(element => {
+      element.firstChild.data = 'Previous best with a long provenance note that wraps over several lines. '.repeat(8);
+    });
+  });
+  await page.waitForFunction(() => document.querySelectorAll('.latest-757-race[hidden]').length > 0);
+  const after = await fitState(page);
+  assert.ok(after.fits && after.visible > 0);
+  assert.equal(after.height, before.height);
+  assert.equal(after.width, before.width);
+  await page.evaluate(() => {
+    document.querySelectorAll('.latest-757-improvement').forEach(element => { element.textContent = 'Previous best 1:06.00'; });
+  });
+  await page.waitForFunction(() => document.querySelectorAll('.latest-757-race[hidden]').length === 0);
+  const mutations = await page.evaluate(async () => {
+    let count = 0;
+    const observer = new MutationObserver(records => { count += records.length; });
+    observer.observe(document.querySelector('.latest-757-results'), { attributes: true, attributeFilter: ['hidden'], subtree: true });
+    for (let frame = 0; frame < 10; frame++) await new Promise(requestAnimationFrame);
+    observer.disconnect();
+    return count;
+  });
+  assert.equal(mutations, 0);
+  await page.close();
+});
+
+it('refits when an additional font loads after the initial fonts.ready', async () => {
+  const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
+  await page.setContent(reflowFixture());
+  await page.evaluate(() => document.fonts.ready);
+  let releaseFont;
+  const fontGate = new Promise(resolve => { releaseFont = resolve; });
+  await page.route('https://fixture.test/late.woff2', async route => {
+    await fontGate;
+    await route.fulfill({ contentType: 'font/woff2', headers: { 'access-control-allow-origin': '*' },
+      body: readFileSync(new URL('./assets-v2/fonts/barlow-semi-condensed-400.woff2', import.meta.url)) });
+  });
+  await page.addStyleTag({ content: `
+    @font-face { font-family: Late757; src: url(https://fixture.test/late.woff2); font-display: swap; size-adjust: 250%; }
+    .latest-757-race>span,.latest-757-improvement { font-family: Late757, sans-serif; line-height: normal; }
+  ` });
+  await page.waitForFunction(() => document.fonts.status === 'loading');
+  const before = await fitState(page);
+  releaseFont();
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForFunction(count => document.querySelectorAll('.latest-757-race:not([hidden])').length < count, before.visible);
+  const after = await fitState(page);
+  assert.ok(after.fits && after.visible > 0);
+  assert.equal(after.height, before.height);
+  assert.equal(after.width, before.width);
+  await page.close();
+});
 
 // ── the fixture season ───────────────────────────────────────────────────────
 // A four-race SCM meet with a DQ and a three-race SCY meet, in the shapes

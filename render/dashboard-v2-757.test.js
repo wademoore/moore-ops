@@ -78,6 +78,7 @@ describe('latest 757 meet card', () => {
     const before = structuredClone(meet);
     assert.deepEqual(titles(render(meet)), ['25y Freestyle', '25y Breaststroke', '25y Backstroke', '25y Butterfly', '25y Individual Medley', '50y Freestyle', '100y Freestyle']);
     assert.match(render(meet), /class="latest-757-more" hidden/);
+    assert.doesNotMatch(render(meet), /\+\d+ more races?/);
     assert.deepEqual(meet, before);
   });
 
