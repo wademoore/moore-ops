@@ -872,13 +872,13 @@ function safeLatest757Card(a) {
         meet.dates.some(date => !swimMeetDate(date)) ||
         meet.races.some(race => !race || typeof race.event !== 'string' || !race.event.trim() ||
           (race.personalBest != null && !swimMeetDate(race.personalBest.date)))) return '';
-    return renderLatest757Card(a, meet, athleticsCards(a, '').length + 1);
+    return renderLatest757Card(a, meet);
   } catch {
     return '';
   }
 }
 
-function renderLatest757Card(a, meet, cardCount) {
+function renderLatest757Card(a, meet) {
   // The shared footer currently contains a Waves award, not a 757 award.
   const footer = /2025 Most Improved Swimmer/i.test(a.opheliaFooter || '') ? '' : a.opheliaFooter;
   // Household preference, 2026-09-15. Keep the producer's array unchanged;
@@ -889,12 +889,10 @@ function renderLatest757Card(a, meet, cardCount) {
   };
   const races = [...meet.races].sort((a, b) =>
     ((a.distance ?? Infinity) - (b.distance ?? Infinity)) || strokeRank(a) - strokeRank(b));
-  // Use the same rendered card list as the panel and layout count.
-  const rowLimit = cardCount > 1 ? 4 : 5;
   const date = meet.dates.length > 1
     ? `${swimMeetDate(meet.startDate)} – ${swimMeetDate(meet.endDate)}`
     : swimMeetDate(meet.startDate);
-  const rows = races.slice(0, rowLimit).map(race => {
+  const rows = races.map(race => {
     const pb = race.personalBest;
     const isPB = !race.dq && race.isPersonalBest;
     const pbDate = pb ? swimMeetDate(pb.date) : '';
@@ -917,7 +915,7 @@ function renderLatest757Card(a, meet, cardCount) {
     <div class="latest-757-results">
       <div class="latest-757-meet"><strong>${esc(meet.meet)}</strong><span>${esc(date)}</span></div>
       <div class="swim-rows">${rows}</div>
-      ${races.length > rowLimit ? `<div class="latest-757-more">+${races.length - rowLimit} more races</div>` : ''}
+      <div class="latest-757-more" hidden></div>
     </div>
     ${footer ? `<div class="athletic-footer">${esc(footer)}</div>` : ''}
   </article>`;
@@ -1398,8 +1396,40 @@ function browserScript() {
         sections.forEach(section => { section.style.height = height + 'px'; section.style.flexShrink = '0'; });
       }
     };
-    if (document.fonts) document.fonts.ready.then(() => { fitUpcoming(); alignTeamCards(); });
-    else fitUpcoming();
+    // Keep a complete, readable prefix. Measure the actual wrapping and reserve
+    // space for the disclosure; restore rows when the card grows again.
+    const fitLatest757 = () => {
+      document.querySelectorAll('.latest-757-results').forEach(results => {
+        const rows = [...results.querySelectorAll('.latest-757-race')];
+        const more = results.querySelector('.latest-757-more');
+        rows.forEach(row => { row.hidden = false; });
+        more.hidden = true;
+        more.textContent = '';
+        let visible = rows.length;
+        while (visible && results.scrollHeight > results.clientHeight) {
+          rows[--visible].hidden = true;
+          more.hidden = false;
+          const hidden = rows.length - visible;
+          more.textContent = '+' + hidden + (hidden === 1 ? ' more race' : ' more races');
+        }
+      });
+    };
+    const startLatest757 = () => {
+      fitLatest757();
+      const observer = new ResizeObserver(fitLatest757);
+      // Observe text, not hidden attributes or the disclosure we update ourselves.
+      const textObserver = new MutationObserver(fitLatest757);
+      document.querySelectorAll('.latest-757-results').forEach(results => {
+        observer.observe(results);
+        for (const content of results.querySelectorAll('.latest-757-meet,.swim-rows')) {
+          textObserver.observe(content, { childList: true, characterData: true, subtree: true });
+        }
+      });
+      document.fonts?.addEventListener('loadingdone', fitLatest757);
+    };
+    // Install swim fitting even if an unrelated layout step subsequently fails.
+    if (document.fonts) document.fonts.ready.then(() => { startLatest757(); fitUpcoming(); alignTeamCards(); });
+    else { startLatest757(); fitUpcoming(); alignTeamCards(); }
     const zone = 'America/New_York';
     const dashboard = document.querySelector('.dashboard');
     const clock = document.getElementById('live-clock');
@@ -1739,6 +1769,8 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .card-count-1 .latest-757-results{grid-column:2;grid-row:2/4}.card-count-1 .latest-757-results .swim-rows{display:block}
 .card-count-1 .latest-757-race{grid-template-columns:minmax(0,1fr) 90px 32px minmax(0,1.6fr)}.card-count-1 .latest-757-pb{grid-column:4}
 .latest-757-improvement{grid-column:1/-1;font-size:14px;line-height:1.15;color:var(--secondary)}
+.latest-757-results{flex:1;min-height:0;overflow:hidden}.latest-757-card>.athletic-summary,.latest-757-card>.athletic-footer{flex-shrink:0}
+.latest-757-race[hidden],.latest-757-more[hidden]{display:none}
 .latest-757-more{font-size:14px;line-height:1.1;margin-top:3px;color:var(--secondary)}
 .latest-757-dense .latest-757-race{padding:0;row-gap:1px}.latest-757-dense .latest-757-race>strong{font-size:22px}
 .latest-757-dense .latest-757-meet{margin-bottom:2px}.latest-757-dense .latest-757-more{margin-top:1px}

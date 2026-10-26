@@ -44,6 +44,15 @@ Candidate diagnostics use concrete occurrence identity (`Google event id + start
 
 ## Minimum runtime display policies
 
+The latest 757swim card fits a complete prefix of races to its available results
+height after fonts load, and refits when that area resizes, additional fonts finish
+loading, or meet/race text changes. Fitting starts before unrelated layout steps.
+Text sizes stay fixed; the meet heading, optional footer, and overflow disclosure retain their
+space. At the standard 2560×1440 layout, six two-line results fit alongside other
+sports; the shorter single-card strip may disclose the sixth race. Browser
+coverage lives in `render/dashboard-v2-757-layout.test.js`, including constrained
+height, wrapped provenance, and restoring rows when space grows.
+
 - Event artwork resolves in this order: official organization logo, semantic category mark, neutral family spark. The semantic set covers appointments, travel, school, household, arts, sports, and family events; remote-logo failures reveal the semantic mark beneath them.
 - `Coming Up` shows a chronological prefix of the eligible two-week calendar, without importance ranking. Browser fitting includes as many item rows as fit, with a partial final day when necessary. The separate On the Horizon rail retains its own selection rules.
 - NOW/NEXT requires temporal immediacy or a current action/decision; importance alone is insufficient. Time-bounded planning conditions may remain visible in their calendar or planning context while declaring `nowNextEligibleFrom` for the point at which they affect current operations. Emma unavailability becomes eligible the day before it begins and while it is active; earlier coverage work belongs in Weekly Priorities.
