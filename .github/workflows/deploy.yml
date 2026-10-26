@@ -9,24 +9,19 @@ permissions:
   id-token: write
   contents: read
 
+# Runs held by the deploy window are released together; the group keeps their
+# deploys serial.
+concurrency:
+  group: deploy-lambda
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # The longest hold is the window plus its lead; this bounds a hung run so it
+    # fails (and notifies) instead of blocking the concurrency group.
+    timeout-minutes: 120
     steps:
-      - name: Check safe deploy window
-        run: |
-          HOUR=$(TZ="America/New_York" date +%H)
-          MIN=$(TZ="America/New_York" date +%M)
-          if [ "$HOUR" -eq 3 ] && [ "$MIN" -ge 30 ]; then
-            echo "Deploy blocked — too close to 4 AM digest run"
-            exit 1
-          fi
-          if [ "$HOUR" -eq 4 ] && [ "$MIN" -le 30 ]; then
-            echo "Deploy blocked — digest may be running"
-            exit 1
-          fi
-          echo "Deploy window is safe — proceeding"
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -38,6 +33,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --omit=dev
+
+      # Evaluated here, immediately before the credentials and the deploy, so it
+      # holds for whenever the merge happened. It waits rather than fails: the
+      # merge has already landed, so failing would leave the Lambda stale.
+      - name: Hold deploy until outside the deploy window
+        run: node scripts/deploy-window-guard.mjs
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -72,3 +73,26 @@ jobs:
             --function-name ${{ secrets.LAMBDA_FUNCTION_NAME }} \
             --region ${{ secrets.AWS_REGION }}
           echo "✓ Lambda updated successfully"
+
+  # Notifies the repository owner whichever actor pushed.
+  notify-failure:
+    needs: deploy
+    if: ${{ failure() }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open an issue assigned to the repository owner
+        env:
+          GH_TOKEN: ${{ github.token }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.repository }}
+          WORKFLOW: ${{ github.workflow }}
+          SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          gh issue create \
+            --repo "$REPO" \
+            --assignee "$OWNER" \
+            --title "Deploy failed: $WORKFLOW at ${SHA:0:7}" \
+            --body "@$OWNER the \"$WORKFLOW\" run for commit $SHA failed. Run: $RUN_URL"
