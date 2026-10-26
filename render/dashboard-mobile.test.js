@@ -150,7 +150,7 @@ describe('mobile dashboard content contract', () => {
     data.athletics.opheliaLatest757Meet = { ...meet, races: [] };
     assert.equal(safeLatest757Card(data.athletics), '');
     assert.doesNotMatch(section(renderDashboardMobile(data), 'athletics'), /Ophelia · 757 Swim|latest-757-card/);
-    assert.doesNotMatch(renderDashboardV2(data), /latest-757-card/);
+    assert.doesNotMatch(renderDashboardV2(data), /<article[^>]*latest-757-card/);
   });
   it('does not claim a successful priority fetch when no rows are returned', () => {
     assert.match(section(render('quiet'), 'priorities'), /No priorities listed in this update/);

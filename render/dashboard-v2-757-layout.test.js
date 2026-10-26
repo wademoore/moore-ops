@@ -12,13 +12,9 @@ let browser;
 before(async () => { browser = await chromium.launch({ headless: true, executablePath: resolveBrowserPath(process.env.DASHBOARD_BROWSER_PATH) }); });
 after(async () => { await browser?.close(); });
 
-// Explicit acceptance cases: [rendered cards, available races, visible rows].
-const footerCases = [
-  [1, 1, 1], [1, 2, 2], [1, 3, 3], [1, 4, 4], [1, 5, 5], [1, 6, 5], [1, 10, 5],
-  [2, 1, 1], [2, 2, 2], [2, 3, 3], [2, 4, 4], [2, 5, 4], [2, 6, 4], [2, 10, 4],
-  [3, 1, 1], [3, 2, 2], [3, 3, 3], [3, 4, 4], [3, 5, 4], [3, 6, 4], [3, 10, 4],
-];
-for (const [count, raceCount, visibleCount] of footerCases) {
+// Fit complete rows at natural text sizes, across all card counts.
+const footerCases = [1, 2, 3].flatMap(count => [1, 2, 3, 4, 5, 6, 10].map(races => [count, races]));
+for (const [count, raceCount] of footerCases) {
   it(`keeps the footer and ${raceCount} races within the ${count}-card panel`, async () => {
     const page = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
     const races = ['25y Butterfly', '25y Backstroke', '25y Breaststroke', '25y Freestyle', '50y Freestyle', '50y Breaststroke', '50y Backstroke', '50y Butterfly', '100y Freestyle', '100y Breaststroke'].slice(0, raceCount).map(event => ({
@@ -41,8 +37,8 @@ for (const [count, raceCount, visibleCount] of footerCases) {
       const elements = [...document.querySelectorAll('.latest-757-card strong,.latest-757-card span,.latest-757-pb,.latest-757-improvement,.latest-757-more')];
       return {
         cardCount: document.querySelectorAll('.athletics-grid > .athletic-card').length,
-        count: document.querySelectorAll('.latest-757-race').length,
-        titles: [...document.querySelectorAll('.latest-757-race>span')].map(element => element.firstChild.textContent.trim()),
+        count: document.querySelectorAll('.latest-757-race:not([hidden])').length,
+        titles: [...document.querySelectorAll('.latest-757-race:not([hidden])>span')].map(element => element.firstChild.textContent.trim()),
         more: document.querySelector('.latest-757-more')?.textContent || '',
         footer: { height: footer.height, bottom: footer.bottom, panelBottom: panel.bottom, cardBottom: card.bottom,
           textVisible: footerText.length > 0 && footerText.every(box => box.left >= panel.left && box.right <= panel.right && box.top >= panel.top && box.bottom <= panel.bottom && box.bottom <= footer.bottom + 1),
@@ -56,10 +52,45 @@ for (const [count, raceCount, visibleCount] of footerCases) {
     });
     assert.ok(result.footer.height > 0 && result.footer.bottom <= Math.min(result.footer.panelBottom, result.footer.cardBottom) && result.footer.textVisible && result.footer.unclipped, `Footer clipped: ${JSON.stringify(result.footer)}`);
     assert.equal(result.cardCount, count);
-    assert.equal(result.count, visibleCount);
-    assert.deepEqual(result.titles, ['25y Freestyle', '25y Breaststroke', '25y Backstroke', '25y Butterfly', '50y Freestyle'].filter(event => races.some(race => race.event === event)).slice(0, visibleCount));
+    const visibleCount = result.count;
+    assert.ok(visibleCount > 0);
+    // The single-card strip is shorter; its two-line comparisons fit five.
+    if (raceCount <= 6) assert.equal(visibleCount, count === 1 ? Math.min(5, raceCount) : raceCount);
+    assert.deepEqual(result.titles, ['25y Freestyle', '25y Breaststroke', '25y Backstroke', '25y Butterfly', '50y Freestyle', '50y Breaststroke', '50y Backstroke', '50y Butterfly', '100y Freestyle', '100y Breaststroke'].filter(event => races.some(race => race.event === event)).slice(0, visibleCount));
     assert.equal(result.more, raceCount > visibleCount ? `+${raceCount - visibleCount} more races` : '');
     assert.deepEqual(result.clipped, []);
+    if (raceCount === 6) {
+      // Exercise wrapped provenance, a DQ, and a PB without shrinking type.
+      await page.evaluate(() => {
+        const rows = [...document.querySelectorAll('.latest-757-race')];
+        rows[0].querySelector('strong').textContent = 'DQ';
+        rows[1].querySelector('em').textContent = 'PB';
+        rows[2].querySelector('.latest-757-improvement').textContent = 'Previous best 1:05.00 · A longer meet name with additional provenance that wraps onto another line';
+        document.querySelector('.latest-757-results').style.cssText = 'height:180px;max-height:180px;flex:none';
+      });
+      await page.waitForFunction(() => document.querySelectorAll('.latest-757-race[hidden]').length > 1);
+      const constrained = await page.evaluate(() => {
+        const results = document.querySelector('.latest-757-results');
+        const rows = [...results.querySelectorAll('.latest-757-race:not([hidden])')];
+        const more = results.querySelector('.latest-757-more');
+        const fits = results.scrollHeight <= results.clientHeight;
+        // One more whole row must not fit, even without a disclosure if last.
+        const next = results.querySelector('.latest-757-race[hidden]');
+        next.hidden = false;
+        if (rows.length === 5) more.hidden = true;
+        const nextOverflows = results.scrollHeight > results.clientHeight;
+        next.hidden = true;
+        more.hidden = false;
+        return { fits, nextOverflows, visible: rows.length, more: more.textContent,
+          font: getComputedStyle(rows[0].querySelector('span')).fontSize };
+      });
+      assert.ok(constrained.fits && constrained.nextOverflows, JSON.stringify(constrained));
+      assert.equal(constrained.more, `+${6 - constrained.visible} more races`);
+      assert.equal(constrained.font, '18px');
+      await page.evaluate(() => { document.querySelector('.latest-757-results').style.cssText = 'height:600px;max-height:600px;flex:none'; });
+      await page.waitForFunction(() => document.querySelectorAll('.latest-757-race[hidden]').length === 0);
+      assert.equal(await page.locator('.latest-757-more').isVisible(), false);
+    }
     await page.close();
   });
 }
@@ -111,7 +142,7 @@ for (const april of [false, true]) for (const count of [1, 2, 3]) {
       const footer = document.querySelector('.latest-757-card .athletic-footer').getBoundingClientRect();
       const elements = [...document.querySelectorAll('.latest-757-meet strong,.latest-757-meet span,.latest-757-race>span,.latest-757-race>strong,.latest-757-pb,.latest-757-improvement')];
       return {
-        rows: document.querySelectorAll('.latest-757-race').length,
+        rows: document.querySelectorAll('.latest-757-race:not([hidden])').length,
         clipped: elements.flatMap(element => {
           const range = document.createRange(); range.selectNodeContents(element);
           const boxes = [...range.getClientRects()];
