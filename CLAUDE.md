@@ -62,6 +62,9 @@ End with: "Designer complete — ready for Planner"
 - Feature branch + pull request is the only route to `main`. Never push to `main`.
 - Reviewer sign-off is required before the PR is merged. Pushing a branch is not
   delivery; merging is.
+- Decision, 2026-10-26: Wade no longer reviews or merges PRs. After the Reviewer
+  passes, the session enables auto-merge on its own PR, which merges when required CI is
+  green.
 - The push hook refuses any `git push` command whose text contains the word `main`. This
   over-blocks by design. Split the command instead of weakening the hook.
 
