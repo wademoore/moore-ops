@@ -1,11 +1,9 @@
 // Deploy-time window guard.
 //
 // No deploy may execute between 3:30 and 4:30 AM America/New_York. The check
-// has to run when the deploy is about to execute, not when the PR is checked:
-// an auto-merge can fire inside the window off a check that passed before it.
-// Blocking by failing is not acceptable either - the merge has already landed,
-// so a failed deploy leaves the Lambda stale. This guard therefore WAITS until
-// the window has cleared and then lets the deploy proceed.
+// runs when the deploy is about to execute, not when the PR is checked.
+// Failing is not acceptable either - the merge has already landed. This guard
+// therefore WAITS until the window has cleared and then lets the deploy proceed.
 //
 // Usage (the workflow step):  node scripts/deploy-window-guard.mjs
 // Test/inspection mode:       node scripts/deploy-window-guard.mjs --check --now <ISO instant>
@@ -29,8 +27,7 @@ const WINDOW_START_MINUTE = 3 * 60 + 30;
 const WINDOW_END_MINUTE = 4 * 60 + 30;
 
 // A deploy that starts just before the window still executes inside it, so the
-// guard starts blocking this many minutes early. Chosen against the step
-// durations in the Actions run history (see the PR that introduced it).
+// guard starts blocking this many minutes early.
 export const DEFAULT_LEAD_MINUTES = 10;
 
 const FORMATTER = new Intl.DateTimeFormat('en-US', {

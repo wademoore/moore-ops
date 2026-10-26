@@ -64,7 +64,7 @@ End with: "Designer complete — ready for Planner"
   delivery; merging is.
 - Decision, 2026-10-26: Wade no longer reviews or merges PRs. After the Reviewer
   passes, the session enables auto-merge on its own PR, which merges when required CI is
-  green. A failed deploy opens an issue assigned to Wade.
+  green.
 - The push hook refuses any `git push` command whose text contains the word `main`. This
   over-blocks by design. Split the command instead of weakening the hook.
 

@@ -31,8 +31,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # The longest hold is the window plus its lead; this bounds a hung run so it
-    # fails (and notifies) instead of blocking the concurrency group.
+    # Bounds the hold.
     timeout-minutes: 120
     steps:
       - name: Resolve Family Spotlight kill switch
@@ -133,9 +132,8 @@ jobs:
           npm run build:dashboard-artifact
           npm run validate:dashboard-artifact-package
 
-      # Evaluated here, immediately before the credentials and the deploy, so it
-      # holds for whenever the merge happened. It waits rather than fails: the
-      # merge has already landed, so failing would leave the stack stale.
+      # Evaluated here, immediately before the credentials and the deploy. It
+      # waits rather than fails: the merge has already landed.
       - name: Hold deploy until outside the deploy window
         run: node scripts/deploy-window-guard.mjs
 
