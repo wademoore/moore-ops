@@ -52,6 +52,25 @@ for (const sport of ['soccer', 'flag-football']) {
     }
   });
 }
+for (const sport of ['soccer', 'flag-football']) {
+  // Decision of 2026-10-27.
+  it(`${sport}: Final shows with the table only when available and regularSeasonComplete is true`, () => {
+    for (const status of ['available', 'preseason', 'unavailable']) for (const complete of [true, false, null, 'true']) {
+      const value = { ...table(sport, status), regularSeasonComplete: complete };
+      const html = render(sport, value);
+      assert.equal(html.includes('>Final<'), status === 'available' && complete === true, `${status} / ${complete}`);
+      if (status !== 'unavailable') assert.equal((html.match(/data-team-id=/g) || []).length, value.rows.length, 'the table never hides');
+    }
+  });
+}
+it('Final replaces the unposted note rather than sitting beside it', () => {
+  for (const sport of ['soccer', 'flag-football']) {
+    const html = render(sport, { ...table(sport, 'available', 7), regularSeasonComplete: true });
+    assert.ok(html.includes('>Final<'));
+    assert.ok(!html.includes('Some scores are not yet posted.'));
+    assert.equal((html.match(/standings-note/g) || []).length, 1);
+  }
+});
 it('flag columns add T only for recorded ties and duplicate short names use coach by id', () => {
   const value = table('flag-football');
   value.rows[0].shortName = value.rows.at(-1).shortName = 'Cowboys';

@@ -224,8 +224,11 @@ describe('soccer — a household-observed result counts for display, never for t
     assert.equal(plain.unverifiedCount, 0);
 
     // Additive: one key added and nothing else renamed, removed or reordered
-    // out of the shape the rest of this file already pins.
-    const { unverifiedCount, ...before } = plain;
+    // out of the shape the rest of this file already pins. The 2026-10-27
+    // decision added regularSeasonComplete to every table, so it is set aside
+    // here with unverifiedCount; this case is about the marker, and the new key
+    // is asserted by its own cases below.
+    const { unverifiedCount, regularSeasonComplete, ...before } = plain;
     assert.deepEqual(Object.keys(before).sort(), [
       'asOfDate', 'divisionLabel', 'reason', 'reasonDetail',
       'rows', 'source', 'sport', 'status', 'unpostedCount',
@@ -1028,5 +1031,76 @@ describe('parseSharks — a result is attributed only to a fixture with exactly 
     const { wins, losses, ties } = parsed.seasonRecord;
     assert.equal(wins + losses + ties, attributable.length);
     assert.equal(parsed.lastResult.date, attributable.map(m => m.date).sort().at(-1));
+  });
+});
+
+// ── Regular season complete — decision of 2026-10-27 ─────────────────────────
+// Not a pre-existing convention. Derived from the fixtures at every build; the
+// season's end date is never read.
+describe('regularSeasonComplete', () => {
+  const finished = () => {
+    const season = clone(fallSeason);
+    for (const game of season.games) {
+      if (game.type === 'regular') Object.assign(game, { status: 'final', homeScore: 10, awayScore: 7 });
+    }
+    return season;
+  };
+  const firstRegular = season => season.games.find(g => g.type === 'regular');
+
+  it('is true once every regular fixture has a result, whatever the season end date says', () => {
+    for (const seasonEnd of ['2020-01-01', '2099-01-01']) {
+      const season = finished();
+      season.seasonEnd = seasonEnd;
+      assert.equal(buildFlagFootballDivisionTable(season).regularSeasonComplete, true);
+    }
+  });
+
+  it('is true for the shipped fall-2026 season', () => {
+    assert.equal(buildFlagFootballDivisionTable(fallSeason).regularSeasonComplete, true);
+  });
+
+  it('is false while any regular fixture is unplayed', () => {
+    const season = finished();
+    Object.assign(firstRegular(season), { status: 'scheduled', homeScore: null, awayScore: null });
+    const table = buildFlagFootballDivisionTable(season);
+    assert.equal(table.status, STANDINGS_STATUS.AVAILABLE);
+    assert.equal(table.regularSeasonComplete, false);
+  });
+
+  it('a regular row added later without a result takes it away again', () => {
+    const season = finished();
+    assert.equal(buildFlagFootballDivisionTable(season).regularSeasonComplete, true);
+    season.games.push({ ...clone(firstRegular(season)), date: '2026-11-01', status: 'scheduled', homeScore: null, awayScore: null });
+    assert.equal(buildFlagFootballDivisionTable(season).regularSeasonComplete, false);
+  });
+
+  it('a rescheduled row, a friendly, a practice and an unplayed postseason row do not hold it back', () => {
+    const season = finished();
+    const template = clone(firstRegular(season));
+    season.games.push(
+      { ...template, status: 'rescheduled', homeScore: null, awayScore: null },
+      { ...template, friendly: true, status: 'scheduled', homeScore: null, awayScore: null },
+      { ...template, type: 'playoff', status: 'scheduled', homeScore: null, awayScore: null },
+    );
+    assert.equal(buildFlagFootballDivisionTable(season).regularSeasonComplete, true);
+  });
+
+  it('is null in preseason and when unavailable, never true', () => {
+    assert.equal(buildFlagFootballDivisionTable(flagSeasonWith([])).status, STANDINGS_STATUS.PRESEASON);
+    assert.equal(buildFlagFootballDivisionTable(flagSeasonWith([])).regularSeasonComplete, null);
+    assert.equal(buildFlagFootballDivisionTable(null).regularSeasonComplete, null);
+    assert.equal(buildSoccerDivisionTable(null).regularSeasonComplete, null);
+  });
+
+  it('soccer: true when every match has a result, false with one unplayed or one unverified', () => {
+    const ids = ['a', 'b', 'c'];
+    const played = [soccerMatch(1, '2026-09-20', 'a', 2, 'b', 1), soccerMatch(2, '2026-09-27', 'b', 0, 'c', 0)];
+    assert.equal(buildSoccerDivisionTable(soccerFixture(ids, played)).regularSeasonComplete, true);
+    const unplayed = [...played, soccerMatch(3, '2026-10-04', 'a', null, 'c', null)];
+    assert.equal(buildSoccerDivisionTable(soccerFixture(ids, unplayed)).regularSeasonComplete, false);
+    const unverified = [played[0], soccerMatch(2, '2026-09-27', 'b', 0, 'c', 0, { unverified: true })];
+    const table = buildSoccerDivisionTable(soccerFixture(ids, unverified));
+    assert.equal(table.status, STANDINGS_STATUS.AVAILABLE);
+    assert.equal(table.regularSeasonComplete, false);
   });
 });

@@ -387,8 +387,7 @@ not been identified. The log is job 109227739708 in run 36512572064. Added
 Observed on PR #164 (2026-10-27): the Reviewer was refused by a hook when
 it tried to run the flag football division-standings derivation against the
 live data, so its evidence for the derived table came from the existing test
-suite alone. The suite shows the derivation still matches the published
-table it already holds, not the league's current one.
+suite alone.
 
 From `.claude/hooks/guard-readonly.mjs`: the Reviewer's Bash allowlist
 covers `npm test`, `npm run <script>`, `node --test`, read-only git, and
@@ -399,7 +398,14 @@ invocation hit the hook is unconfirmed.
 If the Reviewer is expected to verify derived standings after a results
 write, it needs a sanctioned way to run the derivation read-only. The hooks
 and agent files are deny-ruled for sessions, so any fix is a hand edit by
-Wade.
+Wade. Added 2026-10-27.
+
+### Trace whether the flag football schedule-gap alert reaches the email or the featured slot
+
+A calendar flag football game with no matching row in
+`data/flag-football.json` raises an amber alert titled "Flag Football
+Schedule Gap" (`digest/flags.js`). It is untraced whether that alert reaches
+the email, or can win the wall's featured slot. Added 2026-10-27.
 
 ---
 

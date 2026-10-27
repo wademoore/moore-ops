@@ -167,7 +167,10 @@ describe('dashboard v2 2560x1440 layout verification', () => {
     }
   });
   it('fits full real division tables, including unposted notes and our last rows', async () => {
-    for (const banner of [null, { title: 'Family day' }]) for (const only of [null, 'soccer', 'flag-football']) {
+    // The note slot holds either the unposted note or, since the 2026-10-27
+    // decision, "Final". Both are measured; `final` is forced on both tables so
+    // the geometry does not depend on which sport's shipped data is complete.
+    for (const final of [false, true]) for (const banner of [null, { title: 'Family day' }]) for (const only of [null, 'soccer', 'flag-football']) {
       const athletics = realDivisionAthletics();
       if (only) {
         athletics.swim757Active = false;
@@ -176,7 +179,8 @@ describe('dashboard v2 2560x1440 layout verification', () => {
       }
       for (const table of [athletics.sharksDivisionTable, athletics.flagFootballDivisionTable]) {
         table.status = 'available';
-        table.unpostedCount = 2;
+        table.unpostedCount = final ? 0 : 2;
+        table.regularSeasonComplete = final;
         table.rows = [...table.rows.filter(row => !row.isMe), ...table.rows.filter(row => row.isMe)];
       }
       athletics.flagFootballDivisionTable.rows[1].drawn = 1;
@@ -186,11 +190,13 @@ describe('dashboard v2 2560x1440 layout verification', () => {
         const bounds = card.getBoundingClientRect();
         const table = card.querySelector('table');
         const rows = [...table.querySelectorAll('tbody tr')];
-        const note = card.querySelector('.standings-note').getBoundingClientRect();
+        const noteNode = card.querySelector('.standings-note');
+        const note = noteNode.getBoundingClientRect();
         const next = card.querySelector('.next-box').getBoundingClientRect();
         const box = table.getBoundingClientRect();
         const result = card.querySelector('.result-line');
         return { card: card.className, rows: rows.length, oursLast: rows.at(-1).classList.contains('is-me'),
+          noteText: noteNode.textContent,
           resultText: result?.querySelector('b')?.textContent ?? null,
           resultHeight: result ? Math.round(result.getBoundingClientRect().height) : null,
           textSize: getComputedStyle(table).fontSize,
@@ -212,6 +218,7 @@ describe('dashboard v2 2560x1440 layout verification', () => {
       for (const card of result) {
         assert.equal(card.rows, card.card.includes('sharks') ? 11 : 8);
         assert.equal(card.oursLast, true);
+        assert.equal(card.noteText, final ? 'Final' : 'Some scores are not yet posted.');
         // The latest-result line is the field whose LENGTH moves this card's
         // geometry, so the case pins its value — which is worth nothing unless
         // the value actually reaches the card. A mutation that stopped

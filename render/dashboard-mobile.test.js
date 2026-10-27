@@ -136,6 +136,23 @@ describe('mobile dashboard content contract', () => {
     assert.match(mobile, /T-1|T-2/); assert.match(mobile, /Bears \(Lee\)/);
     assert.match(mobile, /Bears \(Kim\)/); assert.match(mobile, /Some scores are not yet posted/);
   });
+  it('shows Final and a tagged postseason last result identically on the wall and on mobile (decision 2026-10-27)', () => {
+    const data = structuredClone(states.everyday);
+    const row = { teamId: 2, shortName: 'Cowboys', isMe: true, rank: 1, rankShared: false, wins: 2, losses: 0, drawn: 0 };
+    const lastResult = 'L 0–40 vs Ravens · Semifinal';
+    data.athletics = { flagFootballActive: true, flagTeamName: 'Cowboys', lastResult,
+      flagFootballDivisionTable: { status: 'available', unpostedCount: 0, regularSeasonComplete: true, rows: [row] } };
+    const mobile = section(renderDashboardMobile(data), 'athletics');
+    const wall = renderDashboardV2(data);
+    for (const html of [mobile, wall]) {
+      assert.ok(html.includes('standings-final">Final</div>'));
+      assert.ok(html.includes(lastResult));
+    }
+    data.athletics.flagFootballDivisionTable.regularSeasonComplete = false;
+    for (const html of [section(renderDashboardMobile(data), 'athletics'), renderDashboardV2(data)]) {
+      assert.ok(!html.includes('>Final<'));
+    }
+  });
   it('uses the wall latest 757 meet gate and content without a Waves award', () => {
     const data = structuredClone(states.everyday);
     const meet = { meet: 'KickOff', startDate: '2026-09-12', endDate: '2026-09-12', dates: ['2026-09-12'], races: [

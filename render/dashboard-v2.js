@@ -814,7 +814,8 @@ function renderDivisionTable(table, sport) {
     <tbody>${rows.map(row => `<tr class="${row.isMe ? 'is-me' : ''}" data-team-id="${esc(row.teamId)}">
       ${ranked ? `<td class="rank-cell">${row.rankShared ? 'T-' : ''}${esc(row.rank)}</td>` : ''}<td class="team-cell">${flag ? (flagLogoMark(row.shortName) || '<span class="flag-team-mark flag-team-placeholder" aria-hidden="true"></span>') : ''}${esc(labels.get(row.teamId) ?? row.shortName)}${flag && row.isMe ? ' · Us' : ''}</td>${columns.map(([key]) => `<td>${esc(row[key])}</td>`).join('')}
     </tr>`).join('')}</tbody></table>
-    ${ranked && table.unpostedCount > 0 ? '<div class="standings-note">Some scores are not yet posted.</div>' : ''}</div>`;
+    ${ranked && table.regularSeasonComplete === true ? '<div class="standings-note standings-final">Final</div>'
+      : ranked && table.unpostedCount > 0 ? '<div class="standings-note">Some scores are not yet posted.</div>' : ''}</div>`;
 }
 
 function renderWavesCard(a) {
