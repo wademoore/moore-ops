@@ -20,6 +20,21 @@ import { buildFlagFootballDivisionTable } from './divisionStandings.js';
 // added — the same reasoning nextFlagGame was written with.
 export const NON_GAME_TYPES = new Set(['practice']);
 
+// Postseason game types. The last result may be one of these; the record and
+// the division table never are.
+const POSTSEASON_TYPES = new Set(['playoff', 'consolation']);
+
+/**
+ * The suffix naming a postseason game: its own `label` when it has one,
+ * otherwise its type. Empty for a regular game.
+ */
+function postseasonTag(game) {
+  if (!POSTSEASON_TYPES.has(game.type)) return '';
+  const label = typeof game.label === 'string' ? game.label.trim() : '';
+  const name = label || game.type;
+  return ` · ${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+}
+
 /**
  * Fold a team reference to a comparable key: the league's numeric team id when
  * a season declares one, the legacy string abbr otherwise. Null and undefined
@@ -118,18 +133,31 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   const seasonRecord = `${wins}-${losses}-${ties}`;
 
   // ── Last result ──────────────────────────────────────────────────────────────
-  const sortedGames = [...myGames].sort((a, b) => new Date(b.date) - new Date(a.date));
+  // DECIDED WITH WADE, 2026-10-27 — not a pre-existing convention. The last
+  // result is the most recent game played, postseason included, so the wall does
+  // not freeze on the last regular-season result through the playoffs. Only this
+  // field widens: the record and the standings above and below keep the
+  // regular-only `eligibleGames`. Practices and friendlies stay out.
+  //
+  // An allow-list here, unlike NON_GAME_TYPES: an unrecognised type must not
+  // silently become a "result". A postseason result carries a suffix naming it,
+  // so it cannot render as a regular one on any surface that shows the string.
+  const lastResultGames = (season.games || []).filter(
+    g => (g.type === 'regular' || POSTSEASON_TYPES.has(g.type))
+      && g.status === 'final' && !g.friendly && hasBothScores(g)
+      && (keyOf(g.home) === myKey || keyOf(g.away) === myKey)
+  ).sort((a, b) => new Date(b.date) - new Date(a.date));
   let lastResult   = '';
   let lastOpponent = null;
-  if (sortedGames.length > 0) {
-    const last    = sortedGames[0];
+  if (lastResultGames.length > 0) {
+    const last    = lastResultGames[0];
     const isHome  = keyOf(last.home) === myKey;
     const myScore  = isHome ? last.homeScore : last.awayScore;
     const oppScore = isHome ? last.awayScore : last.homeScore;
     const oppAbbr  = keyOf(isHome ? last.away : last.home);
     const oppName  = teamsMap.get(oppAbbr) || oppAbbr;
     const wl       = myScore > oppScore ? 'W' : myScore < oppScore ? 'L' : 'T';
-    lastResult   = `${wl} ${myScore}–${oppScore} vs ${oppName}`;
+    lastResult   = `${wl} ${myScore}–${oppScore} vs ${oppName}${postseasonTag(last)}`;
     lastOpponent = oppName;
   }
 

@@ -289,6 +289,51 @@ describe('parseFlagFootball', () => {
       'nor to an opponent\u2019s, from either postseason row');
   });
 
+  // ── Last result includes the postseason — decision of 2026-10-27 ───────────
+  // Not a pre-existing convention. The record and the division table stay
+  // regular-only; only the last result widens.
+  const withGames = games => ({ seasons: [{ ...ID_FIXTURE.seasons[0], games }] });
+  const REG = { type: 'regular', status: 'final', date: '2026-09-20', home: 8009182, away: 8070749, homeScore: 20, awayScore: 6 };
+  const OCT_26 = new Date('2026-10-26T12:00:00');
+
+  it('a later playoff game is the last result, named by its label, and moves neither record nor table', () => {
+    const base = withGames([REG]);
+    const post = withGames([REG,
+      { type: 'playoff', label: 'semifinal', status: 'final', date: '2026-10-25', home: 8009182, away: 8070749, homeScore: 0, awayScore: 40 }]);
+    const without = parseFlagFootball(base, OCT_26, CONFIG);
+    const result = parseFlagFootball(post, OCT_26, CONFIG);
+    assert.equal(without.lastResult, 'W 20\u20136 vs Ravens');
+    assert.equal(result.lastResult, 'L 0\u201340 vs Ravens \u00b7 Semifinal');
+    assert.equal(result.lastOpponent, 'Ravens');
+    assert.equal(result.seasonRecord, without.seasonRecord, 'the W-L record is regular-season only');
+    assert.deepEqual(result.standings, without.standings, 'the legacy standings are regular-season only');
+    assert.deepEqual(result.divisionTable, without.divisionTable, 'the division table is regular-season only');
+  });
+
+  it('a postseason game without a label is named by its type', () => {
+    for (const [type, tag] of [['playoff', 'Playoff'], ['consolation', 'Consolation']]) {
+      const result = parseFlagFootball(withGames([REG,
+        { type, status: 'final', date: '2026-10-25', home: 8009182, away: 8070749, homeScore: 9, awayScore: 3 }]), OCT_26, CONFIG);
+      assert.equal(result.lastResult, `W 9\u20133 vs Ravens \u00b7 ${tag}`);
+    }
+  });
+
+  it('a regular result carries no postseason tag, even on a row that has a label', () => {
+    const result = parseFlagFootball(withGames([{ ...REG, label: 'semifinal' }]), OCT_26, CONFIG);
+    assert.equal(result.lastResult, 'W 20\u20136 vs Ravens');
+  });
+
+  it('practice rows, friendlies, unscored postseason rows and other teams\u2019 postseason games are not the last result', () => {
+    const result = parseFlagFootball(withGames([REG,
+      { type: 'practice', status: 'final', date: '2026-10-20', home: 8009182, away: null, homeScore: 1, awayScore: 0 },
+      { type: 'regular', friendly: true, status: 'final', date: '2026-10-21', home: 8009182, away: 8070749, homeScore: 40, awayScore: 0 },
+      { type: 'playoff', label: 'semifinal', status: 'final', date: '2026-10-22', home: 8009182, away: 8070749, homeScore: null, awayScore: null },
+      { type: 'playoff', status: 'scheduled', date: '2026-10-23', home: 8009182, away: 8070749, homeScore: 5, awayScore: 0 },
+      { type: 'consolation', status: 'final', date: '2026-10-24', home: 8888888, away: 8070749, homeScore: 9, awayScore: 20 },
+    ]), OCT_26, CONFIG);
+    assert.equal(result.lastResult, 'W 20\u20136 vs Ravens');
+  });
+
   // ── Standings identity and the shared display name ─────────────────────────
   // ID_FIXTURE's teams[] carries leagueName but no coach. The real
   // data/flag-football.json fall-2026 entry carries both, so the coaches are

@@ -119,6 +119,18 @@
  *                                not have them. Zero and null are different
  *                                answers — zero means the sport records this
  *                                and none is outstanding.
+ *   regularSeasonComplete: boolean|null
+ *                                DECIDED WITH WADE, 2026-10-27 — not a
+ *                                pre-existing convention. Derived from the
+ *                                fixtures on every build, never stored: true
+ *                                when the table has at least one fixture that
+ *                                counts, every such fixture has a result, and
+ *                                none of those results is unverified. A
+ *                                fixture marked `excused` (flag football's
+ *                                `rescheduled` status) does not count. It does
+ *                                not read the season's end date. Null unless
+ *                                available, so preseason and unavailable
+ *                                never carry it as true.
  *   divisionLabel: string|null
  *   rows:          Row[]         Rank order. Empty ONLY when unavailable: a
  *                                preseason table carries every team at zero.
@@ -210,6 +222,7 @@ export function unavailableTable(sport, reason, detail = null, divisionLabel = n
     source,
     unpostedCount: null,
     unverifiedCount: null,
+    regularSeasonComplete: null,
     divisionLabel: divisionLabel ?? null,
     rows:          [],
   };
@@ -260,7 +273,7 @@ function rankRows(rows, compare) {
  * @param {string|null} spec.divisionLabel
  * @param {string} spec.source
  * @param {Array}  spec.teams     [{ teamId, name, shortName, coach, isMe }]
- * @param {Array}  spec.fixtures  [{ date, hasResult, unverified, sides: [{teamId, scored, conceded}] }]
+ * @param {Array}  spec.fixtures  [{ date, hasResult, unverified, excused, sides: [{teamId, scored, conceded}] }]
  * @param {Function} spec.decorate  row => extra fields (leaguePoints/winPercentage)
  * @param {Function} spec.compare   (a, b) => negative when a ranks ahead of b
  * @param {boolean} [spec.tracksVerification]  Whether the sport records
@@ -320,6 +333,14 @@ function buildDivisionTable({ sport, divisionLabel, source, teams, fixtures, dec
     ? null
     : fixtures.filter(fixture => fixture.hasResult && fixture.unverified).length;
 
+  // Recomputed from the fixtures at every build, so a regular fixture added
+  // later without a result takes the state away again. An unverified result is
+  // a recorded result for the table but not a confirmed one, so it does not
+  // complete the season.
+  const countedFixtures = fixtures.filter(fixture => !fixture.excused);
+  const regularSeasonComplete = countedFixtures.length > 0
+    && countedFixtures.every(fixture => fixture.hasResult && !fixture.unverified);
+
   const bare = teams.map(team => {
     const tally = tallies.get(keyOf(team.teamId));
     const row = {
@@ -350,6 +371,7 @@ function buildDivisionTable({ sport, divisionLabel, source, teams, fixtures, dec
     source,
     unpostedCount,
     unverifiedCount,
+    regularSeasonComplete: asOfDate === null ? null : regularSeasonComplete,
     divisionLabel: divisionLabel ?? null,
     rows:          rankRows(bare, compare),
   };
@@ -651,6 +673,7 @@ export function buildFlagFootballDivisionTable(season) {
       fixtures.push({
         date: game.date,
         hasResult,
+        excused: game.status === 'rescheduled',
         sides: hasResult
           ? [{ teamId: home, scored: game.homeScore, conceded: game.awayScore },
              { teamId: away, scored: game.awayScore, conceded: game.homeScore }]
