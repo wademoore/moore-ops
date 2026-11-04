@@ -868,10 +868,11 @@ describe('selectSeasonMilestone', () => {
       .filter(g => g.home === season.myTeamId || g.away === season.myTeamId)
       .map(g => g.week)
       .sort((a, b) => a - b);
-    assert.deepEqual(weeks, [1, 2, 3, 4, 5, 6]);
-    assert.equal(season.games.length, 21, 'and the season really does carry other teams\' rows too');
+    // Week 7 is the postseason (our consolation game); still never a milestone, as the loop below checks.
+    assert.deepEqual(weeks, [1, 2, 3, 4, 5, 6, 7]);
+    assert.equal(season.games.length, 25, 'and the season really does carry other teams\' rows too');
     const selected = SEASON_MILESTONES.map(m => selectSeasonMilestone(REAL, 'fall-2026', m).row.week);
     assert.deepEqual(selected, [1, 2]);
-    for (const week of [3, 4, 5, 6]) assert.ok(!selected.includes(week), `week ${week} must never be a milestone`);
+    for (const week of [3, 4, 5, 6, 7]) assert.ok(!selected.includes(week), `week ${week} must never be a milestone`);
   });
 });

@@ -983,6 +983,56 @@
                                           "type":  "regular",
                                           "field":  "4B",
                                           "status":  "final"
+                                      },
+                                      {
+                                          "week":  7,
+                                          "date":  "2026-11-01",
+                                          "time":  "12:00",
+                                          "away":  8009182,
+                                          "awayScore":  20,
+                                          "home":  8113277,
+                                          "homeScore":  0,
+                                          "type":  "consolation",
+                                          "field":  "4B",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "week":  7,
+                                          "date":  "2026-11-01",
+                                          "time":  "15:00",
+                                          "away":  8069066,
+                                          "awayScore":  13,
+                                          "home":  8057461,
+                                          "homeScore":  32,
+                                          "type":  "consolation",
+                                          "field":  "4A",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "week":  7,
+                                          "date":  "2026-11-01",
+                                          "time":  "15:00",
+                                          "away":  8088488,
+                                          "awayScore":  0,
+                                          "home":  8108154,
+                                          "homeScore":  39,
+                                          "type":  "playoff",
+                                          "label":  "semifinal",
+                                          "field":  "3A",
+                                          "status":  "final"
+                                      },
+                                      {
+                                          "week":  7,
+                                          "date":  "2026-11-01",
+                                          "time":  "15:00",
+                                          "away":  8070749,
+                                          "awayScore":  12,
+                                          "home":  8117740,
+                                          "homeScore":  19,
+                                          "type":  "playoff",
+                                          "label":  "semifinal",
+                                          "field":  "3B",
+                                          "status":  "final"
                                       }
                                   ]
                     }

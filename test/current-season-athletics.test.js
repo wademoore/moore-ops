@@ -326,7 +326,7 @@ describe('flag football team identity', () => {
     assert.equal(athletics.lastResult, '', 'no game has been played, so there is no last result');
   });
 
-  it('carries all six of our scheduled events, with Week 1 typed so it cannot affect the record', async () => {
+  it('carries our scheduled events, with Week 1 typed so it cannot affect the record', async () => {
     const data = await readJson('data/flag-football.json');
     const fall = data.seasons.find(s => s.seasonId === 'fall-2026');
     const MY = 8009182;
@@ -351,6 +351,8 @@ describe('flag football team identity', () => {
       { week: 4, date: '2026-10-04', time: '14:00', type: 'regular',  field: '3B', homeAway: 'A', opponent: 8069066 },
       { week: 5, date: '2026-10-18', time: '14:00', type: 'regular',  field: '3B', homeAway: 'A', opponent: 8088488 },
       { week: 6, date: '2026-10-25', time: '12:00', type: 'regular',  field: '3A', homeAway: 'H', opponent: 8108154 },
+      // Week 7 is the 2026-11-01 postseason; the expected rows widen to include our consolation game. It is typed consolation, so the regular-season filters below still exclude it.
+      { week: 7, date: '2026-11-01', time: '12:00', type: 'consolation', field: '4B', homeAway: 'A', opponent: 8113277 },
     ]);
 
     // Week 1 is a practice, not a game. Typed so it is excluded structurally
@@ -363,7 +365,9 @@ describe('flag football team identity', () => {
       fall.games.filter(g => g.type === 'regular' && (g.home === MY || g.away === MY)).length, 5,
       'exactly five of our six events are fixtures');
     // The rest of the division, now that the league has published it.
-    assert.equal(fall.games.length, 21, 'one practice plus all 20 published regular-season fixtures');
+    assert.equal(fall.games.filter(g => g.type === 'regular' || g.type === 'practice').length, 21, 'one practice plus all 20 published regular-season fixtures');
+    assert.equal(fall.games.filter(g => g.type === 'playoff' || g.type === 'consolation').length, 4,
+      'the week 7 postseason results recorded so far, none of them regular-season fixtures');
     assert.equal(fall.games.filter(g => g.type === 'regular').length, 20);
     assert.equal(fall.games.filter(g => g.type === 'practice').length, 1,
       'only our own Meet & Greet; the league publishes no other team\u2019s practices');
@@ -481,9 +485,11 @@ describe('flag football team identity', () => {
     const fall = data.seasons.find(s => s.seasonId === 'fall-2026');
     assert.equal(fall.seasonEnd, cfg.flagFootball.seasonEnd,
       'the schedule file and the visibility window must name the same end date');
-    const lastGame = fall.games.map(g => g.date).sort().at(-1);
+    // Regular season only: the 2026-11-01 postseason rows are dated later and are not what this pin is about.
+    const lastGame = fall.games.filter(g => g.type === 'regular').map(g => g.date).sort().at(-1);
     assert.equal(lastGame, '2026-10-25');
-    assert.ok(cfg.flagFootball.seasonEnd > lastGame,
+    const lastRecorded = fall.games.map(g => g.date).sort().at(-1);
+    assert.ok(cfg.flagFootball.seasonEnd > lastRecorded,
       'the window deliberately outlives the last published week');
   });
 

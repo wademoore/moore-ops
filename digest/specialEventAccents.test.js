@@ -388,7 +388,7 @@ describe('event-row accents — what a seasonMilestone accent DOES fail closed o
   });
 
   it('never fires on any later week of the season', () => {
-    // Weeks 3-6 exist in the same season file and on the same calendar. Both
+    // Weeks 3-7 exist in the same season file and on the same calendar. Both
     // milestones are pinned to weeks 1 and 2, so no later fixture can be
     // decorated no matter when the dashboard is generated.
     //
@@ -411,7 +411,7 @@ describe('event-row accents — what a seasonMilestone accent DOES fail closed o
     // is unchanged, and weeks 3-6 are still present to prove it against.
     const season = FLAG_SEASON.seasons.find(s => s.seasonId === 'fall-2026');
     const myGames = season.games.filter(g => g.home === season.myTeamId || g.away === season.myTeamId);
-    assert.deepEqual(myGames.map(g => g.week), [1, 2, 3, 4, 5, 6],
+    assert.deepEqual(myGames.map(g => g.week), [1, 2, 3, 4, 5, 6, 7],
       'the season must actually have later weeks to prove this against');
     assert.ok(season.games.length > myGames.length,
       'and the season file really does also carry other teams\u2019 fixtures');
@@ -419,7 +419,7 @@ describe('event-row accents — what a seasonMilestone accent DOES fail closed o
     const rowFor = game => timed({
       id: `wk${game.week}`, calendar: 'Myles',
       title: `Flag Football: Week ${game.week} — some opponent`,
-      start: `${game.date}T${game.practiceTime}:00-04:00`,
+      start: `${game.date}T${game.practiceTime ?? game.time}:00-04:00`,
       end: `${game.date}T${game.time ?? game.practiceTime}:00-04:00`,
     });
     // Week 1 and week 2 keep the real occurrence ids, because those are the two
