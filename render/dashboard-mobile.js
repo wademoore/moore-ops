@@ -1,5 +1,5 @@
 import {
-  cleanDisplayText, peopleForEvent, collapseUpcomingEvents, selectHorizonEvents,
+  cleanDisplayText, peopleForEvent, collapseUpcomingEvents, upcomingItems, unavailabilityRangeLabel, selectHorizonEvents,
   formatCalendarDate, formatEventTime, eventSubtitleWithoutTime, eventDateKey,
   rangeDetail, horizonPresentation, conversationalMatchDate, sportsSlotLines, V2_LOGOS, flagTeamLogo, flagNextGame, flagEventMark, renderDivisionTable, safeLatest757Card, easternDateKey,
 } from './dashboard-v2.js';
@@ -100,6 +100,10 @@ function todayPage(data) {
     + group('Williamsburg weather', weather(data));
 }
 
+function unavailabilityRow(item) {
+  return `<article class="event-row unavailability-block"><time>All day</time><div><h3>Emma unavailable</h3><p class="secondary">${esc(unavailabilityRangeLabel(item.block))} · ${esc(item.block.type)}</p></div></article>`;
+}
+
 function upcomingPage(data) {
   let accents = [];
   try { accents = selectEventRowAccents(data, { now: data.now }); } catch { /* Optional treatment fails closed. */ }
@@ -109,11 +113,11 @@ function upcomingPage(data) {
     byOccurrence.set(key, byOccurrence.has(key) ? null : accent);
   }
   const days = new Map();
-  for (const item of collapseUpcomingEvents(data.upcomingEvents, data.today)) {
+  for (const item of upcomingItems(data)) {
     if (!days.has(item.startKey)) days.set(item.startKey, []);
     days.get(item.startKey).push(item);
   }
-  return days.size ? [...days].map(([key, items]) => group(dateLabel(key), items.map(item => eventRow(item.event, rangeDetail(item), byOccurrence.get(occurrenceId(item.event)))).join(''))).join('') : note('No upcoming events listed in the next two weeks.');
+  return days.size ? [...days].map(([key, items]) => group(dateLabel(key), items.map(item => item.kind === 'unavailability' ? unavailabilityRow(item) : eventRow(item.event, rangeDetail(item), byOccurrence.get(occurrenceId(item.event)))).join(''))).join('') : note('No upcoming events listed in the next two weeks.');
 }
 
 function standings(rows, flagLogos = false) {

@@ -154,4 +154,24 @@ describe('fetchEmmaUnavailabilityBlocks(today)', () => {
     assert.deepEqual(warnings.map(JSON.parse), [{ event: 'emma_unavailability_calendar_read_failed' }]);
     assert.doesNotMatch(warnings.join('\n'), /sensitive|calendar\.google|@/i);
   });
+
+  // Decision 2026-11-05: a failed House Manager read must not look like "no blocks".
+  const failingAuth = { request: async () => { throw new Error('upstream refused'); } };
+  const failingFetch = (warnings, logs) => fetchEmmaUnavailabilityBlocks(new Date('2026-08-16T12:00:00-04:00'), {
+    getAuth: async () => failingAuth,
+    log: message => logs.push(message),
+    warn: message => warnings.push(message),
+  });
+
+  it('rejects when the default fetch path errors, instead of returning no blocks', async () => {
+    const warnings = [], logs = [];
+    await assert.rejects(failingFetch(warnings, logs), /^Error: Emma unavailability calendar read failed$/);
+    assert.deepEqual(warnings.map(JSON.parse), [{ event: 'emma_unavailability_calendar_read_failed' }]);
+  });
+
+  it('does not log read success when the default fetch path errors', async () => {
+    const warnings = [], logs = [];
+    await failingFetch(warnings, logs).catch(() => {});
+    assert.deepEqual(logs, []);
+  });
 });

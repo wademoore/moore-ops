@@ -560,6 +560,48 @@ function collapseUpcomingEvents(events, today) {
   return collapsed;
 }
 
+function nextDayKey(today) {
+  const next = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1, 12);
+  return `${next.getFullYear()}-${String(next.getMonth() + 1).padStart(2, '0')}-${String(next.getDate()).padStart(2, '0')}`;
+}
+
+function unavailabilityRangeLabel(block) {
+  const start = dateAtNoon(block.startDate);
+  const end = dateAtNoon(block.endDate);
+  if (block.startDate === block.endDate) return formatDate(start, { month: 'short', day: 'numeric' });
+  if (start.getFullYear() !== end.getFullYear()) {
+    return `${formatDate(start, { month: 'short', day: 'numeric', year: 'numeric' })}–${formatDate(end, { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  }
+  const startLabel = formatDate(start, { month: 'short', day: 'numeric' });
+  return `${startLabel}–${start.getMonth() === end.getMonth() ? formatDate(end, { day: 'numeric' }) : formatDate(end, { month: 'short', day: 'numeric' })}`;
+}
+
+/**
+ * Upcoming rows for Emma's unavailability blocks (data.emmaUnavailableBlocks).
+ * A block is listed when its range overlaps the same window collapseUpcomingEvents
+ * applies (1 to 14 days from today). A block already in progress is listed under
+ * the first day of that window. These items are not events and never pass through
+ * event logic.
+ */
+function upcomingUnavailabilityItems(blocks, today) {
+  return (Array.isArray(blocks) ? blocks : [])
+    .filter(Boolean)
+    .filter(block => daysFrom(today, block.endDate) >= 1 && daysFrom(today, block.startDate) <= 14)
+    .map(block => ({
+      kind: 'unavailability',
+      block,
+      startKey: daysFrom(today, block.startDate) < 1 ? nextDayKey(today) : block.startDate,
+      endKey: block.endDate,
+    }));
+}
+
+function upcomingItems(data) {
+  return [
+    ...upcomingUnavailabilityItems(data.emmaUnavailableBlocks, data.today),
+    ...collapseUpcomingEvents(data.upcomingEvents, data.today),
+  ].sort((a, b) => a.startKey.localeCompare(b.startKey));
+}
+
 function rangeDetail(item) {
   if (item.startKey === item.endKey) return eventDetailLine(item.event);
   const start = dateAtNoon(item.startKey);
@@ -716,7 +758,15 @@ function eventRowAccents(data) {
  * instants below, which is what makes 4:00 PM ET exact rather than rounded to
  * the next scheduled generation.
  */
+function renderUnavailabilityRow(item) {
+  return `<div class="upcoming-event upcoming-block">
+      <span class="upcoming-block-mark" aria-hidden="true"></span>
+      <div><strong>Emma unavailable</strong><span>${esc(unavailabilityRangeLabel(item.block))} · ${esc(item.block.type)}</span></div>
+    </div>`;
+}
+
 function renderUpcomingEvent(item, accents) {
+  if (item.kind === 'unavailability') return renderUnavailabilityRow(item);
   const content = `${activityVisual(item.event, 'upcoming-logo')}
       <div><strong>${esc(cleanDisplayText(item.event.title))}</strong><span>${esc(rangeDetail(item))}</span></div>`;
   const accent = accents.get(occurrenceId(item.event));
@@ -734,7 +784,7 @@ function renderUpcomingEvent(item, accents) {
 
 function renderUpcoming(data, latest757Card = safeLatest757Card(data.athletics || {})) {
   const accents = eventRowAccents(data);
-  const allItems = collapseUpcomingEvents(data.upcomingEvents, data.today);
+  const allItems = upcomingItems(data);
   const eventTarget = athleticsCardCount(data, latest757Card) === 1 ? 14 : 12;
   const grouped = new Map();
   for (const item of allItems) {
@@ -757,7 +807,7 @@ function renderUpcoming(data, latest757Card = safeLatest757Card(data.athletics |
   const renderDay = day => {
     const date = dateAtNoon(day.key);
     const days = daysFrom(data.today, day.key);
-    const people = new Set(day.items.map(item => peopleForEvent(item.event)));
+    const people = new Set(day.items.filter(item => item.kind !== 'unavailability').map(item => peopleForEvent(item.event)));
     const person = people.has('both') || (people.has('myles') && people.has('ophelia')) ? 'both' : (people.values().next().value || 'family');
     const eventLines = day.items.map(item => renderUpcomingEvent(item, accents)).join('');
     return `<div class="upcoming-day person-${person}">
@@ -1693,6 +1743,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .upcoming-panel.upcoming-dense .upcoming-events{gap:1px}.upcoming-panel.upcoming-dense .upcoming-event{grid-template-columns:27px minmax(0,1fr);gap:6px}
 .upcoming-panel.upcoming-dense .upcoming-logo{width:27px;height:27px}.upcoming-panel.upcoming-dense .upcoming-event strong{font-size:17px;line-height:1}.upcoming-panel.upcoming-dense .upcoming-event span{font-size:11px;line-height:1}
 .upcoming-panel.upcoming-dense .count-chip{font-size:11px;padding:3px 9px}
+.upcoming-event.upcoming-block{border-left:3px dashed ${COLORS.gold};padding-left:5px;background:rgba(212,154,24,.12)}.upcoming-block-mark{grid-column:1;width:20px;height:20px;box-sizing:border-box;border:2px solid ${COLORS.gold};border-radius:50%;position:relative}.upcoming-block-mark:after{content:"";position:absolute;left:3px;right:3px;top:7px;border-top:2px solid ${COLORS.gold};transform:rotate(-45deg)}
 .upcoming-more{font-size:20px;line-height:1.1;font-weight:700;color:${COLORS.greenDark};padding-top:3px}
 /* A masthead and latest-result line need 32px more in the stacked multi-card layout. */
 .dashboard.has-masthead.athletics-multi .upcoming-panel{height:calc(58% - 68px)}.dashboard.has-masthead.athletics-multi .athletics-panel{height:calc(40% + 70px)}
@@ -2007,6 +2058,8 @@ export {
   analyzeEventSemantics,
   activityCategory,
   collapseUpcomingEvents,
+  upcomingItems,
+  unavailabilityRangeLabel,
   comingUpScore,
   selectComingUpEvent,
   selectComingUpEvents,
