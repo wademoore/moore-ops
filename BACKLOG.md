@@ -46,6 +46,14 @@ not a pre-existing convention being written down.
 
 ## Work
 
+### Emma unavailability parser: a title that deviates yields zero blocks silently
+
+`digest/emmaUnavailabilityParser.js` matches the event title with `TITLE_RE`
+(`Emma: <type> — Unavailable`, optional bracketed qualifier). An event whose
+title deviates, for example a hyphen typed in place of the em dash, does not
+match, produces no block, and nothing reports it: the House Manager read
+succeeds and the result is the same as no blocks. Entry only; no fix yet.
+
 ### Remove the leftover in-house PB rule paraphrase from CLAUDE.md
 
 The in-house meet PB rule lives in the moore-ops-updater skill. CLAUDE.md

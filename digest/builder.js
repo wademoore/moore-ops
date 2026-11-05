@@ -111,7 +111,7 @@ import { buildGmailHits, buildActivityCommsLines } from './gmailParser.js';
 import { parseWeeklyPriorities } from './weeklyPrioritiesParser.js';
 // TEMPORARY migration shim — delete with the familySpotlightConfig line in P5.
 import { toLegacyFamilySpotlightConfig } from './legacySpotlightCompat.js';
-import { fetchEmmaUnavailabilityBlocks } from './emmaUnavailabilityParser.js';
+import { fetchEmmaUnavailabilityBlocks, HOUSE_MANAGER_CALENDAR_ID } from './emmaUnavailabilityParser.js';
 import { generateTasks } from './generateTasks.js';
 import { attachFlagFootballIdentity, collectFlagFootballGaps } from './flagFootballIdentity.js';
 
@@ -242,7 +242,7 @@ function buildBagPrepLookahead(allResolvedEvents, today) {
  * @param {object|null}  [params.routineAnchorsData] Routine anchors (data/routine-anchors.json); null on file error — see digest/routineAnchorsParser.js. School-type anchors suppressed on 🏫 No School / Early Release days; caregiver-type anchors (a `caregiver` field) suppressed by emmaUnavailabilityParser.js blocks. No early-dismissal time computation.
  * @returns {object}     digestData
  */
-export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, results757, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, specialEventsData, holidayThemesData, centersActionCues = [], calendarFetchFailures }) {
+export async function buildDigest({ rawEvents, emails, docs, banner = null, rawEvents14d = null, config, flagFootballData, pbRecords, swimResults, wavesSeasonData, vpsuRankings, v2Results, annotations, results757, sharksData, routineAnchorsData, emmaUnavailableBlocks, kidsProfile, specialEventsData, holidayThemesData, centersActionCues = [], calendarFetchFailures, fetchEmmaBlocks = fetchEmmaUnavailabilityBlocks }) {
   // Load sports data from local data/ files when not injected by the caller.
   // Params are left as optional so tests can inject fixture objects directly.
   // Passing null explicitly (e.g. flagFootballData: null) is respected as-is —
@@ -435,10 +435,14 @@ export async function buildDigest({ rawEvents, emails, docs, banner = null, rawE
   if (emmaUnavailableBlocks === undefined) {
     emmaUnavailableBlocks = [];
     try {
-      const euResult = await fetchEmmaUnavailabilityBlocks(today);
+      const euResult = await fetchEmmaBlocks(today);
       emmaUnavailableBlocks = euResult.emmaUnavailableBlocks;
     } catch (err) {
       console.warn('[builder:buildDigest] emmaUnavailableBlocks fetch failed — continuing:', err.message);
+      calendarFetchFailures = [
+        ...calendarFetchFailures,
+        { calendarName: 'House Manager', calendarId: HOUSE_MANAGER_CALENDAR_ID, message: err.message },
+      ].sort((a, b) => a.calendarName.localeCompare(b.calendarName));
     }
   }
 

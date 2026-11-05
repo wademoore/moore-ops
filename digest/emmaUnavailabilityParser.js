@@ -8,10 +8,10 @@
  */
 
 import { getAuthClient } from '../auth.js';
-import { fetchCalendarEvents } from '../calendar.js';
+import { fetchCalendarEventsStrict } from '../calendar.js';
 import { toDateKey } from './dateUtils.js';
 
-const HOUSE_MANAGER_CALENDAR_ID = '690a345d398f5a01ba5365c977b7d90a97089cd498e94fd48ff934974633f27b@group.calendar.google.com';
+export const HOUSE_MANAGER_CALENDAR_ID = '690a345d398f5a01ba5365c977b7d90a97089cd498e94fd48ff934974633f27b@group.calendar.google.com';
 
 // ---------------------------------------------------------------------------
 // Pure helpers — exported for unit testing
@@ -78,7 +78,7 @@ export function parseEmmaUnavailabilityBlocks(events) {
  */
 export async function fetchEmmaUnavailabilityBlocks(today, {
   getAuth = getAuthClient,
-  fetchEvents = fetchCalendarEvents,
+  fetchEvents = fetchCalendarEventsStrict,
   log = message => console.log(message),
   warn = message => console.warn(message),
 } = {}) {
