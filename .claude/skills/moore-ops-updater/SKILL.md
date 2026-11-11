@@ -77,6 +77,11 @@ under their own conventions elsewhere in this file, and a raw file carrying a ti
 `Q` suffix is not a reason to put that time on a `dq: true` row — see the
 `swim-results.json` DQ convention, where such a row takes `seconds: null`.
 
+**Decided in conversation 2026-11-10 (Wade, standing for the season):** for the 757swim season,
+results taken from app screens are the source of record while no Hytek file has been posted; a
+raw Hytek file, if one appears, outranks them under the rule above. Reason: the club has posted
+no Hytek files this season.
+
 ---
 
 ## CRITICAL: pb-records.json key construction
