@@ -395,6 +395,8 @@ game, including playoff rows recorded before that date.
 Clarified by Wade in conversation on 2026-11-11, not a pre-existing convention: `"consolation"`
 rows count too. All of the games count.
 
+Why, as Wade stated it on 2026-11-11: the league records it this way on its site.
+
 ### Unsupported
 
 A **forfeit** has no representation in this file. `sharks-soccer.json` carries a `forfeit`
