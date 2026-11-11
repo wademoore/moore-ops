@@ -77,10 +77,15 @@ under their own conventions elsewhere in this file, and a raw file carrying a ti
 `Q` suffix is not a reason to put that time on a `dq: true` row — see the
 `swim-results.json` DQ convention, where such a row takes `seconds: null`.
 
-**Decided in conversation 2026-11-10 (Wade, standing for the season):** for the 757swim season,
-results taken from app screens are the source of record while no Hytek file has been posted; a
-raw Hytek file, if one appears, outranks them under the rule above. Reason: the club has posted
-no Hytek files this season.
+**Decided in conversation 2026-11-10 (Wade):** for a 757swim meet that has a Hytek file, the
+Hytek data is the source of record and outranks Meet Mobile screenshots and any hand-entered
+row for the same swim, under the rule above. For a 757swim meet with no Hytek file, Meet Mobile
+screens are the fallback source of record. The fallback applies per meet, not season-wide. It
+replaces the season-wide form Wade set earlier the same day, before he said he had files for
+Catch 'Em All #1 and #2. As of that date Catch 'Em All #3 (Nov 8) has no file. Reason, as Wade
+stated it: the Hytek export is the club's own raw record, and the rule above already ranks raw
+meet files above parsed results above hand-entered records. Not independently verified in the
+session that recorded it.
 
 ---
 
@@ -341,7 +346,7 @@ Read from the eligibility filter and the record/standings loops in `parseFlagFoo
 | `homeScore` | points scored by the `home` side — a number |
 | `awayScore` | points scored by the `away` side — a number |
 | `status` | `"final"` marks the result as recorded; `"scheduled"` and `"rescheduled"` are the other values in the file |
-| `type` | `"regular"` is what the record counts; the derived division table counts `"regular"` and `"playoff"` |
+| `type` | `"regular"` is what the record counts; the derived division table counts `"regular"`, `"playoff"` and `"consolation"` |
 
 The filter in `parseFlagFootball()` admits a game only when `type` is `"regular"`, `status`
 is `"final"`, the row is not marked `friendly`, and **both** scores are numbers. A
@@ -390,8 +395,12 @@ investigate, not a result to assume is expected.
 Decided in conversation by Wade on 2026-11-10, not a pre-existing convention: every flag
 football game with `type` `"playoff"` counts in the derived division table
 (`buildFlagFootballDivisionTable()` in `digest/divisionStandings.js`) the same as a regular
-game, including playoff rows recorded before that date. A `"consolation"` row has a different
-`type`.
+game, including playoff rows recorded before that date.
+
+Clarified by Wade in conversation on 2026-11-11, not a pre-existing convention: `"consolation"`
+rows count too. All of the games count.
+
+Why, as Wade stated it on 2026-11-11: the league records it this way on its site.
 
 ### Unsupported
 
