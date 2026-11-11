@@ -326,7 +326,7 @@ describe('flag football team identity', () => {
     assert.equal(athletics.lastResult, '', 'no game has been played, so there is no last result');
   });
 
-  it('carries all six of our scheduled events, with Week 1 typed so it cannot affect the record', async () => {
+  it('carries all of our scheduled events, with Week 1 typed so it cannot affect the record', async () => {
     const data = await readJson('data/flag-football.json');
     const fall = data.seasons.find(s => s.seasonId === 'fall-2026');
     const MY = 8009182;
@@ -351,6 +351,7 @@ describe('flag football team identity', () => {
       { week: 4, date: '2026-10-04', time: '14:00', type: 'regular',  field: '3B', homeAway: 'A', opponent: 8069066 },
       { week: 5, date: '2026-10-18', time: '14:00', type: 'regular',  field: '3B', homeAway: 'A', opponent: 8088488 },
       { week: 6, date: '2026-10-25', time: '12:00', type: 'regular',  field: '3A', homeAway: 'H', opponent: 8108154 },
+      { week: 7, date: '2026-11-01', time: '12:00', type: 'consolation', field: '4B', homeAway: 'A', opponent: 8113277 },
     ]);
 
     // Week 1 is a practice, not a game. Typed so it is excluded structurally
@@ -363,7 +364,7 @@ describe('flag football team identity', () => {
       fall.games.filter(g => g.type === 'regular' && (g.home === MY || g.away === MY)).length, 5,
       'exactly five of our six events are fixtures');
     // The rest of the division, now that the league has published it.
-    assert.equal(fall.games.length, 21, 'one practice plus all 20 published regular-season fixtures');
+    assert.equal(fall.games.length, 26, 'one practice, 20 regular-season fixtures and the five Nov 1 postseason games');
     assert.equal(fall.games.filter(g => g.type === 'regular').length, 20);
     assert.equal(fall.games.filter(g => g.type === 'practice').length, 1,
       'only our own Meet & Greet; the league publishes no other team\u2019s practices');
@@ -482,7 +483,7 @@ describe('flag football team identity', () => {
     assert.equal(fall.seasonEnd, cfg.flagFootball.seasonEnd,
       'the schedule file and the visibility window must name the same end date');
     const lastGame = fall.games.map(g => g.date).sort().at(-1);
-    assert.equal(lastGame, '2026-10-25');
+    assert.equal(lastGame, '2026-11-01');
     assert.ok(cfg.flagFootball.seasonEnd > lastGame,
       'the window deliberately outlives the last published week');
   });
