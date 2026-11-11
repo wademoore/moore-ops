@@ -200,7 +200,7 @@ export const SOCCER_SOURCE =
 export const FLAG_FOOTBALL_SOURCE =
   'derived from recorded results in data/flag-football.json (games)';
 
-const FLAG_FOOTBALL_COUNTED_TYPES = new Set(['regular', 'playoff']);
+const FLAG_FOOTBALL_COUNTED_TYPES = new Set(['regular', 'playoff', 'consolation']);
 
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -667,7 +667,7 @@ export function buildFlagFootballDivisionTable(season) {
         date: game.date,
         hasResult,
         excused: game.status === 'rescheduled',
-        postseason: game.type === 'playoff',
+        postseason: game.type !== 'regular',
         sides: hasResult
           ? [{ teamId: home, scored: game.homeScore, conceded: game.awayScore },
              { teamId: away, scored: game.awayScore, conceded: game.homeScore }]

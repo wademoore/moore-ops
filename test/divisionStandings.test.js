@@ -1138,10 +1138,11 @@ describe('flag football — playoff games count in the derived table', () => {
     ]);
   });
 
-  it('a consolation game is not a playoff game and still does not count', () => {
+  it('a consolation game counts the same as a regular game', () => {
     const table = buildFlagFootballDivisionTable(seasonOf([...REGULAR, game('consolation', '2026-11-01', 'c', 20, 'd', 0)]));
-    assert.equal(rowOf(table, 'c').played, 1);
-    assert.equal(rowOf(table, 'd').played, 1);
+    assert.deepEqual([rowOf(table, 'c'), rowOf(table, 'd')].map(r => [r.played, r.wins, r.losses, r.scoreFor, r.scoreAgainst]),
+      [[2, 1, 0, 27, 7], [2, 0, 1, 7, 27]]);
+    assert.equal(table.regularSeasonComplete, true);
   });
 
   it('an unplayed playoff row adds no result, and a played one does not change regularSeasonComplete', () => {
@@ -1152,6 +1153,8 @@ describe('flag football — playoff games count in the derived table', () => {
     assert.equal(rowOf(scheduled, 'a').played, 1);
     const played = buildFlagFootballDivisionTable(seasonOf([...REGULAR, game('playoff', '2026-11-01', 'b', 25, 'a', 24)]));
     assert.equal(played.regularSeasonComplete, true);
+    const consolation = buildFlagFootballDivisionTable(seasonOf([...REGULAR, game('consolation', '2026-11-01', 'c', null, 'd', null, { status: 'scheduled' })]));
+    assert.equal(consolation.regularSeasonComplete, true);
   });
 
   it('a final playoff row with no scores is an unposted score, not a result', () => {
@@ -1174,12 +1177,12 @@ describe('flag football — playoff games count in the derived table', () => {
   });
 
   it('every playoff game already recorded in the shipped file is counted', () => {
-    const seasons = flagSeasons.filter(s => s.games.some(g => g.type === 'playoff'));
+    const seasons = flagSeasons.filter(s => s.games.some(g => g.type === 'playoff' || g.type === 'consolation'));
     assert.ok(seasons.length > 0);
     for (const season of seasons) {
       const table = buildFlagFootballDivisionTable(season);
       assert.equal(table.status, STANDINGS_STATUS.AVAILABLE, season.seasonId);
-      const scored = g => (g.type === 'regular' || g.type === 'playoff') && !g.friendly && g.status === 'final'
+      const scored = g => (g.type === 'regular' || g.type === 'playoff' || g.type === 'consolation') && !g.friendly && g.status === 'final'
         && typeof g.homeScore === 'number' && typeof g.awayScore === 'number';
       const key = ref => String(ref);
       for (const team of season.teams) {
@@ -1189,7 +1192,7 @@ describe('flag football — playoff games count in the derived table', () => {
         assert.equal(row.played, mine.length, `${season.seasonId} ${id}`);
         assert.equal(row.scoreFor, mine.reduce((n, g) => n + (key(g.home) === key(id) ? g.homeScore : g.awayScore), 0), `${season.seasonId} ${id}`);
       }
-      const playoffs = season.games.filter(g => g.type === 'playoff' && scored(g));
+      const playoffs = season.games.filter(g => g.type !== 'regular' && scored(g));
       assert.ok(playoffs.length > 0, season.seasonId);
     }
   });
