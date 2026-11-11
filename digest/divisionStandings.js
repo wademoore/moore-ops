@@ -200,6 +200,8 @@ export const SOCCER_SOURCE =
 export const FLAG_FOOTBALL_SOURCE =
   'derived from recorded results in data/flag-football.json (games)';
 
+const FLAG_FOOTBALL_COUNTED_TYPES = new Set(['regular', 'playoff']);
+
 const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/;
 
 /** A team reference folded to a comparable key; null and undefined both vanish. */
@@ -273,7 +275,7 @@ function rankRows(rows, compare) {
  * @param {string|null} spec.divisionLabel
  * @param {string} spec.source
  * @param {Array}  spec.teams     [{ teamId, name, shortName, coach, isMe }]
- * @param {Array}  spec.fixtures  [{ date, hasResult, unverified, excused, sides: [{teamId, scored, conceded}] }]
+ * @param {Array}  spec.fixtures  [{ date, hasResult, unverified, excused, postseason, sides: [{teamId, scored, conceded}] }]
  * @param {Function} spec.decorate  row => extra fields (leaguePoints/winPercentage)
  * @param {Function} spec.compare   (a, b) => negative when a ranks ahead of b
  * @param {boolean} [spec.tracksVerification]  Whether the sport records
@@ -337,7 +339,7 @@ function buildDivisionTable({ sport, divisionLabel, source, teams, fixtures, dec
   // later without a result takes the state away again. An unverified result is
   // a recorded result for the table but not a confirmed one, so it does not
   // complete the season.
-  const countedFixtures = fixtures.filter(fixture => !fixture.excused);
+  const countedFixtures = fixtures.filter(fixture => !fixture.excused && !fixture.postseason);
   const regularSeasonComplete = countedFixtures.length > 0
     && countedFixtures.every(fixture => fixture.hasResult && !fixture.unverified);
 
@@ -583,29 +585,6 @@ function flagFootballCompare(a, b) {
 /**
  * The flag football division table, derived from the season's own game rows.
  *
- * Fixture scope matches parseFlagFootball()'s standings loop: regular,
- * non-friendly rows, a result recorded when the row is final and carries two
- * numbers. That is the same eligibility predicate, so on any row both can read
- * the two agree about which games have been played.
- *
- * They are NOT the same filter, and both differences are worth naming rather
- * than rounding off — an earlier version of this paragraph named one of them
- * and called it "the" difference.
- *
- * First, this one requires a readable date and fails the whole table closed
- * when a row lacks one, where parseFlagFootball's filter has no date check and
- * counts that row. So a season carrying a malformed date yields a legacy
- * `standings` array and NO derived table — visibly different rather than
- * quietly different, which is the point of failing closed.
- *
- * Second, `isScore` here requires Number.isFinite where that filter requires
- * only `typeof === 'number'`. A NaN score is a recorded result to the parser,
- * which compares it and falls to its tie branch, and an unposted fixture here.
- * Unreachable from JSON, reachable from a hand-built season object.
- *
- * A yet earlier version said the two "can never disagree", which was an
- * unfalsifiable claim about code that already had a gate the other side lacked.
- *
  * No verification field is read, and none exists in this sport's data. The
  * `unverified` marker is soccer's alone, so this table reports unverifiedCount
  * as null rather than zero — decision (d) of 2026-09-19 above.
@@ -651,7 +630,7 @@ export function buildFlagFootballDivisionTable(season) {
 
     const fixtures = [];
     for (const game of season.games || []) {
-      if (game?.type !== 'regular' || game.friendly) continue;
+      if (!FLAG_FOOTBALL_COUNTED_TYPES.has(game?.type) || game.friendly) continue;
       const home = keyOf(game.home);
       const away = keyOf(game.away);
       if (home === null || !seen.has(home)) return fail(STANDINGS_UNAVAILABLE_REASON.UNRESOLVED_TEAM, game.home ?? null);
@@ -674,6 +653,7 @@ export function buildFlagFootballDivisionTable(season) {
         date: game.date,
         hasResult,
         excused: game.status === 'rescheduled',
+        postseason: game.type === 'playoff',
         sides: hasResult
           ? [{ teamId: home, scored: game.homeScore, conceded: game.awayScore },
              { teamId: away, scored: game.awayScore, conceded: game.homeScore }]

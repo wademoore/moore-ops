@@ -341,7 +341,7 @@ Read from the eligibility filter and the record/standings loops in `parseFlagFoo
 | `homeScore` | points scored by the `home` side — a number |
 | `awayScore` | points scored by the `away` side — a number |
 | `status` | `"final"` marks the result as recorded; `"scheduled"` and `"rescheduled"` are the other values in the file |
-| `type` | `"regular"` is what the record and the standings count |
+| `type` | `"regular"` is what the record counts; the derived division table counts `"regular"` and `"playoff"` |
 
 The filter in `parseFlagFootball()` admits a game only when `type` is `"regular"`, `status`
 is `"final"`, the row is not marked `friendly`, and **both** scores are numbers. A
@@ -384,6 +384,18 @@ it green, which is the evidence for the broader claim that nothing else in the s
 to this season’s scoreboard. That simulation is not committed, so it is one measurement
 rather than a standing guard: a red suite after a flag football entry is a finding to
 investigate, not a result to assume is expected.
+
+### Playoff games count in the derived division table (decided 2026-11-10)
+
+Decided in conversation by Wade on 2026-11-10, not a pre-existing convention: every flag
+football game with `type` `"playoff"` counts in the derived division table
+(`buildFlagFootballDivisionTable()` in `digest/divisionStandings.js`) the same as a regular
+game, including playoff rows recorded before that date. A `"consolation"` row has a different
+`type`.
+
+Record a postseason matchday as a whole, the same as a regular week: every game the division
+plays that day in one pass. Recording one playoff game alone leaves the table built from a
+partial day.
 
 ### Unsupported
 
