@@ -341,7 +341,7 @@ Read from the eligibility filter and the record/standings loops in `parseFlagFoo
 | `homeScore` | points scored by the `home` side — a number |
 | `awayScore` | points scored by the `away` side — a number |
 | `status` | `"final"` marks the result as recorded; `"scheduled"` and `"rescheduled"` are the other values in the file |
-| `type` | `"regular"` is what the record counts; the derived division table counts `"regular"` and `"playoff"` |
+| `type` | `"regular"` is what the record counts; the derived division table counts `"regular"`, `"playoff"` and `"consolation"` |
 
 The filter in `parseFlagFootball()` admits a game only when `type` is `"regular"`, `status`
 is `"final"`, the row is not marked `friendly`, and **both** scores are numbers. A
@@ -390,8 +390,10 @@ investigate, not a result to assume is expected.
 Decided in conversation by Wade on 2026-11-10, not a pre-existing convention: every flag
 football game with `type` `"playoff"` counts in the derived division table
 (`buildFlagFootballDivisionTable()` in `digest/divisionStandings.js`) the same as a regular
-game, including playoff rows recorded before that date. A `"consolation"` row has a different
-`type`.
+game, including playoff rows recorded before that date.
+
+Clarified by Wade in conversation on 2026-11-11, not a pre-existing convention: `"consolation"`
+rows count too. All of the games count.
 
 ### Unsupported
 
