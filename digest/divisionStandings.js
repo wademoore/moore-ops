@@ -585,6 +585,20 @@ function flagFootballCompare(a, b) {
 /**
  * The flag football division table, derived from the season's own game rows.
  *
+ * First, this one requires a readable date and fails the whole table closed
+ * when a row lacks one, where parseFlagFootball's filter has no date check and
+ * counts that row. So a season carrying a malformed date yields a legacy
+ * `standings` array and NO derived table — visibly different rather than
+ * quietly different, which is the point of failing closed.
+ *
+ * Second, `isScore` here requires Number.isFinite where that filter requires
+ * only `typeof === 'number'`. A NaN score is a recorded result to the parser,
+ * which compares it and falls to its tie branch, and an unposted fixture here.
+ * Unreachable from JSON, reachable from a hand-built season object.
+ *
+ * A yet earlier version said the two "can never disagree", which was an
+ * unfalsifiable claim about code that already had a gate the other side lacked.
+ *
  * No verification field is read, and none exists in this sport's data. The
  * `unverified` marker is soccer's alone, so this table reports unverifiedCount
  * as null rather than zero — decision (d) of 2026-09-19 above.

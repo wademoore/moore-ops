@@ -393,10 +393,6 @@ football game with `type` `"playoff"` counts in the derived division table
 game, including playoff rows recorded before that date. A `"consolation"` row has a different
 `type`.
 
-Record a postseason matchday as a whole, the same as a regular week: every game the division
-plays that day in one pass. Recording one playoff game alone leaves the table built from a
-partial day.
-
 ### Unsupported
 
 A **forfeit** has no representation in this file. `sharks-soccer.json` carries a `forfeit`
