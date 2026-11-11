@@ -79,7 +79,7 @@
           { "matchNumber": 675, "date": "2026-10-31", "time": "13:30", "homeTeam": "Baystars FC TASL B2015/16 Tsunami", "awayTeam": "VIP United TASL B2015/2016 Red (VA)", "venue": "Woodville Park - Wood 7", "played": true, "homeScore": 4, "awayScore": 4 },
           { "matchNumber": 672, "date": "2026-10-31", "time": "14:00", "homeTeam": "Beach FC B2015/16 Anderson Waves", "awayTeam": "Chesapeake SC CSC TASL B2015/2016 Galaxy Gold (VA)", "venue": "Hampton Roads Soccer Complex - 9v9 #8b", "played": true, "homeScore": 2, "awayScore": 2 },
 
-          { "matchNumber": 664, "date": "2026-11-07", "time": "10:30", "homeTeam": "Beach FC B2015/16 Perkins Dragons", "awayTeam": "Beach FC B2015/16 Anderson Waves", "venue": "Hampton Roads Soccer Complex - 9v9 #6a", "played": false, "homeScore": null, "awayScore": null },
+          { "matchNumber": 664, "date": "2026-11-07", "time": "10:30", "homeTeam": "Beach FC B2015/16 Perkins Dragons", "awayTeam": "Beach FC B2015/16 Anderson Waves", "venue": "Hampton Roads Soccer Complex - 9v9 #6a", "played": true, "homeScore": 2, "awayScore": 1 },
           { "matchNumber": 673, "date": "2026-11-07", "time": "10:00", "homeTeam": "Beach FC B2015/16 Brammer Breakers", "awayTeam": "Tidewater Sharks Premier White", "venue": "Hampton Roads Soccer Complex - 9v9 #6b", "address": "2276 Recreation Dr, Virginia Beach, VA 23456", "note": "Same day as W&M Football home game vs Lafayette — check family calendar for conflicts.", "played": false, "homeScore": null, "awayScore": null }
         ]
       }
