@@ -8,6 +8,7 @@
 
 import { buildDigest, generateTasks } from './builder.js';
 import { attachFetchFailures } from '../calendar.js';
+import { fetchEmmaUnavailabilityBlocks } from './emmaUnavailabilityParser.js';
 import { isSchoolDay, getRotation } from './schoolRotation.js';
 import { startOfTodayET } from './dateUtils.js';
 import { selectNowNext } from './nowNextSelector.js';
@@ -746,7 +747,7 @@ describe('buildDigest — calendar fetch failures', () => {
   const withFailures = (events, failures) => attachFetchFailures(events, failures);
 
   it('defaults to an empty list when the event arrays carry nothing', async () => {
-    const result = await buildDigest({ rawEvents: [], emails: [], docs: {}, banner: null, ...SPORTS_PARAMS });
+    const result = await buildDigest({ rawEvents: [], emails: [], docs: {}, banner: null, ...SPORTS_PARAMS, emmaUnavailableBlocks: [] });
     nodeAssert.deepEqual(result.calendarFetchFailures, []);
     nodeAssert.equal(result.flags.find(f => f.id === 'calendar-fetch-failure'), undefined);
   });
@@ -754,7 +755,7 @@ describe('buildDigest — calendar fetch failures', () => {
   it('reads failures off the 72h event array and exposes them on digestData', async () => {
     const result = await buildDigest({
       rawEvents: withFailures([], [FAILURE]),
-      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS, emmaUnavailableBlocks: [],
     });
     nodeAssert.equal(result.calendarFetchFailures.length, 1);
     nodeAssert.equal(result.calendarFetchFailures[0].calendarName, 'WJCC Schools');
@@ -763,7 +764,7 @@ describe('buildDigest — calendar fetch failures', () => {
   it('raises the red flag so an unreadable calendar is not read as a clear day', async () => {
     const result = await buildDigest({
       rawEvents: withFailures([], [FAILURE]),
-      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS, emmaUnavailableBlocks: [],
     });
     const flag = result.flags.find(f => f.id === 'calendar-fetch-failure');
     nodeAssert.ok(flag, 'expected the calendar-fetch-failure flag');
@@ -776,7 +777,7 @@ describe('buildDigest — calendar fetch failures', () => {
     const result = await buildDigest({
       rawEvents:    withFailures([], [FAILURE]),
       rawEvents14d: withFailures([], [FAILURE, other]),
-      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS, emmaUnavailableBlocks: [],
     });
     nodeAssert.deepEqual(
       result.calendarFetchFailures.map(f => f.calendarName),
@@ -788,7 +789,47 @@ describe('buildDigest — calendar fetch failures', () => {
     const result = await buildDigest({
       rawEvents: withFailures([], [FAILURE]),
       calendarFetchFailures: [],
-      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+      emails: [], docs: {}, banner: null, ...SPORTS_PARAMS, emmaUnavailableBlocks: [],
+    });
+    nodeAssert.deepEqual(result.calendarFetchFailures, []);
+    nodeAssert.equal(result.flags.find(f => f.id === 'calendar-fetch-failure'), undefined);
+  });
+
+  // Decision 2026-11-05: a failed House Manager read must not look like "no blocks".
+  const failingHouseManagerRead = today => fetchEmmaUnavailabilityBlocks(today, {
+    getAuth: async () => ({ request: async () => { throw new Error('upstream refused'); } }),
+    warn: () => {},
+  });
+  const quietWarn = fn => async () => {
+    const original = console.warn;
+    console.warn = () => {};
+    try { await fn(); } finally { console.warn = original; }
+  };
+
+  it('raises the red calendar-fetch-failure flag when the House Manager read errors', quietWarn(async () => {
+    const result = await buildDigest({
+      rawEvents: [], emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+      fetchEmmaBlocks: failingHouseManagerRead,
+    });
+    const flag = result.flags.find(f => f.id === 'calendar-fetch-failure');
+    nodeAssert.ok(flag, 'expected the calendar-fetch-failure flag');
+    nodeAssert.equal(flag.level, 'red');
+    nodeAssert.match(flag.body, /House Manager/);
+    nodeAssert.deepEqual(result.calendarFetchFailures.map(f => f.calendarName), ['House Manager']);
+  }));
+
+  it('keeps a family-calendar failure alongside the House Manager failure', quietWarn(async () => {
+    const result = await buildDigest({
+      rawEvents: withFailures([], [FAILURE]), emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+      fetchEmmaBlocks: failingHouseManagerRead,
+    });
+    nodeAssert.deepEqual(result.calendarFetchFailures.map(f => f.calendarName), ['House Manager', 'WJCC Schools']);
+  }));
+
+  it('raises nothing when the House Manager read succeeds with no blocks', async () => {
+    const result = await buildDigest({
+      rawEvents: [], emails: [], docs: {}, banner: null, ...SPORTS_PARAMS,
+      fetchEmmaBlocks: async () => ({ emmaUnavailableBlocks: [] }),
     });
     nodeAssert.deepEqual(result.calendarFetchFailures, []);
     nodeAssert.equal(result.flags.find(f => f.id === 'calendar-fetch-failure'), undefined);

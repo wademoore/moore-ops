@@ -327,6 +327,7 @@ describe('flag football team identity', () => {
   });
 
   it('carries our scheduled events, with Week 1 typed so it cannot affect the record', async () => {
+  it('carries all of our scheduled events, with Week 1 typed so it cannot affect the record', async () => {
     const data = await readJson('data/flag-football.json');
     const fall = data.seasons.find(s => s.seasonId === 'fall-2026');
     const MY = 8009182;
@@ -368,6 +369,7 @@ describe('flag football team identity', () => {
     assert.equal(fall.games.filter(g => g.type === 'regular' || g.type === 'practice').length, 21, 'one practice plus all 20 published regular-season fixtures');
     assert.equal(fall.games.filter(g => g.type === 'playoff' || g.type === 'consolation').length, 4,
       'the week 7 postseason results recorded so far, none of them regular-season fixtures');
+    assert.equal(fall.games.length, 26, 'one practice, 20 regular-season fixtures and the five Nov 1 postseason games');
     assert.equal(fall.games.filter(g => g.type === 'regular').length, 20);
     assert.equal(fall.games.filter(g => g.type === 'practice').length, 1,
       'only our own Meet & Greet; the league publishes no other team\u2019s practices');
@@ -490,6 +492,9 @@ describe('flag football team identity', () => {
     assert.equal(lastGame, '2026-10-25');
     const lastRecorded = fall.games.map(g => g.date).sort().at(-1);
     assert.ok(cfg.flagFootball.seasonEnd > lastRecorded,
+    const lastGame = fall.games.map(g => g.date).sort().at(-1);
+    assert.equal(lastGame, '2026-11-01');
+    assert.ok(cfg.flagFootball.seasonEnd > lastGame,
       'the window deliberately outlives the last published week');
   });
 

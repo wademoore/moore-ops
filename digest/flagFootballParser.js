@@ -11,17 +11,14 @@ import { buildFlagFootballDivisionTable } from './divisionStandings.js';
 
 // Game types that are scheduled calendar entries but are not fixtures: they
 // have no opponent. Two consumers read it: nextFlagGame below, and the
-// `first-game` branch of selectSeasonMilestone(). The record and the standings
-// exclude practices via their own `type === 'regular'` filter, so do not read
-// this constant as the thing keeping practices out of those.
+// `first-game` branch of selectSeasonMilestone().
 //
 // Stated as a deny-list rather than an allow-list so that no existing type
 // ('regular', 'playoff', 'consolation') changes behaviour when a new one is
 // added — the same reasoning nextFlagGame was written with.
 export const NON_GAME_TYPES = new Set(['practice']);
 
-// Postseason game types. The last result may be one of these; the record and
-// the division table never are.
+// Postseason game types. The last result may be one of these.
 const POSTSEASON_TYPES = new Set(['playoff', 'consolation']);
 
 /**
@@ -135,9 +132,9 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   // ── Last result ──────────────────────────────────────────────────────────────
   // DECIDED WITH WADE, 2026-10-27 — not a pre-existing convention. The last
   // result is the most recent game played, postseason included, so the wall does
-  // not freeze on the last regular-season result through the playoffs. Only this
-  // field widens: the record and the standings above and below keep the
-  // regular-only `eligibleGames`. Practices and friendlies stay out.
+  // not freeze on the last regular-season result through the playoffs. The
+  // record and the legacy standings above and below keep `eligibleGames`.
+  // Practices and friendlies stay out.
   //
   // An allow-list here, unlike NON_GAME_TYPES: an unrecognised type must not
   // silently become a "result". A postseason result carries a suffix naming it,

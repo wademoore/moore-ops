@@ -1033,6 +1033,19 @@
                                           "label":  "semifinal",
                                           "field":  "3B",
                                           "status":  "final"
+                                      },
+                                      {
+                                          "week":  7,
+                                          "date":  "2026-11-01",
+                                          "time":  "16:00",
+                                          "away":  8117740,
+                                          "awayScore":  24,
+                                          "home":  8108154,
+                                          "homeScore":  25,
+                                          "type":  "playoff",
+                                          "label":  "championship",
+                                          "field":  "3A",
+                                          "status":  "final"
                                       }
                                   ]
                     }

@@ -290,13 +290,12 @@ describe('parseFlagFootball', () => {
   });
 
   // ── Last result includes the postseason — decision of 2026-10-27 ───────────
-  // Not a pre-existing convention. The record and the division table stay
-  // regular-only; only the last result widens.
+  // Not a pre-existing convention.
   const withGames = games => ({ seasons: [{ ...ID_FIXTURE.seasons[0], games }] });
   const REG = { type: 'regular', status: 'final', date: '2026-09-20', home: 8009182, away: 8070749, homeScore: 20, awayScore: 6 };
   const OCT_26 = new Date('2026-10-26T12:00:00');
 
-  it('a later playoff game is the last result, named by its label, and moves neither record nor table', () => {
+  it('a later playoff game is the last result, named by its label, and moves neither the record nor the legacy standings', () => {
     const base = withGames([REG]);
     const post = withGames([REG,
       { type: 'playoff', label: 'semifinal', status: 'final', date: '2026-10-25', home: 8009182, away: 8070749, homeScore: 0, awayScore: 40 }]);
@@ -307,7 +306,10 @@ describe('parseFlagFootball', () => {
     assert.equal(result.lastOpponent, 'Ravens');
     assert.equal(result.seasonRecord, without.seasonRecord, 'the W-L record is regular-season only');
     assert.deepEqual(result.standings, without.standings, 'the legacy standings are regular-season only');
-    assert.deepEqual(result.divisionTable, without.divisionTable, 'the division table is regular-season only');
+    const mine = table => table.rows.find(r => r.isMe);
+    assert.deepEqual([mine(without.divisionTable).played, mine(without.divisionTable).losses], [1, 0]);
+    assert.deepEqual([mine(result.divisionTable).played, mine(result.divisionTable).losses], [2, 1],
+      'the derived division table counts the playoff game');
   });
 
   it('a postseason game without a label is named by its type', () => {
@@ -871,6 +873,8 @@ describe('selectSeasonMilestone', () => {
     // Week 7 is the postseason (our consolation game); still never a milestone, as the loop below checks.
     assert.deepEqual(weeks, [1, 2, 3, 4, 5, 6, 7]);
     assert.equal(season.games.length, 25, 'and the season really does carry other teams\' rows too');
+    assert.deepEqual(weeks, [1, 2, 3, 4, 5, 6, 7]);
+    assert.equal(season.games.length, 26, 'and the season really does carry other teams\' rows too');
     const selected = SEASON_MILESTONES.map(m => selectSeasonMilestone(REAL, 'fall-2026', m).row.week);
     assert.deepEqual(selected, [1, 2]);
     for (const week of [3, 4, 5, 6, 7]) assert.ok(!selected.includes(week), `week ${week} must never be a milestone`);
