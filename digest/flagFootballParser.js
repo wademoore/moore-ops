@@ -87,7 +87,7 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   const seasonTeamName =
     (typeof season.teamName === 'string' ? season.teamName.trim() : '') || null;
 
-  // Base filter: final regular non-friendly games with two real scores.
+  // Base filter: final regular or postseason non-friendly games with two real scores.
   //
   // The score check is not redundant. Counting w/l/t compares the two scores,
   // and `null > null` and `null < null` are BOTH false, so a `final` row with
@@ -96,18 +96,16 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   // bogus loss; bucketing it as a plausible-looking 0-0 draw makes the same bad
   // row quieter rather than smaller, which is worse.
   //
-  // Unreachable in current data, but NOT because null scores only ever appear on
-  // non-final rows — spring-2026's playoff semifinal is `status: "final"` with
-  // both scores null. It is excluded by `type === 'regular'`, not by its status.
-  // So this guards the shape against a future `regular` + `final` + null row
-  // rather than fixing a live defect. (Note the asymmetry it introduces: such a
-  // row would still count toward `allFinal` in the separate `regularGames`
-  // filter below, so `seasonComplete` could go true with that game absent from
-  // the record. Omitting a scoreless game is still better than inventing a draw
-  // for it.)
+  // Null scores do not only appear on non-final rows — spring-2026's playoff
+  // semifinal is `status: "final"` with both scores null. (Note the asymmetry
+  // this introduces: such a row would still count toward `allFinal` in the
+  // separate `regularGames` filter below, so `seasonComplete` could go true with
+  // that game absent from the record. Omitting a scoreless game is still better
+  // than inventing a draw for it.)
   const hasBothScores = g => typeof g.homeScore === 'number' && typeof g.awayScore === 'number';
   const eligibleGames = (season.games || []).filter(
-    g => g.type === 'regular' && g.status === 'final' && !g.friendly && hasBothScores(g)
+    g => (g.type === 'regular' || POSTSEASON_TYPES.has(g.type))
+      && g.status === 'final' && !g.friendly && hasBothScores(g)
   );
 
   // My team's eligible games
@@ -132,8 +130,7 @@ export function parseFlagFootball(flagFootballData, referenceDate, config) {
   // ── Last result ──────────────────────────────────────────────────────────────
   // DECIDED WITH WADE, 2026-10-27 — not a pre-existing convention. The last
   // result is the most recent game played, postseason included, so the wall does
-  // not freeze on the last regular-season result through the playoffs. The
-  // record and the legacy standings above and below keep `eligibleGames`.
+  // not freeze on the last regular-season result through the playoffs.
   // Practices and friendlies stay out.
   //
   // An allow-list here, unlike NON_GAME_TYPES: an unrecognised type must not
