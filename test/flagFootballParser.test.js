@@ -175,6 +175,24 @@ describe('parseFlagFootball', () => {
     assert.equal(result.finalRecord, '4-0-0');  // 4 wins: Apr 26, May 3, May 10, May 31
   });
 
+  it('seasonComplete reads regular games only: an unplayed postseason row does not hold it back, a played one does not require it', () => {
+    const regularDone = FIXTURE.seasons[0].games.map(g =>
+      g.date === '2026-05-31' ? { ...g, status: 'final', homeScore: 28, awayScore: 14 } : g);
+    const withGames = extra => ({ seasons: [{ ...FIXTURE.seasons[0], games: [...regularDone, ...extra] }] });
+    const unplayed = { type: 'playoff', status: 'scheduled', date: '2026-06-07', home: 'Cowboys', away: 'Chiefs', homeScore: null, awayScore: null };
+    const played   = { ...unplayed, status: 'final', homeScore: 6, awayScore: 20 };
+    const consolation = { ...unplayed, type: 'consolation' };
+
+    const none = parseFlagFootball(withGames([]), AFTER_FF, CONFIG);
+    assert.equal(none.seasonComplete, true);
+    for (const extra of [[unplayed], [consolation], [played]]) {
+      const result = parseFlagFootball(withGames(extra), AFTER_FF, CONFIG);
+      assert.equal(result.seasonComplete, true);
+    }
+    assert.equal(parseFlagFootball(withGames([played]), AFTER_FF, CONFIG).finalRecord, '4-1-0');
+    assert.equal(parseFlagFootball(withGames([unplayed]), AFTER_FF, CONFIG).finalRecord, '4-0-0');
+  });
+
   // ── Ties ───────────────────────────────────────────────────────────────────
   // A drawn game used to fall into the record loop's `else` branch and be
   // counted as a LOSS. Flag football can end level, so this pins the fix.

@@ -367,8 +367,7 @@ from `seasonComplete`.
 - A practice row has `type: "practice"`, `away: null`, and a `label` (e.g. `"Meet & Greet"`).
   `NON_GAME_TYPES` in `digest/flagFootballParser.js` keeps it out of `nextFlagGame` and out
   of the `first-game` milestone; the `season-opener` milestone resolves TO it when the season
-  opens with one. A practice
-  never takes a score.
+  opens with one. A practice never takes a score.
 - `practiceTime` appears only on rows our team plays in — the league publishes no other
   team's practice time. Do not add one to another fixture.
 - Otherwise our rows carry the same fields as every other fixture in the same season — in
@@ -400,10 +399,10 @@ game, including playoff rows recorded before that date.
 Clarified by Wade in conversation on 2026-11-11, not a pre-existing convention: `"consolation"`
 rows count too. All of the games count.
 
+Why, as Wade stated it on 2026-11-11: the league records it this way on its site.
+
 Decided by Wade in conversation on 2026-11-12, not a pre-existing convention: postseason games,
 consolation included, also count in the record (`seasonRecord` in `parseFlagFootball()`).
-
-Why, as Wade stated it on 2026-11-11: the league records it this way on its site.
 
 ### Unsupported
 
