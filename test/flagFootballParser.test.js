@@ -175,6 +175,24 @@ describe('parseFlagFootball', () => {
     assert.equal(result.finalRecord, '4-0-0');  // 4 wins: Apr 26, May 3, May 10, May 31
   });
 
+  it('seasonComplete reads regular games only: an unplayed postseason row does not hold it back, a played one does not require it', () => {
+    const regularDone = FIXTURE.seasons[0].games.map(g =>
+      g.date === '2026-05-31' ? { ...g, status: 'final', homeScore: 28, awayScore: 14 } : g);
+    const withGames = extra => ({ seasons: [{ ...FIXTURE.seasons[0], games: [...regularDone, ...extra] }] });
+    const unplayed = { type: 'playoff', status: 'scheduled', date: '2026-06-07', home: 'Cowboys', away: 'Chiefs', homeScore: null, awayScore: null };
+    const played   = { ...unplayed, status: 'final', homeScore: 6, awayScore: 20 };
+    const consolation = { ...unplayed, type: 'consolation' };
+
+    const none = parseFlagFootball(withGames([]), AFTER_FF, CONFIG);
+    assert.equal(none.seasonComplete, true);
+    for (const extra of [[unplayed], [consolation], [played]]) {
+      const result = parseFlagFootball(withGames(extra), AFTER_FF, CONFIG);
+      assert.equal(result.seasonComplete, true);
+    }
+    assert.equal(parseFlagFootball(withGames([played]), AFTER_FF, CONFIG).finalRecord, '4-1-0');
+    assert.equal(parseFlagFootball(withGames([unplayed]), AFTER_FF, CONFIG).finalRecord, '4-0-0');
+  });
+
   // ── Ties ───────────────────────────────────────────────────────────────────
   // A drawn game used to fall into the record loop's `else` branch and be
   // counted as a LOSS. Flag football can end level, so this pins the fix.
@@ -266,14 +284,7 @@ describe('parseFlagFootball', () => {
       'and it must not become the last result either');
   });
 
-  it('a scored playoff or consolation game stays out of the regular-season record', () => {
-    // Not hypothetical, and the shape differs by season: fall-2025 ships two
-    // playoff rows AND two consolation rows, all four final and carrying two
-    // real scores; spring-2026 ships three playoff rows and no consolation row
-    // at all, two of the three scored. fall-2026 ships neither — the league has
-    // published its Oct 25 postseason, but every participant is TBD and the
-    // file deliberately records no row rather than inventing teams. So `type`
-    // is what keeps six live scored rows out of a regular-season table.
+  it('a scored playoff or consolation game counts in the record and the legacy standings', () => {
     const postseason = { seasons: [{ ...ID_FIXTURE.seasons[0],
       games: [
         { type: 'regular',     status: 'final', date: '2026-09-20', home: 8009182, away: 8070749, homeScore: 20, awayScore: 6 },
@@ -281,12 +292,13 @@ describe('parseFlagFootball', () => {
         { type: 'consolation', status: 'final', date: '2026-10-25', home: 8888888, away: 8070749, homeScore: 9,  awayScore: 20 },
       ] }] };
     const result = parseFlagFootball(postseason, SEP_21, CONFIG);
-    assert.equal(result.seasonRecord, '1-0-0',
-      'the playoff defeat must not be added to the regular-season record');
+    assert.equal(result.seasonRecord, '1-1-0',
+      'the playoff defeat is added to the record');
     const mine = result.standings.find(s => s.isMe);
-    assert.deepEqual({ w: mine.w, l: mine.l, t: mine.t }, { w: 1, l: 0, t: 0 });
-    assert.equal(result.standings.find(r => r.teamId === 8070749).w, 0,
-      'nor to an opponent\u2019s, from either postseason row');
+    assert.deepEqual({ w: mine.w, l: mine.l, t: mine.t }, { w: 1, l: 1, t: 0 });
+    const ravens = result.standings.find(r => r.teamId === 8070749);
+    assert.deepEqual({ w: ravens.w, l: ravens.l }, { w: 2, l: 1 },
+      'and to an opponent\u2019s, from both postseason rows');
   });
 
   // ── Last result includes the postseason — decision of 2026-10-27 ───────────
@@ -295,7 +307,7 @@ describe('parseFlagFootball', () => {
   const REG = { type: 'regular', status: 'final', date: '2026-09-20', home: 8009182, away: 8070749, homeScore: 20, awayScore: 6 };
   const OCT_26 = new Date('2026-10-26T12:00:00');
 
-  it('a later playoff game is the last result, named by its label, and moves neither the record nor the legacy standings', () => {
+  it('a later playoff game is the last result, named by its label, and is counted in the record and the legacy standings', () => {
     const base = withGames([REG]);
     const post = withGames([REG,
       { type: 'playoff', label: 'semifinal', status: 'final', date: '2026-10-25', home: 8009182, away: 8070749, homeScore: 0, awayScore: 40 }]);
@@ -304,8 +316,9 @@ describe('parseFlagFootball', () => {
     assert.equal(without.lastResult, 'W 20\u20136 vs Ravens');
     assert.equal(result.lastResult, 'L 0\u201340 vs Ravens \u00b7 Semifinal');
     assert.equal(result.lastOpponent, 'Ravens');
-    assert.equal(result.seasonRecord, without.seasonRecord, 'the W-L record is regular-season only');
-    assert.deepEqual(result.standings, without.standings, 'the legacy standings are regular-season only');
+    assert.equal(without.seasonRecord, '1-0-0');
+    assert.equal(result.seasonRecord, '1-1-0', 'the W-L record counts the playoff game');
+    assert.equal(result.standings.find(s => s.isMe).l, 1, 'and so do the legacy standings');
     const mine = table => table.rows.find(r => r.isMe);
     assert.deepEqual([mine(without.divisionTable).played, mine(without.divisionTable).losses], [1, 0]);
     assert.deepEqual([mine(result.divisionTable).played, mine(result.divisionTable).losses], [2, 1],

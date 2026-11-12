@@ -346,9 +346,9 @@ Read from the eligibility filter and the record/standings loops in `parseFlagFoo
 | `homeScore` | points scored by the `home` side — a number |
 | `awayScore` | points scored by the `away` side — a number |
 | `status` | `"final"` marks the result as recorded; `"scheduled"` and `"rescheduled"` are the other values in the file |
-| `type` | `"regular"` is what the record counts; the derived division table counts `"regular"`, `"playoff"` and `"consolation"` |
+| `type` | `"regular"`, `"playoff"` and `"consolation"` all count, in the record and in the derived division table |
 
-The filter in `parseFlagFootball()` admits a game only when `type` is `"regular"`, `status`
+The filter in `parseFlagFootball()` admits a game only when `type` is `"regular"`, `"playoff"` or `"consolation"`, `status`
 is `"final"`, the row is not marked `friendly`, and **both** scores are numbers. A
 `"final"` row with a null score is skipped rather than counted as a draw, so leave `status`
 at `"scheduled"` until you have both numbers. `friendly: true` marks a scrimmage the parser
@@ -367,8 +367,7 @@ from `seasonComplete`.
 - A practice row has `type: "practice"`, `away: null`, and a `label` (e.g. `"Meet & Greet"`).
   `NON_GAME_TYPES` in `digest/flagFootballParser.js` keeps it out of `nextFlagGame` and out
   of the `first-game` milestone; the `season-opener` milestone resolves TO it when the season
-  opens with one. The record and standings exclude it by `type === "regular"`. A practice
-  never takes a score.
+  opens with one. A practice never takes a score.
 - `practiceTime` appears only on rows our team plays in — the league publishes no other
   team's practice time. Do not add one to another fixture.
 - Otherwise our rows carry the same fields as every other fixture in the same season — in
@@ -401,6 +400,9 @@ Clarified by Wade in conversation on 2026-11-11, not a pre-existing convention: 
 rows count too. All of the games count.
 
 Why, as Wade stated it on 2026-11-11: the league records it this way on its site.
+
+Decided by Wade in conversation on 2026-11-12, not a pre-existing convention: postseason games,
+consolation included, also count in the record (`seasonRecord` in `parseFlagFootball()`).
 
 ### Unsupported
 
