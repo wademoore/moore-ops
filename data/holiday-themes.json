@@ -21,6 +21,20 @@
       "paletteNote": "An approved palette key, never a colour. It resolves in digest/holidayThemeSchema.js to HOLIDAY_PALETTE_SPECS['halloween-ambient'], which carries the reviewed day and evening values and is audited for readability, opacity, completeness and ownership separation before it can reach CSS. Adding a future holiday palette is deliberately a reviewed code change: a palette authorable by typing hex into this file would be production-authorable, and every one of those properties would then rest on whoever typed it.",
       "doodles": ["spiderweb-corner", "bat-trio", "pumpkin-outline"],
       "note": "First Holiday Theme pilot, revised one controlled step stronger. This entry is purely declarative: it selects one palette key, one typography key and three doodle keys, and authors none of their underlying values. Purple is deliberately absent from the approved palette: purple is already Ophelia's ownership cue and must not become ambient decoration. The palette sets decorative ground, paper, structural borders, brush artwork, brush lettering and one restrained highlight — it cannot reach owner, urgency, warning, weather, status or countdown colours, because those roles are not in the palette spec at all."
+    },
+    {
+      "id": "christmas-2026",
+      "renderer": "holiday-theme-v1",
+      "status": "ready",
+      "enabled": true,
+      "priority": 101,
+      "timezone": "America/New_York",
+      "lifecycle": {
+        "activateAt": "2026-11-27T00:00",
+        "expireAt": "2027-01-02T00:00"
+      },
+      "palette": "christmas-evergreen",
+      "doodles": ["christmas-ornaments"]
     }
   ]
 }

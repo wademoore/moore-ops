@@ -165,6 +165,30 @@ const HOLIDAY_PALETTE_SPECS = Object.freeze({
       highlight: '#c25c10',
     }),
   }),
+  'christmas-evergreen': Object.freeze({
+    day: Object.freeze({
+      canvas: '#a9c0af',
+      surfacePanel: '#fff9ec',
+      surfaceAlt: '#edf2e8',
+      panelBorder: '#53746399',
+      rule: '#59756355',
+      frame: '#224b3bd9',
+      brush: '#164433',
+      headingInk: '#fff2ce',
+      highlight: '#98631b',
+    }),
+    evening: Object.freeze({
+      canvas: '#9eb3a3',
+      surfacePanel: '#efe5ce',
+      surfaceAlt: '#dee6d7',
+      panelBorder: '#345a4ab3',
+      rule: '#405b4d66',
+      frame: '#183b30e0',
+      brush: '#10382a',
+      headingInk: '#fae7b4',
+      highlight: '#85571b',
+    }),
+  }),
 });
 
 /** The keys a registry entry may select. */
@@ -251,6 +275,7 @@ const DOODLE_ASSETS = Object.freeze({
   'pumpkin-outline': 'doodle-holiday-pumpkin.svg',
   'bat-trio': 'doodle-holiday-bats.svg',
   'spiderweb-corner': 'doodle-holiday-web.svg',
+  'christmas-ornaments': 'doodle-holiday-christmas.svg',
 });
 
 const KNOWN_HOLIDAY_DOODLE_KEYS = Object.freeze(Object.keys(DOODLE_ASSETS));

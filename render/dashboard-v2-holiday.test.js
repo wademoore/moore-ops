@@ -165,6 +165,21 @@ describe('holiday theme — what a themed artifact carries', () => {
     assert.equal((html.match(/data-holiday-state="ordinary"/g) || []).length, 1);
   });
 
+  it('ships Christmas through New Year’s Day in Eastern time', () => {
+    const start = Date.parse('2026-11-27T05:00:00Z');
+    const end = Date.parse('2027-01-02T05:00:00Z');
+    for (const now of [start, end - 1]) {
+      const html = render({ now });
+      assert.ok(html.includes('data-holiday-id="christmas-2026"'));
+      assert.ok(html.includes(`data-holiday-activate-at="${start}"`));
+      assert.ok(html.includes(`data-holiday-expire-at="${end}"`));
+      assert.ok(html.includes('holiday-doodle holiday-doodle-christmas-ornaments'));
+      assert.ok(inlineStyle(html).includes('--holiday-brush:#164433'));
+      assert.ok(inlineStyle(html).includes('--holiday-evening-brush:#10382a'));
+    }
+    assert.ok(!render({ now: end }).includes('data-holiday-id="christmas-2026"'));
+  });
+
   it('ships one decorative mark per approved doodle key, and nothing semantic', () => {
     const html = render();
     for (const key of ['spiderweb-corner', 'bat-trio', 'pumpkin-outline']) {
