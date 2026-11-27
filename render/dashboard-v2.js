@@ -1907,10 +1907,11 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .holiday-doodle-spiderweb-corner{left:18px;top:18px;width:60px;height:60px;opacity:.72;-webkit-mask-image:var(--holiday-doodle-spiderweb-corner);mask-image:var(--holiday-doodle-spiderweb-corner);-webkit-mask-position:top left;mask-position:top left}
 .holiday-doodle-pumpkin-outline{left:520px;top:2px;width:74px;height:74px;opacity:.8;-webkit-mask-image:var(--holiday-doodle-pumpkin-outline);mask-image:var(--holiday-doodle-pumpkin-outline)}
 .holiday-doodle-bat-trio{left:1540px;top:4px;width:242px;height:72px;opacity:.62;background-color:var(--holiday-brush-active);-webkit-mask-image:var(--holiday-doodle-bat-trio);mask-image:var(--holiday-doodle-bat-trio)}
-/* A masthead pushes both panel-band marks down by its own track plus the grid
+.holiday-doodle-christmas-ornaments{left:1540px;top:4px;width:242px;height:72px;opacity:.88;-webkit-mask-image:var(--holiday-doodle-christmas-ornaments);mask-image:var(--holiday-doodle-christmas-ornaments)}
+/* A masthead pushes the panel-band marks down by its own track plus the grid
    gap. The frame-corner web is anchored to the frame and does not move. */
 .dashboard.has-masthead .holiday-doodle-pumpkin-outline{top:141px}
-.dashboard.has-masthead .holiday-doodle-bat-trio{top:139px}
+.dashboard.has-masthead .holiday-doodle-bat-trio,.dashboard.has-masthead .holiday-doodle-christmas-ornaments{top:139px}
 .dashboard[data-holiday-state="active"]{--canvas:var(--holiday-canvas);--surface-panel:var(--holiday-surface-panel);--surface-alt:var(--holiday-surface-alt);--rule:var(--holiday-rule);--holiday-border-active:var(--holiday-panel-border);--holiday-frame-active:var(--holiday-frame);--holiday-brush-active:var(--holiday-brush);--holiday-highlight-active:var(--holiday-highlight);--holiday-heading-ink-active:var(--holiday-heading-ink)}
 .dashboard.palette-evening[data-holiday-state="active"]{--canvas:var(--holiday-evening-canvas);--surface-panel:var(--holiday-evening-surface-panel);--surface-alt:var(--holiday-evening-surface-alt);--rule:var(--holiday-evening-rule);--holiday-border-active:var(--holiday-evening-panel-border);--holiday-frame-active:var(--holiday-evening-frame);--holiday-brush-active:var(--holiday-evening-brush);--holiday-highlight-active:var(--holiday-evening-highlight);--holiday-heading-ink-active:var(--holiday-evening-heading-ink)}
 .dashboard[data-holiday-state="active"] .paper-panel,.dashboard[data-holiday-state="active"] .rail-card{border-color:var(--holiday-border-active)}

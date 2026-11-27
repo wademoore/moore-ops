@@ -99,7 +99,7 @@ describe('holiday theme schema — the allowlists that make "skin only" structur
 
   it('exposes exactly the approved doodle keys and one renderer', () => {
     assert.deepEqual([...KNOWN_HOLIDAY_DOODLE_KEYS], [
-      'pumpkin-outline', 'bat-trio', 'spiderweb-corner',
+      'pumpkin-outline', 'bat-trio', 'spiderweb-corner', 'christmas-ornaments',
     ]);
     assert.deepEqual([...HOLIDAY_RENDERERS], ['holiday-theme-v1']);
     assert.equal(MAX_HOLIDAY_DOODLES, 3);
@@ -208,7 +208,7 @@ describe('holiday theme schema — the registry selects a palette, never authors
 
 describe('holiday theme schema — the code-owned palette allowlist and its audit', () => {
   it('exposes exactly the approved palette keys', () => {
-    assert.deepEqual([...HOLIDAY_PALETTE_KEYS], ['halloween-ambient']);
+    assert.deepEqual([...HOLIDAY_PALETTE_KEYS], ['halloween-ambient', 'christmas-evergreen']);
   });
 
   it('every shipped palette spec passes the audit', () => {
@@ -518,12 +518,16 @@ describe('holiday theme schema — identity, status, priority and window', () =>
 });
 
 describe('holiday theme registry — document-level validation', () => {
-  it('accepts the shipped registry and resolves the Halloween 2026 pilot', () => {
+  it('accepts the shipped Halloween and Christmas themes', () => {
     const { themes, rejected, reasons } = validateHolidayRegistry(REGISTRY);
     assert.deepEqual(rejected, []);
     assert.deepEqual(reasons, []);
-    assert.equal(themes.length, 1);
-    const [theme] = themes;
+    assert.deepEqual(themes.map(theme => theme.id), ['halloween-2026', 'christmas-2026']);
+    const [theme, christmas] = themes;
+    assert.equal(christmas.activateAt, '2026-11-27T00:00');
+    assert.equal(christmas.expireAt, '2027-01-02T00:00');
+    assert.equal(christmas.paletteKey, 'christmas-evergreen');
+    assert.deepEqual([...christmas.doodles], ['christmas-ornaments']);
     assert.equal(theme.id, 'halloween-2026');
     assert.equal(theme.renderer, 'holiday-theme-v1');
     assert.equal(theme.status, 'ready');
@@ -599,8 +603,8 @@ describe('holiday theme registry — document-level validation', () => {
   it('honours a restricted available-asset set at the document level', () => {
     const { themes, rejected } = validateHolidayRegistry(REGISTRY, { availableDoodles: new Set(['pumpkin-outline']) });
     assert.deepEqual(themes, []);
-    assert.equal(rejected.length, 1);
-    assert.ok(rejected[0].reasons.includes(HOLIDAY_REASON.DOODLE_ASSET_UNAVAILABLE));
+    assert.deepEqual(rejected.map(entry => entry.id), ['halloween-2026', 'christmas-2026']);
+    assert.ok(rejected.every(entry => entry.reasons.includes(HOLIDAY_REASON.DOODLE_ASSET_UNAVAILABLE)));
   });
 
   it('never throws, whatever it is handed', () => {
