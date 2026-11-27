@@ -1453,8 +1453,8 @@ function browserScript() {
       document.querySelectorAll('.latest-757-results').forEach(results => {
         const rows = [...results.querySelectorAll('.latest-757-race')];
         const more = results.querySelector('.latest-757-more');
-        rows.forEach(row => { row.hidden = false; });
-        more.hidden = true;
+        rows.forEach(row => { if (row.hidden) row.hidden = false; });
+        if (!more.hidden) more.hidden = true;
         more.textContent = '';
         let visible = rows.length;
         while (visible && results.scrollHeight > results.clientHeight) {
