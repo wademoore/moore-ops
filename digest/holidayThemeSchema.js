@@ -167,7 +167,7 @@ const HOLIDAY_PALETTE_SPECS = Object.freeze({
   }),
   'christmas-evergreen': Object.freeze({
     day: Object.freeze({
-      canvas: '#d8e7df',
+      canvas: '#a9c0af',
       surfacePanel: '#fff9ec',
       surfaceAlt: '#edf2e8',
       panelBorder: '#53746399',
@@ -178,7 +178,7 @@ const HOLIDAY_PALETTE_SPECS = Object.freeze({
       highlight: '#98631b',
     }),
     evening: Object.freeze({
-      canvas: '#bdcfc4',
+      canvas: '#9eb3a3',
       surfacePanel: '#efe5ce',
       surfaceAlt: '#dee6d7',
       panelBorder: '#345a4ab3',

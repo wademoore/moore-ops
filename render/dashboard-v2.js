@@ -1881,6 +1881,17 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .athletics-multi .result-placeholder{min-height:22px}.latest-757-improvement.is-improved{color:#3f7c3f;font-weight:700}
 .athletics-multi .latest-757-race{padding-top:9px;padding-bottom:9px}
 .athletics-multi .latest-757-dense .latest-757-race{padding-top:3px;padding-bottom:3px}
+/* The garland crosses the front edges of the cards. Keep the added top
+   inset limited to the active Christmas window so the regular grid returns
+   when the browser clock expires the theme. */
+.dashboard.christmas-theme[data-holiday-state="active"]{--christmas-star:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2OCA2OCI+PHBhdGggZD0iTTM0IDMgMzkgMjUgNTMgMTUgNDQgMzAgNjUgMzQgNDQgMzkgNTMgNTMgMzkgNDQgMzQgNjUgMjkgNDQgMTUgNTMgMjQgMzkgMyAzNCAyNCAzMCAxNSAxNSAyOSAyNVoiIGZpbGw9IiNlZGJkNTQiIHN0cm9rZT0iIzllNjcxZSIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTM0IDh2NTBNOCAzNGg1MiIgc3Ryb2tlPSIjZmZmMWJlIiBzdHJva2Utd2lkdGg9IjEuNCIvPjwvc3ZnPg==');--christmas-sprig:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3NiA1OCI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIj48cGF0aCBkPSJNOSA0OVEzMSAzNCA2MyA5TTIzIDQxIDY2IDMyTTM0IDM0IDMyIDEwIiBzdHJva2U9IiMzMzVkNDQiIHN0cm9rZS13aWR0aD0iMyIvPjxwYXRoIGQ9Ik0yOCAzNyAxNyAyM00zNCAzMiAyMiAxNk00MSAyNyA0MiAxME00NyAyMyA1MCA3TTQ4IDI0IDY0IDE5TTM3IDMxIDU1IDI4TTM3IDM5IDUwIDQ5TTQ1IDM3IDU5IDQ1TTU0IDM1IDY4IDQwTTMyIDIzIDI0IDEzTTMzIDI4IDM5IDE3IiBzdHJva2U9IiM1NDgzNjUiIHN0cm9rZS13aWR0aD0iMi44Ii8+PC9nPjxjaXJjbGUgY3g9IjIyIiBjeT0iNDMiIHI9IjYiIGZpbGw9IiM5YTMwM2UiLz48Y2lyY2xlIGN4PSIzNCIgY3k9IjQ2IiByPSI1LjQiIGZpbGw9IiNhYjNjNDgiLz48L3N2Zz4=');--christmas-holly:url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA0NCAzMiI+PHBhdGggZD0iTTE3IDIzUTMgMTkgMiA3cTYgMyAxMCAwIDAgNSA3IDVsMSA5UTI0IDkgMzggM3EtMiA1IDEgOS02IDEtNiA2LTctMS0xMiA2IiBmaWxsPSIjNDI3NDU4IiBzdHJva2U9IiMyMDRiMzYiIHN0cm9rZS13aWR0aD0iMS4yIi8+PHBhdGggZD0ibTE5IDIxLTExLTltMTMgOUwzMyA5IiBzdHJva2U9IiNhNGJmOTYiIHN0cm9rZS13aWR0aD0iMS4xIi8+PGNpcmNsZSBjeD0iMTciIGN5PSIyNCIgcj0iNCIgZmlsbD0iI2EzMzg0MiIvPjxjaXJjbGUgY3g9IjI0IiBjeT0iMjMiIHI9IjQuMSIgZmlsbD0iI2JiNGM1NCIvPjxjaXJjbGUgY3g9IjIxIiBjeT0iMjgiIHI9IjMuNCIgZmlsbD0iIzg2MjkzOCIvPjwvc3ZnPg==');padding-top:52px}
+.dashboard.has-masthead .holiday-doodle-christmas-ornaments{top:135px}
+.holiday-skin .holiday-doodle-christmas-ornaments{left:18px;top:0;width:2524px;height:88px;background:var(--holiday-doodle-christmas-ornaments) center/contain no-repeat}
+.dashboard.christmas-theme[data-holiday-state="active"] .doodle-star .section-doodle{width:66px;height:65px;right:23px;background-image:var(--christmas-star);transform:rotate(6deg)}
+.dashboard.christmas-theme[data-holiday-state="active"] .doodle-calendar .section-doodle{width:76px;height:58px;left:auto;right:21px;top:5px;background-image:var(--christmas-sprig);transform:none}
+.dashboard.christmas-theme[data-holiday-state="active"] .doodle-calendar span{padding-left:70px!important}
+.dashboard.christmas-theme[data-holiday-state="active"] .doodle-dinner .section-doodle:after{content:"";position:absolute;left:45px;top:7px;width:44px;height:32px;background:var(--christmas-holly) center/contain no-repeat}
+.dashboard.christmas-theme[data-holiday-state="active"] .doodle-soccer .section-doodle,.dashboard.christmas-theme[data-holiday-state="active"] .ticker-doodle{filter:saturate(.84) brightness(.86)}
 /* ── Holiday Theme — ambient skin (holiday-theme-v1) ────────────────────────
    A skin, never a layout. Every rule in this block is scoped to
    [data-holiday-state="active"], so an artifact with no theme, a staged theme,
@@ -1907,11 +1918,10 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
 .holiday-doodle-spiderweb-corner{left:18px;top:18px;width:60px;height:60px;opacity:.72;-webkit-mask-image:var(--holiday-doodle-spiderweb-corner);mask-image:var(--holiday-doodle-spiderweb-corner);-webkit-mask-position:top left;mask-position:top left}
 .holiday-doodle-pumpkin-outline{left:520px;top:2px;width:74px;height:74px;opacity:.8;-webkit-mask-image:var(--holiday-doodle-pumpkin-outline);mask-image:var(--holiday-doodle-pumpkin-outline)}
 .holiday-doodle-bat-trio{left:1540px;top:4px;width:242px;height:72px;opacity:.62;background-color:var(--holiday-brush-active);-webkit-mask-image:var(--holiday-doodle-bat-trio);mask-image:var(--holiday-doodle-bat-trio)}
-.holiday-doodle-christmas-ornaments{left:1540px;top:4px;width:242px;height:72px;opacity:.88;-webkit-mask-image:var(--holiday-doodle-christmas-ornaments);mask-image:var(--holiday-doodle-christmas-ornaments)}
 /* A masthead pushes the panel-band marks down by its own track plus the grid
    gap. The frame-corner web is anchored to the frame and does not move. */
 .dashboard.has-masthead .holiday-doodle-pumpkin-outline{top:141px}
-.dashboard.has-masthead .holiday-doodle-bat-trio,.dashboard.has-masthead .holiday-doodle-christmas-ornaments{top:139px}
+.dashboard.has-masthead .holiday-doodle-bat-trio{top:139px}
 .dashboard[data-holiday-state="active"]{--canvas:var(--holiday-canvas);--surface-panel:var(--holiday-surface-panel);--surface-alt:var(--holiday-surface-alt);--rule:var(--holiday-rule);--holiday-border-active:var(--holiday-panel-border);--holiday-frame-active:var(--holiday-frame);--holiday-brush-active:var(--holiday-brush);--holiday-highlight-active:var(--holiday-highlight);--holiday-heading-ink-active:var(--holiday-heading-ink)}
 .dashboard.palette-evening[data-holiday-state="active"]{--canvas:var(--holiday-evening-canvas);--surface-panel:var(--holiday-evening-surface-panel);--surface-alt:var(--holiday-evening-surface-alt);--rule:var(--holiday-evening-rule);--holiday-border-active:var(--holiday-evening-panel-border);--holiday-frame-active:var(--holiday-evening-frame);--holiday-brush-active:var(--holiday-evening-brush);--holiday-highlight-active:var(--holiday-evening-highlight);--holiday-heading-ink-active:var(--holiday-evening-heading-ink)}
 .dashboard[data-holiday-state="active"] .paper-panel,.dashboard[data-holiday-state="active"] .rail-card{border-color:var(--holiday-border-active)}
@@ -2017,7 +2027,7 @@ function renderDashboardV2(digestData) {
   const initialPalette = paletteSetting === 'auto' ? paletteModeForDate(data.now ? new Date(data.now) : new Date()) : paletteSetting;
   const divisionTable = (data.athletics?.sharksActive && ['available', 'preseason'].includes(data.athletics?.sharksDivisionTable?.status))
     || (data.athletics?.flagFootballActive && ['available', 'preseason'].includes(data.athletics?.flagFootballDivisionTable?.status));
-  const classes = `dashboard${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'} athletics-${cardCount === 1 ? 'one' : 'multi'} palette-${initialPalette}${divisionTable ? ' has-division-table' : ''}`;
+  const classes = `dashboard${activeTheme?.id === 'christmas-2026' ? ' christmas-theme' : ''}${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'} athletics-${cardCount === 1 ? 'one' : 'multi'} palette-${initialPalette}${divisionTable ? ' has-division-table' : ''}`;
 
   return `<!DOCTYPE html>
 <html lang="en">
