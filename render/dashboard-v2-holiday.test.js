@@ -295,7 +295,7 @@ describe('holiday theme — the skin cannot reach protected colours', () => {
   });
 
   it('confines every typography declaration to the approved heading selectors', () => {
-    // The heading treatment is one rule. Splitting the block on `}` and finding
+    // Splitting the block on `}` and finding
     // every rule that sets a typography property proves the scope, rather than
     // trusting that only one rule was written.
     const rules = themeBlock.split('}').map(chunk => {
@@ -303,9 +303,12 @@ describe('holiday theme — the skin cannot reach protected colours', () => {
       return { selector: chunk.slice(0, at).split('\n').pop().trim(), body: chunk.slice(at + 1) };
     }).filter(rule => rule.selector);
     const typographic = rules.filter(rule => /font-family|font-weight|font-style|letter-spacing|text-transform|text-shadow|(^|[;{])color:/.test(rule.body));
-    assert.equal(typographic.length, 1, `expected one typographic rule, found ${typographic.length}`);
-
-    const selectors = typographic[0].selector.split(',').map(part => part.trim());
+    assert.equal(typographic.length, 2);
+    const [ink, typography] = typographic;
+    assert.equal(ink.body, 'color:var(--holiday-heading-ink-active)');
+    const selectors = ink.selector.split(',').map(part => part.trim());
+    assert.deepEqual(typography.selector.split(','), selectors.map(selector =>
+      selector.replace('.dashboard[', '.dashboard[data-holiday-heading-style][')));
     assert.deepEqual(selectors.sort(), [
       '.dashboard[data-holiday-state="active"] .forecast-heading',
       '.dashboard[data-holiday-state="active"] .horizon-label',

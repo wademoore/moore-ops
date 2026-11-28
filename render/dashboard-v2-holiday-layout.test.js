@@ -305,6 +305,30 @@ describe('holiday theme 2560x1440 skin, geometry and clock transitions', () => {
     }
   });
 
+  it('preserves ordinary heading typography for the Christmas palette', async () => {
+    const christmas = await browser.newPage({ viewport: { width: 2560, height: 1440 } });
+    try {
+      const now = Date.parse('2026-11-27T21:10:00Z');
+      await christmas.clock.setFixedTime(now);
+      const read = () => christmas.locator('.section-title > span,.weather-label,.forecast-heading,.horizon-label,.next-up-label')
+        .evaluateAll(headings => headings.map(heading => {
+          const { fontFamily, fontSize, fontWeight, fontStyle, letterSpacing, textTransform } = getComputedStyle(heading);
+          return { fontFamily, fontSize, fontWeight, fontStyle, letterSpacing, textTransform };
+        }));
+      const render = holidayThemes => renderDashboardV2(holidayThemeSampleData({
+        now, holidayThemes, holidayThemesConfig: HOLIDAY_REGISTRY,
+      }));
+      await christmas.setContent(render(false));
+      const ordinary = await read();
+      assert.ok(ordinary.length >= 7);
+      await christmas.setContent(render(true));
+      await christmas.waitForSelector('[data-holiday-state=active][data-holiday-id=christmas-2026]');
+      assert.deepEqual(await read(), ordinary);
+    } finally {
+      await christmas.close();
+    }
+  });
+
   it('restyles the decorative brush headings and nothing else', async () => {
     const read = () => page.evaluate(() => {
       const of = (selector, pseudo = null) => {
