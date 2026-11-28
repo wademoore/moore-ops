@@ -1958,7 +1958,7 @@ body{font-family:"Barlow Semi Condensed","Arial Narrow",Arial,sans-serif;font-si
    No font-size is set here. The face changes; the type scale does not, so the
    fixed-height title rows keep their geometry and nothing can reflow. */
 .dashboard[data-holiday-state="active"] .section-title:not(.section-title-red):not(.section-title-purple)>span,.dashboard[data-holiday-state="active"] .weather-label,.dashboard[data-holiday-state="active"] .forecast-heading,.dashboard[data-holiday-state="active"] .horizon-label,.dashboard[data-holiday-state="active"] .next-up-label{color:var(--holiday-heading-ink-active)}
-.dashboard.holiday-heading-style[data-holiday-state="active"] .section-title:not(.section-title-red):not(.section-title-purple)>span,.dashboard.holiday-heading-style[data-holiday-state="active"] .weather-label,.dashboard.holiday-heading-style[data-holiday-state="active"] .forecast-heading,.dashboard.holiday-heading-style[data-holiday-state="active"] .horizon-label,.dashboard.holiday-heading-style[data-holiday-state="active"] .next-up-label{font-family:var(--holiday-heading-font);font-weight:var(--holiday-heading-weight);font-style:var(--holiday-heading-style);letter-spacing:var(--holiday-heading-tracking);text-transform:var(--holiday-heading-transform);text-shadow:var(--holiday-heading-shadow)}
+.dashboard[data-holiday-heading-style][data-holiday-state="active"] .section-title:not(.section-title-red):not(.section-title-purple)>span,.dashboard[data-holiday-heading-style][data-holiday-state="active"] .weather-label,.dashboard[data-holiday-heading-style][data-holiday-state="active"] .forecast-heading,.dashboard[data-holiday-heading-style][data-holiday-state="active"] .horizon-label,.dashboard[data-holiday-heading-style][data-holiday-state="active"] .next-up-label{font-family:var(--holiday-heading-font);font-weight:var(--holiday-heading-weight);font-style:var(--holiday-heading-style);letter-spacing:var(--holiday-heading-tracking);text-transform:var(--holiday-heading-transform);text-shadow:var(--holiday-heading-shadow)}
 
 
 `;
@@ -2020,7 +2020,7 @@ function renderDashboardV2(digestData) {
   if (themeVars) styleVarList.push(...themeVars);
   const styleVars = styleVarList.join(';');
   const holidayAttributes = activeTheme
-    ? ` data-holiday-id="${esc(activeTheme.id)}" data-holiday-renderer="${esc(activeTheme.renderer)}" data-holiday-state="ordinary" data-holiday-activate-at="${activeTheme.activateAt}" data-holiday-expire-at="${activeTheme.expireAt}"`
+    ? ` data-holiday-id="${esc(activeTheme.id)}"${activeTheme.headingStyle ? ' data-holiday-heading-style="approved"' : ''} data-holiday-renderer="${esc(activeTheme.renderer)}" data-holiday-state="ordinary" data-holiday-activate-at="${activeTheme.activateAt}" data-holiday-expire-at="${activeTheme.expireAt}"`
     : '';
   const latest757Card = safeLatest757Card(data.athletics || {});
   const cardCount = athleticsCardCount(data, latest757Card);
@@ -2028,8 +2028,7 @@ function renderDashboardV2(digestData) {
   const initialPalette = paletteSetting === 'auto' ? paletteModeForDate(data.now ? new Date(data.now) : new Date()) : paletteSetting;
   const divisionTable = (data.athletics?.sharksActive && ['available', 'preseason'].includes(data.athletics?.sharksDivisionTable?.status))
     || (data.athletics?.flagFootballActive && ['available', 'preseason'].includes(data.athletics?.flagFootballDivisionTable?.status));
-  const headingClass = activeTheme?.headingStyle ? ' holiday-heading-style' : '';
-  const classes = `dashboard${headingClass}${activeTheme?.id === 'christmas-2026' ? ' christmas-theme' : ''}${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'} athletics-${cardCount === 1 ? 'one' : 'multi'} palette-${initialPalette}${divisionTable ? ' has-division-table' : ''}`;
+  const classes = `dashboard${activeTheme?.id === 'christmas-2026' ? ' christmas-theme' : ''}${mastheadAsset ? ' has-brush' : ''} ${data.banner ? 'has-masthead' : 'no-masthead'} athletics-${cardCount === 1 ? 'one' : 'multi'} palette-${initialPalette}${divisionTable ? ' has-division-table' : ''}`;
 
   return `<!DOCTYPE html>
 <html lang="en">
